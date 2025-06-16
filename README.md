@@ -1,5 +1,7 @@
 A toolset for managing and working with hydrogeological observational data. Distributed under the terms of the GNU GPL License v2.
 
+NOTE: This is as of 2025-05-16 the official and maintained repository for the Midvatten plugin (forked from https://github.com/jkall/qgis-midvatten-plugin).
+
 The following features are included:
 
   * Database generator
@@ -18,6 +20,6 @@ The following features are included:
     * [DiverOffice] ( http://www.vanessen.com/products/software/diver-office) files from Water Level Dataloggers from [vanEssen instruments] (http://www.vanessen.com)
     * FieldLogger files from the [FieldLogger app] (https://play.google.com/store/apps/details?id=nl.artesia.fieldlogger)
 
-Please visit the [wiki](https://github.com/jkall/qgis-midvatten-plugin/wiki) for more information.
+Please visit the [wiki](https://github.com/henrikspa/qgis-midvatten-plugin/wiki) for more information.
 
-_Copyright (c) 2016 Josef Källgården_
+_Copyright (c) 2016 Josef Källgården and Henrik Spångmyr_

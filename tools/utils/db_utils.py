@@ -606,7 +606,13 @@ def get_table_info(tablename, dbconnection=None):
     else:
         columns_sql = "SELECT ordinal_position, column_name, data_type, CASE WHEN is_nullable = 'NO' THEN 1 ELSE 0 END AS notnull, column_default, 0 AS primary_key FROM information_schema.columns WHERE table_schema = '%s' AND table_name = '%s'"%(dbconnection.schemas(), tablename)
         columns = [list(x) for x in dbconnection.execute_and_fetchall(columns_sql)]
-        primary_keys = [x[0] for x in dbconnection.execute_and_fetchall("SELECT a.attname, format_type(a.atttypid, a.atttypmod) AS data_type FROM pg_index i JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey) WHERE i.indrelid = '%s'::regclass AND i.indisprimary;"%tablename)]
+
+
+
+        primary_keys = [x[0] for x in dbconnection.execute_and_fetchall("SELECT a.attname, format_type(a.atttypid, a.atttypmod) AS data_type "
+                                                                        "FROM pg_index i "
+                                                                        "JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey) "
+                                                                        "WHERE i.indrelid = '%s.%s'::regclass AND i.indisprimary;"%(dbconnection.schemas(), tablename))]
         for column in columns:
             if column[1] in primary_keys:
                 column[5] = 1

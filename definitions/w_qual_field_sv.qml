@@ -41,7 +41,7 @@
     <alias field="comment" index="9" name="kommentar"/>
     <alias field="date_time" index="2" name="datum och tid"/>
     <alias field="flow_lpm" index="8" name="provtagningsflöde (l/min)"/>
-    <alias field="reading_num" index="5" name="mätvärde numersikt"/>
+    <alias field="reading_num" index="5" name="mätvärde numeriskt"/>
     <alias field="reading_txt" index="6" name="mätvärde text (inkl. &lt; > etc )"/>
     <alias field="staff" index="1" name="fältpersonal"/>
     <alias field="unit" index="7" name="enhet"/>

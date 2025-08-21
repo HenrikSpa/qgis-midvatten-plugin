@@ -129,6 +129,19 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         self.import_all_data.checked = False
         self.add_row(self.import_all_data.widget)
 
+
+        existing_columns = db_utils.tables_columns(table='w_levels_logger')['w_levels_logger']
+        if 'source' in existing_columns:
+            self.add_row(get_line())
+            self.source_row = RowEntry()
+            self.source_label = QtWidgets.QLabel('Add source comment (optional)')
+            self.source_edit = QtWidgets.QLineEdit()
+            self.source_row.layout.addWidget(self.source_label)
+            self.source_row.layout.addWidget(self.source_edit)
+            self.add_row(self.source_row.widget)
+        else:
+            self.source_edit = None
+
         self.select_files_button = qgis.PyQt.QtWidgets.QPushButton(
             QCoreApplication.translate('DiverofficeImport', 'Select files'))
         self.gridLayout_buttons.addWidget(self.select_files_button, 0, 0)
@@ -319,6 +332,12 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
             self.status = 'True'
             common_utils.stop_waiting_cursor()
             return True
+
+        if self.source_edit is not None:
+            source = self.source_edit.text().strip()
+            if source:
+                file_to_import_to_db[0].append('source')
+                [row.append(source) for row in file_to_import_to_db[1:]]
 
         if import_to_db:
             importer = import_data_to_db.midv_data_importer()

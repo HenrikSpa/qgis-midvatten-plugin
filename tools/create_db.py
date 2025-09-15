@@ -286,7 +286,11 @@ class NewDb(object):
 
         execute_sqlfile(get_full_filename('insert_obs_points_triggers_postgis.sql'), dbconnection)
 
-        execute_sqlfile(get_full_filename('insert_functions_postgis.sql'), dbconnection)
+        try:
+            execute_sqlfile(get_full_filename('insert_functions_postgis.sql'), dbconnection)
+        except:
+            execute_sqlfile(get_full_filename('insert_functions_postgis_pg17.sql'), dbconnection)
+            pass
 
         self.add_metadata_to_about_db(dbconnection, created_tables_sqls,
                                       w_levels_logger_timezone=w_levels_logger_timezone,

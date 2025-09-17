@@ -21,8 +21,10 @@ tracker=https://github.com/henrikspa/qgis-midvatten-plugin/issues?state=open
 icon=icons/MidvSettings.png
 
 changelog=
+
         Version 1.8.5:
         - CreateDb: Fix for Postgresql 17 (and probably earlier).
+        - db_utils: Fix for Postgresql 17 (and probably earlier).
         Version 1.8.4:
         - DiverofficeImport: Added feature to add comment to source column during import.
         Version 1.8.3:

@@ -570,7 +570,10 @@ def get_tables(dbconnection=None, skip_views=False):
             pg_mat_views = ""
         else:
             tabletype = ''
-            pg_mat_views = """UNION SELECT relname FROM pg_class WHERE relkind = 'm' AND TRIM(TRIM(REPLACE(oid::regclass::text, relname, ''), '.'), '"') = '%s' """%dbconnection.schema
+            pg_mat_views = """UNION SELECT relname FROM pg_class WHERE relkind = 'm'"""
+            if dbconnection.schema.lower() != 'public':
+                pg_mat_views += """ AND TRIM(TRIM(REPLACE(oid::regclass::text, relname, ''), '.'), '"') = '%s' """%dbconnection.schema
+
         tables_sql = """SELECT table_name FROM (
                         SELECT table_name FROM information_schema.tables 
                         WHERE table_schema='%s' %s 

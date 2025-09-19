@@ -417,7 +417,7 @@ def get_postgis_connections():
     return postgresql_connections
 
 
-def sql_load_fr_db(sql, dbconnection=None, print_error_message_in_bar=True):
+def sql_load_fr_db(sql, dbconnection=None, print_error_message_in_bar=True, execute_args=None):
     if not isinstance(dbconnection, DbConnectionManager):
         dbconnection = DbConnectionManager()
         dbconnection_created = True
@@ -425,7 +425,7 @@ def sql_load_fr_db(sql, dbconnection=None, print_error_message_in_bar=True):
         dbconnection_created = False
 
     try:
-        result = dbconnection.execute_and_fetchall(sql)
+        result = dbconnection.execute_and_fetchall(sql, execute_args)
     except Exception as e:
         textstring = ru(QCoreApplication.translate('sql_load_fr_db', """DB error!\n SQL causing this error:%s\nMsg:\n%s""")) % (ru(sql), ru(str(e)))
         if print_error_message_in_bar:

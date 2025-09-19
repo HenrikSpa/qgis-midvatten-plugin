@@ -29,13 +29,18 @@ from builtins import next
 from builtins import range
 from builtins import str
 
+import matplotlib as mpl
+mpl.use('Qt5Agg')
+
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tick
 import numpy as np
 import qgis.PyQt
+
 from matplotlib.backend_bases import MouseButton, PickEvent
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.dates import datestr2num, num2date
+
 from qgis.PyQt import uic, QtWidgets
 from qgis.PyQt.QtCore import QCoreApplication, Qt
 
@@ -56,6 +61,7 @@ from midvatten.tools.utils.gui_utils import add_action_to_navigation_toolbar
 
 Calibr_Ui_Dialog =  uic.loadUiType(os.path.join(os.path.dirname(__file__),'..','ui', 'calibr_logger_dialog_integrated.ui'))[0]
 Calc_Ui_Dialog =  uic.loadUiType(os.path.join(os.path.dirname(__file__),'..','ui', 'calc_lvl_dialog.ui'))[0]
+
 
 
 class Calclvl(qgis.PyQt.QtWidgets.QDialog, Calc_Ui_Dialog): # An instance of the class Calc_Ui_Dialog is created same time as instance of calclvl is created
@@ -242,15 +248,29 @@ class Calibrlogger(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog): # An inst
 
     @fn_timer
     def get_uncalibrated_obsids(self, obsid=None):
-        return [row[0] for row in db_utils.sql_load_fr_db("""
-                                                      SELECT obsid FROM obs_points a 
-                                                      WHERE {}
-                                                      EXISTS (SELECT obsid FROM w_levels_logger b 
-                                                                    WHERE b.obsid = a.obsid AND
-                                                                    level_masl IS NULL AND head_cm IS NOT NULL 
-                                                                    LIMIT 1)
-                                                      ORDER BY a.obsid""".format('' if obsid is None
-                                                                                  else " obsid = '{}' AND ".format(obsid)))[1]]
+        dbconnection = db_utils.DbConnectionManager()
+        try:
+            if dbconnection.dbtype == 'spatialite':
+                sql = """SELECT obsid FROM (SELECT obsid, MAX(date_time), level_masl, head_cm FROM w_levels_logger {} GROUP BY obsid)
+                         WHERE level_masl IS NULL AND head_cm IS NOT NULL ORDER BY obsid""".format('' if obsid is None
+                                                                                      else f" WHERE obsid = {dbconnection.placeholder_sign()}")
+            else:
+                sql = """SELECT obsid FROM 
+                        (SELECT DISTINCT ON (obsid) obsid, level_masl, head_cm
+                        FROM w_levels_logger
+                        {}
+                        ORDER BY obsid, date_time desc) foo
+                        WHERE level_masl IS NULL AND head_cm IS NOT NULL ORDER BY obsid""".format('' if obsid is None
+                                                                                      else f" WHERE obsid = '{dbconnection.placeholder_sign()}'")
+
+            execute_args = obsid if obsid is not None else None
+            res = [row[0] for row in db_utils.sql_load_fr_db(sql, dbconnection=dbconnection, execute_args=execute_args)[1]]
+        except:
+            dbconnection.closedb()
+            raise
+        else:
+            dbconnection.closedb()
+        return res
 
     @fn_timer
     def load_obsid_from_db(self):
@@ -371,7 +391,7 @@ class Calibrlogger(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog): # An inst
 
         self.level_masl_ts = self.list_of_list_to_recarray(level_masl_list)
 
-        calibration_status = [obsid] if [row[1] for row in level_masl_list if row[1] is None] else []
+        calibration_status = [obsid] if level_masl_list[-1][1] is None else []
         self.update_combobox_with_calibration_info(obsid=obsid, _obsids_with_uncalibrated_data=calibration_status)
 
         self.setlastcalibration(obsid)

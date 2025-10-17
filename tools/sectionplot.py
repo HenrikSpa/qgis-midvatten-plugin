@@ -21,6 +21,8 @@ from builtins import range
 from builtins import str
 from builtins import zip
 from operator import itemgetter
+import sqlite3
+import ast
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -129,6 +131,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         self.dem_groupbox.collapsedStateChanged.connect(lambda: self.resize_widget(self.settingsdockWidget))
         self.bar_groupbox.collapsedStateChanged.connect(lambda: self.resize_widget(self.settingsdockWidget))
         self.plots_groupbox.collapsedStateChanged.connect(lambda: self.resize_widget(self.settingsdockWidget))
+        self.tem_groupbox.collapsedStateChanged.connect(lambda: self.resize_widget(self.settingsdockWidget))
         self.tabWidget.setTabBarAutoHide(True)
         self.settingsdockWidget.closeEvent = types.MethodType(self.dock_settings, self.settingsdockWidget)
         self.resize_widget(self.settingsdockWidget)
@@ -270,6 +273,8 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
     def do_it(self, msettings, selected_obspoints, sectionlinelayer):#must recieve msettings again if this plot windows stayed open while changing qgis project
         self.obsid_annotation = {}
 
+        self.sectionlinelayer = sectionlinelayer
+
         #show the user this may take a long time...
         common_utils.start_waiting_cursor()
         #settings must be recieved here since plot windows may stay open (hence sectionplot instance activated) while a new qgis project is opened or midv settings are chaned 
@@ -291,10 +296,9 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         self.fill_check_boxes()
         self.fill_combo_boxes()
         self.fill_spinboxes()
+        self.fill_tem()
         self.show()
 
-        self.sectionlinelayer = sectionlinelayer
-        
         if self.sectionlinelayer and self.sectionlinelayer.selectedFeatureCount() == 1:
             # Test that layer and feature have been selected
             # upload vector line layer as temporary table in sqlite db
@@ -431,6 +435,17 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
             self.ms.settingsdict['secplot_grading_max_opacity'] = self.secplot_grading_max_opacity.value()
             self.ms.settingsdict['secplot_grading_min_opacity'] = self.secplot_grading_min_opacity.value()
 
+            self.ms.settingsdict['secplot_tem_model_name'] = self.tem_model_name.currentText()
+            self.ms.settingsdict['secplot_tem_colormap'] = self.tem_colormap.currentText()
+            self.ms.settingsdict['secplot_tem_norm'] = self.tem_norm.currentText()
+            self.ms.settingsdict['secplot_tem_shading'] = self.tem_shading.currentText()
+            self.ms.settingsdict['secplot_tem_vmin'] = self.tem_vmin.text()
+            self.ms.settingsdict['secplot_tem_vmax'] = self.tem_vmax.text()
+            self.ms.settingsdict['secplot_tem_snap'] = self.tem_snap.isChecked()
+            self.ms.settingsdict['secplot_tem_edgecolors'] = self.tem_edgecolors.text()
+            self.ms.settingsdict['secplot_tem_alpha_above_doi'] = self.tem_alpha_above_doi.value()
+            self.ms.settingsdict['secplot_tem_alpha_below_doi'] = self.tem_alpha_below_doi.value()
+
             if self.text_align_center.isChecked():
                 self.ms.settingsdict['secplotlayertextalignment'] = 'center'
             else:
@@ -438,6 +453,8 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
 
             #fix Floating Bar Width in percents of xmax - xmin
             self.p = []
+
+            self.plot_tem()
 
             if len(self.obsids_x_position) > 0:
                 xmax, xmin = float(max(self.obsids_x_position.values())), float(min(self.obsids_x_position.values()))
@@ -634,6 +651,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         self.drillstoplineEdit.setText(drillstop)
         if self.ms.settingsdict['secplotincludeviews']:
             self.include_views_checkBox.setChecked(True)
+
     def fill_dem_list(self):   # This method populates the QListWidget 'inData' with all possible DEMs
         self.inData.clear()
         if not self.sectionlinelayer:
@@ -709,7 +727,48 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         if self.ms.settingsdict.get('secplot_grading_min_opacity', 0.0):
             self.secplot_grading_min_opacity.setValue(float(self.ms.settingsdict['secplot_grading_min_opacity']))
 
+    def fill_tem(self):
+        self.tem_model_name.clear()
+        self.tem_colormap.clear()
+        self.tem_norm.clear()
+        self.tem_shading.clear()
 
+        self.tem_colormap.addItems(plt.colormaps())
+        self.tem_norm.addItems(['log', 'linear']) #mpl.scale.get_scale_names()
+        self.tem_shading.addItems(['nearest', 'gouraud']) #'flat' will not work.
+
+        if not self.sectionlinelayer:
+            return
+
+        tables = db_utils.get_tables()
+        if not 'tem_data' in tables:
+            self.tem_model_name.addItem(QCoreApplication.translate('SectionPlot', 'Table tem_data missing in database.'))
+            self.tem_model_name.setToolTip(QCoreApplication.translate('SectionPlot', 'Upgrade (export) the database to add the table tem_data.'))
+            return
+
+        self.tem_model_name.addItem('')
+        if self.sectionlinelayer and self.sectionlinelayer.selectedFeatureCount() == 1:
+            obsid = list(self.sectionlinelayer.getSelectedFeatures())[0].attribute('obsid')
+            res = self.dbconnection.execute_and_fetchall(f"SELECT DISTINCT inversion_name FROM tem_data WHERE obsid = {self.dbconnection.placeholder_sign()}", args=(obsid,))
+            if res:
+                self.tem_model_name.addItems([x[0] for x in res])
+
+        print(f"colormap to set {self.ms.settingsdict.get('secplot_tem_colormap', 'jet')}")
+        try:
+            print(f"self.tem_colormap: {self.tem_colormap.items()}")
+        except:
+            pass
+
+        set_combobox(self.tem_model_name, self.ms.settingsdict.get('secplot_tem_model_name', ''), add_if_not_exists=False)
+        set_combobox(self.tem_colormap, self.ms.settingsdict.get('secplot_tem_colormap', 'jet'), add_if_not_exists=False)
+        set_combobox(self.tem_norm, self.ms.settingsdict.get('secplot_tem_norm', 'log'), add_if_not_exists=False)
+        set_combobox(self.tem_shading, self.ms.settingsdict.get('secplot_tem_shading', 'nearest'), add_if_not_exists=False)
+        self.tem_vmin.setText(self.ms.settingsdict.get('secplot_tem_vmin', ''))
+        self.tem_vmax.setText(self.ms.settingsdict.get('secplot_tem_vmax', ''))
+        self.tem_snap.setChecked(self.ms.settingsdict.get('secplot_tem_snap', False))
+        self.tem_edgecolors.setText(self.ms.settingsdict.get('secplot_tem_edgecolors', ''))
+        self.tem_alpha_above_doi.setValue(float(self.ms.settingsdict.get('secplot_tem_alpha_above_doi', 1.0)))
+        self.tem_alpha_below_doi.setValue(float(self.ms.settingsdict.get('secplot_tem_alpha_below_doi', 0.7)))
 
     @fn_timer
     def finish_plot(self):
@@ -1408,6 +1467,16 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         self.ms.save_settings('secplot_grading_num_layers')
         self.ms.save_settings('secplot_grading_max_opacity')
         self.ms.save_settings('secplot_grading_min_opacity')
+        self.ms.save_settings('secplot_tem_model_name')
+        self.ms.save_settings('secplot_tem_colormap')
+        self.ms.save_settings('secplot_tem_norm')
+        self.ms.save_settings('secplot_tem_shading')
+        self.ms.save_settings('secplot_tem_vmin')
+        self.ms.save_settings('secplot_tem_vmax')
+        self.ms.save_settings('secplot_tem_snap')
+        self.ms.save_settings('secplot_tem_edgecolors')
+        self.ms.save_settings('secplot_tem_alpha_above_doi')
+        self.ms.save_settings('secplot_tem_alpha_below_doi')
 
         #Don't save plot min/max for next plot. If a specific is to be used, it should be set in a saved template file.
         loaded_template = copy.deepcopy(self.secplot_templates.loaded_template)
@@ -1607,6 +1676,124 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
             else:
                 sampled_values.append(None)
         return sampled_values
+
+    @fn_timer
+    def plot_tem(self):
+        if not pandas_on:
+            common_utils.MessagebarAndLog.info(bar_msg=ru(QCoreApplication.translate('SectionPlot', "Python package Pandas required for plotting TEM inversion model")))
+            return
+
+        if not self.ms.settingsdict['secplot_tem_model_name']:
+            return
+
+        tables = db_utils.get_tables()
+        if not 'tem_data' in tables:
+            return
+
+
+        print(f"self.ms.settingsdict['secplot_tem_model_name']: {self.ms.settingsdict['secplot_tem_model_name']}")
+        df = pd.read_sql(
+            f"""SELECT length, thickness, resistivity, elevation, doi FROM tem_data WHERE inversion_name = {self.dbconnection.placeholder_sign()} ORDER BY length;""",
+            self.dbconnection.conn, params=(self.ms.settingsdict['secplot_tem_model_name'],))
+        print(f"Got data {df}")
+        x = df['length']
+
+        X = None
+        Y = None
+        Z = None
+        Z_below_doi = None
+        vmin = None
+        vmax = None
+
+        for idx, (length, thickness, resistivity, elevation, doi) in enumerate(
+                df.itertuples(index=False)):
+            resistivity = np.array(ast.literal_eval(resistivity))
+            thickness = ast.literal_eval(thickness)
+            thickness.append(0)
+            thickness = np.array(thickness)
+
+            layers = [0]
+            layers.extend(thickness[:-1])
+            layers = (np.array(layers).cumsum())
+            # Adjustment with thickness/2 to make the layer level represent the bottom of the layer instead of the
+            # middle.
+            layers = elevation -layers -thickness/2
+
+            if X is None:
+                shape = (len(resistivity), len(x))
+                X = np.ndarray(shape=shape)
+                Y = np.ndarray(shape=shape)
+                Z = np.ndarray(shape=shape)
+                Z_below_doi = np.ndarray(shape=shape)
+
+            # Split the plot into above and below doi (depth of investigation)
+            mask_above_doi = (layers + thickness/2) >= (elevation - doi)
+            print(f"resistivity: {resistivity}, mask_above_doi {mask_above_doi}")
+            print(f"layers: {layers} elevation {elevation} doi {doi} ")
+            if any(mask_above_doi):
+                if vmin is None:
+                    vmin = min(resistivity[mask_above_doi])
+                else:
+                    vmin = min(vmin, min(resistivity[mask_above_doi]))
+
+                if vmax is None:
+                    vmax = max(resistivity[mask_above_doi])
+                else:
+                    vmax = max(vmax, max(resistivity[mask_above_doi]))
+
+            resistivity_below_doi = resistivity.copy()
+            resistivity[~mask_above_doi] = np.NaN
+            resistivity_below_doi[mask_above_doi] = np.NaN
+
+            X[:, idx] = length
+            Y[:, idx] = layers
+            Z[:, idx] = resistivity
+            Z_below_doi[:, idx] = resistivity_below_doi
+
+        if self.ms.settingsdict['secplot_tem_vmin'].strip():
+            try:
+                vmin = float(self.ms.settingsdict['secplot_tem_vmin'].strip().replace(',', '.'))
+            except:
+                common_utils.MessagebarAndLog.warning(bar_msg=ru(QCoreApplication.translate('SectionPlot', "Error: Supplied vmin could not be interpreted as a number")))
+        if self.ms.settingsdict['secplot_tem_vmax'].strip():
+            try:
+                vmax = float(self.ms.settingsdict['secplot_tem_vmax'].strip().replace(',', '.'))
+            except:
+                common_utils.MessagebarAndLog.warning(bar_msg=ru(QCoreApplication.translate('SectionPlot', "Error: Supplied vmax could not be interpreted as a number")))
+
+        snap = self.ms.settingsdict['secplot_tem_snap']
+        edgecolors = self.ms.settingsdict['secplot_tem_edgecolors'].strip() if self.ms.settingsdict['secplot_tem_edgecolors'].strip() else 'none'
+        shading = self.ms.settingsdict['secplot_tem_shading']
+        cmap = self.ms.settingsdict['secplot_tem_colormap']
+        norm = self.ms.settingsdict['secplot_tem_norm']
+
+        above_doi = self.axes.pcolormesh(X, Y, Z, cmap=cmap, norm=norm,
+                                  vmin=round(vmin, 0), vmax=round(vmax, 0),
+                                  zorder=1, snap=snap, edgecolors=edgecolors,
+                                  alpha=self.ms.settingsdict['secplot_tem_alpha_above_doi'],
+                                  shading=shading)
+        below_doi = self.axes.pcolormesh(X, Y, Z_below_doi, cmap=cmap,
+                                         norm=norm,
+                                         vmin=round(vmin, 0), vmax=round(vmax, 0),
+                                         zorder=1, snap=snap, edgecolors=edgecolors,
+                                         alpha=self.ms.settingsdict['secplot_tem_alpha_below_doi'],
+                                         shading=shading)
+
+        a = self.axes.plot(x, df['elevation'] - df['doi'], color='k', label='TEM DOI', linestyle=':')[0]
+        self.p.append(above_doi)
+        self.p.append(a)
+
+        if self.tem_norm.currentText() == 'log':
+            ticks = []
+            for pow in range(6):
+                ticks.extend(np.linspace(10 ** pow, 10 ** (pow + 1), 10))
+        else:
+            ticks = None
+
+        cbar = self.figure.colorbar(above_doi, label=QCoreApplication.translate('SectionPlot', 'Resistivity') + ' ' + self.ms.settingsdict['secplot_tem_model_name'], ticks=ticks)
+
+        if ticks is not None:
+            cbar.ax.set_yticklabels([f"{v:.0f}" for v in cbar.ax.get_yticks()])
 
 def resample(df, valuecol, rule, resample_kwargs):
     resample_kwargs = dict(resample_kwargs)

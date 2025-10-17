@@ -55,3 +55,19 @@ POSTGIS id SERIAL PRIMARY KEY
 , valid BOOLEAN /*Specifies if this spatial entry is still valid. Set to False if a new measurement has made the entry not longer valid.*/
 , FOREIGN KEY (obsid) REFERENCES obs_points (obsid) ON DELETE CASCADE
 );
+
+CREATE TABLE tem_data /*Raw data from TEM2Go Inversion Models*/(
+SPATIALITE id INTEGER PRIMARY KEY AUTOINCREMENT
+POSTGIS id SERIAL PRIMARY KEY
+, obsid text NOT NULL --Obsid linked to obs_lines.obsid
+, inversion_name TEXT NOT NULL -- Name of the model
+, length double NOT NULL --Length along line
+, elevation double --Elevation (masl) for top layer
+, data_fit double -- Data fit
+, doi double --Depth of investigation (data is unreliable below this depth)
+, thickness TEXT -- String list with thickness of layers in meters, ex for inversion with 3 layers: [1.0, 4.0, 5.0]
+, resistivity TEXT -- String list with resistivity of the layers, ex for inversion with 3 layers: [29.5, 150.4, 1001.6]
+, comment text --Additional info
+, UNIQUE (obsid, inversion_name, length)
+, FOREIGN KEY (obsid) REFERENCES obs_lines(obsid)
+);

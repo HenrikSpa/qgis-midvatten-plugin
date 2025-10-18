@@ -759,7 +759,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         res = self.dbconnection.execute_and_fetchall(f"SELECT DISTINCT inversion_name FROM tem_data WHERE obsid = {self.dbconnection.placeholder_sign()}", args=(obsid,))
         if res:
             self.tem_model_name.addItems([x[0] for x in res])
-        print(f"Got obsd {obsid} res {res} ")
+
         set_combobox(self.tem_model_name, self.ms.settingsdict.get('secplot_tem_model_name', ''), add_if_not_exists=False)
         set_combobox(self.tem_colormap, self.ms.settingsdict.get('secplot_tem_colormap', 'jet'), add_if_not_exists=False)
         set_combobox(self.tem_norm, self.ms.settingsdict.get('secplot_tem_norm', 'log'), add_if_not_exists=False)
@@ -1728,8 +1728,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         if not 'tem_data' in tables:
             return
 
-
-        print(f"self.ms.settingsdict['secplot_tem_model_name']: {self.ms.settingsdict['secplot_tem_model_name']}")
         df = pd.read_sql(
             f"""SELECT length, thickness, resistivity, elevation, doi FROM tem_data WHERE inversion_name = {self.dbconnection.placeholder_sign()} ORDER BY length;""",
             self.dbconnection.conn, params=(self.ms.settingsdict['secplot_tem_model_name'],))
@@ -1812,18 +1810,8 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         shading = self.ms.settingsdict['secplot_tem_shading']
         cmap = self.ms.settingsdict['secplot_tem_colormap']
         norm = self.ms.settingsdict['secplot_tem_norm']
-        print(f"X: {X}")
-        print(f"Y: {Y}")
 
-        #X = X[~np.isnan(X)]
-        #Y = Y[~np.isnan(Y)]
-        #Z = Z[~np.isnan(Z)]
-        # Jag kanske alltid måste ha lika många lager i X och Y som i Z. eventuellt bara fylla på med skräpvärden.
-
-        #Xm = np.ma.masked_invalid(X)
-        #Ym = np.ma.masked_invalid(Y)
         Zm = np.ma.masked_invalid(Z)
-        print(f"Minmax X {np.min(X)} {np.max(X)} Y {np.min(Y)} {np.max(Y)} Z {np.min(Z)} {np.max(Z)}")
 
         above_doi = self.axes.pcolormesh(X, Y, Zm, cmap=cmap, norm=norm,
                                   vmin=vmin,

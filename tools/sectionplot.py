@@ -132,6 +132,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         self.bar_groupbox.collapsedStateChanged.connect(lambda: self.resize_widget(self.settingsdockWidget))
         self.plots_groupbox.collapsedStateChanged.connect(lambda: self.resize_widget(self.settingsdockWidget))
         self.tem_groupbox.collapsedStateChanged.connect(lambda: self.resize_widget(self.settingsdockWidget))
+        self.images_groupbox.collapsedStateChanged.connect(lambda: self.resize_widget(self.settingsdockWidget))
         self.tabWidget.setTabBarAutoHide(True)
         self.settingsdockWidget.closeEvent = types.MethodType(self.dock_settings, self.settingsdockWidget)
         self.resize_widget(self.settingsdockWidget)
@@ -297,6 +298,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         self.fill_combo_boxes()
         self.fill_spinboxes()
         self.fill_tem()
+        self.fill_images()
         self.show()
 
         if self.sectionlinelayer and self.sectionlinelayer.selectedFeatureCount() == 1:
@@ -323,6 +325,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
                 self.obsids_x_position = {}
 
             self.fill_dem_list()
+
         else:
             res = self.dbconnection.execute_and_fetchall('''SELECT obsid, east, north FROM obs_points WHERE obsid IN ({})'''.format(
                 common_utils.sql_unicode_list(selected_obspoints)))
@@ -442,9 +445,14 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
             self.ms.settingsdict['secplot_tem_vmin'] = self.tem_vmin.text()
             self.ms.settingsdict['secplot_tem_vmax'] = self.tem_vmax.text()
             self.ms.settingsdict['secplot_tem_snap'] = self.tem_snap.isChecked()
+            self.ms.settingsdict['secplot_tem_rasterized'] = self.tem_rasterized.isChecked()
             self.ms.settingsdict['secplot_tem_edgecolors'] = self.tem_edgecolors.text()
             self.ms.settingsdict['secplot_tem_alpha_above_doi'] = self.tem_alpha_above_doi.value()
             self.ms.settingsdict['secplot_tem_alpha_below_doi'] = self.tem_alpha_below_doi.value()
+
+            self.ms.settingsdict['secplot_images_images'] = str(list([item.text() for item in self.images_images.selectedItems()]))
+            self.ms.settingsdict['secplot_images_alpha'] = self.images_alpha.text()
+            self.ms.settingsdict['secplot_images_zorder'] = self.images_zorder.text()
 
             if self.text_align_center.isChecked():
                 self.ms.settingsdict['secplotlayertextalignment'] = 'center'
@@ -455,6 +463,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
             self.p = []
 
             self.plot_tem()
+            self.plot_images()
 
             if len(self.obsids_x_position) > 0:
                 xmax, xmin = float(max(self.obsids_x_position.values())), float(min(self.obsids_x_position.values()))
@@ -737,28 +746,20 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         self.tem_norm.addItems(['log', 'linear']) #mpl.scale.get_scale_names()
         self.tem_shading.addItems(['nearest', 'gouraud']) #'flat' will not work.
 
-        if not self.sectionlinelayer:
+        if self.sectionlinelayer is None:
             return
 
         tables = db_utils.get_tables()
         if not 'tem_data' in tables:
-            self.tem_model_name.addItem(QCoreApplication.translate('SectionPlot', 'Table tem_data missing in database.'))
             self.tem_model_name.setToolTip(QCoreApplication.translate('SectionPlot', 'Upgrade (export) the database to add the table tem_data.'))
             return
 
         self.tem_model_name.addItem('')
-        if self.sectionlinelayer and self.sectionlinelayer.selectedFeatureCount() == 1:
-            obsid = list(self.sectionlinelayer.getSelectedFeatures())[0].attribute('obsid')
-            res = self.dbconnection.execute_and_fetchall(f"SELECT DISTINCT inversion_name FROM tem_data WHERE obsid = {self.dbconnection.placeholder_sign()}", args=(obsid,))
-            if res:
-                self.tem_model_name.addItems([x[0] for x in res])
-
-        print(f"colormap to set {self.ms.settingsdict.get('secplot_tem_colormap', 'jet')}")
-        try:
-            print(f"self.tem_colormap: {self.tem_colormap.items()}")
-        except:
-            pass
-
+        obsid = list(self.sectionlinelayer.getSelectedFeatures())[0].attribute('obsid')
+        res = self.dbconnection.execute_and_fetchall(f"SELECT DISTINCT inversion_name FROM tem_data WHERE obsid = {self.dbconnection.placeholder_sign()}", args=(obsid,))
+        if res:
+            self.tem_model_name.addItems([x[0] for x in res])
+        print(f"Got obsd {obsid} res {res} ")
         set_combobox(self.tem_model_name, self.ms.settingsdict.get('secplot_tem_model_name', ''), add_if_not_exists=False)
         set_combobox(self.tem_colormap, self.ms.settingsdict.get('secplot_tem_colormap', 'jet'), add_if_not_exists=False)
         set_combobox(self.tem_norm, self.ms.settingsdict.get('secplot_tem_norm', 'log'), add_if_not_exists=False)
@@ -766,9 +767,42 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         self.tem_vmin.setText(self.ms.settingsdict.get('secplot_tem_vmin', ''))
         self.tem_vmax.setText(self.ms.settingsdict.get('secplot_tem_vmax', ''))
         self.tem_snap.setChecked(self.ms.settingsdict.get('secplot_tem_snap', False))
+        self.tem_rasterized.setChecked(self.ms.settingsdict.get('secplot_tem_rasterized', False))
         self.tem_edgecolors.setText(self.ms.settingsdict.get('secplot_tem_edgecolors', ''))
         self.tem_alpha_above_doi.setValue(float(self.ms.settingsdict.get('secplot_tem_alpha_above_doi', 1.0)))
         self.tem_alpha_below_doi.setValue(float(self.ms.settingsdict.get('secplot_tem_alpha_below_doi', 0.7)))
+
+    def fill_images(self):
+        self.images_images.clear()
+
+        if self.sectionlinelayer is None:
+            return
+
+        tables = db_utils.get_tables()
+        if not 'line_images' in tables:
+            self.tem_model_name.addItem(
+                QCoreApplication.translate('SectionPlot', 'Table tem_data missing in database.'))
+            self.images_images.setToolTip(
+                QCoreApplication.translate('SectionPlot', 'Upgrade (export) the database to add the table line_images.'))
+            return
+
+        obsid = list(self.sectionlinelayer.getSelectedFeatures())[0].attribute('obsid')
+        res = self.dbconnection.execute_and_fetchall(
+            f"SELECT alias FROM line_images WHERE obsid = {self.dbconnection.placeholder_sign()}",
+            args=(obsid,))
+
+        if res:
+            self.images_images.addItems([x[0] for x in sorted(res)])
+
+        self.images_alpha.setText(self.ms.settingsdict.get('secplot_images_alpha', ''))
+        self.images_zorder.setText(self.ms.settingsdict.get('secplot_images_zorder', ''))
+        selected_images = self.ms.settingsdict.get('secplot_images_images', '[]')
+        if selected_images.strip():
+            selected_images = ast.literal_eval(selected_images.strip())
+            for idx in range(self.images_images.count()):
+                item = self.images_images.item(idx)
+                if item.text() in selected_images:
+                    item.setSelected(True)
 
     @fn_timer
     def finish_plot(self):
@@ -1474,9 +1508,13 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         self.ms.save_settings('secplot_tem_vmin')
         self.ms.save_settings('secplot_tem_vmax')
         self.ms.save_settings('secplot_tem_snap')
+        self.ms.save_settings('secplot_tem_rasterized')
         self.ms.save_settings('secplot_tem_edgecolors')
         self.ms.save_settings('secplot_tem_alpha_above_doi')
         self.ms.save_settings('secplot_tem_alpha_below_doi')
+        self.ms.save_settings('secplot_images_images')
+        self.ms.save_settings('secplot_images_alpha')
+        self.ms.save_settings('secplot_images_zorder')
 
         #Don't save plot min/max for next plot. If a specific is to be used, it should be set in a saved template file.
         loaded_template = copy.deepcopy(self.secplot_templates.loaded_template)
@@ -1695,60 +1733,67 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         df = pd.read_sql(
             f"""SELECT length, thickness, resistivity, elevation, doi FROM tem_data WHERE inversion_name = {self.dbconnection.placeholder_sign()} ORDER BY length;""",
             self.dbconnection.conn, params=(self.ms.settingsdict['secplot_tem_model_name'],))
-        print(f"Got data {df}")
-        x = df['length']
+        #print(f"Got data {df}"
 
-        X = None
-        Y = None
-        Z = None
-        Z_below_doi = None
         vmin = None
         vmax = None
 
+        number_of_layers = 0
+        for col in ['thickness', 'resistivity']:
+            df[col] = df[col].apply(eval)
+            _max_layers = df[col].apply(len).max()
+            number_of_layers = max(_max_layers, number_of_layers)
+
+        def create_array(shape):
+            a = np.empty(shape=shape)
+            a[:] = np.NaN
+            return a
+
+        shape = (number_of_layers, len(df['length']))
+        X = create_array(shape)
+        Y = create_array(shape)
+        Z = create_array(shape)
+        Z_below_doi = create_array(shape)
+
         for idx, (length, thickness, resistivity, elevation, doi) in enumerate(
                 df.itertuples(index=False)):
-            resistivity = np.array(ast.literal_eval(resistivity))
-            thickness = ast.literal_eval(thickness)
-            thickness.append(0)
+            resistivity = np.array(resistivity)
+            if len(thickness) < len(resistivity):
+                thickness.append(0)
             thickness = np.array(thickness)
 
             layers = [0]
             layers.extend(thickness[:-1])
             layers = (np.array(layers).cumsum())
-            # Adjustment with thickness/2 to make the layer level represent the bottom of the layer instead of the
-            # middle.
             layers = elevation -layers -thickness/2
 
-            if X is None:
-                shape = (len(resistivity), len(x))
-                X = np.ndarray(shape=shape)
-                Y = np.ndarray(shape=shape)
-                Z = np.ndarray(shape=shape)
-                Z_below_doi = np.ndarray(shape=shape)
-
             # Split the plot into above and below doi (depth of investigation)
-            mask_above_doi = (layers + thickness/2) >= (elevation - doi)
-            print(f"resistivity: {resistivity}, mask_above_doi {mask_above_doi}")
-            print(f"layers: {layers} elevation {elevation} doi {doi} ")
-            if any(mask_above_doi):
-                if vmin is None:
-                    vmin = min(resistivity[mask_above_doi])
-                else:
-                    vmin = min(vmin, min(resistivity[mask_above_doi]))
-
-                if vmax is None:
-                    vmax = max(resistivity[mask_above_doi])
-                else:
-                    vmax = max(vmax, max(resistivity[mask_above_doi]))
-
             resistivity_below_doi = resistivity.copy()
-            resistivity[~mask_above_doi] = np.NaN
-            resistivity_below_doi[mask_above_doi] = np.NaN
+            if doi is None:
+                vmin = min(resistivity) if vmin is None else min(vmin, min(resistivity))
+                vmax = max(resistivity) if vmax is None else max(vmax, max(resistivity))
+            else:
+                mask_above_doi = (layers + thickness/2) >= (elevation - doi)
+                if any(mask_above_doi):
+                    resistivity_above_doi = resistivity[mask_above_doi]
+                    vmin = min(resistivity_above_doi) if vmin is None else min(vmin, min(resistivity_above_doi))
+                    vmax = max(resistivity_above_doi) if vmax is None else max(vmax, max(resistivity_above_doi))
+
+                resistivity[~mask_above_doi] = np.NaN
+                resistivity_below_doi[mask_above_doi] = np.NaN
 
             X[:, idx] = length
-            Y[:, idx] = layers
-            Z[:, idx] = resistivity
-            Z_below_doi[:, idx] = resistivity_below_doi
+            Y[:len(resistivity), idx] = layers
+            Z[:len(resistivity), idx] = resistivity
+            #if len(resistivity) < number_of_layers:
+            #    # X and Y can't have NaN-values. Fill up with faked layers.
+            #    Y[len(resistivity):, idx] = [layers[-1]-(idx*0.001) for idx in range(1, number_of_layers-len(resistivity)+1)]
+            Z_below_doi[:len(resistivity_below_doi), idx] = resistivity_below_doi
+
+        maximum_depth = max(Y[-1, :])
+        Y[-1, :] = np.where(np.isnan(Y[-1,:]), maximum_depth, Y[-1,:])
+        nans, x = nan_helper(Y)
+        Y[nans] = np.interp(x(nans), x(~nans), Y[~nans])
 
         if self.ms.settingsdict['secplot_tem_vmin'].strip():
             try:
@@ -1762,26 +1807,45 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
                 common_utils.MessagebarAndLog.warning(bar_msg=ru(QCoreApplication.translate('SectionPlot', "Error: Supplied vmax could not be interpreted as a number")))
 
         snap = self.ms.settingsdict['secplot_tem_snap']
+        rasterized = self.ms.settingsdict['secplot_tem_rasterized']
         edgecolors = self.ms.settingsdict['secplot_tem_edgecolors'].strip() if self.ms.settingsdict['secplot_tem_edgecolors'].strip() else 'none'
         shading = self.ms.settingsdict['secplot_tem_shading']
         cmap = self.ms.settingsdict['secplot_tem_colormap']
         norm = self.ms.settingsdict['secplot_tem_norm']
+        print(f"X: {X}")
+        print(f"Y: {Y}")
 
-        above_doi = self.axes.pcolormesh(X, Y, Z, cmap=cmap, norm=norm,
-                                  vmin=round(vmin, 0), vmax=round(vmax, 0),
+        #X = X[~np.isnan(X)]
+        #Y = Y[~np.isnan(Y)]
+        #Z = Z[~np.isnan(Z)]
+        # Jag kanske alltid måste ha lika många lager i X och Y som i Z. eventuellt bara fylla på med skräpvärden.
+
+        #Xm = np.ma.masked_invalid(X)
+        #Ym = np.ma.masked_invalid(Y)
+        Zm = np.ma.masked_invalid(Z)
+        print(f"Minmax X {np.min(X)} {np.max(X)} Y {np.min(Y)} {np.max(Y)} Z {np.min(Z)} {np.max(Z)}")
+
+        above_doi = self.axes.pcolormesh(X, Y, Zm, cmap=cmap, norm=norm,
+                                  vmin=vmin,
+                                  vmax=round(vmax, 0) if vmax is not None else vmax,
                                   zorder=1, snap=snap, edgecolors=edgecolors,
                                   alpha=self.ms.settingsdict['secplot_tem_alpha_above_doi'],
-                                  shading=shading)
-        below_doi = self.axes.pcolormesh(X, Y, Z_below_doi, cmap=cmap,
-                                         norm=norm,
-                                         vmin=round(vmin, 0), vmax=round(vmax, 0),
-                                         zorder=1, snap=snap, edgecolors=edgecolors,
-                                         alpha=self.ms.settingsdict['secplot_tem_alpha_below_doi'],
-                                         shading=shading)
+                                  shading=shading, rasterized=rasterized)
 
-        a = self.axes.plot(x, df['elevation'] - df['doi'], color='k', label='TEM DOI', linestyle=':')[0]
+
         self.p.append(above_doi)
-        self.p.append(a)
+        if not df['doi'].dropna().empty:
+            mZ_below_doi = np.ma.masked_invalid(Z_below_doi)
+            below_doi = self.axes.pcolormesh(X, Y, mZ_below_doi, cmap=cmap,
+                                             norm=norm,
+                                             vmin=vmin,
+                                             vmax=round(vmax, 0) if vmax is not None else vmax,
+                                             zorder=1, snap=snap, edgecolors=edgecolors,
+                                             alpha=self.ms.settingsdict['secplot_tem_alpha_below_doi'],
+                                             shading=shading, rasterized=rasterized)
+
+            a = self.axes.plot(df['length'], df['elevation'] - df['doi'], color='k', label='TEM DOI', linestyle=':')[0]
+            self.p.append(a)
 
         if self.tem_norm.currentText() == 'log':
             ticks = []
@@ -1794,6 +1858,65 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
 
         if ticks is not None:
             cbar.ax.set_yticklabels([f"{v:.0f}" for v in cbar.ax.get_yticks()])
+
+    def plot_images(self):
+        if not self.ms.settingsdict['secplot_images_images']:
+            return
+
+        obsid = list(self.sectionlinelayer.getSelectedFeatures())[0].attribute('obsid')
+        res = self.dbconnection.execute_and_fetchall(
+            f"SELECT alias, path, clip_left_right_top_bottom, extent_left_right_top_bottom FROM line_images WHERE obsid = {self.dbconnection.placeholder_sign()}",
+            args=(obsid,))
+
+        alphas = [float(x.strip().replace(',', '.'))
+                  for x in self.ms.settingsdict.get('secplot_images_alpha', '').strip().split(';')
+                  if x.strip()]
+        if not alphas:
+            alphas = [1.0]
+
+        zorders = [int(x.strip().replace(',', '.'))
+                  for x in self.ms.settingsdict.get('secplot_images_zorder', '').strip().split(';')
+                  if x.strip()]
+        if not zorders:
+            zorders = [0]
+
+        selected_images = self.ms.settingsdict.get('secplot_images_images', '[]')
+        if selected_images.strip():
+            selected_images = ast.literal_eval(selected_images.strip())
+        else:
+            return
+
+        for idx, selected_alias in enumerate(selected_images):
+            for alias, _path, clip_left_right_top_bottom, extent_left_right_top_bottom in res:
+                if not alias == selected_alias:
+                    continue
+
+                path = None
+                if os.path.isfile(_path):
+                    path = _path
+                else:
+                    if self.dbconnection.dbtype == 'spatialite':
+                        new_path = os.path.join(self.dbconnection.dbpath, _path)
+                        if os.path.isfile(new_path):
+                            path = new_path
+
+                if path is None:
+                    common_utils.MessagebarAndLog.warning(bar_msg=ru(QCoreApplication.translate('SectionPlot', "Error: The image path '%s' could not be found!"))%_path)
+                    continue
+
+                alpha = alphas[0] if len(alphas) == 1 else alphas[idx]
+                zorder = zorders[0] if len(zorders) == 1 else zorders[idx]
+
+                im = plt.imread(path)
+                if clip_left_right_top_bottom:
+                    clip_left_right_top_bottom = ast.literal_eval(clip_left_right_top_bottom)
+                    clip_left, clip_right, clip_top, clip_bottom = clip_left_right_top_bottom
+                    im = im[clip_top:clip_bottom, clip_left:clip_right]
+
+                left, right, top, bottom = ast.literal_eval(extent_left_right_top_bottom)
+                self.axes.imshow(im, extent=[left, right, bottom, top], zorder=zorder, alpha=alpha, clip_on=True,
+                                 aspect='auto')
+
 
 def resample(df, valuecol, rule, resample_kwargs):
     resample_kwargs = dict(resample_kwargs)
@@ -1818,3 +1941,21 @@ def df_idx_as_datetime64(df, idx):
 
 def df_idx_as_datetime(df, idx):
     return pd.to_datetime(str(df_idx_as_datetime64(df, idx)))
+
+def nan_helper(y):
+    """Helper to handle indices and logical indices of NaNs.
+
+    from https://stackoverflow.com/questions/6518811/interpolate-nan-values-in-a-numpy-array
+
+    Input:
+        - y, 1d numpy array with possible NaNs
+    Output:
+        - nans, logical indices of NaNs
+        - index, a function, with signature indices= index(logical_indices),
+          to convert logical indices of NaNs to 'equivalent' indices
+    Example:
+        >>> # linear interpolation of NaNs
+        >>> nans, x= nan_helper(y)
+        >>> y[nans]= np.interp(x(nans), x(~nans), y[~nans])
+    """
+    return np.isnan(y), lambda z: z.nonzero()[0]

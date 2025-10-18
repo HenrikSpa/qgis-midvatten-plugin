@@ -221,6 +221,19 @@ POSTGIS id SERIAL PRIMARY KEY
 , UNIQUE (obsid, inversion_name, length)
 , FOREIGN KEY (obsid) REFERENCES obs_lines(obsid)
 );
+CREATE TABLE line_images /*Image files linked to obs_lines*/(
+SPATIALITE id INTEGER PRIMARY KEY AUTOINCREMENT
+POSTGIS id SERIAL PRIMARY KEY
+, obsid text NOT NULL --Obsid linked to obs_lines.obsid
+, alias TEXT NOT NULL -- The name used in SectionPlot
+, path TEXT NOT NULL -- Path to image.
+, clip_left_right_top_bottom TEXT -- A list of pixels to clip the image with before using it. Ex. [54, 2052, 38, 589]
+, extent_left_right_top_bottom TEXT NOT NULL-- A list with the image extent in meters relative to the linked obs_lines.obsid line after clip, ex [0.0, 500.0, 40.0, -60.0]
+, source TEXT -- Reference for the image (consultancy report or similar)
+, comment text --Additional info
+, UNIQUE (obsid, alias)
+, FOREIGN KEY (obsid) REFERENCES obs_lines(obsid)
+);
 CREATE TABLE comments /*Comments connected to obsids*/(
 obsid text NOT NULL --Obsid linked to obs_points.obsid
 , date_time text NOT NULL --Date and Time for the comment

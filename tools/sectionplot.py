@@ -1884,7 +1884,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
                     path = _path
                 else:
                     if self.dbconnection.dbtype == 'spatialite':
-                        new_path = os.path.join(self.dbconnection.dbpath, _path)
+                        new_path = os.path.join(os.path.dirname(self.dbconnection.dbpath), _path)
                         if os.path.isfile(new_path):
                             path = new_path
 

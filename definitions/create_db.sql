@@ -221,7 +221,7 @@ POSTGIS id SERIAL PRIMARY KEY
 , UNIQUE (obsid, inversion_name, length)
 , FOREIGN KEY (obsid) REFERENCES obs_lines(obsid)
 );
-CREATE TABLE line_images /*Image files linked to obs_lines*/(
+CREATE TABLE profile_images /*Image files linked to obs_lines*/(
 SPATIALITE id INTEGER PRIMARY KEY AUTOINCREMENT
 POSTGIS id SERIAL PRIMARY KEY
 , obsid text NOT NULL --Obsid linked to obs_lines.obsid

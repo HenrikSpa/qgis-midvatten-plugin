@@ -779,16 +779,16 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
             return
 
         tables = db_utils.get_tables()
-        if not 'line_images' in tables:
+        if not 'profile_images' in tables:
             self.tem_model_name.addItem(
                 QCoreApplication.translate('SectionPlot', 'Table tem_data missing in database.'))
             self.images_images.setToolTip(
-                QCoreApplication.translate('SectionPlot', 'Upgrade (export) the database to add the table line_images.'))
+                QCoreApplication.translate('SectionPlot', 'Upgrade (export) the database to add the table profile_images.'))
             return
 
         obsid = list(self.sectionlinelayer.getSelectedFeatures())[0].attribute('obsid')
         res = self.dbconnection.execute_and_fetchall(
-            f"SELECT alias FROM line_images WHERE obsid = {self.dbconnection.placeholder_sign()}",
+            f"SELECT alias FROM profile_images WHERE obsid = {self.dbconnection.placeholder_sign()}",
             args=(obsid,))
 
         if res:
@@ -1848,12 +1848,15 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
             cbar.ax.set_yticklabels([f"{v:.0f}" for v in cbar.ax.get_yticks()])
 
     def plot_images(self):
+        if not self.sectionlinelayer:
+            return
+
         if not self.ms.settingsdict['secplot_images_images']:
             return
 
         obsid = list(self.sectionlinelayer.getSelectedFeatures())[0].attribute('obsid')
         res = self.dbconnection.execute_and_fetchall(
-            f"SELECT alias, path, clip_left_right_top_bottom, extent_left_right_top_bottom FROM line_images WHERE obsid = {self.dbconnection.placeholder_sign()}",
+            f"SELECT alias, path, clip_left_right_top_bottom, extent_left_right_top_bottom FROM profile_images WHERE obsid = {self.dbconnection.placeholder_sign()}",
             args=(obsid,))
 
         alphas = [float(x.strip().replace(',', '.'))

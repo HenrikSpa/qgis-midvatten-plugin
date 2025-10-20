@@ -22,7 +22,7 @@ icon=icons/MidvSettings.png
 
 changelog=
         Version 1.9.0b2:
-        - Database: Added table line_images.
+        - Database: Added table profile_images.
         - SectionPlot: Support for images as backgrounds (for example resistivity).
         Version 1.9.0b1:
         - Database: Added table tem_data. Made tables w_qual_logger, s_qual_lab and spatial_history into regular tables for new databases.

@@ -349,7 +349,7 @@ def get_subset_of_tables_fr_db(category='obs_points'):
     if category=='obs_points':
         return ['obs_points', 'comments', 'w_levels', 'w_levels_logger', 'w_flow', 'w_qual_lab', 'w_qual_field', 'stratigraphy', 'meteo']
     elif category == 'obs_lines':
-        return ['obs_lines', 'vlf_data', 'seismic_data', 'tem_data', 'line_images']
+        return ['obs_lines', 'vlf_data', 'seismic_data', 'tem_data', 'profile_images']
     elif category == 'data_domains':
         return ['zz_flowtype', 'zz_meteoparam', 'zz_staff', 'zz_strat', 'zz_stratigraphy_plots', 'zz_capacity', 'zz_capacity_plots']
     elif category == 'default_layers':
@@ -361,7 +361,7 @@ def get_subset_of_tables_fr_db(category='obs_points'):
     elif category == 'stratitable':#not yet in use
         return ['stratigraphy']
     elif category == 'data_tables':
-        return ['line_images', 'meteo', 'seismic_data', 'tem_data', 'vlf_data', 'w_levels_logger']
+        return ['profile_images', 'meteo', 'seismic_data', 'tem_data', 'vlf_data', 'w_levels_logger']
     elif category == 'extra_data_tables':
         # Extra non-essential tables created using create_db_extra_data_tables.sql
         return ['s_qual_lab', 'w_qual_logger', 'spatial_history']

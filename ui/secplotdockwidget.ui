@@ -1164,30 +1164,6 @@ p, li { white-space: pre-wrap; }
                             <bool>true</bool>
                            </property>
                            <layout class="QGridLayout" name="gridLayout_6">
-                            <item row="1" column="1">
-                             <widget class="QLineEdit" name="images_zorder">
-                              <property name="toolTip">
-                               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The drawing order of the images. Give one value or a ;-separated list of values corresponding to the alphabetical order of the selected images (default 0).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                              </property>
-                              <property name="text">
-                               <string>1</string>
-                              </property>
-                             </widget>
-                            </item>
-                            <item row="0" column="0" colspan="2">
-                             <widget class="QListWidget" name="images_images">
-                              <property name="selectionMode">
-                               <enum>QAbstractItemView::MultiSelection</enum>
-                              </property>
-                             </widget>
-                            </item>
-                            <item row="2" column="0">
-                             <widget class="QLabel" name="label_30">
-                              <property name="text">
-                               <string>alpha(s)</string>
-                              </property>
-                             </widget>
-                            </item>
                             <item row="1" column="0">
                              <widget class="QLabel" name="label_29">
                               <property name="text">
@@ -1202,6 +1178,50 @@ p, li { white-space: pre-wrap; }
                               </property>
                               <property name="text">
                                <string>1.0</string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="2" column="0">
+                             <widget class="QLabel" name="label_30">
+                              <property name="text">
+                               <string>alpha(s)</string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="0" column="0" colspan="2">
+                             <widget class="QListWidget" name="images_images">
+                              <property name="selectionMode">
+                               <enum>QAbstractItemView::MultiSelection</enum>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="1" column="1">
+                             <widget class="QLineEdit" name="images_zorder">
+                              <property name="toolTip">
+                               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The drawing order of the images. Give one value or a ;-separated list of values corresponding to the alphabetical order of the selected images (default 0).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                              </property>
+                              <property name="text">
+                               <string>1</string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="3" column="0">
+                             <widget class="QLabel" name="label_28">
+                              <property name="text">
+                               <string>clip</string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="3" column="1">
+                             <widget class="QCheckBox" name="images_clip">
+                              <property name="toolTip">
+                               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Clip the images using clip_left_right_top_bottom-column.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                              </property>
+                              <property name="text">
+                               <string/>
+                              </property>
+                              <property name="checked">
+                               <bool>true</bool>
                               </property>
                              </widget>
                             </item>

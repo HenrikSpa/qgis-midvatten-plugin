@@ -86,7 +86,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         #super(sectionplot, self).save_settings()
         qgis.PyQt.QtWidgets.QDockWidget.__init__(self, parent1) #, PyQt4.QtCore.Qt.WindowFlags(PyQt4.QtCore.Qt.WA_DeleteOnClose))
         self.setAttribute(qgis.PyQt.QtCore.Qt.WA_DeleteOnClose)
-        #Ui_SecPlotDock.__init__(self)
+
         self.obsids_x_position = {}
 
         self.df = None
@@ -103,13 +103,11 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
 
         self.parent = parent1
         self.iface = iface1
-        #self.location = PyQt4.QtCore.Qt.Qt.BottomDockWidgetArea#should be loaded from settings instead
-        #self.location = int(self.ms.settingsdict['secplotlocation'])
+
         if not self.isWindow():
             self.dockLocationChanged.connect(self.set_location)#not really implemented yet
 
-        self.setupUi(self) # Required by Qt4 to initialize the UI
-        #self.setWindowTitle("Midvatten plugin - section plot") # Set the title for the dialog
+        self.setupUi(self) # Required by Qt to initialize the UI
 
         self.initUI()
         self.obsid_annotation = {}
@@ -271,14 +269,14 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         event.accept()
 
     @fn_timer
-    def do_it(self, msettings, selected_obspoints, sectionlinelayer):#must recieve msettings again if this plot windows stayed open while changing qgis project
+    def do_it(self, msettings, selected_obspoints, sectionlinelayer): #must recieve msettings again if this plot windows stayed open while changing qgis project
         self.obsid_annotation = {}
 
         self.sectionlinelayer = sectionlinelayer
 
         #show the user this may take a long time...
         common_utils.start_waiting_cursor()
-        #settings must be recieved here since plot windows may stay open (hence sectionplot instance activated) while a new qgis project is opened or midv settings are chaned 
+        #settings must be recieved here since plot windows may stay open (hence sectionplot instance activated) while a new qgis project is opened or midv settings are changed.
         self.ms = msettings
 
         template_folder = os.path.join(os.path.split(os.path.dirname(__file__))[0], 'definitions', 'secplot_templates')
@@ -287,7 +285,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
                                                template_folder, 'secplot_templates', 'secplot_loaded_template',
                                                defs.secplot_default_template(), self.ms)
 
-        #Draw the widget
         self.iface.addDockWidget(max(self.ms.settingsdict['secplotlocation'],1), self)
         self.iface.mapCanvas().setRenderFlag(True)
 
@@ -305,13 +302,12 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
             # Test that layer and feature have been selected
             # upload vector line layer as temporary table in sqlite db
             self.line_crs = self.sectionlinelayer.crs()
-            # print(str(self.dbconnection.cursor().execute('select * from a.sqlite_master').fetchall()))
             ok = self.upload_qgis_vector_layer(self.sectionlinelayer, self.line_crs.postgisSrid(), True,
-                                               False)  # loads qgis polyline layer into sqlite table
+                                               False)
             if not ok:
                 return None
 
-            # get sorted obsid and distance along section from sqlite db
+            # get sorted obsid and distance along section
             if len(selected_obspoints):
                 self.obsids_x_position = self.get_length_along(selected_obspoints)
 
@@ -323,9 +319,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
                                                      ';'.join([str(x) for x in self.obsids_x_position.values()])))
             else:
                 self.obsids_x_position = {}
-
-            self.fill_dem_list()
-
         else:
             res = self.dbconnection.execute_and_fetchall('''SELECT obsid, east, north FROM obs_points WHERE obsid IN ({})'''.format(
                 common_utils.sql_unicode_list(selected_obspoints)))
@@ -340,7 +333,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
                 pass
             self.obsids_x_position = {row[0]: idx * 10 for idx, row in enumerate(sorted(res, key=itemgetter(k)))}
 
-            self.fill_dem_list()
+        self.fill_dem_list()
 
         common_utils.stop_waiting_cursor() #now this long process is done and the cursor is back as normal
         
@@ -398,7 +391,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
             except KeyError:
                 common_utils.MessagebarAndLog.info(log_msg=ru(QCoreApplication.translate('SectionPlot', "rcParams key %s didn't exist")) % ru(k))
 
-
         try:
             common_utils.MessagebarAndLog.info(log_msg=ru(QCoreApplication.translate('SectionPlot', 'Plotting using settings:\n%s')) % self.secplot_templates.readable_output())
         except:
@@ -453,13 +445,14 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
             self.ms.settingsdict['secplot_images_images'] = str(list([item.text() for item in self.images_images.selectedItems()]))
             self.ms.settingsdict['secplot_images_alpha'] = self.images_alpha.text()
             self.ms.settingsdict['secplot_images_zorder'] = self.images_zorder.text()
+            self.ms.settingsdict['secplot_images_clip'] = self.images_clip.isChecked()
 
             if self.text_align_center.isChecked():
                 self.ms.settingsdict['secplotlayertextalignment'] = 'center'
             else:
                 self.ms.settingsdict['secplotlayertextalignment'] = 'edge'
 
-            #fix Floating Bar Width in percents of xmax - xmin
+
             self.p = []
 
             self.plot_tem()
@@ -470,21 +463,17 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
                 self.barwidth = (self.ms.settingsdict['secplotbw']/100.0)*(xmax -xmin)
 
                 if self.ms.settingsdict['stratigraphyplotted']:
-                    #PLOT ALL MAIN GEOLOGY TYPES AS SINGLE FLOATING BAR SERIES
                     self.plot_bars(self.geo_bars, color_dict=defs.PlotColorDict(),
                                    color_key='color',
                                    hatch_dict=defs.PlotHatchDict())
-                    # WRITE TEXT BY ALL GEOLOGY TYPES, ADJACENT TO FLOATING BAR SERIES
                     if len(self.ms.settingsdict['secplottext'])>0:
                         self.write_annotation()
 
                 if self.ms.settingsdict['secplothydrologyplotted']:
-                    # Plot all main hydrology types as single floating bar serieite ts
                     hydro_color_dict = {k: v[1] for k, v in self.hydro_colors.items()}
                     self.plot_bars(self.hydro_bars, color_dict=hydro_color_dict,
                                    color_key='color_qt',
                                    hatch_dict=None)
-                    # Write text by all hydrology types adjacent to floating bar series
                     if len(self.ms.settingsdict['secplottext']) > 0:
                         self.write_annotation()
 
@@ -514,8 +503,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
             then autscaling will fail silently since it does not consider axes.annotate (which is used for printing obsid)
             hence this special treatment to check if xlim are less than expected from lengthalong
             """
-            # self.secax.autoscale(enable=True, axis='both', tight=None)
-
             xmin_xmax = self.secplot_templates.loaded_template['Axes_set_xlim']
             if xmin_xmax is not None:
                 xmin, xmax = xmin_xmax
@@ -746,21 +733,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         self.tem_norm.addItems(['log', 'linear']) #mpl.scale.get_scale_names()
         self.tem_shading.addItems(['nearest', 'gouraud']) #'flat' will not work.
 
-        if self.sectionlinelayer is None:
-            return
-
-        tables = db_utils.get_tables()
-        if not 'tem_data' in tables:
-            self.tem_model_name.setToolTip(QCoreApplication.translate('SectionPlot', 'Upgrade (export) the database to add the table tem_data.'))
-            return
-
-        self.tem_model_name.addItem('')
-        obsid = list(self.sectionlinelayer.getSelectedFeatures())[0].attribute('obsid')
-        res = self.dbconnection.execute_and_fetchall(f"SELECT DISTINCT inversion_name FROM tem_data WHERE obsid = {self.dbconnection.placeholder_sign()}", args=(obsid,))
-        if res:
-            self.tem_model_name.addItems([x[0] for x in res])
-
-        set_combobox(self.tem_model_name, self.ms.settingsdict.get('secplot_tem_model_name', ''), add_if_not_exists=False)
         set_combobox(self.tem_colormap, self.ms.settingsdict.get('secplot_tem_colormap', 'jet'), add_if_not_exists=False)
         set_combobox(self.tem_norm, self.ms.settingsdict.get('secplot_tem_norm', 'log'), add_if_not_exists=False)
         set_combobox(self.tem_shading, self.ms.settingsdict.get('secplot_tem_shading', 'nearest'), add_if_not_exists=False)
@@ -772,8 +744,30 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         self.tem_alpha_above_doi.setValue(float(self.ms.settingsdict.get('secplot_tem_alpha_above_doi', 1.0)))
         self.tem_alpha_below_doi.setValue(float(self.ms.settingsdict.get('secplot_tem_alpha_below_doi', 0.7)))
 
+        self.tem_model_name.addItem('')
+
+        if self.sectionlinelayer is None:
+            return
+
+        tables = db_utils.get_tables()
+        if not 'tem_data' in tables:
+            self.tem_model_name.setToolTip(QCoreApplication.translate('SectionPlot', 'Upgrade (export) the database to add the table tem_data.'))
+            return
+
+        obsid = list(self.sectionlinelayer.getSelectedFeatures())[0].attribute('obsid')
+        res = self.dbconnection.execute_and_fetchall(f"SELECT DISTINCT inversion_name FROM tem_data WHERE obsid = {self.dbconnection.placeholder_sign()}", args=(obsid,))
+        if res:
+            self.tem_model_name.addItems([x[0] for x in res])
+
+        set_combobox(self.tem_model_name, self.ms.settingsdict.get('secplot_tem_model_name', ''), add_if_not_exists=False)
+
+
     def fill_images(self):
         self.images_images.clear()
+
+        self.images_alpha.setText(self.ms.settingsdict.get('secplot_images_alpha', ''))
+        self.images_zorder.setText(self.ms.settingsdict.get('secplot_images_zorder', ''))
+        self.images_clip.setChecked(self.ms.settingsdict.get('secplot_images_clip', True))
 
         if self.sectionlinelayer is None:
             return
@@ -794,8 +788,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         if res:
             self.images_images.addItems([x[0] for x in sorted(res)])
 
-        self.images_alpha.setText(self.ms.settingsdict.get('secplot_images_alpha', ''))
-        self.images_zorder.setText(self.ms.settingsdict.get('secplot_images_zorder', ''))
         selected_images = self.ms.settingsdict.get('secplot_images_images', '[]')
         if selected_images.strip():
             selected_images = ast.literal_eval(selected_images.strip())
@@ -1515,6 +1507,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         self.ms.save_settings('secplot_images_images')
         self.ms.save_settings('secplot_images_alpha')
         self.ms.save_settings('secplot_images_zorder')
+        self.ms.save_settings('secplot_images_clip')
 
         #Don't save plot min/max for next plot. If a specific is to be used, it should be set in a saved template file.
         loaded_template = copy.deepcopy(self.secplot_templates.loaded_template)
@@ -1898,13 +1891,28 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
                 alpha = alphas[0] if len(alphas) == 1 else alphas[idx]
                 zorder = zorders[0] if len(zorders) == 1 else zorders[idx]
 
+                left, right, top, bottom = ast.literal_eval(extent_left_right_top_bottom)
+
                 im = plt.imread(path)
+
+                clip = self.images_clip.isChecked()
                 if clip_left_right_top_bottom:
                     clip_left_right_top_bottom = ast.literal_eval(clip_left_right_top_bottom)
                     clip_left, clip_right, clip_top, clip_bottom = clip_left_right_top_bottom
-                    im = im[clip_top:clip_bottom, clip_left:clip_right]
+                    if clip:
+                        im = im[clip_top:clip_bottom, clip_left:clip_right]
+                    else:
+                        # Calculate the full extent of the image
+                        numrows, numcols, _ = im.shape
+                        print(f"SHape was {im.shape}")
+                        dx = (right-left) / (clip_right-clip_left)
+                        left = -clip_left*dx + left
+                        right = (numcols-clip_right)*dx + right
 
-                left, right, top, bottom = ast.literal_eval(extent_left_right_top_bottom)
+                        dy = (bottom-top) / (clip_bottom-clip_top)
+                        top = -clip_top*dy + top
+                        bottom = (numrows-clip_bottom)*dy + bottom
+
                 self.axes.imshow(im, extent=[left, right, bottom, top], zorder=zorder, alpha=alpha, clip_on=True,
                                  aspect='auto')
 

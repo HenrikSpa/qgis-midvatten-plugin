@@ -47,7 +47,6 @@ class midvsettings(object):
         # map data types to function names
         prj = QgsProject.instance()
         functions = {'str' : prj.readEntry,
-                     'str' : prj.readEntry, # SIP API UPDATE 2.0
                      'int' : prj.readNumEntry,
                      'float' : prj.readDoubleEntry,
                      'bool' : prj.readBoolEntry,

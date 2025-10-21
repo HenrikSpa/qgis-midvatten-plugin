@@ -91,6 +91,7 @@ def settingsdict():    #These are the default settings, they shall not be change
             'secplot_images_images': '',
             'secplot_images_alpha': '1.0',
             'secplot_images_zorder': '1',
+            'secplot_images_clip': True,
             'settingslocation':1,
             'compactwqualreport':'',
             'custplot_tabwidget':0,

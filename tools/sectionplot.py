@@ -1721,9 +1721,11 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         if not 'tem_data' in tables:
             return
 
+        line_obsid = common_utils.getselectedobjectnames(self.sectionlinelayer)[0]
+
         df = pd.read_sql(
-            f"""SELECT length, thickness, resistivity, elevation, doi FROM tem_data WHERE inversion_name = {self.dbconnection.placeholder_sign()} ORDER BY length;""",
-            self.dbconnection.conn, params=(self.ms.settingsdict['secplot_tem_model_name'],))
+            f"""SELECT length, thickness, resistivity, elevation, doi FROM tem_data WHERE inversion_name = {self.dbconnection.placeholder_sign()} AND obsid = {self.dbconnection.placeholder_sign()} ORDER BY length;""",
+            self.dbconnection.conn, params=(self.ms.settingsdict['secplot_tem_model_name'], line_obsid))
         #print(f"Got data {df}"
 
         vmin = None
@@ -1842,6 +1844,10 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
 
     def plot_images(self):
         if not self.sectionlinelayer:
+            return
+
+        tables = db_utils.get_tables()
+        if not 'profile_images' in tables:
             return
 
         if not self.ms.settingsdict['secplot_images_images']:

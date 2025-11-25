@@ -979,7 +979,7 @@ p, li { white-space: pre-wrap; }
                            </property>
                            <layout class="QGridLayout" name="gridLayout_5">
                             <item row="3" column="3">
-                             <widget class="QLineEdit" name="tem_vmin">
+                             <widget class="QLineEdit" name="tem_vmax">
                               <property name="toolTip">
                                <string>Maximum resistivity value to use for scaling the colormap. Will use maximum value above doi if not set</string>
                               </property>
@@ -989,7 +989,7 @@ p, li { white-space: pre-wrap; }
                              </widget>
                             </item>
                             <item row="3" column="2">
-                             <widget class="QLineEdit" name="tem_vmax">
+                             <widget class="QLineEdit" name="tem_vmin">
                               <property name="toolTip">
                                <string>Minimum resistivity value to use for scaling the colormap. Will use minimum value above doi if not set.</string>
                               </property>

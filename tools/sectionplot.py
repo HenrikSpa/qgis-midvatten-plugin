@@ -1752,13 +1752,14 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
                 df.itertuples(index=False)):
             resistivity = np.array(resistivity)
             if len(thickness) < len(resistivity):
-                thickness.append(0)
+                thickness.append(thickness[-1])
             thickness = np.array(thickness)
 
-            layers = [0]
-            layers.extend(thickness[:-1])
-            layers = (np.array(layers).cumsum())
-            layers = elevation -layers -thickness/2
+            layers_top = [0]
+            layers_top.extend(thickness[:-1])
+            layers_top = (np.array(layers_top).cumsum())
+            layers_top = elevation -layers_top
+            layers_middle = layers_top - thickness/2
 
             # Split the plot into above and below doi (depth of investigation)
             resistivity_below_doi = resistivity.copy()
@@ -1766,7 +1767,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
                 vmin = min(resistivity) if vmin is None else min(vmin, min(resistivity))
                 vmax = max(resistivity) if vmax is None else max(vmax, max(resistivity))
             else:
-                mask_above_doi = (layers + thickness/2) >= (elevation - doi)
+                mask_above_doi = layers_top >= (elevation - doi) #(layers + thickness/2) >= (elevation - doi)
                 if any(mask_above_doi):
                     resistivity_above_doi = resistivity[mask_above_doi]
                     vmin = min(resistivity_above_doi) if vmin is None else min(vmin, min(resistivity_above_doi))
@@ -1776,7 +1777,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
                 resistivity_below_doi[mask_above_doi] = np.NaN
 
             X[:, idx] = length
-            Y[:len(resistivity), idx] = layers
+            Y[:len(resistivity), idx] = layers_middle
             Z[:len(resistivity), idx] = resistivity
             #if len(resistivity) < number_of_layers:
             #    # X and Y can't have NaN-values. Fill up with faked layers.

@@ -856,7 +856,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
 
     @fn_timer
     def update_legend(self, from_navbar=False):
-        from_navbar = True
         if self.ms.settingsdict['secplotlegendplotted']:  # Include legend in plot
             # skipped_bars is self-variable just to make it easily available for tests.
             items, labels = self.get_legend_items_labels()
@@ -1321,7 +1320,21 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         valinit = valuemin
         #valstep = 1
         self.wlvl_axes = self.figure.add_subplot(self.gridspec[0:1, 1:2])
+        color_styles = set()
+        linestyles = ['-', '--', '-.', ':']
         df.plot(ax=self.wlvl_axes, picker=2)
+        for line in self.wlvl_axes.lines:
+            k = (line.get_color(), line.get_linestyle())
+
+            for ls in linestyles:
+                if k in color_styles:
+                    k = (line.get_color(), ls)
+                else:
+                    line.set_color(k[0])
+                    line.set_linestyle(k[1])
+                    color_styles.add(k)
+                    break
+        self.wlvl_axes.legend()
 
         self.wlvl_axes.set_xlabel('')
         #Axes_set_ylabel = dict([(k, v) for k, v in self.secplot_templates.loaded_template.get('Axes_set_ylabel', {}).items() if k != 'ylabel'])
@@ -1385,7 +1398,11 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         x_wl, WL = self.get_water_levels_from_df(self.df, current_idx, self.obsids_x_position)
         if self._waterlevel_lineplot is not None and self.df is not None:
             self._waterlevel_lineplot.set_ydata(WL)
-            self.axvline.set_xdata(df_idx_as_datetime(self.df, current_idx))
+            try:
+                self.axvline.set_xdata(df_idx_as_datetime(self.df, current_idx))
+            except RuntimeError:
+                # Change in Matplotlib to only accept a sequence for Line2D.set_xdata.
+                self.axvline.set_xdata([df_idx_as_datetime(self.df, current_idx)])
             self.canvas.draw_idle()
             self._waterlevel_lineplot.set_label(longdateformat(df_idx_as_datetime(self.df, current_idx)))
             self.update_legend(from_navbar=True)

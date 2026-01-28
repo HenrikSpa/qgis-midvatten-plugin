@@ -133,8 +133,11 @@ def replace_matplotlib_backends_backend_qt5agg_NavigationToolbar2QT_set_message_
             s = msg
         else:
             s = ', '.join([s, msg])
-
-        self.message.emit(s)
+        try:
+            self.message.emit(s)
+        except AttributeError:
+            # The message attribute no longer exists since around Matplotlib 3.3
+            pass
         if self.coordinates:
             self.locLabel.setText(s)
 

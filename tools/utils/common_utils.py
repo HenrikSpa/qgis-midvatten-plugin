@@ -333,9 +333,9 @@ def get_selected_features_as_tuple(layer_name=None, column_name=None):
         if obs_points_layer is None:
             return tuple()
         if column_name is not None:
-            selected_obs_points = getselectedobjectnames(layer_name=obs_points_layer, column_name=column_name)
+            selected_obs_points = getselectedobjectnames(layer=obs_points_layer, column_name=column_name)
         else:
-            selected_obs_points = getselectedobjectnames(layer_name=obs_points_layer)
+            selected_obs_points = getselectedobjectnames(layer=obs_points_layer)
     else:
         if column_name is not None:
             selected_obs_points = getselectedobjectnames(column_name=column_name)
@@ -347,19 +347,19 @@ def get_selected_features_as_tuple(layer_name=None, column_name=None):
     return obsidtuple
 
 
-def getselectedobjectnames(layer_name='default', column_name='obsid'):
+def getselectedobjectnames(layer='default', column_name='obsid'):
     """ Returns a list of obsid as unicode
 
-        thelayer is an optional argument, if not given then activelayer is used
+        layer is an optional argument, if not given then activelayer is used
     """
-    if layer_name == 'default':
-        layer_name = get_active_layer()
-    if not layer_name:
+    if layer == 'default':
+        layer = get_active_layer()
+    if not layer:
         return []
-    selectedobs = layer_name.selectedFeatures()
-    kolumnindex = layer_name.dataProvider().fieldNameIndex(column_name)  #OGR data provier is used to find index for column named 'obsid'
+    selectedobs = layer.selectedFeatures()
+    kolumnindex = layer.dataProvider().fieldNameIndex(column_name)  #OGR data provier is used to find index for column named 'obsid'
     if kolumnindex == -1:
-        kolumnindex = layer_name.dataProvider().fieldNameIndex(column_name.upper())  #backwards compatibility
+        kolumnindex = layer.dataProvider().fieldNameIndex(column_name.upper())  #backwards compatibility
     observations = [obs[kolumnindex] for obs in selectedobs] # value in column obsid is stored as unicode
     return observations
 

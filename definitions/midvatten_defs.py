@@ -79,6 +79,7 @@ def settingsdict():    #These are the default settings, they shall not be change
             'secplot_grading_min_opacity': 0.0,
             'secplot_tem_model_name': '',
             'secplot_tem_colormap': 'jet',
+            'secplot_tem_data_fit': False,
             'secplot_tem_norm': 'log',
             'secplot_tem_shading': 'nearest',
             'secplot_tem_vmin': '',

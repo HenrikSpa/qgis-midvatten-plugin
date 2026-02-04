@@ -142,6 +142,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         self.resample_offset.setToolTip(defs.pandas_base_tooltip())
         self.resample_how.setText('mean')
         self.resample_how.setToolTip(defs.pandas_how_tooltip())
+        self.tem_data_fit_ax = None
 
     @fn_timer
     def init_figure(self):
@@ -443,6 +444,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
             self.ms.settingsdict['secplot_tem_vmin'] = self.tem_vmin.text()
             self.ms.settingsdict['secplot_tem_vmax'] = self.tem_vmax.text()
             self.ms.settingsdict['secplot_tem_snap'] = self.tem_snap.isChecked()
+            self.ms.settingsdict['secplot_tem_data_fit'] = self.tem_data_fit.isChecked()
             self.ms.settingsdict['secplot_tem_rasterized'] = self.tem_rasterized.isChecked()
             self.ms.settingsdict['secplot_tem_edgecolors'] = self.tem_edgecolors.text()
             self.ms.settingsdict['secplot_tem_alpha_above_doi'] = self.tem_alpha_above_doi.value()
@@ -749,6 +751,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         self.tem_edgecolors.setText(self.ms.settingsdict.get('secplot_tem_edgecolors', ''))
         self.tem_alpha_above_doi.setValue(float(self.ms.settingsdict.get('secplot_tem_alpha_above_doi', 1.0)))
         self.tem_alpha_below_doi.setValue(float(self.ms.settingsdict.get('secplot_tem_alpha_below_doi', 0.7)))
+        self.tem_data_fit.setChecked(self.ms.settingsdict.get('secplot_tem_data_fit', False))
 
         self.tem_model_name.addItem('')
 
@@ -824,6 +827,8 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
                 [(k, v) for k, v in self.secplot_templates.loaded_template.get('Axes_set_xlabel', {}).items() if
                  k != 'xlabel'])
             xlabel = self.secplot_templates.loaded_template.get('Axes_set_xlabel', {}).get('xlabel', defs.secplot_default_template()['Axes_set_xlabel']['xlabel'])
+        if self.sectionlinelayer:
+            xlabel +=  f" {list(self.sectionlinelayer.getSelectedFeatures())[0].attribute('obsid')}"
         self.axes.set_xlabel(xlabel, **Axes_set_xlabel)  # Allows international characters ('åäö') as xlabel
         self.axes.yaxis.set_major_formatter(tick.ScalarFormatter(useOffset=False, useMathText=False))
 
@@ -870,7 +875,9 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
             if LEGEND_NCOL_KEY not in legend_kwargs:
                 if LEGEND_NCOL_KEY.rstrip('s') in legend_kwargs:
                     legend_kwargs[LEGEND_NCOL_KEY] = legend_kwargs.pop(LEGEND_NCOL_KEY.rstrip('s'))
-            leg = self.axes.legend(items, labels, **legend_kwargs)
+
+            leg_ax = self.axes if self.tem_data_fit_ax is None else self.tem_data_fit_ax
+            leg = leg_ax.legend(items, labels, **legend_kwargs)
 
             try:
                 leg.set_draggable(state=True)
@@ -1523,6 +1530,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         self.ms.save_settings('secplot_tem_vmin')
         self.ms.save_settings('secplot_tem_vmax')
         self.ms.save_settings('secplot_tem_snap')
+        self.ms.save_settings('secplot_tem_data_fit')
         self.ms.save_settings('secplot_tem_rasterized')
         self.ms.save_settings('secplot_tem_edgecolors')
         self.ms.save_settings('secplot_tem_alpha_above_doi')
@@ -1747,7 +1755,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         line_obsid = common_utils.getselectedobjectnames(self.sectionlinelayer)[0]
 
         df = pd.read_sql(
-            f"""SELECT length, thickness, resistivity, elevation, doi FROM tem_data WHERE inversion_name = {self.dbconnection.placeholder_sign()} AND obsid = {self.dbconnection.placeholder_sign()} ORDER BY length;""",
+            f"""SELECT length, thickness, resistivity, elevation, doi, data_fit FROM tem_data WHERE inversion_name = {self.dbconnection.placeholder_sign()} AND obsid = {self.dbconnection.placeholder_sign()} ORDER BY length;""",
             self.dbconnection.conn, params=(self.ms.settingsdict['secplot_tem_model_name'], line_obsid))
         #print(f"Got data {df}"
 
@@ -1771,7 +1779,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         Z = create_array(shape)
         Z_below_doi = create_array(shape)
 
-        for idx, (length, thickness, resistivity, elevation, doi) in enumerate(
+        for idx, (length, thickness, resistivity, elevation, doi, data_fit) in enumerate(
                 df.itertuples(index=False)):
             resistivity = np.array(resistivity)
             if len(thickness) < len(resistivity):
@@ -1865,6 +1873,14 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
 
         if ticks is not None:
             cbar.ax.set_yticklabels([f"{v:.0f}" for v in cbar.ax.get_yticks()])
+
+        data_fit = self.ms.settingsdict['secplot_tem_data_fit']
+        if data_fit:
+            if self.tem_data_fit_ax is None:
+                self.tem_data_fit_ax = self.axes.twinx()
+                self.tem_data_fit_ax.set_ylabel('TEM data fit')
+            a = self.tem_data_fit_ax.plot(df['length'], df['data_fit'], color='k', label='TEM data fit', linestyle=':', alpha=0.5)[0]
+            self.p.append(a)
 
     def plot_images(self):
         if not self.sectionlinelayer:

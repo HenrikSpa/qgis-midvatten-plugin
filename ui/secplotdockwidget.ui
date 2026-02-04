@@ -978,108 +978,6 @@ p, li { white-space: pre-wrap; }
                             <bool>true</bool>
                            </property>
                            <layout class="QGridLayout" name="gridLayout_5">
-                            <item row="3" column="3">
-                             <widget class="QLineEdit" name="tem_vmax">
-                              <property name="toolTip">
-                               <string>Maximum resistivity value to use for scaling the colormap. Will use maximum value above doi if not set</string>
-                              </property>
-                              <property name="inputMethodHints">
-                               <set>Qt::ImhFormattedNumbersOnly</set>
-                              </property>
-                             </widget>
-                            </item>
-                            <item row="3" column="2">
-                             <widget class="QLineEdit" name="tem_vmin">
-                              <property name="toolTip">
-                               <string>Minimum resistivity value to use for scaling the colormap. Will use minimum value above doi if not set.</string>
-                              </property>
-                              <property name="inputMethodHints">
-                               <set>Qt::ImhFormattedNumbersOnly</set>
-                              </property>
-                             </widget>
-                            </item>
-                            <item row="0" column="2" colspan="2">
-                             <widget class="QComboBox" name="tem_model_name"/>
-                            </item>
-                            <item row="5" column="0" colspan="2">
-                             <widget class="QLabel" name="label_26">
-                              <property name="text">
-                               <string>Alpha below doi</string>
-                              </property>
-                             </widget>
-                            </item>
-                            <item row="2" column="0" colspan="2">
-                             <widget class="QLabel" name="label_22">
-                              <property name="text">
-                               <string>Colormap normalization</string>
-                              </property>
-                             </widget>
-                            </item>
-                            <item row="3" column="0" colspan="2">
-                             <widget class="QLabel" name="label_19">
-                              <property name="text">
-                               <string>Colormap vmin / vmax</string>
-                              </property>
-                             </widget>
-                            </item>
-                            <item row="1" column="0">
-                             <widget class="QLabel" name="label_18">
-                              <property name="text">
-                               <string>Colormap</string>
-                              </property>
-                             </widget>
-                            </item>
-                            <item row="7" column="0">
-                             <widget class="QLabel" name="label_24">
-                              <property name="text">
-                               <string>Edgecolors</string>
-                              </property>
-                             </widget>
-                            </item>
-                            <item row="2" column="2" colspan="2">
-                             <widget class="QComboBox" name="tem_norm"/>
-                            </item>
-                            <item row="8" column="2" colspan="2">
-                             <widget class="QCheckBox" name="tem_snap">
-                              <property name="toolTip">
-                               <string>Whether to snap the mesh to pixel boundaries.</string>
-                              </property>
-                              <property name="text">
-                               <string/>
-                              </property>
-                             </widget>
-                            </item>
-                            <item row="0" column="0" colspan="2">
-                             <widget class="QLabel" name="label_10">
-                              <property name="text">
-                               <string>Inversion model name</string>
-                              </property>
-                             </widget>
-                            </item>
-                            <item row="6" column="0">
-                             <widget class="QLabel" name="label_21">
-                              <property name="text">
-                               <string>Shading</string>
-                              </property>
-                             </widget>
-                            </item>
-                            <item row="4" column="0">
-                             <widget class="QLabel" name="label_23">
-                              <property name="text">
-                               <string>Alpha above doi</string>
-                              </property>
-                             </widget>
-                            </item>
-                            <item row="1" column="2" colspan="2">
-                             <widget class="QComboBox" name="tem_colormap"/>
-                            </item>
-                            <item row="8" column="0">
-                             <widget class="QLabel" name="label_25">
-                              <property name="text">
-                               <string>Snap</string>
-                              </property>
-                             </widget>
-                            </item>
                             <item row="5" column="2" colspan="2">
                              <widget class="QDoubleSpinBox" name="tem_alpha_below_doi">
                               <property name="toolTip">
@@ -1096,10 +994,30 @@ p, li { white-space: pre-wrap; }
                               </property>
                              </widget>
                             </item>
-                            <item row="6" column="2" colspan="2">
-                             <widget class="QComboBox" name="tem_shading">
+                            <item row="0" column="2" colspan="2">
+                             <widget class="QComboBox" name="tem_model_name"/>
+                            </item>
+                            <item row="2" column="0" colspan="2">
+                             <widget class="QLabel" name="label_22">
+                              <property name="text">
+                               <string>Colormap normalization</string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="9" column="2" colspan="2">
+                             <widget class="QCheckBox" name="tem_rasterized">
                               <property name="toolTip">
-                               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The fill style, Possible values:&lt;/p&gt;&lt;ul style=&quot;margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;&quot;&gt;&lt;li style=&quot; margin-top:12px; margin-bottom:0px; margin-left:30px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;'flat': A solid color is used for each quad. The color of the quad (i, j), (i+1, j), (i, j+1), (i+1, j+1) is given by &lt;span style=&quot; font-family:'monospace';&quot;&gt;C[i,j]&lt;/span&gt;.&lt;/li&gt;&lt;li style=&quot; margin-top:0px; margin-bottom:12px; margin-left:30px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;'gouraud': Each quad will be Gouraud shaded: The color of the corners (i', j') are given by &lt;span style=&quot; font-family:'monospace';&quot;&gt;C[i',j']&lt;/span&gt;. The color values of the area in between is interpolated from the corner values.&lt;/li&gt;&lt;/ul&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                               <string>Rasterize the pcolormesh when drawing vector graphics. This can speed up rendering and produce smaller files for large data sets.</string>
+                              </property>
+                              <property name="text">
+                               <string/>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="10" column="0">
+                             <widget class="QLabel" name="label_31">
+                              <property name="text">
+                               <string>Plot data fit</string>
                               </property>
                              </widget>
                             </item>
@@ -1107,6 +1025,112 @@ p, li { white-space: pre-wrap; }
                              <widget class="QLineEdit" name="tem_edgecolors">
                               <property name="toolTip">
                                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The color of the edges. Defaults to 'none' ('none', None, 'face', color, color sequence).&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="4" column="0">
+                             <widget class="QLabel" name="label_23">
+                              <property name="text">
+                               <string>Alpha above doi</string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="6" column="0">
+                             <widget class="QLabel" name="label_21">
+                              <property name="text">
+                               <string>Shading</string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="6" column="2" colspan="2">
+                             <widget class="QComboBox" name="tem_shading">
+                              <property name="toolTip">
+                               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The fill style, Possible values:&lt;/p&gt;&lt;ul style=&quot;margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;&quot;&gt;&lt;li style=&quot; margin-top:12px; margin-bottom:0px; margin-left:30px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;'flat': A solid color is used for each quad. The color of the quad (i, j), (i+1, j), (i, j+1), (i+1, j+1) is given by &lt;span style=&quot; font-family:'monospace';&quot;&gt;C[i,j]&lt;/span&gt;.&lt;/li&gt;&lt;li style=&quot; margin-top:0px; margin-bottom:12px; margin-left:30px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;'gouraud': Each quad will be Gouraud shaded: The color of the corners (i', j') are given by &lt;span style=&quot; font-family:'monospace';&quot;&gt;C[i',j']&lt;/span&gt;. The color values of the area in between is interpolated from the corner values.&lt;/li&gt;&lt;/ul&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="3" column="2">
+                             <widget class="QLineEdit" name="tem_vmin">
+                              <property name="toolTip">
+                               <string>Minimum resistivity value to use for scaling the colormap. Will use minimum value above doi if not set.</string>
+                              </property>
+                              <property name="inputMethodHints">
+                               <set>Qt::ImhFormattedNumbersOnly</set>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="8" column="2" colspan="2">
+                             <widget class="QCheckBox" name="tem_snap">
+                              <property name="toolTip">
+                               <string>Whether to snap the mesh to pixel boundaries.</string>
+                              </property>
+                              <property name="text">
+                               <string/>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="1" column="0">
+                             <widget class="QLabel" name="label_18">
+                              <property name="text">
+                               <string>Colormap</string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="3" column="0" colspan="2">
+                             <widget class="QLabel" name="label_19">
+                              <property name="text">
+                               <string>Colormap vmin / vmax</string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="5" column="0" colspan="2">
+                             <widget class="QLabel" name="label_26">
+                              <property name="text">
+                               <string>Alpha below doi</string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="2" column="2" colspan="2">
+                             <widget class="QComboBox" name="tem_norm"/>
+                            </item>
+                            <item row="0" column="0" colspan="2">
+                             <widget class="QLabel" name="label_10">
+                              <property name="text">
+                               <string>Inversion model name</string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="3" column="3">
+                             <widget class="QLineEdit" name="tem_vmax">
+                              <property name="toolTip">
+                               <string>Maximum resistivity value to use for scaling the colormap. Will use maximum value above doi if not set</string>
+                              </property>
+                              <property name="inputMethodHints">
+                               <set>Qt::ImhFormattedNumbersOnly</set>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="8" column="0">
+                             <widget class="QLabel" name="label_25">
+                              <property name="text">
+                               <string>Snap</string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="1" column="2" colspan="2">
+                             <widget class="QComboBox" name="tem_colormap"/>
+                            </item>
+                            <item row="9" column="0" colspan="2">
+                             <widget class="QLabel" name="label_27">
+                              <property name="text">
+                               <string>Rasterized</string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="10" column="2">
+                             <widget class="QCheckBox" name="tem_data_fit">
+                              <property name="text">
+                               <string/>
                               </property>
                              </widget>
                             </item>
@@ -1126,20 +1150,10 @@ p, li { white-space: pre-wrap; }
                               </property>
                              </widget>
                             </item>
-                            <item row="9" column="0" colspan="2">
-                             <widget class="QLabel" name="label_27">
+                            <item row="7" column="0">
+                             <widget class="QLabel" name="label_24">
                               <property name="text">
-                               <string>Rasterized</string>
-                              </property>
-                             </widget>
-                            </item>
-                            <item row="9" column="2" colspan="2">
-                             <widget class="QCheckBox" name="tem_rasterized">
-                              <property name="toolTip">
-                               <string>Rasterize the pcolormesh when drawing vector graphics. This can speed up rendering and produce smaller files for large data sets.</string>
-                              </property>
-                              <property name="text">
-                               <string/>
+                               <string>Edgecolors</string>
                               </property>
                              </widget>
                             </item>

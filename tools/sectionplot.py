@@ -178,6 +178,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
 
         self.canvas.mpl_connect('button_release_event', self.update_barwidths_from_plot)
         self.canvas.mpl_connect('resize_event', self.update_barwidths_from_plot)
+        self.canvas.mpl_connect('button_release_event', self.flash_section_line_position)
 
         self.mpltoolbar = NavigationToolbar(self.canvas, self.widgetPlot)
 
@@ -354,8 +355,24 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         self.get_missing_obsid_labels()
         self.drillstops = self.get_drillstops()
 
-        #draw plot
         self.draw_plot()
+
+    def flash_section_line_position(self, event):
+        if not all([self.sectionlinelayer,
+                    self.sectionlinelayer.selectedFeatureCount() == 1,
+                    event.button.name.lower() == 'right']):
+            return
+
+        ax = event.inaxes
+        if ax is None:
+            return
+        elif ax is not self.axes:
+            return
+
+        x = event.xdata
+        line_geom = list(self.sectionlinelayer.getSelectedFeatures())[0].geometry()
+        point = line_geom.interpolate(x)
+        self.iface.mapCanvas().flashGeometries([point], crs=self.sectionlinelayer.crs())
 
     @fn_timer
     def get_plot_data_seismic(self):
@@ -1666,7 +1683,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
             else:
                 x = a.original_xy[0] + (barwidth/2)
             a.xy = (x, a.original_xy[1])
-        #self.canvas.draw()
 
     @fn_timer
     def sample_polygon(self, polyLayer, sectionlinelayer, xarray):

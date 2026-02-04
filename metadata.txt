@@ -26,6 +26,7 @@ changelog=
         - SectionPlot: Added button to detach the figure from the section plot tool.
         - SectionPlot: Added the name of the section line to the xaxis label.
         - SectionPlot: Added plotting of tem data fit.
+        - SectionPlot: Right click in figure now flashes the distance on the section line.
         Version 1.9.0b5:
         - SectionPlot: Fixes for new matplotlib-version.
         Version 1.9.0b4:

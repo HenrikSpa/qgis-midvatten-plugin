@@ -160,6 +160,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
             self.layoutplot.removeWidget(self.canvas)
             self.canvas.close()
         if hasattr(self, 'figure'):
+            self.tem_data_fit_ax = None
             fignum = self.figure.number
             plt.close(fignum)
 
@@ -893,7 +894,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
                 if LEGEND_NCOL_KEY.rstrip('s') in legend_kwargs:
                     legend_kwargs[LEGEND_NCOL_KEY] = legend_kwargs.pop(LEGEND_NCOL_KEY.rstrip('s'))
 
-            leg_ax = self.axes if self.tem_data_fit_ax is None else self.tem_data_fit_ax
+            leg_ax = self.axes if self.tem_data_fit_ax is None  else self.tem_data_fit_ax
             leg = leg_ax.legend(items, labels, **legend_kwargs)
 
             try:

@@ -160,7 +160,11 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         if hasattr(self, 'figure'):
             fignum = self.figure.number
             plt.close(fignum)
-        self.figure = plt.figure()
+
+        if self.dynamic_plot_size.isChecked():
+            self.figure = plt.figure(tight_layout=True)
+        else:
+            self.figure = plt.figure()
 
         if self.interactive_groupbox.isChecked():
             self.gridspec = GridSpec(nrows=2, ncols=2, height_ratios=[20, 1])

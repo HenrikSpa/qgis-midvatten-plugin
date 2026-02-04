@@ -367,7 +367,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         ax = event.inaxes
         if ax is None:
             return
-        elif ax is not self.axes:
+        elif ax not in (self.axes, self.tem_data_fit_ax):
             return
 
         x = event.xdata
@@ -856,6 +856,9 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
 
         for label in self.axes.yaxis.get_ticklabels():
             label.set_fontsize(**self.secplot_templates.loaded_template['ticklabels_Text_set_fontsize'])
+        if self.tem_data_fit_ax is not None:
+            for label in self.tem_data_fit_ax.yaxis.get_ticklabels():
+                label.set_fontsize(**self.secplot_templates.loaded_template['ticklabels_Text_set_fontsize'])
 
         if self.secplot_templates.loaded_template['Figure_subplots_adjust']:
             self.figure.subplots_adjust(**self.secplot_templates.loaded_template['Figure_subplots_adjust'])
@@ -1890,7 +1893,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         cbar = self.figure.colorbar(above_doi, label=QCoreApplication.translate('SectionPlot', 'Resistivity') + ' ' + self.ms.settingsdict['secplot_tem_model_name'], ticks=ticks)
 
         if ticks is not None:
-            cbar.ax.set_yticklabels([f"{v:.0f}" for v in cbar.ax.get_yticks()])
+            cbar.ax.set_yticklabels([f"{v:.0f}" for v in cbar.ax.get_yticks()], **self.secplot_templates.loaded_template['ticklabels_Text_set_fontsize'])
 
         data_fit = self.ms.settingsdict['secplot_tem_data_fit']
         if data_fit:

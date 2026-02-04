@@ -692,7 +692,7 @@ class Calibrlogger(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog): # An inst
     def plot_the_recarray(self, axes, time_list, a_recarray, label, style=None):
         if style is None:
             style = {}
-        return axes.plot_date(time_list, a_recarray.values, label=label, **style) #, xdate=True)
+        return axes.plot(time_list, a_recarray.values, label=label, **style) #, xdate=True)
 
     @fn_timer
     def set_from_date_from_x(self):

@@ -32,6 +32,7 @@ import io
 
 import psycopg2
 import psycopg2.extras
+from numpy.core.records import get_remaining_size
 
 try:
     import pandas as pd
@@ -61,6 +62,7 @@ class midv_data_importer(object):  # this class is intended to be a multipurpose
         self.csvlayer = None
         self.foreign_keys_import_question = None
 
+
     def general_import(self, dest_table, file_data, allow_obs_fk_import=False,
                        _dbconnection=None, dump_temptable=False, source_srid=None,
                        skip_confirmation=False, binary_geometry=False):
@@ -81,6 +83,8 @@ class midv_data_importer(object):  # this class is intended to be a multipurpose
         """
 
         self.temptable_name = None
+        import_messages = [QCoreApplication.translate('midv_data_importer',
+                                                          """Note:\nForeign keys will be imported silently.""")]
 
         if skip_confirmation:
             self.foreign_keys_import_question = 1
@@ -100,6 +104,9 @@ class midv_data_importer(object):  # this class is intended to be a multipurpose
             db_utils.activate_foreign_keys(activated=True, dbconnection=dbconnection)
 
             recsinfile = len(file_data[1:])
+            all_rownumbers = tuple(range(recsinfile))
+            remaining_rownumbers = tuple(all_rownumbers)
+
             table_info = db_utils.db_tables_columns_info(table=dest_table, dbconnection=dbconnection)
             if not table_info:
                 raise MidvDataImporterError(ru(QCoreApplication.translate('midv_data_importer', 'The table %s did not exist. Update the database to latest version.')) % dest_table)
@@ -121,28 +128,67 @@ class midv_data_importer(object):  # this class is intended to be a multipurpose
 
             self.list_to_table(dbconnection, dest_table, file_data, primary_keys_for_concat)
 
+            get_remaining_rownumbers = lambda: [x[0] for x in dbconnection.execute_and_fetchall(f"""SELECT "{self.temptable_rowid_name}" FROM {self.temptable_name};""")]
+            get_removed_rownumbers = lambda start_numbers, remaining:  [x for x in start_numbers if x not in remaining]
+            get_row_subset = lambda rownumbers: [', '.join([str(x) for x in file_data[1:][rownr]]) for rownr in rownumbers[:10]]
+
             #Delete records from self.temptable where yyyy-mm-dd hh:mm or yyyy-mm-dd hh:mm:ss already exist for the same date.
-            nr_before = dbconnection.execute_and_fetchall('''select count(*) from %s''' % (self.temptable_name))[0][0]
+
             if 'date_time' in primary_keys:
                 self.delete_existing_date_times_from_temptable(primary_keys, dest_table, dbconnection)
-            nr_after = dbconnection.execute_and_fetchall('''select count(*) from %s''' % (self.temptable_name))[0][0]
+                remaining_rownumbers = get_remaining_rownumbers()
+                print(f"remaining_rownumbers {remaining_rownumbers=}")
+                if not remaining_rownumbers:
+                    common_utils.MessagebarAndLog.warning(bar_msg=ru(QCoreApplication.translate('midv_data_importer', 'Nothing imported to %s after deleting duplicate date_times')) % dest_table)
+                    return
 
-            nr_same_date = nr_after - nr_before
-            if nr_same_date > 0:
-                common_utils.MessagebarAndLog.info(log_msg=ru(QCoreApplication.translate('midv_data_importer', 'In total "%s" rows with the same date \non format yyyy-mm-dd hh:mm or yyyy-mm-dd hh:mm:ss already existed and will not be imported. %s rows remain.')) % (str(nr_same_date), str(nr_after)))
-            if not nr_after > 0:
-                common_utils.MessagebarAndLog.warning(bar_msg=ru(QCoreApplication.translate('midv_data_importer', 'Nothing imported to %s after deleting duplicate date_times')) % dest_table)
-                return
+                removed_rownumbers = get_removed_rownumbers(all_rownumbers, remaining_rownumbers)
+                if removed_rownumbers:
+                    removed_rows = get_row_subset(removed_rownumbers)
+                    common_utils.MessagebarAndLog.info(log_msg=ru(QCoreApplication.translate('midv_data_importer', 'Skipped %s rows with duplicate date_time but of different date format (yyyy-mm-dd hh:mm or yyyy-mm-dd hh:mm:ss). Subset of skipped rows:\n%s'))%(str(len(removed_rownumbers)), '\n'.join(removed_rows)))
+                    import_messages.append(ru(QCoreApplication.translate('midv_data_importer', 'Skipped %s rows with duplicate date_time.')) %str(len(removed_rownumbers)))
 
             #Special cases for some tables
             if dest_table == 'stratigraphy':
                 self.check_and_delete_stratigraphy(existing_columns_in_dest_table, dbconnection)
+                remaining_rownumbers_after_stratigraphy = get_remaining_rownumbers()
+                if not remaining_rownumbers_after_stratigraphy:
+                    common_utils.MessagebarAndLog.warning(bar_msg=ru(QCoreApplication.translate('midv_data_importer',
+                                                                                                'Nothing imported to %s after deleting stratigraphy rows with errors.')) % dest_table)
+                    return
+
+                removed_rownumbers = get_removed_rownumbers(remaining_rownumbers, remaining_rownumbers_after_stratigraphy)
+                if removed_rownumbers:
+                    removed_rows = get_row_subset(removed_rownumbers)
+                    common_utils.MessagebarAndLog.info(log_msg=ru(QCoreApplication.translate('midv_data_importer',
+                                                                                         'Skipped %s rows due to problems with stratigraphy. Subset of skipped rows:\n%s')) % (
+                                                               str(len(removed_rownumbers)), '\n'.join(removed_rows)))
+                    import_messages.append(ru(QCoreApplication.translate('midv_data_importer',
+                                                                         'Skipped %s rows due to problems with stratigraphy.')) % str(
+                        len(removed_rownumbers)))
+                remaining_rownumbers = remaining_rownumbers_after_stratigraphy
             elif dest_table == 'w_qual_field':
                 self.convert_null_unit_to_empty_string(self.temptable_name, 'unit', dbconnection)
 
             # Dump temptable to csv for debugging
             if dump_temptable:
                 dbconnection.dump_table_2_csv(self.temptable_name)
+
+            if len(remaining_rownumbers) == len(all_rownumbers):
+                if self.foreign_keys_import_question:
+                    import_messages = []
+                else:
+                    import_messages.append(QCoreApplication.translate('midv_data_importer', 'Proceed with import?'))
+                    # Only skip recurring queries for imports without errors.
+                    self.foreign_keys_import_question = 1
+            else:
+                import_messages.append(ru(QCoreApplication.translate('midv_data_importer', """There are %s out of %s number of rows to import (see log for more info about removed rows).\n\nProceed with import?""" ))% (str(len(remaining_rownumbers)), str(len(all_rownumbers))))
+
+            if import_messages:
+                print('\n'.join(import_messages))
+                stop_question = common_utils.Askuser("YesNo", '\n'.join(import_messages), ru(QCoreApplication.translate('midv_data_importer', "Info")))
+                if stop_question.result == 0:      # if the user wants to abort
+                    raise UserInterruptError()
 
             # Import foreign keys in some special cases
             foreign_keys = db_utils.get_foreign_keys(dest_table, dbconnection=dbconnection)
@@ -151,34 +197,8 @@ class midv_data_importer(object):  # this class is intended to be a multipurpose
                     for table in ['obs_points', 'obs_lines']:
                         if table in foreign_keys:
                             del foreign_keys[table]
-
                 if foreign_keys:
-                    if self.foreign_keys_import_question is None:
-                        msg = ru(QCoreApplication.translate('midv_data_importer', """Please note!\nForeign keys will be imported silently into "%s" if needed. \n\nProceed?""")) % (', '.join(list(foreign_keys.keys())))
-                        common_utils.MessagebarAndLog.info(log_msg=msg)
-                        stop_question = common_utils.Askuser("YesNo", msg, ru(QCoreApplication.translate('midv_data_importer', "Info!")))
-                        if stop_question.result == 0:      # if the user wants to abort
-                            raise UserInterruptError()
-                        else:
-                            self.foreign_keys_import_question = 1
-                    if self.foreign_keys_import_question == 1:
-                        nr_before = nr_after
-                        self.import_foreign_keys(dbconnection, dest_table, self.temptable_name, foreign_keys, existing_columns_in_temptable)
-                        nr_after = dbconnection.execute_and_fetchall('''select count(*) from %s''' % (self.temptable_name))[0][0]
-                        nr_after_foreign_keys = nr_before - nr_after
-                        common_utils.MessagebarAndLog.info(log_msg=ru(QCoreApplication.translate('midv_data_importer', 'In total "%s" rows were deleted due to foreign keys restrictions and "%s" rows remain.')) % (str(nr_after_foreign_keys), str(nr_after)))
-
-            if not nr_after > 0:
-                raise MidvDataImporterError(ru(QCoreApplication.translate('midv_data_importer', 'Nothing imported, see log message panel')))
-
-            #Finally import data:
-            nr_failed_import = recsinfile - nr_after
-            if nr_failed_import > 0:
-                msg = ru(QCoreApplication.translate('midv_data_importer', """Please note!\nThere are %s rows in your data that can not be imported!\nDo you really want to import the rest?\nAnswering yes will start, from top of the imported file and only import the first of the duplicates.\n\nProceed?""" ))% (str(nr_failed_import))
-                common_utils.MessagebarAndLog.info(log_msg=msg)
-                stop_question = common_utils.Askuser("YesNo", msg, ru(QCoreApplication.translate('midv_data_importer', "Warning!")))
-                if stop_question.result == 0:      # if the user wants to abort
-                    raise UserInterruptError()
+                    self.import_foreign_keys(dbconnection, dest_table, self.temptable_name, foreign_keys, existing_columns_in_temptable)
 
             # Check if current table has geometry:
             geom_columns = db_utils.get_geometry_types(dbconnection, dest_table)
@@ -218,7 +238,7 @@ class midv_data_importer(object):  # this class is intended to be a multipurpose
             except Exception as e:
                 print(f"{ru(traceback.format_exc())}")
                 print(sql)
-                print("Sourde " + str(source_srid))
+                print("Source " + str(source_srid))
 
                 common_utils.MessagebarAndLog.info(log_msg=ru(QCoreApplication.translate('midv_data_importer', 'INSERT failed while importing to %s. Using INSERT OR IGNORE instead. Msg:\n')) % dest_table_with_schema + ru(str(e)))
                 sql = db_utils.add_insert_or_ignore_to_sql(sql, dbconnection)
@@ -281,13 +301,16 @@ class midv_data_importer(object):  # this class is intended to be a multipurpose
         @param primary_keys_for_concat:
         @return:
         """
-        fieldnames_types = ['{} TEXT'.format(field_name) for field_name in file_data[0]]
-        self.temptable_name = dbconnection.create_temporary_table_for_import(destination_table + '_temp', fieldnames_types)
+        fieldnames_types = [f"{field_name} TEXT" for field_name in file_data[0]]
+        tname = f"temp_{destination_table}_temp"
+        self.temptable_rowid_name = f"{tname}_rowid"
+        fieldnames_types.append(f"{self.temptable_rowid_name} INTEGER")
+        self.temptable_name = dbconnection.create_temporary_table_for_import(tname, fieldnames_types)
 
         if pandas_on:
-            numskipped = self.list_to_table_using_pandas(dbconnection, self.temptable_name, file_data, primary_keys_for_concat)
+            numskipped = self.list_to_table_using_pandas(dbconnection, self.temptable_name, self.temptable_rowid_name, file_data, primary_keys_for_concat)
         else:
-            numskipped = self.list_to_table_using_loop(dbconnection, self.temptable_name, file_data, primary_keys_for_concat)
+            numskipped = self.list_to_table_using_loop(dbconnection, self.temptable_name, self.temptable_rowid_name, file_data, primary_keys_for_concat)
 
         if numskipped:
             common_utils.MessagebarAndLog.warning(bar_msg=ru(QCoreApplication.translate('midv_data_importer', 'Import warning, duplicates skipped')), log_msg=ru(QCoreApplication.translate('midv_data_importer', "%s nr of duplicate rows in file was skipped while importing.")) % str(numskipped))
@@ -295,11 +318,12 @@ class midv_data_importer(object):  # this class is intended to be a multipurpose
         for colname in file_data[0]:
             dbconnection.execute(f"""UPDATE {self.temptable_name} SET {colname} = NULL WHERE {colname} = '' """)
 
-        dbconnection.cursor.execute(f"""select * from {self.temptable_name}""")
+        #dbconnection.cursor.execute(f"""select * from {self.temptable_name}""")
 
-    def list_to_table_using_pandas(self, dbconnection, temptable_name, file_data, primary_keys_for_concat):
+    def list_to_table_using_pandas(self, dbconnection, temptable_name, temptable_rowidcol, file_data, primary_keys_for_concat):
         numskipped = 0
         df = pd.DataFrame.from_records(file_data[1:], columns=file_data[0])
+        df[temptable_rowidcol] = df.index
 
         if primary_keys_for_concat:
             len_before = len(df)
@@ -319,9 +343,8 @@ class midv_data_importer(object):  # this class is intended to be a multipurpose
         df = df.astype(object).where(pd.notnull(df), None)
 
         if dbconnection.dbtype == 'spatialite':
-            placeholder_sign = db_utils.placeholder_sign(dbconnection)
             sql = """INSERT INTO %s VALUES (%s)""" % (
-                temptable_name, ', '.join([placeholder_sign for x in range(len(file_data[0]))]))
+                temptable_name, ', '.join([dbconnection.placeholder_sign() for x in range(len(df.columns))]))
             dbconnection.cursor.executemany(sql, list(df.itertuples(index=False)))
         else:
             csv_buffer = io.StringIO()
@@ -331,9 +354,8 @@ class midv_data_importer(object):  # this class is intended to be a multipurpose
                 dbconnection.cursor.copy_from(csv_buffer, temptable_name, sep=";")
             except psycopg2.errors.BadCopyFileFormat:
                 # This is probably due to the separator exists in the values.
-                placeholder_sign = db_utils.placeholder_sign(dbconnection)
                 data = list(df.itertuples(index=False))
-                sql = f"""INSERT INTO {temptable_name} VALUES {placeholder_sign}"""
+                sql = f"""INSERT INTO {temptable_name} VALUES {dbconnection.placeholder_sign()}"""
                 psycopg2.extras.execute_values(dbconnection.cursor, sql, data,
                                                template=None)
 
@@ -341,13 +363,13 @@ class midv_data_importer(object):  # this class is intended to be a multipurpose
 
     def list_to_table_using_loop(self, dbconnection, temptable_name, file_data, primary_keys_for_concat):
         numskipped = 0
-        placeholder_sign = db_utils.placeholder_sign(dbconnection)
+        placeholder_sign = dbconnection.placeholder_sign()
         concat_cols = [file_data[0].index(pk) for pk in primary_keys_for_concat]
         added_rows = set()
 
         sql = """INSERT INTO %s VALUES (%s)""" % (
-        temptable_name, ', '.join([placeholder_sign for x in range(len(file_data[0]))]))
-        for row in file_data[1:]:
+        temptable_name, ', '.join([placeholder_sign for x in range(len(file_data[0])+1)]))
+        for rownr, row in enumerate(file_data[1:]):
             if primary_keys_for_concat:
                 concatted = '|'.join([ru(row[idx]) for idx in concat_cols])
                 if concatted in added_rows:
@@ -356,9 +378,9 @@ class midv_data_importer(object):  # this class is intended to be a multipurpose
                 else:
                     added_rows.add(concatted)
 
-            args = tuple([self.sanitize(r) for r in row])
-
-            dbconnection.cursor.execute(sql, args)
+            args = [self.sanitize(r) for r in row]
+            args.append(rownr)
+            dbconnection.cursor.execute(sql, tuple(args))
         return numskipped
 
     def sanitize(self, value):
@@ -475,16 +497,21 @@ class midv_data_importer(object):  # this class is intended to be a multipurpose
                         continue
                     #Check that there is no gap in the stratid:
                     if float(sorted_strats[index][stratid_idx]) - float(sorted_strats[index - 1][stratid_idx]) != 1:
-                        common_utils.MessagebarAndLog.warning(bar_msg=self.import_error_msg(), log_msg=ru(QCoreApplication.translate('midv_data_importer', 'The obsid %s will not be imported due to gaps in stratid')) % obsid)
+                        common_utils.MessagebarAndLog.info(ru(QCoreApplication.translate('midv_data_importer', 'The obsid %s will not be imported due to gaps in stratid')) % obsid)
                         skip_obsids.append(obsid)
                         break
                     #Check that the current depthtop is equal to the previous depthbot
                     elif sorted_strats[index][depthtop_idx] != sorted_strats[index - 1][depthbot_idx]:
-                        common_utils.MessagebarAndLog.warning(bar_msg=self.import_error_msg(), log_msg=ru(QCoreApplication.translate('midv_data_importer', 'The obsid %s will not be imported due to gaps in depthtop/depthbot')) % obsid)
+                        common_utils.MessagebarAndLog.info(ru(QCoreApplication.translate('midv_data_importer', 'The obsid %s will not be imported due to gaps in depthtop/depthbot')) % obsid)
                         skip_obsids.append(obsid)
                         break
             if skip_obsids:
-                dbconnection.execute('delete from %s where obsid in (%s)' % (self.temptable_name, ', '.join(["'{}'".format(obsid) for obsid in skip_obsids])))
+                sql = 'DELETE FROM %s WHERE obsid IN (%s)' % (self.temptable_name,
+                                                                             ', '.join([dbconnection.placeholder_sign()]*len(skip_obsids)))
+                print(f" {sql=} {skip_obsids=}")
+                dbconnection.execute('DELETE FROM %s WHERE obsid IN (%s)' % (self.temptable_name,
+                                                                             ', '.join([dbconnection.placeholder_sign()]*len(skip_obsids))),
+                                     all_args=[tuple(skip_obsids)])
 
     def convert_null_unit_to_empty_string(self, temptable_name, column, dbconnection):
         dbconnection.execute('''UPDATE {table} 

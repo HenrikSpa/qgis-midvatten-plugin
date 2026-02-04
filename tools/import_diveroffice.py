@@ -451,7 +451,8 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
                 return 'skip'
 
         df = pd.read_csv(path, sep=delimiter, encoding=charset, usecols=usecols, names=colnames,
-                         skipfooter=skipfooter, skiprows=data_start_row, parse_dates=['date_time'])
+                         skipfooter=skipfooter, skiprows=data_start_row, parse_dates=['date_time'],
+                         engine='python')
         for col in df.columns[1:]:
             df[col] = pd.to_numeric(df[col].astype(str).str.replace(',', '.').str.strip(), errors='coerce')
 

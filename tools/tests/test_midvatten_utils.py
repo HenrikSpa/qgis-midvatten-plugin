@@ -195,17 +195,21 @@ class TestGetCurrentLocale(object):
 
     @mock.patch('midvatten.tools.utils.db_utils.DbConnectionManager')
     @mock.patch('midvatten.tools.utils.midvatten_utils.isinstance')
-    @mock.patch('locale.getdefaultlocale')
+    @mock.patch('locale.getencoding')
+    @mock.patch('locale.getlocale')
     @mock.patch('midvatten.tools.utils.midvatten_utils.get_locale_from_db')
     def test_getcurrentlocale(self, mock_get_locale, mock_default_locale,
+                              mock_getencoding,
                               mock_isinstance,
                               mock_dbconnection):
         mock_get_locale.return_value = 'a_lang'
         mock_default_locale.return_value = [None, 'an_enc']
         mock_isinstance.return_value = False
+        mock_getencoding.return_value = 'an_enc'
 
         test_string = create_test_string(midvatten_utils.getcurrentlocale())
         reference_string = '[a_lang, an_enc]'
+        #['a_lang', 'UTF-8']
         print(midvatten_utils.getcurrentlocale())
         assert test_string == reference_string
         

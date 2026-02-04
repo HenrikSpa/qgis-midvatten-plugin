@@ -177,4 +177,4 @@ def mock_answer(yes_or_no='yes'):
 answer_yes = mock_answer('yes')
 answer_no = mock_answer('no')
 
-mock_askuser = MockReturnUsingDictIn({'It is a strong': answer_no.get_v(), 'Please note!\nThere are ': answer_yes.get_v(), 'Please note!\nForeign keys will': answer_yes.get_v()}, 1)
+mock_askuser = MockReturnUsingDictIn({'It is a strong': answer_no.get_v(), 'Please note!\nThere are ': answer_yes.get_v(), 'Note:\nForeign keys will be imported silently.': answer_yes.get_v()}, 1)

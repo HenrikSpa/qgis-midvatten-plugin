@@ -781,7 +781,7 @@ class TestFieldLoggerImporterDb(utils_for_tests.MidvattenTestSpatialiteDbSv):
                         elif args[1].startswith('Do you want to import all'):
                             mock_result.result = 0
                             return mock_result
-                        elif args[1].startswith('Please note!\nForeign keys'):
+                        elif args[1].startswith("""Note:\nForeign keys will be imported silently.\nProceed with import?"""):
                             mock_result.result = 1
                             return mock_result
                         elif args[1].startswith('Please note!\nThere are'):

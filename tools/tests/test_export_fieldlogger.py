@@ -30,6 +30,7 @@ from PyQt5.QtCore import QVariant
 from mock import MagicMock
 from nose.plugins.attrib import attr
 from qgis.PyQt.QtWidgets import QWidget
+from qgis.PyQt.QtCore import QMetaType
 from qgis.core import QgsField, QgsGeometry
 from qgis.core import QgsProject
 
@@ -449,8 +450,8 @@ class TestExportFieldloggerNoDb(MidvattenTestBase):
         mock_ms.settingsdict = {}
 
         mock_tables_columns.return_value = {}
-        _fields = [QgsField('id', QVariant.Int, QVariant.typeToName(QVariant.Int)),
-                   QgsField('obsid', QVariant.String, QVariant.typeToName(QVariant.String))]
+        _fields = [QgsField('id', QMetaType.Type.Int),
+                   QgsField('obsid', QMetaType.Type.QString)]
         data = [[1, 'obsid1'], [2, 'obsid2'], [3, 'obsid3']]
         geometries = [QgsGeometry.fromWkt('POINT(1000000.0 100000.0)'),
                       QgsGeometry.fromWkt('POINT(2000000.0 200000.0)'),
@@ -538,8 +539,8 @@ class TestExportFieldloggerNoDb(MidvattenTestBase):
         mock_ms.settingsdict = {}
 
         mock_tables_columns.return_value = {}
-        _fields = [QgsField('id', QVariant.Int, QVariant.typeToName(QVariant.Int)),
-                   QgsField('obsid', QVariant.String, QVariant.typeToName(QVariant.String))]
+        _fields = [QgsField('id', QMetaType.Type.Int),
+                   QgsField('obsid', QMetaType.Type.QString)]
         data = [[1, 'obsid1'], [2, 'obsid2'], [3, 'obsid3']]
         geometries = [QgsGeometry.fromWkt('POINT(1000000.0 100000.0)'),
                       QgsGeometry.fromWkt('POINT(2000000.0 200000.0)'),

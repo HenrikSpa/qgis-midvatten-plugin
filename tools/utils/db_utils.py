@@ -181,10 +181,11 @@ class DbConnectionManager(object):
         elif self.dbtype == 'postgis':
             connection_name = self.connection_settings['connection'].split('/')[0]
             self.postgis_settings = get_postgis_connections()[connection_name]
+            print(self.postgis_settings)
             if self.postgis_settings.get('service', '').strip():
-                self.uri.setConnection(aService=self.postgis_settings['service'], aDatabase=self.postgis_settings['database'], aUsername=self.postgis_settings['username'], aPassword=self.postgis_settings['password'])
+                self.uri.setConnection(aService=self.postgis_settings['service'], aDatabase=self.postgis_settings['database'], aUsername=self.postgis_settings.get('username'), aPassword=self.postgis_settings.get('password'))
             else:
-                self.uri.setConnection(self.postgis_settings['host'], self.postgis_settings['port'], self.postgis_settings['database'], self.postgis_settings['username'], self.postgis_settings['password'])
+                self.uri.setConnection(self.postgis_settings['host'], self.postgis_settings['port'], self.postgis_settings['database'], self.postgis_settings.get('username'), self.postgis_settings.get('password'))
             try:
                 self.connector = PostGisDBConnectorMod(self.uri)
             except Exception as e:
@@ -295,7 +296,7 @@ class DbConnectionManager(object):
     def create_temporary_table_for_import(self, temptable_name, fieldnames_types, geometry_colname_type_srid=None):
 
         if not temptable_name.startswith('temp_'):
-            temptable_name = 'temp_%s'%temptable_name
+            temptable_name = f"temp_{temptable_name}"
 
         if self.dbtype == 'spatialite':
             temptable_name = 'mem.' + temptable_name

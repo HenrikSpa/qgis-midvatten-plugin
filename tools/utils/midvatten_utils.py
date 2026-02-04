@@ -234,9 +234,9 @@ def getcurrentlocale(print_error_message_in_bar=True, dbconnection=None):
 
 
     if db_locale is not None and db_locale:
-        return [db_locale, locale.getdefaultlocale()[1]]
+        return [db_locale, locale.getencoding()]
     else:
-        return locale.getdefaultlocale()[:2]
+        return locale.getlocale()
 
 
 def get_locale_from_db(print_error_message_in_bar=True, dbconnection=None):

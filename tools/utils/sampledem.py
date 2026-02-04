@@ -9,13 +9,13 @@
         email                : groundwatergis [at] gmail.com
  ***************************************************************************/
 """
-import traceback
-
 """
 This code is inspired from the PointSamplingTool plugin Copyright (C) 2008 Borys Jurgiel
 and qchainage plugin (C) 2012 by Werner Macho
 """
 
+import traceback
+from qgis.PyQt.QtCore import QMetaType
 import qgis.PyQt
 from qgis.core import QgsFeature, QgsField, QgsFields, QgsProject, QgsApplication, QgsRaster, QgsVectorLayer, \
     QgsUnitTypes, QgsWkbTypes
@@ -58,9 +58,9 @@ def create_points_at(startpoint, endpoint, distance, geom, fid,unit): #original 
     # set the first point at startpoint
     point = geom.interpolate(startpoint)
 
-    field_id = QgsField(name="id", type=qgis.PyQt.QtCore.QVariant.Int)
-    field = QgsField(name="dist", type=qgis.PyQt.QtCore.QVariant.Double)
-    field2 = QgsField(name="unit", type=qgis.PyQt.QtCore.QVariant.String)
+    field_id = QgsField(name="id", type=QMetaType.Type.Int)
+    field = QgsField(name="dist", type=QMetaType.Type.Double)
+    field2 = QgsField(name="unit", type=QMetaType.Type.QString)
     fields = QgsFields()
 
     fields.append(field_id)
@@ -107,9 +107,9 @@ def points_along_line(layerout, startpoint, endpoint, distance, layer):#,selecte
         QgsUnitTypes.DistanceFeet: 'Feet',
         QgsUnitTypes.DistanceUnknownUnit: 'Unknown'}
     unit = unit_dic.get(units, 'Unknown')
-    provider.addAttributes([QgsField("fid", qgis.PyQt.QtCore.QVariant.Int)])
-    provider.addAttributes([QgsField("cum_dist", qgis.PyQt.QtCore.QVariant.Int)])
-    provider.addAttributes([QgsField("unit", qgis.PyQt.QtCore.QVariant.String)])
+    provider.addAttributes([QgsField("fid", QMetaType.Type.Int)])
+    provider.addAttributes([QgsField("cum_dist", QMetaType.Type.Int)])
+    provider.addAttributes([QgsField("unit", QMetaType.Type.QString)])
 
     # Loop through all (selected) features
     for feature in layer.getSelectedFeatures():

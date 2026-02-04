@@ -286,11 +286,17 @@ class NewDb(object):
 
         execute_sqlfile(get_full_filename('insert_obs_points_triggers_postgis.sql'), dbconnection)
 
-        try:
-            execute_sqlfile(get_full_filename('insert_functions_postgis.sql'), dbconnection)
-        except:
-            execute_sqlfile(get_full_filename('insert_functions_postgis_pg17.sql'), dbconnection)
-            pass
+        pg_version = dbconnection.conn.server_version / 10000
+        if pg_version > 17:
+            try:
+                execute_sqlfile(get_full_filename('insert_functions_postgis_pg17.sql'), dbconnection)
+            except:
+                execute_sqlfile(get_full_filename('insert_functions_postgis.sql'), dbconnection)
+        else:
+            try:
+                execute_sqlfile(get_full_filename('insert_functions_postgis.sql'), dbconnection)
+            except:
+                execute_sqlfile(get_full_filename('insert_functions_postgis_pg17.sql'), dbconnection)
 
         self.add_metadata_to_about_db(dbconnection, created_tables_sqls,
                                       w_levels_logger_timezone=w_levels_logger_timezone,
@@ -316,7 +322,7 @@ class NewDb(object):
     def ask_for_locale(self):
         locales = [qgis.PyQt.QtCore.QLocale(qgis.PyQt.QtCore.QLocale.Swedish, qgis.PyQt.QtCore.QLocale.Sweden), qgis.PyQt.QtCore.QLocale(qgis.PyQt.QtCore.QLocale.English, qgis.PyQt.QtCore.QLocale.UnitedStates)]
         locale_names = [localeobj.name() for localeobj in locales]
-        locale_names.append(locale.getdefaultlocale()[0])
+        locale_names.append(locale.getlocale()[0])
         locale_names = list(set(locale_names))
         question = common_utils.NotFoundQuestion(dialogtitle=ru(QCoreApplication.translate('NewDb', 'User input needed')),
              msg=ru(QCoreApplication.translate('NewDb', 'Supply locale for the database.\nCurrently, only locale sv_SE has special meaning,\nall other locales will use english.')),

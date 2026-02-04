@@ -26,7 +26,7 @@ def x(mock_askuser):
         elif args[1].startswith('Do you want to import all'):
             mock_result.result = 0
             return mock_result
-        elif args[1].startswith('Please note!\nForeign keys'):
+        elif args[1].startswith('Note:\nForeign keys'):
             mock_result.result = 1
             return mock_result
         elif args[1].startswith('Please note!\nThere are'):

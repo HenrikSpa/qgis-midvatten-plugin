@@ -765,7 +765,7 @@ class TestFieldLoggerImporterDb(utils_for_tests.MidvattenTestPostgisDbSv):
             @mock.patch('midvatten.tools.import_fieldlogger.midvatten_utils.QtWidgets.QFileDialog.getOpenFileNames')
             @mock.patch('midvatten.tools.import_fieldlogger.midvatten_utils.QtWidgets.QInputDialog.getText')
             @mock.patch('midvatten.tools.import_fieldlogger.common_utils.MessagebarAndLog')
-
+            #p_question = common_utils.Askuser("YesNo", '\n'.join(import_messages), ru(QCoreApplication.translate('midv_data_importer', "Info")))
             def _test(self, filename, mock_MessagebarAndLog, mock_charset, mock_savefilename, mock_ask_instrument, mock_askuser):
                 mock_charset.return_value = ('utf-8', True)
                 mock_savefilename.return_value = [[filename]]
@@ -780,10 +780,10 @@ class TestFieldLoggerImporterDb(utils_for_tests.MidvattenTestPostgisDbSv):
                         elif args[1].startswith('Do you want to import all'):
                             mock_result.result = 0
                             return mock_result
-                        elif args[1].startswith('Please note!\nForeign keys'):
+                        elif args[1].startswith("""Note:\nForeign keys will be imported silently.\nProceed with import?"""):
                             mock_result.result = 1
                             return mock_result
-                        elif args[1].startswith('Please note!\nThere are'):
+                        elif '(see log for more info about removed rows)' in args[1]:
                             mock_result.result = 1
                             return mock_result
                         elif args[1].startswith('It is a strong recommendation'):

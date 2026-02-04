@@ -83,7 +83,7 @@ class TestGeneralCsvGui(utils_for_tests.MidvattenTestSpatialiteDbSv):
                                 elif args[1].startswith('Do you want to import all'):
                                     mock_result.result = 0
                                     return mock_result
-                                elif args[1].startswith('Please note!\nForeign keys'):
+                                elif args[1].startswith('Note:\nForeign keys'):
                                     mock_result.result = 1
                                     return mock_result
                                 elif args[1].startswith('Please note!\nThere are'):
@@ -151,7 +151,7 @@ class TestGeneralCsvGui(utils_for_tests.MidvattenTestSpatialiteDbSv):
                                 elif args[1].startswith('Do you want to import all'):
                                     mock_result.result = 0
                                     return mock_result
-                                elif args[1].startswith('Please note!\nForeign keys'):
+                                elif args[1].startswith('Note:\nForeign keys'):
                                     mock_result.result = 1
                                     return mock_result
                                 elif args[1].startswith('Please note!\nThere are'):
@@ -227,7 +227,7 @@ class TestGeneralCsvGui(utils_for_tests.MidvattenTestSpatialiteDbSv):
                                 elif args[1].startswith('Do you want to import all'):
                                     mock_result.result = 0
                                     return mock_result
-                                elif args[1].startswith('Please note!\nForeign keys'):
+                                elif args[1].startswith('Note:\nForeign keys'):
                                     mock_result.result = 1
                                     return mock_result
                                 elif args[1].startswith('Please note!\nThere are'):
@@ -302,7 +302,7 @@ class TestGeneralCsvGui(utils_for_tests.MidvattenTestSpatialiteDbSv):
                                 elif args[1].startswith('Do you want to import all'):
                                     mock_result.result = 0
                                     return mock_result
-                                elif args[1].startswith('Please note!\nForeign keys'):
+                                elif args[1].startswith('Note:\nForeign keys'):
                                     mock_result.result = 1
                                     return mock_result
                                 elif args[1].startswith('Please note!\nThere are'):
@@ -368,7 +368,7 @@ class TestGeneralCsvGui(utils_for_tests.MidvattenTestSpatialiteDbSv):
                                 elif args[1].startswith('Do you want to import all'):
                                     mock_result.result = 0
                                     return mock_result
-                                elif args[1].startswith('Please note!\nForeign keys'):
+                                elif args[1].startswith('Note:\nForeign keys'):
                                     mock_result.result = 1
                                     return mock_result
                                 elif args[1].startswith('Please note!\nThere are'):
@@ -437,7 +437,7 @@ class TestGeneralCsvGui(utils_for_tests.MidvattenTestSpatialiteDbSv):
                                 elif args[1].startswith('Do you want to import all'):
                                     mock_result.result = 0
                                     return mock_result
-                                elif args[1].startswith('Please note!\nForeign keys'):
+                                elif args[1].startswith('Note:\nForeign keys'):
                                     mock_result.result = 1
                                     return mock_result
                                 elif args[1].startswith('Please note!\nThere are'):
@@ -509,7 +509,7 @@ class TestGeneralCsvGui(utils_for_tests.MidvattenTestSpatialiteDbSv):
                                 elif args[1].startswith('Do you want to import all'):
                                     mock_result.result = 0
                                     return mock_result
-                                elif args[1].startswith('Please note!\nForeign keys'):
+                                elif args[1].startswith('Note:\nForeign keys'):
                                     mock_result.result = 1
                                     return mock_result
                                 elif args[1].startswith('Please note!\nThere are'):
@@ -581,7 +581,7 @@ class TestGeneralCsvGui(utils_for_tests.MidvattenTestSpatialiteDbSv):
                                 elif args[1].startswith('Do you want to import all'):
                                     mock_result.result = 0
                                     return mock_result
-                                elif args[1].startswith('Please note!\nForeign keys'):
+                                elif args[1].startswith('Note:\nForeign keys'):
                                     mock_result.result = 1
                                     return mock_result
                                 elif args[1].startswith('Please note!\nThere are'):
@@ -650,7 +650,7 @@ class TestGeneralCsvGui(utils_for_tests.MidvattenTestSpatialiteDbSv):
                                 elif args[1].startswith('Do you want to import all'):
                                     mock_result.result = 0
                                     return mock_result
-                                elif args[1].startswith('Please note!\nForeign keys'):
+                                elif args[1].startswith('Note:\nForeign keys'):
                                     mock_result.result = 1
                                     return mock_result
                                 elif args[1].startswith('Please note!\nThere are'):
@@ -717,7 +717,7 @@ class TestGeneralCsvGui(utils_for_tests.MidvattenTestSpatialiteDbSv):
                                 elif args[1].startswith('Do you want to import all'):
                                     mock_result.result = 0
                                     return mock_result
-                                elif args[1].startswith('Please note!\nForeign keys'):
+                                elif args[1].startswith('Note:\nForeign keys'):
                                     mock_result.result = 1
                                     return mock_result
                                 elif args[1].startswith('Please note!\nThere are'):
@@ -783,7 +783,7 @@ class TestGeneralCsvGui(utils_for_tests.MidvattenTestSpatialiteDbSv):
                                 elif args[1].startswith('Do you want to import all'):
                                     mock_result.result = 0
                                     return mock_result
-                                elif args[1].startswith('Please note!\nForeign keys'):
+                                elif args[1].startswith('Note:\nForeign keys'):
                                     mock_result.result = 1
                                     return mock_result
                                 elif args[1].startswith('Please note!\nThere are'):
@@ -849,7 +849,7 @@ class TestGeneralCsvGui(utils_for_tests.MidvattenTestSpatialiteDbSv):
                                 elif args[1].startswith('Do you want to import all'):
                                     mock_result.result = 0
                                     return mock_result
-                                elif args[1].startswith('Please note!\nForeign keys'):
+                                elif args[1].startswith('Note:\nForeign keys'):
                                     mock_result.result = 1
                                     return mock_result
                                 elif args[1].startswith('Please note!\nThere are'):
@@ -918,7 +918,7 @@ class TestGeneralCsvGui(utils_for_tests.MidvattenTestSpatialiteDbSv):
                                 elif args[1].startswith('Do you want to import all'):
                                     mock_result.result = 0
                                     return mock_result
-                                elif args[1].startswith('Please note!\nForeign keys'):
+                                elif args[1].startswith('Note:\nForeign keys'):
                                     mock_result.result = 1
                                     return mock_result
                                 elif args[1].startswith('Please note!\nThere are'):
@@ -984,7 +984,7 @@ class TestGeneralCsvGui(utils_for_tests.MidvattenTestSpatialiteDbSv):
                                 elif args[1].startswith('Do you want to import all'):
                                     mock_result.result = 0
                                     return mock_result
-                                elif args[1].startswith('Please note!\nForeign keys'):
+                                elif args[1].startswith('Note:\nForeign keys'):
                                     mock_result.result = 1
                                     return mock_result
                                 elif args[1].startswith('Please note!\nThere are'):
@@ -1052,7 +1052,7 @@ class TestGeneralCsvGui(utils_for_tests.MidvattenTestSpatialiteDbSv):
                                 elif args[1].startswith('Do you want to import all'):
                                     mock_result.result = 0
                                     return mock_result
-                                elif args[1].startswith('Please note!\nForeign keys'):
+                                elif args[1].startswith('Note:\nForeign keys'):
                                     mock_result.result = 1
                                     return mock_result
                                 elif args[1].startswith('Please note!\nThere are'):
@@ -1124,7 +1124,7 @@ class TestGeneralCsvGui(utils_for_tests.MidvattenTestSpatialiteDbSv):
                                 elif args[1].startswith('Do you want to import all'):
                                     mock_result.result = 0
                                     return mock_result
-                                elif args[1].startswith('Please note!\nForeign keys'):
+                                elif args[1].startswith('Note:\nForeign keys'):
                                     mock_result.result = 1
                                     return mock_result
                                 elif args[1].startswith('Please note!\nThere are'):
@@ -1212,7 +1212,7 @@ class TestGeneralCsvGuiFromLayer(utils_for_tests.MidvattenTestSpatialiteDbSv):
                     elif args[1].startswith('Do you want to import all'):
                         mock_result.result = 0
                         return mock_result
-                    elif args[1].startswith('Please note!\nForeign keys'):
+                    elif args[1].startswith('Note:\nForeign keys'):
                         mock_result.result = 1
                         return mock_result
                     elif args[1].startswith('Please note!\nThere are'):
@@ -1251,7 +1251,7 @@ class TestGeneralCsvGuiFromLayer(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert test_string == reference_string
 
     def test_import_obs_points_from_layer_other_srid(self):
-        _fields = [QgsField('obsid', QVariant.String, QVariant.typeToName(QVariant.String))]
+        _fields = [QgsField('obsid', QMetaType.Type.QString)]
         data = [['obs1']]
         geometries = [QgsGeometry.fromWkt('POINT(14.786846 58.639219)')]
         self.vlayer = utils_for_tests.create_vectorlayer(_fields, data, geometries, 'Point', crs=4326,
@@ -1280,7 +1280,7 @@ class TestGeneralCsvGuiFromLayer(utils_for_tests.MidvattenTestSpatialiteDbSv):
                     elif args[1].startswith('Do you want to import all'):
                         mock_result.result = 0
                         return mock_result
-                    elif args[1].startswith('Please note!\nForeign keys'):
+                    elif args[1].startswith('Note:\nForeign keys'):
                         mock_result.result = 1
                         return mock_result
                     elif args[1].startswith('Please note!\nThere are'):

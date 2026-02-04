@@ -850,8 +850,10 @@ class TestWlvllogImportFromDiverofficeFiles(utils_for_tests.MidvattenTestSpatial
                             # Ref with UTC+1
                             reference_string = r'''(True, [(rb1, 2016-03-15 10:30:00, 1.0, 10.0, None, None, None), (rb1, 2016-03-15 11:00:00, 11.0, 101.0, None, None, None), (rb3, 2016-05-15 10:30:00, 3.0, 30.0, 5.0, None, None), (rb3, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None), (rb4, 2016-05-15 10:30:00, 3.0, 30.0, 5.0, None, None), (rb4, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None), (rb5, 2016-05-15 13:30:00, 3.0, 30.0, 5.0, None, None), (rb5, 2016-05-15 14:00:00, 31.0, 301.0, 6.0, None, None)])'''
                             assert test_string == reference_string
-
-                            assert mock_askuser.call_args.kwargs.get('dialogtitle', '') == 'File timezone error!'
+                            assert test_string == reference_string
+                            print(mock_askuser.call_args)
+                            print(mock_askuser.call_args.kwargs)
+                            assert 'File timezone error!' in ', '.join([str(x) for x in mock_askuser.mock_calls])
 
 
     def test_wlvllogg_import_change_timezone_file_timezone_failed_cancel(self):

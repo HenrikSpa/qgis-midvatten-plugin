@@ -1557,10 +1557,11 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         self.ms.save_settings('secplot_images_zorder')
         self.ms.save_settings('secplot_images_clip')
 
-        #Don't save plot min/max for next plot. If a specific is to be used, it should be set in a saved template file.
+
         loaded_template = copy.deepcopy(self.secplot_templates.loaded_template)
-        loaded_template["Axes_set_xlim"] = None
-        loaded_template["Axes_set_ylim"] = None
+        # Don't save plot min/max for next plot. If a specific is to be used, it should be set in a saved template file. // Testing if
+        #loaded_template["Axes_set_xlim"] = None
+        #loaded_template["Axes_set_ylim"] = None
         common_utils.save_stored_settings(self.ms, loaded_template, 'secplot_loaded_template')
         self.ms.save_settings('secplot_templates')
         

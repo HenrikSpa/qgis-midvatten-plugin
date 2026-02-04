@@ -990,3 +990,5 @@ class MatplotlibStyles(object):
                 item.setSelected(True)
             else:
                 item.setSelected(False)
+
+

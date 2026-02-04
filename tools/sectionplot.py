@@ -57,6 +57,7 @@ import matplotlib.dates as mdates
 from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.common_utils import returnunicode as ru, fn_timer, UsageError, LEGEND_NCOL_KEY
 from midvatten.tools.utils.midvatten_utils import PlotTemplates
+from midvatten.tools.utils.gui_utils import DetatchFigureButton
 from midvatten.tools.utils.matplotlib_replacements import NavigationToolbarWithSignal as NavigationToolbar
 import midvatten.definitions.midvatten_defs as defs
 from midvatten.tools.utils import matplotlib_replacements
@@ -196,6 +197,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         self.layoutplot.addWidget(self.mpltoolbar)
 
         pick_annotator = common_utils.PickAnnotator(self.figure, canvas=self.canvas)
+        self.figure._midv_detatch_figure_button = DetatchFigureButton(self.figure)
 
     def tabwidget_resize(self, tabwidget):
         current_index = tabwidget.currentIndex()

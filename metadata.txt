@@ -23,6 +23,7 @@ icon=icons/MidvSettings.png
 changelog=
         Version 1.9.0b6:
         - SectionPlot: Added tight_layout as standard when the size is set to dynamic.
+        - SectionPlot: Added button to detach the figure from the section plot tool.
         Version 1.9.0b5:
         - SectionPlot: Fixes for new matplotlib-version.
         Version 1.9.0b4:

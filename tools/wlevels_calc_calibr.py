@@ -56,7 +56,7 @@ import datetime
 from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.common_utils import returnunicode as ru, fn_timer
 from midvatten.tools.utils.date_utils import dateshift, datestring_to_date, long_dateformat, change_timezone
-from midvatten.tools.utils.gui_utils import add_action_to_navigation_toolbar
+from midvatten.tools.utils.gui_utils import add_action_to_navigation_toolbar, NavigationButton
 
 
 Calibr_Ui_Dialog =  uic.loadUiType(os.path.join(os.path.dirname(__file__),'..','ui', 'calibr_logger_dialog_integrated.ui'))[0]
@@ -1138,29 +1138,6 @@ class Calibrlogger(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog): # An inst
             self.deactivate_pan_zoom()
             self.move_nodes_button.uncheck()
         self.period_selector.set_active(on)
-
-
-class NavigationButton(QtWidgets.QWidget):
-    def __init__(self, parent, fig):
-        super().__init__(parent)
-        self.parent = parent
-        self.fig = fig
-        self.actions = {}
-
-    def connect_toolbar(self):
-        self.canvas = self.fig.canvas
-        self.mpltoolbar = self.canvas.toolbar
-        self._add_buttons_to_toolbar()
-
-    def uncheck(self):
-        for v in self.actions.values():
-            v.setChecked(False)
-
-    def _add_buttons_to_toolbar(self):
-        self.actions = {}
-        for text, callback, tooltip_text, icon in self._button_setup:
-            self.actions[text] = add_action_to_navigation_toolbar(self.mpltoolbar, text, callback, tooltip_text, icon,
-                                                                  set_checkable=True)
 
 
 class SelectNodesButton(NavigationButton):

@@ -23,11 +23,15 @@ from __future__ import absolute_import
 
 import copy
 from builtins import object
+import traceback
+import os
 
 import qgis.PyQt
-from qgis.PyQt import QtCore
+from qgis.PyQt import QtCore, QtWidgets
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtGui import QIcon
+
+import matplotlib.pyplot as plt
 
 from midvatten.tools.utils.common_utils import returnunicode as ru, MessagebarAndLog, sql_failed_msg
 from midvatten.tools.utils.date_utils import datestring_to_date
@@ -284,3 +288,59 @@ def add_action_to_navigation_toolbar(toolbar, text, callback, tooltip_text, icon
     if tooltip_text is not None:
         a.setToolTip(tooltip_text)
     return a
+
+
+class NavigationButton(QtWidgets.QWidget):
+    def __init__(self, parent, fig):
+        super().__init__(parent)
+        self.parent = parent
+        self.fig = fig
+        self.actions = {}
+
+    def button(self):
+        return list(self.actions.values())[0]
+
+    def connect_toolbar(self):
+        self.canvas = self.fig.canvas
+        self.mpltoolbar = self.canvas.toolbar
+        self._add_buttons_to_toolbar()
+
+    def uncheck(self):
+        for v in self.actions.values():
+            v.setChecked(False)
+
+    def _add_buttons_to_toolbar(self):
+        self.actions = {}
+        for text, callback, tooltip_text, icon in self._button_setup:
+            self.actions[text] = add_action_to_navigation_toolbar(self.mpltoolbar, text, callback, tooltip_text, icon,
+                                                                  set_checkable=True)
+
+
+class DetatchFigureButton(NavigationButton):
+    """
+
+    """
+    def __init__(self, fig, parent=None):
+        super().__init__(parent, fig)
+        self._button_setup = [("detatch fig", self._detatch_button, "Detatch fig",
+                               os.path.join(os.path.dirname(__file__), '..', '..', 'icons', 'detatch_figure.png'))]
+        self.connect_toolbar()
+
+    def _detatch_button(self):
+        self.button().setChecked(False)
+        fignums = plt.get_fignums()
+        max_fignums = 0 if not fignums else max(plt.get_fignums())
+        plt._backend_mod.new_figure_manager_given_figure(max_fignums, self.fig)
+
+        title = getattr(self.fig, 'midv_figname', '')
+        if title:
+            try:
+                self.fig.canvas.manager.set_window_title(title)
+            except AttributeError:
+                e = traceback.format_exc()
+                try:
+                    self.fig.canvas.set_window_title(title)
+                except AttributeError:
+                    print(f"Error, {e}, followup:\n{traceback.format_exc()}")
+
+        self.fig.show()

@@ -893,12 +893,12 @@ class Midvatten(object):
         #else:
         #    midvatten_utils.MessagebarAndLog.critical(bar_msg=ru(QCoreApplication.translate("Midvatten", 'You must select at least two objects in the obs_points layer')))
         #    raise midvatten_utils.UsageError()
-
         try:
-            self.myplot.do_it(self.ms,selected_obspoints,selected_layer)
-        except:
-            self.myplot = SectionPlot(self.iface.mainWindow(), self.iface)
-            self.myplot.do_it(self.ms,selected_obspoints,selected_layer)
+            self.sectionplot.create_new_plot(self.ms, selected_obspoints, selected_layer)
+        except AttributeError:
+            #traceback.print_exc()
+            self.sectionplot = SectionPlot(self.iface.mainWindow(), self.iface)
+            self.sectionplot.create_new_plot(self.ms, selected_obspoints, selected_layer)
 
     @common_utils.general_exception_handler
     def plot_xy(self):

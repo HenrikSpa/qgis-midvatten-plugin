@@ -371,6 +371,11 @@ class DbConnectionManager(object):
     def placeholder_sign(self):
         return placeholder_sign(self)
 
+    def placeholder_string(self, count):
+        if not isinstance(count, int):
+            count = len(count)
+        return ', '.join([self.placeholder_sign()]*count)
+
 def connect_with_spatialite_connect(dbpath):
     conn = spatialite_connect(dbpath, detect_types=sqlite.PARSE_DECLTYPES | sqlite.PARSE_COLNAMES)
     return conn

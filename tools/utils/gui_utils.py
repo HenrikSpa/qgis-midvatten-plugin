@@ -25,6 +25,7 @@ import copy
 from builtins import object
 import traceback
 import os
+from functools import partial
 
 import qgis.PyQt
 from qgis.PyQt import QtCore, QtWidgets
@@ -316,17 +317,21 @@ class NavigationButton(QtWidgets.QWidget):
                                                                   set_checkable=True)
 
 
-class DetatchFigureButton(NavigationButton):
+class DetachFigureButton(NavigationButton):
     """
 
     """
-    def __init__(self, fig, parent=None):
+    def __init__(self, fig, parent=None, callback=None):
         super().__init__(parent, fig)
-        self._button_setup = [("detatch fig", self._detatch_button, "Detatch fig",
-                               os.path.join(os.path.dirname(__file__), '..', '..', 'icons', 'detatch_figure.png'))]
+        if callback is None:
+            callback = self._detach_button
+        else:
+            callback = partial(callback, self)
+        self._button_setup = [("detach fig", callback, "Detach fig",
+                               os.path.join(os.path.dirname(__file__), '..', '..', 'icons', 'detach_figure.png'))]
         self.connect_toolbar()
 
-    def _detatch_button(self):
+    def _detach_button(self):
         self.button().setChecked(False)
         fignums = plt.get_fignums()
         max_fignums = 0 if not fignums else max(plt.get_fignums())
@@ -342,5 +347,5 @@ class DetatchFigureButton(NavigationButton):
                     self.fig.canvas.set_window_title(title)
                 except AttributeError:
                     print(f"Error, {e}, followup:\n{traceback.format_exc()}")
-
+        print(f"In detach_figure for button")
         self.fig.show()

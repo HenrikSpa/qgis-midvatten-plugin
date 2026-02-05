@@ -526,7 +526,7 @@ p, li { white-space: pre-wrap; }
                            </property>
                            <layout class="QVBoxLayout" name="verticalLayout_6">
                             <item>
-                             <widget class="QListWidget" name="inData">
+                             <widget class="QListWidget" name="dem_list">
                               <property name="sizePolicy">
                                <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
                                 <horstretch>0</horstretch>
@@ -610,6 +610,9 @@ p, li { white-space: pre-wrap; }
                               </property>
                               <property name="checkable">
                                <bool>true</bool>
+                              </property>
+                              <property name="checked">
+                               <bool>false</bool>
                               </property>
                               <layout class="QGridLayout" name="gridLayout_3">
                                <item row="2" column="0">

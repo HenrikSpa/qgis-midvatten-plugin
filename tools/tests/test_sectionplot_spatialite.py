@@ -33,7 +33,7 @@ from qgis.core import QgsProject, QgsVectorLayer
 from midvatten.tools.utils import db_utils, gui_utils
 from midvatten.tools.tests import utils_for_tests
 from midvatten.tools.utils.midvatten_utils import anything_to_string_representation
-
+from midvatten.tools.sectionplot import get_legend_items_labels
 
 @attr(status='on')
 class TestSectionPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
@@ -79,26 +79,26 @@ class TestSectionPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
             mock_mapcanvas = mock_iface.mapCanvas.return_value
             mock_mapcanvas.layerCount.return_value = 0
             self.midvatten.plot_section()
-            self.myplot = self.midvatten.myplot
-            self.myplot.drillstoplineEdit.setText("%berg%")
-            self.myplot.draw_plot()
+            self.sectionplot = self.midvatten.sectionplot
+            self.sectionplot.drillstoplineEdit.setText("%berg%")
+            self.sectionplot.draw_plot()
         _test_plot_section(self)
-
+        print(self.sectionplot.figure._midv_obsids_x_position.keys())
         assert """call.info(log_msg='Settings {""" in str(mock_messagebar.mock_calls)
-        assert self.myplot.drillstoplineEdit.text() == '%berg%'
-        assert anything_to_string_representation(list(self.myplot.obsids_x_position.keys())) == '''["P1", "P2", "P3"]'''
+        assert self.sectionplot.drillstoplineEdit.text() == '%berg%'
+        assert anything_to_string_representation(list(self.sectionplot.figure._midv_obsids_x_position.keys())) == '''["P1", "P2", "P3"]'''
         assert not mock_messagebar.warning.called
         assert not mock_messagebar.critical.called
         #print(str(mock_messagebar.mock_calls))
-        print("self.myplot.p {} self.myplot.get_legend_items_labels()[1] {}".format(str(self.myplot.p),
-                                                              str(self.myplot.get_legend_items_labels()[1])))
-        assert len(self.myplot.get_legend_items_labels()[0]) == len(self.myplot.get_legend_items_labels()[1])
-        assert len(self.myplot.p) - 1 == len(self.myplot.get_legend_items_labels()[0])  # The bars should not be labeled, so there is one less label than plot.
+        print("self.sectionplot.figure._midv_p {} get_legend_items_labels(self.sectionplot.figure._midv_p)[1] {}".format(str(self.sectionplot.figure._midv_p),
+                                                              str(get_legend_items_labels(self.sectionplot.figure._midv_p)[1])))
+        assert len(get_legend_items_labels(self.sectionplot.figure._midv_p)[0]) == len(get_legend_items_labels(self.sectionplot.figure._midv_p)[1])
+        assert len(self.sectionplot.figure._midv_p) - 1 == len(get_legend_items_labels(self.sectionplot.figure._midv_p)[0])  # The bars should not be labeled, so there is one less label than plot.
 
     @mock.patch('midvatten.tools.sectionplot.common_utils.MessagebarAndLog')
     def test_plot_section_no_linelayer_message(self, mock_messagebar):
 
-        @mock.patch('midvatten.tools.sectionplot.SectionPlot.do_it')
+        @mock.patch('midvatten.tools.sectionplot.SectionPlot.create_new_plot')
         @mock.patch('midvatten.tools.sectionplot.common_utils.getselectedobjectnames', autospec=True)
         @mock.patch('qgis.utils.iface', autospec=True)
         def _test(self, mock_iface, mock_getselectedobjectnames, mock_sectionplot):
@@ -137,14 +137,14 @@ class TestSectionPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
             mock_mapcanvas = mock_iface.mapCanvas.return_value
             mock_mapcanvas.layerCount.return_value = 0
             self.midvatten.plot_section()
-            self.myplot = self.midvatten.myplot
-            self.myplot.drillstoplineEdit.setText("%berg%")
-            self.myplot.draw_plot()
+            self.sectionplot = self.midvatten.sectionplot
+            self.sectionplot.drillstoplineEdit.setText("%berg%")
+            self.sectionplot.draw_plot()
         _test_plot_section(self)
 
         assert """call.info(log_msg='Settings {""" in str(mock_messagebar.mock_calls)
-        assert self.myplot.drillstoplineEdit.text() == '%berg%'
-        assert anything_to_string_representation(list(self.myplot.obsids_x_position.keys())) == '''["P1", "P2", "P3"]'''
+        assert self.sectionplot.drillstoplineEdit.text() == '%berg%'
+        assert anything_to_string_representation(list(self.sectionplot.figure._midv_obsids_x_position.keys())) == '''["P1", "P2", "P3"]'''
         assert not mock_messagebar.warning.called
         assert not mock_messagebar.critical.called
 
@@ -169,7 +169,7 @@ class TestSectionPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
             mock_mapcanvas.layerCount.return_value = 0
             self.midvatten.plot_section()
             print(str(mock_messagebar.mock_calls))
-            self.myplot = self.midvatten.myplot
+            self.sectionplot = self.midvatten.sectionplot
         _test(self)
 
         print(str(mock_messagebar.mock_calls))
@@ -196,10 +196,10 @@ class TestSectionPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
             mock_mapcanvas = mock_iface.mapCanvas.return_value
             mock_mapcanvas.layerCount.return_value = 0
             self.midvatten.plot_section()
-            self.myplot = self.midvatten.myplot
-            gui_utils.set_combobox(self.myplot.wlvltableComboBox, 'w_levels')
-            self.myplot.datetimetextEdit.append('2015')
-            self.myplot.draw_plot()
+            self.sectionplot = self.midvatten.sectionplot
+            gui_utils.set_combobox(self.sectionplot.wlvltableComboBox, 'w_levels')
+            self.sectionplot.datetimetextEdit.append('2015')
+            self.sectionplot.draw_plot()
 
         _test(self)
 
@@ -227,24 +227,24 @@ class TestSectionPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
             mock_mapcanvas = mock_iface.mapCanvas.return_value
             mock_mapcanvas.layerCount.return_value = 0
             self.midvatten.plot_section()
-            self.myplot = self.midvatten.myplot
-            gui_utils.set_combobox(self.myplot.wlvltableComboBox, 'w_levels')
-            self.myplot.datetimetextEdit.append('2015')
-            self.myplot.datetimetextEdit.append('2015')
-            self.myplot.secplot_templates.loaded_template['wlevels_Axes_plot'] = {'2015': {'label': '1', 'linestyle': '-', 'linewidth': 1, 'marker': 'v', 'markersize': 6, 'zorder': 8},
+            self.sectionplot = self.midvatten.sectionplot
+            gui_utils.set_combobox(self.sectionplot.wlvltableComboBox, 'w_levels')
+            self.sectionplot.datetimetextEdit.append('2015')
+            self.sectionplot.datetimetextEdit.append('2015')
+            self.sectionplot.secplot_templates.loaded_template['wlevels_Axes_plot'] = {'2015': {'label': '1', 'linestyle': '-', 'linewidth': 1, 'marker': 'v', 'markersize': 6, 'zorder': 8},
                                                                                   '2015_2': {'label': '2', 'linestyle': '-', 'linewidth': 1, 'marker': 'v', 'markersize': 6, 'zorder': 8},
                                                                                   'DEFAULT': {'label': 'DEFAULT', 'linestyle': '-', 'linewidth': 1, 'marker': 'v', 'markersize': 6, 'zorder': 8}}
-            self.myplot.draw_plot()
+            self.sectionplot.draw_plot()
 
         _test(self)
 
         print(str(mock_messagebar.mock_calls))
         assert not mock_messagebar.warning.called
         assert not mock_messagebar.critical.called
-        labels = [p.get_label() for p in self.myplot.p]
+        labels = [p.get_label() for p in self.sectionplot.figure._midv_p]
         print(str(labels))
         assert anything_to_string_representation(labels) == '''["1", "2", "drillstop like %berg%", "frame"]'''
-        assert anything_to_string_representation(self.myplot.water_level_labels_duplicate_check) == '''["2015", "2015_2"]'''
+        assert anything_to_string_representation(self.sectionplot.water_level_labels_duplicate_check) == '''["2015", "2015_2"]'''
 
     @mock.patch('midvatten.tools.sectionplot.common_utils.MessagebarAndLog')
     def test_plot_section_length_along_slope(self, mock_messagebar):
@@ -266,18 +266,19 @@ class TestSectionPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
             mock_mapcanvas = mock_iface.mapCanvas.return_value
             mock_mapcanvas.layerCount.return_value = 0
             midvatten.plot_section()
-            self.myplot = midvatten.myplot
-            self.myplot.drillstoplineEdit.setText("%berg%")
-            self.myplot.draw_plot()
+            self.sectionplot = midvatten.sectionplot
+            self.sectionplot.drillstoplineEdit.setText("%berg%")
+            self.sectionplot.draw_plot()
         _test(self.midvatten, self.vlayer)
 
         test_string = utils_for_tests.create_test_string({k: round(v, 6)
-                                                          for k, v in self.myplot.obsids_x_position.items()})
+                                                          for k, v in self.sectionplot.figure._midv_obsids_x_position.items()})
         print(str(test_string))
         print(str(mock_messagebar.mock_calls))
         assert test_string == '{P1: 0.0, P2: 0.624695, P3: 1.874085}'
         assert not mock_messagebar.warning.called
         assert not mock_messagebar.critical.called
+
 
     @mock.patch('midvatten.tools.sectionplot.common_utils.MessagebarAndLog')
     def test_plot_section_length_along(self, mock_messagebar):
@@ -298,13 +299,13 @@ class TestSectionPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
             mock_mapcanvas = mock_iface.mapCanvas.return_value
             mock_mapcanvas.layerCount.return_value = 0
             midvatten.plot_section()
-            myplot = midvatten.myplot
+            myplot = midvatten.sectionplot
             myplot.drillstoplineEdit.setText("%berg%")
             myplot.draw_plot()
             return myplot
         myplot = _test(self.midvatten, self.vlayer)
-
-        test_string = utils_for_tests.create_test_string(myplot.obsids_x_position)
+        print(myplot.figure._midv_obsids_x_position)
+        test_string = utils_for_tests.create_test_string(myplot.figure._midv_obsids_x_position)
         assert test_string == "{P1: 1.0, P2: 3.0, P3: 5.0}"
         assert mock.call.info(log_msg='Hidden features, obsids and length along section:\nP1;P2;P3\\1.0;3.0;5.0') in mock_messagebar.mock_calls
         assert not mock_messagebar.warning.called
@@ -330,17 +331,17 @@ class TestSectionPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
             mock_mapcanvas = mock_iface.mapCanvas.return_value
             mock_mapcanvas.layerCount.return_value = 0
             self.midvatten.plot_section()
-            self.myplot = self.midvatten.myplot
-            self.myplot.Stratigraphy_radioButton.setChecked(True)
-            self.myplot.Legend_checkBox.setChecked(True)
-            gui_utils.set_combobox(self.myplot.wlvltableComboBox, 'w_levels')
-            self.myplot.datetimetextEdit.append('2015')
-            self.myplot.draw_plot()
+            self.sectionplot = self.midvatten.sectionplot
+            self.sectionplot.Stratigraphy_radioButton.setChecked(True)
+            self.sectionplot.Legend_checkBox.setChecked(True)
+            gui_utils.set_combobox(self.sectionplot.wlvltableComboBox, 'w_levels')
+            self.sectionplot.datetimetextEdit.append('2015')
+            self.sectionplot.draw_plot()
         _test(self)
 
         print(str(mock_messagebar.mock_calls))
-        print(str(self.myplot.p))
-        assert len(self.myplot.get_legend_items_labels()[0]) == 2
+        print(str(self.sectionplot.figure._midv_p))
+        assert len(get_legend_items_labels(self.sectionplot.figure._midv_p)[0]) == 2
         #assert False
 
     @mock.patch('midvatten.tools.sectionplot.common_utils.MessagebarAndLog')
@@ -366,20 +367,20 @@ class TestSectionPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
             mock_mapcanvas = mock_iface.mapCanvas.return_value
             mock_mapcanvas.layerCount.return_value = 0
             self.midvatten.plot_section()
-            self.myplot = self.midvatten.myplot
-            self.myplot.Stratigraphy_radioButton.setChecked(True)
-            self.myplot.Legend_checkBox.setChecked(True)
-            gui_utils.set_combobox(self.myplot.wlvltableComboBox, 'w_levels')
-            self.myplot.datetimetextEdit.append('2015')
-            self.myplot.draw_plot()
+            self.sectionplot = self.midvatten.sectionplot
+            self.sectionplot.Stratigraphy_radioButton.setChecked(True)
+            self.sectionplot.Legend_checkBox.setChecked(True)
+            gui_utils.set_combobox(self.sectionplot.wlvltableComboBox, 'w_levels')
+            self.sectionplot.datetimetextEdit.append('2015')
+            self.sectionplot.draw_plot()
 
         _test(self)
 
         print(str(mock_messagebar.mock_calls))
-        print(str(self.myplot.p))
-        assert len(self.myplot.get_legend_items_labels()[0]) == len(self.myplot.get_legend_items_labels()[1])
-        print(str(self.myplot.get_legend_items_labels()[1]))
-        assert len(self.myplot.get_legend_items_labels()[0]) == 4
+        print(str(self.sectionplot.figure._midv_p))
+        assert len(get_legend_items_labels(self.sectionplot.figure._midv_p)[0]) == len(get_legend_items_labels(self.sectionplot.figure._midv_p)[1])
+        print(str(get_legend_items_labels(self.sectionplot.figure._midv_p)[1]))
+        assert len(get_legend_items_labels(self.sectionplot.figure._midv_p)[0]) == 4
 
     @mock.patch('midvatten.tools.sectionplot.common_utils.MessagebarAndLog')
     def test_plot_section_p_label_lengths_with_geology_changed_label(self, mock_messagebar):
@@ -404,28 +405,29 @@ class TestSectionPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
             mock_mapcanvas = mock_iface.mapCanvas.return_value
             mock_mapcanvas.layerCount.return_value = 0
             self.midvatten.plot_section()
-            self.myplot = self.midvatten.myplot
-            self.myplot.secplot_templates.loaded_template['geology_Axes_bar'] = {'sand': {'label': 'sandtest', 'edgecolor': 'black', 'zorder': 5},
+            self.sectionplot = self.midvatten.sectionplot
+            self.sectionplot.secplot_templates.loaded_template['geology_Axes_bar'] = {'sand': {'label': 'sandtest', 'edgecolor': 'black', 'zorder': 5},
                                                                                   'grus': {'label': 'grustest', 'edgecolor': 'black', 'zorder': 5},
                                                                                   'DEFAULT': {'edgecolor': 'black', 'zorder': 5}}
-            print("before: " + str(self.myplot.secplot_templates.loaded_template['geology_Axes_bar']))
-            self.myplot.Stratigraphy_radioButton.setChecked(True)
-            self.myplot.Legend_checkBox.setChecked(True)
-            gui_utils.set_combobox(self.myplot.wlvltableComboBox, 'w_levels')
-            self.myplot.datetimetextEdit.append('2015')
+            print("before: " + str(self.sectionplot.secplot_templates.loaded_template['geology_Axes_bar']))
+            self.sectionplot.Stratigraphy_radioButton.setChecked(True)
+            self.sectionplot.Legend_checkBox.setChecked(True)
+            gui_utils.set_combobox(self.sectionplot.wlvltableComboBox, 'w_levels')
+            self.sectionplot.datetimetextEdit.append('2015')
 
-            self.myplot.draw_plot()
+            self.sectionplot.draw_plot()
 
         _test(self)
 
         #print(str(mock_messagebar.mock_calls))
-        #print(str(self.myplot.p))
-        labels = [p.get_label() for p in self.myplot.p]
-        assert len(self.myplot.get_legend_items_labels()[0]) == len(self.myplot.get_legend_items_labels()[1])
-        assert len(self.myplot.get_legend_items_labels()[1]) == 4
+        #print(str(self.sectionplot.figure._midv_p))
+        labels = [p.get_label() for p in self.sectionplot.figure._midv_p]
+        assert len(get_legend_items_labels(self.sectionplot.figure._midv_p)[0]) == len(get_legend_items_labels(self.sectionplot.figure._midv_p)[1])
+        assert len(get_legend_items_labels(self.sectionplot.figure._midv_p)[1]) == 4
         assert anything_to_string_representation(labels) == '''["sandtest", "grustest", "2015", "drillstop like %berg%", "frame"]'''
-        assert anything_to_string_representation(self.myplot.water_level_labels_duplicate_check) == '''["2015"]'''
+        assert anything_to_string_representation(self.sectionplot.water_level_labels_duplicate_check) == '''["2015"]'''
 
+    @attr(status='only')
     @mock.patch('midvatten.tools.sectionplot.common_utils.MessagebarAndLog')
     def test_plot_section_with_w_levels_animation(self, mock_messagebar):
         db_utils.sql_alter_db('''INSERT INTO obs_lines (obsid, geometry) VALUES ('1', ST_GeomFromText('LINESTRING(633466.711659 6720684.24498, 633599.530455 6720727.016568)', 3006))''')
@@ -448,15 +450,16 @@ class TestSectionPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
             mock_mapcanvas = mock_iface.mapCanvas.return_value
             mock_mapcanvas.layerCount.return_value = 0
             self.midvatten.plot_section()
-            self.myplot = self.midvatten.myplot
-            gui_utils.set_combobox(self.myplot.wlvltableComboBox, 'w_levels')
-            self.myplot.interactive_groupbox.setChecked(True)
-            #self.myplot.datetimetextEdit.append('2015')
+            self.sectionplot = self.midvatten.sectionplot
+            gui_utils.set_combobox(self.sectionplot.wlvltableComboBox, 'w_levels')
+            self.sectionplot.interactive_groupbox.setChecked(True)
+            #self.sectionplot.datetimetextEdit.append('2015')
 
-            self.myplot.draw_plot()
-            return self.myplot
+            self.sectionplot.draw_plot()
+            return self.sectionplot
 
         myplot = _test(self)
+        print(myplot.figure.axes)
         print(str(mock_messagebar.mock_calls))
         assert myplot.interactive_groupbox.isChecked()
         assert len(myplot.figure.axes) > 1
@@ -485,16 +488,16 @@ class TestSectionPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
             mock_mapcanvas = mock_iface.mapCanvas.return_value
             mock_mapcanvas.layerCount.return_value = 0
             self.midvatten.plot_section()
-            self.myplot = self.midvatten.myplot
-            gui_utils.set_combobox(self.myplot.wlvltableComboBox, 'w_levels')
-            self.myplot.datetimetextEdit.append('2015')
-            self.myplot.draw_plot()
+            self.sectionplot = self.midvatten.sectionplot
+            gui_utils.set_combobox(self.sectionplot.wlvltableComboBox, 'w_levels')
+            self.sectionplot.datetimetextEdit.append('2015')
+            self.sectionplot.draw_plot()
 
         _test(self)
-        #print(str(self.myplot.obsid_annotation))
-        print(str(self.myplot.obsid_annotation))
+        #print(str(self.sectionplot.figure._midv_obsid_annotation))
+        print(str(self.sectionplot.figure._midv_obsid_annotation))
         #print(str(mock_messagebar.mock_calls))
-        assert str(self.myplot.obsid_annotation) == '''{'P1': (0.0, 50.0), 'P3': (3.0, 90.0), 'P2': (1.0, 183.0)}'''
+        assert str(self.sectionplot.figure._midv_obsid_annotation) == '''{'P1': (0.0, 50.0), 'P3': (3.0, 90.0), 'P2': (1.0, 183.0)}'''
         assert mock_messagebar.warning.called
         assert not mock_messagebar.critical.called
 
@@ -525,15 +528,15 @@ class TestSectionPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
             mock_mapcanvas = mock_iface.mapCanvas.return_value
             mock_mapcanvas.layerCount.return_value = 0
             self.midvatten.plot_section()
-            self.myplot = self.midvatten.myplot
-            self.myplot.Stratigraphy_radioButton.setChecked(True)
-            self.myplot.Legend_checkBox.setChecked(True)
-            self.myplot.draw_plot()
+            self.sectionplot = self.midvatten.sectionplot
+            self.sectionplot.Stratigraphy_radioButton.setChecked(True)
+            self.sectionplot.Legend_checkBox.setChecked(True)
+            self.sectionplot.draw_plot()
 
         _test(self)
 
         print(str(mock_messagebar.mock_calls))
-        print(str(self.myplot.p))
+        print(str(self.sectionplot.figure._midv_p))
 
         pattern_obsids = {'''Obsid {}: using h_gs '[0-9None]+' failed, using 'h_toc' instead.''': ['P1'],
                           '''Obsid {}: using h_gs None or h_toc None failed, using 0 instead.''': ['P2']}

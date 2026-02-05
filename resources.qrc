@@ -39,5 +39,6 @@
         <file>icons/vacuum.png</file>
         <file>icons/wqualreport.png</file>
         <file>icons/zip.png</file>
+        <file>icons/detach_figure.png</file>
     </qresource>
 </RCC>

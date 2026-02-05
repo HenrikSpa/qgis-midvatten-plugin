@@ -673,8 +673,8 @@ class Calibrlogger(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog): # An inst
 
     @fn_timer
     def timestring_list_to_time_list(self, timestring_list):
-        """Get help from function datestr2num to get date and time into float"""
-        return datestr2num(timestring_list)
+        """Convert date strings to date"""
+        return num2date(datestr2num(timestring_list))
 
     @fn_timer
     def contains_more_than_nan(self, a_recarray):
@@ -982,7 +982,7 @@ class Calibrlogger(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog): # An inst
     @fn_timer
     def set_adjust_data_on_click(self, event, date_var, level_var):
         getattr(self, level_var).setText('{:.5f}'.format(event.ydata))
-        getattr(self, date_var).setDateTime(num2date(float(event.xdata)))
+        getattr(self, date_var).setDateTime(event.xdata)
         self.reset_cid()
 
     @fn_timer
@@ -1040,7 +1040,7 @@ class Calibrlogger(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog): # An inst
         fr_d_t = self.FromDateTime.dateTime().toPyDateTime().replace(tzinfo=None)
         to_d_t = self.ToDateTime.dateTime().toPyDateTime().replace(tzinfo=None)
         xdata = self.logger_artist.get_xdata()
-        ydata = [y if fr_d_t <= num2date(xdata[idx]).replace(tzinfo=None) <= to_d_t else None for idx, y in
+        ydata = [y if fr_d_t <= xdata[idx].replace(tzinfo=None) <= to_d_t else None for idx, y in
                  enumerate(self.logger_artist.get_ydata())]
 
         if self.selected_line is None:
@@ -1100,8 +1100,8 @@ class Calibrlogger(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog): # An inst
         :return:
         """
         'eclick and erelease are the press and release events'
-        x1, y1 = eclick.xdata, eclick.ydata
-        x2, y2 = erelease.xdata, erelease.ydata
+        x1, y1 = num2date(eclick.xdata), eclick.ydata
+        x2, y2 = num2date(erelease.xdata), erelease.ydata
 
 
         # Ongoing developement 
@@ -1121,8 +1121,8 @@ class Calibrlogger(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog): # An inst
         x_idx = [idx for idx, x in enumerate(self.logger_artist.get_xdata()) if min(x1, x2) <= x <= max(x1, x2)]
         found_idx = [idx for idx in x_idx if idx in y_idx]
         if found_idx:
-            self.FromDateTime.setDateTime(num2date(self.logger_artist.get_xdata()[min(found_idx)]))
-            self.ToDateTime.setDateTime(num2date(self.logger_artist.get_xdata()[max(found_idx)]))
+            self.FromDateTime.setDateTime(self.logger_artist.get_xdata()[min(found_idx)])
+            self.ToDateTime.setDateTime(self.logger_artist.get_xdata()[max(found_idx)])
 
     def toggle_move_nodes(self, on):
         if on:

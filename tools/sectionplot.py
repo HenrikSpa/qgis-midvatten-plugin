@@ -87,9 +87,8 @@ SAKNAS:
 
 class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPlotDock  is created instantaniously as this is created
     def __init__(self, parent1, iface1):
-        #super(sectionplot, self).save_settings()
-        qgis.PyQt.QtWidgets.QDockWidget.__init__(self, parent1) #, PyQt4.QtCore.Qt.WindowFlags(PyQt4.QtCore.Qt.WA_DeleteOnClose))
-        self.setAttribute(qgis.PyQt.QtCore.Qt.WA_DeleteOnClose)
+        qgis.PyQt.QtWidgets.QDockWidget.__init__(self, parent1)
+        #self.setAttribute(qgis.PyQt.QtCore.Qt.WA_DeleteOnClose)
 
         self.figures = {}
         self.figure = None
@@ -140,8 +139,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         self.resample_how.setToolTip(defs.pandas_how_tooltip())
 
     @fn_timer
-    def create_new_plot(self, msettings, selected_obspoints, line_layer): #must recieve msettings again if this plot windows stayed open while changing qgis project
-
+    def create_new_plot(self, msettings, selected_obspoints, line_layer):
         self.line_layer = None
         self.line_feature = None
         self.obs_lines_plot_data = None
@@ -281,7 +279,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
                     if item.text() in self.ms.settingsdict['secplotselectedDEMs']:
                         item.setSelected(True)
         if msg:
-            common_utils.MessagebarAndLog.warning(
+            common_utils.MessagebarAndLog.info(
                 bar_msg=QCoreApplication.translate('SectionPlot', "One or more layers were omitted due to unfulfilled requirements, see log message panel."),
                 log_msg='\n'.join(msg),
                 duration=30
@@ -865,29 +863,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         self.figure._midv_line_layer = self.line_layer # Needed for flash_section_line_position.
         self.figure._midv_line_feature = self.line_feature # Needed for flash_section_line_position.
         self.figure._midv_obsid_annotation = deepcopy(self.obsid_annotation) # Needed for interactive waterlevel.
-        self.figure._midv_z_data = deepcopy(self.z_data)
-        self.figure._midv_geo_bars = deepcopy(self.z_data)
-        self.figure._midv_geo_bars = deepcopy(self.geo_bars)
-        self.figure._midv_hydro_bars = deepcopy(self.hydro_bars)
-        self.figure._midv_layer_texts = deepcopy(self.layer_texts)
-        self.figure._midv_geo_bars = deepcopy(self.z_data)
-        self.figure._midv_drillstops = deepcopy(self.drillstops)
 
-        """
-         self.obsids_x_position = self.prepare_line_and_obsid_positions(selected_obspoints)
-        self.z_data = self.get_z_data(self.obsids_x_position)
-        self.geo_bars = self.get_plot_data_bars(defs.PlotTypesDict(), self.obsids_x_position,
-                                                self.obsid_annotation, strat_key='TRIM(LOWER(geoshort))')
-        hydro_subtypes = {k: "IN ('{}')".format(k) for k in self.hydro_colors.keys()}
-        self.hydro_bars = self.get_plot_data_bars(hydro_subtypes, self.obsids_x_position,
-                                                self.obsid_annotation, strat_key='TRIM(capacity)')
-        self.layer_texts = self.get_plot_data_layer_texts(self.obsids_x_position)
-        if self.line_feature is not None:
-            self.obs_lines_plot_data = self.get_plot_data_seismic(self.line_layer, self.line_feature)
-        self.add_missing_obsid_labels(self.obsids_x_position, self.obsid_annotation)
-        self.drillstops = self.get_drillstops(self.obsids_x_position, self.z_data)
-
-        self.draw_plot()"""
         # Storing figures for detached figures to not be garbage collected.
         self.figures[self.figure.number] = self.figure
 
@@ -1446,6 +1422,10 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
                          parse_dates={'date_time': {'format': 'mixed'}},
                          columns=None,
                          chunksize=None)
+        if df.empty:
+            common_utils.MessagebarAndLog.info(
+                log_msg=ru(QCoreApplication.translate("SectionPlot", "Interactive plot: No waterlevels found for chosen obsids in %s."))%self.ms.settingsdict['secplotwlvltab'])
+            return
         if isinstance(df, pd.Series):
             df = df.to_frame()
 
@@ -1563,7 +1543,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
 
         if self.width_of_plot.isChecked():
             self.ms.settingsdict['secplotwidthofplot'] = True
-            self.update_barwidths_from_plot(self.axes)
+            self.update_barwidths_from_plot(self.figure._midv_ax_main)
         else:
             self.ms.settingsdict['secplotwidthofplot'] = False
 
@@ -1812,7 +1792,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
                     _obs = obs.encode('utf8').decode('utf8')
                 except Exception as e:
                     common_utils.MessagebarAndLog.info(
-                        log_msg=ru(QCoreApplication.translate("Sectionplot: Encoding string failed for %s")) % ru(obs))
+                        log_msg=ru(QCoreApplication.translate('SectionPlot', "Encoding string failed for %s")) % ru(obs))
                     continue
                 else:
                     try:

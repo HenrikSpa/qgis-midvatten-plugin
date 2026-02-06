@@ -28,9 +28,6 @@ import zipfile
 from builtins import object
 from builtins import str
 
-import qgis.PyQt
-from PyQt5.QtCore import QCoreApplication
-
 try:
     import zlib
     compression = zipfile.ZIP_DEFLATED

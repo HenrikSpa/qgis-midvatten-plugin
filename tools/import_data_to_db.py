@@ -174,6 +174,7 @@ class midv_data_importer(object):  # this class is intended to be a multipurpose
             if dump_temptable:
                 dbconnection.dump_table_2_csv(self.temptable_name)
 
+            print(f"{remaining_rownumbers=} {all_rownumbers=}")
             if len(remaining_rownumbers) == len(all_rownumbers):
                 if self.foreign_keys_import_question:
                     import_messages = []
@@ -185,7 +186,7 @@ class midv_data_importer(object):  # this class is intended to be a multipurpose
                 import_messages.append(ru(QCoreApplication.translate('midv_data_importer', """There are %s out of %s number of rows to import (see log for more info about removed rows).\n\nProceed with import?""" ))% (str(len(remaining_rownumbers)), str(len(all_rownumbers))))
 
             if import_messages:
-                print('\n'.join(import_messages))
+                #print('\n'.join(import_messages))
                 stop_question = common_utils.Askuser("YesNo", '\n'.join(import_messages), ru(QCoreApplication.translate('midv_data_importer', "Info")))
                 if stop_question.result == 0:      # if the user wants to abort
                     raise UserInterruptError()
@@ -236,9 +237,9 @@ class midv_data_importer(object):  # this class is intended to be a multipurpose
             try:
                 dbconnection.execute(sql)
             except Exception as e:
-                print(f"{ru(traceback.format_exc())}")
-                print(sql)
-                print("Source " + str(source_srid))
+                #print(f"{ru(traceback.format_exc())}")
+                #print(sql)
+                #print("Source " + str(source_srid))
 
                 common_utils.MessagebarAndLog.info(log_msg=ru(QCoreApplication.translate('midv_data_importer', 'INSERT failed while importing to %s. Using INSERT OR IGNORE instead. Msg:\n')) % dest_table_with_schema + ru(str(e)))
                 sql = db_utils.add_insert_or_ignore_to_sql(sql, dbconnection)

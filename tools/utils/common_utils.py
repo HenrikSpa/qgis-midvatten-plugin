@@ -38,8 +38,8 @@ import traceback
 import matplotlib as mpl
 import numpy as np
 import qgis.utils
-from PyQt5.QtCore import QCoreApplication
-from PyQt5.QtWebKitWidgets import QWebView
+from qgis.PyQt.QtCore import QCoreApplication
+from qgis.PyQt.QtWebKitWidgets import QWebView
 from matplotlib.dates import num2date
 from qgis.PyQt import QtWidgets, QtCore, uic
 from qgis.core import Qgis, QgsApplication, QgsLogger, QgsProject, QgsMapLayer

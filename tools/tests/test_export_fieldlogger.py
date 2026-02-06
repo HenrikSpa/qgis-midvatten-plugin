@@ -25,7 +25,6 @@ from collections import OrderedDict
 
 
 import mock
-from PyQt5.QtCore import QVariant
 
 from mock import MagicMock
 from nose.plugins.attrib import attr

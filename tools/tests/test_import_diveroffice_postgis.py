@@ -746,7 +746,19 @@ class TestWlvllogImportFromDiverofficeFiles(utils_for_tests.MidvattenTestPostgis
                                 importer.select_files()
 
                                 #Dont skip
-                                mock_askuser.return_value.result = 0
+                                def side_effect(*args, **kwargs):
+                                    mock_result = mock.MagicMock()
+                                    if 'msg' in kwargs:
+                                        if 'UTC+ABC2 could not be parsed!\n\nSkip file?' in kwargs['msg']:
+                                            mock_result.result = 0
+                                            print(f"Was here1")
+                                            return mock_result
+                                    if len(args) > 1:
+                                        if args[1].startswith('Note:\nForeign keys will be imported silently.\nProceed with import?'):
+                                            mock_result.result = 1
+                                            print(f"Was here2")
+                                            return mock_result
+                                mock_askuser.side_effect = side_effect
 
                                 importer.start_import(importer.files, importer.skip_rows.checked, importer.confirm_names.checked, importer.import_all_data.checked)
                                 print(str(mock_askuser.mock_calls))
@@ -761,10 +773,8 @@ class TestWlvllogImportFromDiverofficeFiles(utils_for_tests.MidvattenTestPostgis
 
                             # Ref with UTC+1
                             reference_string = r'''(True, [(rb1, 2016-03-15 10:30:00, 1.0, 10.0, None, None, None), (rb1, 2016-03-15 11:00:00, 11.0, 101.0, None, None, None), (rb2, 2016-04-15 10:30:00, 2.0, 20.0, None, None, None), (rb2, 2016-04-15 11:00:00, 21.0, 201.0, None, None, None), (rb3, 2016-05-15 10:30:00, 3.0, 30.0, 5.0, None, None), (rb3, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None), (rb4, 2016-05-15 10:30:00, 3.0, 30.0, 5.0, None, None), (rb4, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None), (rb5, 2016-05-15 13:30:00, 3.0, 30.0, 5.0, None, None), (rb5, 2016-05-15 14:00:00, 31.0, 301.0, 6.0, None, None)])'''
-                            print(f"Ref {reference_string}\nTest {test_string}")
                             assert test_string == reference_string
-
-                            assert mock_askuser.call_args.kwargs.get('dialogtitle', '') == 'File timezone error!'
+                            assert mock_askuser.mock_calls[0].kwargs.get('dialogtitle', '') == 'File timezone error!'
 
 
     def test_wlvllogg_import_change_timezone_file_timezone_failed_skip(self):

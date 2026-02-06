@@ -427,7 +427,6 @@ class TestSectionPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert anything_to_string_representation(labels) == '''["sandtest", "grustest", "2015", "drillstop like %berg%", "frame"]'''
         assert anything_to_string_representation(self.sectionplot.water_level_labels_duplicate_check) == '''["2015"]'''
 
-    @attr(status='only')
     @mock.patch('midvatten.tools.sectionplot.common_utils.MessagebarAndLog')
     def test_plot_section_with_w_levels_animation(self, mock_messagebar):
         db_utils.sql_alter_db('''INSERT INTO obs_lines (obsid, geometry) VALUES ('1', ST_GeomFromText('LINESTRING(633466.711659 6720684.24498, 633599.530455 6720727.016568)', 3006))''')

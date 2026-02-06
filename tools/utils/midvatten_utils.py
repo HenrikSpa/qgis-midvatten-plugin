@@ -28,8 +28,7 @@ import shutil
 
 import matplotlib as mpl
 import qgis.PyQt
-from PyQt5.QtCore import QCoreApplication
-from PyQt5.QtGui import QDesktopServices
+from qgis.PyQt.QtGui import QDesktopServices
 from matplotlib import pyplot as plt
 from qgis.core import QgsProject
 from qgis.core import QgsVectorLayer

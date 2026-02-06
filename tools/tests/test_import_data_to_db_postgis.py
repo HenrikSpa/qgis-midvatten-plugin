@@ -61,6 +61,26 @@ class TestGeneralImport(utils_for_tests.MidvattenTestPostgisDbSvImportInstance):
         assert test_string == reference_string
 
     @mock.patch('midvatten.tools.utils.common_utils.MessagebarAndLog')
+    @mock.patch('midvatten.tools.import_data_to_db.common_utils.Askuser', mock.MagicMock())
+    def test_general_import_wlvllogg_primary_keys_existing(self, mock_messagebar):
+        file = [('obsid','date_time','head_cm'),
+                ('rb1','2016-03-15 10:30:00','1'),
+                ('rb1','2016-03-15 11:00:00','2')]
+
+        db_utils.sql_alter_db('''INSERT INTO obs_points (obsid) VALUES ('rb1')''')
+        db_utils.sql_alter_db('''INSERT INTO w_levels_logger (obsid, date_time, head_cm) VALUES ('rb1', '2016-03-15 11:00:00', 3)''')
+
+        self.importinstance.general_import(dest_table='w_levels_logger', file_data=file)
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db('''select obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment from w_levels_logger ORDER BY date_time ASC'''))
+        reference_string = r'''(True, [(rb1, 2016-03-15 10:30:00, 1.0, None, None, None, None), (rb1, 2016-03-15 11:00:00, 3.0, None, None, None, None)])'''
+        print(str(mock_messagebar.mock_calls))
+        print(test_string)
+        assert test_string == reference_string
+        assert call.info(bar_msg='1 rows imported and 1 excluded for table w_levels_logger. See log message panel for details', log_msg='--------------------') in mock_messagebar.mock_calls
+
+    @mock.patch('midvatten.tools.utils.common_utils.MessagebarAndLog')
     @mock.patch('midvatten.tools.import_data_to_db.common_utils.Askuser',
                 mock.MagicMock())
     @mock.patch('qgis.utils.iface', autospec=True)
@@ -269,32 +289,19 @@ class TestImportObsPointsObsLines(
         reference_string = r'''(True, [(rb1, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)])'''
         assert test_string == reference_string
 
-    @mock.patch('midvatten.tools.import_data_to_db.common_utils.Askuser',
-                mock.MagicMock())
+    @mock.patch('midvatten.tools.import_data_to_db.common_utils.Askuser', mock.MagicMock())
     @mock.patch('midvatten.tools.utils.common_utils.MessagebarAndLog')
     def test_import_obs_points_duplicates(self, mock_messagebar):
-        f = [['obsid', 'name', 'place', 'type', 'length', 'drillstop', 'diam',
-              'material', 'screen', 'capacity', 'drilldate', 'wmeas_yn', 'wlogg_yn',
-              'east', 'north', 'ne_accur', 'ne_source', 'h_toc', 'h_tocags', 'h_gs',
-              'h_accur', 'h_syst', 'h_source', 'source', 'com_onerow', 'com_html'],
-             ['rb1', 'rb1', 'a', 'pipe', '1', '1', '1', '1', '1', '1', '1', '1', '1',
-              '421484', '6542696', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1',
-              '1'],
-             ['rb1', 'rb2', 'a', 'pipe', '1', '1', '1', '1', '1', '1', '1', '1', '1',
-              '421485', '6542697', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1',
-              '1'],
-             ['rb1', 'rb3', 'a', 'pipe', '1', '1', '1', '1', '1', '1', '1', '1', '1',
-              '421484', '6542696', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1',
-              '1']]
+        f = [['obsid', 'name', 'place', 'type', 'length', 'drillstop', 'diam', 'material', 'screen', 'capacity', 'drilldate', 'wmeas_yn', 'wlogg_yn', 'east', 'north', 'ne_accur', 'ne_source', 'h_toc', 'h_tocags', 'h_gs', 'h_accur', 'h_syst', 'h_source', 'source', 'com_onerow', 'com_html'],
+         ['rb1', 'rb1', 'a', 'pipe', '1', '1', '1', '1', '1', '1', '1', '1', '1', '421484', '6542696', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1'],
+         ['rb1', 'rb2', 'a', 'pipe', '1', '1', '1', '1', '1', '1', '1', '1', '1', '421485', '6542697', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1'],
+         ['rb1', 'rb3', 'a', 'pipe', '1', '1', '1', '1', '1', '1', '1', '1', '1', '421484', '6542696', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1']]
 
         self.importinstance.general_import(file_data=f, dest_table='obs_points')
-
-        call.info(
-            bar_msg='1 rows imported and 2 excluded for table obs_points. See log message panel for details',
-            log_msg='2 nr of duplicate rows in file was skipped while importing.\n--------------------') in mock_messagebar.mock_calls
+        print(mock_messagebar.mock_calls)
+        assert call.info(bar_msg='1 rows imported and 2 excluded for table obs_points. See log message panel for details', log_msg='--------------------')in mock_messagebar.mock_calls
         test_string = utils_for_tests.create_test_string(
-            db_utils.sql_load_fr_db(
-                '''select obsid, name, place, type, length, drillstop, diam, material, screen, capacity, drilldate, wmeas_yn, wlogg_yn, east, north, ne_accur, ne_source, h_toc, h_tocags, h_gs, h_accur, h_syst, h_source, source, com_onerow, com_html, ST_AsText(geometry) from obs_points'''))
+            db_utils.sql_load_fr_db('''select obsid, name, place, type, length, drillstop, diam, material, screen, capacity, drilldate, wmeas_yn, wlogg_yn, east, north, ne_accur, ne_source, h_toc, h_tocags, h_gs, h_accur, h_syst, h_source, source, com_onerow, com_html, ST_AsText(geometry) from obs_points'''))
 
         reference_string = r'''(True, [(rb1, rb1, a, pipe, 1.0, 1, 1.0, 1, 1, 1, 1, 1, 1, 421484.0, 6542696.0, 1.0, 1, 1.0, 1.0, 1.0, 1.0, 1, 1, 1, 1, 1, POINT(421484 6542696))])'''
         assert test_string == reference_string

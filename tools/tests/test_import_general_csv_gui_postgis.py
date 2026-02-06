@@ -32,10 +32,11 @@ from collections import OrderedDict
 import mock
 import qgis.PyQt
 
+from qgis.PyQt.QtCore import QMetaType
+
 from mock import MagicMock
 from nose.plugins.attrib import attr
 from qgis.core import QgsProject, QgsVectorLayer, QgsField, QgsFeature, QgsFields, QgsGeometry
-from PyQt5.QtCore import QVariant
 
 from midvatten.tools.utils import common_utils
 from midvatten.tools.utils import db_utils

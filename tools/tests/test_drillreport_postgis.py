@@ -25,7 +25,7 @@ from __future__ import print_function
 from builtins import str
 
 import mock
-import PyQt5
+from qgis.PyQt import QtCore
 import re
 from nose.plugins.attrib import attr
 from qgis.core import QgsProject, QgsVectorLayer
@@ -64,7 +64,7 @@ class TestDrillreport(utils_for_tests.MidvattenTestPostgisDbSv):
 
         print(str(mock_messagebar.mock_calls))
 
-        assert mock.call(PyQt5.QtCore.QUrl('file:///tmp/midvatten_reports/drill_report.html')) in openurl.mock_calls
+        assert mock.call(QtCore.QUrl('file:///tmp/midvatten_reports/drill_report.html')) in openurl.mock_calls
 
         with open('/tmp/midvatten_reports/drill_report.html', 'r') as f:
             report = ''.join(f.readlines())

@@ -422,6 +422,9 @@ def PlotTypesDict(international='no'):
     Default method is to read the database table zz_strat and generate the dictionary from columns 'strat' and 'geoshorts'
     The user may update these fields in the zz_strat table to use other stratigraphy units and other abbreviations (in geoshorts)
     Fallback method use dictionary defined in the code below
+
+    TODO: WARNING. This function must be changed so it returns lists or tuples instead of SQL strings. The sql queries
+    must NOT be used for string concatenation.
     """
     #success, Dict = midvatten_utils.create_dict_from_db_2_cols(('strata','geoshort','zz_strat'))
     success, Dict = get_sql_result_as_dict('select strata, geoshort from zz_strat')

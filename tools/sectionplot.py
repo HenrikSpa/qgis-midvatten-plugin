@@ -14,15 +14,16 @@ from __future__ import absolute_import
 
 import copy
 import os
-import sqlite3 as sqlite  # needed since spatialite-specific sql will be used during polyline layer import
 import traceback
 import types
 from builtins import range
 from builtins import str
 from builtins import zip
 from operator import itemgetter
-import sqlite3
+from contextlib import contextmanager
+
 import ast
+from functools import partial
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -32,22 +33,22 @@ import qgis.PyQt
 from matplotlib import container, patches
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from qgis.PyQt import QtWidgets
-# from ui.secplotdockwidget_ui import Ui_SecPlotDock
 from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QCoreApplication, Qt
 from qgis.PyQt.QtWidgets import QApplication, QDockWidget, QSizePolicy
-from qgis.core import (QgsProject, QgsVectorLayer, QgsRectangle, QgsGeometry,
-                       QgsFeatureRequest, QgsWkbTypes, QgsMapLayer, QgsRuleBasedRenderer,
-                       QgsCategorizedSymbolRenderer, QgsSingleSymbolRenderer, QgsRenderContext,
+from qgis.core import (QgsProject, QgsVectorLayer, QgsGeometry,
+                       QgsFeatureRequest, QgsMapLayer, QgsRuleBasedRenderer,
+                       QgsRenderContext,
                        Qgis)
+
+try:#assume matplotlib >=1.5.1
+    from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+except:
+    from matplotlib.backends.backend_qt5agg import NavigationToolbar2QTAgg as NavigationToolbar
 
 from midvatten.tools.utils.gui_utils import set_combobox
 
-# try:#assume matplotlib >=1.5.1
-#    from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
-# except:
-#    from matplotlib.backends.backend_qt5agg import NavigationToolbar2QTAgg as NavigationToolbar
-from functools import partial
+
 Ui_SecPlotDock =  uic.loadUiType(os.path.join(os.path.dirname(__file__),'..','ui', 'secplotdockwidget.ui'))[0]
 
 from matplotlib.widgets import Slider
@@ -60,11 +61,9 @@ from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.common_utils import returnunicode as ru, fn_timer, UsageError, LEGEND_NCOL_KEY
 from midvatten.tools.utils.midvatten_utils import PlotTemplates
 from midvatten.tools.utils.gui_utils import DetachFigureButton
-from midvatten.tools.utils.matplotlib_replacements import NavigationToolbarWithSignal as NavigationToolbar
 import midvatten.definitions.midvatten_defs as defs
 from midvatten.tools.utils import matplotlib_replacements
 from midvatten.tools.utils.sampledem import qchain, sampling
-
 
 try:
     import pandas as pd
@@ -72,17 +71,6 @@ except:
     pandas_on = False
 else:
     pandas_on = True
-
-"""
-Major parts of the code is re-used from the profiletool plugin:
-# Copyright (C) 2008  Borys Jurgiel
-# Copyright (C) 2012  Patrice Verchere 
-Code is also re-used from the qprof plugin by Mauro Alberti, Marco Zanieri
-
-SAKNAS:
-1. (input och plottning av seismik, vlf etc längs med linjen) - efter release alpha
-2. ((input och plottning av markyta från DEM)) - efter release beta
-"""
 
 
 class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPlotDock  is created instantaniously as this is created
@@ -113,7 +101,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         self.template_plot_label.setText("<a href=\"https://github.com/jkall/qgis-midvatten-plugin/wiki/5.-Plots-and-reports#create-section-plot\">Templates manual</a>")
         self.template_plot_label.setOpenExternalLinks(True)
 
-    @fn_timer
     def initUI(self):
         # connect signal
         self.pushButton.clicked.connect(lambda x: self.draw_plot())
@@ -138,7 +125,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         self.resample_how.setText('mean')
         self.resample_how.setToolTip(defs.pandas_how_tooltip())
 
-    @fn_timer
     def create_new_plot(self, msettings, selected_obspoints, line_layer):
         self.line_layer = None
         self.line_feature = None
@@ -433,13 +419,11 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
             obsids_x_position = {row[0]: idx * 10 for idx, row in enumerate(sorted(res, key=itemgetter(k)))}
         return obsids_x_position
 
-    @fn_timer
     def get_dem_selection(self):
         self.rasterselection = []
         for item in self.dem_list.selectedItems():
             self.rasterselection.append(item.text())
 
-    @fn_timer
     def get_length_along(self, obsidtuple):
         sql = """SELECT p.obsid, ST_Length((SELECT geometry FROM {temptable_name})) * {funcname}((SELECT geometry FROM {temptable_name}), p.geometry) AS absdist FROM obs_points AS p
                   WHERE p.obsid in ({placeholders})
@@ -479,7 +463,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         data = {ru(row[0]): row[1] for row in res}
         return data
 
-    @fn_timer
     def get_z_data(self, obsids_x_position):
         z_data = {}
         for obs in obsids_x_position.keys():
@@ -512,7 +495,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
 
         return z_data
 
-    @fn_timer
     def get_plot_data_bars(self, typ_subtypes, obsids_x_position, obsid_annotation, strat_key='lower(geoshort)'):#this is called when class is instantiated, collecting data specific for the profile line layer and the obs_points
         common_utils.start_waiting_cursor()#show the user this may take a long time...
         bars = {}
@@ -537,7 +519,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         common_utils.stop_waiting_cursor()#now this long process is done and the cursor is back as normal
         return bars
 
-    @fn_timer
     def get_plot_data_layer_texts(self, obsids_x_position, z_data, hydro_colors):
         bar_texts = {}
         common_utils.start_waiting_cursor()#show the user this may take a long time...
@@ -574,7 +555,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         common_utils.stop_waiting_cursor()#now this long process is done and the cursor is back as normal
         return bar_texts
 
-    @fn_timer
     def get_drillstops(self, obsids_x_position, z_data):
         obs_p_w_drill_stops = []
         if self.ms.settingsdict['secplotdrillstop']!='':
@@ -588,7 +568,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
                            if obs in obs_p_w_drill_stops]
         return drillstops
 
-    @fn_timer
     def get_plot_data_seismic(self, line_layer, line_feature):
         # Last step in get data - check if the line layer is obs_lines and if so, load seismic data if there are any
         My_format = [('obsline_x', float), ('obsline_y1', float), ('obsline_y2', float), ('obsline_y3', float)]
@@ -604,15 +583,13 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
             obs_lines_plot_data = table.view(np.recarray)   # RECARRAY   Makes the two columns inte callable objects, i.e. write self.obs_lines_plot_data.values
             return obs_lines_plot_data
 
-    @fn_timer
     def add_missing_obsid_labels(self, obsids_x_position, obsid_annotation):
         for obs, x in obsids_x_position.items():
             if obs not in obsid_annotation and (self.ms.settingsdict['stratigraphyplotted'] or
                                                      self.ms.settingsdict['secplothydrologyplotted']):
                 obsid_annotation[obs] = (x, self.z_data[obs]['bottom'] + self.z_data[obs]['barheight'])
 
-    @fn_timer
-    def draw_plot(self): #replot
+    def draw_plot(self):
         self.water_level_labels_duplicate_check = []
 
         rcparams = self.secplot_templates.loaded_template.get('rcParams', {})
@@ -826,12 +803,12 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
     def remove_previous_figure(self):
         if self.figure is None:
             return
-        try:
-            self.previous_title = self.figure._midv_ax_main.axes.get_title()
-            self.previous_xaxis_label = self.figure._midv_ax_main.axes.get_xlabel()
-            self.previous_yaxis_label = self.figure._midv_ax_main.axes.get_ylabel()
-        except:
-            pass
+        #try:
+        #    self.previous_title = self.figure._midv_ax_main.axes.get_title()
+        #    self.previous_xaxis_label = self.figure._midv_ax_main.axes.get_xlabel()
+        #    self.previous_yaxis_label = self.figure._midv_ax_main.axes.get_ylabel()
+        #except:
+        #    pass
 
         previous_canvas = self.figure.canvas
         previous_toolbar = previous_canvas.toolbar
@@ -847,7 +824,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         plt.close(fignum)
         self.figure = None
 
-    @fn_timer
     def init_figure(self):
         self.remove_previous_figure()
 
@@ -875,10 +851,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         self.figure._midv_ax_main = self.figure.add_subplot(self.gridspec[0:2, 0:1])
         canvas = FigureCanvas(self.figure)
 
-        canvas.mpl_connect('button_release_event', self.update_barwidths_from_plot)
-        canvas.mpl_connect('resize_event', self.update_barwidths_from_plot)
-        canvas.mpl_connect('button_release_event', self.flash_section_line_position)
-
         mpltoolbar = NavigationToolbar(canvas, self.widgetPlot)
 
         try:
@@ -888,19 +860,12 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
             common_utils.MessagebarAndLog.info(log_msg=ru(
                 QCoreApplication.translate('SectionPlot', 'Could not alter NavigationToolbar, msg: %s')) % str(e))
 
-        try:
-            mpltoolbar.edit_parameters_used.connect(lambda: partial(self.update_legend, True, self.figure))
-        except Exception as e:
-            common_utils.MessagebarAndLog.info(log_msg=ru(
-                QCoreApplication.translate('SectionPlot', 'Could not connect to edit_parameters_used signal, msg: %s')) % str(e))
-
         self.layoutplot.addWidget(canvas)
         self.layoutplot.addWidget(mpltoolbar)
 
         common_utils.PickAnnotator(self.figure)
         self.figure._midv_detach_figure_button = DetachFigureButton(self.figure, callback=self.detach_figure)
 
-    @fn_timer
     def plot_dems(self):
         try:
             if self.ms.settingsdict['secplotselectedDEMs'] and len(
@@ -953,7 +918,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
             except:
                 pass
 
-    @fn_timer
     def plot_graded_dems(self, temp_memorylayer, sectionlinelayer, xarray, DEMdata, layername, dem_layername,
                          alpha_max=0.5, alpha_min=0, number_of_plots=20, graded_depth_m=2, skip_labels=None):
         try:
@@ -1047,7 +1011,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
                                                    color='brown', linestyle='-')
                     plotted_axvlines.add(x_vals[_idx])
 
-    @fn_timer
     def plot_drill_stop(self):
         settings = copy.deepcopy(self.secplot_templates.loaded_template['drillstop_Axes_plot'])
         label = settings.get('label', None)
@@ -1059,7 +1022,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
 
         self.figure._midv_p.append(lineplot)
 
-    @fn_timer
     def plot_tem(self):
         if not pandas_on:
             common_utils.MessagebarAndLog.info(bar_msg=ru(QCoreApplication.translate('SectionPlot',
@@ -1191,8 +1153,9 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         else:
             ticks = None
 
-        cbar = self.figure.colorbar(above_doi, label=QCoreApplication.translate('SectionPlot', 'Resistivity') + ' ' +
-                                                     self.ms.settingsdict['secplot_tem_model_name'], ticks=ticks)
+        label = QCoreApplication.translate('SectionPlot', 'Resistivity') + ' ' +  self.ms.settingsdict['secplot_tem_model_name']
+        cbar = self.figure.colorbar(above_doi, label=label, ticks=ticks)
+        self.figure._midv_tem_cbar_label = label
 
         if ticks is not None:
             cbar.ax.set_yticklabels([f"{v:.0f}" for v in cbar.ax.get_yticks()],
@@ -1218,6 +1181,8 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
 
         if not self.ms.settingsdict['secplot_images_images']:
             return
+
+        labels = []
 
         res = self.dbconnection.execute_and_fetchall(
             f"SELECT alias, path, clip_left_right_top_bottom, extent_left_right_top_bottom FROM profile_images WHERE obsid = {self.dbconnection.placeholder_sign()}",
@@ -1285,10 +1250,10 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
                         bottom = (numrows - clip_bottom) * dy + bottom
 
                 self.figure._midv_ax_main.imshow(im, extent=[left, right, bottom, top], zorder=zorder, alpha=alpha,
-                                                 clip_on=True,
-                                                 aspect='auto')
+                                                 clip_on=True, aspect='auto', label=alias)
+                labels.append(alias)
+        self.figure._midv_images_labels = list(sorted(set(labels)))
 
-    @fn_timer
     def plot_bars(self, bars_dict, color_dict, color_key='color', hatch_dict=None, barwidth=1):
         for typ, bar_data in bars_dict.items():
             _settings = copy.deepcopy(self.secplot_templates.loaded_template['geology_Axes_bar'])
@@ -1329,7 +1294,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
                                                                          bottom=bar_data['bottom'], align='edge',
                                                                          **settings))
 
-    @fn_timer
     def plot_specific_water_level(self):
         for secplotdates in self.ms.settingsdict['secplotdates']:
             if secplotdates.startswith('#'):
@@ -1376,7 +1340,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
                     self.figure._midv_obsid_annotation[obs] = (x_wl[-1], WL[-1])
             self.waterlevel_lineplot(x_wl, WL, _date)
 
-    @fn_timer
     def plot_obs_lines_data(self):
         def remove_nones(xdata, ydata):
             x_y = [(xdata[idx], row) for idx, row in enumerate(ydata) if not np.isnan(row)]
@@ -1399,7 +1362,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         lineplot, = self.figure._midv_ax_main.plot(x, y, picker=2, marker='+', linestyle='-', label=plotlable)  # PLOT!!
         self.figure._midv_p.append(lineplot)
 
-    @fn_timer
     def plot_water_level(self):
         if not self.ms.settingsdict['secplotwlvltab']:
             return
@@ -1410,7 +1372,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         if self.interactive_groupbox.isChecked():
             self.plot_water_level_interactive()
 
-    @fn_timer
     def plot_water_level_interactive(self):
         sql = f'''SELECT date_time, level_masl, obsid FROM {self.ms.settingsdict['secplotwlvltab']} 
                   WHERE obsid IN ({self.dbconnection.placeholder_string(list(self.obsids_x_position.keys()))})'''
@@ -1486,24 +1447,17 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
 
         self.figure._midv_ax_slider = self.figure.add_subplot(self.gridspec[1:2, 1:2])
         self.figure._midv_ax_slider.midv_axes_name = 'sliderax'
-        self.figure._midv_date_slider = Slider(self.figure._midv_ax_slider, 'Date', valuemin, valuemax, valinit=valinit,
-                                               valfmt='%1.0f')
+        self.figure._midv_date_slider = Slider(self.figure._midv_ax_slider, 'Date', valuemin, valuemax,
+                                               valinit=valinit, valfmt='%1.0f')
 
         self.figure._midv_axvline = self.figure._midv_ax_wlvl.axvline(df_idx_as_datetime(df, valinit), color='black',
-                                                                      linewidth=2,
-                                                                      linestyle='--')  # mdates.date2num(df_idx_as_datetime(self.figure._midv_df, valinit)))
+                                                                      linewidth=2, linestyle='--')
 
-        self.figure._midv_date_slider.on_changed(partial(self.update_animation, self.figure))
         current_idx = get_slider_idx(self.figure._midv_date_slider)
-        x_wl, WL = self.get_water_levels_from_df(df, current_idx, self.obsids_x_position)
+        x_wl, WL = self.get_water_levels_from_df(df, current_idx, self.obsids_x_position, self.figure)
         self.waterlevel_lineplot(x_wl, WL, longdateformat(df_idx_as_datetime(df, current_idx)), interactive_line=True)
 
-        self.figure.canvas.mpl_connect('draw_event', self.update_slider)
-
-    @fn_timer
     def finish_plot(self):
-        self.update_legend()
-
         self.figure._midv_ax_main.grid(**self.secplot_templates.loaded_template['grid_Axes_grid'])
         if not self.figure._midv_line_layer: # Test produces simple stratigraphy plot
             self.figure._midv_ax_main.set_xticks(list(self.obsids_x_position.values()))  # Places ticks where plots are
@@ -1548,10 +1502,10 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
             self.ms.settingsdict['secplotwidthofplot'] = False
 
         self.update_plot_size()
-        #if mpl.rcParams['figure.autolayout']:
-        #    self.figure.tight_layout()
+        self.attach_signals(self.figure)
+        self.update_legend(from_navbar=False, fig=self.figure)
 
-        self.figure.canvas.draw()
+        self.figure.canvas.draw_idle()
         self.tabWidget.setCurrentIndex(0)
 
         """
@@ -1561,32 +1515,49 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         and it will not be plotted by plt.show() - but the plot exists in the canvas
         Please note, this do not work completely as expected under windows. 
         """
-
         plt.close(self.figure) #this closes reference to self.secfig
-
 
     # ----- Methods used by the gui -----
     def detach_figure(self, button):
         self.layoutplot.removeWidget(self.figure.canvas.toolbar)
         self.layoutplot.removeWidget(self.figure.canvas)
 
-        self.previous_title = self.figure._midv_ax_main.get_title()
-        self.previous_xaxis_label = self.figure._midv_ax_main.get_xlabel()
-        self.previous_yaxis_label = self.figure._midv_ax_main.get_ylabel()
+        #self.previous_title = self.figure._midv_ax_main.get_title()
+        #self.previous_xaxis_label = self.figure._midv_ax_main.get_xlabel()
+        #self.previous_yaxis_label = self.figure._midv_ax_main.get_ylabel()
 
         self.figure.canvas.toolbar.close()
         self.figure.canvas.close()
+        fig = self.figure
+
         button._detach_button()
+        self.attach_signals(self.figure)
         self.figure = None
+
+        window_title = []
+        window_title.extend([getattr(fig, attr, None) for attr in ['_midv_figname', '_midv_tem_cbar_label'] if getattr(fig, attr, None)])
+        window_title.extend(getattr(fig, '_midv_images_labels', []))
+
+        if window_title:
+            window_title = ', '.join(window_title)
+            try:
+                fig.canvas.manager.set_window_title(window_title)
+            except AttributeError:
+                e = traceback.format_exc()
+                try:
+                    fig.canvas.set_window_title(window_title)
+                except AttributeError:
+                    try:
+                        fig.canvas.setWindowTitle(window_title)
+                    except:
+                        print(f"Error, {e}, followup:\n{traceback.format_exc()}")
 
     def resize_widget(self, parent):
         """
-
         :param parent:
         :param widget:
         :return:
         """
-
         parent.updateGeometry()
         parent.layout().setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
         parent.adjustSize()
@@ -1597,7 +1568,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
             self.widgetPlot.setMaximumWidth(16777215)
             self.widgetPlot.setMinimumHeight(10)
             self.widgetPlot.setMaximumHeight(16777215)
-            #self.widgetPlot.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         else:
             width_inches, height_inches = self.figure.get_size_inches()
             screen_dpi = QApplication.screens()[0].logicalDotsPerInch()
@@ -1652,43 +1622,48 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
 
     # ----- Methods used by each figure instance as long as the figure is live -----
     def flash_section_line_position(self, event):
-        if not all([getattr(self.figure, '_midv_line_feature', None) is not None,
-                    event.button.name.lower() == 'right']):
+        if event.button.name.lower() != 'right':
             return
-
+            
         ax = event.inaxes
         if ax is None:
             return
         fig = ax.get_figure()
+        
+        if not all([getattr(fig, '_midv_line_feature', None) is not None,
+                    event.button.name.lower() == 'right']):
+            return
+
         axs = [getattr(fig, name, None) for name in ['_midv_ax_main', '_midv_ax_data_fit'] 
                if getattr(fig, name, None) is not None]
         if ax not in axs:
             return
 
-        point = self.figure._midv_line_feature.geometry().interpolate(event.xdata)
-        self.iface.mapCanvas().flashGeometries([point], crs=self.figure._midv_line_layer.crs())
+        point = fig._midv_line_feature.geometry().interpolate(event.xdata)
+        self.iface.mapCanvas().flashGeometries([point], crs=fig._midv_line_layer.crs())
 
     def update_animation(self, fig, datevalue):
-        if fig._midv_waterlevel_lineplot is not None and self.figure._midv_df is not None:
+        if fig._midv_waterlevel_lineplot is not None and fig._midv_df is not None:
             current_idx = get_slider_idx(fig._midv_date_slider)
-            x_wl, WL = self.get_water_levels_from_df(self.figure._midv_df, current_idx,
-                                                     self.figure._midv_obsids_x_position)
+            x_wl, WL = self.get_water_levels_from_df(fig._midv_df, current_idx,
+                                                     fig._midv_obsids_x_position,
+                                                     fig)
 
             fig._midv_waterlevel_lineplot.set_ydata(WL)
             try:
-                self.figure._midv_axvline.set_xdata(df_idx_as_datetime(self.figure._midv_df, current_idx))
+                fig._midv_axvline.set_xdata(df_idx_as_datetime(fig._midv_df, current_idx))
             except RuntimeError:
                 # Change in Matplotlib to only accept a sequence for Line2D.set_xdata.
-                self.figure._midv_axvline.set_xdata([df_idx_as_datetime(self.figure._midv_df, current_idx)])
-            fig.canvas.draw_idle()
+                fig._midv_axvline.set_xdata([df_idx_as_datetime(fig._midv_df, current_idx)])
             fig._midv_waterlevel_lineplot.set_label(
-                longdateformat(df_idx_as_datetime(self.figure._midv_df, current_idx)))
-            self.update_legend(from_navbar=True)
+                longdateformat(df_idx_as_datetime(fig._midv_df, current_idx)))
+            fig.canvas.draw_idle()
+            #self.update_legend(from_navbar=True, fig=fig)
 
     def update_slider(self, event):
         fig = event.canvas.figure
 
-        wlvl_axes = self.figure._midv_ax_wlvl
+        wlvl_axes = fig._midv_ax_wlvl
         xmin, xmax = wlvl_axes.get_xlim()
         # For some reason, matplotlib gives me days from 1970 instead of from 1900.
         _1970 = mdates.date2num(datetime.date(1970, 1, 1))
@@ -1714,17 +1689,16 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         date_slider.reset()
         fig._midv_ax_slider.set_xlim(left=min_idx, right=max_idx)
 
-    def update_legend(self, from_navbar=False, fig=None):
+    def update_legend(self, from_navbar=True, fig=None):
         if self.ms.settingsdict['secplotlegendplotted']:  # Include legend in plot
             # skipped_bars is self-variable just to make it easily available for tests.
             if fig is None:
                 fig = self.figure
-            main_ax = self.figure._midv_ax_main
+            main_ax = fig._midv_ax_main
             if getattr(fig, 'midv_ax_data_fit', None) is not None:
                 leg_ax = fig.midv_ax_data_fit
             else:
                 leg_ax = main_ax
-
             items, labels = get_legend_items_labels(fig._midv_p)
 
             legend_kwargs = dict(self.secplot_templates.loaded_template['legend_Axes_legend'])
@@ -1733,7 +1707,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
                     legend_kwargs[LEGEND_NCOL_KEY] = legend_kwargs.pop(LEGEND_NCOL_KEY.rstrip('s'))
 
             leg = leg_ax.legend(items, labels, **legend_kwargs)
-
             try:
                 leg.set_draggable(state=True)
             except AttributeError:
@@ -1746,11 +1719,11 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
             frame.set_fill(self.secplot_templates.loaded_template['legend_Frame_set_fill'])
             for t in leg.get_texts():
                 t.set_fontsize(self.secplot_templates.loaded_template['legend_Text_set_fontsize'])
+            #if from_navbar:
+            #    with self.temporary_deactivate_update_legend(fig): # See docstring for self.temporary_deactivate_update_legend
+            #        fig.canvas.draw()
+            #    #pass
 
-            if from_navbar:
-                fig.canvas.draw()
-
-    @fn_timer
     def update_barwidths_from_plot(self, event):
         if not self.width_of_plot.isChecked(): #, self.figure._midv_obsids_x_position)):
             return
@@ -1778,8 +1751,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
                 x = a.original_xy[0] + (barwidth/2)
             a.xy = (x, a.original_xy[1])
 
-    @fn_timer
-    def get_water_levels_from_df(self, df, idx, obsids_x_position):
+    def get_water_levels_from_df(self, df, idx, obsids_x_position, fig):
         WL = []
         x_wl = []
         for obs, x in obsids_x_position.items():
@@ -1802,14 +1774,13 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
 
             WL.append(val)
             x_wl.append(x)
-            if obs not in self.figure._midv_obsid_annotation or not any([self.ms.settingsdict['stratigraphyplotted'],
+            if obs not in fig._midv_obsid_annotation or not any([self.ms.settingsdict['stratigraphyplotted'],
                                                                          self.ms.settingsdict[
                                                                              'secplothydrologyplotted']]):
-                self.figure._midv_obsid_annotation[obs] = (x, val)
+                fig._midv_obsid_annotation[obs] = (x, val)
         return x_wl, WL
 
     # ----- Tools used during creation of a new figure -----
-    @fn_timer
     def waterlevel_lineplot(self, x_wl, WL, level_date, interactive_line=False):
         plotlable = get_plot_label_name(level_date, self.water_level_labels_duplicate_check)
         self.water_level_labels_duplicate_check.append(plotlable)
@@ -1825,7 +1796,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
             self.figure._midv_waterlevel_lineplot = lineplot
         self.figure._midv_p.append(lineplot)
 
-    @fn_timer
     def upload_qgis_vector_layer(self, line_layer, line_feature):
         """Upload layer (QgsMapLayer) (optionaly only selected values ) into current DB,
         in self.temptable_name (string) with desired SRID (default layer srid if None) - user can desactivate mapinfo compatibility Date importation. Return True if operation succesfull or false in all other cases"""
@@ -1853,7 +1823,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
         sql = f"""INSERT INTO {self.temptable_name} (dummyfield, geometry) VALUES ('0', ST_GeomFromText({ph}, {ph}))"""
         self.dbconnection.execute(sql, all_args=[(geom_linestring.asWkt(), srid)])
 
-    @fn_timer
     def write_layer_text(self):
         xy_texts = self.layer_texts[self.ms.settingsdict['secplottext']]
         settings = self.secplot_templates.loaded_template['layer_Axes_annotate']
@@ -1869,7 +1838,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
             a = self.figure._midv_ax_main.annotate(text, (x, xy[1]), **settings)
             a.original_xy = xy
 
-    @fn_timer
     def write_obsid(self, plot_labels=True):  # annotation, and also empty bars to show drillings without stratigraphy data
         if self.ms.settingsdict['stratigraphyplotted'] or self.ms.settingsdict['secplothydrologyplotted']:
             plotxleftbarcorner = []
@@ -1900,7 +1868,35 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):#the Ui_SecPl
                 #for m,n,o in zip(self.x_id,self.z_id,self.selected_obsids):#change last arg to the one to be written in plot
                 text = self.figure._midv_ax_main.annotate(o, xy=(m, n), **self.secplot_templates.loaded_template['obsid_Axes_annotate'])
 
+    def attach_signals(self, fig):
+        fig.canvas.mpl_connect('button_release_event', self.update_barwidths_from_plot)
+        fig.canvas.mpl_connect('resize_event', self.update_barwidths_from_plot)
+        fig.canvas.mpl_connect('button_release_event', self.flash_section_line_position)
 
+        if getattr(fig, '_midv_date_slider', None) is not None:
+            fig.canvas.mpl_connect('draw_event', self.update_slider)
+            fig._midv_date_slider.on_changed(partial(self.update_animation, fig))
+
+
+        fig._midv_update_legend_cid = fig.canvas.mpl_connect('draw_event', lambda x: self.update_legend(True, fig))
+        # Connecting to draw_event instead, but if it's too slow this one also works:
+        #try:
+        #    fig.canvas.toolbar._actions['edit_parameters'].triggered.connect(lambda x: self.update_legend(True, fig))
+        #    pass
+        #except:
+        #    common_utils.MessagebarAndLog.info(log_msg=ru(
+        #        QCoreApplication.translate('SectionPlot', 'Programming error: Connection to qaction edit_parameters failed: %s')) % str(traceback.format_exc()))
+
+    @contextmanager
+    def temporary_deactivate_update_legend(self, fig):
+        """Currently the legend is updated after each draw, but it doesn't trigger draw itself.
+
+        draw_idle probably doesn't work with the context manager as it exits the manager before draw is triggered
+        reusling in a very slow gui as legend is redone over and over again. """
+        fig.canvas.mpl_disconnect(fig._midv_update_legend_cid)
+        fig._midv_update_legend_cid = None
+        yield
+        fig._midv_update_legend_cid = fig.canvas.mpl_connect('draw_event', lambda x: self.update_legend(True, fig))
 
 def sample_polygon(polyLayer, sectionlinelayer, xarray):
     polyProvider = polyLayer.dataProvider()

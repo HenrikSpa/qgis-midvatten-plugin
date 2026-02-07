@@ -145,17 +145,6 @@ def replace_matplotlib_backends_backend_qt5agg_NavigationToolbar2QT_set_message_
     mpltoolbar.locLabel.setTextInteractionFlags(Qt.TextSelectableByMouse)
 
 
-class NavigationToolbarWithSignal(NavigationToolbar, QObject):
-    edit_parameters_used = pyqtSignal()
-
-    def __init__(self, *args, **kwargs):
-        NavigationToolbar.__init__(self, *args, **kwargs)
-
-    def edit_parameters(self, *args, **kwargs):
-        super(NavigationToolbarWithSignal, self).edit_parameters(*args, **kwargs)
-        self.edit_parameters_used.emit()
-
-
 LINESTYLES = {'-': 'Solid',
               '--': 'Dashed',
               '-.': 'DashDot',

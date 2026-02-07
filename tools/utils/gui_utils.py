@@ -275,13 +275,11 @@ def set_groupbox_children_visibility(groupbox_widget):
 
 
 def add_action_to_navigation_toolbar(toolbar, text, callback, tooltip_text, icon, set_checkable=True):
-    background_color = toolbar.palette().color(toolbar.backgroundRole())
-    foreground_color = toolbar.palette().color(toolbar.foregroundRole())
-    icon_color = (foreground_color if background_color.value() < 128 else None)
-
-    _text, _tooltip_text, _image_file, _callback = toolbar.toolitems[0]
-
+    #background_color = toolbar.palette().color(toolbar.backgroundRole())
+    #foreground_color = toolbar.palette().color(toolbar.foregroundRole())
+    #icon_color = (foreground_color if background_color.value() < 128 else None)
     #icon toolbar._icon(_image_file + '.png', icon_color)
+    _text, _tooltip_text, _image_file, _callback = toolbar.toolitems[0]
 
     a = toolbar.addAction(QIcon(icon), text, callback)
     toolbar._actions[callback] = a
@@ -347,5 +345,4 @@ class DetachFigureButton(NavigationButton):
                     self.fig.canvas.set_window_title(title)
                 except AttributeError:
                     print(f"Error, {e}, followup:\n{traceback.format_exc()}")
-        print(f"In detach_figure for button")
         self.fig.show()

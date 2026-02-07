@@ -549,3 +549,71 @@ class TestSectionPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
                     assert m
                 else:
                     assert not m
+
+    @mock.patch('midvatten.tools.sectionplot.common_utils.MessagebarAndLog')
+    def test_plot_section_detach_fig(self, mock_messagebar):
+        """ Test that detatching figure works and that the legend still has a working signal for edit_parameters """
+        db_utils.sql_alter_db('''INSERT INTO obs_lines (obsid, geometry) VALUES ('1', ST_GeomFromText('LINESTRING(633466.711659 6720684.24498, 633599.530455 6720727.016568)', 3006))''')
+        db_utils.sql_alter_db('''INSERT INTO obs_points (obsid, geometry, h_gs, length, drillstop) VALUES ('P1', ST_GeomFromText('POINT(633466 711659)', 3006), 2, 10, 'berg')''')
+        db_utils.sql_alter_db('''INSERT INTO obs_points (obsid, geometry, h_gs, length, drillstop) VALUES ('P2', ST_GeomFromText('POINT(6720727 016568)', 3006), 3, 20, NULL)''')
+        db_utils.sql_alter_db('''INSERT INTO obs_points (obsid, geometry, h_gs, length, drillstop) VALUES ('P3', ST_GeomFromText('POINT(6720728 016569)', 3006), 4, 30, NULL)''')
+
+        self.create_and_select_vlayer()
+
+        @mock.patch('midvatten.tools.sectionplot.common_utils.find_layer')
+        @mock.patch('midvatten.tools.sectionplot.common_utils.getselectedobjectnames', autospec=True)
+        @mock.patch('qgis.utils.iface', autospec=True)
+        def _test_plot_section(self, mock_iface, mock_getselectedobjectnames, mock_findlayer):
+            mock_iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
+            mock_findlayer.return_value.isEditable.return_value = False
+            mock_getselectedobjectnames.return_value = ('P1', 'P2', 'P3')
+            mock_mapcanvas = mock_iface.mapCanvas.return_value
+            mock_mapcanvas.layerCount.return_value = 0
+            self.midvatten.plot_section()
+            self.sectionplot = self.midvatten.sectionplot
+
+            self.sectionplot.drillstoplineEdit.setText("%berg%")
+            self.sectionplot.Legend_checkBox.setChecked(True)
+            self.sectionplot.draw_plot()
+            return self.sectionplot
+
+        secplot = _test_plot_section(self)
+        fig = secplot.figure
+        old_toolbar = fig.canvas.toolbar
+        for callback, qaction in secplot.figure.canvas.toolbar._actions.items():
+            if 'SectionPlot.detach_figure' in str(callback):
+                # Detach the figure
+                #continue
+                callback()
+                break
+
+        assert secplot.figure is None
+        assert old_toolbar is not fig.canvas.toolbar
+
+        #print(fig._midv_ax_main.__dict__)
+        leg = fig._midv_ax_main.get_legend()
+
+        def markersize(leg):
+            return leg.legend_handles[0].get_markersize()
+
+        start_markersize = markersize(leg)
+
+        new_markersize = 17.543
+        assert start_markersize != new_markersize # Make sure they are different for the test to work
+
+        for line in fig._midv_ax_main.get_lines():
+            line.set_markersize(new_markersize)
+
+        not_changed_markersize = markersize(leg)
+        assert start_markersize == not_changed_markersize
+
+        for callback, qaction in fig.canvas.toolbar._actions.items():
+            if callback == 'edit_parameters':
+                print(f"Trigger:")
+                qaction.trigger()
+                break
+
+        changed_markersize = markersize(leg)
+        assert changed_markersize == changed_markersize
+
+

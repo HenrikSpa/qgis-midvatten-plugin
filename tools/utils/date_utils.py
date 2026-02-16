@@ -22,15 +22,15 @@
 import datetime
 import re
 from builtins import str
-import pytz
-import numpy as np
+from typing import List
 
+import pytz
 from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools.utils.common_utils import returnunicode as ru, MessagebarAndLog
 
 
-def find_date_format(datestring, suppress_error_msg=False):
+def find_date_format(datestring: str, suppress_error_msg: bool = False) -> str:
     """
     Parses a string and returns the found working dateformat string
     :param datestring: A string representing a date, ex: '2015-01-01 12:00'
@@ -150,7 +150,9 @@ def dateshift(adate, n, step_lenght):
     return new_date
 
 
-def datestring_to_date(astring, now=datetime.datetime.now(), df=None):
+def datestring_to_date(
+    astring: str, now: datetime.datetime = datetime.datetime.now(), df: None = None
+) -> datetime.datetime:
     """
     Takes a string representing a date and converts it to datetime
     :param astring: A string or a datetime-object representing a date, ex: '2015-01-01 12:00' or an epoch number.
@@ -188,17 +190,17 @@ def datestring_to_date(astring, now=datetime.datetime.now(), df=None):
     return adate
 
 
-def long_dateformat(astring, dateformat=None):
+def long_dateformat(astring: str, dateformat=None) -> str:
     return datetime.datetime.strftime(
         datestring_to_date(astring, df=dateformat), "%Y-%m-%d %H:%M:%S"
     )
 
 
-def date_to_epoch(astring):
+def date_to_epoch(astring: str):
     return datestring_to_date(astring) - datetime.datetime(1970, 1, 1)
 
 
-def reformat_date_time(astring):
+def reformat_date_time(astring: str):
     date_format = find_date_format(astring)
     if date_format is None:
         return None
@@ -221,7 +223,7 @@ def reformat_date_time(astring):
     return new_datestring
 
 
-def find_time_format(datestring):
+def find_time_format(datestring: str):
     """
     Parses a string and returns the found working dateformat string
     :param datestring: A string representing a time, ex: '12:00'
@@ -386,5 +388,5 @@ def change_timezone(date_or_string, from_timezone, to_timezone):
     return res
 
 
-def get_pytz_timezones():
+def get_pytz_timezones() -> List[str]:
     return pytz.all_timezones

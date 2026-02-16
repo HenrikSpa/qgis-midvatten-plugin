@@ -43,12 +43,18 @@ from qgis.PyQt.QtWebKitWidgets import QWebView
 from matplotlib.dates import num2date
 from qgis.PyQt import QtWidgets, QtCore, uic
 from qgis.core import Qgis, QgsApplication, QgsLogger, QgsProject, QgsMapLayer
+from typing import Any, Callable, Iterator, List, Optional, Tuple, Type
 
 not_found_dialog = uic.loadUiType(
     os.path.join(os.path.dirname(__file__), "../..", "ui", "not_found_gui.ui")
 )[0]
 
 LEGEND_NCOL_KEY = "ncol" if mpl.__version__ < "3.6.0" else "ncols"
+
+
+def tr(context: str, msg: str) -> str:
+    """Shorter function alias for QCoreApplication.translate """
+    return QCoreApplication.translate(context, msg)
 
 
 class MessagebarAndLog(object):
@@ -86,19 +92,19 @@ class MessagebarAndLog(object):
 
     @staticmethod
     def log(
-        bar_msg=None,
-        log_msg=None,
-        duration=10,
-        messagebar_level=Qgis.Info,
-        log_level=Qgis.Info,
-        button=True,
+        bar_msg: Optional[str] = None,
+        log_msg: Optional[str] = None,
+        duration: int = 10,
+        messagebar_level: Qgis.MessageLevel = Qgis.Info,
+        log_level: Qgis.MessageLevel = Qgis.Info,
+        button: bool = True,
     ):
         if qgis.utils.iface is None:
             return None
         if bar_msg is not None:
             widget = qgis.utils.iface.messageBar().createMessage(returnunicode(bar_msg))
             log_button = QtWidgets.QPushButton(
-                QCoreApplication.translate("MessagebarAndLog", "View message log"),
+                tr("MessagebarAndLog", "View message log"),
                 pressed=show_message_log,
             )
             if log_msg is not None and button:
@@ -123,7 +129,13 @@ class MessagebarAndLog(object):
             )
 
     @staticmethod
-    def info(bar_msg=None, log_msg=None, duration=10, button=True, optional_bar=False):
+    def info(
+        bar_msg: Optional[str] = None,
+        log_msg: Optional[str] = None,
+        duration: int = 10,
+        button: bool = True,
+        optional_bar: bool = False,
+    ):
         MessagebarAndLog.log(bar_msg, log_msg, duration, Qgis.Info, Qgis.Info, button)
 
     @staticmethod
@@ -136,14 +148,18 @@ class MessagebarAndLog(object):
 
     @staticmethod
     def critical(
-        bar_msg=None, log_msg=None, duration=10, button=True, optional_bar=False
+        bar_msg: Optional[str] = None,
+        log_msg: Optional[str] = None,
+        duration: int = 10,
+        button: bool = True,
+        optional_bar: bool = False,
     ):
         MessagebarAndLog.log(
             bar_msg, log_msg, duration, Qgis.Critical, Qgis.Critical, button
         )
 
 
-def write_qgs_log_to_file(message, tag, level):
+def write_qgs_log_to_file(message: str, tag: str, level: Qgis.MessageLevel):
     logfile = QgsLogger.logFile()
     if logfile is not None:
         QgsLogger.logMessageToFile(
@@ -161,7 +177,7 @@ class Askuser(QtWidgets.QDialog):
         self,
         question="YesNo",
         msg="",
-        dialogtitle=QCoreApplication.translate("askuser", "User input needed"),
+        dialogtitle=tr("askuser", "User input needed"),
         parent=None,
         include_cancel_button=False,
     ):
@@ -186,10 +202,10 @@ class Askuser(QtWidgets.QDialog):
                 self.result = 0  # 0="no"
         elif question == "AllSelected":  # All or Selected Dialog
             btnAll = QtWidgets.QPushButton(
-                QCoreApplication.translate("askuser", "All")
+                tr("askuser", "All")
             )  # = "0"
             btnSelected = QtWidgets.QPushButton(
-                QCoreApplication.translate("askuser", "Selected")
+                tr("askuser", "Selected")
             )  # = "1"
             # btnAll.clicked.connect(lambda x: self.DoForAll())
             # btnSelected.clicked.connect(lambda x: self.DoForSelected())
@@ -216,9 +232,9 @@ class Askuser(QtWidgets.QDialog):
                 answer = str(
                     qgis.PyQt.QtWidgets.QInputDialog.getText(
                         None,
-                        QCoreApplication.translate("askuser", "User input needed"),
+                        tr("askuser", "User input needed"),
                         returnunicode(
-                            QCoreApplication.translate(
+                            tr(
                                 "askuser",
                                 "Give needed adjustment of date/time for the data.\nSupported format: +- X <resolution>\nEx: 1 hours, -1 hours, -1 days\nSupported units:\n%s",
                             )
@@ -240,7 +256,7 @@ class Askuser(QtWidgets.QDialog):
                         else:
                             pop_up_info(
                                 returnunicode(
-                                    QCoreApplication.translate(
+                                    tr(
                                         "askuser",
                                         "Failure:\nOnly support resolutions\n%s",
                                     )
@@ -249,7 +265,7 @@ class Askuser(QtWidgets.QDialog):
                             )
                     else:
                         pop_up_info(
-                            QCoreApplication.translate(
+                            tr(
                                 "askuser",
                                 "Failure:\nMust write time resolution also.\n",
                             )
@@ -286,13 +302,13 @@ class NotFoundQuestion(QtWidgets.QDialog, not_found_dialog):
 
         if ignore_checkbox:
             self.ignore_checkbox = qgis.PyQt.QtWidgets.QCheckBox(
-                QCoreApplication.translate(
+                tr(
                     "NotFoundQuestion", "Ignore database missmatch"
                 ),
                 self,
             )
             self.ignore_checkbox.setToolTip(
-                QCoreApplication.translate(
+                tr(
                     "NotFoundQuestion",
                     "Ignore database missmatch and try to import anyway",
                 )
@@ -305,7 +321,7 @@ class NotFoundQuestion(QtWidgets.QDialog, not_found_dialog):
             button.clicked.connect(lambda x: self.button_clicked())
 
         self.reuse_label = qgis.PyQt.QtWidgets.QLabel(
-            QCoreApplication.translate(
+            tr(
                 "NotFoundQuestion", "Reuse answer for all identical"
             )
         )
@@ -384,7 +400,7 @@ class HtmlDialog(QtWidgets.QDialog):
         self.verticalLayout.setMargin(0)
         self.verticalLayout.addWidget(self.webView)
         self.closeButton = QtWidgets.QPushButton()
-        self.closeButton.setText(QCoreApplication.translate("HtmlDialog", "Close"))
+        self.closeButton.setText(tr("HtmlDialog", "Close"))
         self.closeButton.setMaximumWidth(150)
         self.horizontalLayout = QtWidgets.QHBoxLayout()
         self.horizontalLayout.setSpacing(2)
@@ -424,7 +440,7 @@ def ask_user_about_stopping(question):
         return "ignore"
 
 
-def find_layer(layer_name):
+def find_layer(layer_name: str):
     found_layers = [
         layer
         for name, layer in QgsProject.instance().mapLayers().items()
@@ -434,14 +450,14 @@ def find_layer(layer_name):
     if len(found_layers) == 0:
         raise UsageError(
             returnunicode(
-                QCoreApplication.translate("find_layer", "The layer %s was not found!")
+                tr("find_layer", "The layer %s was not found!")
             )
             % layer_name
         )
     elif len(found_layers) > 1:
         raise UsageError(
             returnunicode(
-                QCoreApplication.translate(
+                tr(
                     "find_layer",
                     'Found %s layers with the name "%s". There can be only one!',
                 )
@@ -464,7 +480,7 @@ def get_selected_features_as_tuple(layer_name=None, column_name=None):
             obs_points_layer = layer_name
         else:
             MessagebarAndLog.info(
-                log_msg=QCoreApplication.translate(
+                log_msg=tr(
                     "get_selected_features_as_tuple",
                     'Programming error: The layername "%s" was not str or QgsMapLayer!',
                 )
@@ -524,7 +540,7 @@ def getQgisVectorLayers():
     return layerlist
 
 
-def isfloat(str):
+def isfloat(str: str):
     try:
         float(str)
     except ValueError:
@@ -557,7 +573,7 @@ def null_2_empty_string(input_string):
 
 
 def pop_up_info(
-    msg="", title=QCoreApplication.translate("pop_up_info", "Information"), parent=None
+    msg="", title=tr("pop_up_info", "Information"), parent=None
 ):
     """Display an info message via Qt box"""
     QtWidgets.QMessageBox.information(parent, title, "%s" % (msg))
@@ -576,8 +592,8 @@ def return_lower_ascii_string(textstring):
 
 
 def returnunicode(
-    anything, keep_containers=False
-):  # takes an input and tries to return it as unicode
+    anything: Any, keep_containers: bool = False
+) -> Any:  # takes an input and tries to return it as unicode
     r"""
 
     >>> returnunicode('b')
@@ -673,7 +689,7 @@ def returnunicode(
                 break
         else:
             decoded = str(
-                QCoreApplication.translate(
+                tr(
                     "returnunicode", "data type unknown, check database"
                 )
             )
@@ -697,7 +713,7 @@ def selection_check(
             return "ok"
         elif selectedfeatures == 0 and not (layer.selectedFeatureCount() > 0):
             MessagebarAndLog.critical(
-                bar_msg=QCoreApplication.translate(
+                bar_msg=tr(
                     "selection_check",
                     "Error, select at least one object in the qgis layer!",
                 )
@@ -705,7 +721,7 @@ def selection_check(
         else:
             MessagebarAndLog.critical(
                 bar_msg=returnunicode(
-                    QCoreApplication.translate(
+                    tr(
                         "selection_check",
                         '"""Error, select exactly %s object in the qgis layer!',
                     )
@@ -714,7 +730,7 @@ def selection_check(
             )
     else:
         pop_up_info(
-            QCoreApplication.translate(
+            tr(
                 "selection_check", "Select a qgis layer that has a field obsid!"
             )
         )
@@ -730,7 +746,7 @@ def strat_selection_check(layer=""):
     else:
         MessagebarAndLog.critical(
             bar_msg=returnunicode(
-                QCoreApplication.translate(
+                tr(
                     "strat_selection_check",
                     "Error, select a qgis layer with field h_gs!",
                 )
@@ -772,7 +788,7 @@ def unicode_2_utf8(anything):  # takes an unicode and tries to return it as utf8
 
     if text is None:
         text = returnunicode(
-            QCoreApplication.translate(
+            tr(
                 "unicode_2_utf8", "data type unknown, check database"
             )
         ).encode("utf-8")
@@ -788,7 +804,7 @@ def verify_layer_selection(
             current_error_signal += 1
             if required_number_of_selected_features == 0:
                 MessagebarAndLog.critical(
-                    bar_msg=QCoreApplication.translate(
+                    bar_msg=tr(
                         "verify_layer_selection",
                         "Error, you have to select some features!",
                     )
@@ -796,7 +812,7 @@ def verify_layer_selection(
             else:
                 MessagebarAndLog.critical(
                     bar_msg=returnunicode(
-                        QCoreApplication.translate(
+                        tr(
                             "verify_layer_selection",
                             "Error, you have to select exactly %s features!",
                         )
@@ -805,7 +821,7 @@ def verify_layer_selection(
                 )
     else:
         MessagebarAndLog.critical(
-            bar_msg=QCoreApplication.translate(
+            bar_msg=tr(
                 "verify_layer_selection", "Error, you have to select a relevant layer!"
             )
         )
@@ -827,7 +843,7 @@ def verify_this_layer_selected_and_not_in_edit_mode(errorsignal, layername):
         errorsignal += 1
         MessagebarAndLog.critical(
             bar_msg=returnunicode(
-                QCoreApplication.translate(
+                tr(
                     "verify_this_layer_selected_and_not_in_edit_mode",
                     "Error, you have to select/activate %s layer!",
                 )
@@ -838,7 +854,7 @@ def verify_this_layer_selected_and_not_in_edit_mode(errorsignal, layername):
         errorsignal += 1
         MessagebarAndLog.critical(
             bar_msg=returnunicode(
-                QCoreApplication.translate(
+                tr(
                     "verify_this_layer_selected_and_not_in_edit_mode",
                     "Error, the selected layer is currently in editing mode. Please exit this mode before updating coordinates.",
                 )
@@ -848,7 +864,7 @@ def verify_this_layer_selected_and_not_in_edit_mode(errorsignal, layername):
         errorsignal += 1
         MessagebarAndLog.critical(
             bar_msg=returnunicode(
-                QCoreApplication.translate(
+                tr(
                     "verify_this_layer_selected_and_not_in_edit_mode",
                     "Error, you have to select/activate %s layer!",
                 )
@@ -859,7 +875,7 @@ def verify_this_layer_selected_and_not_in_edit_mode(errorsignal, layername):
 
 
 @contextmanager
-def tempinput(data, charset="UTF-8", suffix=".csv"):
+def tempinput(data: str, charset: str = "UTF-8", suffix: str = ".csv") -> Iterator[str]:
     """Creates and yields a temporary file from data
 
     The file can't be deleted in windows for some strange reason.
@@ -910,7 +926,7 @@ def calc_mean_diff(coupled_vals):
     )
 
 
-def lstrip(word, from_string):
+def lstrip(word: str, from_string: str) -> str:
     """
     Strips word from the start of from_string
     :param word: a string to strip
@@ -928,7 +944,7 @@ def lstrip(word, from_string):
     return new_word
 
 
-def rstrip(word, from_string):
+def rstrip(word: str, from_string: str) -> str:
     """
     Strips word from the end of from_string
     :param word: a string to strip
@@ -946,12 +962,12 @@ def rstrip(word, from_string):
     return new_word
 
 
-def ask_for_export_crs(default_crs=""):
+def ask_for_export_crs(default_crs: int = "") -> str:
     return str(
         QtWidgets.QInputDialog.getText(
             None,
-            QCoreApplication.translate("ask_for_export_crs", "Set export crs"),
-            QCoreApplication.translate(
+            tr("ask_for_export_crs", "Set export crs"),
+            tr(
                 "ask_for_export_crs", "Give the crs for the exported database.\n"
             ),
             QtWidgets.QLineEdit.Normal,
@@ -1095,12 +1111,12 @@ def find_similar(word, wordlist, hits=5):
 
 
 def filter_nonexisting_values_and_ask(
-    file_data=None,
-    header_value=None,
-    existing_values=None,
-    try_capitalize=False,
-    always_ask_user=False,
-):
+    file_data: Optional[List[List[str]]] = None,
+    header_value: Optional[str] = None,
+    existing_values: Optional[List[str]] = None,
+    try_capitalize: bool = False,
+    always_ask_user: bool = False,
+) -> List[List[str]]:
     """
 
     The class NotFoundQuestion is used with 4 buttons; 'Ignore', 'Cancel', 'Ok', 'Skip'.
@@ -1195,7 +1211,7 @@ def filter_nonexisting_values_and_ask(
         while submitted_value not in existing_values:
             # Put the found similar values on top, but include all values in the database as well
             msg = returnunicode(
-                QCoreApplication.translate(
+                tr(
                     "filter_nonexisting_values_and_ask",
                     "(Message %s of %s)\n\nGive the %s for:\n%s",
                 )
@@ -1213,7 +1229,7 @@ def filter_nonexisting_values_and_ask(
                 ),
             )
             question = NotFoundQuestion(
-                dialogtitle=QCoreApplication.translate(
+                dialogtitle=tr(
                     "filter_nonexisting_values_and_ask", "User input needed"
                 ),
                 msg=msg,
@@ -1285,13 +1301,13 @@ def remove_mean_from_nparray(x):
 
 
 def anything_to_string_representation(
-    anything,
-    itemjoiner=", ",
-    pad="",
-    dictformatter="{%s}",
-    listformatter="[%s]",
-    tupleformatter="(%s, )",
-):
+    anything: Any,
+    itemjoiner: str = ", ",
+    pad: str = "",
+    dictformatter: str = "{%s}",
+    listformatter: str = "[%s]",
+    tupleformatter: str = "(%s, )",
+) -> str:
     r"""Turns anything into a string used for testing
     :param anything: just about anything
     :param itemjoiner: The string to join list/tuple/dict items with.
@@ -1382,7 +1398,7 @@ def anything_to_string_representation(
     return aunicode
 
 
-def waiting_cursor(func):
+def waiting_cursor(func: Callable) -> Callable:
     def func_wrapper(*args, **kwargs):
         start_waiting_cursor()
         result = func(*args, **kwargs)
@@ -1419,16 +1435,16 @@ class Cancel(object):
 
 
 def get_delimiter(
-    filename=None,
-    rows=None,
-    charset="utf-8",
-    delimiters=None,
-    num_fields=None,
-    skip_empty_rows=True,
-):
+    filename: Optional[str] = None,
+    rows: None = None,
+    charset: str = "utf-8",
+    delimiters: Optional[List[str]] = None,
+    num_fields: Optional[int] = None,
+    skip_empty_rows: bool = True,
+) -> str:
     if filename is None:
         raise TypeError(
-            QCoreApplication.translate(
+            tr(
                 "get_delimiter", "Must give filename or supply rows"
             )
         )
@@ -1442,7 +1458,12 @@ def get_delimiter(
     return delimiter
 
 
-def get_delimiter_from_file_rows(rows, filename=None, delimiters=None, num_fields=None):
+def get_delimiter_from_file_rows(
+    rows: List[str],
+    filename: Optional[str] = None,
+    delimiters: Optional[List[str]] = None,
+    num_fields: Optional[int] = None,
+) -> str:
     if filename is None:
         filename = "the rows"
     delimiter = None
@@ -1464,7 +1485,7 @@ def get_delimiter_from_file_rows(rows, filename=None, delimiters=None, num_field
         if not tested_delim:
             _delimiter = ask_for_delimiter(
                 question=returnunicode(
-                    QCoreApplication.translate(
+                    tr(
                         "get_delimiter_from_file_rows",
                         "Delimiter couldn't be found automatically for %s. Give the correct one (ex ';'):",
                     )
@@ -1477,7 +1498,7 @@ def get_delimiter_from_file_rows(rows, filename=None, delimiters=None, num_field
                 if num_fields is not None:
                     MessagebarAndLog.critical(
                         returnunicode(
-                            QCoreApplication.translate(
+                            tr(
                                 "get_delimiter_from_file_rows",
                                 "Delimiter not found for %s. The file must contain %s fields, but none of %s worked as delimiter.",
                             )
@@ -1495,7 +1516,7 @@ def get_delimiter_from_file_rows(rows, filename=None, delimiters=None, num_field
                 if lenght == 1 or len(more_than_one_delimiter) > 1:
                     _delimiter = ask_for_delimiter(
                         question=returnunicode(
-                            QCoreApplication.translate(
+                            tr(
                                 "get_delimiter_from_file_rows",
                                 "Delimiter couldn't be found automatically for %s. Give the correct one (ex ';'):",
                             )
@@ -1507,13 +1528,13 @@ def get_delimiter_from_file_rows(rows, filename=None, delimiters=None, num_field
 
 
 def ask_for_delimiter(
-    header=QCoreApplication.translate("ask_for_delimiter", "Give delimiter"),
+    header=tr("ask_for_delimiter", "Give delimiter"),
     question="",
     default=";",
 ):
     _delimiter = qgis.PyQt.QtWidgets.QInputDialog.getText(
         None,
-        QCoreApplication.translate("ask_for_delimiter", "Give delimiter"),
+        tr("ask_for_delimiter", "Give delimiter"),
         question,
         qgis.PyQt.QtWidgets.QLineEdit.Normal,
         default,
@@ -1521,7 +1542,7 @@ def ask_for_delimiter(
     if not _delimiter[1]:
         MessagebarAndLog.info(
             bar_msg=returnunicode(
-                QCoreApplication.translate(
+                tr(
                     "ask_for_delimiter", "Delimiter not given. Stopping."
                 )
             )
@@ -1539,13 +1560,13 @@ def transpose_lists_of_lists(list_of_lists):
     return outlist_of_lists
 
 
-def sql_failed_msg():
-    return QCoreApplication.translate(
+def sql_failed_msg() -> str:
+    return tr(
         "sql_failed_msg", "Sql failed, see log message panel."
     )
 
 
-def fn_timer(function):
+def fn_timer(function: Callable) -> Callable:
     """from http://www.marinamele.com/7-tips-to-time-python-scripts-and-control-memory-and-cpu-usage"""
 
     @wraps(function)
@@ -1576,7 +1597,7 @@ class UsageError(Exception):
     pass
 
 
-def general_exception_handler(func):
+def general_exception_handler(func: Callable) -> Callable:
     """
     If UsageError is raised without message, it is assumed that the programmer has used MessagebarAndLog for the messages
     and no additional message will be printed.
@@ -1599,7 +1620,7 @@ def general_exception_handler(func):
             if msg:
                 MessagebarAndLog.critical(
                     bar_msg=returnunicode(
-                        QCoreApplication.translate(
+                        tr(
                             "general_exception_handler", "Usage error: %s"
                         )
                     )
@@ -1632,7 +1653,7 @@ def save_stored_settings(ms, stored_settings, settingskey, skip_ast=False):
     ms.save_settings(settingskey)
     MessagebarAndLog.info(
         log_msg=returnunicode(
-            QCoreApplication.translate(
+            tr(
                 "save_stored_settings", "Settings %s stored for key %s."
             )
         )
@@ -1654,7 +1675,7 @@ def get_stored_settings(ms, settingskey, default=None, skip_ast=False):
     if settings_string_raw is None:
         MessagebarAndLog.info(
             bar_msg=returnunicode(
-                QCoreApplication.translate(
+                tr(
                     "get_stored_settings",
                     "Settings key %s did not exist in midvatten settings.",
                 )
@@ -1665,7 +1686,7 @@ def get_stored_settings(ms, settingskey, default=None, skip_ast=False):
     if not settings_string_raw:
         MessagebarAndLog.info(
             log_msg=returnunicode(
-                QCoreApplication.translate(
+                tr(
                     "get_stored_settings", "Settings key %s was empty."
                 )
             )
@@ -1678,7 +1699,7 @@ def get_stored_settings(ms, settingskey, default=None, skip_ast=False):
     try:
         MessagebarAndLog.info(
             log_msg=returnunicode(
-                QCoreApplication.translate(
+                tr(
                     "get_stored_settings", 'Reading stored settings "%s":\n%s'
                 )
             )
@@ -1696,14 +1717,14 @@ def get_stored_settings(ms, settingskey, default=None, skip_ast=False):
             stored_settings = default
             MessagebarAndLog.warning(
                 bar_msg=returnunicode(
-                    QCoreApplication.translate(
+                    tr(
                         "get_stored_settings",
                         "Getting stored settings failed for key %s see log message panel.",
                     )
                 )
                 % settingskey,
                 log_msg=returnunicode(
-                    QCoreApplication.translate(
+                    tr(
                         "ExportToFieldLogger",
                         'Parsing the settingsstring %s failed. Msg "%s"',
                     )
@@ -1714,14 +1735,14 @@ def get_stored_settings(ms, settingskey, default=None, skip_ast=False):
             stored_settings = default
             MessagebarAndLog.warning(
                 bar_msg=returnunicode(
-                    QCoreApplication.translate(
+                    tr(
                         "get_stored_settings",
                         "Getting stored settings failed for key %s see log message panel.",
                     )
                 )
                 % settingskey,
                 log_msg=returnunicode(
-                    QCoreApplication.translate(
+                    tr(
                         "ExportToFieldLogger",
                         'Parsing the settingsstring %s failed. Msg "%s"',
                     )
@@ -1760,7 +1781,12 @@ def to_float_or_none(anything):
 
 
 def write_printlist_to_file(
-    filename, printlist, dialect=csv.excel, delimiter=";", encoding="utf-8", **kwds
+    filename: str,
+    printlist: List[Any],
+    dialect: Type[csv.excel] = csv.excel,
+    delimiter: str = ";",
+    encoding: str = "utf-8",
+    **kwds
 ):
     with io.open(filename, "w", newline="", encoding=encoding) as csvfile:
         csvwriter = csv.writer(csvfile, delimiter=delimiter, dialect=dialect, **kwds)
@@ -1768,7 +1794,7 @@ def write_printlist_to_file(
         csvwriter.writerows(returnunicode(printlist, keep_containers=True))
     MessagebarAndLog.info(
         bar_msg=returnunicode(
-            QCoreApplication.translate(
+            tr(
                 "write_printlist_to_file", "Data written to file %s."
             )
         )
@@ -1776,11 +1802,11 @@ def write_printlist_to_file(
     )
 
 
-def sql_unicode_list(an_iterator):
+def sql_unicode_list(an_iterator: Tuple[str]) -> str:
     return ", ".join(["'{}'".format(returnunicode(x)) for x in an_iterator])
 
 
-def get_save_file_name_no_extension(**kwargs):
+def get_save_file_name_no_extension(**kwargs) -> str:
     filename = qgis.PyQt.QtWidgets.QFileDialog.getSaveFileName(**kwargs)
     if not filename[0]:
         raise UserInterruptError()
@@ -1788,7 +1814,7 @@ def get_save_file_name_no_extension(**kwargs):
         return filename[0]
 
 
-def dict_to_tuple(adict):
+def dict_to_tuple(adict: dict) -> tuple[tuple[Any, Any], ...]:
     return tuple([(k, v) for k, v in sorted(adict.items())])
 
 
@@ -1821,7 +1847,7 @@ class ContinuousColorCycle(object):
         else:
             MessagebarAndLog.info(
                 bar_msg=returnunicode(
-                    QCoreApplication.translate(
+                    tr(
                         "Customplot",
                         "Style cycler ran out of unique combinations. Using random color!",
                     )
@@ -1835,7 +1861,7 @@ class ContinuousColorCycle(object):
             return next_combo
 
 
-def get_full_filename(filename):
+def get_full_filename(filename: str) -> str:
     return os.path.join(
         os.sep, os.path.dirname(__file__), "../..", "definitions", filename
     )
@@ -1853,7 +1879,7 @@ class PickAnnotator(object):
         canvas.mpl_connect("pick_event", lambda event: self.identify_plot(event))
         canvas.mpl_connect("figure_enter_event", self.remove_annotation)
         MessagebarAndLog.info(
-            log_msg=QCoreApplication.translate(
+            log_msg=tr(
                 "PickAnnotator", "PickAnnotator initialized."
             )
         )
@@ -1908,7 +1934,7 @@ class PickAnnotator(object):
             self.fig.canvas.flush_events()
         except Exception as e:
             MessagebarAndLog.info(
-                log_msg=QCoreApplication.translate(
+                log_msg=tr(
                     "PickAnnotator", "Adding annotation failed, msg: %s."
                 )
                 % str(e)
@@ -1924,7 +1950,7 @@ class PickAnnotator(object):
                 self.fig.canvas.flush_events()
             except Exception as e:
                 MessagebarAndLog.info(
-                    log_msg=QCoreApplication.translate(
+                    log_msg=tr(
                         "PickAnnotator", "Removing annotation failed, msg: %s."
                     )
                     % str(e)
@@ -1940,7 +1966,7 @@ class Timer(object):
     def stop(self):
         t = time.time()
         MessagebarAndLog.info(
-            log_msg=QCoreApplication.translate(
+            log_msg=tr(
                 "Timer", "Total time running %s: %s seconds"
             )
             % (self.name, str(t - self.t0))
@@ -1948,7 +1974,7 @@ class Timer(object):
 
     def current_time(self, info=""):
         MessagebarAndLog.info(
-            log_msg=QCoreApplication.translate(
+            log_msg=tr(
                 "Timer", "Current time running %s%s: %s seconds"
             )
             % (self.name, info, str(time.time() - self.t0))
@@ -1959,7 +1985,7 @@ class Timer(object):
         diff = time.time() - self.t1
         self.t1 = t
         MessagebarAndLog.info(
-            log_msg=QCoreApplication.translate(
+            log_msg=tr(
                 "Timer", "Current time running %s%s: %s seconds"
             )
             % (self.name, info, str(diff))
@@ -1972,17 +1998,17 @@ def timer(name):
     yield
     t1 = time.time()
     MessagebarAndLog.info(
-        log_msg=QCoreApplication.translate("timer", "Total time running %s: %s seconds")
+        log_msg=tr("timer", "Total time running %s: %s seconds")
         % (name, str(t1 - t0))
     )
 
 
-def get_date_time():
+def get_date_time() -> str:
     """returns date and time as a string in a pre-formatted format"""
     return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
-def format_timezone_string(index):
+def format_timezone_string(index: int) -> str:
     if index < -12 or index > 14:
         raise Exception("Error, timezone must be between -12 and + 14.")
     if index < 0:

@@ -27,28 +27,23 @@ from builtins import object
 from builtins import range
 from builtins import str
 from collections import OrderedDict
+from typing import Any, Dict, List, Tuple, Union
 
 import qgis.PyQt
 import qgis.gui
-from qgis.gui import QgsMapLayerComboBox
-from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt import QtWidgets
-
-# from qgis._core import QgsProject
+from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import (
     QgsProject,
-    QgsWkbTypes,
     QgsGeometry,
-    QgsVectorLayer,
-    QgsMapLayer,
     QgsCoordinateTransform,
     QgsCoordinateReferenceSystem,
-    QgsMapLayerProxyModel,
     Qgis,
 )
+from qgis.gui import QgsMapLayerComboBox
 
 import midvatten.definitions.midvatten_defs as defs
-from midvatten.tools.utils import common_utils, midvatten_utils, db_utils, gui_utils
+from midvatten.tools.utils import common_utils, db_utils, gui_utils
 from midvatten.tools.utils.common_utils import (
     returnunicode as ru,
     start_waiting_cursor,
@@ -70,6 +65,157 @@ parameter_browser_dialog = qgis.PyQt.uic.loadUiType(
         os.path.dirname(__file__), "..", "ui", "fieldlogger_parameter_browser.ui"
     )
 )[0]
+
+
+class ParameterGroup(object):
+    def __init__(self, obslayer: None):
+        """ """
+        self.obslayer = obslayer
+        # Widget list:
+
+        self._location_suffix = QtWidgets.QLineEdit()
+        self._sublocation_suffix = QtWidgets.QLineEdit()
+        self._input_field_group_list = ExtendedQPlainTextEdit(keep_sorted=False)
+        self._obsid_list = ExtendedQPlainTextEdit(keep_sorted=True)
+        self.paste_from_selection_button = QtWidgets.QPushButton(
+            ru(QCoreApplication.translate("ParameterGroup", "Paste selected ids"))
+        )
+        # ------------------------------------------------------------------------
+        self._location_suffix.setToolTip(
+            ru(
+                QCoreApplication.translate(
+                    "ParameterGroup",
+                    """(optional)\n"""
+                    """The Fieldlogger location in the Fieldlogger map will be "obsid.LOCATION SUFFIX".\n\n"""
+                    """Location suffix is useful for separating locations with identical obsids.\n"""
+                    """ex: Location suffix 1234 --> obsid.1234""",
+                )
+            )
+        )
+        self._sublocation_suffix.setToolTip(
+            ru(
+                QCoreApplication.translate(
+                    "ParameterGroup",
+                    """(optional)\n"""
+                    """Fieldlogger sub-location will be obsid.Location suffix.Sub-location suffix\n\n"""
+                    """Parameters sharing the same sub-location will be shown together.\n"""
+                    """Sub-location suffix is used to separate input fields into groups for the Fieldlogger user.\n"""
+                    """ex: level, quality, sample, comment, flow.""",
+                )
+            )
+        )
+        self._input_field_group_list.setToolTip(
+            ru(
+                QCoreApplication.translate(
+                    "ParameterGroup",
+                    """Copy and paste input fields from "Create Input Fields" to this box\n"""
+                    """or from/to other input field boxes.\n"""
+                    """The input fields in Fieldlogger will appear in the same order as in\n"""
+                    """this list.\n"""
+                    """The topmost input field will be the first selected input field when\n"""
+                    """the user enters the input fields in Fieldlogger. (!!! If the input\n"""
+                    """field already exists in a previous group it will end up on top!!!)""",
+                )
+            )
+        )
+        locations_box_tooltip = ru(
+            QCoreApplication.translate(
+                "ParameterGroup",
+                """Add locations to Locations box by selecting rows in the chosen layer (see "Locations from"\n"""
+                """in the left column) using it's attribute table or selection from map.\n"""
+                """Then click the button "Paste selected ids."\n"""
+                """Copy and paste obsids between Locations boxes.""",
+            )
+        )
+
+        self._obsid_list.setToolTip(locations_box_tooltip)
+        self.paste_from_selection_button.setToolTip(locations_box_tooltip)
+
+        # -------------------------------------------------------------------------------------
+        self.paste_from_selection_button.clicked.connect(
+            lambda: self.paste_from_selection()
+        )
+
+    def paste_from_selection(self):
+        if self.obslayer.obs_from_vlayer.isChecked():
+            self._obsid_list.paste_data(
+                common_utils.get_selected_features_as_tuple(
+                    layer_name=self.obslayer.current_layer(),
+                    column_name=self.obslayer.current_column(),
+                )
+            )
+        else:
+            try:
+                self._obsid_list.paste_data(
+                    common_utils.get_selected_features_as_tuple(
+                        layer_name="obs_points", column_name="obsid"
+                    )
+                )
+            except common_utils.UsageError as e:
+                common_utils.MessagebarAndLog.warning(bar_msg=str(e))
+
+    def get_settings(self):
+        settings = (
+            ("input_field_group_list", self.input_field_group_list),
+            ("location_suffix", self.location_suffix),
+            ("sublocation_suffix", self.sublocation_suffix),
+        )
+        settings = tuple((k, v) for k, v in settings if v)
+        return ru(settings, keep_containers=True)
+
+    @property
+    def location_suffix(self):
+        return ru(self._location_suffix.text())
+
+    @location_suffix.setter
+    def location_suffix(self, value):
+        self._location_suffix.setText(ru(value))
+
+    @property
+    def sublocation_suffix(self):
+        return ru(self._sublocation_suffix.text())
+
+    @sublocation_suffix.setter
+    def sublocation_suffix(self, value):
+        self._sublocation_suffix.setText(ru(value))
+
+    @property
+    def locations_sublocations_obsids(self) -> List[Tuple[str, str, str]]:
+        """
+
+        :return: a list like [[obsid.locationsuffix as location, obsid.locationsuffix.sublocationsuffix as sublocation, obsid), ...]
+        """
+        locations_sublocations_obsids = [
+            (
+                ".".join([x for x in [ru(obsid), ru(self.location_suffix)] if x]),
+                ".".join(
+                    [
+                        x
+                        for x in [
+                            ru(obsid),
+                            ru(self.location_suffix),
+                            ru(self.sublocation_suffix),
+                        ]
+                        if x
+                    ]
+                ),
+                ru(obsid),
+            )
+            for obsid in set(self._obsid_list.get_all_data())
+        ]
+        return locations_sublocations_obsids
+
+    @property
+    def input_field_group_list(self):
+        return ru(self._input_field_group_list.get_all_data(), keep_containers=True)
+
+    @input_field_group_list.setter
+    def input_field_group_list(self, value):
+        value = ru(value, keep_containers=True)
+        if isinstance(value, (list, tuple)):
+            self._input_field_group_list.paste_data(paste_list=value)
+        else:
+            self._input_field_group_list.paste_data(paste_list=value.split("\n"))
 
 
 class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
@@ -449,7 +595,17 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         return new_widget
 
     @staticmethod
-    def create_parameter_groups_using_stored_settings(stored_settings, obslayer):
+    def create_parameter_groups_using_stored_settings(
+        stored_settings: List[
+            Union[
+                Tuple[int, Tuple[Tuple[str, str], Tuple[str, str], Tuple[str, str]]],
+                Tuple[
+                    int, Tuple[Tuple[str, List[str]], Tuple[str, str], Tuple[str, str]]
+                ],
+            ]
+        ],
+        obslayer: None,
+    ) -> List[ParameterGroup]:
         """ """
         if not stored_settings or stored_settings is None:
             return []
@@ -678,7 +834,13 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         QtWidgets.QMessageBox.information(None, "Preview", output)
 
     @staticmethod
-    def organize_for_export(parameter_groups, latlons):
+    def organize_for_export(
+        parameter_groups: List[ParameterGroup],
+        latlons: Dict[str, Union[Tuple[int, int], Tuple[None, None], Tuple[str, str]]],
+    ) -> Union[
+        Tuple[Dict[str, str], OrderedDict, OrderedDict, OrderedDict, OrderedDict],
+        Tuple[Dict[Any, Any], OrderedDict, OrderedDict, OrderedDict, OrderedDict],
+    ]:
         sublocations_locations = {}
         locations_sublocations = OrderedDict()
         locations_lat_lon = OrderedDict()
@@ -767,7 +929,10 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         )
 
     @staticmethod
-    def create_export_printlist(parameter_groups, latlons):
+    def create_export_printlist(
+        parameter_groups: List[ParameterGroup],
+        latlons: Dict[str, Union[Tuple[int, int], Tuple[None, None], Tuple[str, str]]],
+    ) -> List[str]:
         """
         Creates a result list with FieldLogger format from selected obsids and parameters
         :return: a list with result lines to export to file
@@ -918,157 +1083,6 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         self.add_parameter_group_to_gui(self.widgets_layouts, self.parameter_groups[-1])
 
 
-class ParameterGroup(object):
-    def __init__(self, obslayer):
-        """ """
-        self.obslayer = obslayer
-        # Widget list:
-
-        self._location_suffix = QtWidgets.QLineEdit()
-        self._sublocation_suffix = QtWidgets.QLineEdit()
-        self._input_field_group_list = ExtendedQPlainTextEdit(keep_sorted=False)
-        self._obsid_list = ExtendedQPlainTextEdit(keep_sorted=True)
-        self.paste_from_selection_button = QtWidgets.QPushButton(
-            ru(QCoreApplication.translate("ParameterGroup", "Paste selected ids"))
-        )
-        # ------------------------------------------------------------------------
-        self._location_suffix.setToolTip(
-            ru(
-                QCoreApplication.translate(
-                    "ParameterGroup",
-                    """(optional)\n"""
-                    """The Fieldlogger location in the Fieldlogger map will be "obsid.LOCATION SUFFIX".\n\n"""
-                    """Location suffix is useful for separating locations with identical obsids.\n"""
-                    """ex: Location suffix 1234 --> obsid.1234""",
-                )
-            )
-        )
-        self._sublocation_suffix.setToolTip(
-            ru(
-                QCoreApplication.translate(
-                    "ParameterGroup",
-                    """(optional)\n"""
-                    """Fieldlogger sub-location will be obsid.Location suffix.Sub-location suffix\n\n"""
-                    """Parameters sharing the same sub-location will be shown together.\n"""
-                    """Sub-location suffix is used to separate input fields into groups for the Fieldlogger user.\n"""
-                    """ex: level, quality, sample, comment, flow.""",
-                )
-            )
-        )
-        self._input_field_group_list.setToolTip(
-            ru(
-                QCoreApplication.translate(
-                    "ParameterGroup",
-                    """Copy and paste input fields from "Create Input Fields" to this box\n"""
-                    """or from/to other input field boxes.\n"""
-                    """The input fields in Fieldlogger will appear in the same order as in\n"""
-                    """this list.\n"""
-                    """The topmost input field will be the first selected input field when\n"""
-                    """the user enters the input fields in Fieldlogger. (!!! If the input\n"""
-                    """field already exists in a previous group it will end up on top!!!)""",
-                )
-            )
-        )
-        locations_box_tooltip = ru(
-            QCoreApplication.translate(
-                "ParameterGroup",
-                """Add locations to Locations box by selecting rows in the chosen layer (see "Locations from"\n"""
-                """in the left column) using it's attribute table or selection from map.\n"""
-                """Then click the button "Paste selected ids."\n"""
-                """Copy and paste obsids between Locations boxes.""",
-            )
-        )
-
-        self._obsid_list.setToolTip(locations_box_tooltip)
-        self.paste_from_selection_button.setToolTip(locations_box_tooltip)
-
-        # -------------------------------------------------------------------------------------
-        self.paste_from_selection_button.clicked.connect(
-            lambda: self.paste_from_selection()
-        )
-
-    def paste_from_selection(self):
-        if self.obslayer.obs_from_vlayer.isChecked():
-            self._obsid_list.paste_data(
-                common_utils.get_selected_features_as_tuple(
-                    layer_name=self.obslayer.current_layer(),
-                    column_name=self.obslayer.current_column(),
-                )
-            )
-        else:
-            try:
-                self._obsid_list.paste_data(
-                    common_utils.get_selected_features_as_tuple(
-                        layer_name="obs_points", column_name="obsid"
-                    )
-                )
-            except common_utils.UsageError as e:
-                common_utils.MessagebarAndLog.warning(bar_msg=str(e))
-
-    def get_settings(self):
-        settings = (
-            ("input_field_group_list", self.input_field_group_list),
-            ("location_suffix", self.location_suffix),
-            ("sublocation_suffix", self.sublocation_suffix),
-        )
-        settings = tuple((k, v) for k, v in settings if v)
-        return ru(settings, keep_containers=True)
-
-    @property
-    def location_suffix(self):
-        return ru(self._location_suffix.text())
-
-    @location_suffix.setter
-    def location_suffix(self, value):
-        self._location_suffix.setText(ru(value))
-
-    @property
-    def sublocation_suffix(self):
-        return ru(self._sublocation_suffix.text())
-
-    @sublocation_suffix.setter
-    def sublocation_suffix(self, value):
-        self._sublocation_suffix.setText(ru(value))
-
-    @property
-    def locations_sublocations_obsids(self):
-        """
-
-        :return: a list like [[obsid.locationsuffix as location, obsid.locationsuffix.sublocationsuffix as sublocation, obsid), ...]
-        """
-        locations_sublocations_obsids = [
-            (
-                ".".join([x for x in [ru(obsid), ru(self.location_suffix)] if x]),
-                ".".join(
-                    [
-                        x
-                        for x in [
-                            ru(obsid),
-                            ru(self.location_suffix),
-                            ru(self.sublocation_suffix),
-                        ]
-                        if x
-                    ]
-                ),
-                ru(obsid),
-            )
-            for obsid in set(self._obsid_list.get_all_data())
-        ]
-        return locations_sublocations_obsids
-
-    @property
-    def input_field_group_list(self):
-        return ru(self._input_field_group_list.get_all_data(), keep_containers=True)
-
-    @input_field_group_list.setter
-    def input_field_group_list(self, value):
-        value = ru(value, keep_containers=True)
-        if isinstance(value, (list, tuple)):
-            self._input_field_group_list.paste_data(paste_list=value)
-        else:
-            self._input_field_group_list.paste_data(paste_list=value.split("\n"))
-
-
 class ParameterBrowser(QtWidgets.QDialog, parameter_browser_dialog):
     def __init__(self, tables_columns, parent=None, use_fieldlogger=True):
         QtWidgets.QDialog.__init__(self, parent)
@@ -1211,7 +1225,7 @@ class ParameterBrowser(QtWidgets.QDialog, parameter_browser_dialog):
         # self.horizontalLayoutWidget.setTabOrder(self._input_field_list, self._parameter_table)
 
     @staticmethod
-    def get_distinct_values(tablename, columnname):
+    def get_distinct_values(tablename: str, columnname: str) -> List[str]:
         if not tablename or not columnname:
             return []
         sql = """SELECT distinct %s FROM %s""" % (columnname, tablename)
@@ -1237,7 +1251,7 @@ class ParameterBrowser(QtWidgets.QDialog, parameter_browser_dialog):
         return values
 
     @staticmethod
-    def replace_items(combobox, items):
+    def replace_items(combobox: QtWidgets.QComboBox, items: List[str]):
         combobox.clear()
         combobox.addItem("")
         try:

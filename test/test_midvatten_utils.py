@@ -19,7 +19,7 @@
  *                                                                         *
  ***************************************************************************/
 """
-from __future__ import absolute_import
+
 
 import io
 from builtins import object

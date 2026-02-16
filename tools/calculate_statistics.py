@@ -17,7 +17,7 @@
  *                                                                         *
  ***************************************************************************/
 """
-from __future__ import absolute_import
+
 
 import os
 
@@ -27,9 +27,14 @@ from qgis.PyQt.QtCore import QCoreApplication
 from midvatten.tools.utils import common_utils, gui_utils, db_utils
 from midvatten.tools.utils.common_utils import returnunicode as ru
 
-calculate_statistics_dialog = qgis.PyQt.uic.loadUiType(os.path.join(os.path.dirname(__file__),'..','ui', 'calculate_statistics_ui.ui'))[0]
+calculate_statistics_dialog = qgis.PyQt.uic.loadUiType(
+    os.path.join(os.path.dirname(__file__), "..", "ui", "calculate_statistics_ui.ui")
+)[0]
 
-class CalculateStatisticsGui(qgis.PyQt.QtWidgets.QMainWindow, calculate_statistics_dialog):
+
+class CalculateStatisticsGui(
+    qgis.PyQt.QtWidgets.QMainWindow, calculate_statistics_dialog
+):
     def __init__(self, parent, midv_settings):
         self.iface = parent
 
@@ -41,12 +46,11 @@ class CalculateStatisticsGui(qgis.PyQt.QtWidgets.QMainWindow, calculate_statisti
         tables_columns = db_utils.tables_columns()
         self.db_browser = DbBrowser(tables_columns)
 
-
         self.gridLayout.addWidget(self.db_browser.widget, 0, 0)
 
         self.pushButton_ok.clicked.connect(lambda x: self.calculate())
 
-        self.pushButton_cancel.clicked.connect(lambda : self.close())
+        self.pushButton_cancel.clicked.connect(lambda: self.close())
 
         self.show()
 
@@ -58,17 +62,47 @@ class CalculateStatisticsGui(qgis.PyQt.QtWidgets.QMainWindow, calculate_statisti
         obsids = common_utils.get_selected_features_as_tuple()
 
         if not all([table, column, obsids]):
-            common_utils.MessagebarAndLog.critical(bar_msg=ru(QCoreApplication.translate('CalculateStatisticsGui', '''Calculation failed, make sure you've selected a table, a column and features with a column obsid.''')))
+            common_utils.MessagebarAndLog.critical(
+                bar_msg=ru(
+                    QCoreApplication.translate(
+                        "CalculateStatisticsGui",
+                        """Calculation failed, make sure you've selected a table, a column and features with a column obsid.""",
+                    )
+                )
+            )
             return None
 
-        sql_function_order = ['min', 'max', 'avg', 'count']
-        stats = get_statistics(obsids, table, column, sql_function_order=sql_function_order, median=True)
+        sql_function_order = ["min", "max", "avg", "count"]
+        stats = get_statistics(
+            obsids, table, column, sql_function_order=sql_function_order, median=True
+        )
         printlist = []
-        printlist.append(ru(QCoreApplication.translate("Midvatten", 'Obsid;Min;Median;Average;Max;Nr of values')))
-        printlist.extend([';'.join([ru(x) for x in (obsid, v[0], v[4], v[2], v[1], v[3])]) for obsid, v in sorted(stats.items())])
+        printlist.append(
+            ru(
+                QCoreApplication.translate(
+                    "Midvatten", "Obsid;Min;Median;Average;Max;Nr of values"
+                )
+            )
+        )
+        printlist.extend(
+            [
+                ";".join([ru(x) for x in (obsid, v[0], v[4], v[2], v[1], v[3])])
+                for obsid, v in sorted(stats.items())
+            ]
+        )
         common_utils.MessagebarAndLog.info(
-            bar_msg=ru(QCoreApplication.translate("Midvatten", 'Statistics for table %s column %s done, see log for results.'))%(table, column),
-            log_msg='\n'.join(printlist), duration=15, button=True)
+            bar_msg=ru(
+                QCoreApplication.translate(
+                    "Midvatten",
+                    "Statistics for table %s column %s done, see log for results.",
+                )
+            )
+            % (table, column),
+            log_msg="\n".join(printlist),
+            duration=15,
+            button=True,
+        )
+
 
 class DbBrowser(gui_utils.DistinctValuesBrowser):
 
@@ -83,51 +117,69 @@ class DbBrowser(gui_utils.DistinctValuesBrowser):
     def get_distinct_values(tablename, columnname):
         return []
 
-def get_statistics(obsids, table, column, sql_function_order=None, median=True, dbconnection=None):
+
+def get_statistics(
+    obsids, table, column, sql_function_order=None, median=True, dbconnection=None
+):
     if not isinstance(dbconnection, db_utils.DbConnectionManager):
         dbconnection = db_utils.DbConnectionManager()
 
     if sql_function_order is None:
-        sql_function_order = ['min', 'max', 'avg', 'count']
+        sql_function_order = ["min", "max", "avg", "count"]
     if not isinstance(obsids, (list, tuple)):
         obsids = [obsids]
 
-    sql = 'select obsid, %s from %s where obsid in (%s) group by obsid'%(', '.join(['%s(%s)'%(func, column) for func in sql_function_order]), table, ', '.join(["'{}'".format(x) for x in obsids]))
+    sql = "select obsid, %s from %s where obsid in (%s) group by obsid" % (
+        ", ".join(["%s(%s)" % (func, column) for func in sql_function_order]),
+        table,
+        ", ".join(["'{}'".format(x) for x in obsids]),
+    )
     _res = db_utils.get_sql_result_as_dict(sql, dbconnection=dbconnection)[1]
     res = dict([(obsid, list(v[0])) for obsid, v in _res.items()])
     if median:
-        [v.append(db_utils.calculate_median_value(table, column, obsid, dbconnection)) for obsid, v in res.items()]
+        [
+            v.append(
+                db_utils.calculate_median_value(table, column, obsid, dbconnection)
+            )
+            for obsid, v in res.items()
+        ]
     return res
 
-def get_statistics_for_single_obsid(obsid ='', table='w_levels', data_columns=None):
-    Statistics_list = [0]*4
+
+def get_statistics_for_single_obsid(obsid="", table="w_levels", data_columns=None):
+    Statistics_list = [0] * 4
 
     if data_columns is None:
-        data_columns = ['meas', 'level_masl']
-    data_column = data_columns[0] #default value
+        data_columns = ["meas", "level_masl"]
+    data_column = data_columns[0]  # default value
 
-
-    #number of values, also decide wehter to use meas or level_masl in report
+    # number of values, also decide wehter to use meas or level_masl in report
     for column in data_columns:
-        sql = r"""select Count(%s) from %s where obsid = '%s'"""%(column, table, obsid)
+        sql = r"""select Count(%s) from %s where obsid = '%s'""" % (
+            column,
+            table,
+            obsid,
+        )
         ConnectionOK, number_of_values = db_utils.sql_load_fr_db(sql)
-        if number_of_values and number_of_values[0][0] > Statistics_list[2]:#this will select meas if meas >= level_masl
+        if (
+            number_of_values and number_of_values[0][0] > Statistics_list[2]
+        ):  # this will select meas if meas >= level_masl
             data_column = column
             Statistics_list[2] = number_of_values[0][0]
 
-    #min value
-    sql = r"""select min(%s) from %s where obsid = '%s'"""%(data_column, table, obsid)
+    # min value
+    sql = r"""select min(%s) from %s where obsid = '%s'""" % (data_column, table, obsid)
     ConnectionOK, min_value = db_utils.sql_load_fr_db(sql)
     if min_value:
         Statistics_list[0] = min_value[0][0]
 
-    #median value
+    # median value
     median_value = db_utils.calculate_median_value(table, data_column, obsid)
     if median_value:
         Statistics_list[1] = median_value
 
-    #max value
-    sql = r"""select max(%s) from %s where obsid = '%s'"""%(data_column, table, obsid)
+    # max value
+    sql = r"""select max(%s) from %s where obsid = '%s'""" % (data_column, table, obsid)
     ConnectionOK, max_value = db_utils.sql_load_fr_db(sql)
     if max_value:
         Statistics_list[3] = max_value[0][0]

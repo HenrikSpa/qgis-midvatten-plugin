@@ -17,7 +17,7 @@
  *                                                                         *
  ***************************************************************************/
 """
-from __future__ import absolute_import
+
 from __future__ import print_function
 
 import ast
@@ -38,9 +38,15 @@ from qgis.PyQt.QtGui import QDesktopServices
 from qgis.PyQt.QtWidgets import QApplication
 
 from midvatten.tools.utils import common_utils, db_utils, gui_utils
-from midvatten.tools.utils.common_utils import returnunicode as ru, general_exception_handler
+from midvatten.tools.utils.common_utils import (
+    returnunicode as ru,
+    general_exception_handler,
+)
 
-custom_drillreport_dialog = qgis.PyQt.uic.loadUiType(os.path.join(os.path.dirname(__file__),'..','ui', 'compact_w_qual_report.ui'))[0]
+custom_drillreport_dialog = qgis.PyQt.uic.loadUiType(
+    os.path.join(os.path.dirname(__file__), "..", "ui", "compact_w_qual_report.ui")
+)[0]
+
 
 class CompactWqualReportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
     def __init__(self, parent, midv_settings):
@@ -52,76 +58,121 @@ class CompactWqualReportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_d
         qgis.PyQt.QtWidgets.QDialog.__init__(self, parent)
         self.setAttribute(qgis.PyQt.QtCore.Qt.WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt4 to initialize the UI
-        self.setWindowTitle(ru(QCoreApplication.translate('CompactWqualReportUi',
-                                                          "Compact water quality report")))  # Set the title for the dialog
+        self.setWindowTitle(
+            ru(
+                QCoreApplication.translate(
+                    "CompactWqualReportUi", "Compact water quality report"
+                )
+            )
+        )  # Set the title for the dialog
 
-        self.manual_label.setText("<a href=\"https://github.com/jkall/qgis-midvatten-plugin/wiki/5.-Plots-and-reports#create-compact-water-quality-report\">%s</a>"%QCoreApplication.translate('CompactWqualReportUi', '(manual)'))
+        self.manual_label.setText(
+            '<a href="https://github.com/jkall/qgis-midvatten-plugin/wiki/5.-Plots-and-reports#create-compact-water-quality-report">%s</a>'
+            % QCoreApplication.translate("CompactWqualReportUi", "(manual)")
+        )
         self.manual_label.setOpenExternalLinks(True)
 
-        self.date_time_formats = {'YYYY-MM': '%Y-%m',
-                                  'YYYY-MM-DD': '%Y-%m-%d',
-                                  'YYYY-MM-DD hh': '%Y-%m-%d %H',
-                                  'YYYY-MM-DD hh:mm': '%Y-%m-%d %H:%M',
-                                  'YYYY-MM-DD hh:mm:ss': '%Y-%m-%d %H:%M:%S'}
+        self.date_time_formats = {
+            "YYYY-MM": "%Y-%m",
+            "YYYY-MM-DD": "%Y-%m-%d",
+            "YYYY-MM-DD hh": "%Y-%m-%d %H",
+            "YYYY-MM-DD hh:mm": "%Y-%m-%d %H:%M",
+            "YYYY-MM-DD hh:mm:ss": "%Y-%m-%d %H:%M:%S",
+        }
 
-        self.methods = {'concat': lambda x: ', '.join([ru(y) for y in x.values]),
-                    'avg': lambda x: round(sum([float(y) for y in x.values]) / float(len(x.values)), num_decimals(x.values)) if all([floatable(y) for y in x.values]) else ', '.join([ru(y) for y in x.values]),
-                    'sum': lambda x: round(sum([float(y) for y in x]), num_decimals(x)) if all([floatable(y) for y in x.values]) else ', '.join(x.values),
-                    'min': lambda x: min(x.values),
-                    'max': lambda x: max(x.values)}
+        self.methods = {
+            "concat": lambda x: ", ".join([ru(y) for y in x.values]),
+            "avg": lambda x: (
+                round(
+                    sum([float(y) for y in x.values]) / float(len(x.values)),
+                    num_decimals(x.values),
+                )
+                if all([floatable(y) for y in x.values])
+                else ", ".join([ru(y) for y in x.values])
+            ),
+            "sum": lambda x: (
+                round(sum([float(y) for y in x]), num_decimals(x))
+                if all([floatable(y) for y in x.values])
+                else ", ".join(x.values)
+            ),
+            "min": lambda x: min(x.values),
+            "max": lambda x: max(x.values),
+        }
 
         self.date_time_format.addItems(self.date_time_formats.keys())
         self.method.addItems(self.methods.keys())
 
-        self.sort1.addItems(['', 'obsid', 'date_time', 'report'])
-        self.sort2.addItems(['', 'obsid', 'date_time', 'report'])
-        self.sort3.addItems(['', 'obsid', 'date_time', 'report'])
-        gui_utils.set_combobox(self.sort1, 'obsid', add_if_not_exists=False)
-        gui_utils.set_combobox(self.sort2, 'date_time', add_if_not_exists=False)
-        gui_utils.set_combobox(self.sort3, 'report', add_if_not_exists=False)
+        self.sort1.addItems(["", "obsid", "date_time", "report"])
+        self.sort2.addItems(["", "obsid", "date_time", "report"])
+        self.sort3.addItems(["", "obsid", "date_time", "report"])
+        gui_utils.set_combobox(self.sort1, "obsid", add_if_not_exists=False)
+        gui_utils.set_combobox(self.sort2, "date_time", add_if_not_exists=False)
+        gui_utils.set_combobox(self.sort3, "report", add_if_not_exists=False)
 
         tables = list(db_utils.tables_columns().keys())
         self.sql_table.addItems(sorted(tables))
 
-        self.save_attrnames = ['num_data_cols',
-                         'rowheader_colwidth_percent',
-                         'empty_row_between_tables',
-                         'page_break_between_tables',
-                         'from_active_layer',
-                         'from_sql_table',
-                         'sql_table',
-                         'sort_alphabetically',
-                         'sort1',
-                         'sort2',
-                         'sort3',
-                         'date_time_as_columns',
-                         'date_time_format',
-                         'method',
-                         'data_column']
+        self.save_attrnames = [
+            "num_data_cols",
+            "rowheader_colwidth_percent",
+            "empty_row_between_tables",
+            "page_break_between_tables",
+            "from_active_layer",
+            "from_sql_table",
+            "sql_table",
+            "sort_alphabetically",
+            "sort1",
+            "sort2",
+            "sort3",
+            "date_time_as_columns",
+            "date_time_format",
+            "method",
+            "data_column",
+        ]
 
-        self.stored_settings_key = 'compactwqualreport'
+        self.stored_settings_key = "compactwqualreport"
 
         self.pushButton_ok.clicked.connect(lambda x: self.wqualreport())
 
-        self.from_active_layer.clicked.connect(lambda x: self.set_columns_from_activelayer())
+        self.from_active_layer.clicked.connect(
+            lambda x: self.set_columns_from_activelayer()
+        )
         self.from_sql_table.clicked.connect(lambda x: self.set_columns_from_sql_layer())
-        self.sql_table.currentIndexChanged.connect(lambda x: self.set_columns_from_sql_layer())
+        self.sql_table.currentIndexChanged.connect(
+            lambda x: self.set_columns_from_sql_layer()
+        )
 
-        self.pushButton_update_from_string.clicked.connect(lambda x: self.ask_and_update_stored_settings())
+        self.pushButton_update_from_string.clicked.connect(
+            lambda x: self.ask_and_update_stored_settings()
+        )
 
-        self.sql_table.currentIndexChanged.connect(lambda: self.from_sql_table.setChecked(True))
+        self.sql_table.currentIndexChanged.connect(
+            lambda: self.from_sql_table.setChecked(True)
+        )
 
         self.empty_row_between_tables.clicked.connect(
-                     lambda: self.page_break_between_tables.setChecked(False) if self.empty_row_between_tables.isChecked() else True)
+            lambda: (
+                self.page_break_between_tables.setChecked(False)
+                if self.empty_row_between_tables.isChecked()
+                else True
+            )
+        )
         self.page_break_between_tables.clicked.connect(
-                     lambda: self.empty_row_between_tables.setChecked(False) if self.page_break_between_tables.isChecked() else True)
+            lambda: (
+                self.empty_row_between_tables.setChecked(False)
+                if self.page_break_between_tables.isChecked()
+                else True
+            )
+        )
 
-        #Use w_qual_lab as default.
+        # Use w_qual_lab as default.
         self.from_sql_table.click()
-        gui_utils.set_combobox(self.sql_table, 'w_qual_lab', add_if_not_exists=False)
-        gui_utils.set_combobox(self.data_column, 'reading_txt', add_if_not_exists=False)
+        gui_utils.set_combobox(self.sql_table, "w_qual_lab", add_if_not_exists=False)
+        gui_utils.set_combobox(self.data_column, "reading_txt", add_if_not_exists=False)
 
-        self.stored_settings = common_utils.get_stored_settings(self.ms, self.stored_settings_key, {})
+        self.stored_settings = common_utils.get_stored_settings(
+            self.ms, self.stored_settings_key, {}
+        )
         self.update_from_stored_settings(self.stored_settings)
 
         self.show()
@@ -150,12 +201,21 @@ class CompactWqualReportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_d
         sql_table = self.sql_table.currentText()
         sort_alphabetically = self.sort_alphabetically.isChecked()
         sort_order = []
-        [sort_order.append(box.currentText()) for box in [self.sort1, self.sort2, self.sort3]
-            if box.currentText() and box.currentText() not in sort_order]
+        [
+            sort_order.append(box.currentText())
+            for box in [self.sort1, self.sort2, self.sort3]
+            if box.currentText() and box.currentText() not in sort_order
+        ]
         date_time_as_columns = self.date_time_as_columns.isChecked()
         if date_time_as_columns and not sort_order:
-            common_utils.MessagebarAndLog.critical(bar_msg=ru(QCoreApplication.translate('CompactWqualReportUi',
-                                                          "Must give at least one column to sort by!")))
+            common_utils.MessagebarAndLog.critical(
+                bar_msg=ru(
+                    QCoreApplication.translate(
+                        "CompactWqualReportUi",
+                        "Must give at least one column to sort by!",
+                    )
+                )
+            )
             return
 
         date_time_format = self.date_time_formats[self.date_time_format.currentText()]
@@ -164,9 +224,21 @@ class CompactWqualReportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_d
 
         self.save_stored_settings(self.save_attrnames)
 
-        wqual = Wqualreport(self.ms.settingsdict, num_data_cols, rowheader_colwidth_percent, empty_row_between_tables,
-                            page_break_between_tables, from_active_layer, sql_table, sort_alphabetically, sort_order,
-                            date_time_as_columns, date_time_format, method, data_column)
+        wqual = Wqualreport(
+            self.ms.settingsdict,
+            num_data_cols,
+            rowheader_colwidth_percent,
+            empty_row_between_tables,
+            page_break_between_tables,
+            from_active_layer,
+            sql_table,
+            sort_alphabetically,
+            sort_order,
+            date_time_as_columns,
+            date_time_format,
+            method,
+            data_column,
+        )
         common_utils.stop_waiting_cursor()
 
     def update_from_stored_settings(self, stored_settings):
@@ -179,9 +251,15 @@ class CompactWqualReportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_d
                 else:
                     if isinstance(selfattr, qgis.PyQt.QtWidgets.QPlainTextEdit):
                         if isinstance(val, (list, tuple)):
-                            val = '\n'.join(val)
+                            val = "\n".join(val)
                         selfattr.setPlainText(val)
-                    elif isinstance(selfattr, (qgis.PyQt.QtWidgets.QCheckBox, qgis.PyQt.QtWidgets.QRadioButton)):
+                    elif isinstance(
+                        selfattr,
+                        (
+                            qgis.PyQt.QtWidgets.QCheckBox,
+                            qgis.PyQt.QtWidgets.QRadioButton,
+                        ),
+                    ):
                         if bool(val):
                             selfattr.click()
                     elif isinstance(selfattr, qgis.PyQt.QtWidgets.QLineEdit):
@@ -201,34 +279,69 @@ class CompactWqualReportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_d
             try:
                 attr = getattr(self, attrname)
             except:
-                common_utils.MessagebarAndLog.info(log_msg=ru(QCoreApplication.translate('DrillreportUi',
-                                                                                  "Programming error. Attribute name %s didn't exist in self.")) % attrname)
+                common_utils.MessagebarAndLog.info(
+                    log_msg=ru(
+                        QCoreApplication.translate(
+                            "DrillreportUi",
+                            "Programming error. Attribute name %s didn't exist in self.",
+                        )
+                    )
+                    % attrname
+                )
             else:
                 if isinstance(attr, qgis.PyQt.QtWidgets.QPlainTextEdit):
-                    val = [x for x in attr.toPlainText().split('\n') if x]
-                elif isinstance(attr, (qgis.PyQt.QtWidgets.QCheckBox, qgis.PyQt.QtWidgets.QRadioButton)):
+                    val = [x for x in attr.toPlainText().split("\n") if x]
+                elif isinstance(
+                    attr,
+                    (qgis.PyQt.QtWidgets.QCheckBox, qgis.PyQt.QtWidgets.QRadioButton),
+                ):
                     val = attr.isChecked()
                 elif isinstance(attr, qgis.PyQt.QtWidgets.QLineEdit):
                     val = attr.text()
                 elif isinstance(attr, qgis.PyQt.QtWidgets.QComboBox):
                     val = attr.currentText()
                 else:
-                    common_utils.MessagebarAndLog.info(log_msg=ru(QCoreApplication.translate('DrillreportUi', 'Programming error. The Qt-type %s is unhandled.')) % str(type(attr)))
+                    common_utils.MessagebarAndLog.info(
+                        log_msg=ru(
+                            QCoreApplication.translate(
+                                "DrillreportUi",
+                                "Programming error. The Qt-type %s is unhandled.",
+                            )
+                        )
+                        % str(type(attr))
+                    )
                     continue
                 stored_settings[attrname] = val
 
         self.stored_settings = stored_settings
 
-        common_utils.save_stored_settings(self.ms, self.stored_settings, self.stored_settings_key)
+        common_utils.save_stored_settings(
+            self.ms, self.stored_settings, self.stored_settings_key
+        )
 
     def ask_for_stored_settings(self, stored_settings):
-        old_string = common_utils.anything_to_string_representation(stored_settings, itemjoiner=',\n', pad='    ',
-                                                                                dictformatter='{\n%s}',
-                                                                                listformatter='[\n%s]', tupleformatter='(\n%s, )')
+        old_string = common_utils.anything_to_string_representation(
+            stored_settings,
+            itemjoiner=",\n",
+            pad="    ",
+            dictformatter="{\n%s}",
+            listformatter="[\n%s]",
+            tupleformatter="(\n%s, )",
+        )
 
-        msg = ru(QCoreApplication.translate('CompactWqualReportUi', 'Replace the settings string with a new settings string.'))
-        new_string = qgis.PyQt.QtWidgets.QInputDialog.getText(None, ru(QCoreApplication.translate('DrillreportUi', "Edit settings string")), msg,
-                                                           qgis.PyQt.QtWidgets.QLineEdit.Normal, old_string)
+        msg = ru(
+            QCoreApplication.translate(
+                "CompactWqualReportUi",
+                "Replace the settings string with a new settings string.",
+            )
+        )
+        new_string = qgis.PyQt.QtWidgets.QInputDialog.getText(
+            None,
+            ru(QCoreApplication.translate("DrillreportUi", "Edit settings string")),
+            msg,
+            qgis.PyQt.QtWidgets.QLineEdit.Normal,
+            old_string,
+        )
         if not new_string[1]:
             raise common_utils.UserInterruptError()
 
@@ -239,87 +352,166 @@ class CompactWqualReportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_d
         try:
             as_dict = ast.literal_eval(new_string_text)
         except Exception as e:
-            common_utils.MessagebarAndLog.warning(bar_msg=ru(QCoreApplication.translate('CompactWqualReportUi', 'Translating string to dict failed, see log message panel')),
-                                                              log_msg=str(e))
+            common_utils.MessagebarAndLog.warning(
+                bar_msg=ru(
+                    QCoreApplication.translate(
+                        "CompactWqualReportUi",
+                        "Translating string to dict failed, see log message panel",
+                    )
+                ),
+                log_msg=str(e),
+            )
             raise common_utils.UsageError()
         else:
             return as_dict
 
 
-class Wqualreport(object):        # extracts water quality data for selected objects, selected db and given table, results shown in html report
+class Wqualreport(
+    object
+):  # extracts water quality data for selected objects, selected db and given table, results shown in html report
     @general_exception_handler
-    def __init__(self, settingsdict, num_data_cols, rowheader_colwidth_percent, empty_row_between_tables,
-                 page_break_between_tables, from_active_layer, sql_table, sort_parameters_alphabetically,
-                 sort_order, date_time_as_columns, date_time_format, method, data_column, include_depth_in_obsid=True):
-        #show the user this may take a long time...
+    def __init__(
+        self,
+        settingsdict,
+        num_data_cols,
+        rowheader_colwidth_percent,
+        empty_row_between_tables,
+        page_break_between_tables,
+        from_active_layer,
+        sql_table,
+        sort_parameters_alphabetically,
+        sort_order,
+        date_time_as_columns,
+        date_time_format,
+        method,
+        data_column,
+        include_depth_in_obsid=True,
+    ):
+        # show the user this may take a long time...
 
-        reportfolder = os.path.join(QDir.tempPath(), 'midvatten_reports')
+        reportfolder = os.path.join(QDir.tempPath(), "midvatten_reports")
         if not os.path.exists(reportfolder):
             os.makedirs(reportfolder)
         reportpath = os.path.join(reportfolder, "w_qual_report.html")
         f = codecs.open(reportpath, "wb", "utf-8")
 
-        #write some initiating html
-        rpt = r"""<head><title>%s</title></head>"""%ru(QCoreApplication.translate('Wqualreport', 'water quality report from Midvatten plugin for QGIS'))
-        rpt += r""" <meta http-equiv="content-type" content="text/html; charset=utf-8" />""" #NOTE, all report data must be in 'utf-8'
+        # write some initiating html
+        rpt = r"""<head><title>%s</title></head>""" % ru(
+            QCoreApplication.translate(
+                "Wqualreport", "water quality report from Midvatten plugin for QGIS"
+            )
+        )
+        rpt += r""" <meta http-equiv="content-type" content="text/html; charset=utf-8" />"""  # NOTE, all report data must be in 'utf-8'
         rpt += "<html><body>"
         f.write(rpt)
 
         if date_time_as_columns:
-            data_columns = ['obsid', 'date_time', 'report', 'parameter', 'unit', data_column]
+            data_columns = [
+                "obsid",
+                "date_time",
+                "report",
+                "parameter",
+                "unit",
+                data_column,
+            ]
         else:
-            data_columns = ['obsid', 'date_time', 'parameter', 'unit', data_column]
+            data_columns = ["obsid", "date_time", "parameter", "unit", data_column]
 
         if include_depth_in_obsid:
-            data_columns.insert(1, 'depth')
+            data_columns.insert(1, "depth")
 
         if from_active_layer:
             w_qual_lab_layer = qgis.utils.iface.activeLayer()
             if w_qual_lab_layer is None:
-                raise common_utils.UsageError(ru(QCoreApplication.translate('CompactWqualReport', 'Must select a layer!')))
+                raise common_utils.UsageError(
+                    ru(
+                        QCoreApplication.translate(
+                            "CompactWqualReport", "Must select a layer!"
+                        )
+                    )
+                )
             if not w_qual_lab_layer.selectedFeatureCount():
                 w_qual_lab_layer.selectAll()
             df = self.get_data_from_qgislayer(w_qual_lab_layer, data_columns)
         else:
-            df = self.get_data_from_sql(sql_table, common_utils.getselectedobjectnames(), data_columns)
+            df = self.get_data_from_sql(
+                sql_table, common_utils.getselectedobjectnames(), data_columns
+            )
 
-        if 'depth' in df.columns:
+        if "depth" in df.columns:
             try:
-                df.loc[df['depth'] == '', 'depth'] = np.NaN
+                df.loc[df["depth"] == "", "depth"] = np.NaN
             except:
                 print(f"Something went wrong: {traceback.format_exc()}")
 
-            df['depth'] = df['depth'].fillna(0)
-            df.loc[:, 'obsid'].where(df['depth'] == 0, df['obsid'] + ' (' + df['depth'].astype(
-                str).apply(lambda x: (x.replace('.0', '') if int(float(x)) == float(x) else x)) + ' m)',
-                                     inplace=True)
-            df = df.drop('depth', axis=1)
+            df["depth"] = df["depth"].fillna(0)
+            df.loc[:, "obsid"].where(
+                df["depth"] == 0,
+                df["obsid"]
+                + " ("
+                + df["depth"]
+                .astype(str)
+                .apply(
+                    lambda x: (x.replace(".0", "") if int(float(x)) == float(x) else x)
+                )
+                + " m)",
+                inplace=True,
+            )
+            df = df.drop("depth", axis=1)
 
         sort_order = [c for c in sort_order if c in df.columns.values.tolist()]
         if date_time_as_columns:
-            columns = [c for c in ('obsid', 'date_time', 'report') if c in sort_order]
-            rows = ['parunit']
+            columns = [c for c in ("obsid", "date_time", "report") if c in sort_order]
+            rows = ["parunit"]
             values = [data_column]
-            report_data = self.data_to_printlist(df, list(columns), list(rows), values, sort_parameters_alphabetically, sort_order, method, date_time_format, date_time_as_columns)
+            report_data = self.data_to_printlist(
+                df,
+                list(columns),
+                list(rows),
+                values,
+                sort_parameters_alphabetically,
+                sort_order,
+                method,
+                date_time_format,
+                date_time_as_columns,
+            )
         else:
-            columns = ['obsid']
+            columns = ["obsid"]
             _sort_order = columns
-            rows = ['parunit', 'date_time']
+            rows = ["parunit", "date_time"]
             values = [data_column]
-            report_data = self.data_to_printlist(df, list(columns), list(rows), values, sort_parameters_alphabetically, _sort_order, method, date_time_format, date_time_as_columns)
+            report_data = self.data_to_printlist(
+                df,
+                list(columns),
+                list(rows),
+                values,
+                sort_parameters_alphabetically,
+                _sort_order,
+                method,
+                date_time_format,
+                date_time_as_columns,
+            )
 
         # Split the data into separate tables with the specified number of columns
         for startcol in range(len(rows), len(report_data[0]), num_data_cols):
-            printlist = [row[:len(rows)] for row in report_data]
+            printlist = [row[: len(rows)] for row in report_data]
             for rownr, row in enumerate(report_data):
-                printlist[rownr].extend(row[startcol:min(startcol+num_data_cols, len(row))])
+                printlist[rownr].extend(
+                    row[startcol : min(startcol + num_data_cols, len(row))]
+                )
 
-            filtered = [row for row in printlist if any(row[len(rows):])]
+            filtered = [row for row in printlist if any(row[len(rows) :])]
 
             self.htmlcols = len(filtered[0])
-            self.write_html_table(filtered, f, rowheader_colwidth_percent, empty_row_between_tables=empty_row_between_tables,
-                                  page_break_between_tables=page_break_between_tables, nr_header_rows=len(columns),
-                                  nr_row_header_columns=len(rows))
+            self.write_html_table(
+                filtered,
+                f,
+                rowheader_colwidth_percent,
+                empty_row_between_tables=empty_row_between_tables,
+                page_break_between_tables=page_break_between_tables,
+                nr_header_rows=len(columns),
+                nr_row_header_columns=len(rows),
+            )
 
         # write some finishing html and close the file
         f.write("\n</body></html>")
@@ -339,43 +531,67 @@ class Wqualreport(object):        # extracts water quality data for selected obj
         """
         dbconnection = db_utils.DbConnectionManager()
         fieldnames = db_utils.tables_columns(table, dbconnection)[table]
-        missing = [column not in fieldnames for column in columns if column != 'report']
+        missing = [column not in fieldnames for column in columns if column != "report"]
         columns = [column for column in columns if column in fieldnames]
         if any(missing):
-                raise common_utils.UsageError(ru(QCoreApplication.translate('CompactWqualReport', 'The chosen table must contain columns %s')) % str(columns))
+            raise common_utils.UsageError(
+                ru(
+                    QCoreApplication.translate(
+                        "CompactWqualReport", "The chosen table must contain columns %s"
+                    )
+                )
+                % str(columns)
+            )
 
-
-        sql = '''SELECT %s FROM %s'''%(', '.join(columns), table)
+        sql = """SELECT %s FROM %s""" % (", ".join(columns), table)
         if obsids:
-            sql += ''' WHERE obsid in (%s)'''%sql_list(obsids)
+            sql += """ WHERE obsid in (%s)""" % sql_list(obsids)
 
-        df = pd.read_sql(con=dbconnection.conn, sql=sql,
-                         parse_dates={'date_time': {'format': 'mixed'}})
+        df = pd.read_sql(
+            con=dbconnection.conn,
+            sql=sql,
+            parse_dates={"date_time": {"format": "mixed"}},
+        )
         dbconnection.closedb()
 
         return df
 
     def get_data_from_qgislayer(self, w_qual_lab_layer, columns):
-        """
-        """
+        """ """
         fields = w_qual_lab_layer.fields()
         fieldnames = [field.name() for field in fields]
-        missing = [column not in fieldnames for column in columns if column != 'report']
+        missing = [column not in fieldnames for column in columns if column != "report"]
         columns = [column for column in columns if column in fieldnames]
 
         if any(missing):
-                raise common_utils.UsageError(ru(QCoreApplication.translate('CompactWqualReport', 'The chosen layer must contain columns %s')) % str(columns))
+            raise common_utils.UsageError(
+                ru(
+                    QCoreApplication.translate(
+                        "CompactWqualReport", "The chosen layer must contain columns %s"
+                    )
+                )
+                % str(columns)
+            )
 
         columns = [column for column in columns if column in fieldnames]
 
         indexes = {column: fields.indexFromName(column) for column in columns}
-        features = [f for f in w_qual_lab_layer.getFeatures('True') if f.id() in w_qual_lab_layer.selectedFeatureIds()]
+        features = [
+            f
+            for f in w_qual_lab_layer.getFeatures("True")
+            if f.id() in w_qual_lab_layer.selectedFeatureIds()
+        ]
         file_data = [columns]
-        file_data.extend([[ru(feature.attributes()[indexes[col]]) for col in columns]
-                           for feature in features if feature.isValid()])
+        file_data.extend(
+            [
+                [ru(feature.attributes()[indexes[col]]) for col in columns]
+                for feature in features
+                if feature.isValid()
+            ]
+        )
 
         df = pd.DataFrame(file_data[1:], columns=file_data[0])
-        df['date_time'] = pd.to_datetime(df['date_time'], format='mixed')
+        df["date_time"] = pd.to_datetime(df["date_time"], format="mixed")
 
         num_features = len(file_data) - 1
         invalid_features = len(features) - num_features
@@ -384,38 +600,71 @@ class Wqualreport(object):        # extracts water quality data for selected obj
         else:
             msgfunc = common_utils.MessagebarAndLog.info
 
-        msgfunc(bar_msg=ru(QCoreApplication.translate('CompactWqualReport', 'Layer processed with %s selected features, %s read features and %s invalid features.'))%(str(w_qual_lab_layer.selectedFeatureCount()), str(num_features), str(invalid_features)))
+        msgfunc(
+            bar_msg=ru(
+                QCoreApplication.translate(
+                    "CompactWqualReport",
+                    "Layer processed with %s selected features, %s read features and %s invalid features.",
+                )
+            )
+            % (
+                str(w_qual_lab_layer.selectedFeatureCount()),
+                str(num_features),
+                str(invalid_features),
+            )
+        )
         return df
 
-    def data_to_printlist(self, df, columns, rows, values, sort_parameters_alphabetically, sort_order, method, date_time_format,
-                          date_time_as_columns):
-        df['parunit'] = df['parameter'] + ', ' + df['unit'].fillna('')
-        par_unit_order = {val: idx for idx, val in enumerate(df['parunit'].drop_duplicates(keep='first').tolist())}
-        df['par_unit_order'] = df['parunit']
-        df = df.replace({'par_unit_order': par_unit_order})
-        df['date_time'] = df['date_time'].dt.strftime(date_time_format)
+    def data_to_printlist(
+        self,
+        df,
+        columns,
+        rows,
+        values,
+        sort_parameters_alphabetically,
+        sort_order,
+        method,
+        date_time_format,
+        date_time_as_columns,
+    ):
+        df["parunit"] = df["parameter"] + ", " + df["unit"].fillna("")
+        par_unit_order = {
+            val: idx
+            for idx, val in enumerate(
+                df["parunit"].drop_duplicates(keep="first").tolist()
+            )
+        }
+        df["par_unit_order"] = df["parunit"]
+        df = df.replace({"par_unit_order": par_unit_order})
+        df["date_time"] = df["date_time"].dt.strftime(date_time_format)
         _rows = list(rows)
-        _rows.insert(0, 'par_unit_order')
+        _rows.insert(0, "par_unit_order")
 
-        df = pd.pivot_table(df, values=values, index=_rows, columns=columns,
-                            aggfunc=method)
+        df = pd.pivot_table(
+            df, values=values, index=_rows, columns=columns, aggfunc=method
+        )
 
         df = df.sort_index(axis=1, level=sort_order)
 
         if sort_parameters_alphabetically:
-            df = df.sort_index(axis=0, level=[x for x in _rows if x != 'par_unit_order'])
+            df = df.sort_index(
+                axis=0, level=[x for x in _rows if x != "par_unit_order"]
+            )
         else:
-            df = df.sort_index(axis=0, level=[x for x in _rows if x != 'parunit'])
+            df = df.sort_index(axis=0, level=[x for x in _rows if x != "parunit"])
 
         # Drop par_unit_order order
         df.index = df.index.droplevel(0)
 
-        df = df.replace(np.nan, '', regex=True)
+        df = df.replace(np.nan, "", regex=True)
 
-        index = [list(row) if isinstance(row, tuple) else [row] for row in df.index.values.tolist()]
+        index = [
+            list(row) if isinstance(row, tuple) else [row]
+            for row in df.index.values.tolist()
+        ]
         df_columns = [x[1:] for x in df.columns.values.tolist()]
         values = df.values.tolist()
-        printlist = [['']*df.index.nlevels for _ in range(df.columns.nlevels-1)]
+        printlist = [[""] * df.index.nlevels for _ in range(df.columns.nlevels - 1)]
         [row.extend([c[idx] for c in df_columns]) for idx, row in enumerate(printlist)]
         [row.extend(values[idx]) for idx, row in enumerate(index)]
         printlist.extend(index)
@@ -429,8 +678,16 @@ class Wqualreport(object):        # extracts water quality data for selected obj
 
         return printlist
 
-    def write_html_table(self, ReportData, f, rowheader_colwidth_percent, empty_row_between_tables=False,
-                         page_break_between_tables=False, nr_header_rows=3, nr_row_header_columns=1):
+    def write_html_table(
+        self,
+        ReportData,
+        f,
+        rowheader_colwidth_percent,
+        empty_row_between_tables=False,
+        page_break_between_tables=False,
+        nr_header_rows=3,
+        nr_row_header_columns=1,
+    ):
         rpt = """<TABLE WIDTH=100% BORDER=1 CELLPADDING=1 class="no-spacing" CELLSPACING=0 PADDING-BOTTOM=0 PADDING=0>"""
         f.write(rpt)
 
@@ -440,38 +697,56 @@ class Wqualreport(object):        # extracts water quality data for selected obj
                 if counter < nr_header_rows:
                     rpt = "<tr>"
                     for idx in range(nr_row_header_columns):
-                        rpt += "<TH WIDTH={}%><font size=1>{}</font></th>".format(str(rowheader_colwidth_percent), row[idx])
+                        rpt += "<TH WIDTH={}%><font size=1>{}</font></th>".format(
+                            str(rowheader_colwidth_percent), row[idx]
+                        )
 
-                    data_colwidth = (100.0 - (float(rowheader_colwidth_percent)*nr_row_header_columns)) / len(row[nr_row_header_columns:])
+                    data_colwidth = (
+                        100.0
+                        - (float(rowheader_colwidth_percent) * nr_row_header_columns)
+                    ) / len(row[nr_row_header_columns:])
 
                     coltext = "<th width ={colwidth}%><font size=1>{data}</font></th>"
-                    rpt += "".join([coltext.format(**{"colwidth": str(data_colwidth),
-                                                      "data": x}) for x in row[nr_row_header_columns:]])
+                    rpt += "".join(
+                        [
+                            coltext.format(
+                                **{"colwidth": str(data_colwidth), "data": x}
+                            )
+                            for x in row[nr_row_header_columns:]
+                        ]
+                    )
 
                     rpt += "</tr>\n"
                 else:
                     rpt = "<tr>"
                     for idx in range(nr_row_header_columns):
-                        rpt += """<td align=\"left\"><font size=1>{}</font></td>""".format(row[idx])
+                        rpt += (
+                            """<td align=\"left\"><font size=1>{}</font></td>""".format(
+                                row[idx]
+                            )
+                        )
                     coltext = """<td align=\"right\"><font size=1>{}</font></td>"""
-                    rpt += "".join([coltext.format(x) for x in row[nr_row_header_columns:]])
+                    rpt += "".join(
+                        [coltext.format(x) for x in row[nr_row_header_columns:]]
+                    )
                     rpt += "</tr>\n"
             except:
                 try:
-                    print("here was an error: %s"%row)
+                    print("here was an error: %s" % row)
                 except:
                     pass
             f.write(rpt)
 
         f.write("\n</table><p></p><p></p>")
 
-        #All in one table:Wqualreport
+        # All in one table:Wqualreport
         if empty_row_between_tables:
             f.write("""<p>empty_row_between_tables</p>""")
 
-        #Separate tables:
+        # Separate tables:
         if page_break_between_tables:
             f.write("""<p style="page-break-before: always"></p>""")
+
 
 def isnan(x):
     if x is None:
@@ -485,12 +760,13 @@ def isnan(x):
 
 
 def sql_list(alist):
-    return ', '.join(["'{}'".format(x) for x in alist])
+    return ", ".join(["'{}'".format(x) for x in alist])
+
 
 def floatable(anything):
     if isinstance(anything, (pd.DataFrame, pd.Series)):
         try:
-            anything.astype('float64')
+            anything.astype("float64")
         except ValueError as e:
             return False
         else:
@@ -503,13 +779,21 @@ def floatable(anything):
         else:
             return True
 
+
 def num_decimals(alist):
     try:
-        [float(x.replace(',', '.')) if isinstance(x, str) else float(x) for x in alist]
+        [float(x.replace(",", ".")) if isinstance(x, str) else float(x) for x in alist]
     except (TypeError, ValueError):
         return 0
 
-    min_decimals = min([len(str(x).replace(',', '.').split('.')[-1])
-                        if len(str(x).replace(',', '.').split('.')) == 2 else None
-                        for x in alist])
+    min_decimals = min(
+        [
+            (
+                len(str(x).replace(",", ".").split(".")[-1])
+                if len(str(x).replace(",", ".").split(".")) == 2
+                else None
+            )
+            for x in alist
+        ]
+    )
     return min_decimals if min_decimals is not None else 0

@@ -19,7 +19,7 @@ __modified_date__ = "Nov 2013"
     Development date: 8/5/2011
 ***************************************************************************/
 """
-from __future__ import absolute_import
+
 from __future__ import print_function
 
 import datetime

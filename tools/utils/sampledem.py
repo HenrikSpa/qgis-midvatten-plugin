@@ -17,16 +17,25 @@ and qchainage plugin (C) 2012 by Werner Macho
 import traceback
 from qgis.PyQt.QtCore import QMetaType
 import qgis.PyQt
-from qgis.core import QgsFeature, QgsField, QgsFields, QgsProject, QgsApplication, QgsRaster, QgsVectorLayer, \
-    QgsUnitTypes, QgsWkbTypes
+from qgis.core import (
+    QgsFeature,
+    QgsField,
+    QgsFields,
+    QgsProject,
+    QgsApplication,
+    QgsRaster,
+    QgsVectorLayer,
+    QgsUnitTypes,
+    QgsWkbTypes,
+)
 
 
-def qchain(sectionlinelayer, distance): #original start function from qchainage
+def qchain(sectionlinelayer, distance):  # original start function from qchainage
     layer = sectionlinelayer
-    layerout = 'temporary_memory_layer'
+    layerout = "temporary_memory_layer"
     startpoint = 0
     endpoint = 0
-    #selectedOnly = self.selectOnlyRadioBtn.isChecked()
+    # selectedOnly = self.selectOnlyRadioBtn.isChecked()
 
     projectionSettingKey = "Projections/defaultBehaviour"
     qgisSettings = qgis.PyQt.QtCore.QSettings()
@@ -35,19 +44,18 @@ def qchain(sectionlinelayer, distance): #original start function from qchainage
     qgisSettings.sync()
 
     virt_layer, xarray = points_along_line(
-        layerout,
-        startpoint,
-        endpoint,
-        distance,
-        layer)#,
-        #selectedOnly)
+        layerout, startpoint, endpoint, distance, layer
+    )  # ,
+    # selectedOnly)
     qgisSettings.setValue(projectionSettingKey, oldProjectionSetting)
-    
+
     return virt_layer, xarray
 
-def create_points_at(startpoint, endpoint, distance, geom, fid,unit): #original function from qchainage
-    """Creating Points at coordinates along the line
-    """
+
+def create_points_at(
+    startpoint, endpoint, distance, geom, fid, unit
+):  # original function from qchainage
+    """Creating Points at coordinates along the line"""
     length = geom.length()
     current_distance = distance
     feats = []
@@ -68,45 +76,51 @@ def create_points_at(startpoint, endpoint, distance, geom, fid,unit): #original 
     fields.append(field2)
 
     feature = QgsFeature(fields)
-    feature['dist'] = startpoint
-    feature['id'] = fid
-    feature['unit'] = unit
+    feature["dist"] = startpoint
+    feature["id"] = fid
+    feature["unit"] = unit
 
     feature.setGeometry(point)
     feats.append(feature)
-    xarray=[feature['dist']]
+    xarray = [feature["dist"]]
 
     while startpoint + current_distance <= length:
         # Get a point along the line at the current distance
         point = geom.interpolate(startpoint + current_distance)
         # Create a new QgsFeature and assign it the new geometry
         feature = QgsFeature(fields)
-        feature['dist'] = (startpoint + current_distance)
-        feature['id'] = fid
-        feature['unit'] = unit
+        feature["dist"] = startpoint + current_distance
+        feature["id"] = fid
+        feature["unit"] = unit
         feature.setGeometry(point)
         feats.append(feature)
-        xarray.append( feature['dist'])
+        xarray.append(feature["dist"])
         # Increase the distance
         current_distance = current_distance + distance
 
     return feats, xarray
 
-def points_along_line(layerout, startpoint, endpoint, distance, layer):#,selected_only=True):#more from qchainage
+
+def points_along_line(
+    layerout, startpoint, endpoint, distance, layer
+):  # ,selected_only=True):#more from qchainage
     """Adding Points along the line"""
     # Create a new memory layer and add a distance attribute self.layerNameLine
-    #layer_crs = virt_layer.setCrs(layer.crs())
-    virt_layer = QgsVectorLayer("Point?crs=%s&index=yes" % layer.crs().authid(),layerout,"memory")
+    # layer_crs = virt_layer.setCrs(layer.crs())
+    virt_layer = QgsVectorLayer(
+        "Point?crs=%s&index=yes" % layer.crs().authid(), layerout, "memory"
+    )
     provider = virt_layer.dataProvider()
-    virt_layer.startEditing()   # actually writes attributes
+    virt_layer.startEditing()  # actually writes attributes
     units = layer.crs().mapUnits()
 
     unit_dic = {
-        QgsUnitTypes.DistanceDegrees: 'Degrees',
-        QgsUnitTypes.DistanceMeters: 'Meters',
-        QgsUnitTypes.DistanceFeet: 'Feet',
-        QgsUnitTypes.DistanceUnknownUnit: 'Unknown'}
-    unit = unit_dic.get(units, 'Unknown')
+        QgsUnitTypes.DistanceDegrees: "Degrees",
+        QgsUnitTypes.DistanceMeters: "Meters",
+        QgsUnitTypes.DistanceFeet: "Feet",
+        QgsUnitTypes.DistanceUnknownUnit: "Unknown",
+    }
+    unit = unit_dic.get(units, "Unknown")
     provider.addAttributes([QgsField("fid", QMetaType.Type.Int)])
     provider.addAttributes([QgsField("cum_dist", QMetaType.Type.Int)])
     provider.addAttributes([QgsField("unit", QMetaType.Type.QString)])
@@ -120,7 +134,9 @@ def points_along_line(layerout, startpoint, endpoint, distance, layer):#,selecte
             QgsApplication.messageLog().logMessage("No geometry", "QChainage")
             continue
 
-        features, xarray = create_points_at(startpoint, endpoint, distance, geom, fid,unit)
+        features, xarray = create_points_at(
+            startpoint, endpoint, distance, geom, fid, unit
+        )
         provider.addFeatures(features)
         virt_layer.updateExtents()
 
@@ -130,14 +146,16 @@ def points_along_line(layerout, startpoint, endpoint, distance, layer):#,selecte
     virt_layer.triggerRepaint()
     return virt_layer, xarray
 
-def sampling(pointsamplinglayer, rastersamplinglayer, bands=1, extract_type='value'):
+
+def sampling(pointsamplinglayer, rastersamplinglayer, bands=1, extract_type="value"):
     point_layer = pointsamplinglayer
     point_provider = point_layer.dataProvider()
     raster_provider = rastersamplinglayer.dataProvider()
 
-    identify_type = {#'text': QgsRaster.IdentifyFormatText,
-                     'value': QgsRaster.IdentifyFormatValue,
-                     'feature': QgsRaster.IdentifyFormatFeature}
+    identify_type = {  #'text': QgsRaster.IdentifyFormatText,
+        "value": QgsRaster.IdentifyFormatValue,
+        "feature": QgsRaster.IdentifyFormatFeature,
+    }
     _type = identify_type[extract_type]
     result = []
     for feature in point_provider.getFeatures():
@@ -153,13 +171,13 @@ def sampling(pointsamplinglayer, rastersamplinglayer, bands=1, extract_type='val
             result.append(None)
             continue
 
-        if extract_type == 'value':
+        if extract_type == "value":
             try:
                 if isinstance(bands, (list, tuple)):
                     result.append([float(sample[band]) for band in bands])
                 else:
                     result.append(float(sample[bands]))
-            except: # point is out of raster extent
+            except:  # point is out of raster extent
                 traceback.print_exc()
                 result.append(None)
         else:

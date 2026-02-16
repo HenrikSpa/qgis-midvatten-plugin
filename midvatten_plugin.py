@@ -882,8 +882,8 @@ class Midvatten:
                         )
                     else:
                         try:
-                            self.midvsettingsdialog.ClearEverything()
-                            self.midvsettingsdialog.LoadAndSelectLastSettings()
+                            self.midvsettingsdialog.clear_everything()
+                            self.midvsettingsdialog.select_last_settings()
                         except:
                             pass
             else:
@@ -960,8 +960,8 @@ class Midvatten:
                         % str(importinstance.recsafter - importinstance.recsbefore)
                     )
                     try:
-                        self.midvsettingsdialog.ClearEverything()
-                        self.midvsettingsdialog.LoadAndSelectLastSettings()
+                        self.midvsettingsdialog.clear_everything()
+                        self.midvsettingsdialog.select_last_settings()
                     except:
                         pass
 
@@ -1048,8 +1048,8 @@ class Midvatten:
                         )
                     else:
                         try:
-                            self.midvsettingsdialog.ClearEverything()
-                            self.midvsettingsdialog.LoadAndSelectLastSettings()
+                            self.midvsettingsdialog.clear_everything()
+                            self.midvsettingsdialog.select_last_settings()
                         except:
                             pass
             else:
@@ -1101,8 +1101,8 @@ class Midvatten:
                         )
                     else:
                         try:
-                            self.midvsettingsdialog.ClearEverything()
-                            self.midvsettingsdialog.LoadAndSelectLastSettings()
+                            self.midvsettingsdialog.clear_everything()
+                            self.midvsettingsdialog.select_last_settings()
                         except:
                             pass
             else:
@@ -1219,7 +1219,7 @@ class Midvatten:
                 self.ms.settingsdict["database"] = newdbinstance.db_settings
                 self.ms.save_settings("database")
                 try:
-                    self.midvsettingsdialog.LoadAndSelectLastSettings()
+                    self.midvsettingsdialog.select_last_settings()
                 except AttributeError:
                     pass
 
@@ -1252,7 +1252,7 @@ class Midvatten:
                 self.ms.settingsdict["database"] = newdbinstance.db_settings
                 self.ms.save_settings("database")
                 try:
-                    self.midvsettingsdialog.LoadAndSelectLastSettings()
+                    self.midvsettingsdialog.select_last_settings()
                 except AttributeError:
                     pass
 
@@ -1336,167 +1336,174 @@ class Midvatten:
 
     @common_utils.general_exception_handler
     def plot_section(self):
-        selected_layer = (
-            qgis.utils.iface.mapCanvas().currentLayer()
-        )  # MUST BE LINE VECTOR LAYER WITH SAME EPSG as MIDV_OBSDB AND THERE MUST BE ONLY ONE SELECTED FEATURE
-        if not selected_layer:
-            common_utils.MessagebarAndLog.critical(
-                bar_msg=QCoreApplication.translate(
-                    "Midvatten", "You must select at least one layer and one feature!"
-                ),
-                duration=10,
-            )
-            raise common_utils.UsageError()
-
-        nrofselected = selected_layer.selectedFeatureCount()
-        if not isinstance(selected_layer, QgsVectorLayer):
-            common_utils.MessagebarAndLog.critical(
-                bar_msg=QCoreApplication.translate(
-                    "Midvatten",
-                    "You must activate the vector line layer that defines the section.",
-                ),
-                log_msg=ru(
-                    QCoreApplication.translate(
+        with monkeytype.trace():
+            selected_layer = (
+                qgis.utils.iface.mapCanvas().currentLayer()
+            )  # MUST BE LINE VECTOR LAYER WITH SAME EPSG as MIDV_OBSDB AND THERE MUST BE ONLY ONE SELECTED FEATURE
+            if not selected_layer:
+                common_utils.MessagebarAndLog.critical(
+                    bar_msg=QCoreApplication.translate(
                         "Midvatten",
-                        'The layer must be of type QgsVectorLayer, but was  "%s".',
-                    )
+                        "You must select at least one layer and one feature!",
+                    ),
+                    duration=10,
                 )
-                % str(type(selected_layer)),
-            )
-            raise common_utils.UsageError()
-        selected_obspoints = None
-        for feat in selected_layer.getSelectedFeatures():
-            geom = feat.geometry()
-            if geom.wkbType() in (
-                QgsWkbTypes.LineString,
-                2,
-                QgsWkbTypes.MultiLineString,
-                5,
-                QgsWkbTypes.LineStringZ,
-                1002,
-                QgsWkbTypes.MultiLineStringZ,
-                1005,
-                QgsWkbTypes.LineStringM,
-                2002,
-                QgsWkbTypes.MultiLineStringM,
-                2005,
-                QgsWkbTypes.LineStringZM,
-                3002,
-                QgsWkbTypes.MultiLineStringZM,
-                3005,
-            ):
-                if nrofselected != 1:
-                    common_utils.MessagebarAndLog.critical(
-                        bar_msg=QCoreApplication.translate(
+                raise common_utils.UsageError()
+
+            nrofselected = selected_layer.selectedFeatureCount()
+            if not isinstance(selected_layer, QgsVectorLayer):
+                common_utils.MessagebarAndLog.critical(
+                    bar_msg=QCoreApplication.translate(
+                        "Midvatten",
+                        "You must activate the vector line layer that defines the section.",
+                    ),
+                    log_msg=ru(
+                        QCoreApplication.translate(
                             "Midvatten",
-                            "You must select only one line feature that defines the section",
+                            'The layer must be of type QgsVectorLayer, but was  "%s".',
                         )
                     )
-                    raise common_utils.UsageError()
-                else:
-                    try:
-                        obs_points_layer = common_utils.find_layer("obs_points")
-                    except common_utils.UsageError as e:
+                    % str(type(selected_layer)),
+                )
+                raise common_utils.UsageError()
+            selected_obspoints = None
+            for feat in selected_layer.getSelectedFeatures():
+                geom = feat.geometry()
+                if geom.wkbType() in (
+                    QgsWkbTypes.LineString,
+                    2,
+                    QgsWkbTypes.MultiLineString,
+                    5,
+                    QgsWkbTypes.LineStringZ,
+                    1002,
+                    QgsWkbTypes.MultiLineStringZ,
+                    1005,
+                    QgsWkbTypes.LineStringM,
+                    2002,
+                    QgsWkbTypes.MultiLineStringM,
+                    2005,
+                    QgsWkbTypes.LineStringZM,
+                    3002,
+                    QgsWkbTypes.MultiLineStringZM,
+                    3005,
+                ):
+                    if nrofselected != 1:
                         common_utils.MessagebarAndLog.critical(
-                            bar_msg=ru(
-                                QCoreApplication.translate(
-                                    "Midvatten", "%s. Plotting without observations!"
-                                )
+                            bar_msg=QCoreApplication.translate(
+                                "Midvatten",
+                                "You must select only one line feature that defines the section",
                             )
-                            % str(e)
                         )
-                        break
+                        raise common_utils.UsageError()
                     else:
-                        if obs_points_layer.isEditable():
-                            common_utils.MessagebarAndLog.warning(
-                                bar_msg=QCoreApplication.translate(
-                                    "Midvatten",
-                                    "Layer obs_points is in editing mode! Plotting without observations!",
+                        try:
+                            obs_points_layer = common_utils.find_layer("obs_points")
+                        except common_utils.UsageError as e:
+                            common_utils.MessagebarAndLog.critical(
+                                bar_msg=ru(
+                                    QCoreApplication.translate(
+                                        "Midvatten",
+                                        "%s. Plotting without observations!",
+                                    )
                                 )
+                                % str(e)
                             )
                             break
                         else:
-                            selected_obspoints = common_utils.getselectedobjectnames(
-                                obs_points_layer
-                            )
-            else:
-                selected_layer = None
-                # utils.MessagebarAndLog.warning(bar_msg=QCoreApplication.translate("Midvatten", 'Reverting to simple stratigraphy plot. For section plot, you must activate the vector line layer and select exactly one feature that defines the section'))
-                # Then verify that at least two feature is selected in obs_points layer,
-                # and get a list (selected_obspoints) of selected obs_points
-                selected_obspoints = (
-                    common_utils.getselectedobjectnames()
-                )  # Finding obsid from currently selected layer
-                if not selected_obspoints:
-                    common_utils.MessagebarAndLog.warning(
-                        bar_msg=QCoreApplication.translate(
-                            "Midvatten",
-                            "The current layer had no selected obsids. Trying to plot from layer obs_points!",
-                        )
-                    )
-                    try:
-                        obs_points_layer = common_utils.find_layer("obs_points")
-                    except common_utils.UsageError:
+                            if obs_points_layer.isEditable():
+                                common_utils.MessagebarAndLog.warning(
+                                    bar_msg=QCoreApplication.translate(
+                                        "Midvatten",
+                                        "Layer obs_points is in editing mode! Plotting without observations!",
+                                    )
+                                )
+                                break
+                            else:
+                                selected_obspoints = (
+                                    common_utils.getselectedobjectnames(
+                                        obs_points_layer
+                                    )
+                                )
+                else:
+                    selected_layer = None
+                    # utils.MessagebarAndLog.warning(bar_msg=QCoreApplication.translate("Midvatten", 'Reverting to simple stratigraphy plot. For section plot, you must activate the vector line layer and select exactly one feature that defines the section'))
+                    # Then verify that at least two feature is selected in obs_points layer,
+                    # and get a list (selected_obspoints) of selected obs_points
+                    selected_obspoints = (
+                        common_utils.getselectedobjectnames()
+                    )  # Finding obsid from currently selected layer
+                    if not selected_obspoints:
                         common_utils.MessagebarAndLog.warning(
                             bar_msg=QCoreApplication.translate(
                                 "Midvatten",
-                                "Layer obs_points is not found. Plotting without observations!",
+                                "The current layer had no selected obsids. Trying to plot from layer obs_points!",
                             )
                         )
-                        break
-                    else:
-                        if obs_points_layer.isEditable():
+                        try:
+                            obs_points_layer = common_utils.find_layer("obs_points")
+                        except common_utils.UsageError:
                             common_utils.MessagebarAndLog.warning(
                                 bar_msg=QCoreApplication.translate(
                                     "Midvatten",
-                                    "Layer obs_points is in editing mode! Plotting without observations!",
+                                    "Layer obs_points is not found. Plotting without observations!",
                                 )
                             )
                             break
                         else:
-                            selected_obspoints = common_utils.getselectedobjectnames(
-                                obs_points_layer
-                            )
+                            if obs_points_layer.isEditable():
+                                common_utils.MessagebarAndLog.warning(
+                                    bar_msg=QCoreApplication.translate(
+                                        "Midvatten",
+                                        "Layer obs_points is in editing mode! Plotting without observations!",
+                                    )
+                                )
+                                break
+                            else:
+                                selected_obspoints = (
+                                    common_utils.getselectedobjectnames(
+                                        obs_points_layer
+                                    )
+                                )
 
-        if not selected_layer and not selected_obspoints:
-            common_utils.MessagebarAndLog.critical(
-                bar_msg=QCoreApplication.translate(
-                    "Midvatten", "You must select at least one feature!"
-                ),
-                duration=10,
-            )
-            raise common_utils.UsageError()
-        elif not selected_layer:
-            common_utils.MessagebarAndLog.info(
-                bar_msg=QCoreApplication.translate(
-                    "Midvatten",
-                    "No line layer was selected. The stratigraphy bars will be lined up from south-north or west-east and no DEMS will be plotted.",
-                ),
-                duration=10,
-            )
+            if not selected_layer and not selected_obspoints:
+                common_utils.MessagebarAndLog.critical(
+                    bar_msg=QCoreApplication.translate(
+                        "Midvatten", "You must select at least one feature!"
+                    ),
+                    duration=10,
+                )
+                raise common_utils.UsageError()
+            elif not selected_layer:
+                common_utils.MessagebarAndLog.info(
+                    bar_msg=QCoreApplication.translate(
+                        "Midvatten",
+                        "No line layer was selected. The stratigraphy bars will be lined up from south-north or west-east and no DEMS will be plotted.",
+                    ),
+                    duration=10,
+                )
 
-        if selected_obspoints is not None and len(selected_obspoints) > 0:
-            selected_obspoints = ru(selected_obspoints, keep_containers=True)
-        else:
-            selected_obspoints = []
-        # Then verify that at least two feature is selected in obs_points layer, and get a list (selected_obspoints) of selected obs_points
-        # if len(selected_obspoints)>1:
-        #    # We cannot send unicode as string to sql because it would include the '
-        #    # Made into tuple because module sectionplot depends on obsid being a tuple
-        #    selected_obspoints = ru(selected_obspoints, keep_containers=True)
-        # else:
-        #    midvatten_utils.MessagebarAndLog.critical(bar_msg=ru(QCoreApplication.translate("Midvatten", 'You must select at least two objects in the obs_points layer')))
-        #    raise midvatten_utils.UsageError()
-        try:
-            self.sectionplot.create_new_plot(
-                self.ms, selected_obspoints, selected_layer
-            )
-        except AttributeError:
-            # traceback.print_exc()
-            self.sectionplot = SectionPlot(self.iface.mainWindow(), self.iface)
-            self.sectionplot.create_new_plot(
-                self.ms, selected_obspoints, selected_layer
-            )
+            if selected_obspoints is not None and len(selected_obspoints) > 0:
+                selected_obspoints = ru(selected_obspoints, keep_containers=True)
+            else:
+                selected_obspoints = []
+            # Then verify that at least two feature is selected in obs_points layer, and get a list (selected_obspoints) of selected obs_points
+            # if len(selected_obspoints)>1:
+            #    # We cannot send unicode as string to sql because it would include the '
+            #    # Made into tuple because module sectionplot depends on obsid being a tuple
+            #    selected_obspoints = ru(selected_obspoints, keep_containers=True)
+            # else:
+            #    midvatten_utils.MessagebarAndLog.critical(bar_msg=ru(QCoreApplication.translate("Midvatten", 'You must select at least two objects in the obs_points layer')))
+            #    raise midvatten_utils.UsageError()
+            try:
+                self.sectionplot.create_new_plot(
+                    self.ms, selected_obspoints, selected_layer
+                )
+            except AttributeError:
+                # traceback.print_exc()
+                self.sectionplot = SectionPlot(self.iface.mainWindow(), self.iface)
+                self.sectionplot.create_new_plot(
+                    self.ms, selected_obspoints, selected_layer
+                )
 
     @common_utils.general_exception_handler
     def plot_xy(self):
@@ -1533,13 +1540,12 @@ class Midvatten:
         )  # verify midv settings are loaded
         if not (err_flag == 0):
             return
-        with monkeytype.trace():
-            try:
-                self.customplot.activateWindow()
-            except:
-                self.customplot = plotsqlitewindow(
-                    self.iface.mainWindow(), self.ms
-                )  # self.iface as arg?
+        try:
+            self.customplot.activateWindow()
+        except:
+            self.customplot = plotsqlitewindow(
+                self.iface.mainWindow(), self.ms
+            )  # self.iface as arg?
 
     @common_utils.general_exception_handler
     def prepare_layers_for_qgis2threejs(self):
@@ -1567,8 +1573,8 @@ class Midvatten:
         self.ms.loadSettings()
         try:  # if midvsettingsdock is shown, then it must be reloaded
             self.midvsettingsdialog.activateWindow()
-            self.midvsettingsdialog.ClearEverything()
-            self.midvsettingsdialog.LoadAndSelectLastSettings()
+            self.midvsettingsdialog.clear_everything()
+            self.midvsettingsdialog.select_last_settings()
         except:
             pass
         midvatten_utils.warn_about_old_database()
@@ -1578,7 +1584,7 @@ class Midvatten:
         self.ms.save_settings()
         try:  # if midvsettingsdock is shown, then it must be reset
             self.midvsettingsdialog.activateWindow()
-            self.midvsettingsdialog.ClearEverything()
+            self.midvsettingsdialog.clear_everything()
         except:
             pass
 
@@ -1587,7 +1593,7 @@ class Midvatten:
             self.midvsettingsdialog.activateWindow()
         except AttributeError:
             # utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
-            self.midvsettingsdialog = midvsettingsdialog.midvsettingsdialogdock(
+            self.midvsettingsdialog = midvsettingsdialog.MidvattenSettingsDock(
                 self.iface.mainWindow(), self.iface, self.ms
             )  # self.iface as arg?
             self.midvsettingsdialog.destroyed.connect(
@@ -1607,7 +1613,8 @@ class Midvatten:
         )  # verify midv settings are loaded
         if err_flag == 0:
             QApplication.setOverrideCursor(Qt.WaitCursor)
-            db_utils.sql_alter_db("vacuum")
+            with monkeytype.trace():
+                db_utils.sql_alter_db("vacuum")
             common_utils.stop_waiting_cursor()
 
     @common_utils.general_exception_handler
@@ -1709,14 +1716,6 @@ class Midvatten:
             if connection_ok:
                 db_utils.backup_db(dbconnection)
                 dbconnection.closedb()
-
-    @common_utils.general_exception_handler
-    def calculate_statistics_for_selected_obsids(self):
-        """Calculates min, median, nr of values and max for all obsids and writes to file
-
-        Uses GetStatistics from drillreport for the calculations
-        """
-        stats_gui = CalculateStatisticsGui(self.iface.mainWindow(), self.ms)
 
     @common_utils.general_exception_handler
     def calculate_db_table_rows(self):

@@ -19,7 +19,7 @@
  *                                                                         *
  ***************************************************************************/
 """
-from __future__ import absolute_import
+
 from __future__ import print_function
 
 import os
@@ -37,21 +37,25 @@ from midvatten.tools.utils import common_utils, db_utils, midvatten_utils
 from midvatten.tools.utils.common_utils import returnunicode as ru
 
 
-class PrepareForQgis2Threejs(object):        
+class PrepareForQgis2Threejs(object):
     def __init__(self, iface, settingsdict={}):
 
         self.dbconnection = db_utils.DbConnectionManager()
 
         self.settingsdict = settingsdict
-        self.strat_layers_dict =  defs.PlotTypesDict('english') 
-        self.symbolcolors_dict = defs.PlotColorDict() # This is not used yet
-        for key, v in list(self.strat_layers_dict.items()):#make all the keys only ascii and only lower case and also add 'strat_' as prefix
-            newkey = 'strat_' + common_utils.return_lower_ascii_string(key)
+        self.strat_layers_dict = defs.PlotTypesDict("english")
+        self.symbolcolors_dict = defs.PlotColorDict()  # This is not used yet
+        for key, v in list(
+            self.strat_layers_dict.items()
+        ):  # make all the keys only ascii and only lower case and also add 'strat_' as prefix
+            newkey = "strat_" + common_utils.return_lower_ascii_string(key)
             self.strat_layers_dict[newkey] = self.strat_layers_dict[key]
             del self.strat_layers_dict[key]
-        for key, v in list(self.symbolcolors_dict.items()):#THIS IS NOT USED YET make all the keys only ascii and only lower case and also add 'strat_' as prefix
-            newkey = 'strat_' + common_utils.return_lower_ascii_string(key)
-            self.symbolcolors_dict[newkey] = self.symbolcolors_dict[key] 
+        for key, v in list(
+            self.symbolcolors_dict.items()
+        ):  # THIS IS NOT USED YET make all the keys only ascii and only lower case and also add 'strat_' as prefix
+            newkey = "strat_" + common_utils.return_lower_ascii_string(key)
+            self.symbolcolors_dict[newkey] = self.symbolcolors_dict[key]
             del self.symbolcolors_dict[key]
         self.iface = iface
         self.root = QgsProject.instance().layerTreeRoot()
@@ -62,23 +66,31 @@ class PrepareForQgis2Threejs(object):
         self.add_layers()
         self.dbconnection.closedb()
 
-    def add_layers(self):#not tested and not ready, must fix basic styles (preferrably colors based on some definition dicitonary
-        MyGroup = self.root.insertGroup(0, "stratigraphy_layers_for_qgis2threejs")#verify this is inserted at top
+    def add_layers(
+        self,
+    ):  # not tested and not ready, must fix basic styles (preferrably colors based on some definition dicitonary
+        MyGroup = self.root.insertGroup(
+            0, "stratigraphy_layers_for_qgis2threejs"
+        )  # verify this is inserted at top
 
         canvas = self.iface.mapCanvas()
 
         list_with_all_strat_layer = []
         for key in self.strat_layers_dict:
             list_with_all_strat_layer.append(key)
-        #print list_with_all_strat_layer#debug
+        # print list_with_all_strat_layer#debug
 
-        list_with_all_strat_layer.append('strat_obs_p_for_qgsi2threejs')
+        list_with_all_strat_layer.append("strat_obs_p_for_qgsi2threejs")
 
         colors = []
 
         layer_list = []
-        midvatten_utils.add_layers_to_list(layer_list, list_with_all_strat_layer, geometrycolumn='geometry',
-                           dbconnection=self.dbconnection)
+        midvatten_utils.add_layers_to_list(
+            layer_list,
+            list_with_all_strat_layer,
+            geometrycolumn="geometry",
+            dbconnection=self.dbconnection,
+        )
 
         for strat_layer_view in list_with_all_strat_layer:
             try:
@@ -97,88 +109,152 @@ class PrepareForQgis2Threejs(object):
                         color = [x * 255 for x in color]
                     except Exception as e:
                         common_utils.MessagebarAndLog.warning(
-                            bar_msg=ru(QCoreApplication.translate('PrepareForQgis2Threejs', 'Setting color from dict failed')),
-                            log_msg=ru(QCoreApplication.translate('PrepareForQgis2Threejs', 'Error msg %s'))%str(e))
+                            bar_msg=ru(
+                                QCoreApplication.translate(
+                                    "PrepareForQgis2Threejs",
+                                    "Setting color from dict failed",
+                                )
+                            ),
+                            log_msg=ru(
+                                QCoreApplication.translate(
+                                    "PrepareForQgis2Threejs", "Error msg %s"
+                                )
+                            )
+                            % str(e),
+                        )
                         color = None
 
             colors.append(color)
 
-        for idx, layer in enumerate(layer_list):#now loop over all the layers, add them to canvas and set colors
+        for idx, layer in enumerate(
+            layer_list
+        ):  # now loop over all the layers, add them to canvas and set colors
             if not layer.isValid():
                 try:
-                    print(layer.name() + ' is not valid layer')
+                    print(layer.name() + " is not valid layer")
                 except:
                     pass
                 pass
             else:
                 # TODO: Made this a comment, but there might be some hidden feature that's still needed!
-                #map_canvas_layer_list.append(QgsMapCanvasLayer(layer))
+                # map_canvas_layer_list.append(QgsMapCanvasLayer(layer))
 
-                #now try to load the style file
-                stylefile = os.path.join(os.sep,os.path.dirname(__file__),"..","definitions",layer.name() + ".qml")
+                # now try to load the style file
+                stylefile = os.path.join(
+                    os.sep,
+                    os.path.dirname(__file__),
+                    "..",
+                    "definitions",
+                    layer.name() + ".qml",
+                )
                 try:
                     layer.loadNamedStyle(stylefile)
                 except:
                     try:
-                        print("Loading stylefile %s failed."%stylefile)
+                        print("Loading stylefile %s failed." % stylefile)
                     except:
                         pass
 
                 color = colors[idx]
                 if color:
                     current_symbol = layer.renderer().symbol()
-                    current_symbol.setColor(QColor.fromRgb(int(color[0]), int(color[1]), int(color[2])))
+                    current_symbol.setColor(
+                        QColor.fromRgb(int(color[0]), int(color[1]), int(color[2]))
+                    )
 
-                QgsProject.instance().addMapLayers([layer],False)
-                MyGroup.insertLayer(0,layer)
-                                
-            #finally refresh canvas
+                QgsProject.instance().addMapLayers([layer], False)
+                MyGroup.insertLayer(0, layer)
+
+            # finally refresh canvas
             canvas.refresh()
 
     def create_db_views(self):
-        SQLFile = os.path.join(os.sep,os.path.dirname(__file__),"..","definitions","add_spatial_views_for_gis2threejs.sql")
+        SQLFile = os.path.join(
+            os.sep,
+            os.path.dirname(__file__),
+            "..",
+            "definitions",
+            "add_spatial_views_for_gis2threejs.sql",
+        )
 
-        if self.dbconnection.dbtype == 'spatialite':
-            self.dbconnection.execute(r"""create view strat_obs_p_for_qgsi2threejs as select distinct "a"."rowid" as "rowid", "a"."obsid" as "obsid", "a"."geometry" as "geometry" from "obs_points" as "a" JOIN "stratigraphy" as "b" using ("obsid") where (typeof("a"."h_toc") in ('integer', 'real') or typeof("a"."h_gs") in ('integer', 'real'))""")
-            self.dbconnection.execute(r"""insert into views_geometry_columns (view_name, view_geometry, view_rowid, f_table_name, f_geometry_column, read_only) values ('strat_obs_p_for_qgsi2threejs', 'geometry', 'rowid', 'obs_points', 'geometry',1);""")
+        if self.dbconnection.dbtype == "spatialite":
+            self.dbconnection.execute(
+                r"""create view strat_obs_p_for_qgsi2threejs as select distinct "a"."rowid" as "rowid", "a"."obsid" as "obsid", "a"."geometry" as "geometry" from "obs_points" as "a" JOIN "stratigraphy" as "b" using ("obsid") where (typeof("a"."h_toc") in ('integer', 'real') or typeof("a"."h_gs") in ('integer', 'real'))"""
+            )
+            self.dbconnection.execute(
+                r"""insert into views_geometry_columns (view_name, view_geometry, view_rowid, f_table_name, f_geometry_column, read_only) values ('strat_obs_p_for_qgsi2threejs', 'geometry', 'rowid', 'obs_points', 'geometry',1);"""
+            )
         else:
             try:
                 self.dbconnection.execute(
-                r"""CREATE VIEW strat_obs_p_for_qgsi2threejs AS 
+                    r"""CREATE VIEW strat_obs_p_for_qgsi2threejs AS 
                     SELECT ROW_NUMBER() OVER (ORDER BY obsid) rowid, obsid, "geometry"
                     FROM "obs_points"
                     WHERE EXISTS (SELECT s.obsid FROM stratigraphy s WHERE s.obsid = obs_points.obsid LIMIT 1)
                     AND COALESCE(h_toc, h_gs, 0) > 0;
-                    """)
+                    """
+                )
             except psycopg2.errors.DuplicateTable:
-                common_utils.MessagebarAndLog.info(log_msg=ru(QCoreApplication.translate('PrepareForQgis2Threejs', 'Table strat_obs_p_for_qgsi2threejs already existed and is not recreated.')))
+                common_utils.MessagebarAndLog.info(
+                    log_msg=ru(
+                        QCoreApplication.translate(
+                            "PrepareForQgis2Threejs",
+                            "Table strat_obs_p_for_qgsi2threejs already existed and is not recreated.",
+                        )
+                    )
+                )
 
         for key in self.strat_layers_dict:
-            with open(SQLFile, 'r') as f:
+            with open(SQLFile, "r") as f:
                 for linecounter, line in enumerate(f):
-                    if linecounter > 0:    # first line is encoding info....
+                    if linecounter > 0:  # first line is encoding info....
                         if line.startswith(self.dbconnection.dbtype.upper()):
-                            line = common_utils.lstrip(self.dbconnection.dbtype.upper(), line)
-                            sqliteline = line.replace('CHANGETOVIEWNAME',key).replace('CHANGETOPLOTTYPESDICTVALUE',self.strat_layers_dict[key])
-                            #print(sqliteline)#debug
+                            line = common_utils.lstrip(
+                                self.dbconnection.dbtype.upper(), line
+                            )
+                            sqliteline = line.replace("CHANGETOVIEWNAME", key).replace(
+                                "CHANGETOPLOTTYPESDICTVALUE",
+                                self.strat_layers_dict[key],
+                            )
+                            # print(sqliteline)#debug
                             try:
                                 self.dbconnection.execute(sqliteline)
                             except psycopg2.errors.DuplicateTable:
-                                common_utils.MessagebarAndLog.info(log_msg=ru(QCoreApplication.translate('PrepareForQgis2Threejs', 'Table %s already existed and is not recreated.'))%ru(key))
+                                common_utils.MessagebarAndLog.info(
+                                    log_msg=ru(
+                                        QCoreApplication.translate(
+                                            "PrepareForQgis2Threejs",
+                                            "Table %s already existed and is not recreated.",
+                                        )
+                                    )
+                                    % ru(key)
+                                )
 
     def drop_db_views(self):
-        if self.dbconnection.dbtype == 'spatialite':
-            db_utils.sql_alter_db("delete from views_geometry_columns where view_name = 'strat_obs_p_for_qgsi2threejs'", dbconnection=self.dbconnection)
+        if self.dbconnection.dbtype == "spatialite":
+            db_utils.sql_alter_db(
+                "delete from views_geometry_columns where view_name = 'strat_obs_p_for_qgsi2threejs'",
+                dbconnection=self.dbconnection,
+            )
 
-        db_utils.sql_alter_db("drop view if exists strat_obs_p_for_qgsi2threejs", dbconnection=self.dbconnection)
+        db_utils.sql_alter_db(
+            "drop view if exists strat_obs_p_for_qgsi2threejs",
+            dbconnection=self.dbconnection,
+        )
 
         for key in self.strat_layers_dict:
-            if self.dbconnection.dbtype == 'spatialite':
-                db_utils.sql_alter_db("delete from views_geometry_columns where view_name = '{}'".format(key), dbconnection=self.dbconnection)
+            if self.dbconnection.dbtype == "spatialite":
+                db_utils.sql_alter_db(
+                    "delete from views_geometry_columns where view_name = '{}'".format(
+                        key
+                    ),
+                    dbconnection=self.dbconnection,
+                )
 
-            db_utils.sql_alter_db("drop view if exists " + key, dbconnection=self.dbconnection)
+            db_utils.sql_alter_db(
+                "drop view if exists " + key, dbconnection=self.dbconnection
+            )
 
     def remove_views(self):
         remove_group = self.root.findGroup("stratigraphy_layers_for_qgis2threejs")
         self.root.removeChildNode(remove_group)
-        

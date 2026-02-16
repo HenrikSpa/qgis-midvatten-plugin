@@ -10,7 +10,6 @@
         email                : groundwatergis [at] gmail.com
  ***************************************************************************/
 """
-from __future__ import absolute_import
 
 import copy
 import os
@@ -21,6 +20,7 @@ from builtins import str
 from builtins import zip
 from operator import itemgetter
 from contextlib import contextmanager
+import monkeytype
 
 import ast
 from functools import partial
@@ -90,12 +90,9 @@ else:
     pandas_on = True
 
 
-class SectionPlot(
-    qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock
-):  # the Ui_SecPlotDock  is created instantaniously as this is created
+class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
     def __init__(self, parent1, iface1):
         qgis.PyQt.QtWidgets.QDockWidget.__init__(self, parent1)
-        # self.setAttribute(qgis.PyQt.QtCore.Qt.WA_DeleteOnClose)
 
         self.figures = {}
         self.figure = None
@@ -116,9 +113,9 @@ class SectionPlot(
                 self.set_location
             )  # not really implemented yet
 
-        self.setupUi(self)  # Required by Qt to initialize the UI
-
-        self.initUI()
+        self.setupUi(self)
+        with monkeytype.trace():
+            self.initUI()
         self.template_plot_label.setText(
             '<a href="https://github.com/jkall/qgis-midvatten-plugin/wiki/5.-Plots-and-reports#create-section-plot">Templates manual</a>'
         )

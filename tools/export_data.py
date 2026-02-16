@@ -17,7 +17,7 @@
  *                                                                         *
  ***************************************************************************/
 """
-from __future__ import absolute_import
+
 
 import traceback
 
@@ -39,17 +39,35 @@ class ExportData(object):
         self.dest_dbconnection = None
         self.source_dbconnection = None
 
-    def export_2_csv(self,exportfolder):
+    def export_2_csv(self, exportfolder):
         self.source_dbconnection = db_utils.DbConnectionManager()
-        self.source_dbconnection.connect2db() #establish connection to the current midv db
+        self.source_dbconnection.connect2db()  # establish connection to the current midv db
         db_utils.export_bytea_as_bytes(self.source_dbconnection)
 
         self.exportfolder = exportfolder
-        self.write_data(self.to_csv, None, defs.get_subset_of_tables_fr_db(category='data_domains'))
-        self.write_data(self.to_csv, self.ID_obs_points, defs.get_subset_of_tables_fr_db(category='obs_points'))
-        self.write_data(self.to_csv, self.ID_obs_lines, defs.get_subset_of_tables_fr_db(category='obs_lines'))
-        self.write_data(self.to_csv, self.ID_obs_points, defs.get_subset_of_tables_fr_db(category='extra_data_tables'))
-        self.write_data(self.to_csv, self.ID_obs_points, defs.get_subset_of_tables_fr_db(category='interlab4_import_table'))
+        self.write_data(
+            self.to_csv, None, defs.get_subset_of_tables_fr_db(category="data_domains")
+        )
+        self.write_data(
+            self.to_csv,
+            self.ID_obs_points,
+            defs.get_subset_of_tables_fr_db(category="obs_points"),
+        )
+        self.write_data(
+            self.to_csv,
+            self.ID_obs_lines,
+            defs.get_subset_of_tables_fr_db(category="obs_lines"),
+        )
+        self.write_data(
+            self.to_csv,
+            self.ID_obs_points,
+            defs.get_subset_of_tables_fr_db(category="extra_data_tables"),
+        )
+        self.write_data(
+            self.to_csv,
+            self.ID_obs_points,
+            defs.get_subset_of_tables_fr_db(category="interlab4_import_table"),
+        )
 
         self.source_dbconnection.closedb()
 
@@ -62,7 +80,7 @@ class ExportData(object):
 
         """
         self.source_dbconnection = db_utils.DbConnectionManager()
-        self.source_dbconnection.connect2db() #establish connection to the current midv db
+        self.source_dbconnection.connect2db()  # establish connection to the current midv db
         db_utils.export_bytea_as_bytes(self.source_dbconnection)
 
         self.dest_dbconnection = db_utils.DbConnectionManager(target_db)
@@ -70,32 +88,65 @@ class ExportData(object):
 
         self.midv_data_importer = midv_data_importer()
 
-        self.write_data(self.to_sql, None, defs.get_subset_of_tables_fr_db(category='data_domains'), replace=True)
+        self.write_data(
+            self.to_sql,
+            None,
+            defs.get_subset_of_tables_fr_db(category="data_domains"),
+            replace=True,
+        )
         self.dest_dbconnection.commit()
-        self.write_data(self.to_sql, self.ID_obs_points, defs.get_subset_of_tables_fr_db(category='obs_points'))
+        self.write_data(
+            self.to_sql,
+            self.ID_obs_points,
+            defs.get_subset_of_tables_fr_db(category="obs_points"),
+        )
         self.dest_dbconnection.commit()
-        self.write_data(self.to_sql, self.ID_obs_lines, defs.get_subset_of_tables_fr_db(category='obs_lines'))
+        self.write_data(
+            self.to_sql,
+            self.ID_obs_lines,
+            defs.get_subset_of_tables_fr_db(category="obs_lines"),
+        )
         self.dest_dbconnection.commit()
-        self.write_data(self.to_sql, self.ID_obs_points, defs.get_subset_of_tables_fr_db(category='extra_data_tables'))
+        self.write_data(
+            self.to_sql,
+            self.ID_obs_points,
+            defs.get_subset_of_tables_fr_db(category="extra_data_tables"),
+        )
         self.dest_dbconnection.commit()
-        self.write_data(self.to_sql, self.ID_obs_points, defs.get_subset_of_tables_fr_db(category='interlab4_import_table'))
+        self.write_data(
+            self.to_sql,
+            self.ID_obs_points,
+            defs.get_subset_of_tables_fr_db(category="interlab4_import_table"),
+        )
         self.dest_dbconnection.commit()
 
         db_utils.delete_srids(self.dest_dbconnection.cursor, dest_srid)
         self.dest_dbconnection.commit()
 
-        #Statistics
+        # Statistics
         statistics = self.get_table_rows_with_differences()
 
-        self.dest_dbconnection.cursor.execute('vacuum')
+        self.dest_dbconnection.cursor.execute("vacuum")
 
-        common_utils.MessagebarAndLog.info(bar_msg=ru(QCoreApplication.translate('ExportData', "Export done, see differences in log message panel")), log_msg=ru(QCoreApplication.translate('ExportData', "Tables with different number of rows:\n%s")) % statistics)
+        common_utils.MessagebarAndLog.info(
+            bar_msg=ru(
+                QCoreApplication.translate(
+                    "ExportData", "Export done, see differences in log message panel"
+                )
+            ),
+            log_msg=ru(
+                QCoreApplication.translate(
+                    "ExportData", "Tables with different number of rows:\n%s"
+                )
+            )
+            % statistics,
+        )
 
         self.dest_dbconnection.commit_and_closedb()
         self.source_dbconnection.closedb()
 
     def get_number_of_rows(self, obsids, tname):
-        sql = "select count(obsid) from %s"%tname
+        sql = "select count(obsid) from %s" % tname
         if obsids:
             sql += " WHERE obsid IN ({})".format(common_utils.sql_unicode_list(obsids))
         nr_of_rows = self.source_dbconnection.execute_and_fetchall(sql)[0][0]
@@ -103,30 +154,58 @@ class ExportData(object):
 
     def write_data(self, to_writer, obsids, ptabs, replace=False):
         for tname in ptabs:
-            if not db_utils.verify_table_exists(tname, dbconnection=self.source_dbconnection):
-                common_utils.MessagebarAndLog.info(bar_msg=ru(QCoreApplication.translate('ExportData', "Table %s didn't exist. Skipping it.")) % tname)
+            if not db_utils.verify_table_exists(
+                tname, dbconnection=self.source_dbconnection
+            ):
+                common_utils.MessagebarAndLog.info(
+                    bar_msg=ru(
+                        QCoreApplication.translate(
+                            "ExportData", "Table %s didn't exist. Skipping it."
+                        )
+                    )
+                    % tname
+                )
                 continue
             if self.dest_dbconnection is not None:
-                if not db_utils.verify_table_exists(tname, dbconnection=self.dest_dbconnection):
-                    if tname in defs.get_subset_of_tables_fr_db('extra_data_tables'):
+                if not db_utils.verify_table_exists(
+                    tname, dbconnection=self.dest_dbconnection
+                ):
+                    if tname in defs.get_subset_of_tables_fr_db("extra_data_tables"):
                         sqlfile = db_defs.extra_datatables_sqlfile()
                         if not os.path.isfile(sqlfile):
-                            common_utils.MessagebarAndLog.info(bar_msg=ru(QCoreApplication.translate('ExportData',
-                               'Programming error, file path not existing: %s. Skipping table %s'))%(sqlfile,
-                                                                                                     tname))
+                            common_utils.MessagebarAndLog.info(
+                                bar_msg=ru(
+                                    QCoreApplication.translate(
+                                        "ExportData",
+                                        "Programming error, file path not existing: %s. Skipping table %s",
+                                    )
+                                )
+                                % (sqlfile, tname)
+                            )
                             continue
                         else:
-                            db_utils.execute_sqlfile(sqlfile, self.dest_dbconnection, merge_newlines=True)
+                            db_utils.execute_sqlfile(
+                                sqlfile, self.dest_dbconnection, merge_newlines=True
+                            )
                             self.dest_dbconnection.commit()
                     else:
-                        common_utils.MessagebarAndLog.info(bar_msg=ru(QCoreApplication.translate('ExportData',
-                                          'Programming error, table missing in new database: %s.')) %tname)
+                        common_utils.MessagebarAndLog.info(
+                            bar_msg=ru(
+                                QCoreApplication.translate(
+                                    "ExportData",
+                                    "Programming error, table missing in new database: %s.",
+                                )
+                            )
+                            % tname
+                        )
 
             if not obsids:
                 to_writer(tname, obsids, replace)
             else:
                 nr_of_rows = self.get_number_of_rows(obsids, tname)
-                if nr_of_rows > 0: #only go on if there are any observations for this obsid
+                if (
+                    nr_of_rows > 0
+                ):  # only go on if there are any observations for this obsid
                     to_writer(tname, obsids, replace)
 
     def to_csv(self, tname, obsids=None, replace=False):
@@ -136,7 +215,7 @@ class ExportData(object):
         :param obsids:
         :return:
         """
-        sql = """SELECT * FROM "%s" """%tname
+        sql = """SELECT * FROM "%s" """ % tname
         if obsids:
             sql += " WHERE obsid IN ({})".format(common_utils.sql_unicode_list(obsids))
         data = self.source_dbconnection.execute_and_fetchall(sql)
@@ -165,55 +244,83 @@ class ExportData(object):
             file_data_srid = 4326
 
         try:
-            source_data = self.get_table_data(tname, obsids, self.source_dbconnection, file_data_srid)
+            source_data = self.get_table_data(
+                tname, obsids, self.source_dbconnection, file_data_srid
+            )
         except:
-            common_utils.MessagebarAndLog.info(bar_msg=ru(
-                QCoreApplication.translate('ExportData', "Error! Export of table %s failed, see log message panel"))%tname,
-                                               log_msg=ru(traceback.format_exc()))
+            common_utils.MessagebarAndLog.info(
+                bar_msg=ru(
+                    QCoreApplication.translate(
+                        "ExportData",
+                        "Error! Export of table %s failed, see log message panel",
+                    )
+                )
+                % tname,
+                log_msg=ru(traceback.format_exc()),
+            )
             return
 
         if replace:
-            self.dest_dbconnection.execute('''PRAGMA foreign_keys = OFF;''')
-            dest_data = self.get_table_data(tname, obsids, self.dest_dbconnection, file_data_srid)
+            self.dest_dbconnection.execute("""PRAGMA foreign_keys = OFF;""")
+            dest_data = self.get_table_data(
+                tname, obsids, self.dest_dbconnection, file_data_srid
+            )
             if dest_data:
-                self.dest_dbconnection.execute('''DELETE FROM {}'''.format(tname))
+                self.dest_dbconnection.execute("""DELETE FROM {}""".format(tname))
 
-        if tname == 'obs_points':
-            geom_column = list(db_utils.get_geometry_types(self.source_dbconnection, tname).keys())[0]
-            source_data = [set_east_north_to_null(row, source_data[0], geom_column) if rownr > 0
-                           else row
-                           for rownr, row in enumerate(source_data)]
+        if tname == "obs_points":
+            geom_column = list(
+                db_utils.get_geometry_types(self.source_dbconnection, tname).keys()
+            )[0]
+            source_data = [
+                (
+                    set_east_north_to_null(row, source_data[0], geom_column)
+                    if rownr > 0
+                    else row
+                )
+                for rownr, row in enumerate(source_data)
+            ]
 
-        self.midv_data_importer.general_import(tname, source_data,
-                                               _dbconnection=self.dest_dbconnection,
-                                               source_srid=file_data_srid,
-                                               skip_confirmation=True,
-                                               binary_geometry=True)
+        self.midv_data_importer.general_import(
+            tname,
+            source_data,
+            _dbconnection=self.dest_dbconnection,
+            source_srid=file_data_srid,
+            skip_confirmation=True,
+            binary_geometry=True,
+        )
 
         if replace and dest_data is not None:
-            self.midv_data_importer.general_import(tname, dest_data,
-                                                   _dbconnection=self.dest_dbconnection,
-                                                   source_srid=file_data_srid,
-                                                   skip_confirmation=True)
-            self.dest_dbconnection.execute('''PRAGMA foreign_keys = ON;''')
+            self.midv_data_importer.general_import(
+                tname,
+                dest_data,
+                _dbconnection=self.dest_dbconnection,
+                source_srid=file_data_srid,
+                skip_confirmation=True,
+            )
+            self.dest_dbconnection.execute("""PRAGMA foreign_keys = ON;""")
 
     def get_table_data(self, tname, obsids, dbconnection, file_data_srid):
-        dbconnection.execute("""SELECT * FROM "%s" LIMIT 1"""%tname)
+        dbconnection.execute("""SELECT * FROM "%s" LIMIT 1""" % tname)
         columns = [x[0] for x in dbconnection.cursor.description]
 
         if file_data_srid:
-            astext = 'ST_AsBinary(ST_Transform({}, %s))'%str(file_data_srid)
+            astext = "ST_AsBinary(ST_Transform({}, %s))" % str(file_data_srid)
         else:
-            astext = 'ST_AsBinary({})'
+            astext = "ST_AsBinary({})"
 
         geom_columns = list(db_utils.get_geometry_types(dbconnection, tname).keys())
-        #Transform to 4326 just to be sure that both the source and dest database has support for the srid.
-        select_columns = [astext.format(col)
-                          if (col.lower() in geom_columns and dbconnection.get_srid(tname, col))
-                          else col
-                          for col in columns]
+        # Transform to 4326 just to be sure that both the source and dest database has support for the srid.
+        select_columns = [
+            (
+                astext.format(col)
+                if (col.lower() in geom_columns and dbconnection.get_srid(tname, col))
+                else col
+            )
+            for col in columns
+        ]
 
-        sql = '''SELECT {} FROM "{}"'''.format(u', '.join(select_columns), tname)
+        sql = '''SELECT {} FROM "{}"'''.format(", ".join(select_columns), tname)
         if obsids:
             sql += " WHERE obsid IN ({})".format(common_utils.sql_unicode_list(obsids))
         dbconnection.execute(sql)
@@ -234,40 +341,61 @@ class ExportData(object):
         :return:  a printable list of nr of rows for all tables
         """
         results = {}
-        db_aliases_and_connections = [('exported_db', self.dest_dbconnection), ('source_db', self.source_dbconnection)]
+        db_aliases_and_connections = [
+            ("exported_db", self.dest_dbconnection),
+            ("source_db", self.source_dbconnection),
+        ]
         for alias, dbconnection in db_aliases_and_connections:
             tablenames = db_utils.get_tables(dbconnection, skip_views=True)
             for tablename in tablenames:
-                sql = """SELECT count(*) FROM "%s" """%(tablename)
+                sql = """SELECT count(*) FROM "%s" """ % (tablename)
                 try:
                     nr_of_rows = dbconnection.execute_and_fetchall(sql)[0][0]
                 except:
-                    common_utils.MessagebarAndLog.warning(log_msg=ru(QCoreApplication.translate('ExportData', 'Sql failed while getting table row differences: %s')) % sql)
+                    common_utils.MessagebarAndLog.warning(
+                        log_msg=ru(
+                            QCoreApplication.translate(
+                                "ExportData",
+                                "Sql failed while getting table row differences: %s",
+                            )
+                        )
+                        % sql
+                    )
                 else:
                     results.setdefault(tablename, {})[alias] = str(nr_of_rows)
 
         printable_results = []
 
-        #Create header
-        header = ['tablename']
+        # Create header
+        header = ["tablename"]
         db_aliases = sorted([_x[0] for _x in db_aliases_and_connections])
         header.extend(db_aliases)
         printable_results.append(header)
 
-        #Create table result rows
+        # Create table result rows
         for tablename, dbdict in sorted(results.items()):
             vals = [tablename]
-            vals.extend([str(dbdict.get(alias, 'table_missing')) for alias in sorted(db_aliases)])
+            vals.extend(
+                [
+                    str(dbdict.get(alias, "table_missing"))
+                    for alias in sorted(db_aliases)
+                ]
+            )
             if vals[1] != vals[2]:
                 printable_results.append(vals)
 
-        printable_msg = '\n'.join(['{0:40}{1:15}{2:15}'.format(result_row[0], result_row[1], result_row[2]) for result_row in printable_results])
+        printable_msg = "\n".join(
+            [
+                "{0:40}{1:15}{2:15}".format(result_row[0], result_row[1], result_row[2])
+                for result_row in printable_results
+            ]
+        )
         return printable_msg
 
 
 def set_east_north_to_null(row, header, geometry):
     res = list(row)
     if res[header.index(geometry)]:
-        res[header.index('east')] = None
-        res[header.index('north')] = None
+        res[header.index("east")] = None
+        res[header.index("north")] = None
     return res

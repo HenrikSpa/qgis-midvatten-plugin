@@ -17,7 +17,7 @@
  *                                                                         *
  ***************************************************************************/
 """
-from __future__ import absolute_import
+
 
 import datetime
 import re
@@ -50,16 +50,37 @@ def find_date_format(datestring, suppress_error_msg=False):
     None
     """
     datestring = str(datestring)
-    date_formats_to_try = ['%Y/%m/%d %H:%M:%S', '%Y-%m-%d %H:%M:%S', '%Y-%m-%dT%H:%M:%S',
-                           '%Y-%m-%dT%H:%M:%S.%f', '%Y-%m-%d %H:%M:%S.%f',
-                           '%Y%m%d %H:%M:%S', '%Y%m%d %H:%M', '%Y-%m-%d %H:%M', '%Y%m%d',
-                           '%Y-%m-%d', '%d-%m-%Y', '%H:%M:%S', '%d-%m-%Y %H:%M:%S',
-                           '%d-%m-%Y %H:%M', '%d-%m-%Y %H', '%Y/%m/%d %H:%M',
-                           '%Y/%m/%d %H', '%Y%m%d %H%M%S', '%Y%m%d %H%M',
-                           '%Y%m%d %H', '%m/%d/%y %H:%M:%S', '%d-%b-%y %H:%M:%S',
-                           '%d-%b-%Y %H:%M:%S', '%d-%B-%y %H:%M:%S', '%d-%B-%Y %H:%M:%S',
-                           '%d.%m.%Y %H:%M', '%d.%m.%Y %H:%M:%S', '%d/%m/%Y %H:%M:%S',
-                           '%d/%m/%Y %H:%M']
+    date_formats_to_try = [
+        "%Y/%m/%d %H:%M:%S",
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%dT%H:%M:%S",
+        "%Y-%m-%dT%H:%M:%S.%f",
+        "%Y-%m-%d %H:%M:%S.%f",
+        "%Y%m%d %H:%M:%S",
+        "%Y%m%d %H:%M",
+        "%Y-%m-%d %H:%M",
+        "%Y%m%d",
+        "%Y-%m-%d",
+        "%d-%m-%Y",
+        "%H:%M:%S",
+        "%d-%m-%Y %H:%M:%S",
+        "%d-%m-%Y %H:%M",
+        "%d-%m-%Y %H",
+        "%Y/%m/%d %H:%M",
+        "%Y/%m/%d %H",
+        "%Y%m%d %H%M%S",
+        "%Y%m%d %H%M",
+        "%Y%m%d %H",
+        "%m/%d/%y %H:%M:%S",
+        "%d-%b-%y %H:%M:%S",
+        "%d-%b-%Y %H:%M:%S",
+        "%d-%B-%y %H:%M:%S",
+        "%d-%B-%Y %H:%M:%S",
+        "%d.%m.%Y %H:%M",
+        "%d.%m.%Y %H:%M:%S",
+        "%d/%m/%Y %H:%M:%S",
+        "%d/%m/%Y %H:%M",
+    ]
     found_format = None
     for dateformat in date_formats_to_try:
         try:
@@ -73,10 +94,20 @@ def find_date_format(datestring, suppress_error_msg=False):
     if found_format is None:
         if not suppress_error_msg:
             MessagebarAndLog.critical(
-                bar_msg=QCoreApplication.translate('find_date_format', 'Date parsing failed, see log message panel'),
-                log_msg=ru(QCoreApplication.translate('find_date_format', 'Could not find the date format for string "%s"\nSupported date formats:\n%s'))%(ru(datestring), '\n'.join(date_formats_to_try)))
+                bar_msg=QCoreApplication.translate(
+                    "find_date_format", "Date parsing failed, see log message panel"
+                ),
+                log_msg=ru(
+                    QCoreApplication.translate(
+                        "find_date_format",
+                        'Could not find the date format for string "%s"\nSupported date formats:\n%s',
+                    )
+                )
+                % (ru(datestring), "\n".join(date_formats_to_try)),
+            )
 
     return found_format
+
 
 def dateshift(adate, n, step_lenght):
     """
@@ -96,27 +127,28 @@ def dateshift(adate, n, step_lenght):
     adate = datestring_to_date(adate)
 
     step_lenght = step_lenght.lower()
-    if not step_lenght.endswith('s'):
-        step_lenght += 's'
+    if not step_lenght.endswith("s"):
+        step_lenght += "s"
 
-    if step_lenght == 'microseconds':
+    if step_lenght == "microseconds":
         td = datetime.timedelta(microseconds=n)
-    elif step_lenght == 'milliseconds':
+    elif step_lenght == "milliseconds":
         td = datetime.timedelta(milliseconds=n)
-    elif step_lenght == 'seconds':
+    elif step_lenght == "seconds":
         td = datetime.timedelta(seconds=n)
-    elif step_lenght == 'minutes':
+    elif step_lenght == "minutes":
         td = datetime.timedelta(minutes=n)
-    elif step_lenght == 'hours':
+    elif step_lenght == "hours":
         td = datetime.timedelta(hours=n)
-    elif step_lenght == 'days':
+    elif step_lenght == "days":
         td = datetime.timedelta(days=n)
-    elif step_lenght == 'weeks':
+    elif step_lenght == "weeks":
         td = datetime.timedelta(weeks=n)
     else:
         return None
     new_date = adate + td
     return new_date
+
 
 def datestring_to_date(astring, now=datetime.datetime.now(), df=None):
     """
@@ -155,22 +187,39 @@ def datestring_to_date(astring, now=datetime.datetime.now(), df=None):
                     adate = None
     return adate
 
+
 def long_dateformat(astring, dateformat=None):
-    return datetime.datetime.strftime(datestring_to_date(astring, df=dateformat), '%Y-%m-%d %H:%M:%S')
+    return datetime.datetime.strftime(
+        datestring_to_date(astring, df=dateformat), "%Y-%m-%d %H:%M:%S"
+    )
+
 
 def date_to_epoch(astring):
     return datestring_to_date(astring) - datetime.datetime(1970, 1, 1)
+
 
 def reformat_date_time(astring):
     date_format = find_date_format(astring)
     if date_format is None:
         return None
 
-    date = u'-'.join([u'%{}'.format(letter) for letter in [u'Y', u'm', u'd'] if letter in date_format.replace(u'b', u'm').replace(u'B', u'm').replace(u'y', u'Y')]) # fix for rare cases where date_format contains month names instead of month no.
-    time = ':'.join(['%{}'.format(letter) for letter in ['H', 'M', 'S'] if letter in date_format])
-    outformat = ' '.join([date, time])
-    new_datestring = datetime.datetime.strftime(datetime.datetime.strptime(astring, date_format), outformat)
+    date = "-".join(
+        [
+            "%{}".format(letter)
+            for letter in ["Y", "m", "d"]
+            if letter
+            in date_format.replace("b", "m").replace("B", "m").replace("y", "Y")
+        ]
+    )  # fix for rare cases where date_format contains month names instead of month no.
+    time = ":".join(
+        ["%{}".format(letter) for letter in ["H", "M", "S"] if letter in date_format]
+    )
+    outformat = " ".join([date, time])
+    new_datestring = datetime.datetime.strftime(
+        datetime.datetime.strptime(astring, date_format), outformat
+    )
     return new_datestring
+
 
 def find_time_format(datestring):
     """
@@ -182,12 +231,13 @@ def find_time_format(datestring):
 
     """
     datestring = str(datestring)
-    #Length, format
-    time_formats_to_try = {4: ['%H%M'],
-                           5: ['%H:%M', '%H %M'],
-                           6: ['%H%M%S'],
-                           8: ['%H:%M:%S', '%H %M %S']}
-
+    # Length, format
+    time_formats_to_try = {
+        4: ["%H%M"],
+        5: ["%H:%M", "%H %M"],
+        6: ["%H%M%S"],
+        8: ["%H:%M:%S", "%H %M %S"],
+    }
 
     found_format = None
 
@@ -195,7 +245,7 @@ def find_time_format(datestring):
 
     format_list = time_formats_to_try.get(length, None)
     if format_list is None:
-        print('Timeformat not supported for %s'%datestring)
+        print("Timeformat not supported for %s" % datestring)
         return None
 
     for timeformat in format_list:
@@ -208,6 +258,7 @@ def find_time_format(datestring):
             break
 
     return found_format
+
 
 def parse_timezone_to_timedelta(tz_string):
     """
@@ -251,23 +302,35 @@ def parse_timezone_to_timedelta(tz_string):
     datetime.timedelta(seconds=9300)
     """
     _tz_string = ru(tz_string).lower()
-    match = re.match(r'[\-a-zA-Z0-9\ \t]*(gmt|utc)([\+\-]*)([0-9]+)([\:]*[0-9]*)', _tz_string, re.IGNORECASE)
+    match = re.match(
+        r"[\-a-zA-Z0-9\ \t]*(gmt|utc)([\+\-]*)([0-9]+)([\:]*[0-9]*)",
+        _tz_string,
+        re.IGNORECASE,
+    )
     if match is None:
-        if not _tz_string.replace('gmt', '').replace('utc', ''):
-            res = ('', '', '', '')
+        if not _tz_string.replace("gmt", "").replace("utc", ""):
+            res = ("", "", "", "")
         else:
-            raise ValueError(ru(QCoreApplication.translate('parse_timezone_to_timedelta',
-                                                           'Timezone string %s could not be parsed!'))%tz_string)
+            raise ValueError(
+                ru(
+                    QCoreApplication.translate(
+                        "parse_timezone_to_timedelta",
+                        "Timezone string %s could not be parsed!",
+                    )
+                )
+                % tz_string
+            )
     else:
         res = match.groups()
-    if res[1] == '-':
+    if res[1] == "-":
         sign = -1
     else:
         sign = 1
-    hours = int(res[2])*sign if res[2] else 0
-    minutes = int(res[3].lstrip(':'))*sign if res[3].lstrip(':') else 0
+    hours = int(res[2]) * sign if res[2] else 0
+    minutes = int(res[3].lstrip(":")) * sign if res[3].lstrip(":") else 0
     td = datetime.timedelta(hours=hours, minutes=minutes)
     return td
+
 
 def change_timezone(date_or_string, from_timezone, to_timezone):
     """
@@ -289,8 +352,9 @@ def change_timezone(date_or_string, from_timezone, to_timezone):
     >>> change_timezone('2022-10-31 00:00', 'Europe/Stockholm', 'UTC+1')
     '2022-10-31 00:00'
     """
+
     def get_tz_and_timedelta(tz_string):
-        if tz_string.lower().startswith('utc'):
+        if tz_string.lower().startswith("utc"):
             new_tz = pytz.utc
             timedelta = parse_timezone_to_timedelta(tz_string)
         else:
@@ -298,14 +362,15 @@ def change_timezone(date_or_string, from_timezone, to_timezone):
             timedelta = None
         return new_tz, timedelta
 
-
     tz_naive = datestring_to_date(date_or_string)
 
     tz, td = get_tz_and_timedelta(from_timezone)
     try:
         tz_aware = tz.localize(tz_naive, is_dst=None)
     except AttributeError as e:
-        raise Exception(f"Error changing timezone for '{date_or_string}', returned '{tz_naive}'.")
+        raise Exception(
+            f"Error changing timezone for '{date_or_string}', returned '{tz_naive}'."
+        )
     if td:
         tz_aware = tz_aware - td
 
@@ -319,6 +384,7 @@ def change_timezone(date_or_string, from_timezone, to_timezone):
     else:
         res = new_date
     return res
+
 
 def get_pytz_timezones():
     return pytz.all_timezones

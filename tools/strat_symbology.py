@@ -791,7 +791,7 @@ def add_views_to_db(dbconnection, bedrock_types):
     else:
         _bergy = SQL(bergy).format(
             view_name=Identifier(view_name),
-            bedrock_types=self.dbconnection.placeholder_string(bedrock_types),
+            bedrock_types=SQL(self.dbconnection.placeholder_string(bedrock_types)),
         )
     try:
 

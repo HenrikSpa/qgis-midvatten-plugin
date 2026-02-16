@@ -907,7 +907,8 @@ class TestSectionPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         fig = secplot.figure
         old_toolbar = fig.canvas.toolbar
         for callback, qaction in secplot.figure.canvas.toolbar._actions.items():
-            if "SectionPlot.detach_figure" in str(callback):
+            print(f"{'DetachFigureButton' in str(callback)=} {callback=}")
+            if "DetachFigureButton" in str(callback):
                 # Detach the figure
                 # continue
                 callback()

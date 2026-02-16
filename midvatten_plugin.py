@@ -28,8 +28,6 @@ import shutil
 import traceback
 from pathlib import Path
 
-import monkeytype
-
 import qgis.utils
 from qgis.PyQt.QtCore import QCoreApplication, QDir, QSettings, QUrl, Qt
 from qgis.PyQt.QtGui import QIcon
@@ -111,7 +109,7 @@ class Midvatten:
         callback,
         enabled_flag=True,
         add_to_menu=False,
-        add_to_toolbar=True,
+        add_to_toolbar=False,
         status_tip=None,
         whats_this=None,
         parent=None,
@@ -1336,174 +1334,169 @@ class Midvatten:
 
     @common_utils.general_exception_handler
     def plot_section(self):
-        with monkeytype.trace():
-            selected_layer = (
-                qgis.utils.iface.mapCanvas().currentLayer()
-            )  # MUST BE LINE VECTOR LAYER WITH SAME EPSG as MIDV_OBSDB AND THERE MUST BE ONLY ONE SELECTED FEATURE
-            if not selected_layer:
-                common_utils.MessagebarAndLog.critical(
-                    bar_msg=QCoreApplication.translate(
-                        "Midvatten",
-                        "You must select at least one layer and one feature!",
-                    ),
-                    duration=10,
-                )
-                raise common_utils.UsageError()
+        selected_layer = (
+            qgis.utils.iface.mapCanvas().currentLayer()
+        )  # MUST BE LINE VECTOR LAYER WITH SAME EPSG as MIDV_OBSDB AND THERE MUST BE ONLY ONE SELECTED FEATURE
+        if not selected_layer:
+            common_utils.MessagebarAndLog.critical(
+                bar_msg=QCoreApplication.translate(
+                    "Midvatten",
+                    "You must select at least one layer and one feature!",
+                ),
+                duration=10,
+            )
+            raise common_utils.UsageError()
 
-            nrofselected = selected_layer.selectedFeatureCount()
-            if not isinstance(selected_layer, QgsVectorLayer):
-                common_utils.MessagebarAndLog.critical(
-                    bar_msg=QCoreApplication.translate(
+        nrofselected = selected_layer.selectedFeatureCount()
+        if not isinstance(selected_layer, QgsVectorLayer):
+            common_utils.MessagebarAndLog.critical(
+                bar_msg=QCoreApplication.translate(
+                    "Midvatten",
+                    "You must activate the vector line layer that defines the section.",
+                ),
+                log_msg=ru(
+                    QCoreApplication.translate(
                         "Midvatten",
-                        "You must activate the vector line layer that defines the section.",
-                    ),
-                    log_msg=ru(
-                        QCoreApplication.translate(
+                        'The layer must be of type QgsVectorLayer, but was  "%s".',
+                    )
+                )
+                % str(type(selected_layer)),
+            )
+            raise common_utils.UsageError()
+        selected_obspoints = None
+        for feat in selected_layer.getSelectedFeatures():
+            geom = feat.geometry()
+            if geom.wkbType() in (
+                QgsWkbTypes.LineString,
+                2,
+                QgsWkbTypes.MultiLineString,
+                5,
+                QgsWkbTypes.LineStringZ,
+                1002,
+                QgsWkbTypes.MultiLineStringZ,
+                1005,
+                QgsWkbTypes.LineStringM,
+                2002,
+                QgsWkbTypes.MultiLineStringM,
+                2005,
+                QgsWkbTypes.LineStringZM,
+                3002,
+                QgsWkbTypes.MultiLineStringZM,
+                3005,
+            ):
+                if nrofselected != 1:
+                    common_utils.MessagebarAndLog.critical(
+                        bar_msg=QCoreApplication.translate(
                             "Midvatten",
-                            'The layer must be of type QgsVectorLayer, but was  "%s".',
+                            "You must select only one line feature that defines the section",
                         )
                     )
-                    % str(type(selected_layer)),
-                )
-                raise common_utils.UsageError()
-            selected_obspoints = None
-            for feat in selected_layer.getSelectedFeatures():
-                geom = feat.geometry()
-                if geom.wkbType() in (
-                    QgsWkbTypes.LineString,
-                    2,
-                    QgsWkbTypes.MultiLineString,
-                    5,
-                    QgsWkbTypes.LineStringZ,
-                    1002,
-                    QgsWkbTypes.MultiLineStringZ,
-                    1005,
-                    QgsWkbTypes.LineStringM,
-                    2002,
-                    QgsWkbTypes.MultiLineStringM,
-                    2005,
-                    QgsWkbTypes.LineStringZM,
-                    3002,
-                    QgsWkbTypes.MultiLineStringZM,
-                    3005,
-                ):
-                    if nrofselected != 1:
-                        common_utils.MessagebarAndLog.critical(
-                            bar_msg=QCoreApplication.translate(
-                                "Midvatten",
-                                "You must select only one line feature that defines the section",
-                            )
-                        )
-                        raise common_utils.UsageError()
-                    else:
-                        try:
-                            obs_points_layer = common_utils.find_layer("obs_points")
-                        except common_utils.UsageError as e:
-                            common_utils.MessagebarAndLog.critical(
-                                bar_msg=ru(
-                                    QCoreApplication.translate(
-                                        "Midvatten",
-                                        "%s. Plotting without observations!",
-                                    )
-                                )
-                                % str(e)
-                            )
-                            break
-                        else:
-                            if obs_points_layer.isEditable():
-                                common_utils.MessagebarAndLog.warning(
-                                    bar_msg=QCoreApplication.translate(
-                                        "Midvatten",
-                                        "Layer obs_points is in editing mode! Plotting without observations!",
-                                    )
-                                )
-                                break
-                            else:
-                                selected_obspoints = (
-                                    common_utils.getselectedobjectnames(
-                                        obs_points_layer
-                                    )
-                                )
+                    raise common_utils.UsageError()
                 else:
-                    selected_layer = None
-                    # utils.MessagebarAndLog.warning(bar_msg=QCoreApplication.translate("Midvatten", 'Reverting to simple stratigraphy plot. For section plot, you must activate the vector line layer and select exactly one feature that defines the section'))
-                    # Then verify that at least two feature is selected in obs_points layer,
-                    # and get a list (selected_obspoints) of selected obs_points
-                    selected_obspoints = (
-                        common_utils.getselectedobjectnames()
-                    )  # Finding obsid from currently selected layer
-                    if not selected_obspoints:
-                        common_utils.MessagebarAndLog.warning(
-                            bar_msg=QCoreApplication.translate(
-                                "Midvatten",
-                                "The current layer had no selected obsids. Trying to plot from layer obs_points!",
+                    try:
+                        obs_points_layer = common_utils.find_layer("obs_points")
+                    except common_utils.UsageError as e:
+                        common_utils.MessagebarAndLog.critical(
+                            bar_msg=ru(
+                                QCoreApplication.translate(
+                                    "Midvatten",
+                                    "%s. Plotting without observations!",
+                                )
                             )
+                            % str(e)
                         )
-                        try:
-                            obs_points_layer = common_utils.find_layer("obs_points")
-                        except common_utils.UsageError:
+                        break
+                    else:
+                        if obs_points_layer.isEditable():
                             common_utils.MessagebarAndLog.warning(
                                 bar_msg=QCoreApplication.translate(
                                     "Midvatten",
-                                    "Layer obs_points is not found. Plotting without observations!",
+                                    "Layer obs_points is in editing mode! Plotting without observations!",
                                 )
                             )
                             break
                         else:
-                            if obs_points_layer.isEditable():
-                                common_utils.MessagebarAndLog.warning(
-                                    bar_msg=QCoreApplication.translate(
-                                        "Midvatten",
-                                        "Layer obs_points is in editing mode! Plotting without observations!",
-                                    )
-                                )
-                                break
-                            else:
-                                selected_obspoints = (
-                                    common_utils.getselectedobjectnames(
-                                        obs_points_layer
-                                    )
-                                )
-
-            if not selected_layer and not selected_obspoints:
-                common_utils.MessagebarAndLog.critical(
-                    bar_msg=QCoreApplication.translate(
-                        "Midvatten", "You must select at least one feature!"
-                    ),
-                    duration=10,
-                )
-                raise common_utils.UsageError()
-            elif not selected_layer:
-                common_utils.MessagebarAndLog.info(
-                    bar_msg=QCoreApplication.translate(
-                        "Midvatten",
-                        "No line layer was selected. The stratigraphy bars will be lined up from south-north or west-east and no DEMS will be plotted.",
-                    ),
-                    duration=10,
-                )
-
-            if selected_obspoints is not None and len(selected_obspoints) > 0:
-                selected_obspoints = ru(selected_obspoints, keep_containers=True)
+                            selected_obspoints = common_utils.getselectedobjectnames(
+                                obs_points_layer
+                            )
             else:
-                selected_obspoints = []
-            # Then verify that at least two feature is selected in obs_points layer, and get a list (selected_obspoints) of selected obs_points
-            # if len(selected_obspoints)>1:
-            #    # We cannot send unicode as string to sql because it would include the '
-            #    # Made into tuple because module sectionplot depends on obsid being a tuple
-            #    selected_obspoints = ru(selected_obspoints, keep_containers=True)
-            # else:
-            #    midvatten_utils.MessagebarAndLog.critical(bar_msg=ru(QCoreApplication.translate("Midvatten", 'You must select at least two objects in the obs_points layer')))
-            #    raise midvatten_utils.UsageError()
-            try:
-                self.sectionplot.create_new_plot(
-                    self.ms, selected_obspoints, selected_layer
-                )
-            except AttributeError:
-                # traceback.print_exc()
-                self.sectionplot = SectionPlot(self.iface.mainWindow(), self.iface)
-                self.sectionplot.create_new_plot(
-                    self.ms, selected_obspoints, selected_layer
-                )
+                selected_layer = None
+                # utils.MessagebarAndLog.warning(bar_msg=QCoreApplication.translate("Midvatten", 'Reverting to simple stratigraphy plot. For section plot, you must activate the vector line layer and select exactly one feature that defines the section'))
+                # Then verify that at least two feature is selected in obs_points layer,
+                # and get a list (selected_obspoints) of selected obs_points
+                selected_obspoints = (
+                    common_utils.getselectedobjectnames()
+                )  # Finding obsid from currently selected layer
+                if not selected_obspoints:
+                    common_utils.MessagebarAndLog.warning(
+                        bar_msg=QCoreApplication.translate(
+                            "Midvatten",
+                            "The current layer had no selected obsids. Trying to plot from layer obs_points!",
+                        )
+                    )
+                    try:
+                        obs_points_layer = common_utils.find_layer("obs_points")
+                    except common_utils.UsageError:
+                        common_utils.MessagebarAndLog.warning(
+                            bar_msg=QCoreApplication.translate(
+                                "Midvatten",
+                                "Layer obs_points is not found. Plotting without observations!",
+                            )
+                        )
+                        break
+                    else:
+                        if obs_points_layer.isEditable():
+                            common_utils.MessagebarAndLog.warning(
+                                bar_msg=QCoreApplication.translate(
+                                    "Midvatten",
+                                    "Layer obs_points is in editing mode! Plotting without observations!",
+                                )
+                            )
+                            break
+                        else:
+                            selected_obspoints = common_utils.getselectedobjectnames(
+                                obs_points_layer
+                            )
+
+        if not selected_layer and not selected_obspoints:
+            common_utils.MessagebarAndLog.critical(
+                bar_msg=QCoreApplication.translate(
+                    "Midvatten", "You must select at least one feature!"
+                ),
+                duration=10,
+            )
+            raise common_utils.UsageError()
+        elif not selected_layer:
+            common_utils.MessagebarAndLog.info(
+                bar_msg=QCoreApplication.translate(
+                    "Midvatten",
+                    "No line layer was selected. The stratigraphy bars will be lined up from south-north or west-east and no DEMS will be plotted.",
+                ),
+                duration=10,
+            )
+
+        if selected_obspoints is not None and len(selected_obspoints) > 0:
+            selected_obspoints = ru(selected_obspoints, keep_containers=True)
+        else:
+            selected_obspoints = []
+        # Then verify that at least two feature is selected in obs_points layer, and get a list (selected_obspoints) of selected obs_points
+        # if len(selected_obspoints)>1:
+        #    # We cannot send unicode as string to sql because it would include the '
+        #    # Made into tuple because module sectionplot depends on obsid being a tuple
+        #    selected_obspoints = ru(selected_obspoints, keep_containers=True)
+        # else:
+        #    midvatten_utils.MessagebarAndLog.critical(bar_msg=ru(QCoreApplication.translate("Midvatten", 'You must select at least two objects in the obs_points layer')))
+        #    raise midvatten_utils.UsageError()
+        try:
+            self.sectionplot.create_new_plot(
+                self.ms, selected_obspoints, selected_layer
+            )
+        except AttributeError:
+            # traceback.print_exc()
+            self.sectionplot = SectionPlot(self.iface.mainWindow(), self.iface)
+            self.sectionplot.create_new_plot(
+                self.ms, selected_obspoints, selected_layer
+            )
 
     @common_utils.general_exception_handler
     def plot_xy(self):

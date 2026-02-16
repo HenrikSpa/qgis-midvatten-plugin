@@ -728,7 +728,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                          FROM stratigraphy WHERE obsid = {ph} 
                          AND TRIM(LOWER({strat_key})) {condition} ({subtypes}) 
                          ORDER BY stratid"""
-                if self.dbconnection.dbtype() == "spatialite":
+                if self.dbconnection.dbtype == "spatialite":
                     _sql = sql.format(
                         ph=self.dbconnection.placeholder_sign(),
                         strat_key=strat_key,
@@ -737,13 +737,13 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                     )
                 else:
                     _sql = SQL(sql).format(
-                        ph=self.dbconnection.placeholder_sign(),
+                        ph=SQL(self.dbconnection.placeholder_sign()),
                         strat_key=Identifier(strat_key),
-                        condition=condition,
-                        subtypes=self.dbconnection.placeholder_string(subtypes),
+                        condition=SQL(condition),
+                        subtypes=SQL(self.dbconnection.placeholder_string(subtypes)),
                     )
                 params = tuple([obs] + list(subtypes))
-                recs = self.dbconnection.execute_and_fetchall(sql, args=params)
+                recs = self.dbconnection.execute_and_fetchall(_sql, args=params)
                 if not recs:
                     continue
 
@@ -1257,7 +1257,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
 
         common_utils.PickAnnotator(self.figure)
         self.figure._midv_detach_figure_button = DetachFigureButton(
-            self.figure, callback=lambda x: self.detach_figure
+            self.figure, callback=self.detach_figure
         )
 
     def plot_dems(self):
@@ -2266,6 +2266,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
 
     # ----- Methods used by the gui -----
     def detach_figure(self, button):
+        print(f"Detach pressed")
         self.layoutplot.removeWidget(self.figure.canvas.toolbar)
         self.layoutplot.removeWidget(self.figure.canvas)
 

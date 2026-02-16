@@ -604,7 +604,7 @@ def plot_types_dict(international="no"):
             )
     else:
         dictionary = {
-            k[0]: strata_geoshorts.get(k[0])
+            k[0]: [x[0] for x in strata_geoshorts.get(k[0])]
             for k in strata_order
             if k[0] in strata_geoshorts
         }

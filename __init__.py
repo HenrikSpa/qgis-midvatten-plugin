@@ -22,7 +22,6 @@ SQLite or PostgreSQL database.
  ***************************************************************************/
  This script initializes the plugin, making it known to QGIS.
 """
-import monkeytype
 
 
 # noinspection PyPep8Naming
@@ -32,7 +31,6 @@ def classFactory(iface):  # pylint: disable=invalid-name
     :param iface: A QGIS interface instance.
     :type iface: QgsInterface
     """
-    with monkeytype.trace():
-        from .midvatten_plugin import Midvatten
+    from .midvatten_plugin import Midvatten
 
-        return Midvatten(iface)
+    return Midvatten(iface)

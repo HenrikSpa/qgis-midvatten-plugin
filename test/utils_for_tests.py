@@ -29,7 +29,6 @@ from builtins import str
 
 import matplotlib.pyplot as plt
 import mock
-import monkeytype
 import qgis
 import qgis.PyQt
 import qgis.core
@@ -144,8 +143,7 @@ class MidvattenTestBase(object):
         self.dummy_iface = DummyInterface2()
         self.iface = self.dummy_iface.mock
         self.midvatten = Midvatten(self.iface)
-        with monkeytype.trace():
-            self.midvatten.initGui()
+        self.midvatten.initGui()
         self.midvatten.setup()
 
     def stop_show(self):

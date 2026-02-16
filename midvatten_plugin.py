@@ -27,7 +27,9 @@ import os.path
 import shutil
 import traceback
 from pathlib import Path
+from typing import Callable, Optional
 
+import PyQt5.QtWidgets
 import qgis.utils
 from qgis.PyQt.QtCore import QCoreApplication, QDir, QSettings, QUrl, Qt
 from qgis.PyQt.QtGui import QIcon
@@ -35,9 +37,8 @@ from qgis.PyQt.QtWidgets import QAction, QApplication, QFileDialog, QMenu
 from qgis.core import QgsApplication, QgsWkbTypes, QgsVectorLayer
 
 import midvatten.midvsettingsdialog as midvsettingsdialog
-
 from midvatten.definitions import midvatten_defs
-from midvatten.tools.calculate_statistics import CalculateStatisticsGui
+from midvatten.tools.calculate_level import CalculateLevel
 from midvatten.tools.column_values_from_selected_features import (
     ValuesFromSelectedFeaturesGui,
 )
@@ -54,6 +55,7 @@ from midvatten.tools.import_hobologger import HobologgerImport
 from midvatten.tools.import_interlab4 import Interlab4Import
 from midvatten.tools.import_levelogger import LeveloggerImport
 from midvatten.tools.loaddefaultlayers import LoadLayers
+from midvatten.tools.loggereditor import LoggerEditor
 from midvatten.tools.midvsettings import midvsettings
 from midvatten.tools.piper import PiperPlot
 from midvatten.tools.prepareforqgis2threejs import PrepareForQgis2Threejs
@@ -66,8 +68,6 @@ from midvatten.tools.utils import matplotlib_replacements
 from midvatten.tools.utils.common_utils import returnunicode as ru
 from midvatten.tools.utils.util_translate import getTranslate
 from midvatten.tools.w_flow_calc_aveflow import CalculateAveflow
-from midvatten.tools.calculate_level import CalculateLevel
-from midvatten.tools.loggereditor import LoggerEditor
 from midvatten.tools.wqualreport import Wqualreport
 from midvatten.tools.wqualreport_compact import CompactWqualReportUi
 from midvatten.tools.xyplot import XYPlot
@@ -104,16 +104,16 @@ class Midvatten:
 
     def add_action(
         self,
-        icon_path,
-        text,
-        callback,
-        enabled_flag=True,
-        add_to_menu=False,
-        add_to_toolbar=False,
-        status_tip=None,
-        whats_this=None,
-        parent=None,
-    ):
+        icon_path: str,
+        text: str,
+        callback: Callable,
+        enabled_flag: bool=True,
+        add_to_menu: bool=False,
+        add_to_toolbar: bool=False,
+        status_tip: None=None,
+        whats_this: Optional[str]=None,
+        parent: None=None,
+    ) -> PyQt5.QtWidgets.QAction:
         """Add a toolbar icon to the toolbar.
 
         :param icon_path: Path to the icon for this action. Can be a resource
@@ -560,7 +560,7 @@ class Midvatten:
             common_utils.write_qgs_log_to_file
         )
 
-    def add_menu(self, name, parent):
+    def add_menu(self, name: str, parent: PyQt5.QtWidgets.QMenu) -> PyQt5.QtWidgets.QMenu:
         menu = QMenu(name)
         parent.addMenu(menu)
         return menu
@@ -1606,8 +1606,7 @@ class Midvatten:
         )  # verify midv settings are loaded
         if err_flag == 0:
             QApplication.setOverrideCursor(Qt.WaitCursor)
-            with monkeytype.trace():
-                db_utils.sql_alter_db("vacuum")
+            db_utils.sql_alter_db("vacuum")
             common_utils.stop_waiting_cursor()
 
     @common_utils.general_exception_handler

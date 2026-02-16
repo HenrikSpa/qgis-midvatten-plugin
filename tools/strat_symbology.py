@@ -21,6 +21,8 @@ import copy
 import os
 import traceback
 
+import psycopg2.sql
+from psycopg2.sql import SQL, Identifier
 import qgis.utils
 from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QCoreApplication
@@ -90,7 +92,7 @@ def strat_symbology(
     """
     root = QgsProject.instance().layerTreeRoot()
 
-    plot_types = defs.PlotTypesDict()
+    plot_types = defs.plot_types_dict()
     bedrock_geoshort = defs.bedrock_geoshort()
     bedrock_types = plot_types[bedrock_geoshort]
     geo_colors = defs.geocolorsymbols()
@@ -537,7 +539,16 @@ def symbology_using_cloning(plot_types, colors, layer, stylename, column):
         color = QColor(colors.get(key, [None, "white"])[1])
         rule = for_cloning.clone()
         rule.setIsElse(False)
-        rule.setFilterExpression("""trim(lower("{}")) {}""".format(column, types))
+
+        if types is None:
+            condition = "NOT IN"
+            types = [x for k, v in types.items() for x in v if k != typ]
+        else:
+            condition = "IN"
+        _types = ", ".join([f"'{x}'" for x in types])
+        rule.setFilterExpression(
+            """trim(lower("{}")) {} ({})""".format(column, condition, _types)
+        )
         rule.setLabel(key)
         sl = rule.symbol().symbolLayer(0)
         sl.setColor(color)
@@ -617,36 +628,43 @@ def scale_geometry(layer, xfactor=None, yfactor=None, use_map_scale=None):
 def add_views_to_db(dbconnection, bedrock_types):
     view_name = "bars_strat"
     cur = dbconnection.cursor
+
     try:
-        cur.execute("""DROP VIEW IF EXISTS {}""".format(view_name))
+        dbconnection.drop_view(view_name)
     except:
         midvatten_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
-    if dbconnection.dbtype == "spatialite":
+    def insert_view(view_name):
         cur.execute(
-            """DELETE FROM views_geometry_columns WHERE view_name = '{}' """.format(
-                view_name
-            )
+            f"""INSERT OR IGNORE INTO views_geometry_columns VALUES
+             ('{dbconnection.placeholder_sign()}', 
+             'geometry', 'rowid', 'obs_points', 'geometry', 1)""",
+            params=(view_name,),
         )
-        sql = """
-    CREATE VIEW {} AS
-        SELECT stratigraphy.{} AS rowid, "obsid", (SELECT MAX(depthbot) FROM stratigraphy AS a where a.obsid = stratigraphy.obsid) AS "maxdepthbot",
-        "stratid", "depthtop", "depthbot", "geology", "geoshort", stratigraphy."capacity", stratigraphy."development", "comment", geometry FROM stratigraphy JOIN obs_points USING (obsid)""".format(
-            view_name, db_utils.rowid_string(dbconnection)
-        )
+
+    if dbconnection.dbtype == "spatialite":
+        sql = f"""
+            CREATE VIEW {view_name} AS
+            SELECT row_number() OVER (ORDER BY "obsid", "stratid") "rowid", "obsid", 
+            (SELECT 
+            MAX(depthbot) 
+            FROM 
+            stratigraphy AS a where a.obsid = stratigraphy.obsid) AS "maxdepthbot",
+            "stratid", "depthtop", "depthbot", "geology", "geoshort", stratigraphy."capacity", 
+            stratigraphy."development", "comment", geometry FROM stratigraphy JOIN obs_points USING (obsid)"""
     else:
         # The first user that creates this view will own it in the PostgreSQL-database.
         #
-        sql = """
+        sql = SQL(
+            """
             CREATE OR REPLACE VIEW {} AS
             SELECT row_number() OVER (ORDER BY "obsid", "stratid") "rowid",
             "obsid", "maxdepthbot", "stratid", "depthtop", "depthbot", "geology", "geoshort", "capacity", "development", "comment", "geometry"
             FROM (
             SELECT "obsid", (SELECT MAX(depthbot) FROM stratigraphy AS a where a.obsid = stratigraphy.obsid) AS "maxdepthbot",
             "stratid", "depthtop", "depthbot", "geology", "geoshort", stratigraphy."capacity", stratigraphy."development", "comment", geometry FROM stratigraphy JOIN obs_points USING (obsid)
-            ) b""".format(
-            view_name, db_utils.rowid_string(dbconnection)
-        )
+            ) b"""
+        ).format(Identifier(view_name))
     try:
         cur.execute(sql)
     except:
@@ -664,43 +682,34 @@ def add_views_to_db(dbconnection, bedrock_types):
         )
 
     if dbconnection.dbtype == "spatialite":
-        cur.execute(
-            """INSERT OR IGNORE INTO views_geometry_columns SELECT '{}', 'geometry', 'rowid', 'obs_points', 'geometry', 1""".format(
-                view_name
-            )
-        )
+        insert_view(view_name)
 
     view_name = "w_lvls_last_geom"
     try:
+        dbconnection.drop_view(view_name)
+    except:
+        midvatten_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
+    try:
         if dbconnection.dbtype == "spatialite":
             cur.execute(
-                """DELETE FROM views_geometry_columns WHERE view_name = '{}' """.format(
-                    view_name
-                )
-            )
-            cur.execute("""DROP VIEW IF EXISTS {}""".format(view_name))
-            cur.execute(
-                """CREATE VIEW {view_name} AS 
-                                    SELECT b.{rowid} AS rowid, a.obsid AS obsid, MAX(a.date_time) AS date_time,  a.meas AS meas,  a.level_masl AS level_masl, b.h_tocags AS h_tocags, b.geometry AS geometry 
+                f"""CREATE VIEW {view_name} AS 
+                                    SELECT row_number() OVER (ORDER BY a.obsid) rowid, 
+                                    a.obsid AS obsid, MAX(a.date_time) AS date_time,  a.meas AS meas,  a.level_masl AS level_masl, b.h_tocags AS h_tocags, b.geometry AS geometry 
                                     FROM w_levels AS a JOIN obs_points AS b using (obsid) 
-                                    GROUP BY obsid;""".format(
-                    **{
-                        "view_name": view_name,
-                        "rowid": db_utils.rowid_string(dbconnection),
-                    }
-                )
+                                    GROUP BY obsid;"""
             )
-            cur.execute(
-                """INSERT OR IGNORE INTO views_geometry_columns SELECT '{}', 'geometry', 'rowid', 'obs_points', 'geometry', 1;""".format(
-                    view_name
-                )
-            )
+            insert_view(view_name)
+
         else:
-            cur.execute("""DROP VIEW IF EXISTS {}""".format(view_name))
             cur.execute(
-                """CREATE OR REPLACE VIEW {view_name} AS SELECT a.obsid AS obsid, a.date_time AS date_time, a.meas AS meas, a.level_masl AS level_masl, c.h_tocags AS h_tocags, c.geometry AS geometry FROM w_levels AS a JOIN (SELECT obsid, max(date_time) as date_time FROM w_levels GROUP BY obsid) as b ON a.obsid=b.obsid and a.date_time=b.date_time JOIN obs_points AS c ON a.obsid=c.obsid;""".format(
-                    **{"view_name": view_name}
-                )
+                SQL(
+                    """CREATE OR REPLACE VIEW {} AS 
+            SELECT a.obsid AS obsid, a.date_time AS date_time, a.meas AS meas, 
+            a.level_masl AS level_masl, c.h_tocags AS h_tocags, c.geometry AS geometry 
+            FROM w_levels AS a JOIN (SELECT obsid, max(date_time) as date_time 
+            FROM w_levels GROUP BY obsid) as b ON a.obsid=b.obsid and 
+            a.date_time=b.date_time JOIN obs_points AS c ON a.obsid=c.obsid;"""
+                ).format(Identifier(view_name))
             )
     except:
         midvatten_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
@@ -727,19 +736,13 @@ def add_views_to_db(dbconnection, bedrock_types):
 
     view_name = "bedrock"
     try:
-        cur.execute("""DROP VIEW IF EXISTS {}""".format(view_name))
+        dbconnection.drop_view(view_name)
     except:
         midvatten_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
-    if dbconnection.dbtype == "spatialite":
-        cur.execute(
-            """DELETE FROM views_geometry_columns WHERE view_name = '{}' """.format(
-                view_name
-            )
-        )
     bergy = """
-CREATE VIEW {view_name} AS
- SELECT a.{rowid},
+    CREATE VIEW {view_name} AS
+    SELECT row_number() OVER (ORDER BY a.obsid) rowid,
     a.obsid,
     a.h_toc,
     a.h_gs,
@@ -776,28 +779,28 @@ CREATE VIEW {view_name} AS
      LEFT JOIN (SELECT s.obsid, MIN(s.depthtop) AS soildepth,
                 'Stratigraphy: '||MIN(s.geology)||' '||MIN(s.geoshort) AS geo
                 FROM stratigraphy s
-                WHERE LOWER(s.geoshort) {bedrock_types}
+                WHERE LOWER(s.geoshort) IN ({bedrock_types})
                 GROUP BY s.obsid
                 ) u ON a.obsid = u.obsid
-    ORDER BY a.obsid""".format(
-        **{
-            "view_name": view_name,
-            "bedrock_types": bedrock_types,
-            "rowid": db_utils.rowid_string(dbconnection),
-        }
-    )
-
+    ORDER BY a.obsid"""
+    if dbconnection.dbtype == "spatialite":
+        _bergy = bergy.format(
+            view_name=view_name,
+            bedrock_types=self.dbconnection.placeholder_string(bedrock_types),
+        )
+    else:
+        _bergy = SQL(bergy).format(
+            view_name=Identifier(view_name),
+            bedrock_types=self.dbconnection.placeholder_string(bedrock_types),
+        )
     try:
-        cur.execute(bergy)
+
+        cur.execute(_bergy, params=tuple(bedrock_types))
     except:
         midvatten_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
     if dbconnection.dbtype == "spatialite":
-        cur.execute(
-            """INSERT OR IGNORE INTO views_geometry_columns SELECT '{}', 'geometry', 'rowid', 'obs_points', 'geometry', 1""".format(
-                view_name
-            )
-        )
+        insert_view(view_name)
 
     if view_name not in list(db_utils.tables_columns(dbconnection=dbconnection).keys()):
         midvatten_utils.MessagebarAndLog.critical(

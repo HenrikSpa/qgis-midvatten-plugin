@@ -27,6 +27,7 @@ from builtins import object
 from builtins import str
 
 import matplotlib as mpl
+from psycopg2.sql import SQL, Identifier
 import psycopg2.errors
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtGui import QColor
@@ -43,11 +44,10 @@ class PrepareForQgis2Threejs(object):
         self.dbconnection = db_utils.DbConnectionManager()
 
         self.settingsdict = settingsdict
-        self.strat_layers_dict = defs.PlotTypesDict("english")
-        self.symbolcolors_dict = defs.PlotColorDict()  # This is not used yet
-        for key, v in list(
-            self.strat_layers_dict.items()
-        ):  # make all the keys only ascii and only lower case and also add 'strat_' as prefix
+        self.strat_layers_dict = defs.plot_types_dict("english")
+        self.symbolcolors_dict = defs.plot_colors_dict()
+        # make all the keys only ascii and only lower case and also add 'strat_' as prefix
+        for key, v in list(self.strat_layers_dict.items()):
             newkey = "strat_" + common_utils.return_lower_ascii_string(key)
             self.strat_layers_dict[newkey] = self.strat_layers_dict[key]
             del self.strat_layers_dict[key]
@@ -75,10 +75,7 @@ class PrepareForQgis2Threejs(object):
 
         canvas = self.iface.mapCanvas()
 
-        list_with_all_strat_layer = []
-        for key in self.strat_layers_dict:
-            list_with_all_strat_layer.append(key)
-        # print list_with_all_strat_layer#debug
+        list_with_all_strat_layer = list(self.strat_layers_dict.keys())
 
         list_with_all_strat_layer.append("strat_obs_p_for_qgsi2threejs")
 
@@ -207,28 +204,45 @@ class PrepareForQgis2Threejs(object):
         for key in self.strat_layers_dict:
             with open(SQLFile, "r") as f:
                 for linecounter, line in enumerate(f):
-                    if linecounter > 0:  # first line is encoding info....
-                        if line.startswith(self.dbconnection.dbtype.upper()):
-                            line = common_utils.lstrip(
-                                self.dbconnection.dbtype.upper(), line
-                            )
-                            sqliteline = line.replace("CHANGETOVIEWNAME", key).replace(
-                                "CHANGETOPLOTTYPESDICTVALUE",
-                                self.strat_layers_dict[key],
-                            )
-                            # print(sqliteline)#debug
-                            try:
-                                self.dbconnection.execute(sqliteline)
-                            except psycopg2.errors.DuplicateTable:
-                                common_utils.MessagebarAndLog.info(
-                                    log_msg=ru(
-                                        QCoreApplication.translate(
-                                            "PrepareForQgis2Threejs",
-                                            "Table %s already existed and is not recreated.",
-                                        )
-                                    )
-                                    % ru(key)
+                    if not linecounter:
+                        # first line is encoding info....
+                        continue
+                    if not line.startswith(self.dbconnection.dbtype.upper()):
+                        continue
+                    line = common_utils.lstrip(self.dbconnection.dbtype.upper(), line)
+                    if self.strat_layers_dict[key] is None:
+                        params = tuple(
+                            [
+                                x
+                                for k, v in self.strat_layers_dict.items()
+                                for x in v
+                                if k != key
+                            ]
+                        )
+                        condition = "NOT IN"
+                    else:
+                        params = self.strat_layers_dict[key]
+                        condition = "IN"
+
+                    sqliteline = line.replace("CHANGETOVIEWNAME", key).replace(
+                        "CHANGETOPLOTTYPESDICTVALUE",
+                        "{} ({})".format(
+                            condition, self.dbconnection.placeholder_string(len(params))
+                        ),
+                    )
+
+                    try:
+                        self.dbconnection.execute(sqliteline, [params])
+                    except psycopg2.errors.DuplicateTable:
+                        common_utils.MessagebarAndLog.info(
+                            log_msg=ru(
+                                QCoreApplication.translate(
+                                    "PrepareForQgis2Threejs",
+                                    "Table %s already existed and is not recreated.",
                                 )
+                            )
+                            % ru(key)
+                        )
 
     def drop_db_views(self):
         if self.dbconnection.dbtype == "spatialite":
@@ -245,15 +259,20 @@ class PrepareForQgis2Threejs(object):
         for key in self.strat_layers_dict:
             if self.dbconnection.dbtype == "spatialite":
                 db_utils.sql_alter_db(
-                    "delete from views_geometry_columns where view_name = '{}'".format(
-                        key
+                    "delete from views_geometry_columns where view_name = {}".format(
+                        self.dbconnection.placeholder_sign()
                     ),
                     dbconnection=self.dbconnection,
+                    all_args=[key],
                 )
-
-            db_utils.sql_alter_db(
-                "drop view if exists " + key, dbconnection=self.dbconnection
-            )
+                # TODO UNSAFE SQL
+                db_utils.sql_alter_db(
+                    "drop view if exists " + key, dbconnection=self.dbconnection
+                )
+            else:
+                self.dbconnection.cur.execute(
+                    SQL("DROP VIEW IF EXISTS {}").format(Identifier(key))
+                )
 
     def remove_views(self):
         remove_group = self.root.findGroup("stratigraphy_layers_for_qgis2threejs")

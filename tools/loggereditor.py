@@ -5,7 +5,7 @@ import os
 
 import numpy as np
 import qgis.PyQt
-from PyQt5.QtCore import QCoreApplication, Qt
+from qgis.PyQt.QtCore import QCoreApplication, Qt
 from matplotlib import pyplot as plt, ticker as tick
 from matplotlib.backend_bases import PickEvent, MouseButton
 from matplotlib.backends.backend_qt import NavigationToolbar2QT as NavigationToolbar

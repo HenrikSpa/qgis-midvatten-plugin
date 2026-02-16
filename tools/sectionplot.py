@@ -20,7 +20,6 @@ from builtins import str
 from builtins import zip
 from operator import itemgetter
 from contextlib import contextmanager
-import monkeytype
 
 import ast
 from functools import partial
@@ -29,6 +28,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tick
 import numpy as np
+from psycopg2.sql import SQL, Identifier
 import qgis.PyQt
 from matplotlib import container, patches
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -114,8 +114,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             )  # not really implemented yet
 
         self.setupUi(self)
-        with monkeytype.trace():
-            self.initUI()
+        self.initUI()
         self.template_plot_label.setText(
             '<a href="https://github.com/jkall/qgis-midvatten-plugin/wiki/5.-Plots-and-reports#create-section-plot">Templates manual</a>'
         )
@@ -229,17 +228,17 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         )
         self.z_data = self.get_z_data(self.obsids_x_position)
         self.geo_bars = self.get_plot_data_bars(
-            defs.PlotTypesDict(),
+            defs.plot_types_dict(),
             self.obsids_x_position,
             self.obsid_annotation,
-            strat_key="TRIM(LOWER(geoshort))",
+            strat_key="geoshort",
         )
         hydro_subtypes = {k: "IN ('{}')".format(k) for k in self.hydro_colors.keys()}
         self.hydro_bars = self.get_plot_data_bars(
             hydro_subtypes,
             self.obsids_x_position,
             self.obsid_annotation,
-            strat_key="TRIM(capacity)",
+            strat_key="capacity",
         )
         self.layer_texts = self.get_plot_data_layer_texts(
             self.obsids_x_position, self.z_data, self.hydro_colors
@@ -705,32 +704,60 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         typ_subtypes,
         obsids_x_position,
         obsid_annotation,
-        strat_key="lower(geoshort)",
-    ):  # this is called when class is instantiated, collecting data specific for the profile line layer and the obs_points
-        common_utils.start_waiting_cursor()  # show the user this may take a long time...
+        strat_key="geoshort",
+    ):
+        """This is called when class is instantiated, collecting data specific for
+        the profile line layer and the obs_points"""
+        common_utils.start_waiting_cursor()
         bars = {}
-        if len(obsids_x_position) > 0:
-            for typ, subtypes in typ_subtypes.items():
-                for obs, x in obsids_x_position.items():
-                    # TODO UNSAFE SQL WARNING! subtypes should be placeholders, but requires a large change in definitions.
-                    sql = f"""SELECT depthtop, depthbot
-                             FROM stratigraphy WHERE obsid = {self.dbconnection.placeholder_sign()} AND {strat_key} {subtypes} 
-                             ORDER BY stratid"""
-                    recs = self.dbconnection.execute_and_fetchall(sql, args=(obs,))
-                    if not recs:
-                        continue
+        if not len(obsids_x_position):
+            common_utils.stop_waiting_cursor()
+            return bars
 
-                    for row in recs:
-                        bars.setdefault(typ, {}).setdefault("x", []).append(x)
-                        bars.setdefault(typ, {}).setdefault("height", []).append(
-                            float(row[1]) - float(row[0])
-                        )
-                        bars.setdefault(typ, {}).setdefault("bottom", []).append(
-                            self.z_data[obs]["z"] - float(row[1])
-                        )
+        for typ, subtypes in typ_subtypes.items():
+            for obs, x in obsids_x_position.items():
+                if subtypes is None:
+                    condition = "NOT IN"
+                    subtypes = [
+                        x for k, v in typ_subtypes.items() for x in v if k != typ
+                    ]
+                else:
+                    condition = "IN"
 
-                    if obs not in obsid_annotation:
-                        obsid_annotation[obs] = (x, self.z_data[obs]["z"])
+                sql = """SELECT depthtop, depthbot
+                         FROM stratigraphy WHERE obsid = {ph} 
+                         AND TRIM(LOWER({strat_key})) {condition} ({subtypes}) 
+                         ORDER BY stratid"""
+                if self.dbconnection.dbtype() == "spatialite":
+                    _sql = sql.format(
+                        ph=self.dbconnection.placeholder_sign(),
+                        strat_key=strat_key,
+                        condition=condition,
+                        subtypes=self.dbconnection.placeholder_string(subtypes),
+                    )
+                else:
+                    _sql = SQL(sql).format(
+                        ph=self.dbconnection.placeholder_sign(),
+                        strat_key=Identifier(strat_key),
+                        condition=condition,
+                        subtypes=self.dbconnection.placeholder_string(subtypes),
+                    )
+                params = tuple([obs] + list(subtypes))
+                recs = self.dbconnection.execute_and_fetchall(sql, args=params)
+                if not recs:
+                    continue
+
+                for row in recs:
+                    bars.setdefault(typ, {}).setdefault("x", []).append(x)
+                    bars.setdefault(typ, {}).setdefault("height", []).append(
+                        float(row[1]) - float(row[0])
+                    )
+                    bars.setdefault(typ, {}).setdefault("bottom", []).append(
+                        self.z_data[obs]["z"] - float(row[1])
+                    )
+
+                if obs not in obsid_annotation:
+                    obsid_annotation[obs] = (x, self.z_data[obs]["z"])
         common_utils.stop_waiting_cursor()  # now this long process is done and the cursor is back as normal
         return bars
 
@@ -975,9 +1002,9 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                 if self.ms.settingsdict["stratigraphyplotted"]:
                     self.plot_bars(
                         self.geo_bars,
-                        color_dict=defs.PlotColorDict(),
+                        color_dict=defs.plot_colors_dict(),
                         color_key="color",
-                        hatch_dict=defs.PlotHatchDict(),
+                        hatch_dict=defs.plot_hatch_dict(),
                         barwidth=self.barwidth,
                     )
                     if len(self.ms.settingsdict["secplottext"]) > 0:

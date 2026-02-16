@@ -511,18 +511,18 @@ class DbConnectionManager(object):
     def drop_view(self, view_name):
         try:
             if self.dbtype == "spatialite":
-                self.cur.execute(
+                self.cursor.execute(
                     f"DELETE FROM views_geometry_columns WHERE view_name = '{view_name}'"
                 )
-                self.cur.execute("""DROP VIEW IF EXISTS {}""".format(view_name))
+                self.cursor.execute("""DROP VIEW IF EXISTS {}""".format(view_name))
             else:
-                self.cur.execute(
+                self.cursor.execute(
                     psycopg2.sql.SQL("DROP VIEW IF EXISTS {}").format(
-                        psycopg2.sql.Identifier(key)
+                        psycopg2.sql.Identifier(view_name)
                     )
                 )
         except:
-            midvatten_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
+            MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
 
 def connect_with_spatialite_connect(dbpath):

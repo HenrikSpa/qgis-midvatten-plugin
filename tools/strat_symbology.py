@@ -94,14 +94,13 @@ def strat_symbology(
 
     plot_types = defs.plot_types_dict()
     bedrock_geoshort = defs.bedrock_geoshort()
-    bedrock_types = plot_types[bedrock_geoshort]
     geo_colors = defs.geocolorsymbols()
     hydro_colors = defs.hydrocolors()
     groupname = "Midvatten strat symbology"
 
     dbconnection = db_utils.DbConnectionManager()
     try:
-        add_views_to_db(dbconnection, bedrock_types)
+        add_views_to_db(dbconnection, bedrock_geoshort)
     except:
         common_utils.MessagebarAndLog.critical(
             bar_msg=QCoreApplication.translate(
@@ -625,7 +624,7 @@ def scale_geometry(layer, xfactor=None, yfactor=None, use_map_scale=None):
             labeling.setSettings(settings)
 
 
-def add_views_to_db(dbconnection, bedrock_types):
+def add_views_to_db(dbconnection, bedrock_geoshort):
     view_name = "bars_strat"
     cur = dbconnection.cursor
 
@@ -637,9 +636,9 @@ def add_views_to_db(dbconnection, bedrock_types):
     def insert_view(view_name):
         cur.execute(
             f"""INSERT OR IGNORE INTO views_geometry_columns VALUES
-             ('{dbconnection.placeholder_sign()}', 
+             ({dbconnection.placeholder_sign()}, 
              'geometry', 'rowid', 'obs_points', 'geometry', 1)""",
-            params=(view_name,),
+            (view_name,),
         )
 
     if dbconnection.dbtype == "spatialite":
@@ -740,6 +739,8 @@ def add_views_to_db(dbconnection, bedrock_types):
     except:
         midvatten_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
+    # Hard coded the strata to ('rock', 'berg') to make the view query safe from sql
+    # injection.
     bergy = """
     CREATE VIEW {view_name} AS
     SELECT row_number() OVER (ORDER BY a.obsid) rowid,
@@ -779,23 +780,21 @@ def add_views_to_db(dbconnection, bedrock_types):
      LEFT JOIN (SELECT s.obsid, MIN(s.depthtop) AS soildepth,
                 'Stratigraphy: '||MIN(s.geology)||' '||MIN(s.geoshort) AS geo
                 FROM stratigraphy s
-                WHERE LOWER(s.geoshort) IN ({bedrock_types})
+                WHERE EXISTS (SELECT 1 FROM zz_strat zzs 
+                              WHERE LOWER(strata) = '{strata}'
+                              AND LOWER(s.geoshort) = LOWER(zzs.geoshort)
+                              LIMIT 1)
                 GROUP BY s.obsid
                 ) u ON a.obsid = u.obsid
     ORDER BY a.obsid"""
     if dbconnection.dbtype == "spatialite":
-        _bergy = bergy.format(
-            view_name=view_name,
-            bedrock_types=self.dbconnection.placeholder_string(bedrock_types),
-        )
+        _bergy = bergy.format(view_name=view_name, strata=bedrock_geoshort)
     else:
         _bergy = SQL(bergy).format(
-            view_name=Identifier(view_name),
-            bedrock_types=SQL(self.dbconnection.placeholder_string(bedrock_types)),
+            view_name=Identifier(view_name), strata=SQL(bedrock_geoshort)
         )
     try:
-
-        cur.execute(_bergy, params=tuple(bedrock_types))
+        cur.execute(_bergy)
     except:
         midvatten_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
 

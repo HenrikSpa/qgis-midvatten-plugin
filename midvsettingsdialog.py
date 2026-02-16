@@ -26,8 +26,6 @@ from midvatten.tools.utils import common_utils, gui_utils, db_utils
 from midvatten.tools.utils.common_utils import returnunicode as ru
 from midvatten.tools.utils.midvatten_utils import warn_about_old_database
 
-#from ui.midvsettingsdock_ui import Ui_MidDockSettings
-
 
 midvsettingsdock_ui_class =  uic.loadUiType(os.path.join(os.path.dirname(__file__),'ui', 'midvsettingsdock.ui'))[0]
 

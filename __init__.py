@@ -1,21 +1,15 @@
 # -*- coding: utf-8 -*-
 """
 /***************************************************************************
-  Midvatten
+ Midvatten
                                  A QGIS plugin
- This is mainly a toolset collecting existing funcions and plugins:
- - ARPAT (by Martin Dobias) in an adjusted version reading SQLite data
- - TimeSeries Plot (an earlier plugin that will be replaced by this toolset)
- - and a new function ScatterPlot (appropriate for ploting geophysical profiles, e.g. seismic data along a line)
- - ChartMaker in an adjusted version reading SQLite data
- 
- The toolset is developed at the company Midvatten AB and aims to to be used within projects at Midvatten AB.
- The main purpose is to let the user quickly access and view different types of hydrogeological data that is stored in a sqlite Database
-  
+A toolset that makes QGIS an interface for editing/viewing hydrogeological
+observational data (drillings, water levels, seismic data etc) stored in a
+SQLite or PostgreSQL database.
                              -------------------
         begin                : 2012-03-05
-        copyright            : (C) 2011 by joskal
-        email                : groundwatergis [at] gmail.com
+        copyright            : (C) 2026 by Midvatten
+        email                : midvattenplugin@midvatten.se
  ***************************************************************************/
 
 /***************************************************************************
@@ -28,8 +22,17 @@
  ***************************************************************************/
  This script initializes the plugin, making it known to QGIS.
 """
-from __future__ import absolute_import
+import monkeytype
 
-def classFactory(iface):
-    from .midvatten_plugin import Midvatten
-    return Midvatten(iface)
+
+# noinspection PyPep8Naming
+def classFactory(iface):  # pylint: disable=invalid-name
+    """Load Midvatten class from file midvatten_plugin.
+
+    :param iface: A QGIS interface instance.
+    :type iface: QgsInterface
+    """
+    with monkeytype.trace():
+        from .midvatten_plugin import Midvatten
+
+        return Midvatten(iface)

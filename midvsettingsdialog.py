@@ -4,7 +4,8 @@
  midvsettingsdialog
  A part of the QGIS plugin Midvatten
  
- This part of the plugin handles the user interaction with midvsettingsdock and propagates any changes to midvattensettings
+ This part of the plugin handles the user interaction with midvsettingsdock and
+ propagates any changes to midvattensettings
  
                              -------------------
         begin                : 2011-10-18
@@ -25,7 +26,10 @@ from qgis.PyQt.QtWidgets import QComboBox, QDockWidget, QFileDialog
 from midvatten.tools.utils import common_utils, gui_utils, db_utils
 from midvatten.tools.utils.common_utils import returnunicode as ru
 from midvatten.tools.utils.midvatten_utils import warn_about_old_database
-
+from PyQt5.QtWidgets import QGridLayout, QMainWindow
+from midvatten.tools.midvsettings import midvsettings
+from mock.mock import MagicMock
+from typing import Any, List, Optional
 
 midvsettingsdock_ui_class = uic.loadUiType(
     os.path.join(os.path.dirname(__file__), "ui", "midvsettingsdock.ui")
@@ -37,7 +41,7 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
     Class for the Midvatten settings dockwidget.
     """
 
-    def __init__(self, parent, iface, msettings):
+    def __init__(self, parent: QMainWindow, iface: MagicMock, msettings: midvsettings):
         self.parent = parent
         self.iface = iface
         self.ms = msettings
@@ -48,8 +52,9 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
         self.initUI()
 
     def initUI(self):
-        # The settings dialog is cleared, filled with relevant information and the last
-        # selected settings are preset
+        """The settings dialog is cleared, filled with relevant information and
+        the last selected settings are preset
+        """
         self.database_settings = DatabaseSettings(self, self.gridLayout_db)
         self.clear_everything()
 
@@ -258,7 +263,7 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
         self.paramCa.clear()
         self.paramMg.clear()
 
-    def ColumnsToComboBox(self, comboboxname="", table=None):
+    def ColumnsToComboBox(self, comboboxname: str="", table: Optional[str]=None):
         getattr(self, comboboxname).clear()
         """This method fills comboboxes with columns for selected tool and table"""
         columns = self.LoadColumnsFromTable(
@@ -441,7 +446,7 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
         else:
             self.checkBoxDataPoints_2.setChecked(False)
 
-    def LoadColumnsFromTable(self, table=""):
+    def LoadColumnsFromTable(self, table: str="") -> List[Any]:
         return db_utils.tables_columns().get(table, [])
 
     def loadTablesFromDB(
@@ -595,7 +600,7 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
         self.ms.settingsdict["wqualtable"] = self.ListOfTables_WQUAL.currentText()
         self.ms.save_settings("wqualtable")  # save this specific setting
 
-    def XYColumnsToComboBox(self, table=None):
+    def XYColumnsToComboBox(self, table: Optional[str]=None):
         """This method fills comboboxes with columns for xyplot"""
         self.ListOfColumns_2.clear()
         self.ListOfColumns_3.clear()
@@ -643,7 +648,7 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
 
 
 class DatabaseSettings(object):
-    def __init__(self, midvsettingsdialogdock, gridLayout_db):
+    def __init__(self, midvsettingsdialogdock: MidvattenSettingsDock, gridLayout_db: QGridLayout):
         self.midvsettingsdialogdock = midvsettingsdialogdock
         self.layout = gridLayout_db
         self.layout.setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
@@ -714,7 +719,7 @@ class DatabaseSettings(object):
 
         # self.layout.setRowStretch(self.layout.rowCount(), 1)
 
-    def update_settings(self, _db_settings):
+    def update_settings(self, _db_settings: str):
         db_settings = None
         if not _db_settings or _db_settings is None:
             return
@@ -782,7 +787,7 @@ class DatabaseSettings(object):
         self.dbtype_combobox = ""
         self.choose_dbtype()
 
-    def maximum_label_width(self):
+    def maximum_label_width(self) -> int:
         maximumwidth = 0
         for label_name in [
             ru(QCoreApplication.translate("DatabaseSettings", "Database type")),
@@ -796,7 +801,7 @@ class DatabaseSettings(object):
 
 
 class SpatialiteSettings(gui_utils.RowEntryGrid):
-    def __init__(self, midvsettingsdialogdock, label_width):
+    def __init__(self, midvsettingsdialogdock: MidvattenSettingsDock, label_width: int):
         super(SpatialiteSettings, self).__init__()
         self.midvsettingsdialogdock = midvsettingsdialogdock
         self.btnSetDB = qgis.PyQt.QtWidgets.QPushButton(
@@ -859,7 +864,7 @@ class SpatialiteSettings(gui_utils.RowEntryGrid):
 class PostgisSettings(gui_utils.RowEntryGrid):
     """Using a guide from http://gis.stackexchange.com/questions/180427/retrieve-available-postgis-connections-in-pyqgis"""
 
-    def __init__(self, midvsettingsdialogdock, label_width):
+    def __init__(self, midvsettingsdialogdock: MidvattenSettingsDock, label_width: int):
         super(PostgisSettings, self).__init__()
         self.midvsettingsdialogdock = midvsettingsdialogdock
 

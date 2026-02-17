@@ -107,12 +107,12 @@ class Midvatten:
         icon_path: str,
         text: str,
         callback: Callable,
-        enabled_flag: bool=True,
-        add_to_menu: bool=False,
-        add_to_toolbar: bool=False,
-        status_tip: None=None,
-        whats_this: Optional[str]=None,
-        parent: None=None,
+        enabled_flag: bool = True,
+        add_to_menu: bool = False,
+        add_to_toolbar: bool = False,
+        status_tip: None = None,
+        whats_this: Optional[str] = None,
+        parent: None = None,
     ) -> PyQt5.QtWidgets.QAction:
         """Add a toolbar icon to the toolbar.
 
@@ -560,7 +560,9 @@ class Midvatten:
             common_utils.write_qgs_log_to_file
         )
 
-    def add_menu(self, name: str, parent: PyQt5.QtWidgets.QMenu) -> PyQt5.QtWidgets.QMenu:
+    def add_menu(
+        self, name: str, parent: PyQt5.QtWidgets.QMenu
+    ) -> PyQt5.QtWidgets.QMenu:
         menu = QMenu(name)
         parent.addMenu(menu)
         return menu

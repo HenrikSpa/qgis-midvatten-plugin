@@ -41,7 +41,7 @@ class LeveloggerImport(import_diveroffice.DiverofficeImport):
 
         self.setWindowTitle(
             QCoreApplication.translate("LeveloggerImport", "Levelogger import")
-        )  # Set the title for the dialog
+        )
 
         self.parse_func = self.parse_levelogger_file
 

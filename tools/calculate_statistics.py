@@ -46,7 +46,7 @@ class CalculateStatisticsGui(
         self.ms = midv_settings
         qgis.PyQt.QtWidgets.QDialog.__init__(self, parent)
         self.setAttribute(qgis.PyQt.QtCore.Qt.WA_DeleteOnClose)
-        self.setupUi(self)  # Required by Qt4 to initialize the UI
+        self.setupUi(self)  # Required by Qt
 
         tables_columns = db_utils.tables_columns()
         self.db_browser = DbBrowser(tables_columns)

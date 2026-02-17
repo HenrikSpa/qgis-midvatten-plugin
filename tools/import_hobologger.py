@@ -43,7 +43,7 @@ class HobologgerImport(import_diveroffice.DiverofficeImport):
 
         self.setWindowTitle(
             QCoreApplication.translate("HobologgerImport", "Hobologger import")
-        )  # Set the title for the dialog
+        )
 
         self.tz_converter = TzConverter()
 

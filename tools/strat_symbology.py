@@ -21,9 +21,8 @@ import copy
 import os
 import traceback
 
-import psycopg2.sql
-from psycopg2.sql import SQL, Identifier
 import qgis.utils
+from psycopg2.sql import SQL, Identifier
 from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtGui import QColor
@@ -52,7 +51,7 @@ class StratSymbology(qgis.PyQt.QtWidgets.QDialog, strat_symbology_dialog):
         self.iface = iface
         qgis.PyQt.QtWidgets.QDialog.__init__(self, parent)
         self.setAttribute(qgis.PyQt.QtCore.Qt.WA_DeleteOnClose)
-        self.setupUi(self)  # Required by Qt4 to initialize the UI
+        self.setupUi(self)  # Required by Qt
         self.ok_button.clicked.connect(lambda: self.create_symbology())
         self.show()
 

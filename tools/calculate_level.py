@@ -59,11 +59,11 @@ class CalculateLevel(
     @fn_timer
     def __init__(self, parent: QWidget, layerin: int):
         qgis.PyQt.QtWidgets.QDialog.__init__(self)
-        self.setupUi(self)  # Required by Qt4 to initialize the UI
+        self.setupUi(self)  # Required by Qt
         # self.obsid = midvatten_utils.getselectedobjectnames()
         self.setWindowTitle(
             ru(QCoreApplication.translate("Calclvl", "Calculate levels"))
-        )  # Set the title for the dialog
+        )
         self.pushButton_All.clicked.connect(lambda x: self.calcall())
         self.pushButton_Selected.clicked.connect(lambda x: self.calcselected())
         self.pushButton_Cancel.clicked.connect(lambda x: self.close())

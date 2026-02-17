@@ -19,14 +19,11 @@
  ***************************************************************************/
 """
 
-
-import datetime
 import os
 
-import numpy as np
+import pandas as pd
 import qgis.PyQt
 import qgis.utils
-from matplotlib.dates import datestr2num
 from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QCoreApplication
 
@@ -34,39 +31,26 @@ from midvatten.tools import import_data_to_db
 from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.common_utils import returnunicode as ru
 
-try:
-    import pandas as pd
-except:
-    pandas_on = False
-else:
-    pandas_on = True
-
 Calc_Ui_Dialog = uic.loadUiType(
     os.path.join(os.path.dirname(__file__), "..", "ui", "calc_aveflow_dialog.ui")
 )[0]
 
 
-class CalculateAveflow(
-    qgis.PyQt.QtWidgets.QDialog, Calc_Ui_Dialog
-):  # An instance of the class Calc_Ui_Dialog is created same time as instance of calclvl is created
-
+class CalculateAveflow(qgis.PyQt.QtWidgets.QDialog, Calc_Ui_Dialog):
     def __init__(self, parent):
         qgis.PyQt.QtWidgets.QDialog.__init__(self)
-        self.setupUi(self)  # Required by Qt4 to initialize the UI
-        # self.obsid = midvatten_utils.getselectedobjectnames()
+        self.setupUi(self)  # Required by Qt
         self.setWindowTitle(
             ru(QCoreApplication.translate("Calcave", "Calculate average flow"))
-        )  # Set the title for the dialog
+        )
         self.pushButton_All.clicked.connect(lambda x: self.calcall())
         self.pushButton_Selected.clicked.connect(lambda x: self.calcselected())
         self.pushButton_Cancel.clicked.connect(lambda x: self.close())
 
-    def calcall(self, use_pandas=True):
+    def calcall(self):
         ok, obsar = db_utils.sql_load_fr_db(
             """SELECT DISTINCT obsid FROM w_flow WHERE flowtype = 'Accvol' """
         )
-        # if not ok:
-        #    midvatten_utils.MessagebarAndLog.critical(bar_msg=)
         if not obsar:
             common_utils.MessagebarAndLog.critical(
                 bar_msg=ru(
@@ -77,108 +61,27 @@ class CalculateAveflow(
                 )
             )
             return
-        self.observations = [obs[0] for obs in obsar]
-        if pandas_on and use_pandas:
-            self.calculateaveflow_pandas()
-        else:
-            self.calculateaveflow()
+        observations = [obs[0] for obs in obsar]
+        self.calc_aveflow(observations)
 
-    def calcselected(self, use_pandas=True):
-        obsar = common_utils.getselectedobjectnames(qgis.utils.iface.activeLayer())
-        self.observations = [
-            obs for obs in obsar
-        ]  # turn into a list of python byte strings
-        if pandas_on and use_pandas:
-            self.calculateaveflow_pandas()
-        else:
-            self.calculateaveflow()
-
-    def calculateaveflow(self):
-        common_utils.start_waiting_cursor()
-        date_from = self.FromDateTime.dateTime().toPyDateTime()
-        date_to = self.ToDateTime.dateTime().toPyDateTime()
-        # Identify distinct set of obsid and instrumentid with Accvol-data and within the user-defined date_time-interval:
-        sql = (
-            """SELECT DISTINCT obsid, instrumentid FROM (SELECT * FROM w_flow WHERE flowtype = 'Accvol' AND date_time >= '%s' AND date_time <= '%s' AND obsid IN (%s))"""
-            % (date_from, date_to, common_utils.sql_unicode_list(self.observations))
+    def calcselected(self):
+        observations = common_utils.getselectedobjectnames(
+            qgis.utils.iface.activeLayer()
         )
-        # utils.pop_up_info(sql)#debug
-        uniqueset = db_utils.sql_load_fr_db(sql)[
-            1
-        ]  # The unique set of obsid and instrumentid is kept in uniqueset
-        negativeflow = False
-        for pyobsid, pyinstrumentid in uniqueset:
-            sql = (
-                """select date_time, reading from w_flow where flowtype = 'Accvol' and obsid='%s' and instrumentid='%s' and date_time >='%s' and date_time <='%s' order by date_time"""
-                % (pyobsid, pyinstrumentid, date_from, date_to)
-            )
-            recs = db_utils.sql_load_fr_db(sql)[1]
-            """Transform data to a numpy.recarray"""
-            My_format = [
-                ("date_time", datetime.datetime),
-                ("values", float),
-            ]  # Define format with help from function datetime
-            table = np.array(recs, dtype=My_format)  # NDARRAY
-            table2 = table.view(
-                np.recarray
-            )  # RECARRAY   Makes the two columns into callable objects, i.e. write table2.values
-            for j, row in enumerate(
-                table2
-            ):  # This is where Aveflow is calculated for each obs and also written to db
-                if (
-                    j > 0
-                ):  # first row is "start-value" for Accvol and there is no Aveflow to be calculated
-                    Volume = (
-                        table2.values[j] - table2.values[j - 1]
-                    ) * 1000  # convert to L since Accvol is supposed to be in m3
-                    """ Get help from function datestr2num to get date and time into float"""
-                    DeltaTime = (
-                        24
-                        * 3600
-                        * (
-                            datestr2num(table2.date_time[j])
-                            - datestr2num(table2.date_time[j - 1])
-                        )
-                    )  # convert to seconds since numtime is days
-                    Aveflow = Volume / DeltaTime  # L/s
-                    if Aveflow < 0:
-                        negativeflow = True
-                    sql = (
-                        """insert or ignore into w_flow(obsid,instrumentid,flowtype,date_time,reading,unit) values('%s','%s','Aveflow','%s','%s','l/s')"""
-                        % (pyobsid, pyinstrumentid, table2.date_time[j], Aveflow)
-                    )
-                    db_utils.sql_alter_db(sql)
-        if negativeflow:
-            common_utils.MessagebarAndLog.info(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "Calcave", "Please notice that negative flow was encountered."
-                    )
-                )
-            )
-        common_utils.stop_waiting_cursor()
-        self.close()
+        self.calc_aveflow(observations)
 
-    def calculateaveflow_pandas(self):
-        if not pandas_on:
-            common_utils.MessagebarAndLog.warning(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "Calcave", "Python3 pandas not installed. No calculation done!"
-                    )
-                )
-            )
-            return
-
+    def calc_aveflow(self, observations):
         common_utils.start_waiting_cursor()
         date_from = self.FromDateTime.dateTime().toPyDateTime()
         date_to = self.ToDateTime.dateTime().toPyDateTime()
 
-        sql = """SELECT date_time, reading, obsid, instrumentid, comment FROM w_flow WHERE flowtype = 'Accvol' AND date_time >= '%s' AND date_time <= '%s' AND obsid IN (%s)
+        sql = """SELECT date_time, reading, obsid, instrumentid, comment FROM 
+                    w_flow WHERE flowtype = 'Accvol' AND date_time >= '%s' 
+                    AND date_time <= '%s' AND obsid IN (%s)
                  ORDER by obsid, instrumentid, date_time""" % (
             date_from,
             date_to,
-            common_utils.sql_unicode_list(self.observations),
+            common_utils.sql_unicode_list(observations),
         )
         dbconnection = db_utils.DbConnectionManager()
         df = pd.read_sql(

@@ -21,18 +21,18 @@
 
 
 import mock
-
 from nose.plugins.attrib import attr
 from qgis.PyQt import QtWidgets
 
-from midvatten.tools.utils import common_utils, date_utils, db_utils
 from midvatten.test import utils_for_tests
 from midvatten.tools import w_flow_calc_aveflow
+from midvatten.tools.utils import common_utils, date_utils, db_utils
 
 
 @attr(status="on")
 class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
+    @mock.patch("midvatten.tools.utils.common_utils.Askuser", mock.MagicMock())
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_calcall(self, mock_messagebar):
 
@@ -56,7 +56,7 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
         calcave.FromDateTime.setDateTime(
             date_utils.datestring_to_date("2000-01-01 00:00:00")
         )
-        calcave.calcall(use_pandas=False)
+        calcave.calcall()
         print(str(mock_messagebar.mock_calls))
         # insert or ignore into w_flow(obsid,instrumentid,flowtype,date_time,reading,unit) values('%s','%s','Aveflow','%s','%s','l/s')
         res = db_utils.sql_load_fr_db(
@@ -64,12 +64,16 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
         )[1]
         test = common_utils.anything_to_string_representation(res)
 
-        print(test)
-        reference = '[("1", "inst1", "Accvol", "2019-02-01 00:00", 1.0, "m3", ), ("1", "inst1", "Accvol", "2019-02-02 00:00", 2.0, "m3", ), ("1", "inst1", "Aveflow", "2019-02-02 00:00", 0.0116, "l/s", ), ("2", "inst2", "Accvol", "2019-02-03 00:00", 5.0, "m3", ), ("2", "inst2", "Accvol", "2019-02-04 00:00", 10.0, "m3", ), ("2", "inst2", "Aveflow", "2019-02-04 00:00", 0.0579, "l/s", )]'
+        reference = '[("1", "inst1", "Accvol", "2019-02-01 00:00", 1.0, "m3", ), ("1", "inst1", "Accvol", "2019-02-02 00:00", 2.0, "m3", ), ("1", "inst1", "Aveflow", "2019-02-02", 0.0116, "l/s", ), ("2", "inst2", "Accvol", "2019-02-03 00:00", 5.0, "m3", ), ("2", "inst2", "Accvol", "2019-02-04 00:00", 10.0, "m3", ), ("2", "inst2", "Aveflow", "2019-02-04", 0.0579, "l/s", )]'
         # result_list = self.calcave.observations
         # reference_list = ['1', '2']
+        print(f"Test:")
+        print(test)
+        print(f"Ref:")
+        print(reference)
         assert test == reference
 
+    @mock.patch("midvatten.tools.utils.common_utils.Askuser", mock.MagicMock())
     @mock.patch("qgis.utils.iface", autospec=True)
     @mock.patch(
         "midvatten.tools.sectionplot.common_utils.getselectedobjectnames", autospec=True
@@ -106,7 +110,7 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
         calcave.FromDateTime.setDateTime(
             date_utils.datestring_to_date("2000-01-01 00:00:00")
         )
-        calcave.calcselected(use_pandas=False)
+        calcave.calcselected()
         print(str(mock_messagebar.mock_calls))
         # insert or ignore into w_flow(obsid,instrumentid,flowtype,date_time,reading,unit) values('%s','%s','Aveflow','%s','%s','l/s')
         res = db_utils.sql_load_fr_db(
@@ -114,15 +118,14 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
         )[1]
         test = common_utils.anything_to_string_representation(res)
 
-        print(test)
-        reference = '[("1", "inst1", "Accvol", "2019-02-01 00:00", 1.0, "m3", ), ("1", "inst1", "Accvol", "2019-02-02 00:00", 2.0, "m3", ), ("1", "inst1", "Accvol", "2019-02-03 00:00", 5.0, "m3", ), ("1", "inst1", "Accvol", "2019-02-04 00:00", 10.0, "m3", ), ("1", "inst1", "Aveflow", "2019-02-02 00:00", 0.0116, "l/s", ), ("1", "inst1", "Aveflow", "2019-02-03 00:00", 0.0347, "l/s", ), ("1", "inst1", "Aveflow", "2019-02-04 00:00", 0.0579, "l/s", ), ("2", "inst2", "Accvol", "2019-02-03 00:00", 5.0, "m3", ), ("2", "inst2", "Accvol", "2019-02-04 00:00", 10.0, "m3", )]'
+        reference = '[("1", "inst1", "Accvol", "2019-02-01 00:00", 1.0, "m3", ), ("1", "inst1", "Accvol", "2019-02-02 00:00", 2.0, "m3", ), ("1", "inst1", "Accvol", "2019-02-03 00:00", 5.0, "m3", ), ("1", "inst1", "Accvol", "2019-02-04 00:00", 10.0, "m3", ), ("1", "inst1", "Aveflow", "2019-02-02", 0.0116, "l/s", ), ("1", "inst1", "Aveflow", "2019-02-03", 0.0347, "l/s", ), ("1", "inst1", "Aveflow", "2019-02-04", 0.0579, "l/s", ), ("2", "inst2", "Accvol", "2019-02-03 00:00", 5.0, "m3", ), ("2", "inst2", "Accvol", "2019-02-04 00:00", 10.0, "m3", )]'
         # result_list = self.calcave.observations
         # reference_list = ['1', '2']
+        print(f"test:\n{test}")
+        print(f"ref:\n{reference}")
         assert test == reference
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.common_utils.Askuser", mock.MagicMock())
     @mock.patch("qgis.utils.iface", autospec=True)
     @mock.patch(
         "midvatten.tools.sectionplot.common_utils.getselectedobjectnames", autospec=True
@@ -166,7 +169,7 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
         calcave.FromDateTime.setDateTime(
             date_utils.datestring_to_date("2000-01-01 00:00:00")
         )
-        calcave.calcselected(use_pandas=True)
+        calcave.calcselected()
         print(str(mock_messagebar.mock_calls))
         # insert or ignore into w_flow(obsid,instrumentid,flowtype,date_time,reading,unit) values('%s','%s','Aveflow','%s','%s','l/s')
         res = db_utils.sql_load_fr_db(
@@ -181,9 +184,7 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
         print("Test:\n" + str(test))
         assert test == reference
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.common_utils.Askuser", mock.MagicMock())
     @mock.patch("qgis.utils.iface", autospec=True)
     @mock.patch(
         "midvatten.tools.sectionplot.common_utils.getselectedobjectnames", autospec=True
@@ -220,7 +221,7 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
         calcave.FromDateTime.setDateTime(
             date_utils.datestring_to_date("2000-01-01 00:00:00")
         )
-        calcave.calcselected(use_pandas=True)
+        calcave.calcselected()
         print(str(mock_messagebar.mock_calls))
         # insert or ignore into w_flow(obsid,instrumentid,flowtype,date_time,reading,unit) values('%s','%s','Aveflow','%s','%s','l/s')
         res = db_utils.sql_load_fr_db(

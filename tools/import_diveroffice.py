@@ -74,10 +74,10 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         self.ms.loadSettings()
         qgis.PyQt.QtWidgets.QDialog.__init__(self, parent)
         self.setAttribute(qgis.PyQt.QtCore.Qt.WA_DeleteOnClose)
-        self.setupUi(self)  # Required by Qt4 to initialize the UI
+        self.setupUi(self)  # Required by Qt
         self.setWindowTitle(
             QCoreApplication.translate("DiverofficeImport", "Diveroffice import")
-        )  # Set the title for the dialog
+        )
         self.table_chooser = None
         self.file_data = None
         self.status = True

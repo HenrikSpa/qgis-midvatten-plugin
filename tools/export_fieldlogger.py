@@ -221,14 +221,14 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         self.ms = midv_settings
         QtWidgets.QDialog.__init__(self, parent)
         self.setAttribute(qgis.PyQt.QtCore.Qt.WA_DeleteOnClose)
-        self.setupUi(self)  # Required by Qt4 to initialize the UI
+        self.setupUi(self)  # Required by Qt
         self.setWindowTitle(
             ru(
                 QCoreApplication.translate(
                     "ExportToFieldLogger", "Export to Fieldlogger dialog"
                 )
             )
-        )  # Set the title for the dialog
+        )
 
         self.widget.setMinimumWidth(180)
 
@@ -1082,7 +1082,7 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
 class ParameterBrowser(QtWidgets.QDialog, parameter_browser_dialog):
     def __init__(self, tables_columns, parent=None, use_fieldlogger=True):
         QtWidgets.QDialog.__init__(self, parent)
-        self.setupUi(self)  # Required by Qt4 to initialize the UI
+        self.setupUi(self)  # Required by Qt
 
         # Widgets:
         # ------------------------------------------------------------------------------------

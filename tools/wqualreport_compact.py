@@ -52,14 +52,14 @@ class CompactWqualReportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_d
         self.ms = midv_settings
         qgis.PyQt.QtWidgets.QDialog.__init__(self, parent)
         self.setAttribute(qgis.PyQt.QtCore.Qt.WA_DeleteOnClose)
-        self.setupUi(self)  # Required by Qt4 to initialize the UI
+        self.setupUi(self)  # Required by Qt
         self.setWindowTitle(
             ru(
                 QCoreApplication.translate(
                     "CompactWqualReportUi", "Compact water quality report"
                 )
             )
-        )  # Set the title for the dialog
+        )
 
         self.manual_label.setText(
             '<a href="https://github.com/jkall/qgis-midvatten-plugin/wiki/5.-Plots-and-reports#create-compact-water-quality-report">%s</a>'

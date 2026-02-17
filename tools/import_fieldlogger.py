@@ -62,7 +62,7 @@ class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
         self.ms.loadSettings()
         QtWidgets.QDialog.__init__(self, parent)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-        self.setupUi(self)  # Required by Qt4 to initialize the UI
+        self.setupUi(self)  # Required by Qt
         self.status = True
         self.main_vertical_layout.setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
         self.main_vertical_layout.setContentsMargins(0, 0, 0, 0)

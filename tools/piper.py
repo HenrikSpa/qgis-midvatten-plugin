@@ -20,20 +20,17 @@ __modified_date__ = "Nov 2013"
 ***************************************************************************/
 """
 
-from __future__ import print_function
 
 import datetime
 import itertools
 import math
-from builtins import object
-from builtins import range
 from operator import sub
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 
-from midvatten.definitions.midvatten_defs import piperplot_style, piperplot2_style
+from midvatten.definitions.midvatten_defs import piperplot2_style
 from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.common_utils import returnunicode as ru, LEGEND_NCOL_KEY
 

@@ -22,16 +22,13 @@
 """
 
 
-from builtins import str
-
 import mock
-
 from mock import call
 from nose.plugins.attrib import attr
 
-from midvatten.tools.utils import common_utils
 from midvatten.test import utils_for_tests
 from midvatten.tools.import_interlab4 import Interlab4Import
+from midvatten.tools.utils import common_utils
 
 
 @attr(status="on")

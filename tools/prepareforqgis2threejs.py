@@ -20,15 +20,13 @@
  ***************************************************************************/
 """
 
-from __future__ import print_function
 
 import os
-from builtins import object
-from builtins import str
+
 
 import matplotlib as mpl
-from psycopg2.sql import SQL, Identifier
 import psycopg2.errors
+from psycopg2.sql import SQL, Identifier
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtGui import QColor
 from qgis.core import QgsProject

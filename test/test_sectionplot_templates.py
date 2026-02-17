@@ -24,18 +24,15 @@
 import ast
 import io
 import os
-from builtins import object
-from builtins import range
 
 import mock
 import qgis.PyQt
-
 from mock import call
 from nose.plugins.attrib import attr
 
-from midvatten.tools.utils import common_utils
-from midvatten.test import utils_for_tests
 from midvatten.definitions import midvatten_defs as defs
+from midvatten.test import utils_for_tests
+from midvatten.tools.utils import common_utils
 from midvatten.tools.utils.midvatten_utils import PlotTemplates
 
 

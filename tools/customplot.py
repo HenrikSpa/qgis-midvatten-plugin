@@ -24,10 +24,6 @@ The PlotSQLite application version 0.2.6 was merged into Midvatten plugin at 201
 
 
 import os
-from builtins import object
-from builtins import range
-from builtins import str
-from builtins import zip
 from functools import partial  # only to get combobox signals to work
 
 import matplotlib as mpl

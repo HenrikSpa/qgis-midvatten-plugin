@@ -20,18 +20,15 @@
  ***************************************************************************/
 """
 
-from __future__ import print_function
 
-from builtins import str
 import mock
 from nose.plugins.attrib import attr
 from qgis.PyQt import QtWidgets
 
-from midvatten.tools.calculate_level import CalculateLevel
-from midvatten.tools.utils.date_utils import datestring_to_date
-
-from midvatten.tools.utils import db_utils
 from midvatten.test import utils_for_tests
+from midvatten.tools.calculate_level import CalculateLevel
+from midvatten.tools.utils import db_utils
+from midvatten.tools.utils.date_utils import datestring_to_date
 
 
 @attr(status="on")

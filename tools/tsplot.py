@@ -21,14 +21,10 @@
 
 
 import datetime
-import logging
-from builtins import object
-from builtins import str
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tick
 import numpy as np
-
 # plt.ion() #interactive mode immediately to prevent pyplot plots from blocking application
 from matplotlib.dates import datestr2num
 from qgis.PyQt.QtCore import QCoreApplication

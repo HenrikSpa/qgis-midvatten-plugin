@@ -22,14 +22,13 @@
 
 
 import io
-from builtins import object
-from builtins import str
+
 
 import mock
 import nose
 import numpy as np
 from cycler import cycler
-from mock import call, Mock
+from mock import call
 from nose.plugins.attrib import attr
 
 from midvatten.test.mocks_for_tests import MockUsingReturnValue

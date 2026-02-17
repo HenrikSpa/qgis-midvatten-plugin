@@ -17,12 +17,10 @@
  *                                                                         *
  ***************************************************************************/
 """
-from __future__ import print_function
+
 
 import io
 import os
-from builtins import str
-from collections import OrderedDict
 
 from cycler import cycler
 from qgis.PyQt.QtCore import QCoreApplication
@@ -30,7 +28,6 @@ from qgis.PyQt.QtCore import QCoreApplication
 from midvatten.tools.utils.common_utils import (
     returnunicode as ru,
     MessagebarAndLog,
-    rstrip,
     anything_to_string_representation,
 )
 from midvatten.tools.utils.db_utils import (
@@ -505,9 +502,6 @@ def plot_types_dict(international="no"):
     Default method is to read the database table zz_strat and generate the dictionary from columns 'strat' and 'geoshorts'
     The user may update these fields in the zz_strat table to use other stratigraphy units and other abbreviations (in geoshorts)
     Fallback method use dictionary defined in the code below
-
-    TODO: WARNING. This function must be changed so it returns lists or tuples instead of SQL strings. The sql queries
-    must NOT be used for string concatenation.
     """
     success, strata_geoshorts = get_sql_result_as_dict(
         "select strata, geoshort from zz_strat"

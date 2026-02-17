@@ -1,9 +1,3 @@
-from __future__ import print_function
-import pytest
-
-from builtins import object
-from builtins import str
-
 # -*- coding: utf-8 -*-
 from collections import OrderedDict
 from operator import itemgetter
@@ -12,16 +6,16 @@ import mock
 from mock import MagicMock, call
 from nose.plugins.attrib import attr
 
-from midvatten.tools.utils import common_utils
 from midvatten.test import utils_for_tests
 from midvatten.test.utils_for_tests import create_test_string
-from midvatten.tools.utils.date_utils import datestring_to_date
+from midvatten.tools import import_fieldlogger
 from midvatten.tools.import_fieldlogger import (
     FieldloggerImport,
     InputFields,
     DateTimeFilter,
 )
-from midvatten.tools import import_fieldlogger
+from midvatten.tools.utils import common_utils
+from midvatten.tools.utils.date_utils import datestring_to_date
 
 
 @attr(status="on")

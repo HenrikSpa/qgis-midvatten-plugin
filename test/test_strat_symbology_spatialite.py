@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 
-from builtins import str
-
 import mock
 from nose.plugins.attrib import attr
 from qgis.core import QgsProject
 
+from midvatten.test import utils_for_tests
 from midvatten.tools.utils import common_utils
 from midvatten.tools.utils import db_utils
-from midvatten.test import utils_for_tests
 
 
 @attr(status="on")

@@ -19,27 +19,30 @@
  ***************************************************************************/
 """
 
-from __future__ import print_function
-
 import ast
 import copy
 import io
+import locale
+import os
+import re
 import shutil
+import string
+from typing import List, Optional, Tuple, TYPE_CHECKING
 
 import matplotlib as mpl
 import qgis.PyQt
-from qgis.PyQt.QtGui import QDesktopServices
 from matplotlib import pyplot as plt
+from qgis.PyQt import QtWidgets, QtCore
+from qgis.PyQt.QtCore import QCoreApplication
+from qgis.PyQt.QtGui import QDesktopServices
+from qgis.core import Qgis
 from qgis.core import QgsProject
 from qgis.core import QgsVectorLayer
 
-import re
-import locale
-import os
-import string
-from qgis.PyQt import QtWidgets, QtCore
-from qgis.PyQt.QtCore import QCoreApplication
-from qgis.core import Qgis
+from midvatten.tools.utils.db_utils import DbConnectionManager
+
+if TYPE_CHECKING:
+    from midvatten.tools.midvsettings import MidvSettings
 
 try:
     import pandas as pd
@@ -71,8 +74,11 @@ from midvatten.tools.utils import db_utils
 
 
 def verify_msettings_loaded_and_layer_edit_mode(
-    iface, mset, allcritical_layers=(""), only_error_if_editing_enabled=True
-):
+    iface: qgis.gui.QgisInterface,
+    mset: "MidvSettings",
+    allcritical_layers: Tuple[str] = ("",),
+    only_error_if_editing_enabled: bool = True,
+) -> int:
     if isinstance(allcritical_layers, str):
         allcritical_layers = (allcritical_layers,)
 
@@ -238,7 +244,7 @@ def ask_for_charset(default_charset=None, msg=None):
     return str(charsetchoosen)
 
 
-def add_triggers_to_obs_points(filename):
+def add_triggers_to_obs_points(filename: str):
     """
     /*
     * These are quick-fixes for updating coords from geometry and the other way around
@@ -300,7 +306,9 @@ def sql_to_parameters_units_tuple(sql):
     return parameters
 
 
-def getcurrentlocale(print_error_message_in_bar=True, dbconnection=None):
+def getcurrentlocale(
+    print_error_message_in_bar: bool = True, dbconnection: None = None
+) -> List[str]:
     if not isinstance(dbconnection, db_utils.DbConnectionManager):
         try:
             dbconnection = db_utils.DbConnectionManager()
@@ -330,7 +338,10 @@ def getcurrentlocale(print_error_message_in_bar=True, dbconnection=None):
         return locale.getlocale()
 
 
-def get_locale_from_db(print_error_message_in_bar=True, dbconnection=None):
+def get_locale_from_db(
+    print_error_message_in_bar: bool = True,
+    dbconnection: Optional[DbConnectionManager] = None,
+) -> str:
     if not isinstance(dbconnection, db_utils.DbConnectionManager):
         dbconnection = db_utils.DbConnectionManager()
         dbconnection_created = True
@@ -595,7 +606,7 @@ def warn_about_old_database():
     dbconnection.closedb()
 
 
-def version_comparison_list(version_string):
+def version_comparison_list(version_string: str) -> List[int]:
     if "-" in version_string:
         # Assume that the version name is used as suffix, ex: '3.22.0-Białowieża'
         version_string = version_string.split("-")[0]
@@ -638,7 +649,7 @@ def version_comparison_list(version_string):
     return res
 
 
-def compare_verson_lists(testlist, reflist):
+def compare_verson_lists(testlist: List[int], reflist: List[int]) -> bool:
     r"""
     Compares versions.
 

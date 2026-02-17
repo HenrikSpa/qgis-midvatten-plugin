@@ -23,8 +23,7 @@
 import ast
 import codecs
 import os
-from builtins import object
-from builtins import str
+
 from collections import OrderedDict
 
 import qgis

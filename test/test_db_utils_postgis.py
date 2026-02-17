@@ -21,12 +21,10 @@
 """
 
 
-from builtins import object
-
 from nose.plugins.attrib import attr
 
-from midvatten.tools.utils import db_utils
 from midvatten.test import utils_for_tests
+from midvatten.tools.utils import db_utils
 
 
 @attr(status="on")

@@ -39,11 +39,9 @@
  ***************************************************************************/
 """
 
-from __future__ import print_function
 
-import unicodedata  # To normalize some special national characters to regular international characters
-from builtins import object
-from builtins import str
+import \
+    unicodedata  # To normalize some special national characters to regular international characters
 from functools import partial  # only to get combobox signals to work
 
 from qgis.PyQt import QtPrintSupport, QtWidgets, QtCore, QtGui

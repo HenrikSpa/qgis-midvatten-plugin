@@ -20,33 +20,18 @@
  ***************************************************************************/
 """
 
-
-import traceback
-from builtins import object
-from builtins import range
-from builtins import str
-from operator import itemgetter
-import traceback
-
 import io
+from operator import itemgetter
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
+import pandas as pd
 import psycopg2
 import psycopg2.extras
-from numpy.core.records import get_remaining_size
-
-try:
-    import pandas as pd
-    import numpy as np
-except:
-    pandas_on = False
-else:
-    pandas_on = True
-
-
 from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.common_utils import returnunicode as ru, UserInterruptError
+from midvatten.tools.utils.db_utils import DbConnectionManager
 
 
 class midv_data_importer(
@@ -65,14 +50,14 @@ class midv_data_importer(
 
     def general_import(
         self,
-        dest_table,
-        file_data,
-        allow_obs_fk_import=False,
-        _dbconnection=None,
-        dump_temptable=False,
-        source_srid=None,
-        skip_confirmation=False,
-        binary_geometry=False,
+        dest_table: str,
+        file_data: Any,
+        allow_obs_fk_import: bool = False,
+        _dbconnection: Optional[DbConnectionManager] = None,
+        dump_temptable: bool = False,
+        source_srid: Optional[int] = None,
+        skip_confirmation: bool = False,
+        binary_geometry: bool = False,
     ):
         """General method for importing a list of list to a table
 
@@ -499,7 +484,11 @@ class midv_data_importer(
             common_utils.stop_waiting_cursor()
 
     def list_to_table(
-        self, dbconnection, destination_table, file_data, primary_keys_for_concat
+        self,
+        dbconnection: DbConnectionManager,
+        destination_table: str,
+        file_data: List[Any],
+        primary_keys_for_concat: List[str],
     ):
         """
         TODO: This method can be extremely slow sometimes.
@@ -517,22 +506,13 @@ class midv_data_importer(
             tname, fieldnames_types
         )
 
-        if pandas_on:
-            numskipped = self.list_to_table_using_pandas(
-                dbconnection,
-                self.temptable_name,
-                self.temptable_rowid_name,
-                file_data,
-                primary_keys_for_concat,
-            )
-        else:
-            numskipped = self.list_to_table_using_loop(
-                dbconnection,
-                self.temptable_name,
-                self.temptable_rowid_name,
-                file_data,
-                primary_keys_for_concat,
-            )
+        numskipped = self.list_to_table_using_pandas(
+            dbconnection,
+            self.temptable_name,
+            self.temptable_rowid_name,
+            file_data,
+            primary_keys_for_concat,
+        )
 
         if numskipped:
             common_utils.MessagebarAndLog.warning(
@@ -559,12 +539,12 @@ class midv_data_importer(
 
     def list_to_table_using_pandas(
         self,
-        dbconnection,
-        temptable_name,
-        temptable_rowidcol,
-        file_data,
-        primary_keys_for_concat,
-    ):
+        dbconnection: DbConnectionManager,
+        temptable_name: str,
+        temptable_rowidcol: str,
+        file_data: List[Any],
+        primary_keys_for_concat: List[str],
+    ) -> int:
         numskipped = 0
         df = pd.DataFrame.from_records(file_data[1:], columns=file_data[0])
         df[temptable_rowidcol] = df.index
@@ -612,39 +592,16 @@ class midv_data_importer(
 
         return numskipped
 
-    def list_to_table_using_loop(
-        self, dbconnection, temptable_name, file_data, primary_keys_for_concat
-    ):
-        numskipped = 0
-        placeholder_sign = dbconnection.placeholder_sign()
-        concat_cols = [file_data[0].index(pk) for pk in primary_keys_for_concat]
-        added_rows = set()
-
-        sql = """INSERT INTO %s VALUES (%s)""" % (
-            temptable_name,
-            ", ".join([placeholder_sign for x in range(len(file_data[0]) + 1)]),
-        )
-        for rownr, row in enumerate(file_data[1:]):
-            if primary_keys_for_concat:
-                concatted = "|".join([ru(row[idx]) for idx in concat_cols])
-                if concatted in added_rows:
-                    numskipped += 1
-                    continue
-                else:
-                    added_rows.add(concatted)
-
-            args = [self.sanitize(r) for r in row]
-            args.append(rownr)
-            dbconnection.cursor.execute(sql, tuple(args))
-        return numskipped
-
     def sanitize(self, value):
         if isinstance(value, str):
             value = value.strip() if value.strip() else None
         return value
 
     def delete_existing_date_times_from_temptable(
-        self, primary_keys, dest_table, dbconnection
+        self,
+        primary_keys: List[str],
+        dest_table: str,
+        dbconnection: DbConnectionManager,
     ):
         """
         Deletes duplicate times
@@ -697,13 +654,13 @@ class midv_data_importer(
 
     def create_geometry_sql(
         self,
-        geom_col,
-        table_name,
-        dbconnection,
-        source_srid,
-        null_replacement,
-        binary_geometry=False,
-    ):
+        geom_col: str,
+        table_name: str,
+        dbconnection: DbConnectionManager,
+        source_srid: int,
+        null_replacement: str,
+        binary_geometry: bool = False,
+    ) -> str:
         # Calculate the geometry
         # THIS IS DUE TO WKT-import of geometries below
         dest_srid = dbconnection.get_srid(table_name, geometry_column=geom_col)
@@ -764,7 +721,9 @@ class midv_data_importer(
         kwargs["to_geometry"] = to_geometry
         return sql.format(**kwargs)
 
-    def check_and_delete_stratigraphy(self, existing_columns, dbconnection):
+    def check_and_delete_stratigraphy(
+        self, existing_columns: List[str], dbconnection: DbConnectionManager
+    ):
         if all(
             [
                 "stratid" in existing_columns,
@@ -853,7 +812,9 @@ class midv_data_importer(
                     all_args=[tuple(skip_obsids)],
                 )
 
-    def convert_null_unit_to_empty_string(self, temptable_name, column, dbconnection):
+    def convert_null_unit_to_empty_string(
+        self, temptable_name: str, column: str, dbconnection: DbConnectionManager
+    ):
         dbconnection.execute(
             """UPDATE {table} 
                                 SET {column} = TRIM(COALESCE({column}, ''))""".format(
@@ -863,11 +824,11 @@ class midv_data_importer(
 
     def import_foreign_keys(
         self,
-        dbconnection,
-        dest_table,
-        temptablename,
-        foreign_keys,
-        existing_columns_in_temptable,
+        dbconnection: DbConnectionManager,
+        dest_table: str,
+        temptablename: str,
+        foreign_keys: Dict[str, List[Tuple[str, str]]],
+        existing_columns_in_temptable: List[str],
     ):
         # TODO: Empty foreign keys are probably imported now. Must add "case when...NULL" to a couple of sql questions here
 
@@ -973,7 +934,7 @@ class MidvDataImporterError(Exception):
     pass
 
 
-def import_exception_handler(func):
+def import_exception_handler(func: Callable) -> Callable:
     def new_func(*args, **kwargs):
         try:
             result = func(*args, **kwargs)

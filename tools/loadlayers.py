@@ -20,7 +20,6 @@
 
 
 import os
-from builtins import object
 
 import qgis.utils
 from qgis.core import QgsDataSourceUri, QgsProject, QgsVectorLayer

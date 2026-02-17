@@ -21,7 +21,6 @@
 
 import datetime
 import re
-from builtins import str
 from typing import List
 
 import pytz

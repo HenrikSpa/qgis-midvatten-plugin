@@ -20,7 +20,6 @@
  ***************************************************************************/
 """
 
-from __future__ import print_function
 
 from decimal import Decimal
 
@@ -28,9 +27,9 @@ import mock
 import numpy as np
 from nose.plugins.attrib import attr
 
+from midvatten.test import utils_for_tests
 from midvatten.tools.loggereditor import LoggerEditor
 from midvatten.tools.utils import db_utils, date_utils, gui_utils
-from midvatten.test import utils_for_tests
 
 
 @attr(status="on")

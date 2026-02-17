@@ -11,27 +11,23 @@
  ***************************************************************************/
 """
 
+import ast
 import copy
 import os
 import traceback
 import types
-from builtins import range
-from builtins import str
-from builtins import zip
-from operator import itemgetter
 from contextlib import contextmanager
-
-import ast
 from functools import partial
+from operator import itemgetter
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tick
 import numpy as np
-from psycopg2.sql import SQL, Identifier
 import qgis.PyQt
 from matplotlib import container, patches
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from psycopg2.sql import SQL, Identifier
 from qgis.PyQt import QtWidgets
 from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QCoreApplication, Qt
@@ -72,7 +68,6 @@ from copy import deepcopy
 from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.common_utils import (
     returnunicode as ru,
-    fn_timer,
     UsageError,
     LEGEND_NCOL_KEY,
 )

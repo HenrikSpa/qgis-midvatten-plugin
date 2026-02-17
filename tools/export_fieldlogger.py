@@ -23,10 +23,6 @@ import ast
 import copy
 import json
 import os.path
-from builtins import object
-from builtins import range
-from builtins import str
-from collections import OrderedDict
 from typing import Any, Dict, List, Tuple, Union
 
 import qgis.PyQt
@@ -838,15 +834,15 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         parameter_groups: List[ParameterGroup],
         latlons: Dict[str, Union[Tuple[int, int], Tuple[None, None], Tuple[str, str]]],
     ) -> Union[
-        Tuple[Dict[str, str], OrderedDict, OrderedDict, OrderedDict, OrderedDict],
-        Tuple[Dict[Any, Any], OrderedDict, OrderedDict, OrderedDict, OrderedDict],
+        Tuple[Dict[str, str], Dict, Dict, Dict, Dict],
+        Tuple[Dict[Any, Any], Dict, Dict, Dict, Dict],
     ]:
         sublocations_locations = {}
-        locations_sublocations = OrderedDict()
-        locations_lat_lon = OrderedDict()
-        sublocations_parameters = OrderedDict()
+        locations_sublocations = {}
+        locations_lat_lon = {}
+        sublocations_parameters = {}
 
-        parameters_inputtypes_hints = OrderedDict()
+        parameters_inputtypes_hints = {}
 
         for index, parameter_group in enumerate(parameter_groups):
             _parameters_inputtypes_hints = parameter_group.input_field_group_list

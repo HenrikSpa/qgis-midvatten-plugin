@@ -29,7 +29,7 @@ import traceback
 from pathlib import Path
 from typing import Callable, Optional
 
-import PyQt5.QtWidgets
+import qgis.PyQt.QtWidgets
 import qgis.utils
 from qgis.PyQt.QtCore import QCoreApplication, QDir, QSettings, QUrl, Qt
 from qgis.PyQt.QtGui import QIcon
@@ -54,9 +54,9 @@ from midvatten.tools.import_general_csv_gui import GeneralCsvImportGui
 from midvatten.tools.import_hobologger import HobologgerImport
 from midvatten.tools.import_interlab4 import Interlab4Import
 from midvatten.tools.import_levelogger import LeveloggerImport
-from midvatten.tools.loaddefaultlayers import LoadLayers
+from midvatten.tools.loadlayers import LoadLayers
 from midvatten.tools.loggereditor import LoggerEditor
-from midvatten.tools.midvsettings import midvsettings
+from midvatten.tools.midvsettings import MidvSettings
 from midvatten.tools.piper import PiperPlot
 from midvatten.tools.prepareforqgis2threejs import PrepareForQgis2Threejs
 from midvatten.tools.sectionplot import SectionPlot
@@ -80,7 +80,7 @@ class Midvatten:
         # initialize plugin directory
         self.plugin_dir = Path(os.path.dirname(__file__))
 
-        self.ms = midvsettings()
+        self.ms = MidvSettings()
         self.translator = getTranslate("midvatten")
         self.actions = []
 
@@ -113,7 +113,7 @@ class Midvatten:
         status_tip: None = None,
         whats_this: Optional[str] = None,
         parent: None = None,
-    ) -> PyQt5.QtWidgets.QAction:
+    ) -> QAction:
         """Add a toolbar icon to the toolbar.
 
         :param icon_path: Path to the icon for this action. Can be a resource
@@ -560,9 +560,7 @@ class Midvatten:
             common_utils.write_qgs_log_to_file
         )
 
-    def add_menu(
-        self, name: str, parent: PyQt5.QtWidgets.QMenu
-    ) -> PyQt5.QtWidgets.QMenu:
+    def add_menu(self, name: str, parent: QMenu) -> QMenu:
         menu = QMenu(name)
         parent.addMenu(menu)
         return menu

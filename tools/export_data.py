@@ -29,17 +29,19 @@ from midvatten.tools.utils.common_utils import returnunicode as ru
 from midvatten.definitions import midvatten_defs as defs, db_defs
 
 from midvatten.tools.import_data_to_db import midv_data_importer
+from midvatten.tools.utils.db_utils import DbConnectionManager
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 
 class ExportData(object):
 
-    def __init__(self, OBSID_P, OBSID_L):
+    def __init__(self, OBSID_P: Union[Tuple[str], Tuple[()]], OBSID_L: Union[Tuple[str], Tuple[()]]):
         self.ID_obs_points = OBSID_P
         self.ID_obs_lines = OBSID_L
         self.dest_dbconnection = None
         self.source_dbconnection = None
 
-    def export_2_csv(self, exportfolder):
+    def export_2_csv(self, exportfolder: str):
         self.source_dbconnection = db_utils.DbConnectionManager()
         self.source_dbconnection.connect2db()  # establish connection to the current midv db
         db_utils.export_bytea_as_bytes(self.source_dbconnection)
@@ -71,7 +73,7 @@ class ExportData(object):
 
         self.source_dbconnection.closedb()
 
-    def export_2_splite(self, target_db, dest_srid):
+    def export_2_splite(self, target_db: str, dest_srid: str):
         """
         Exports a datagbase to a new spatialite database file
         :param target_db: The name of the new database file
@@ -145,14 +147,14 @@ class ExportData(object):
         self.dest_dbconnection.commit_and_closedb()
         self.source_dbconnection.closedb()
 
-    def get_number_of_rows(self, obsids, tname):
+    def get_number_of_rows(self, obsids: Tuple[str], tname: str) -> int:
         sql = "select count(obsid) from %s" % tname
         if obsids:
             sql += " WHERE obsid IN ({})".format(common_utils.sql_unicode_list(obsids))
         nr_of_rows = self.source_dbconnection.execute_and_fetchall(sql)[0][0]
         return nr_of_rows
 
-    def write_data(self, to_writer, obsids, ptabs, replace=False):
+    def write_data(self, to_writer: Callable, obsids: Optional[Union[Tuple[str], Tuple[()]]], ptabs: List[str], replace: bool=False):
         for tname in ptabs:
             if not db_utils.verify_table_exists(
                 tname, dbconnection=self.source_dbconnection
@@ -208,7 +210,7 @@ class ExportData(object):
                 ):  # only go on if there are any observations for this obsid
                     to_writer(tname, obsids, replace)
 
-    def to_csv(self, tname, obsids=None, replace=False):
+    def to_csv(self, tname: str, obsids: Optional[Union[Tuple[str], Tuple[()]]]=None, replace: bool=False):
         """
         Write to csv
         :param tname: The destination database
@@ -224,7 +226,7 @@ class ExportData(object):
         filename = os.path.join(self.exportfolder, tname + ".csv")
         common_utils.write_printlist_to_file(filename, printlist)
 
-    def to_sql(self, tname, obsids=None, replace=False):
+    def to_sql(self, tname: str, obsids: Optional[Union[Tuple[str], Tuple[()]]]=None, replace: bool=False):
         """
         Write to new sql database
         :param tname: The destination database
@@ -300,7 +302,7 @@ class ExportData(object):
             )
             self.dest_dbconnection.execute("""PRAGMA foreign_keys = ON;""")
 
-    def get_table_data(self, tname, obsids, dbconnection, file_data_srid):
+    def get_table_data(self, tname: str, obsids: Optional[Union[Tuple[str], Tuple[()]]], dbconnection: DbConnectionManager, file_data_srid: Optional[int]) -> List[Any]:
         dbconnection.execute("""SELECT * FROM "%s" LIMIT 1""" % tname)
         columns = [x[0] for x in dbconnection.cursor.description]
 
@@ -333,7 +335,7 @@ class ExportData(object):
         else:
             return table_data
 
-    def get_table_rows_with_differences(self):
+    def get_table_rows_with_differences(self) -> str:
         """
         Counts rows for all tables in new and old database and returns those that differ.
         self.cursor is required where the new database is the regular one and the old database is the attached one
@@ -393,7 +395,7 @@ class ExportData(object):
         return printable_msg
 
 
-def set_east_north_to_null(row, header, geometry):
+def set_east_north_to_null(row: Tuple[str, None, None, None, None, None, None, None, None, None, None, None, None, float, float, None, None, None, None, None, None, None, None, None, None, None, bytes], header: List[str], geometry: str) -> List[Optional[Union[str, bytes]]]:
     res = list(row)
     if res[header.index(geometry)]:
         res[header.index("east")] = None

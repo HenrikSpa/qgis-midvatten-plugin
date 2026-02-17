@@ -18,14 +18,12 @@
  ***************************************************************************/
 """
 
-from __future__ import print_function
 
 import datetime
 import locale
 import os
 import re
-from builtins import object
-from builtins import str
+from typing import Dict, List, Optional, Tuple
 
 import qgis.PyQt
 from qgis.PyQt.QtCore import QCoreApplication
@@ -37,8 +35,8 @@ from midvatten.tools.utils.common_utils import (
     get_full_filename,
     format_timezone_string,
 )
-from midvatten.tools.utils.db_utils import execute_sqlfile
 from midvatten.tools.utils.date_utils import get_pytz_timezones
+from midvatten.tools.utils.db_utils import DbConnectionManager, execute_sqlfile
 
 
 class NewDb(object):
@@ -47,12 +45,12 @@ class NewDb(object):
 
     def create_new_spatialite_db(
         self,
-        verno,
-        user_select_CRS="y",
-        EPSG_code="4326",
-        delete_srids=True,
-        w_levels_logger_timezone=None,
-        w_levels_timezone=None,
+        verno: str,
+        user_select_CRS: str = "y",
+        EPSG_code: str = "4326",
+        delete_srids: bool = True,
+        w_levels_logger_timezone: None = None,
+        w_levels_timezone: None = None,
     ):  # CreateNewDB(self, verno):
         """Open a new DataBase (create an empty one if file doesn't exists) and set as default DB"""
 
@@ -63,7 +61,7 @@ class NewDb(object):
 
         if user_select_CRS == "y":
             common_utils.stop_waiting_cursor()
-            EPSGID = str(self.ask_for_CRS(set_locale)[0])
+            EPSGID = str(self.ask_for_CRS(set_locale))
             common_utils.start_waiting_cursor()
         else:
             EPSGID = EPSG_code
@@ -252,11 +250,11 @@ class NewDb(object):
 
     def populate_postgis_db(
         self,
-        verno,
-        user_select_CRS="y",
-        EPSG_code="4326",
-        w_levels_logger_timezone=None,
-        w_levels_timezone=None,
+        verno: str,
+        user_select_CRS: str = "y",
+        EPSG_code: str = "4326",
+        w_levels_logger_timezone: None = None,
+        w_levels_timezone: None = None,
     ):
 
         dbconnection = db_utils.DbConnectionManager()
@@ -286,7 +284,7 @@ class NewDb(object):
 
         if user_select_CRS == "y":
             common_utils.stop_waiting_cursor()
-            epsg_id = str(self.ask_for_CRS(supplied_locale)[0])
+            epsg_id = str(self.ask_for_CRS(supplied_locale))
             common_utils.start_waiting_cursor()
         else:
             epsg_id = EPSG_code
@@ -421,12 +419,14 @@ class NewDb(object):
         """
         common_utils.stop_waiting_cursor()
 
-    def replace_words(self, line, replace_word_replace_with):
+    def replace_words(
+        self, line: str, replace_word_replace_with: List[Tuple[str, str]]
+    ) -> str:
         for replace_word, replace_with in replace_word_replace_with:
             line = line.replace(replace_word, replace_with)
         return line
 
-    def ask_for_locale(self):
+    def ask_for_locale(self) -> str:
         locales = [
             qgis.PyQt.QtCore.QLocale(
                 qgis.PyQt.QtCore.QLocale.Swedish, qgis.PyQt.QtCore.QLocale.Sweden
@@ -458,7 +458,7 @@ class NewDb(object):
         elif answer == "ok":
             return submitted_value
 
-    def ask_for_CRS(self, supplied_locale):
+    def ask_for_CRS(self, supplied_locale: str) -> int:
         # USER MUST SELECT CRS FIRST!!
         if supplied_locale == "sv_SE":
             default_crs = 3006
@@ -477,9 +477,9 @@ class NewDb(object):
         )
         if not epsg_id[1]:
             raise common_utils.UserInterruptError()
-        return epsg_id
+        return epsg_id[0]
 
-    def ask_for_timezone(self, table, default_tz=""):
+    def ask_for_timezone(self, table: str, default_tz: str = "") -> str:
         timezone_list = [""]
         if table == "w_levels_logger":
             msg = ru(
@@ -515,7 +515,11 @@ class NewDb(object):
         elif answer == "ok":
             return submitted_value
 
-    def insert_datadomains(self, set_locale=False, dbconnection=None):
+    def insert_datadomains(
+        self,
+        set_locale: str = False,
+        dbconnection: Optional[DbConnectionManager] = None,
+    ):
         filenamestring = "insert_datadomain"
         if set_locale == "sv_SE":
             filenamestring += "_sv.sql"
@@ -530,10 +534,10 @@ class NewDb(object):
 
     def add_metadata_to_about_db(
         self,
-        dbconnection,
-        created_tables_sqls=None,
-        w_levels_logger_timezone=None,
-        w_levels_timezone=None,
+        dbconnection: DbConnectionManager,
+        created_tables_sqls: Optional[Dict[str, str]] = None,
+        w_levels_logger_timezone: Optional[str] = None,
+        w_levels_timezone: Optional[str] = None,
     ):
         tables = sorted(db_utils.get_tables(dbconnection=dbconnection, skip_views=True))
 

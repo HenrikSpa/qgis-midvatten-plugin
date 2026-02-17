@@ -14,22 +14,21 @@
  ***************************************************************************/"""
 import ast
 import os.path
-from builtins import object
-from builtins import str
+
 from functools import partial  # only to get combobox signals to work
+from typing import Any, List, Optional
 
 import qgis.PyQt
+from mock.mock import MagicMock
 from qgis.PyQt import uic, QtCore
 from qgis.PyQt.QtCore import QCoreApplication, Qt
-from qgis.PyQt.QtWidgets import QComboBox, QDockWidget, QFileDialog
+from qgis.PyQt.QtWidgets import QDockWidget, QFileDialog
+from qgis.PyQt.QtWidgets import QGridLayout, QMainWindow
 
+from midvatten.tools.midvsettings import MidvSettings
 from midvatten.tools.utils import common_utils, gui_utils, db_utils
 from midvatten.tools.utils.common_utils import returnunicode as ru
 from midvatten.tools.utils.midvatten_utils import warn_about_old_database
-from PyQt5.QtWidgets import QGridLayout, QMainWindow
-from midvatten.tools.midvsettings import midvsettings
-from mock.mock import MagicMock
-from typing import Any, List, Optional
 
 midvsettingsdock_ui_class = uic.loadUiType(
     os.path.join(os.path.dirname(__file__), "ui", "midvsettingsdock.ui")
@@ -41,7 +40,7 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
     Class for the Midvatten settings dockwidget.
     """
 
-    def __init__(self, parent: QMainWindow, iface: MagicMock, msettings: midvsettings):
+    def __init__(self, parent: QMainWindow, iface: MagicMock, msettings: MidvSettings):
         self.parent = parent
         self.iface = iface
         self.ms = msettings
@@ -263,7 +262,7 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
         self.paramCa.clear()
         self.paramMg.clear()
 
-    def ColumnsToComboBox(self, comboboxname: str="", table: Optional[str]=None):
+    def ColumnsToComboBox(self, comboboxname: str = "", table: Optional[str] = None):
         getattr(self, comboboxname).clear()
         """This method fills comboboxes with columns for selected tool and table"""
         columns = self.LoadColumnsFromTable(
@@ -446,7 +445,7 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
         else:
             self.checkBoxDataPoints_2.setChecked(False)
 
-    def LoadColumnsFromTable(self, table: str="") -> List[Any]:
+    def LoadColumnsFromTable(self, table: str = "") -> List[Any]:
         return db_utils.tables_columns().get(table, [])
 
     def loadTablesFromDB(
@@ -600,7 +599,7 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
         self.ms.settingsdict["wqualtable"] = self.ListOfTables_WQUAL.currentText()
         self.ms.save_settings("wqualtable")  # save this specific setting
 
-    def XYColumnsToComboBox(self, table: Optional[str]=None):
+    def XYColumnsToComboBox(self, table: Optional[str] = None):
         """This method fills comboboxes with columns for xyplot"""
         self.ListOfColumns_2.clear()
         self.ListOfColumns_3.clear()
@@ -648,7 +647,9 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
 
 
 class DatabaseSettings(object):
-    def __init__(self, midvsettingsdialogdock: MidvattenSettingsDock, gridLayout_db: QGridLayout):
+    def __init__(
+        self, midvsettingsdialogdock: MidvattenSettingsDock, gridLayout_db: QGridLayout
+    ):
         self.midvsettingsdialogdock = midvsettingsdialogdock
         self.layout = gridLayout_db
         self.layout.setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)

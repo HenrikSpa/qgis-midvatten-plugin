@@ -10,11 +10,8 @@
         email                : groundwatergis [at] gmail.com
  ***************************************************************************/"""
 
-from __future__ import print_function
 
 import traceback
-from builtins import object
-from builtins import str
 
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import QgsProject
@@ -24,17 +21,17 @@ from midvatten.tools.utils.common_utils import MessagebarAndLog
 from midvatten.tools.utils.common_utils import returnunicode as ru
 
 
-class midvsettings(object):
+class MidvSettings(object):
     def __init__(self):
         # settings...
         self.settingsareloaded = False
         self.readingSettings = False  # To enable resetsettings
-        self.settingsdict = (
-            self.createsettingsdict()
-        )  # calling for the method that defines an empty dictionary of settings NOTE!! byte strings in dict
+        self.settingsdict = self.createsettingsdict()
         try:
-            self.loadSettings()  # stored settings are loaded (if there are any)
-            # The settings are loaded each time a new qgis project is loaded (and several methods below do check that settings really are loaded)
+            # The settings are loaded each time a new qgis project is loaded
+            # (and several methods below do check that settings really are loaded)
+            self.loadSettings()
+
         except:
             pass
 

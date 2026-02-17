@@ -20,18 +20,14 @@
  ***************************************************************************/
 """
 
-from __future__ import print_function
-
-from builtins import range
-from builtins import str
 
 import mock
 from nose.plugins.attrib import attr
 
+from midvatten.definitions import midvatten_defs as defs
+from midvatten.test import utils_for_tests
 from midvatten.tools.utils import common_utils, midvatten_utils
 from midvatten.tools.utils import db_utils
-from midvatten.test import utils_for_tests
-from midvatten.definitions import midvatten_defs as defs
 
 
 @attr(status="on")

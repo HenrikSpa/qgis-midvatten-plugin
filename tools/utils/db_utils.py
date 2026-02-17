@@ -25,8 +25,10 @@ import ast
 import os
 import traceback
 import zipfile
-from builtins import object
-from builtins import str
+from sqlite3 import Connection, Cursor
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
+import qgis._core
 
 try:
     import zlib
@@ -66,7 +68,7 @@ class PostGisDBConnectorMod(db_manager.db_plugins.postgis.connector.PostGisDBCon
     Based on db_manager.db_plugins.postgis.connector.PostGisDBConnector
     """
 
-    def __init__(self, uri):
+    def __init__(self, uri: qgis._core.QgsDataSourceUri):
         self.connection = None
 
         self.host = uri.host() or os.environ.get("PGHOST")
@@ -124,7 +126,7 @@ class PostGisDBConnectorMod(db_manager.db_plugins.postgis.connector.PostGisDBCon
 
 
 class DbConnectionManager(object):
-    def __init__(self, db_settings=None):
+    def __init__(self, db_settings: Optional[str] = None):
         """
         Manuals for db connectors:
         https://github.com/qgis/QGIS/blob/master/python/plugins/db_manager/db_plugins/connector.py
@@ -273,7 +275,7 @@ class DbConnectionManager(object):
         if self.cursor:
             return True
 
-    def execute(self, sql, all_args=None):
+    def execute(self, sql: str, all_args: None = None):
         """
 
         :param sql:
@@ -334,7 +336,7 @@ class DbConnectionManager(object):
                     % ru(type(all_args))
                 )
 
-    def execute_and_fetchall(self, sql, args=None):
+    def execute_and_fetchall(self, sql: str, args: None = None) -> List[Any]:
         try:
             if args is not None:
                 self.cursor.execute(sql, args)
@@ -352,7 +354,7 @@ class DbConnectionManager(object):
 
         return self.cursor.fetchall()
 
-    def execute_and_commit(self, sql, all_args=None):
+    def execute_and_commit(self, sql: str, all_args: None = None):
         self.execute(sql, all_args=all_args)
         self.commit()
 
@@ -363,7 +365,7 @@ class DbConnectionManager(object):
         self.commit()
         self.closedb()
 
-    def schemas(self):
+    def schemas(self) -> str:
         """ """
         return self.schema
 
@@ -398,8 +400,11 @@ class DbConnectionManager(object):
             self.execute("VACUUM ANALYZE")
 
     def create_temporary_table_for_import(
-        self, temptable_name, fieldnames_types, geometry_colname_type_srid=None
-    ):
+        self,
+        temptable_name: str,
+        fieldnames_types: List[str],
+        geometry_colname_type_srid: None = None,
+    ) -> str:
 
         if not temptable_name.startswith("temp_"):
             temptable_name = f"temp_{temptable_name}"
@@ -456,7 +461,7 @@ class DbConnectionManager(object):
                 self.execute(sql)
         return temptable_name
 
-    def drop_temporary_table(self, temptable_name):
+    def drop_temporary_table(self, temptable_name: str):
         if self.dbtype == "spatialite":
             self.execute("""DROP TABLE {}""".format(temptable_name))
         else:
@@ -472,7 +477,9 @@ class DbConnectionManager(object):
             printlist.extend(rows)
             write_printlist_to_file(filename, printlist)
 
-    def get_srid(self, table_name, geometry_column="geometry"):
+    def get_srid(
+        self, table_name: str, geometry_column: str = "geometry"
+    ) -> Optional[int]:
         srid = None
         if self.dbtype == "spatialite":
             srid = self.execute_and_fetchall(
@@ -500,7 +507,7 @@ class DbConnectionManager(object):
             srid = int(srid)
         return srid
 
-    def placeholder_sign(self):
+    def placeholder_sign(self) -> str:
         return placeholder_sign(self)
 
     def placeholder_string(self, count):
@@ -525,14 +532,14 @@ class DbConnectionManager(object):
             MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
 
-def connect_with_spatialite_connect(dbpath):
+def connect_with_spatialite_connect(dbpath: str) -> Connection:
     conn = spatialite_connect(
         dbpath, detect_types=sqlite.PARSE_DECLTYPES | sqlite.PARSE_COLNAMES
     )
     return conn
 
 
-def check_connection_ok(write_error_msg=True):
+def check_connection_ok(write_error_msg: bool = True) -> bool:
     try:
         dbconnection = DbConnectionManager()
         connection_ok = dbconnection.connect2db()
@@ -552,7 +559,7 @@ def check_connection_ok(write_error_msg=True):
     return connection_ok
 
 
-def if_connection_ok(func):
+def if_connection_ok(func: Callable) -> Callable:
     def func_wrapper(*args, **kwargs):
         if check_connection_ok():
             ret = func(*args, **kwargs)
@@ -563,7 +570,7 @@ def if_connection_ok(func):
     return func_wrapper
 
 
-def get_postgis_connections():
+def get_postgis_connections() -> Dict[str, Dict[str, str]]:
     qs = QSettings()
     postgresql_connections = {}
     for k in sorted(qs.allKeys()):
@@ -583,8 +590,11 @@ def get_postgis_connections():
 
 
 def sql_load_fr_db(
-    sql, dbconnection=None, print_error_message_in_bar=True, execute_args=None
-):
+    sql: str,
+    dbconnection: Optional[DbConnectionManager] = None,
+    print_error_message_in_bar: bool = True,
+    execute_args: None = None,
+) -> Any:
     if not isinstance(dbconnection, DbConnectionManager):
         dbconnection = DbConnectionManager()
         dbconnection_created = True
@@ -612,7 +622,9 @@ def sql_load_fr_db(
     return res
 
 
-def sql_alter_db(sql, dbconnection=None, all_args=None):
+def sql_alter_db(
+    sql: str, dbconnection: Optional[DbConnectionManager] = None, all_args: None = None
+):
     if not isinstance(dbconnection, DbConnectionManager):
         dbconnection = DbConnectionManager()
         dbconnection_created = True
@@ -646,7 +658,7 @@ def sql_alter_db(sql, dbconnection=None, all_args=None):
         dbconnection.closedb()
 
 
-def execute_sqlfile_using_func(sqlfilename, function=sql_alter_db):
+def execute_sqlfile_using_func(sqlfilename: str, function: Callable = sql_alter_db):
     with open(sqlfilename, "r") as f:
         f.readline()  # first line is encoding info....
         for line in f:
@@ -657,7 +669,9 @@ def execute_sqlfile_using_func(sqlfilename, function=sql_alter_db):
             function(line)
 
 
-def execute_sqlfile(sqlfilename, dbconnection, merge_newlines=False):
+def execute_sqlfile(
+    sqlfilename: str, dbconnection: DbConnectionManager, merge_newlines: bool = False
+):
     dbtype_skip_keyword = {"spatialite": "postgis", "postgis": "spatialite"}
     skip_keyword = dbtype_skip_keyword[dbconnection.dbtype]
 
@@ -704,7 +718,9 @@ def execute_sqlfile(sqlfilename, dbconnection, merge_newlines=False):
                 )
 
 
-def tables_columns(table=None, dbconnection=None):
+def tables_columns(
+    table: Optional[str] = None, dbconnection: Optional[DbConnectionManager] = None
+) -> Dict[str, List[str]]:
     return dict(
         [
             (k, [col[1] for col in v])
@@ -715,7 +731,20 @@ def tables_columns(table=None, dbconnection=None):
     )
 
 
-def db_tables_columns_info(table=None, dbconnection=None):
+def db_tables_columns_info(
+    table: Optional[str] = None, dbconnection: Optional[DbConnectionManager] = None
+) -> Dict[
+    str,
+    Union[
+        List[Tuple[int, str, str, int, None, int]],
+        List[
+            Union[
+                Tuple[int, str, str, int, str, int],
+                Tuple[int, str, str, int, None, int],
+            ]
+        ],
+    ],
+]:
     """Returns a dict like {'tablename': (ordernumber, name, type, notnull, defaultvalue, primarykey)}"""
     if not isinstance(dbconnection, DbConnectionManager):
         dbconnection = DbConnectionManager()
@@ -764,7 +793,9 @@ def db_tables_columns_info(table=None, dbconnection=None):
     return tables_dict
 
 
-def get_tables(dbconnection=None, skip_views=False):
+def get_tables(
+    dbconnection: Optional[DbConnectionManager] = None, skip_views: bool = False
+) -> List[str]:
     if not isinstance(dbconnection, DbConnectionManager):
         dbconnection = DbConnectionManager()
         dbconnection_created = True
@@ -813,7 +844,11 @@ def get_tables(dbconnection=None, skip_views=False):
     return tablenames
 
 
-def get_table_info(tablename, dbconnection=None):
+def get_table_info(
+    tablename: str, dbconnection: Optional[DbConnectionManager] = None
+) -> List[
+    Union[Tuple[int, str, str, int, str, int], Tuple[int, str, str, int, None, int]]
+]:
 
     if not isinstance(dbconnection, DbConnectionManager):
         dbconnection = DbConnectionManager()
@@ -885,7 +920,9 @@ def get_table_info(tablename, dbconnection=None):
     return columns
 
 
-def get_foreign_keys(table, dbconnection=None):
+def get_foreign_keys(
+    table: str, dbconnection: Optional[DbConnectionManager] = None
+) -> Dict[str, List[Tuple[str, str]]]:
     """Get foreign keys for table.
        Returns a dict like {foreign_key_table: (colname in table, colname in foreign_key_table)}
     sql code from
@@ -958,7 +995,7 @@ def get_foreign_keys(table, dbconnection=None):
     return foreign_keys
 
 
-def sqlite_internal_tables(as_tuple=False):
+def sqlite_internal_tables(as_tuple: bool = False) -> str:
     astring = """('ElementaryGeometries',
                 'geom_cols_ref_sys',
                 'geometry_columns',
@@ -1002,7 +1039,7 @@ def sqlite_internal_tables(as_tuple=False):
         return astring
 
 
-def postgis_internal_tables(as_tuple=False):
+def postgis_internal_tables(as_tuple: bool = False) -> str:
     astring = """('geography_columns',
                'geometry_columns',
                'spatial_ref_sys',
@@ -1014,7 +1051,9 @@ def postgis_internal_tables(as_tuple=False):
         return astring
 
 
-def get_sql_result_as_dict(sql, dbconnection=None):
+def get_sql_result_as_dict(
+    sql: str, dbconnection: Optional[DbConnectionManager] = None
+) -> Tuple[bool, OrderedDict]:
     """
     Runs sql and returns result as dict
     :param sql: The sql command to run
@@ -1041,11 +1080,17 @@ def get_sql_result_as_dict(sql, dbconnection=None):
     return True, result_dict
 
 
-def verify_table_exists(tablename, dbconnection=None):
+def verify_table_exists(
+    tablename: str, dbconnection: Optional[DbConnectionManager] = None
+) -> bool:
     return tablename in get_tables(dbconnection=dbconnection)
 
 
-def change_cast_type_for_geometry_columns(dbconnection, table_info, tablename):
+def change_cast_type_for_geometry_columns(
+    dbconnection: DbConnectionManager,
+    table_info: List[Tuple[int, str, str, int, None, int]],
+    tablename: str,
+) -> Dict[str, str]:
     if dbconnection.dbtype == "spatialite":
         newtype = "BLOB"
         geometry_columns_types = get_geometry_types(dbconnection, tablename)
@@ -1066,7 +1111,9 @@ def change_cast_type_for_geometry_columns(dbconnection, table_info, tablename):
     return column_headers_types
 
 
-def get_geometry_types(dbconnection, tablename):
+def get_geometry_types(
+    dbconnection: DbConnectionManager, tablename: str
+) -> OrderedDict:
     if dbconnection.dbtype == "spatialite":
         sql = (
             """SELECT f_geometry_column, geometry_type FROM geometry_columns WHERE f_table_name = '%s'"""
@@ -1095,7 +1142,9 @@ def delete_duplicate_values(dbconnection, tablename, primary_keys):
     )
 
 
-def activate_foreign_keys(activated=True, dbconnection=None):
+def activate_foreign_keys(
+    activated: bool = True, dbconnection: Optional[DbConnectionManager] = None
+):
     if not isinstance(dbconnection, DbConnectionManager):
         dbconnection = DbConnectionManager()
         dbconnection_created = True
@@ -1113,7 +1162,7 @@ def activate_foreign_keys(activated=True, dbconnection=None):
         dbconnection.closedb()
 
 
-def add_insert_or_ignore_to_sql(sql, dbconnection):
+def add_insert_or_ignore_to_sql(sql: str, dbconnection: DbConnectionManager) -> str:
     if dbconnection.dbtype == "spatialite":
         sql = sql.replace("INSERT", "INSERT OR IGNORE")
     else:
@@ -1125,7 +1174,7 @@ class DatabaseLockedError(Exception):
     pass
 
 
-def placeholder_sign(dbconnection=None):
+def placeholder_sign(dbconnection: Optional[DbConnectionManager] = None) -> str:
     if not isinstance(dbconnection, DbConnectionManager):
         dbconnection = DbConnectionManager()
         dbconnection_created = True
@@ -1219,7 +1268,9 @@ def backup_db(dbconnection=None):
         dbconnection.closedb()
 
 
-def cast_null(data_type, dbconnection=None):
+def cast_null(
+    data_type: str, dbconnection: Optional[DbConnectionManager] = None
+) -> str:
     if not isinstance(dbconnection, DbConnectionManager):
         dbconnection = DbConnectionManager()
         dbconnection_created = True
@@ -1284,7 +1335,7 @@ def sqlite_numeric_data_types():
     return ["integer", "double"]
 
 
-def get_srid_name(srid, dbconnection=None):
+def get_srid_name(srid: int, dbconnection: None = None) -> str:
     if not isinstance(dbconnection, DbConnectionManager):
         dbconnection = DbConnectionManager()
         dbconnection_created = True
@@ -1355,7 +1406,12 @@ def numeric_datatypes(dbconnection=None):
     return res
 
 
-def calculate_median_value(table, column, obsid, dbconnection=None):
+def calculate_median_value(
+    table: str,
+    column: str,
+    obsid: str,
+    dbconnection: Optional[DbConnectionManager] = None,
+) -> Optional[float]:
     """
     Code from https://stackoverflow.com/questions/15763965/how-can-i-calculate-the-median-of-values-in-sqlite
     :param table:
@@ -1470,7 +1526,9 @@ def rowid_string(dbconnection=None):
     return res
 
 
-def delete_srids(execute_able_object, keep_epsg_code):
+def delete_srids(
+    execute_able_object: Union[Cursor, DbConnectionManager], keep_epsg_code: str
+):
     if isinstance(execute_able_object, DbConnectionManager):
         if not execute_able_object.dbtype == "spatialite":
             return None
@@ -1501,7 +1559,7 @@ def delete_srids(execute_able_object, keep_epsg_code):
         )
 
 
-def get_spatialite_db_path_from_dbsettings_string(db_settings):
+def get_spatialite_db_path_from_dbsettings_string(db_settings: str) -> str:
     if isinstance(db_settings, str):
         # Test if the db_setting is an old database
         if os.path.isfile(db_settings):
@@ -1541,7 +1599,9 @@ def get_spatialite_db_path_from_dbsettings_string(db_settings):
         return ""
 
 
-def nonplot_tables(as_tuple=False):
+def nonplot_tables(
+    as_tuple: bool = False,
+) -> Union[str, Tuple[str, str, str, str, str, str]]:
     tables = (
         "about_db",
         "comments",
@@ -1624,7 +1684,7 @@ def get_latlon_for_all_obsids(dbconnection=None):
     return latlon_dict
 
 
-def get_timezone_from_db(tablename, dbconnection=None):
+def get_timezone_from_db(tablename: str, dbconnection: None = None) -> Optional[str]:
     timezone = None
     if not isinstance(dbconnection, DbConnectionManager):
         dbconnection = DbConnectionManager()
@@ -1658,7 +1718,7 @@ def get_timezone_from_db(tablename, dbconnection=None):
     return timezone
 
 
-def export_bytea_as_bytes(dbconnection):
+def export_bytea_as_bytes(dbconnection: DbConnectionManager):
     """
     Using ST_AsBinary(geometry) for a Postgis-database returns MemoryView object.
     To convert this, one could either use bytes(obj) och memoryview.tobytes(), but this

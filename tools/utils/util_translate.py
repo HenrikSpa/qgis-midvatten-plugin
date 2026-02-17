@@ -38,7 +38,7 @@ from qgis.PyQt.QtCore import (
 from qgis.core import QgsApplication, Qgis
 
 
-def getTranslate(namePlugin, nameDir=None):
+def getTranslate(namePlugin: str, nameDir: None = None):
     if nameDir is None:
         nameDir = namePlugin
 

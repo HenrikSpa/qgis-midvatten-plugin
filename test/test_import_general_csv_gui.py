@@ -22,13 +22,11 @@
 """
 
 
-from builtins import object
-
 from nose.plugins.attrib import attr
 
-from midvatten.tools.utils import common_utils
 from midvatten.test import utils_for_tests
 from midvatten.tools.import_general_csv_gui import GeneralCsvImportGui
+from midvatten.tools.utils import common_utils
 
 
 @attr(status="on")

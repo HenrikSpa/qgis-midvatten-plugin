@@ -18,14 +18,10 @@
  ***************************************************************************/
 """
 
-from __future__ import print_function
 
 import codecs
 import os
 import time  # for debugging
-from builtins import object
-from builtins import range
-from builtins import str
 
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtCore import QUrl, QDir

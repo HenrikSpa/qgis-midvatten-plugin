@@ -20,17 +20,14 @@
  ***************************************************************************/
 """
 
-from __future__ import print_function
-
-from builtins import str
 
 import mock
 from mock import MagicMock
 from nose.plugins.attrib import attr
 
+from midvatten.test import utils_for_tests
 from midvatten.tools.utils import common_utils
 from midvatten.tools.utils import db_utils
-from midvatten.test import utils_for_tests
 
 
 #

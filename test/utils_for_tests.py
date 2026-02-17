@@ -20,12 +20,10 @@
  ***************************************************************************/
 """
 
-from __future__ import print_function
 
 import io
 import os
-from builtins import object
-from builtins import str
+
 
 import matplotlib.pyplot as plt
 import mock
@@ -39,10 +37,10 @@ from qgis.core import QgsApplication
 from qgis.core import QgsProject, QgsVectorLayer, QgsFeature, QgsFields
 
 from midvatten.midvatten_plugin import Midvatten
+from midvatten.test.mocks_for_tests import DummyInterface2
+from midvatten.tools.import_data_to_db import midv_data_importer
 from midvatten.tools.utils import common_utils
 from midvatten.tools.utils import db_utils
-from midvatten.tools.import_data_to_db import midv_data_importer
-from midvatten.test.mocks_for_tests import DummyInterface2
 
 
 class test_qapplication_is_running(object):

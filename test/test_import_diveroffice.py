@@ -23,16 +23,15 @@
 
 
 import os
-from builtins import object
 
 import mock
-from midvatten.tools.utils.date_utils import datestring_to_date
 from nose.plugins.attrib import attr
 
-from midvatten.tools.utils import common_utils
 from midvatten.test import utils_for_tests
 from midvatten.test.mocks_for_tests import MockReturnUsingDictIn
 from midvatten.tools.import_diveroffice import DiverofficeImport
+from midvatten.tools.utils import common_utils
+from midvatten.tools.utils.date_utils import datestring_to_date
 
 
 #

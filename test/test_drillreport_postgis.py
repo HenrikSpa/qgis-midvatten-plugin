@@ -20,20 +20,16 @@
  ***************************************************************************/
 """
 
-from __future__ import print_function
 
-from builtins import str
+import re
 
 import mock
-from qgis.PyQt import QtCore
-import re
 from nose.plugins.attrib import attr
-from qgis.core import QgsProject, QgsVectorLayer
+from qgis.PyQt import QtCore
 
-from midvatten.tools.utils import common_utils
-from midvatten.tools.utils import db_utils
 from midvatten.test import utils_for_tests
 from midvatten.tools.drillreport import Drillreport
+from midvatten.tools.utils import db_utils
 
 
 @attr(status="on")

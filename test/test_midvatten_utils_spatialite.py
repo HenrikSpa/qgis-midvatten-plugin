@@ -21,15 +21,13 @@
 """
 
 
-from builtins import str
-
 import mock
 from mock import call
 from nose.plugins.attrib import attr
 
-from midvatten.tools.utils import db_utils, midvatten_utils
 from midvatten.test import utils_for_tests
 from midvatten.test.utils_for_tests import create_test_string
+from midvatten.tools.utils import db_utils, midvatten_utils
 
 
 @attr(status="on")

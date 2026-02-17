@@ -21,9 +21,7 @@
  ***************************************************************************/
 """
 
-from __future__ import print_function
 
-from builtins import str
 from collections import OrderedDict
 
 import mock
@@ -31,9 +29,9 @@ import nose
 from mock import call
 from nose.plugins.attrib import attr
 
-from midvatten.tools.utils import db_utils, common_utils
 from midvatten.test import utils_for_tests
 from midvatten.tools.import_data_to_db import MidvDataImporterError
+from midvatten.tools.utils import db_utils, common_utils
 
 
 @attr(status="on")

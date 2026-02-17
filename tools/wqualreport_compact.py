@@ -18,15 +18,11 @@
  ***************************************************************************/
 """
 
-from __future__ import print_function
 
 import ast
 import codecs
 import os
 import traceback
-from builtins import object
-from builtins import range
-from builtins import str
 
 import numpy as np
 import pandas as pd
@@ -35,7 +31,6 @@ import qgis.PyQt
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtCore import QUrl, QDir
 from qgis.PyQt.QtGui import QDesktopServices
-from qgis.PyQt.QtWidgets import QApplication
 
 from midvatten.tools.utils import common_utils, db_utils, gui_utils
 from midvatten.tools.utils.common_utils import (

@@ -21,24 +21,21 @@
  ***************************************************************************/
 """
 
-from __future__ import print_function
 
-from builtins import str
 from collections import OrderedDict
 
 import mock
 from mock import MagicMock
 from nose.plugins.attrib import attr
-
 from qgis.PyQt import QtWidgets
 
-from midvatten.tools.utils import common_utils
-from midvatten.tools.utils import db_utils
-from midvatten.tools.utils import gui_utils
 from midvatten.test import utils_for_tests
 from midvatten.test.mocks_for_tests import MockUsingReturnValue
 from midvatten.tools.import_diveroffice import DiverofficeImport
-import midvatten.tools.import_diveroffice
+from midvatten.tools.utils import common_utils
+from midvatten.tools.utils import db_utils
+from midvatten.tools.utils import gui_utils
+
 
 #
 

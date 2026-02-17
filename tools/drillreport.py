@@ -22,7 +22,7 @@
 
 import codecs
 import os
-from builtins import object
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtCore import QUrl, QDir
@@ -35,7 +35,11 @@ from midvatten.tools.utils.common_utils import returnunicode as ru
 
 class Drillreport(object):  # general observation point info for the selected object
 
-    def __init__(self, obsids=[""], settingsdict={}):
+    def __init__(
+        self,
+        obsids: List[str] = [""],
+        settingsdict: Dict[str, Union[str, int, bool, float]] = {},
+    ):
 
         reportfolder = os.path.join(QDir.tempPath(), "midvatten_reports")
         if not os.path.exists(reportfolder):
@@ -82,7 +86,9 @@ class Drillreport(object):  # general observation point info for the selected ob
                 # else:
                 #    sleep(0.2)
 
-    def open_file(self, header, reportpath):
+    def open_file(
+        self, header: str, reportpath: str
+    ) -> Tuple[codecs.StreamReaderWriter, str]:
         # open connection to report file
         f = codecs.open(reportpath, "wb", "utf-8")
         # write some initiating html, header and also
@@ -100,14 +106,21 @@ class Drillreport(object):  # general observation point info for the selected ob
 
         return f, rpt
 
-    def close_file(self, f, reportpath):
+    def close_file(self, f: codecs.StreamReaderWriter, reportpath: str) -> bool:
         f.write("\n</p></body></html>")
         f.close()
         # print reportpath#debug
         url_status = QDesktopServices.openUrl(QUrl.fromLocalFile(reportpath))
         return url_status
 
-    def write_obsid(self, obsid, rpt, imgpath, logopath, f):
+    def write_obsid(
+        self,
+        obsid: str,
+        rpt: str,
+        imgpath: str,
+        logopath: str,
+        f: codecs.StreamReaderWriter,
+    ):
         rpt += r"""<html><TABLE WIDTH=100% BORDER=0 CELLPADDING=1 CELLSPACING=1><TR VALIGN=TOP><TD WIDTH=15%><h3 style="font-family:'arial';font-size:18pt; font-weight:600">"""
         rpt += obsid
         if midvatten_utils.getcurrentlocale()[0] == "sv_SE":
@@ -205,7 +218,73 @@ class Drillreport(object):  # general observation point info for the selected ob
 
             f.write(r"""</TD></TR></TABLE></TD></TR></TABLE>""")
 
-    def rpt_upper_left_sv(self, GeneralData, CRS="", CRSname=""):
+    def rpt_upper_left_sv(
+        self,
+        GeneralData: List[
+            Union[
+                Tuple[
+                    str,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    float,
+                    float,
+                    None,
+                    None,
+                    None,
+                    None,
+                    float,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    bytes,
+                ],
+                Tuple[
+                    str,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    float,
+                    float,
+                    None,
+                    None,
+                    None,
+                    None,
+                    float,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    str,
+                ],
+            ]
+        ],
+        CRS: str = "",
+        CRSname: str = "",
+    ) -> str:
         rpt = r"""<p style="font-family:'arial'; font-size:8pt; font-weight:400; font-style:normal;">"""
         if (
             ru(GeneralData[0][1]) != ""
@@ -603,7 +682,12 @@ class Drillreport(object):  # general observation point info for the selected ob
             )
         return rpt
 
-    def rpt_upper_right_sv(self, StratData):
+    def rpt_upper_right_sv(
+        self,
+        StratData: List[
+            Union[Tuple[str, int, float, float, str, str, str, str, None], Any]
+        ],
+    ) -> str:
         rpt = r"""<p style="font-family:'arial'; font-size:10pt; font-weight:400; font-style:normal;">"""
         if len(StratData) > 0:
             rpt += (
@@ -687,7 +771,71 @@ class Drillreport(object):  # general observation point info for the selected ob
         rpt += r"""</p>"""
         return rpt
 
-    def rpt_lower_left(self, GeneralData):
+    def rpt_lower_left(
+        self,
+        GeneralData: List[
+            Union[
+                Tuple[
+                    str,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    float,
+                    float,
+                    None,
+                    None,
+                    None,
+                    None,
+                    float,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    bytes,
+                ],
+                Tuple[
+                    str,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    float,
+                    float,
+                    None,
+                    None,
+                    None,
+                    None,
+                    float,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    str,
+                ],
+            ]
+        ],
+    ) -> str:
         rpt = r"""<p style="font-family:'arial'; font-size:10pt; font-weight:400; font-style:normal;">"""
         if ru(GeneralData[0][24]) not in ["", "NULL"] and ru(
             GeneralData[0][25]
@@ -701,7 +849,9 @@ class Drillreport(object):  # general observation point info for the selected ob
         rpt += r"""</p>"""
         return rpt
 
-    def rpt_lower_right_sv(self, statistics, meas_or_level_masl):
+    def rpt_lower_right_sv(
+        self, statistics: List[Optional[Union[float, int]]], meas_or_level_masl: str
+    ) -> str:
         if meas_or_level_masl == "meas":
             unit = " m u rök<br>"
         else:
@@ -772,9 +922,78 @@ class Drillreport(object):  # general observation point info for the selected ob
         rpt += r"""</p>"""
         return rpt
 
-    def GetData(
-        self, obsid="", tablename="", debug="n"
-    ):  # GetData method that returns a table with water quality data
+    def GetData(self, obsid: str = "", tablename: str = "", debug: str = "n") -> Union[
+        Tuple[bool, List[Any]],
+        Tuple[
+            bool,
+            List[
+                Tuple[
+                    str,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    float,
+                    float,
+                    None,
+                    None,
+                    None,
+                    None,
+                    float,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    bytes,
+                ]
+            ],
+        ],
+        Tuple[
+            bool,
+            List[
+                Tuple[
+                    str,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    float,
+                    float,
+                    None,
+                    None,
+                    None,
+                    None,
+                    float,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    str,
+                ]
+            ],
+        ],
+        Tuple[bool, List[Tuple[str, int, float, float, str, str, str, str, None]]],
+    ]:  # GetData method that returns a table with water quality data
         # Load all data in obs_points table
         sql = r"""select * from """
         sql += tablename

@@ -19,8 +19,7 @@
  *                                                                         *
  ***************************************************************************/
 """
-from builtins import object
-from builtins import str
+
 
 import mock
 from qgis.PyQt import QtWidgets
@@ -29,8 +28,9 @@ from qgis.core import QgsProject
 
 class MockUsingReturnValue(object):
     def __init__(self, v=None):
-        self.v =  v
+        self.v = v
         self.args_called_with = []
+
     def get_v(self, *args, **kwargs):
         self.args_called_with.extend(args)
         self.args_called_with.extend(kwargs)
@@ -73,16 +73,21 @@ class MockReturnUsingDictIn(object):
                     if isinstance(a, QString):
                         a = str(a)
                 except:
-                    if str(type(a)) == 'qgis.PyQt.QtCore.QString':
+                    if str(type(a)) == "qgis.PyQt.QtCore.QString":
                         a = str(a)
                 if a.startswith(k):
-                   return_value = v
+                    return_value = v
         elif isinstance(self.args_idx, str):
             for k, v in self.adict.items():
                 if str(kwargs[self.args_idx]).startswith(k):
-                   return_value = v
+                    return_value = v
         if return_value == None:
-            raise Exception("MockReturnUsingDictIn: return_value could not be set for: " + str(args) + ' ' + str(kwargs))
+            raise Exception(
+                "MockReturnUsingDictIn: return_value could not be set for: "
+                + str(args)
+                + " "
+                + str(kwargs)
+            )
         return return_value
 
 
@@ -106,10 +111,13 @@ class MockQgisUtilsIface(object):
     print(str(<classname>.mocked_iface.messagebar.messages))
     Where <classname> is the name of the current Test class
     """
+
     def __init__(self):
         self.messagebar = MessageBar()
+
     def activeLayer(self, *args, **kwargs):
         return None
+
     def messageBar(self, *args, **kwargs):
         return self.messagebar
 
@@ -117,6 +125,7 @@ class MockQgisUtilsIface(object):
 class MessageBar(object):
     def __init__(self):
         self.messages = []
+
     def pushMessage(self, *args, **kwargs):
         self.messages.append([arg for arg in args])
         self.messages.append([arg for arg in kwargs])
@@ -124,8 +133,9 @@ class MessageBar(object):
 
 
 class MockQgsProjectInstance(object):
-    def __init__(self, entry=''):
+    def __init__(self, entry=""):
         self.entry = entry
+
     def readEntry(self, *args, **kwargs):
         return self.entry
 
@@ -134,31 +144,39 @@ class DummyInterface(object):
     def __init__(self):
         self.widget = QtWidgets.QWidget()
         self.mainwindow = QtWidgets.QMainWindow(self.widget)
+
     def __getattr__(self, *args, **kwargs):
         def dummy(*args, **kwargs):
             return self
+
         return dummy
+
     def return_none_method(self):
         return None
+
     def mainWindow(self):
         return self.mainwindow
+
     def __iter__(self):
         return self
+
     def next(self):
         raise StopIteration
+
     def layers(self):
         # simulate iface.legendInterface().layers()
         return list(QgsProject.instance().mapLayers().values())
 
 
 class DummyInterface2(object):
-    """ This should probably be used instead of DummyInterface
-        Based on mock instad of an own type of object.
+    """This should probably be used instead of DummyInterface
+    Based on mock instad of an own type of object.
 
-        Usage:
-        self.dummy_iface = DummyInterface2()
-        self.iface = self.dummy_iface.mock
+    Usage:
+    self.dummy_iface = DummyInterface2()
+    self.iface = self.dummy_iface.mock
     """
+
     def __init__(self):
         self.mock = mock.MagicMock()
         self.widget = QtWidgets.QWidget()
@@ -167,14 +185,22 @@ class DummyInterface2(object):
         self.mock.layers.return_value = list(QgsProject.instance().mapLayers().values())
 
 
-def mock_answer(yes_or_no='yes'):
-    ans = {'yes': 1, 'no': 0}
+def mock_answer(yes_or_no="yes"):
+    ans = {"yes": 1, "no": 0}
     answer_obj = MockUsingReturnValue()
     answer_obj.result = ans.get(yes_or_no, yes_or_no)
     answer = MockUsingReturnValue(answer_obj)
     return answer
 
-answer_yes = mock_answer('yes')
-answer_no = mock_answer('no')
 
-mock_askuser = MockReturnUsingDictIn({'It is a strong': answer_no.get_v(), 'Please note!\nThere are ': answer_yes.get_v(), 'Note:\nForeign keys will be imported silently.': answer_yes.get_v()}, 1)
+answer_yes = mock_answer("yes")
+answer_no = mock_answer("no")
+
+mock_askuser = MockReturnUsingDictIn(
+    {
+        "It is a strong": answer_no.get_v(),
+        "Please note!\nThere are ": answer_yes.get_v(),
+        "Note:\nForeign keys will be imported silently.": answer_yes.get_v(),
+    },
+    1,
+)

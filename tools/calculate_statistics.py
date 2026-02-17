@@ -20,9 +20,11 @@
 
 
 import os
+from typing import Any, Dict, List, Optional, Tuple, Union, TYPE_CHECKING
 
 import qgis.PyQt
 from qgis.PyQt.QtCore import QCoreApplication
+from qgis.PyQt.QtWidgets import QMainWindow
 
 from midvatten.tools.utils import common_utils, gui_utils, db_utils
 from midvatten.tools.utils.common_utils import returnunicode as ru
@@ -31,11 +33,14 @@ calculate_statistics_dialog = qgis.PyQt.uic.loadUiType(
     os.path.join(os.path.dirname(__file__), "..", "ui", "calculate_statistics_ui.ui")
 )[0]
 
+if TYPE_CHECKING:
+    from midvatten.tools.midvsettings import MidvSettings
+
 
 class CalculateStatisticsGui(
     qgis.PyQt.QtWidgets.QMainWindow, calculate_statistics_dialog
 ):
-    def __init__(self, parent, midv_settings):
+    def __init__(self, parent: QMainWindow, midv_settings: "MidvSettings"):
         self.iface = parent
 
         self.ms = midv_settings
@@ -106,7 +111,7 @@ class CalculateStatisticsGui(
 
 class DbBrowser(gui_utils.DistinctValuesBrowser):
 
-    def __init__(self, tables_columns):
+    def __init__(self, tables_columns: Dict[str, List[str]]):
         super(DbBrowser, self).__init__(tables_columns)
 
         self.distinct_value_label.setVisible(False)
@@ -114,13 +119,18 @@ class DbBrowser(gui_utils.DistinctValuesBrowser):
         self.browser_label.setVisible(False)
 
     @staticmethod
-    def get_distinct_values(tablename, columnname):
+    def get_distinct_values(tablename: str, columnname: str) -> List[Any]:
         return []
 
 
 def get_statistics(
-    obsids, table, column, sql_function_order=None, median=True, dbconnection=None
-):
+    obsids: List[str],
+    table: str,
+    column: str,
+    sql_function_order: Optional[List[str]] = None,
+    median: bool = True,
+    dbconnection: None = None,
+) -> Dict[str, List[Union[float, int]]]:
     if not isinstance(dbconnection, db_utils.DbConnectionManager):
         dbconnection = db_utils.DbConnectionManager()
 
@@ -146,7 +156,9 @@ def get_statistics(
     return res
 
 
-def get_statistics_for_single_obsid(obsid="", table="w_levels", data_columns=None):
+def get_statistics_for_single_obsid(
+    obsid: str = "", table: str = "w_levels", data_columns: None = None
+) -> Union[Tuple[str, List[Union[float, int]]], Tuple[str, List[Optional[int]]]]:
     Statistics_list = [0] * 4
 
     if data_columns is None:

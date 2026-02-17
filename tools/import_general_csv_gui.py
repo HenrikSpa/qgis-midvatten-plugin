@@ -21,19 +21,14 @@
  ***************************************************************************/
 """
 
-from __future__ import print_function
 
 import copy
 import csv
 import os
-from builtins import object
-from builtins import range
-from builtins import str
 from operator import itemgetter
 
 import qgis.PyQt
 from qgis.PyQt.QtCore import QCoreApplication
-from qgis.core import QgsCoordinateReferenceSystem
 
 import midvatten.definitions.midvatten_defs as defs
 from midvatten.tools import import_data_to_db

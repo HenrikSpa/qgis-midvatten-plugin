@@ -24,17 +24,14 @@
 
 import io
 import os
+import re
 import traceback
-
-import numpy as np
-from builtins import str
 from collections import OrderedDict
 from datetime import datetime
-import re
 
 import qgis.PyQt
-from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt import QtWidgets
+from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools import import_data_to_db
 from midvatten.tools.utils import common_utils, midvatten_utils, db_utils

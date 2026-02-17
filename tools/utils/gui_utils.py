@@ -22,17 +22,17 @@
 
 
 import copy
-from builtins import object
-import traceback
 import os
+import traceback
 from functools import partial
+from typing import Any, Dict, List, Union
 
+import matplotlib.pyplot as plt
 import qgis.PyQt
 from qgis.PyQt import QtCore, QtWidgets
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtGui import QIcon
-
-import matplotlib.pyplot as plt
+from qgis.PyQt.QtWidgets import QComboBox
 
 from midvatten.tools.utils.common_utils import (
     returnunicode as ru,
@@ -90,11 +90,11 @@ class RowEntryGrid(object):
 class ExtendedQPlainTextEdit(qgis.PyQt.QtWidgets.QPlainTextEdit):
     """ """
 
-    def __init__(self, keep_sorted=False, *args, **kwargs):
+    def __init__(self, keep_sorted: bool = False, *args, **kwargs):
         super(ExtendedQPlainTextEdit, self).__init__(*args, **kwargs)
         self.keep_sorted = keep_sorted
 
-    def paste_data(self, paste_list):
+    def paste_data(self, paste_list: List[str]):
         # Use lists to keep the data ordering (the reason set() is not used
         old_text = self.get_all_data()
         new_items = []
@@ -110,7 +110,7 @@ class ExtendedQPlainTextEdit(qgis.PyQt.QtWidgets.QPlainTextEdit):
         else:
             self.setPlainText("\n".join(new_items))
 
-    def get_all_data(self):
+    def get_all_data(self) -> List[Union[str, Any]]:
         if self.toPlainText():
             return [
                 x for x in ru(self.toPlainText()).replace("\r", "").split("\n") if x
@@ -197,7 +197,7 @@ class DateTimeFilter(qgis.PyQt.QtWidgets.QWidget):
         self.to_datetimeedit.setDateTime(datestring_to_date(value))
 
 
-def set_combobox(combobox, value, add_if_not_exists=True):
+def set_combobox(combobox: QComboBox, value: str, add_if_not_exists: bool = True):
     index = combobox.findText(ru(value))
     if index != -1:
         combobox.setCurrentIndex(index)
@@ -209,7 +209,7 @@ def set_combobox(combobox, value, add_if_not_exists=True):
 
 
 class DistinctValuesBrowser(VRowEntry):
-    def __init__(self, tables_columns):
+    def __init__(self, tables_columns: Dict[str, List[str]]):
         super(DistinctValuesBrowser, self).__init__()
 
         self.browser_label = qgis.PyQt.QtWidgets.QLabel(
@@ -278,7 +278,7 @@ class DistinctValuesBrowser(VRowEntry):
         return values
 
     @staticmethod
-    def replace_items(combobox, items):
+    def replace_items(combobox: QComboBox, items: List[Union[str, Any]]):
         items = sorted(items)
         combobox.clear()
         combobox.addItem("")
@@ -322,10 +322,6 @@ def set_groupbox_children_visibility(groupbox_widget):
 def add_action_to_navigation_toolbar(
     toolbar, text, callback, tooltip_text, icon, set_checkable=True
 ):
-    # background_color = toolbar.palette().color(toolbar.backgroundRole())
-    # foreground_color = toolbar.palette().color(toolbar.foregroundRole())
-    # icon_color = (foreground_color if background_color.value() < 128 else None)
-    # icon toolbar._icon(_image_file + '.png', icon_color)
     _text, _tooltip_text, _image_file, _callback = toolbar.toolitems[0]
 
     a = toolbar.addAction(QIcon(icon), text, callback)

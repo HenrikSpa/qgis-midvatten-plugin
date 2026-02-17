@@ -20,20 +20,18 @@
  ***************************************************************************/
 """
 
-from __future__ import print_function
 
 import re
-from builtins import str
 
 import mock
 from mock import call
 from nose.plugins.attrib import attr
 from qgis.core import QgsProject, QgsVectorLayer
 
-from midvatten.tools.utils import db_utils, gui_utils
 from midvatten.test import utils_for_tests
-from midvatten.tools.utils.midvatten_utils import anything_to_string_representation
 from midvatten.tools.sectionplot import get_legend_items_labels
+from midvatten.tools.utils import db_utils, gui_utils
+from midvatten.tools.utils.midvatten_utils import anything_to_string_representation
 
 
 @attr(status="on")

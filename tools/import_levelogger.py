@@ -25,7 +25,6 @@
 
 import io
 import os
-from builtins import str
 
 from qgis.PyQt.QtCore import QCoreApplication
 

@@ -21,36 +21,29 @@
  ***************************************************************************/
 """
 
-from __future__ import print_function
 
 import datetime
 import timeit
-from builtins import range
-from builtins import str
 from collections import OrderedDict
 
 import mock
 import qgis.PyQt
-
-from qgis.PyQt.QtCore import QMetaType
-
 from mock import MagicMock
 from nose.plugins.attrib import attr
+from qgis.PyQt.QtCore import QMetaType
 from qgis.core import (
     QgsProject,
     QgsVectorLayer,
     QgsField,
-    QgsFeature,
-    QgsFields,
     QgsGeometry,
 )
 
-from midvatten.tools.utils import common_utils
-from midvatten.tools.utils import db_utils
 from midvatten.test import utils_for_tests
 from midvatten.test.mocks_for_tests import MockUsingReturnValue
-from midvatten.tools.utils.date_utils import datestring_to_date
 from midvatten.tools.import_general_csv_gui import GeneralCsvImportGui
+from midvatten.tools.utils import common_utils
+from midvatten.tools.utils import db_utils
+from midvatten.tools.utils.date_utils import datestring_to_date
 
 
 @attr(status="on")

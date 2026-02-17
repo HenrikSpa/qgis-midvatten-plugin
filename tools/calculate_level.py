@@ -21,18 +21,18 @@
  ***************************************************************************/
 """
 
-from __future__ import print_function
 
 import os
-from builtins import str
+from typing import List
 
 import matplotlib as mpl
+from qgis.PyQt.QtWidgets import QWidget
 
 mpl.use("Qt5Agg")
 
 import qgis.PyQt
 
-from qgis.PyQt import uic, QtWidgets
+from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QCoreApplication
 
 try:  # assume matplotlib >=1.5.1
@@ -57,7 +57,7 @@ class CalculateLevel(
 ):  # An instance of the class Calc_Ui_Dialog is created same time as instance of calclvl is created
 
     @fn_timer
-    def __init__(self, parent, layerin):
+    def __init__(self, parent: QWidget, layerin: int):
         qgis.PyQt.QtWidgets.QDialog.__init__(self)
         self.setupUi(self)  # Required by Qt4 to initialize the UI
         # self.obsid = midvatten_utils.getselectedobjectnames()
@@ -69,7 +69,7 @@ class CalculateLevel(
         self.pushButton_Cancel.clicked.connect(lambda x: self.close())
         self.layer = layerin
 
-    def calc(self, obsids):
+    def calc(self, obsids: List[str]):
         fr_d_t = self.FromDateTime.dateTime().toPyDateTime()
         to_d_t = self.ToDateTime.dateTime().toPyDateTime()
         sql = """SELECT obsid FROM obs_points WHERE obsid IN ({}) AND h_toc IS NULL""".format(
@@ -185,7 +185,7 @@ class CalculateLevel(
         else:
             self.calc(obsids)
 
-    def log_msg(self, where_sql):
+    def log_msg(self, where_sql: str) -> str:
         res_sql = """SELECT DISTINCT obsid, min(date_time), max(date_time), count(obsid) FROM w_levels WHERE {} GROUP BY obsid"""
         log_msg = "\n".join(
             [

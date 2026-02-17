@@ -27,8 +27,6 @@ import csv
 import io
 import os
 import re
-from builtins import range
-from builtins import str
 from datetime import datetime
 
 import qgis.PyQt

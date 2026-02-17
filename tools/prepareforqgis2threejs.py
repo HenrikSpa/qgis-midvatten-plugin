@@ -23,10 +23,8 @@
 
 import os
 
-
 import matplotlib as mpl
 import psycopg2.errors
-from psycopg2.sql import SQL, Identifier
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtGui import QColor
 from qgis.core import QgsProject
@@ -199,7 +197,7 @@ class PrepareForQgis2Threejs(object):
                     )
                 )
 
-        for key in self.strat_layers_dict:
+        for key in self.strat_layers_dict.keys():
             with open(SQLFile, "r") as f:
                 for linecounter, line in enumerate(f):
                     if not linecounter:
@@ -222,15 +220,17 @@ class PrepareForQgis2Threejs(object):
                         params = self.strat_layers_dict[key]
                         condition = "IN"
 
+                    # TODO UNSAFE SQL WARNING. The params has to be added using
+                    #  string concatenation for views.
                     sqliteline = line.replace("CHANGETOVIEWNAME", key).replace(
                         "CHANGETOPLOTTYPESDICTVALUE",
                         "{} ({})".format(
-                            condition, self.dbconnection.placeholder_string(len(params))
+                            condition, common_utils.sql_unicode_list(params)
                         ),
                     )
 
                     try:
-                        self.dbconnection.execute(sqliteline, [params])
+                        self.dbconnection.execute(sqliteline)
                     except psycopg2.errors.DuplicateTable:
                         common_utils.MessagebarAndLog.info(
                             log_msg=ru(
@@ -243,34 +243,9 @@ class PrepareForQgis2Threejs(object):
                         )
 
     def drop_db_views(self):
-        if self.dbconnection.dbtype == "spatialite":
-            db_utils.sql_alter_db(
-                "delete from views_geometry_columns where view_name = 'strat_obs_p_for_qgsi2threejs'",
-                dbconnection=self.dbconnection,
-            )
-
-        db_utils.sql_alter_db(
-            "drop view if exists strat_obs_p_for_qgsi2threejs",
-            dbconnection=self.dbconnection,
-        )
-
+        self.dbconnection.drop_view("strat_obs_p_for_qgsi2threejs")
         for key in self.strat_layers_dict:
-            if self.dbconnection.dbtype == "spatialite":
-                db_utils.sql_alter_db(
-                    "delete from views_geometry_columns where view_name = {}".format(
-                        self.dbconnection.placeholder_sign()
-                    ),
-                    dbconnection=self.dbconnection,
-                    all_args=[key],
-                )
-                # TODO UNSAFE SQL
-                db_utils.sql_alter_db(
-                    "drop view if exists " + key, dbconnection=self.dbconnection
-                )
-            else:
-                self.dbconnection.cur.execute(
-                    SQL("DROP VIEW IF EXISTS {}").format(Identifier(key))
-                )
+            self.dbconnection.drop_view(key)
 
     def remove_views(self):
         remove_group = self.root.findGroup("stratigraphy_layers_for_qgis2threejs")

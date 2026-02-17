@@ -40,8 +40,7 @@
 """
 
 
-import \
-    unicodedata  # To normalize some special national characters to regular international characters
+import unicodedata
 from functools import partial  # only to get combobox signals to work
 
 from qgis.PyQt import QtPrintSupport, QtWidgets, QtCore, QtGui

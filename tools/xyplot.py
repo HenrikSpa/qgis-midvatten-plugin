@@ -19,8 +19,7 @@
 """
 
 
-import \
-    matplotlib.pyplot as plt  # THIS LINE may cause conflict with plugins "statist" and "chartmaker"  - THE ISSUE IS NOT SOLVED. May be due to matplotlib.pyplot assumes other backend by default
+import matplotlib.pyplot as plt
 import matplotlib.ticker as tick
 import numpy as np
 from qgis.PyQt.QtCore import QCoreApplication

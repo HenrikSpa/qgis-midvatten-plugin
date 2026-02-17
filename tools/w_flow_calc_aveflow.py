@@ -27,7 +27,6 @@ import numpy as np
 import qgis.PyQt
 import qgis.utils
 from matplotlib.dates import datestr2num
-# from ui.calc_aveflow_dialog import Ui_Dialog as Calc_Ui_Dialog
 from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QCoreApplication
 

@@ -107,7 +107,7 @@ class PostGisDBConnectorMod:
                 try:
                     self.connection = psycopg2.connect(newExpandedConnInfo)
                     QgsCredentials.instance().put(conninfo, username, password)
-                except self.connection_error_types() as e:
+                except psycopg2.Error as e:
                     if i == 2:
                         raise ConnectionError(e)
                     err = str(e)

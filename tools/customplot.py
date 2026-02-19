@@ -89,43 +89,43 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         self.matplotlib_style_sheet_reference.setOpenExternalLinks(True)
 
     def init_ui(self):
-        self.table_combo_box_1.clear()
-        self.table_combo_box_2.clear()
-        self.table_combo_box_3.clear()
+        self.tab1_table.clear()
+        self.tab2_table.clear()
+        self.tab3_table.clear()
         for i in range(1, 3):
             self.clearthings(i)
         # function partial due to problems with currentindexChanged and Combobox
-        # self.table_combo_box_1, QtCore.SIGNAL("currentIndexChanged(int)"), partial(self.table1_changed))#currentIndexChanged caused unnecessary signals when scrolling in combobox
-        self.table_combo_box_1.currentIndexChanged.connect(partial(self.table1_changed))
-        self.filter1_combo_box_1.currentIndexChanged.connect(
-            partial(self.filter1_1_changed)
+        # self.tab1_table, QtCore.SIGNAL("currentIndexChanged(int)"), partial(self.table1_changed))#currentIndexChanged caused unnecessary signals when scrolling in combobox
+        self.tab1_table.currentIndexChanged.connect(partial(self.table1_changed))
+        self.tab1_filtercol1.currentIndexChanged.connect(
+            partial(self.tab1_filter1_changed)
         )
-        # self.filter1_combo_box_1.currentIndexChanged.connect( partial(self.FilterChanged(1,1)))
-        self.filter2_combo_box_1.currentIndexChanged.connect(
-            partial(self.filter2_1_changed)
+        # self.tab1_filtercol1.currentIndexChanged.connect( partial(self.FilterChanged(1,1)))
+        self.tab1_filtercol2.currentIndexChanged.connect(
+            partial(self.tab1_filter2_changed)
         )
-        self.table_combo_box_2.currentIndexChanged.connect(partial(self.table2_changed))
-        self.filter1_combo_box_2.currentIndexChanged.connect(
-            partial(self.filter1_2_changed)
+        self.tab2_table.currentIndexChanged.connect(partial(self.table2_changed))
+        self.tab2_filtercol1.currentIndexChanged.connect(
+            partial(self.tab2_filter1_changed)
         )
-        self.filter2_combo_box_2.currentIndexChanged.connect(
-            partial(self.filter2_2_changed)
+        self.tab2_filtercol2.currentIndexChanged.connect(
+            partial(self.tab2_filter2_changed)
         )
-        self.table_combo_box_3.currentIndexChanged.connect(partial(self.table3_changed))
-        self.filter1_combo_box_3.currentIndexChanged.connect(
-            partial(self.filter1_3_changed)
+        self.tab3_table.currentIndexChanged.connect(partial(self.table3_changed))
+        self.tab3_filtercol1.currentIndexChanged.connect(
+            partial(self.tab3_filter1_changed)
         )
-        self.filter2_combo_box_3.currentIndexChanged.connect(
-            partial(self.filter2_3_changed)
+        self.tab3_filtercol2.currentIndexChanged.connect(
+            partial(self.tab3_filter2_changed)
         )
-        self.plot_settings_1.clicked.connect(
-            partial(set_groupbox_children_visibility, self.plot_settings_1)
+        self.tab1_plotsettings.clicked.connect(
+            partial(set_groupbox_children_visibility, self.tab1_plotsettings)
         )
-        self.plot_settings_2.clicked.connect(
-            partial(set_groupbox_children_visibility, self.plot_settings_2)
+        self.tab2_plotsettings.clicked.connect(
+            partial(set_groupbox_children_visibility, self.tab2_plotsettings)
         )
-        self.plot_settings_3.clicked.connect(
-            partial(set_groupbox_children_visibility, self.plot_settings_3)
+        self.tab3_plotsettings.clicked.connect(
+            partial(set_groupbox_children_visibility, self.tab3_plotsettings)
         )
         self.chart_settings.clicked.connect(
             partial(set_groupbox_children_visibility, self.chart_settings)
@@ -144,74 +144,74 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         self.select_button_t1f1.clicked.connect(
             partial(
                 self.select_in_filterlist_from_selection,
-                self.filter1_q_list_widget_1,
-                self.filter1_combo_box_1,
+                self.tab1_filter1,
+                self.tab1_filtercol1,
             )
         )
         self.select_button_t1f2.clicked.connect(
             partial(
                 self.select_in_filterlist_from_selection,
-                self.filter2_q_list_widget_1,
-                self.filter2_combo_box_1,
+                self.tab1_filter2,
+                self.tab1_filtercol2,
             )
         )
         self.select_button_t2f1.clicked.connect(
             partial(
                 self.select_in_filterlist_from_selection,
-                self.filter1_q_list_widget_2,
-                self.filter1_combo_box_2,
+                self.tab2_filter1,
+                self.tab2_filtercol1,
             )
         )
         self.select_button_t2f2.clicked.connect(
             partial(
                 self.select_in_filterlist_from_selection,
-                self.filter2_q_list_widget_2,
-                self.filter2_combo_box_2,
+                self.tab2_filter2,
+                self.tab2_filtercol2,
             )
         )
         self.select_button_t3f1.clicked.connect(
             partial(
                 self.select_in_filterlist_from_selection,
-                self.filter1_q_list_widget_3,
-                self.filter1_combo_box_3,
+                self.tab3_filter1,
+                self.tab3_filtercol1,
             )
         )
         self.select_button_t3f2.clicked.connect(
             partial(
                 self.select_in_filterlist_from_selection,
-                self.filter2_q_list_widget_3,
-                self.filter2_combo_box_3,
+                self.tab3_filter2,
+                self.tab3_filtercol2,
             )
         )
 
-        self.listfilter_1_1.editingFinished.connect(
+        self.tab1_listfilter1.editingFinished.connect(
             partial(
-                self.filter_filterlist, self.filter1_q_list_widget_1, self.listfilter_1_1
+                self.filter_filterlist, self.tab1_filter1, self.tab1_listfilter1
             )
         )
-        self.listfilter_2_1.editingFinished.connect(
+        self.tab1_listfilter2.editingFinished.connect(
             partial(
-                self.filter_filterlist, self.filter2_q_list_widget_1, self.listfilter_2_1
+                self.filter_filterlist, self.tab1_filter2, self.tab1_listfilter2
             )
         )
-        self.listfilter_1_2.editingFinished.connect(
+        self.tab2_listfilter1.editingFinished.connect(
             partial(
-                self.filter_filterlist, self.filter1_q_list_widget_2, self.listfilter_1_2
+                self.filter_filterlist, self.tab2_filter1, self.tab2_listfilter1
             )
         )
-        self.listfilter_2_2.editingFinished.connect(
+        self.tab2_listfilter2.editingFinished.connect(
             partial(
-                self.filter_filterlist, self.filter2_q_list_widget_2, self.listfilter_2_2
+                self.filter_filterlist, self.tab2_filter2, self.tab2_listfilter2
             )
         )
-        self.listfilter_1_3.editingFinished.connect(
+        self.tab3_listfilter1.editingFinished.connect(
             partial(
-                self.filter_filterlist, self.filter1_q_list_widget_3, self.listfilter_1_3
+                self.filter_filterlist, self.tab3_filter1, self.tab3_listfilter1
             )
         )
-        self.listfilter_2_3.editingFinished.connect(
+        self.tab3_listfilter2.editingFinished.connect(
             partial(
-                self.filter_filterlist, self.filter2_q_list_widget_3, self.listfilter_2_3
+                self.filter_filterlist, self.tab3_filter2, self.tab3_listfilter2
             )
         )
         self.filtersettings1.clicked.connect(
@@ -248,26 +248,26 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         # decimals with either point(.) or comma(,) as a decimal separater
         regexp = QtCore.QRegExp("[+-]?\\d*[\\.,]?\\d+")
         validator = QtGui.QRegExpValidator(regexp)
-        self.line_edit_factor1.setValidator(validator)
-        self.line_edit_factor2.setValidator(validator)
-        self.line_edit_factor3.setValidator(validator)
-        self.line_edit_offset1.setValidator(validator)
-        self.line_edit_offset2.setValidator(validator)
-        self.line_edit_offset3.setValidator(validator)
+        self.tab1_factor.setValidator(validator)
+        self.tab2_factor.setValidator(validator)
+        self.tab3_factor.setValidator(validator)
+        self.tab1_offset.setValidator(validator)
+        self.tab2_offset.setValidator(validator)
+        self.tab3_offset.setValidator(validator)
 
-        self.pandas_calc_1 = None
-        self.pandas_calc_2 = None
-        self.pandas_calc_3 = None
+        self.tab1_pandas_calc = None
+        self.tab2_pandas_calc = None
+        self.tab3_pandas_calc = None
         if pandas_on:
-            self.pandas_calc_1 = PandasCalculations(self.grid_layout_16)
-            self.pandas_calc_2 = PandasCalculations(self.grid_layout_14)
-            self.pandas_calc_3 = PandasCalculations(self.grid_layout_19)
+            self.tab1_pandas_calc = PandasCalculations(self.grid_layout_16)
+            self.tab2_pandas_calc = PandasCalculations(self.grid_layout_14)
+            self.tab3_pandas_calc = PandasCalculations(self.grid_layout_19)
 
         self.plot_tabwidget.setCurrentIndex(0)
         for group_box in [
-            self.plot_settings_1,
-            self.plot_settings_2,
-            self.plot_settings_3,
+            self.tab1_plotsettings,
+            self.tab2_plotsettings,
+            self.tab3_plotsettings,
             self.filtersettings1,
             self.filtersettings2,
             self.filtersettings3,
@@ -408,18 +408,18 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             nop,
             i,
             my_format,
-            self.table_combo_box_1,
-            self.xcol_combo_box_1,
-            self.ycol_combo_box_1,
-            self.filter1_combo_box_1,
-            self.filter1_q_list_widget_1,
-            self.filter2_combo_box_1,
-            self.filter2_q_list_widget_1,
-            self.plot_type_combo_box_1,
-            self.pandas_calc_1,
-            self.check_box_remove_mean1,
-            self.line_edit_factor1,
-            self.line_edit_offset1,
+            self.tab1_table,
+            self.tab1_xcol,
+            self.tab1_ycol,
+            self.tab1_filtercol1,
+            self.tab1_filter1,
+            self.tab1_filtercol2,
+            self.tab1_filter2,
+            self.tab1_plot_type,
+            self.tab1_pandas_calc,
+            self.tab1_remove_mean,
+            self.tab1_factor,
+            self.tab1_offset,
             only_get_data=only_get_data
         )
         nop, i = self.drawPlot(
@@ -427,18 +427,18 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             nop,
             i,
             my_format,
-            self.table_combo_box_2,
-            self.xcol_combo_box_2,
-            self.ycol_combo_box_2,
-            self.filter1_combo_box_2,
-            self.filter1_q_list_widget_2,
-            self.filter2_combo_box_2,
-            self.filter2_q_list_widget_2,
-            self.plot_type_combo_box_2,
-            self.pandas_calc_2,
-            self.check_box_remove_mean2,
-            self.line_edit_factor2,
-            self.line_edit_offset2,
+            self.tab2_table,
+            self.tab2_xcol,
+            self.tab2_ycol,
+            self.tab2_filtercol1,
+            self.tab2_filter1,
+            self.tab2_filtercol2,
+            self.tab2_filter2,
+            self.tab2_plot_type,
+            self.tab2_pandas_calc,
+            self.tab2_remove_mean,
+            self.tab2_factor,
+            self.tab2_offset,
             only_get_data=only_get_data
         )
         nop, i = self.drawPlot(
@@ -446,18 +446,18 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             nop,
             i,
             my_format,
-            self.table_combo_box_3,
-            self.xcol_combo_box_3,
-            self.ycol_combo_box_3,
-            self.filter1_combo_box_3,
-            self.filter1_q_list_widget_3,
-            self.filter2_combo_box_3,
-            self.filter2_q_list_widget_3,
-            self.plot_type_combo_box_3,
-            self.pandas_calc_3,
-            self.check_box_remove_mean3,
-            self.line_edit_factor3,
-            self.line_edit_offset3,
+            self.tab3_table,
+            self.tab3_xcol,
+            self.tab3_ycol,
+            self.tab3_filtercol1,
+            self.tab3_filter1,
+            self.tab3_filtercol2,
+            self.tab3_filter2,
+            self.tab3_plot_type,
+            self.tab3_pandas_calc,
+            self.tab3_remove_mean,
+            self.tab3_factor,
+            self.tab3_offset,
             only_get_data=only_get_data
         )
         if only_get_data:
@@ -952,27 +952,27 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
 
         last_selection_arg_tuples = [
             (
-                self.table_combo_box_1,
-                self.xcol_combo_box_1,
-                self.ycol_combo_box_1,
+                self.tab1_table,
+                self.tab1_xcol,
+                self.tab1_ycol,
                 "custplot_table1",
                 "custplot_xcol1",
                 "custplot_ycol1",
                 self.table1_changed,
             ),
             (
-                self.table_combo_box_2,
-                self.xcol_combo_box_2,
-                self.ycol_combo_box_2,
+                self.tab2_table,
+                self.tab2_xcol,
+                self.tab2_ycol,
                 "custplot_table2",
                 "custplot_xcol2",
                 "custplot_ycol2",
                 self.table2_changed,
             ),
             (
-                self.table_combo_box_3,
-                self.xcol_combo_box_3,
-                self.ycol_combo_box_3,
+                self.tab3_table,
+                self.tab3_xcol,
+                self.tab3_ycol,
                 "custplot_table3",
                 "custplot_xcol3",
                 "custplot_ycol3",
@@ -1003,47 +1003,47 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         self.tab_widget.setCurrentIndex(int(self.ms.settingsdict["custplot_tabwidget"]))
 
         filter_tuples = [
-            (self.filter1_combo_box_1, "custplot_filter1_1", 1, 1),
-            (self.filter2_combo_box_1, "custplot_filter2_1", 2, 1),
-            (self.filter1_combo_box_2, "custplot_filter1_2", 1, 2),
-            (self.filter2_combo_box_2, "custplot_filter2_2", 2, 2),
-            (self.filter1_combo_box_3, "custplot_filter1_3", 1, 3),
-            (self.filter2_combo_box_3, "custplot_filter2_3", 2, 3),
+            (self.tab1_filtercol1, "custplot_filter1_1", 1, 1),
+            (self.tab1_filtercol2, "custplot_filter2_1", 2, 1),
+            (self.tab2_filtercol1, "custplot_filter1_2", 1, 2),
+            (self.tab2_filtercol2, "custplot_filter2_2", 2, 2),
+            (self.tab3_filtercol1, "custplot_filter1_3", 1, 3),
+            (self.tab3_filtercol2, "custplot_filter2_3", 2, 3),
         ]
 
         for filter_combobox, custplot_filter, filterno1, filterno2 in filter_tuples:
             self.set_filters(filter_combobox, custplot_filter, filterno1, filterno2)
 
         filter_selection_tuples = [
-            (self.filter1_q_list_widget_1, "custplot_filter1_1_selection"),
-            (self.filter2_q_list_widget_1, "custplot_filter2_1_selection"),
-            (self.filter1_q_list_widget_2, "custplot_filter1_2_selection"),
-            (self.filter2_q_list_widget_2, "custplot_filter2_2_selection"),
-            (self.filter1_q_list_widget_3, "custplot_filter1_3_selection"),
-            (self.filter2_q_list_widget_3, "custplot_filter2_3_selection"),
+            (self.tab1_filter1, "custplot_filter1_1_selection"),
+            (self.tab1_filter2, "custplot_filter2_1_selection"),
+            (self.tab2_filter1, "custplot_filter1_2_selection"),
+            (self.tab2_filter2, "custplot_filter2_2_selection"),
+            (self.tab3_filter1, "custplot_filter1_3_selection"),
+            (self.tab3_filter2, "custplot_filter2_3_selection"),
         ]
 
         for filter_qlistwidget, custplot_filter_selection in filter_selection_tuples:
             self.filter_selections(filter_qlistwidget, custplot_filter_selection)
 
         # plottype1
-        searchindex = self.plot_type_combo_box_1.findText(
+        searchindex = self.tab1_plot_type.findText(
             self.ms.settingsdict["custplot_plottype1"]
         )
         if searchindex >= 0:
-            self.plot_type_combo_box_1.setCurrentIndex(searchindex)
+            self.tab1_plot_type.setCurrentIndex(searchindex)
         # plottype2
-        searchindex = self.plot_type_combo_box_2.findText(
+        searchindex = self.tab2_plot_type.findText(
             self.ms.settingsdict["custplot_plottype2"]
         )
         if searchindex >= 0:
-            self.plot_type_combo_box_2.setCurrentIndex(searchindex)
+            self.tab2_plot_type.setCurrentIndex(searchindex)
         # plottype3
-        searchindex = self.plot_type_combo_box_3.findText(
+        searchindex = self.tab3_plot_type.findText(
             self.ms.settingsdict["custplot_plottype3"]
         )
         if searchindex >= 0:
-            self.plot_type_combo_box_3.setCurrentIndex(searchindex)
+            self.tab3_plot_type.setCurrentIndex(searchindex)
         # max time step, titles, grid, legend
         self.spnmaxtstep.setValue(self.ms.settingsdict["custplot_maxtstep"])
 
@@ -1123,7 +1123,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             ]
         )
         for i, table_combobox in enumerate(
-            [self.table_combo_box_1, self.table_combo_box_2, self.table_combo_box_3], 1
+            [self.tab1_table, self.tab2_table, self.tab3_table], 1
         ):
             table_combobox.clear()
             self.clearthings(i)
@@ -1151,52 +1151,52 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
     def table1_changed(self):  # This method is called whenever table1 is changed
         # First, update combobox with columns
         self.clearthings(1)
-        # self.ms.settingsdict['custplot_table1'] = self.table_combo_box_1.currentText()
+        # self.ms.settingsdict['custplot_table1'] = self.tab1_table.currentText()
         self.populate_combo_box(
-            "xcol_combo_box_1", self.table_combo_box_1.currentText()
+            "tab1_xcol", self.tab1_table.currentText()
         )  # GeneralNote: For some reason it is not possible to send currentText with the SIGNAL-trigger
         self.populate_combo_box(
-            "ycol_combo_box_1", self.table_combo_box_1.currentText()
+            "tab1_ycol", self.tab1_table.currentText()
         )  # See GeneralNote
         self.populate_combo_box(
-            "filter1_combo_box_1", self.table_combo_box_1.currentText()
+            "tab1_filtercol1", self.tab1_table.currentText()
         )  # See GeneralNote
         self.populate_combo_box(
-            "filter2_combo_box_1", self.table_combo_box_1.currentText()
+            "tab1_filtercol2", self.tab1_table.currentText()
         )  # See GeneralNote
 
     def table2_changed(self):  # This method is called whenever table2 is changed
         # First, update combobox with columns
         self.clearthings(2)
-        # self.ms.settingsdict['custplot_table2'] = self.table_combo_box_2.currentText()
+        # self.ms.settingsdict['custplot_table2'] = self.tab2_table.currentText()
         self.populate_combo_box(
-            "xcol_combo_box_2", self.table_combo_box_2.currentText()
+            "tab2_xcol", self.tab2_table.currentText()
         )  # GeneralNote: For some reason it is not possible to send currentText with the SIGNAL-trigger
         self.populate_combo_box(
-            "ycol_combo_box_2", self.table_combo_box_2.currentText()
+            "tab2_ycol", self.tab2_table.currentText()
         )  # See GeneralNote
         self.populate_combo_box(
-            "filter1_combo_box_2", self.table_combo_box_2.currentText()
+            "tab2_filtercol1", self.tab2_table.currentText()
         )  # See GeneralNote
         self.populate_combo_box(
-            "filter2_combo_box_2", self.table_combo_box_2.currentText()
+            "tab2_filtercol2", self.tab2_table.currentText()
         )  # See GeneralNote
 
     def table3_changed(self):  # This method is called whenever table3 is changed
         # First, update combobox with columns
         self.clearthings(3)
-        # self.ms.settingsdict['custplot_table2'] = self.table_combo_box_3.currentText()
+        # self.ms.settingsdict['custplot_table2'] = self.tab3_table.currentText()
         self.populate_combo_box(
-            "xcol_combo_box_3", self.table_combo_box_3.currentText()
+            "tab3_xcol", self.tab3_table.currentText()
         )  # GeneralNote: For some reason it is not possible to send currentText with the SIGNAL-trigger
         self.populate_combo_box(
-            "ycol_combo_box_3", self.table_combo_box_3.currentText()
+            "tab3_ycol", self.tab3_table.currentText()
         )  # See GeneralNote
         self.populate_combo_box(
-            "filter1_combo_box_3", self.table_combo_box_3.currentText()
+            "tab3_filtercol1", self.tab3_table.currentText()
         )  # See GeneralNote
         self.populate_combo_box(
-            "filter2_combo_box_3", self.table_combo_box_3.currentText()
+            "tab3_filtercol2", self.tab3_table.currentText()
         )  # See GeneralNote
 
     def populate_combo_box(self, comboboxname="", table=None):
@@ -1240,22 +1240,22 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                 dependent_filtering_box,
             )
 
-    def filter1_1_changed(self):
+    def tab1_filter1_changed(self):
         self.filter_changed(1, 1)
 
-    def filter2_1_changed(self):
+    def tab1_filter2_changed(self):
         self.filter_changed(2, 1)
 
-    def filter1_2_changed(self):
+    def tab2_filter1_changed(self):
         self.filter_changed(1, 2)
 
-    def filter2_2_changed(self):
+    def tab2_filter2_changed(self):
         self.filter_changed(2, 2)
 
-    def filter1_3_changed(self):
+    def tab3_filter1_changed(self):
         self.filter_changed(1, 3)
 
-    def filter2_3_changed(self):
+    def tab3_filter2_changed(self):
         self.filter_changed(2, 3)
 
     def PopulateFilterList(
@@ -1437,37 +1437,37 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
 
     def storesettings(self):
         self.ms.settingsdict["custplot_table1"] = str(
-            self.table_combo_box_1.currentText()
+            self.tab1_table.currentText()
         )
-        self.ms.settingsdict["custplot_xcol1"] = str(self.xcol_combo_box_1.currentText())
-        self.ms.settingsdict["custplot_ycol1"] = str(self.ycol_combo_box_1.currentText())
+        self.ms.settingsdict["custplot_xcol1"] = str(self.tab1_xcol.currentText())
+        self.ms.settingsdict["custplot_ycol1"] = str(self.tab1_ycol.currentText())
         self.ms.settingsdict["custplot_table2"] = str(
-            self.table_combo_box_2.currentText()
+            self.tab2_table.currentText()
         )
-        self.ms.settingsdict["custplot_xcol2"] = str(self.xcol_combo_box_2.currentText())
-        self.ms.settingsdict["custplot_ycol2"] = str(self.ycol_combo_box_2.currentText())
+        self.ms.settingsdict["custplot_xcol2"] = str(self.tab2_xcol.currentText())
+        self.ms.settingsdict["custplot_ycol2"] = str(self.tab2_ycol.currentText())
         self.ms.settingsdict["custplot_table3"] = str(
-            self.table_combo_box_3.currentText()
+            self.tab3_table.currentText()
         )
-        self.ms.settingsdict["custplot_xcol3"] = str(self.xcol_combo_box_3.currentText())
-        self.ms.settingsdict["custplot_ycol3"] = str(self.ycol_combo_box_3.currentText())
+        self.ms.settingsdict["custplot_xcol3"] = str(self.tab3_xcol.currentText())
+        self.ms.settingsdict["custplot_ycol3"] = str(self.tab3_ycol.currentText())
         self.ms.settingsdict["custplot_filter1_1"] = str(
-            self.filter1_combo_box_1.currentText()
+            self.tab1_filtercol1.currentText()
         )
         self.ms.settingsdict["custplot_filter2_1"] = str(
-            self.filter2_combo_box_1.currentText()
+            self.tab1_filtercol2.currentText()
         )
         self.ms.settingsdict["custplot_filter1_2"] = str(
-            self.filter1_combo_box_2.currentText()
+            self.tab2_filtercol1.currentText()
         )
         self.ms.settingsdict["custplot_filter2_2"] = str(
-            self.filter2_combo_box_2.currentText()
+            self.tab2_filtercol2.currentText()
         )
         self.ms.settingsdict["custplot_filter1_3"] = str(
-            self.filter1_combo_box_3.currentText()
+            self.tab3_filtercol1.currentText()
         )
         self.ms.settingsdict["custplot_filter2_3"] = str(
-            self.filter2_combo_box_3.currentText()
+            self.tab3_filtercol2.currentText()
         )
         self.ms.settingsdict["custplot_filter1_1_selection"] = []
         self.ms.settingsdict["custplot_filter2_1_selection"] = []
@@ -1475,38 +1475,38 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         self.ms.settingsdict["custplot_filter2_2_selection"] = []
         self.ms.settingsdict["custplot_filter1_3_selection"] = []
         self.ms.settingsdict["custplot_filter2_3_selection"] = []
-        for item in self.filter1_q_list_widget_1.selectedItems():
+        for item in self.tab1_filter1.selectedItems():
             self.ms.settingsdict["custplot_filter1_1_selection"].append(
                 str(item.text())
             )
-        for item in self.filter2_q_list_widget_1.selectedItems():
+        for item in self.tab1_filter2.selectedItems():
             self.ms.settingsdict["custplot_filter2_1_selection"].append(
                 str(item.text())
             )
-        for item in self.filter1_q_list_widget_2.selectedItems():
+        for item in self.tab2_filter1.selectedItems():
             self.ms.settingsdict["custplot_filter1_2_selection"].append(
                 str(item.text())
             )
-        for item in self.filter2_q_list_widget_2.selectedItems():
+        for item in self.tab2_filter2.selectedItems():
             self.ms.settingsdict["custplot_filter2_2_selection"].append(
                 str(item.text())
             )
-        for item in self.filter1_q_list_widget_3.selectedItems():
+        for item in self.tab3_filter1.selectedItems():
             self.ms.settingsdict["custplot_filter1_3_selection"].append(
                 str(item.text())
             )
-        for item in self.filter2_q_list_widget_3.selectedItems():
+        for item in self.tab3_filter2.selectedItems():
             self.ms.settingsdict["custplot_filter2_3_selection"].append(
                 str(item.text())
             )
         self.ms.settingsdict["custplot_plottype1"] = str(
-            self.plot_type_combo_box_1.currentText()
+            self.tab1_plot_type.currentText()
         )
         self.ms.settingsdict["custplot_plottype2"] = str(
-            self.plot_type_combo_box_2.currentText()
+            self.tab2_plot_type.currentText()
         )
         self.ms.settingsdict["custplot_plottype3"] = str(
-            self.plot_type_combo_box_3.currentText()
+            self.tab3_plot_type.currentText()
         )
         self.ms.settingsdict["custplot_maxtstep"] = self.spnmaxtstep.value()
         self.ms.settingsdict["custplot_legend"] = self.legend_check_box.isChecked()

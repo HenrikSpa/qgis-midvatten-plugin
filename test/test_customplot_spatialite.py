@@ -220,10 +220,10 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         gui_utils.set_combobox(customplot.Filter1_ComboBox_2, "obsid")
         customplot.Filter1_QListWidget_2.item(1).setSelected(True)
 
-        customplot.pandas_calc_1.rule.setText("1d")
-        customplot.pandas_calc_1.how.setText("mean")
-        customplot.pandas_calc_2.rule.setText("1d")
-        customplot.pandas_calc_2.how.setText("mean")
+        customplot.tab1_pandas_calc.rule.setText("1d")
+        customplot.tab1_pandas_calc.how.setText("mean")
+        customplot.tab2_pandas_calc.rule.setText("1d")
+        customplot.tab2_pandas_calc.how.setText("mean")
 
         customplot.start_csv_dialog()
         # tempinput(data, charset='UTF-8', suffix='.csv')

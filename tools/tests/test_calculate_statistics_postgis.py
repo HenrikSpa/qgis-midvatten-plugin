@@ -23,15 +23,15 @@ from __future__ import absolute_import
 
 from collections import OrderedDict
 
-
 import mock
 from mock import MagicMock
 from mock import call
 from nose.plugins.attrib import attr
 
-from midvatten.tools.utils import db_utils
-from midvatten.tools.tests import utils_for_tests
 from midvatten.tools import calculate_statistics
+from midvatten.tools.tests import utils_for_tests
+from midvatten.tools.utils import db_utils
+
 
 @attr(status='on')
 class TestCalculateStatistics(utils_for_tests.MidvattenTestPostgisDbSv):

@@ -28,9 +28,6 @@ import zipfile
 from builtins import object
 from builtins import str
 
-import qgis.PyQt
-from PyQt5.QtCore import QCoreApplication
-
 try:
     import zlib
     compression = zipfile.ZIP_DEFLATED
@@ -44,7 +41,6 @@ import tempfile
 from collections import OrderedDict
 import sqlite3 as sqlite
 
-import  qgis.core
 from qgis.PyQt.QtCore import QCoreApplication, QSettings
 
 from qgis.utils import spatialite_connect
@@ -182,9 +178,9 @@ class DbConnectionManager(object):
             connection_name = self.connection_settings['connection'].split('/')[0]
             self.postgis_settings = get_postgis_connections()[connection_name]
             if self.postgis_settings.get('service', '').strip():
-                self.uri.setConnection(aService=self.postgis_settings['service'], aDatabase=self.postgis_settings['database'], aUsername=self.postgis_settings['username'], aPassword=self.postgis_settings['password'])
+                self.uri.setConnection(aService=self.postgis_settings['service'], aDatabase=self.postgis_settings['database'], aUsername=self.postgis_settings.get('username'), aPassword=self.postgis_settings.get('password'))
             else:
-                self.uri.setConnection(self.postgis_settings['host'], self.postgis_settings['port'], self.postgis_settings['database'], self.postgis_settings['username'], self.postgis_settings['password'])
+                self.uri.setConnection(self.postgis_settings['host'], self.postgis_settings['port'], self.postgis_settings['database'], self.postgis_settings.get('username'), self.postgis_settings.get('password'))
             try:
                 self.connector = PostGisDBConnectorMod(self.uri)
             except Exception as e:

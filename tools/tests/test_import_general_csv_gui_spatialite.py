@@ -31,17 +31,17 @@ from collections import OrderedDict
 
 import mock
 import qgis.PyQt
+from PyQt5.QtCore import QVariant
 from mock import MagicMock
 from nose.plugins.attrib import attr
-from qgis.core import QgsProject, QgsVectorLayer, QgsField, QgsFeature, QgsFields, QgsGeometry
-from PyQt5.QtCore import QVariant
+from qgis.core import QgsProject, QgsVectorLayer, QgsField, QgsGeometry
 
-from midvatten.tools.utils import common_utils
-from midvatten.tools.utils import db_utils
+from midvatten.tools.import_general_csv_gui import GeneralCsvImportGui
 from midvatten.tools.tests import utils_for_tests
 from midvatten.tools.tests.mocks_for_tests import MockUsingReturnValue
+from midvatten.tools.utils import common_utils
+from midvatten.tools.utils import db_utils
 from midvatten.tools.utils.date_utils import datestring_to_date
-from midvatten.tools.import_general_csv_gui import GeneralCsvImportGui
 
 
 @attr(status='on')
@@ -468,6 +468,7 @@ class TestGeneralCsvGui(utils_for_tests.MidvattenTestSpatialiteDbSv):
                     test_string = utils_for_tests.create_test_string(
                         db_utils.sql_load_fr_db('''SELECT count(*) FROM w_levels'''))
                     reference_string = r'''(True, [(10000)])'''
+                    print(f"{import_time=}")
                     assert import_time < 10
                     assert test_string == reference_string
 

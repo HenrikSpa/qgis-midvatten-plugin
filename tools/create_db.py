@@ -32,9 +32,11 @@ from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import Qgis
 
 from midvatten.tools.utils import common_utils, db_utils
-from midvatten.tools.utils.common_utils import returnunicode as ru, get_full_filename, format_timezone_string
-from midvatten.tools.utils.db_utils import execute_sqlfile
+from midvatten.tools.utils.common_utils import returnunicode as ru, get_full_filename, \
+    format_timezone_string
 from midvatten.tools.utils.date_utils import get_pytz_timezones
+from midvatten.tools.utils.db_utils import execute_sqlfile
+
 
 class NewDb(object):
     def __init__(self):
@@ -286,7 +288,17 @@ class NewDb(object):
 
         execute_sqlfile(get_full_filename('insert_obs_points_triggers_postgis.sql'), dbconnection)
 
-        execute_sqlfile(get_full_filename('insert_functions_postgis.sql'), dbconnection)
+        pg_version = dbconnection.conn.server_version / 10000
+        if pg_version > 17:
+            try:
+                execute_sqlfile(get_full_filename('insert_functions_postgis_pg17.sql'), dbconnection)
+            except:
+                execute_sqlfile(get_full_filename('insert_functions_postgis.sql'), dbconnection)
+        else:
+            try:
+                execute_sqlfile(get_full_filename('insert_functions_postgis.sql'), dbconnection)
+            except:
+                execute_sqlfile(get_full_filename('insert_functions_postgis_pg17.sql'), dbconnection)
 
         self.add_metadata_to_about_db(dbconnection, created_tables_sqls,
                                       w_levels_logger_timezone=w_levels_logger_timezone,

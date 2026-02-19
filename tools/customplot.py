@@ -51,7 +51,8 @@ import matplotlib.ticker as tick
 from qgis.PyQt.QtWidgets import QApplication
 
 from midvatten.tools.utils import common_utils, midvatten_utils, db_utils
-from midvatten.tools.utils.common_utils import returnunicode as ru, LEGEND_NCOL_KEY
+from midvatten.tools.utils.common_utils import returnunicode as ru, LEGEND_NCOL_KEY, \
+    MessagebarAndLog
 from midvatten.definitions import midvatten_defs as defs
 from midvatten.tools.utils.gui_utils import set_groupbox_children_visibility
 
@@ -66,7 +67,7 @@ common_utils.MessagebarAndLog.info(log_msg="Python pandas: " + str(pandas_on))
 customplot_ui_class =  uic.loadUiType(os.path.join(os.path.dirname(__file__),'..', 'ui', 'customplotdialog.ui'))[0]
 
 
-class plotsqlitewindow(QtWidgets.QMainWindow, customplot_ui_class):
+class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
     def __init__(self, parent, msettings):#, parent as second arg?
         self.ms = msettings
         self.ms.loadSettings()
@@ -129,6 +130,8 @@ class plotsqlitewindow(QtWidgets.QMainWindow, customplot_ui_class):
         self.filtersettings3.clicked.connect( partial(set_groupbox_children_visibility, self.filtersettings3))
 
         self.PlotChart_QPushButton.clicked.connect(lambda x: self.drawplot_with_styles())
+        if pandas_on:
+            self.save_as_csv_button.clicked.connect(lambda: self.start_csv_dialog())
         self.Redraw_pushButton.clicked.connect(lambda x: self.redraw())
 
         self.custplot_last_used_style_settingskey = 'custplot_last_used_template'
@@ -178,7 +181,6 @@ class plotsqlitewindow(QtWidgets.QMainWindow, customplot_ui_class):
         self.tabwidget_resize(self.plot_tabwidget)
         self.show()
 
-
     def init_figure(self):
         try:
             self.title = self.axes.get_title()
@@ -225,39 +227,40 @@ class plotsqlitewindow(QtWidgets.QMainWindow, customplot_ui_class):
         self.styles.load(self.drawPlot_all, (self, 'mpltoolbar'))
 
     @common_utils.general_exception_handler
-    def drawPlot_all(self):
+    def drawPlot_all(self, only_get_data=False):
+        self.data = []
         common_utils.start_waiting_cursor()  # show the user this may take a long time...
+        if not only_get_data:
+            continous_color = True
+            if continous_color:
+                self.used_style_color_combo = set()
+                color_cycler = mpl.rcParams['axes.prop_cycle']
+                color_cycle_len = len(color_cycler)
+                color_cycle = color_cycler()
+                self.line_cycler = common_utils.ContinuousColorCycle(color_cycle, color_cycle_len, mpl.rcParams['axes.midv_line_cycle'], self.used_style_color_combo)
+                self.marker_cycler = common_utils.ContinuousColorCycle(color_cycle, color_cycle_len, mpl.rcParams['axes.midv_marker_cycle'], self.used_style_color_combo)
+                self.line_and_marker_cycler = common_utils.ContinuousColorCycle(color_cycle, color_cycle_len,
+                                                                                            mpl.rcParams['axes.midv_marker_cycle'] * mpl.rcParams['axes.midv_line_cycle'],
+                                                                                            self.used_style_color_combo)
+            else:
+                ccycler = mpl.rcParams['axes.prop_cycle']
+                self.line_cycler = (mpl.rcParams['axes.midv_line_cycle'] * ccycler)()
+                self.marker_cycler = (mpl.rcParams['axes.midv_marker_cycle'] * ccycler)()
+                self.line_and_marker_cycler = (
+                mpl.rcParams['axes.midv_marker_cycle'] * mpl.rcParams['axes.midv_line_cycle'] * ccycler)()
 
-        continous_color = True
-        if continous_color:
-            self.used_style_color_combo = set()
-            color_cycler = mpl.rcParams['axes.prop_cycle']
-            color_cycle_len = len(color_cycler)
-            color_cycle = color_cycler()
-            self.line_cycler = common_utils.ContinuousColorCycle(color_cycle, color_cycle_len, mpl.rcParams['axes.midv_line_cycle'], self.used_style_color_combo)
-            self.marker_cycler = common_utils.ContinuousColorCycle(color_cycle, color_cycle_len, mpl.rcParams['axes.midv_marker_cycle'], self.used_style_color_combo)
-            self.line_and_marker_cycler = common_utils.ContinuousColorCycle(color_cycle, color_cycle_len,
-                                                                                        mpl.rcParams['axes.midv_marker_cycle'] * mpl.rcParams['axes.midv_line_cycle'],
-                                                                                        self.used_style_color_combo)
-        else:
-            ccycler = mpl.rcParams['axes.prop_cycle']
-            self.line_cycler = (mpl.rcParams['axes.midv_line_cycle'] * ccycler)()
-            self.marker_cycler = (mpl.rcParams['axes.midv_marker_cycle'] * ccycler)()
-            self.line_and_marker_cycler = (
-            mpl.rcParams['axes.midv_marker_cycle'] * mpl.rcParams['axes.midv_line_cycle'] * ccycler)()
+            self.init_figure()
 
-        self.init_figure()
+            self.used_format = None
 
-        self.used_format = None
+            if self.title:
+                self.axes.set_title(self.title)
+            if self.xaxis_label:
+                self.axes.set_xlabel(self.xaxis_label)
+            if self.yaxis_label:
+                self.axes.set_ylabel(self.yaxis_label)
 
-        if self.title:
-            self.axes.set_title(self.title)
-        if self.xaxis_label:
-            self.axes.set_xlabel(self.xaxis_label)
-        if self.yaxis_label:
-            self.axes.set_ylabel(self.yaxis_label)
-
-        self.axes.legend_ = None
+            self.axes.legend_ = None
         My_format = [('date_time', datetime.datetime), ('values', float)] #Define (with help from function datetime) a good format for numpy array
 
         dbconnection = db_utils.DbConnectionManager()
@@ -266,28 +269,35 @@ class plotsqlitewindow(QtWidgets.QMainWindow, customplot_ui_class):
         nop=0# nop=number of plots
         self.p=[]
         self.plabels=[]
-                
-        nop, i = self.drawPlot(dbconnection, nop, i, My_format, self.table_ComboBox_1, self.xcol_ComboBox_1, self.ycol_ComboBox_1, self.Filter1_ComboBox_1, self.Filter1_QListWidget_1, self.Filter2_ComboBox_1, self.Filter2_QListWidget_1, self.PlotType_comboBox_1, self.pandas_calc_1, self.checkBox_remove_mean1, self.LineEditFactor1, self.LineEditOffset1)
-        nop, i = self.drawPlot(dbconnection, nop, i, My_format, self.table_ComboBox_2, self.xcol_ComboBox_2, self.ycol_ComboBox_2, self.Filter1_ComboBox_2, self.Filter1_QListWidget_2, self.Filter2_ComboBox_2, self.Filter2_QListWidget_2, self.PlotType_comboBox_2, self.pandas_calc_2, self.checkBox_remove_mean2, self.LineEditFactor2, self.LineEditOffset2)
-        nop, i = self.drawPlot(dbconnection, nop, i, My_format, self.table_ComboBox_3, self.xcol_ComboBox_3, self.ycol_ComboBox_3, self.Filter1_ComboBox_3, self.Filter1_QListWidget_3, self.Filter2_ComboBox_3, self.Filter2_QListWidget_3, self.PlotType_comboBox_3, self.pandas_calc_3, self.checkBox_remove_mean3, self.LineEditFactor3, self.LineEditOffset3)
-        if not self.p:
-            common_utils.MessagebarAndLog.warning(bar_msg=ru(QCoreApplication.translate('CustomPlot', 'Plot not updated.')))
-            return None
-        self.xaxis_formatters = (self.axes.xaxis.get_major_formatter(), self.axes.xaxis.get_major_locator())
+        nop, i = self.drawPlot(dbconnection, nop, i, My_format, self.table_ComboBox_1, self.xcol_ComboBox_1, self.ycol_ComboBox_1, self.Filter1_ComboBox_1, self.Filter1_QListWidget_1, self.Filter2_ComboBox_1, self.Filter2_QListWidget_1, self.PlotType_comboBox_1, self.pandas_calc_1, self.checkBox_remove_mean1, self.LineEditFactor1, self.LineEditOffset1, only_get_data=only_get_data)
+        nop, i = self.drawPlot(dbconnection, nop, i, My_format, self.table_ComboBox_2, self.xcol_ComboBox_2, self.ycol_ComboBox_2, self.Filter1_ComboBox_2, self.Filter1_QListWidget_2, self.Filter2_ComboBox_2, self.Filter2_QListWidget_2, self.PlotType_comboBox_2, self.pandas_calc_2, self.checkBox_remove_mean2, self.LineEditFactor2, self.LineEditOffset2, only_get_data=only_get_data)
+        nop, i = self.drawPlot(dbconnection, nop, i, My_format, self.table_ComboBox_3, self.xcol_ComboBox_3, self.ycol_ComboBox_3, self.Filter1_ComboBox_3, self.Filter1_QListWidget_3, self.Filter2_ComboBox_3, self.Filter2_QListWidget_3, self.PlotType_comboBox_3, self.pandas_calc_3, self.checkBox_remove_mean3, self.LineEditFactor3, self.LineEditOffset3, only_get_data=only_get_data)
 
-        try:
-            self.xaxis_formatters[1].__dict__['intervald'][3] = [1, 2, 4, 8, 16]  # Fix to not have the date ticks overlap at month end/start
-        except Exception as e:
-            common_utils.MessagebarAndLog.warning(log_msg=ru(
-                QCoreApplication.translate('Customplot', 'Setting intervald failed! msg:\n%s ')) % str(e))
+        if only_get_data:
+            data = self.data
+            self.data = None
+            common_utils.stop_waiting_cursor()
+            return data
+        else:
+            if not self.p:
+                common_utils.MessagebarAndLog.warning(bar_msg=ru(QCoreApplication.translate('CustomPlot', 'Plot not updated.')))
+                return None
+            self.xaxis_formatters = (self.axes.xaxis.get_major_formatter(), self.axes.xaxis.get_major_locator())
 
-        self.drawn = True
+            try:
+                self.xaxis_formatters[1].__dict__['intervald'][3] = [1, 2, 4, 8, 16]  # Fix to not have the date ticks overlap at month end/start
+            except Exception as e:
+                common_utils.MessagebarAndLog.warning(log_msg=ru(
+                    QCoreApplication.translate('Customplot', 'Setting intervald failed! msg:\n%s ')) % str(e))
 
-        self.refreshPlot()
-        common_utils.stop_waiting_cursor()  # now this long process is done and the cursor is back as normal
+            self.drawn = True
 
-    def drawPlot(self, dbconnection, nop, i, My_format, table_ComboBox, xcol_ComboBox, ycol_ComboBox, Filter1_ComboBox, Filter1_QListWidget, Filter2_ComboBox, Filter2_QListWidget, PlotType_comboBox, pandas_calc, checkBox_remove_mean, LineEditFactor, LineEditOffset):
-                
+            self.refreshPlot()
+            common_utils.stop_waiting_cursor()
+
+    def drawPlot(self, dbconnection, nop, i, My_format, table_ComboBox,
+                 xcol_ComboBox, ycol_ComboBox, Filter1_ComboBox, Filter1_QListWidget,
+                 Filter2_ComboBox, Filter2_QListWidget, PlotType_comboBox, pandas_calc, checkBox_remove_mean, LineEditFactor, LineEditOffset, only_get_data):
         if not (table_ComboBox.currentText() == '' or table_ComboBox.currentText()==' ') and not (xcol_ComboBox.currentText()== '' or xcol_ComboBox.currentText()==' ') and not (ycol_ComboBox.currentText()== '' or ycol_ComboBox.currentText()==' '): #if anything is to be plotted from tab 1
             self.ms.settingsdict['custplot_maxtstep'] = self.spnmaxtstep.value()   # if user selected a time step bigger than zero than thre may be discontinuous plots
             plottable1='y'
@@ -326,7 +336,7 @@ class plotsqlitewindow(QtWidgets.QMainWindow, customplot_ui_class):
                         i += 1
                         continue
                     self.plabels[i] = label
-                    self.createsingleplotobject(recs, i, My_format, PlotType_comboBox.currentText(), factor, offset, remove_mean, pandas_calc)
+                    self.createsingleplotobject(recs, i, My_format, PlotType_comboBox.currentText(), factor, offset, remove_mean, pandas_calc, only_get_data=only_get_data)
                     i += 1
                 #Both filters in use
                 elif all((filter1.strip(), filter1list, filter2.strip(), filter2list)):
@@ -359,13 +369,13 @@ class plotsqlitewindow(QtWidgets.QMainWindow, customplot_ui_class):
                                     i += 1
                                     continue
                                 self.plabels[i] = label
-                                self.createsingleplotobject(recs, i, My_format, PlotType_comboBox.currentText(), factor, offset, remove_mean, pandas_calc)
+                                self.createsingleplotobject(recs, i, My_format, PlotType_comboBox.currentText(), factor, offset, remove_mean, pandas_calc, only_get_data=only_get_data)
                                 i += 1
-
-
         return nop, i
 
-    def createsingleplotobject(self,recs,i,My_format,plottype='line', factor=1.0, offset=0.0, remove_mean=False, pandas_calc=None):
+    def createsingleplotobject(self,recs,i,My_format,plottype='line', factor=1.0,
+                               offset=0.0, remove_mean=False, pandas_calc=None,
+                               only_get_data=False):
         #Transform data to a numpy.recarray
         try:
             table = np.array(recs, dtype=My_format)  #NDARRAY
@@ -457,6 +467,9 @@ class plotsqlitewindow(QtWidgets.QMainWindow, customplot_ui_class):
         # Matplotlib rcParams often uses lines.markeredgewidth: 0.0 which makes the marker invisible.
         markeredgewidth = 1.0 if not mpl.rcParams['lines.markeredgewidth'] else mpl.rcParams['lines.markeredgewidth']
 
+        if only_get_data:
+            self.data.append((table2, self.plabels[i]))
+            return
         if plottype == "step-pre":
             self.p[i], = plotfunc(numtime, table2.values, '', picker=2, drawstyle='steps-pre', marker='None', label=self.plabels[i], **next(self.line_cycler))# 'steps-pre' best for precipitation and flowmeters, optional types are 'steps', 'steps-mid', 'steps-post'
         elif plottype == "step-post":
@@ -861,10 +874,10 @@ class plotsqlitewindow(QtWidgets.QMainWindow, customplot_ui_class):
         tab.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
         tab.adjustSize()
 
-
-
-
-
+    @common_utils.general_exception_handler
+    def start_csv_dialog(self):
+        data = self.drawPlot_all(only_get_data=True)
+        self.save_file_dialog = SaveToCsvDialog(self, data)
 
 
 class PandasCalculations(object):
@@ -992,12 +1005,97 @@ class PandasCalculations(object):
 
         return df
 
+
 def horizontal_line():
     line = qgis.PyQt.QtWidgets.QFrame()
     line.setGeometry(qgis.PyQt.QtCore.QRect(320, 150, 118, 3))
     line.setFrameShape(qgis.PyQt.QtWidgets.QFrame.HLine)
     line.setFrameShadow(qgis.PyQt.QtWidgets.QFrame.Sunken)
     return line
+
+
+class SaveToCsvDialog(QtWidgets.QDialog):
+    def __init__(self, parent, data):
+        super().__init__(parent)
+        self.setAttribute(qgis.PyQt.QtCore.Qt.WA_DeleteOnClose)
+        self.setWindowTitle(QCoreApplication.translate('SaveToCsvDialog',
+                                                                "Save as csv"))
+
+        self.setLayout(QtWidgets.QVBoxLayout())
+        row = QtWidgets.QWidget()
+        row.setLayout(qgis.PyQt.QtWidgets.QHBoxLayout())
+        row.layout().setContentsMargins(0, 0, 0, 0)
+        self.layout().addWidget(row)
+
+        row.layout().addWidget(QtWidgets.QLabel(QCoreApplication.translate('SaveToCsvDialog',
+                                                                "Filename")))
+        self.filename = qgis.gui.QgsFileWidget()
+        self.filename.setStorageMode(qgis.gui.QgsFileWidget.SaveFile)
+        self.filename.setDialogTitle(QCoreApplication.translate('SaveToCsvDialog',
+                                                                "Filename"))
+        row.layout().addWidget(self.filename)
+        self.filename.setFilter('csv (*.csv)')
+
+        self.as_columns = QtWidgets.QRadioButton('Series as columns')
+        self.as_rows = QtWidgets.QRadioButton('Series as rows')
+        self.as_columns.setChecked(True)
+        self.layout().addWidget(self.as_rows)
+        self.layout().addWidget(self.as_columns)
+
+        self.data = data
+
+        self.save_button = QtWidgets.QPushButton('Save')
+        self.layout().addWidget(self.save_button)
+        self.save_button.clicked.connect(self.save_data)
+        self.show()
+
+    @common_utils.general_exception_handler
+    def save_data(self, *args):
+        filename = self.filename.filePath()
+        if not filename:
+            MessagebarAndLog.critical(bar_msg=QCoreApplication.translate('SaveToCsvDialog',
+                                                                "Must give filename"))
+            return
+        common_utils.start_waiting_cursor()
+        if self.as_rows.isChecked():
+            dfs = []
+            for series in self.data:
+                df = pd.DataFrame()
+                df['index'] = self.parse_index(series[0])
+                df['values'] = series[0].values
+                df['label'] = series[1]
+                df = df.sort_values(by=['index'])
+                dfs.append(df)
+            df = pd.concat(dfs, axis=0)
+            df.to_csv(filename, sep=';', encoding='utf-8', index_label='rowid')
+        else:
+            dfs = []
+            for series in self.data:
+                df = pd.DataFrame(series[0].values, index=self.parse_index(series[0]), columns=[series[1]])
+                if not len(df) == len(df.loc[~df.index.duplicated(keep='first')]):
+                    MessagebarAndLog.critical(
+                        bar_msg=QCoreApplication.translate('SaveToCsvDialog',
+                                                           'Unable to export as columns (the x-axis contained duplicates)'))
+                    common_utils.stop_waiting_cursor()
+                    return
+                dfs.append(df)
+            df = pd.concat(dfs, axis=1) #.sort_index()
+            df.index.name = 'index'
+            df = df.reset_index()
+            df.to_csv(filename, sep=';', encoding='utf-8', index_label='rowid')
+        common_utils.stop_waiting_cursor()
+        self.close()
+
+    def parse_index(self, array):
+        if hasattr(array, 'date_time'):
+            try:
+                index = pd.to_datetime(array.date_time,
+                                             format='mixed')
+            except ValueError:
+                index = array.date_time
+        else:
+            index = array.numx
+        return index
 
 
 

@@ -24,7 +24,6 @@ import io
 # Import some general python modules
 import os.path
 import shutil
-import sys
 import traceback
 from builtins import object
 from builtins import str
@@ -40,10 +39,11 @@ from qgis.core import QgsApplication, QgsWkbTypes, QgsVectorLayer
 import midvatten.midvsettingsdialog as midvsettingsdialog
 from midvatten.definitions import midvatten_defs
 from midvatten.tools.calculate_statistics import CalculateStatisticsGui
-from midvatten.tools.column_values_from_selected_features import ValuesFromSelectedFeaturesGui
+from midvatten.tools.column_values_from_selected_features import \
+    ValuesFromSelectedFeaturesGui
 from midvatten.tools.create_db import NewDb
 from midvatten.tools.custom_drillreport import DrillreportUi
-from midvatten.tools.customplot import plotsqlitewindow
+from midvatten.tools.customplot import CustomPlot
 from midvatten.tools.drillreport import Drillreport
 from midvatten.tools.export_data import ExportData
 from midvatten.tools.export_fieldlogger import ExportToFieldLogger
@@ -918,7 +918,7 @@ class Midvatten(object):
         try:
             self.customplot.activateWindow()
         except:
-            self.customplot = plotsqlitewindow(self.iface.mainWindow(), self.ms)#self.iface as arg?
+            self.customplot = CustomPlot(self.iface.mainWindow(), self.ms)#self.iface as arg?
 
     @common_utils.general_exception_handler
     def prepare_layers_for_qgis2threejs(self):

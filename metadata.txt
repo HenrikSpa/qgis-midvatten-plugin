@@ -21,10 +21,12 @@ tracker=https://github.com/henrikspa/qgis-midvatten-plugin/issues?state=open
 icon=icons/MidvSettings.png
 
 changelog=
-        Version 1.8.3:
-        - Fixes missing schema parameter in get_table_info.
         Version 1.8.2:
+        - CustomPlot: Added button "Save as csv" to save the processed data instead of plotting it.
         - Fixed spelling for layer w_qual_field.
+        - Fixes missing schema parameter in get_table_info.
+        - Fixes support for PostgreSQL 17.
+
         Version 1.8.1
         - Database connection to PostgreSQL/PostGIS now supports "service" (pg_service.conf).
         - db_utils: Fixes to allow parts of the utils to be used with other database schemas.

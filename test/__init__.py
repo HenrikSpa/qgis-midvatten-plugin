@@ -13,6 +13,7 @@ _qgis_extra_paths.extend(
     [
         "/usr/share/qgis/python",
         "/usr/lib/qgis/python",
+        "/home/hsai1/dev/midv/qgis-midvatten-plugin"
     ]
 )
 
@@ -21,10 +22,13 @@ for _p in _qgis_extra_paths:
         # Prepend so that the real QGIS modules win over any stubs.
         sys.path.insert(0, _p)
 
-from qgis.PyQt import QtWidgets
 from qgis.core import QgsApplication
 
-# Assurance that this only happens once for each test run
-app = QtWidgets.QApplication([])
-qgs = QgsApplication([], False)
-qgs.initQgis()
+# Initialise a single global QGIS application instance for tests.
+# We deliberately avoid creating a separate QtWidgets.QApplication here,
+# as that can conflict with other Qt event loops under pytest.
+if QgsApplication.instance() is None:
+    qgs = QgsApplication([], False)
+    qgs.initQgis()
+else:
+    qgs = QgsApplication.instance()

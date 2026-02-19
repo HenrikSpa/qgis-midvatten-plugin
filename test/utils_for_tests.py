@@ -25,6 +25,10 @@ import io
 import os
 
 
+# Use a non-interactive matplotlib backend to avoid Qt event loop issues during tests
+import matplotlib
+
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import mock
 import qgis

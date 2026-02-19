@@ -46,12 +46,10 @@ from collections import OrderedDict
 import sqlite3 as sqlite
 
 import qgis.core
-from qgis.PyQt.QtCore import QCoreApplication, QSettings
+from qgis.PyQt.QtCore import QCoreApplication, QSettings, QFile
 
 from qgis.utils import spatialite_connect
 from qgis.core import QgsProject, QgsDataSourceUri, QgsCredentials
-import db_manager.db_plugins.connector
-import db_manager.db_plugins.spatialite.connector as spatialite_connector
 
 from midvatten.tools.utils.common_utils import (
     MessagebarAndLog,
@@ -64,7 +62,7 @@ from midvatten.tools.utils.common_utils import (
 )
 
 
-class PostGisDBConnectorMod(db_manager.db_plugins.postgis.connector.PostGisDBConnector):
+class PostGisDBConnectorMod:
     """
     Based on db_manager.db_plugins.postgis.connector.PostGisDBConnector
     """
@@ -110,7 +108,7 @@ class PostGisDBConnectorMod(db_manager.db_plugins.postgis.connector.PostGisDBCon
                 try:
                     self.connection = psycopg2.connect(newExpandedConnInfo)
                     QgsCredentials.instance().put(conninfo, username, password)
-                except self.connection_error_types() as e:
+                except psycopg2.Error as e:
                     if i == 2:
                         raise ConnectionError(e)
                     err = str(e)
@@ -125,6 +123,37 @@ class PostGisDBConnectorMod(db_manager.db_plugins.postgis.connector.PostGisDBCon
             psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT
         )
 
+    def _clearSslTempCertsIfAny(self, connectionInfo):
+        # Direct copy of db_manager.db_plugins.postgis.connector.PostGisDBConnector
+        expandedUri = QgsDataSourceUri(connectionInfo)
+
+        def removeCert(certFile):
+            certFile = certFile.replace("'", "")
+            file = QFile(certFile)
+            # set permission to allow removing on Win.
+            # On linux and Mac if file is set with QFile::>ReadUser
+            # does not create problem removing certs
+            if not file.setPermissions(QFile.Permission.WriteOwner):
+                raise Exception(
+                    f"Cannot change permissions on {file.fileName()}: error code: {file.error()}"
+                )
+            if not file.remove():
+                raise Exception(
+                    f"Cannot remove {file.fileName()}: error code: {file.error()}"
+                )
+
+        sslCertFile = expandedUri.param("sslcert")
+        if sslCertFile:
+            removeCert(sslCertFile)
+
+        sslKeyFile = expandedUri.param("sslkey")
+        if sslKeyFile:
+            removeCert(sslKeyFile)
+
+        sslCAFile = expandedUri.param("sslrootcert")
+        if sslCAFile:
+            removeCert(sslCAFile)
+
 
 class DbConnectionManager(object):
     def __init__(self, db_settings: Optional[str] = None):
@@ -136,7 +165,6 @@ class DbConnectionManager(object):
         """
         self.conn = None
         self.cursor = None
-        self.connector = None
 
         # Only supports schema public
         self.schema = "public"
@@ -214,9 +242,8 @@ class DbConnectionManager(object):
             self.uri.setDatabase(self.dbpath)
 
             try:
-                self.connector = spatialite_connector.SpatiaLiteDBConnector(self.uri)
+                self.connection = connect_with_spatialite_connect(self.dbpath)
             except Exception as e:
-
                 MessagebarAndLog.critical(
                     bar_msg=ru(
                         QCoreApplication.translate(
@@ -252,7 +279,7 @@ class DbConnectionManager(object):
                     self.postgis_settings.get("password"),
                 )
             try:
-                self.connector = PostGisDBConnectorMod(self.uri)
+                connector = PostGisDBConnectorMod(self.uri)
             except Exception as e:
                 if "no password supplied" in str(e):
                     MessagebarAndLog.warning(
@@ -266,9 +293,7 @@ class DbConnectionManager(object):
                     raise UserInterruptError()
                 else:
                     raise
-
-        if self.connector is not None:
-            self.conn = self.connector.connection
+            self.conn = connector.connection
             self.cursor = self.conn.cursor()
 
     def connect2db(self):

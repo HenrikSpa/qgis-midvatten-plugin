@@ -142,7 +142,6 @@ class NewDb(object):
             # utils.pop_up_info("Impossible to connect to selected DataBase")
             common_utils.stop_waiting_cursor()
             return ""
-        d = dbconnection.connector
         # First, find spatialite version
         versionstext = dbconnection.execute_and_fetchall("select spatialite_version()")[
             0

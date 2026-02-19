@@ -44,7 +44,7 @@ from midvatten.tools.column_values_from_selected_features import (
 )
 from midvatten.tools.create_db import NewDb
 from midvatten.tools.custom_drillreport import DrillreportUi
-from midvatten.tools.customplot import plotsqlitewindow
+from midvatten.tools.customplot import CustomPlot
 from midvatten.tools.drillreport import Drillreport
 from midvatten.tools.export_data import ExportData
 from midvatten.tools.export_fieldlogger import ExportToFieldLogger
@@ -763,7 +763,7 @@ class Midvatten:
                         """This will create a new empty Midvatten DB with predefined design\nand fill the database with data from %s obs_points and obs_lines.\n\nContinue?""",
                     )
                 )
-                % (selected_all),
+                % selected_all,
                 ru(QCoreApplication.translate("Midvatten", "Are you sure?")),
             )
             if sanity.result == 1:
@@ -1313,7 +1313,7 @@ class Midvatten:
                 duration=15,
             )
         if err_flag == 0:
-            dlg = TimeSeriesPlot(qgis.utils.iface.activeLayer(), self.ms.settingsdict)
+            TimeSeriesPlot(qgis.utils.iface.activeLayer(), self.ms.settingsdict)
 
     @common_utils.general_exception_handler
     def plot_stratigraphy(self):
@@ -1524,7 +1524,7 @@ class Midvatten:
                 duration=15,
             )
         if err_flag == 0:
-            dlg = XYPlot(qgis.utils.iface.activeLayer(), self.ms.settingsdict)
+            XYPlot(qgis.utils.iface.activeLayer(), self.ms.settingsdict)
 
     @common_utils.general_exception_handler
     def plot_sqlite(self):
@@ -1536,9 +1536,7 @@ class Midvatten:
         try:
             self.customplot.activateWindow()
         except:
-            self.customplot = plotsqlitewindow(
-                self.iface.mainWindow(), self.ms
-            )  # self.iface as arg?
+            self.customplot = CustomPlot(self.iface.mainWindow(), self.ms)
 
     @common_utils.general_exception_handler
     def prepare_layers_for_qgis2threejs(self):

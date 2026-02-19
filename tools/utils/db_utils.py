@@ -86,7 +86,7 @@ class PostGisDBConnectorMod:
         expandedConnInfo = str(uri.connectionInfo(True))
         try:
             self.connection = psycopg2.connect(expandedConnInfo)
-        except self.connection_error_types() as e:
+        except psycopg2.Error as e:
             # get credentials if cached or asking to the user no more than 3 times
             err = str(e)
             conninfo = uri.connectionInfo(False)
@@ -221,6 +221,7 @@ class DbConnectionManager(object):
         self.connection_settings = list(self.db_settings.values())[0]
 
         self.uri = QgsDataSourceUri()
+        connector = None
 
         if self.dbtype == "spatialite":
             self.dbpath = ru(self.connection_settings["dbpath"])
@@ -241,7 +242,10 @@ class DbConnectionManager(object):
             self.uri.setDatabase(self.dbpath)
 
             try:
-                self.conn = connect_with_spatialite_connect(self.dbpath)
+                self.conn = spatialite_connect(
+                    self.dbpath,
+                    detect_types=sqlite.PARSE_DECLTYPES | sqlite.PARSE_COLNAMES,
+                )
             except Exception as e:
                 MessagebarAndLog.critical(
                     bar_msg=ru(
@@ -278,6 +282,7 @@ class DbConnectionManager(object):
                     self.postgis_settings.get("username"),
                     self.postgis_settings.get("password"),
                 )
+
             try:
                 connector = PostGisDBConnectorMod(self.uri)
             except Exception as e:
@@ -293,6 +298,8 @@ class DbConnectionManager(object):
                     raise UserInterruptError()
                 else:
                     raise
+
+        if connector is not None:
             self.conn = connector.connection
             self.cursor = self.conn.cursor()
 
@@ -491,9 +498,7 @@ class DbConnectionManager(object):
         if self.dbtype == "spatialite":
             self.execute_safe(self.sql_ident("DROP TABLE {t}", t=temptable_name))
         else:
-            self.execute_safe(
-                self.sql_ident("DROP TABLE IF EXISTS {t}", t=temptable_name)
-            )
+            self.execute_safe(self.sql_ident("DROP TABLE IF EXISTS {t}", t=temptable_name))
 
     def dump_table_2_csv(self, table_name=None):
         self.execute_safe(self.sql_ident("SELECT * FROM {t}", t=table_name))
@@ -578,9 +583,7 @@ class DbConnectionManager(object):
                     "DELETE FROM views_geometry_columns WHERE view_name = ?",
                     (view_name,),
                 )
-                self.execute_safe(
-                    self.sql_ident("DROP VIEW IF EXISTS {v}", v=view_name)
-                )
+                self.execute_safe(self.sql_ident("DROP VIEW IF EXISTS {v}", v=view_name))
             else:
                 self.execute_safe(
                     psycopg2.sql.SQL("DROP VIEW IF EXISTS {}").format(
@@ -1263,14 +1266,10 @@ _IDENT_PART_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 def _split_qualified_identifier(name: str) -> List[str]:
     if not isinstance(name, str) or not name.strip():
-        raise UnsafeIdentifierError(
-            f"Identifier must be a non-empty string, got {name!r}"
-        )
+        raise UnsafeIdentifierError(f"Identifier must be a non-empty string, got {name!r}")
     # Disallow quotes and statement separators outright.
     if any(ch in name for ch in ['"', "'", ";", "\\", "\n", "\r", "\t"]):
-        raise UnsafeIdentifierError(
-            f"Identifier contained forbidden characters: {name!r}"
-        )
+        raise UnsafeIdentifierError(f"Identifier contained forbidden characters: {name!r}")
     parts = [p for p in name.split(".") if p]
     if not parts:
         raise UnsafeIdentifierError(f"Identifier had no parts: {name!r}")
@@ -1281,10 +1280,7 @@ def _split_qualified_identifier(name: str) -> List[str]:
 
 
 def ident(
-    dbconnection: DbConnectionManager,
-    name: str,
-    *,
-    allowed: Optional[Iterable[str]] = None,
+    dbconnection: DbConnectionManager, name: str, *, allowed: Optional[Iterable[str]] = None
 ) -> str:
     """Safely quote/compose an SQL identifier.
 
@@ -1638,9 +1634,7 @@ def calculate_median_value(
             dbconnection,
             execute_args=(obsid,),
         )[1]:
-            sql = (
-                f"SELECT median({col_ident}) FROM {table_ident} t1 WHERE obsid = {ph};"
-            )
+            sql = f"SELECT median({col_ident}) FROM {table_ident} t1 WHERE obsid = {ph};"
             ConnectionOK, median_value = sql_load_fr_db(
                 sql, dbconnection, execute_args=(obsid,)
             )

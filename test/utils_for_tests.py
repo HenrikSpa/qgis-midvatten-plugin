@@ -23,6 +23,7 @@
 
 import io
 import os
+import unittest
 
 
 # Use a non-interactive matplotlib backend to avoid Qt event loop issues during tests
@@ -292,12 +293,29 @@ class MidvattenTestPostgisNotCreated(MidvattenTestBase):
             "nosetests"
         ].items():
             qs.setValue("PostgreSQL/connections/{}/{}".format("nosetests", k), v)
-        # Clear the database
+        # Clear the database; skip PostGIS tests when server is not available
         try:
             db_utils.sql_alter_db("DROP SCHEMA public CASCADE;")
             db_utils.sql_alter_db("CREATE SCHEMA public;")
+        except common_utils.UserInterruptError as e:
+            raise unittest.SkipTest("PostGIS not available (no password): %s" % e)
         except Exception as e:
+            if "password" in str(e).lower() or "connect" in str(e).lower() or "could not connect" in str(e).lower():
+                raise unittest.SkipTest("PostGIS not available: %s" % e)
             print("Failure resetting db: " + str(e))
+
+        # Skip if PostGIS extension cannot be created (e.g. insufficient privileges)
+        try:
+            dbconnection = db_utils.DbConnectionManager()
+            dbconnection.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
+            dbconnection.commit()
+            dbconnection.closedb()
+        except common_utils.UserInterruptError:
+            raise
+        except Exception as e:
+            err = str(e).lower()
+            if "privilege" in err or "superuser" in err or "extension" in err or "rättighet" in err or "saknas" in err:
+                raise unittest.SkipTest("PostGIS extension not available: %s" % e)
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def tearDown(self, mock_messagebar):

@@ -1,6 +1,6 @@
 [general]
 name=Midvatten
-qgisMinimumVersion=3.34.6
+qgisMinimumVersion=3.44
 description=A toolset that makes QGIS an interface for editing/viewing hydrogeological observational data (drillings, water levels, seismic data etc) stored in a SQLite or PostgreSQL database.
 about=The plugin is a toolset that makes QGIS an interface for editing/viewing hydrogeological observational data (drillings, water levels, seismic data etc) stored in a SQLite or PostgreSQL database.
 version=1.9.0b8
@@ -8,6 +8,7 @@ author=Henrik Spångmyr, Josef Källgården
 email=midvattenplugin@midvatten.se
 repository=https://github.com/henrikspa/qgis-midvatten-plugin.git
 license=GPLv2
+qgisMaximumVersion=4.99
 
 #optional metadata entries
 experimental=False
@@ -19,6 +20,7 @@ icon=icons/MidvSettings.png
 plugin_dependencies=qpip
 
 hasProcessingProvider=no
+supportsQt6=True
 
 changelog=
         Version 1.9.0b8:

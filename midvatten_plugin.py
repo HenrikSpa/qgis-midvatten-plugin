@@ -591,7 +591,7 @@ class Midvatten:
     def about(self):
         getTranslate("midvatten")
         filename = self.plugin_dir / "metadata.txt"
-        metadata = QSettings(str(filename), QSettings.IniFormat)
+        metadata = QSettings(str(filename), QSettings.Format.IniFormat)
         verno = metadata.value("version")
         author = ", ".join(metadata.value("author"))
         email = metadata.value("email")
@@ -785,7 +785,7 @@ class Midvatten:
                     return None
 
                 filenamepath = os.path.join(os.path.dirname(__file__), "metadata.txt")
-                iniText = QSettings(filenamepath, QSettings.IniFormat)
+                iniText = QSettings(filenamepath, QSettings.Format.IniFormat)
                 verno = str(iniText.value("version"))
 
                 newdbinstance = NewDb()
@@ -1204,7 +1204,7 @@ class Midvatten:
         )
         if sanity.result == 1:
             filenamepath = os.path.join(os.path.dirname(__file__), "metadata.txt")
-            iniText = QSettings(filenamepath, QSettings.IniFormat)
+            iniText = QSettings(filenamepath, QSettings.Format.IniFormat)
             _verno = iniText.value("version")
             if isinstance(_verno, qgis.PyQt.QtCore.QVariant):
                 verno = _verno.toString()
@@ -1242,7 +1242,7 @@ class Midvatten:
         )
         if sanity.result == 1:
             filenamepath = os.path.join(os.path.dirname(__file__), "metadata.txt")
-            iniText = QSettings(filenamepath, QSettings.IniFormat)
+            iniText = QSettings(filenamepath, QSettings.Format.IniFormat)
             verno = str(iniText.value("version"))
             newdbinstance = NewDb()
             newdbinstance.populate_postgis_db(verno)
@@ -1603,7 +1603,7 @@ class Midvatten:
             self.iface, self.ms
         )  # verify midv settings are loaded
         if err_flag == 0:
-            QApplication.setOverrideCursor(Qt.WaitCursor)
+            QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
             db_utils.sql_alter_db("vacuum")
             common_utils.stop_waiting_cursor()
 
@@ -1710,7 +1710,7 @@ class Midvatten:
     @common_utils.general_exception_handler
     def calculate_db_table_rows(self):
         """Counts the number of rows for all tables in the database"""
-        QApplication.setOverrideCursor(Qt.WaitCursor)
+        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
         midvatten_utils.calculate_db_table_rows()
         common_utils.stop_waiting_cursor()
 

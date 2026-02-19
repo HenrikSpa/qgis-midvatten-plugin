@@ -1257,7 +1257,7 @@ class MetadataFilter(VRowEntry):
          for header, pattern in patterns.items()
          if re.search(pattern, self.table.item(rownr, table_header_colnr[header]).text())]"""
 
-        mode = QItemSelectionModel.Select | QItemSelectionModel.Rows
+        mode = QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows
         selectedItems = self.table.selectionModel().selection()
 
         def select(selected_items, table, rownr, mode):

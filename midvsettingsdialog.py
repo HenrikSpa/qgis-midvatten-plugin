@@ -19,7 +19,6 @@ from functools import partial  # only to get combobox signals to work
 from typing import Any, List, Optional
 
 import qgis.PyQt
-from mock.mock import MagicMock
 from qgis.PyQt import uic, QtCore
 from qgis.PyQt.QtCore import QCoreApplication, Qt
 from qgis.PyQt.QtWidgets import QDockWidget, QFileDialog
@@ -40,13 +39,13 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
     Class for the Midvatten settings dockwidget.
     """
 
-    def __init__(self, parent: QMainWindow, iface: MagicMock, msettings: MidvSettings):
+    def __init__(self, parent: QMainWindow, iface, msettings: MidvSettings):
         self.parent = parent
         self.iface = iface
         self.ms = msettings
         self.ms.loadSettings()
         QDockWidget.__init__(self, self.parent)
-        self.setAttribute(Qt.WA_DeleteOnClose)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.setupUi(self)
         self.initUI()
 

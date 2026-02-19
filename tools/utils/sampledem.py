@@ -115,10 +115,10 @@ def points_along_line(
     units = layer.crs().mapUnits()
 
     unit_dic = {
-        QgsUnitTypes.DistanceDegrees: "Degrees",
-        QgsUnitTypes.DistanceMeters: "Meters",
-        QgsUnitTypes.DistanceFeet: "Feet",
-        QgsUnitTypes.DistanceUnknownUnit: "Unknown",
+        QgsUnitTypes.DistanceUnit.DistanceDegrees: "Degrees",
+        QgsUnitTypes.DistanceUnit.DistanceMeters: "Meters",
+        QgsUnitTypes.DistanceUnit.DistanceFeet: "Feet",
+        QgsUnitTypes.DistanceUnit.DistanceUnknownUnit: "Unknown",
     }
     unit = unit_dic.get(units, "Unknown")
     provider.addAttributes([QgsField("fid", QMetaType.Type.Int)])
@@ -153,15 +153,15 @@ def sampling(pointsamplinglayer, rastersamplinglayer, bands=1, extract_type="val
     raster_provider = rastersamplinglayer.dataProvider()
 
     identify_type = {  #'text': QgsRaster.IdentifyFormatText,
-        "value": QgsRaster.IdentifyFormatValue,
-        "feature": QgsRaster.IdentifyFormatFeature,
+        "value": QgsRaster.IdentifyFormat.IdentifyFormatValue,
+        "feature": QgsRaster.IdentifyFormat.IdentifyFormatFeature,
     }
     _type = identify_type[extract_type]
     result = []
     for feature in point_provider.getFeatures():
         geom = feature.geometry()
 
-        if geom.wkbType() == QgsWkbTypes.MultiPoint:
+        if geom.wkbType() == QgsWkbTypes.Type.MultiPoint:
             point = geom.asMultiPoint()[0]
         else:
             point = geom.asPoint()

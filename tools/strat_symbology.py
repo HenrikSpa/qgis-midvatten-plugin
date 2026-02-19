@@ -373,7 +373,7 @@ def apply_obsid_filter_to_layers(layers):
     if selected_obsids:
         # QgsExpression filter string (not DB-API), so we must escape literals ourselves.
         filter_string = "obsid IN ({})".format(
-            ", ".join(["'{}'".format(str(x).replace(\"'\", \"''\")) for x in selected_obsids])
+            ", ".join(["'{}'".format(str(x).replace("'", "''")) for x in selected_obsids])
         )
         for layer in layers:
             req = QgsFeatureRequest(QgsExpression(filter_string))

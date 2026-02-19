@@ -1,4 +1,4 @@
-﻿#! /usr/bin/env python
+#! /usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 /***************************************************************************
@@ -1376,7 +1376,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
 
         if (
             isinstance(color_layer, QgsVectorLayer)
-            or color_layer.type() == QgsMapLayer.VectorLayer
+            or color_layer.type() == QgsMapLayer.LayerType.VectorLayer
         ):
             print(f"Sampling as polygon")
             labels_colors = sample_polygon(color_layer, sectionlinelayer, xarray)
@@ -2341,10 +2341,10 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
     def add_titlebar(self, widget):
         if widget.isWindow():
             widget.setWindowFlags(
-                Qt.Window
-                | Qt.WindowMinimizeButtonHint
-                | Qt.WindowMaximizeButtonHint
-                | Qt.WindowCloseButtonHint
+                Qt.WindowType.Window
+                | Qt.WindowType.WindowMinimizeButtonHint
+                | Qt.WindowType.WindowMaximizeButtonHint
+                | Qt.WindowType.WindowCloseButtonHint
             )
             widget.show()
 
@@ -2358,16 +2358,16 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
 
             if self.tabWidget.count() > 1:
                 self.tabWidget.removeTab(1)
-        dockwidget.setFeatures(QDockWidget.DockWidgetClosable)
+        dockwidget.setFeatures(QDockWidget.DockWidgetFeature.DockWidgetClosable)
 
     def dock_settings(self, _self, event):
         self.tabWidget.addTab(self.settings_tab, "Settings")
         self.old_settingsdockWidget = self.settingsdockWidget
         self.settingsdockWidget = QDockWidget()
         self.settingsdockWidget.setFeatures(
-            QDockWidget.DockWidgetFloatable | QDockWidget.DockWidgetMovable
+            QDockWidget.DockWidgetFeature.DockWidgetFloatable | QDockWidget.DockWidgetFeature.DockWidgetMovable
         )
-        self.settingsdockWidget.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+        self.settingsdockWidget.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
         self.settingsdockWidget.topLevelChanged.connect(lambda x: self.float_settings())
         self.settingsdockWidget.closeEvent = types.MethodType(
             self.dock_settings, self.settingsdockWidget

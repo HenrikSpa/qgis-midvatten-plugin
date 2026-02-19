@@ -216,7 +216,7 @@ class Askuser(QtWidgets.QDialog):
             msgBox.addButton(btnAll, QtWidgets.QMessageBox.ActionRole)
             msgBox.addButton(btnSelected, QtWidgets.QMessageBox.ActionRole)
             msgBox.addButton(QtWidgets.QMessageBox.Cancel)
-            reply = msgBox.exec_()
+            reply = msgBox.exec()
             self.result = reply  # ALL=0, SELECTED=1
         elif question == "DateShift":
             supported_units = [
@@ -350,7 +350,7 @@ class NotFoundQuestion(QtWidgets.QDialog, not_found_dialog):
                 600,
             )
 
-        self.exec_()
+        self.exec()
 
     @property
     def reuse_column_temp(self, value):
@@ -535,7 +535,7 @@ def getQgisVectorLayers():
     layermap = QgsProject.instance().mapLayers()
     layerlist = []
     for name, layer in layermap.items():
-        if layer.isValid() and layer.type() == QgsMapLayer.VectorLayer:
+        if layer.isValid() and layer.type() == QgsMapLayer.LayerType.VectorLayer:
             layerlist.append(layer)
     return layerlist
 

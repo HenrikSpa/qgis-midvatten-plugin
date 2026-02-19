@@ -1176,7 +1176,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self.deactivate_pan_zoom()
         if help_msg:
             self.statusbar.showMessage(help_msg, 0)
-        self.canvas.setFocusPolicy(Qt.ClickFocus)
+        self.canvas.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
         self.canvas.setFocus()
         if from_node:
             event = "pick_event"
@@ -1195,7 +1195,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     def set_adjust_data(self, date_holder, level_holder):
         self.reset_cid()
         self.deactivate_pan_zoom()
-        self.canvas.setFocusPolicy(Qt.ClickFocus)
+        self.canvas.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
         self.canvas.setFocus()
         self.cid.append(
             self.canvas.mpl_connect(

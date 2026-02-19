@@ -294,11 +294,11 @@ class NotFoundQuestion(QtWidgets.QDialog, not_found_dialog):
         self.setWindowTitle(dialogtitle)
         self.label.setText(msg)
         self.label.setTextInteractionFlags(qgis.PyQt.QtCore.Qt.TextSelectableByMouse)
-        self.comboBox.addItem(default_value)
+        self.combo_box.addItem(default_value)
         self.label_2.setText(combobox_label)
         if existing_list is not None:
             for existing in existing_list:
-                self.comboBox.addItem(existing)
+                self.combo_box.addItem(existing)
 
         if ignore_checkbox:
             self.ignore_checkbox = qgis.PyQt.QtWidgets.QCheckBox(
@@ -317,7 +317,7 @@ class NotFoundQuestion(QtWidgets.QDialog, not_found_dialog):
         for idx, button_name in enumerate(button_names):
             button = QtWidgets.QPushButton(button_name)
             button.setObjectName(button_name.lower())
-            self.buttonBox.addButton(button, QtWidgets.QDialogButtonBox.ActionRole)
+            self.button_box.addButton(button, QtWidgets.QDialogButtonBox.ActionRole)
             button.clicked.connect(lambda x: self.button_clicked())
 
         self.reuse_label = qgis.PyQt.QtWidgets.QLabel(
@@ -372,7 +372,7 @@ class NotFoundQuestion(QtWidgets.QDialog, not_found_dialog):
 
     def set_answer_and_value(self, answer):
         self.answer = answer
-        self.value = returnunicode(self.comboBox.currentText())
+        self.value = returnunicode(self.combo_box.currentText())
         self.reuse_column = self._reuse_column.currentText()
 
     def closeEvent(self, event):

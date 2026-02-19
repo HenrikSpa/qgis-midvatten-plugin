@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>Dialog</class>
- <widget class="QDialog" name="Dialog">
+ <widget class="QDialog" name="dialog">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -13,7 +13,7 @@
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout_7">
+  <layout class="QGridLayout" name="grid_layout_7">
    <property name="leftMargin">
     <number>3</number>
    </property>
@@ -27,7 +27,7 @@
     <number>3</number>
    </property>
    <item row="0" column="0">
-    <widget class="QGroupBox" name="groupBox">
+    <widget class="QGroupBox" name="group_box">
      <property name="font">
       <font>
        <family>Arial</family>
@@ -38,7 +38,7 @@
      <property name="title">
       <string>The observation point</string>
      </property>
-     <layout class="QGridLayout" name="gridLayout_2">
+     <layout class="QGridLayout" name="grid_layout_2">
       <property name="leftMargin">
        <number>6</number>
       </property>
@@ -381,7 +381,7 @@ p, li { white-space: pre-wrap; }
     </widget>
    </item>
    <item row="2" column="0">
-    <widget class="QTabWidget" name="tabWidget">
+    <widget class="QTabWidget" name="tab_widget">
      <property name="font">
       <font>
        <family>Arial</family>
@@ -395,7 +395,7 @@ p, li { white-space: pre-wrap; }
       <attribute name="title">
        <string>Level and depth (m)</string>
       </attribute>
-      <layout class="QGridLayout" name="gridLayout">
+      <layout class="QGridLayout" name="grid_layout">
        <property name="leftMargin">
         <number>3</number>
        </property>
@@ -951,7 +951,7 @@ p, li { white-space: pre-wrap; }
       <attribute name="title">
        <string>Position (m)</string>
       </attribute>
-      <layout class="QGridLayout" name="gridLayout_8">
+      <layout class="QGridLayout" name="grid_layout_8">
        <property name="leftMargin">
         <number>3</number>
        </property>
@@ -965,9 +965,9 @@ p, li { white-space: pre-wrap; }
         <number>3</number>
        </property>
        <item row="0" column="0">
-        <layout class="QGridLayout" name="gridLayout_4" columnstretch="7,3">
+        <layout class="QGridLayout" name="grid_layout_4" columnstretch="7,3">
          <item row="0" column="0">
-          <layout class="QGridLayout" name="gridLayout_3">
+          <layout class="QGridLayout" name="grid_layout_3">
            <item row="0" column="0">
             <widget class="QLabel" name="label_32">
              <property name="sizePolicy">
@@ -1006,7 +1006,7 @@ p, li { white-space: pre-wrap; }
             </widget>
            </item>
            <item row="0" column="1">
-            <widget class="QLabel" name="CRS">
+            <widget class="QLabel" name="crs">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                <horstretch>0</horstretch>
@@ -1203,7 +1203,7 @@ p, li { white-space: pre-wrap; }
             </widget>
            </item>
            <item row="3" column="0">
-            <widget class="QLabel" name="XY_ONOG_label">
+            <widget class="QLabel" name="xy_onog_label">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
                <horstretch>0</horstretch>
@@ -1377,7 +1377,7 @@ p, li { white-space: pre-wrap; }
       <attribute name="title">
        <string>Construction and Drill info</string>
       </attribute>
-      <layout class="QGridLayout" name="gridLayout_5">
+      <layout class="QGridLayout" name="grid_layout_5">
        <property name="leftMargin">
         <number>3</number>
        </property>
@@ -1856,9 +1856,9 @@ p, li { white-space: pre-wrap; }
     </widget>
    </item>
    <item row="3" column="0">
-    <layout class="QFormLayout" name="formLayout">
+    <layout class="QFormLayout" name="form_layout">
      <item row="0" column="0">
-      <widget class="QLabel" name="Referensinformation">
+      <widget class="QLabel" name="referensinformation">
        <property name="enabled">
         <bool>true</bool>
        </property>
@@ -2019,7 +2019,7 @@ p, li { white-space: pre-wrap; }
     </widget>
    </item>
    <item row="5" column="0">
-    <widget class="QGroupBox" name="groupBox_2">
+    <widget class="QGroupBox" name="group_box_2">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
        <horstretch>0</horstretch>
@@ -2047,7 +2047,7 @@ p, li { white-space: pre-wrap; }
      <property name="title">
       <string>Comments (single and multiline)</string>
      </property>
-     <layout class="QGridLayout" name="gridLayout_6">
+     <layout class="QGridLayout" name="grid_layout_6">
       <property name="leftMargin">
        <number>6</number>
       </property>
@@ -2128,7 +2128,7 @@ p, li { white-space: pre-wrap; }
     </widget>
    </item>
    <item row="6" column="0">
-    <widget class="QDialogButtonBox" name="buttonBox">
+    <widget class="QDialogButtonBox" name="button_box">
      <property name="font">
       <font>
        <family>Arial</family>
@@ -2178,9 +2178,9 @@ p, li { white-space: pre-wrap; }
  <resources/>
  <connections>
   <connection>
-   <sender>buttonBox</sender>
+   <sender>button_box</sender>
    <signal>accepted()</signal>
-   <receiver>Dialog</receiver>
+   <receiver>dialog</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -2194,9 +2194,9 @@ p, li { white-space: pre-wrap; }
    </hints>
   </connection>
   <connection>
-   <sender>buttonBox</sender>
+   <sender>button_box</sender>
    <signal>rejected()</signal>
-   <receiver>Dialog</receiver>
+   <receiver>dialog</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">

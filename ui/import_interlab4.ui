@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>MainWindow</class>
- <widget class="QMainWindow" name="MainWindow">
+ <widget class="QMainWindow" name="main_window">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -14,7 +14,7 @@
    <string>Import data from Interlab4</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QGridLayout" name="gridLayout_main">
+   <layout class="QGridLayout" name="grid_layout_main">
     <property name="leftMargin">
      <number>6</number>
     </property>
@@ -41,7 +41,7 @@
         <height>0</height>
        </size>
       </property>
-      <layout class="QGridLayout" name="gridLayout_buttons">
+      <layout class="QGridLayout" name="grid_layout_buttons">
        <property name="leftMargin">
         <number>3</number>
        </property>
@@ -77,7 +77,7 @@
      </widget>
     </item>
     <item row="0" column="2" rowspan="3">
-     <widget class="QScrollArea" name="scrollArea">
+     <widget class="QScrollArea" name="scroll_area">
       <property name="sizePolicy">
        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
         <horstretch>0</horstretch>
@@ -99,7 +99,7 @@
       <property name="widgetResizable">
        <bool>true</bool>
       </property>
-      <widget class="QWidget" name="scrollAreaWidgetContents">
+      <widget class="QWidget" name="scroll_area_widget_contents">
        <property name="geometry">
         <rect>
          <x>0</x>

@@ -52,7 +52,7 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         self.iface = parent
         self.ms = msettings
         if self.ms is not None:
-            self.ms.loadSettings()
+            self.ms.load_settings()
         qgis.PyQt.QtWidgets.QDialog.__init__(self, parent)
         self.setAttribute(qgis.PyQt.QtCore.Qt.WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt
@@ -84,7 +84,7 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         self.select_file_button = qgis.PyQt.QtWidgets.QPushButton(
             ru(QCoreApplication.translate("GeneralCsvImportGui", "Load data from file"))
         )
-        self.gridLayout_buttons.addWidget(self.select_file_button, 0, 0)
+        self.grid_layout_buttons.addWidget(self.select_file_button, 0, 0)
         self.select_file_button.clicked.connect(lambda x: self.select_file())
 
         self.import_all_features_button = qgis.PyQt.QtWidgets.QPushButton(
@@ -95,7 +95,7 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
                 )
             )
         )
-        self.gridLayout_buttons.addWidget(self.import_all_features_button, 1, 0)
+        self.grid_layout_buttons.addWidget(self.import_all_features_button, 1, 0)
         self.import_all_features_button.clicked.connect(
             lambda x: self.import_all_features()
         )
@@ -108,18 +108,18 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
                 )
             )
         )
-        self.gridLayout_buttons.addWidget(self.import_selected_features_button, 2, 0)
+        self.grid_layout_buttons.addWidget(self.import_selected_features_button, 2, 0)
         self.import_selected_features_button.clicked.connect(
             lambda x: self.import_selected_features()
         )
 
-        self.gridLayout_buttons.addWidget(get_line(), 3, 0)
+        self.grid_layout_buttons.addWidget(get_line(), 3, 0)
 
         tables_columns = db_utils.tables_columns()
         self.distinct_value_browser = DistinctValuesBrowser(tables_columns)
-        self.gridLayout_buttons.addWidget(self.distinct_value_browser.widget, 4, 0)
+        self.grid_layout_buttons.addWidget(self.distinct_value_browser.widget, 4, 0)
 
-        self.gridLayout_buttons.addWidget(get_line(), 5, 0)
+        self.grid_layout_buttons.addWidget(get_line(), 5, 0)
 
         self.close_after_import = qgis.PyQt.QtWidgets.QCheckBox(
             ru(
@@ -129,15 +129,15 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
             )
         )
         self.close_after_import.setChecked(True)
-        self.gridLayout_buttons.addWidget(self.close_after_import, 6, 0)
+        self.grid_layout_buttons.addWidget(self.close_after_import, 6, 0)
 
         self.start_import_button = qgis.PyQt.QtWidgets.QPushButton(
             ru(QCoreApplication.translate("GeneralCsvImportGui", "Start import"))
         )
-        self.gridLayout_buttons.addWidget(self.start_import_button, 7, 0)
+        self.grid_layout_buttons.addWidget(self.start_import_button, 7, 0)
         self.start_import_button.clicked.connect(lambda x: self.start_import())
 
-        self.gridLayout_buttons.setRowStretch(8, 1)
+        self.grid_layout_buttons.setRowStretch(8, 1)
         self.setGeometry(100, 100, 1800, 800)
         self.show()
 
@@ -408,7 +408,7 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
 
         file_data = self.reformat_date_time(file_data)
 
-        importer = import_data_to_db.midv_data_importer()
+        importer = import_data_to_db.MidvDataImporter()
         answer = importer.general_import(
             dest_table=dest_table,
             file_data=file_data,

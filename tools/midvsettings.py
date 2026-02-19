@@ -30,7 +30,7 @@ class MidvSettings(object):
         try:
             # The settings are loaded each time a new qgis project is loaded
             # (and several methods below do check that settings really are loaded)
-            self.loadSettings()
+            self.load_settings()
 
         except:
             pass
@@ -41,7 +41,7 @@ class MidvSettings(object):
         dictionary = midvatten_defs.settingsdict()
         return dictionary
 
-    def loadSettings(
+    def load_settings(
         self,
     ):  # settingsdict is a dictionary belonging to instance midvsettings. Must be stored and loaded here.
         """read plugin settings from QgsProject instance"""

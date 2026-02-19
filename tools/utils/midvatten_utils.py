@@ -84,7 +84,7 @@ def verify_msettings_loaded_and_layer_edit_mode(
 
     errorsignal = 0
     if not mset.settingsareloaded:
-        mset.loadSettings()
+        mset.load_settings()
     for layername in allcritical_layers:
         if not layername:
             continue

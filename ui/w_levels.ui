@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>TheDialog</class>
- <widget class="QDialog" name="TheDialog">
+ <widget class="QDialog" name="the_dialog">
   <property name="windowModality">
    <enum>Qt::ApplicationModal</enum>
   </property>
@@ -34,7 +34,7 @@
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout">
+  <layout class="QGridLayout" name="grid_layout">
    <item row="0" column="0">
     <widget class="QLabel" name="label">
      <property name="sizePolicy">
@@ -426,7 +426,7 @@ p, li { white-space: pre-wrap; }
     </widget>
    </item>
    <item row="2" column="4" colspan="2">
-    <widget class="QDialogButtonBox" name="buttonBox">
+    <widget class="QDialogButtonBox" name="button_box">
      <property name="font">
       <font>
        <family>Arial</family>
@@ -455,9 +455,9 @@ p, li { white-space: pre-wrap; }
  <resources/>
  <connections>
   <connection>
-   <sender>buttonBox</sender>
+   <sender>button_box</sender>
    <signal>accepted()</signal>
-   <receiver>TheDialog</receiver>
+   <receiver>the_dialog</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -471,9 +471,9 @@ p, li { white-space: pre-wrap; }
    </hints>
   </connection>
   <connection>
-   <sender>buttonBox</sender>
+   <sender>button_box</sender>
    <signal>rejected()</signal>
-   <receiver>TheDialog</receiver>
+   <receiver>the_dialog</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">

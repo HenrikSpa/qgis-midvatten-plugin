@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>Dialog</class>
- <widget class="QDialog" name="Dialog">
+ <widget class="QDialog" name="dialog">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -25,7 +25,7 @@
   <property name="windowTitle">
    <string>Calculate statistics</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_3">
+  <layout class="QVBoxLayout" name="vertical_layout_3">
    <property name="leftMargin">
     <number>0</number>
    </property>
@@ -58,7 +58,7 @@
        <height>400</height>
       </size>
      </property>
-     <layout class="QGridLayout" name="gridLayout_3">
+     <layout class="QGridLayout" name="grid_layout_3">
       <property name="leftMargin">
        <number>3</number>
       </property>
@@ -72,9 +72,9 @@
        <number>3</number>
       </property>
       <item row="0" column="0">
-       <layout class="QGridLayout" name="gridLayout_2">
+       <layout class="QGridLayout" name="grid_layout_2">
         <item row="0" column="0" colspan="2">
-         <widget class="QWidget" name="gridWidget" native="true">
+         <widget class="QWidget" name="grid_widget" native="true">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -87,7 +87,7 @@
             <height>300</height>
            </size>
           </property>
-          <layout class="QGridLayout" name="gridLayout">
+          <layout class="QGridLayout" name="grid_layout">
            <property name="leftMargin">
             <number>0</number>
            </property>
@@ -104,7 +104,7 @@
          </widget>
         </item>
         <item row="2" column="0">
-         <widget class="QPushButton" name="pushButton_cancel">
+         <widget class="QPushButton" name="push_button_cancel">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
             <horstretch>0</horstretch>
@@ -117,7 +117,7 @@
          </widget>
         </item>
         <item row="2" column="1">
-         <widget class="QPushButton" name="pushButton_ok">
+         <widget class="QPushButton" name="push_button_ok">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
             <horstretch>0</horstretch>

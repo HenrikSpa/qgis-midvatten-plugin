@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>MidDockSettings</class>
- <widget class="QDockWidget" name="MidDockSettings">
+ <widget class="QDockWidget" name="mid_dock_settings">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -13,8 +13,8 @@
   <property name="windowTitle">
    <string>Midvatten Settings</string>
   </property>
-  <widget class="QWidget" name="dockWidgetContents">
-   <layout class="QGridLayout" name="gridLayout_9">
+  <widget class="QWidget" name="dock_widget_contents">
+   <layout class="QGridLayout" name="grid_layout_9">
     <property name="leftMargin">
      <number>6</number>
     </property>
@@ -28,7 +28,7 @@
      <number>6</number>
     </property>
     <item row="0" column="0">
-     <widget class="QTabWidget" name="tabWidget">
+     <widget class="QTabWidget" name="tab_widget">
       <property name="sizePolicy">
        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Expanding">
         <horstretch>0</horstretch>
@@ -49,14 +49,14 @@
       <property name="currentIndex">
        <number>0</number>
       </property>
-      <widget class="QWidget" name="TAB_DB">
+      <widget class="QWidget" name="tab_db">
        <attribute name="title">
         <string>DB</string>
        </attribute>
        <attribute name="toolTip">
         <string>Database settings</string>
        </attribute>
-       <layout class="QGridLayout" name="gridLayout_db_main">
+       <layout class="QGridLayout" name="grid_layout_db_main">
         <property name="leftMargin">
          <number>0</number>
         </property>
@@ -70,14 +70,14 @@
          <number>0</number>
         </property>
         <item row="0" column="0">
-         <widget class="QScrollArea" name="scrollArea_db">
+         <widget class="QScrollArea" name="scroll_area_db">
           <property name="widgetResizable">
            <bool>true</bool>
           </property>
           <property name="alignment">
            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
           </property>
-          <widget class="QWidget" name="scrollAreaWidgetContents_db">
+          <widget class="QWidget" name="scroll_area_widget_contents_db">
            <property name="geometry">
             <rect>
              <x>0</x>
@@ -86,7 +86,7 @@
              <height>602</height>
             </rect>
            </property>
-           <layout class="QGridLayout" name="gridLayout_db_scroll">
+           <layout class="QGridLayout" name="grid_layout_db_scroll">
             <property name="leftMargin">
              <number>6</number>
             </property>
@@ -100,7 +100,7 @@
              <number>6</number>
             </property>
             <item row="0" column="0">
-             <layout class="QGridLayout" name="gridLayout_db"/>
+             <layout class="QGridLayout" name="grid_layout_db"/>
             </item>
            </layout>
            <zorder></zorder>
@@ -109,14 +109,14 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="TAB_TSPLOT_2">
+      <widget class="QWidget" name="tab_tsplot_2">
        <attribute name="title">
         <string>TSplot</string>
        </attribute>
        <attribute name="toolTip">
         <string>Time Series Plot</string>
        </attribute>
-       <layout class="QGridLayout" name="gridLayout_18">
+       <layout class="QGridLayout" name="grid_layout_18">
         <property name="leftMargin">
          <number>0</number>
         </property>
@@ -130,11 +130,11 @@
          <number>0</number>
         </property>
         <item row="0" column="0">
-         <widget class="QScrollArea" name="scrollArea_2">
+         <widget class="QScrollArea" name="scroll_area_2">
           <property name="widgetResizable">
            <bool>true</bool>
           </property>
-          <widget class="QWidget" name="scrollAreaWidgetContents_2">
+          <widget class="QWidget" name="scroll_area_widget_contents_2">
            <property name="geometry">
             <rect>
              <x>0</x>
@@ -143,7 +143,7 @@
              <height>602</height>
             </rect>
            </property>
-           <layout class="QGridLayout" name="gridLayout_10">
+           <layout class="QGridLayout" name="grid_layout_10">
             <property name="leftMargin">
              <number>6</number>
             </property>
@@ -157,9 +157,9 @@
              <number>6</number>
             </property>
             <item row="0" column="0">
-             <layout class="QGridLayout" name="gridLayout_6">
+             <layout class="QGridLayout" name="grid_layout_6">
               <item row="0" column="0">
-               <layout class="QGridLayout" name="gridLayout">
+               <layout class="QGridLayout" name="grid_layout">
                 <item row="0" column="0">
                  <widget class="QLabel" name="label_2">
                   <property name="sizePolicy">
@@ -179,7 +179,7 @@
                  </widget>
                 </item>
                 <item row="1" column="0">
-                 <widget class="QComboBox" name="ListOfTables">
+                 <widget class="QComboBox" name="list_of_tables">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -189,7 +189,7 @@
                  </widget>
                 </item>
                 <item row="2" column="0">
-                 <widget class="QLabel" name="InfoTxtTSPlot">
+                 <widget class="QLabel" name="info_txt_ts_plot">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                     <horstretch>0</horstretch>
@@ -231,7 +231,7 @@
                  </widget>
                 </item>
                 <item row="4" column="0">
-                 <widget class="QComboBox" name="ListOfColumns"/>
+                 <widget class="QComboBox" name="list_of_columns"/>
                 </item>
                </layout>
               </item>
@@ -249,9 +249,9 @@
                </spacer>
               </item>
               <item row="2" column="0">
-               <layout class="QFormLayout" name="formLayout">
+               <layout class="QFormLayout" name="form_layout">
                 <item row="0" column="0">
-                 <widget class="QCheckBox" name="checkBoxDataPoints">
+                 <widget class="QCheckBox" name="check_box_data_points">
                   <property name="enabled">
                    <bool>true</bool>
                   </property>
@@ -266,7 +266,7 @@
                  </widget>
                 </item>
                 <item row="1" column="0">
-                 <widget class="QCheckBox" name="checkBoxStepPlot">
+                 <widget class="QCheckBox" name="check_box_step_plot">
                   <property name="enabled">
                    <bool>true</bool>
                   </property>
@@ -291,14 +291,14 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="TAB_XYPLOT_2">
+      <widget class="QWidget" name="tab_xyplot_2">
        <attribute name="title">
         <string>XYplot</string>
        </attribute>
        <attribute name="toolTip">
         <string>XY Scatter plot</string>
        </attribute>
-       <layout class="QGridLayout" name="gridLayout_5">
+       <layout class="QGridLayout" name="grid_layout_5">
         <property name="leftMargin">
          <number>0</number>
         </property>
@@ -312,11 +312,11 @@
          <number>0</number>
         </property>
         <item row="0" column="0">
-         <widget class="QScrollArea" name="scrollArea">
+         <widget class="QScrollArea" name="scroll_area">
           <property name="widgetResizable">
            <bool>true</bool>
           </property>
-          <widget class="QWidget" name="scrollAreaWidgetContents">
+          <widget class="QWidget" name="scroll_area_widget_contents">
            <property name="geometry">
             <rect>
              <x>0</x>
@@ -325,7 +325,7 @@
              <height>602</height>
             </rect>
            </property>
-           <layout class="QGridLayout" name="gridLayout_21">
+           <layout class="QGridLayout" name="grid_layout_21">
             <property name="leftMargin">
              <number>6</number>
             </property>
@@ -339,7 +339,7 @@
              <number>6</number>
             </property>
             <item row="0" column="0">
-             <layout class="QGridLayout" name="gridLayout_4">
+             <layout class="QGridLayout" name="grid_layout_4">
               <item row="0" column="0">
                <widget class="QLabel" name="label_11">
                 <property name="sizePolicy">
@@ -359,7 +359,7 @@
                </widget>
               </item>
               <item row="1" column="0">
-               <widget class="QComboBox" name="ListOfTables_2">
+               <widget class="QComboBox" name="list_of_tables_2">
                 <property name="enabled">
                  <bool>true</bool>
                 </property>
@@ -372,7 +372,7 @@
                </widget>
               </item>
               <item row="2" column="0">
-               <widget class="QLabel" name="InfoTxtXYPlot">
+               <widget class="QLabel" name="info_txt_xy_plot">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
                   <horstretch>0</horstretch>
@@ -414,7 +414,7 @@
                </widget>
               </item>
               <item row="4" column="0">
-               <widget class="QComboBox" name="ListOfColumns_2">
+               <widget class="QComboBox" name="list_of_columns_2">
                 <property name="enabled">
                  <bool>true</bool>
                 </property>
@@ -445,7 +445,7 @@
                </widget>
               </item>
               <item row="6" column="0">
-               <widget class="QComboBox" name="ListOfColumns_3">
+               <widget class="QComboBox" name="list_of_columns_3">
                 <property name="enabled">
                  <bool>true</bool>
                 </property>
@@ -476,7 +476,7 @@
                </widget>
               </item>
               <item row="8" column="0">
-               <widget class="QComboBox" name="ListOfColumns_4">
+               <widget class="QComboBox" name="list_of_columns_4">
                 <property name="enabled">
                  <bool>true</bool>
                 </property>
@@ -507,7 +507,7 @@
                </widget>
               </item>
               <item row="10" column="0">
-               <widget class="QComboBox" name="ListOfColumns_5">
+               <widget class="QComboBox" name="list_of_columns_5">
                 <property name="enabled">
                  <bool>true</bool>
                 </property>
@@ -533,7 +533,7 @@
                </spacer>
               </item>
               <item row="12" column="0">
-               <widget class="QCheckBox" name="checkBoxDataPoints_2">
+               <widget class="QCheckBox" name="check_box_data_points_2">
                 <property name="enabled">
                  <bool>true</bool>
                 </property>
@@ -557,7 +557,7 @@
        <attribute name="toolTip">
         <string>W quality report</string>
        </attribute>
-       <layout class="QGridLayout" name="gridLayout_17">
+       <layout class="QGridLayout" name="grid_layout_17">
         <property name="leftMargin">
          <number>0</number>
         </property>
@@ -571,11 +571,11 @@
          <number>0</number>
         </property>
         <item row="0" column="0">
-         <widget class="QScrollArea" name="scrollArea_3">
+         <widget class="QScrollArea" name="scroll_area_3">
           <property name="widgetResizable">
            <bool>true</bool>
           </property>
-          <widget class="QWidget" name="scrollAreaWidgetContents_6">
+          <widget class="QWidget" name="scroll_area_widget_contents_6">
            <property name="geometry">
             <rect>
              <x>0</x>
@@ -584,7 +584,7 @@
              <height>664</height>
             </rect>
            </property>
-           <layout class="QGridLayout" name="gridLayout_7">
+           <layout class="QGridLayout" name="grid_layout_7">
             <property name="leftMargin">
              <number>6</number>
             </property>
@@ -619,7 +619,7 @@
              </widget>
             </item>
             <item row="1" column="0">
-             <widget class="QComboBox" name="ListOfTables_WQUAL">
+             <widget class="QComboBox" name="list_of_tables_wqual">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -650,7 +650,7 @@
              </widget>
             </item>
             <item row="3" column="0">
-             <widget class="QComboBox" name="ListOfColumns_WQUALPARAM">
+             <widget class="QComboBox" name="list_of_columns_wqualparam">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -681,7 +681,7 @@
              </widget>
             </item>
             <item row="5" column="0">
-             <widget class="QComboBox" name="ListOfColumns_WQUALVALUE">
+             <widget class="QComboBox" name="list_of_columns_wqualvalue">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -712,7 +712,7 @@
              </widget>
             </item>
             <item row="7" column="0">
-             <widget class="QComboBox" name="ListOfdate_time_format">
+             <widget class="QComboBox" name="list_ofdate_time_format">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -743,7 +743,7 @@
              </widget>
             </item>
             <item row="9" column="0">
-             <widget class="QComboBox" name="ListOfColumns_WQUALUNIT">
+             <widget class="QComboBox" name="list_of_columns_wqualunit">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -780,7 +780,7 @@
              </widget>
             </item>
             <item row="11" column="0">
-             <widget class="QComboBox" name="ListOfColumns_WQUALSORTING">
+             <widget class="QComboBox" name="list_of_columns_wqualsorting">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -811,14 +811,14 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="TAB_PIPER_2">
+      <widget class="QWidget" name="tab_piper_2">
        <attribute name="title">
         <string>Piper</string>
        </attribute>
        <attribute name="toolTip">
         <string>Piper Diagram</string>
        </attribute>
-       <layout class="QGridLayout" name="gridLayout_25">
+       <layout class="QGridLayout" name="grid_layout_25">
         <property name="leftMargin">
          <number>0</number>
         </property>
@@ -832,11 +832,11 @@
          <number>0</number>
         </property>
         <item row="0" column="0">
-         <widget class="QScrollArea" name="scrollArea_5">
+         <widget class="QScrollArea" name="scroll_area_5">
           <property name="widgetResizable">
            <bool>true</bool>
           </property>
-          <widget class="QWidget" name="scrollAreaWidgetContents_8">
+          <widget class="QWidget" name="scroll_area_widget_contents_8">
            <property name="geometry">
             <rect>
              <x>0</x>
@@ -845,7 +845,7 @@
              <height>914</height>
             </rect>
            </property>
-           <layout class="QGridLayout" name="gridLayout_11">
+           <layout class="QGridLayout" name="grid_layout_11">
             <property name="leftMargin">
              <number>6</number>
             </property>
@@ -859,9 +859,9 @@
              <number>6</number>
             </property>
             <item row="0" column="0">
-             <layout class="QGridLayout" name="gridLayout_3">
+             <layout class="QGridLayout" name="grid_layout_3">
               <item row="11" column="0">
-               <widget class="QComboBox" name="paramCa">
+               <widget class="QComboBox" name="param_ca">
                 <property name="enabled">
                  <bool>true</bool>
                 </property>
@@ -877,7 +877,7 @@
                </widget>
               </item>
               <item row="15" column="0">
-               <widget class="QComboBox" name="MarkerComboBox">
+               <widget class="QComboBox" name="marker_combo_box">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                   <horstretch>0</horstretch>
@@ -895,7 +895,7 @@
                </widget>
               </item>
               <item row="17" column="0">
-               <widget class="QLabel" name="Piperinfo">
+               <widget class="QLabel" name="piperinfo">
                 <property name="text">
                  <string>This feature assumes your water quality data is stored in a table &quot;w_qual_lab&quot; as in a midvatten default database. The parameters for piper diagrams must be given in mg/l and with the parameter names exactly as selected above.</string>
                 </property>
@@ -905,7 +905,7 @@
                </widget>
               </item>
               <item row="1" column="0">
-               <widget class="QComboBox" name="paramCl">
+               <widget class="QComboBox" name="param_cl">
                 <property name="enabled">
                  <bool>true</bool>
                 </property>
@@ -939,7 +939,7 @@
                </widget>
               </item>
               <item row="7" column="0">
-               <widget class="QComboBox" name="paramNa">
+               <widget class="QComboBox" name="param_na">
                 <property name="enabled">
                  <bool>true</bool>
                 </property>
@@ -973,7 +973,7 @@
                </widget>
               </item>
               <item row="5" column="0">
-               <widget class="QComboBox" name="paramSO4">
+               <widget class="QComboBox" name="param_so4">
                 <property name="enabled">
                  <bool>true</bool>
                 </property>
@@ -1007,7 +1007,7 @@
                </widget>
               </item>
               <item row="9" column="0">
-               <widget class="QComboBox" name="paramK">
+               <widget class="QComboBox" name="param_k">
                 <property name="enabled">
                  <bool>true</bool>
                 </property>
@@ -1095,7 +1095,7 @@
                </widget>
               </item>
               <item row="3" column="0">
-               <widget class="QComboBox" name="paramHCO3">
+               <widget class="QComboBox" name="param_hco3">
                 <property name="enabled">
                  <bool>true</bool>
                 </property>
@@ -1111,7 +1111,7 @@
                </widget>
               </item>
               <item row="13" column="0">
-               <widget class="QComboBox" name="paramMg">
+               <widget class="QComboBox" name="param_mg">
                 <property name="enabled">
                  <bool>true</bool>
                 </property>

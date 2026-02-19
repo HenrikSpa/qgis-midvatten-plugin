@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>Dialog</class>
- <widget class="QDialog" name="Dialog">
+ <widget class="QDialog" name="dialog">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -31,7 +31,7 @@
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout" columnstretch="20,1,2,2,60,20,1,1,1,40" columnminimumwidth="0,0,0,0,0,0,0,0,0,0">
+  <layout class="QGridLayout" name="grid_layout" columnstretch="20,1,2,2,60,20,1,1,1,40" columnminimumwidth="0,0,0,0,0,0,0,0,0,0">
    <item row="0" column="2" colspan="2">
     <widget class="QLabel" name="label_5">
      <property name="font">
@@ -280,7 +280,7 @@
     </widget>
    </item>
    <item row="3" column="7" colspan="3">
-    <widget class="QDialogButtonBox" name="buttonBox">
+    <widget class="QDialogButtonBox" name="button_box">
      <property name="font">
       <font>
        <family>Arial</family>
@@ -300,9 +300,9 @@
  <resources/>
  <connections>
   <connection>
-   <sender>buttonBox</sender>
+   <sender>button_box</sender>
    <signal>accepted()</signal>
-   <receiver>Dialog</receiver>
+   <receiver>dialog</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -316,9 +316,9 @@
    </hints>
   </connection>
   <connection>
-   <sender>buttonBox</sender>
+   <sender>button_box</sender>
    <signal>rejected()</signal>
-   <receiver>Dialog</receiver>
+   <receiver>dialog</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">

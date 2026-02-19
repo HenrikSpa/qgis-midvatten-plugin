@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>Dialog</class>
- <widget class="QDialog" name="Dialog">
+ <widget class="QDialog" name="dialog">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -19,7 +19,7 @@
   <property name="windowTitle">
    <string>Values from selected features</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout_2">
+  <layout class="QGridLayout" name="grid_layout_2">
    <property name="leftMargin">
     <number>3</number>
    </property>
@@ -34,7 +34,7 @@
    </property>
    <item row="0" column="0">
     <widget class="QWidget" name="gridwidget" native="true">
-     <layout class="QGridLayout" name="gridLayout">
+     <layout class="QGridLayout" name="grid_layout">
       <property name="leftMargin">
        <number>0</number>
       </property>
@@ -55,7 +55,7 @@
        </widget>
       </item>
       <item row="1" column="0">
-       <layout class="QHBoxLayout" name="horizontalLayout_2">
+       <layout class="QHBoxLayout" name="horizontal_layout_2">
         <item>
          <widget class="QComboBox" name="columns"/>
         </item>
@@ -85,7 +85,7 @@
        </widget>
       </item>
       <item row="5" column="0">
-       <layout class="QHBoxLayout" name="horizontalLayout">
+       <layout class="QHBoxLayout" name="horizontal_layout">
         <item>
          <widget class="QPushButton" name="pushbutton_cancel">
           <property name="text">

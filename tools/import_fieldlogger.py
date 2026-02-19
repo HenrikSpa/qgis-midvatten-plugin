@@ -59,7 +59,7 @@ class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
         self.status = False
         self.iface = parent
         self.ms = msettings
-        self.ms.loadSettings()
+        self.ms.load_settings()
         QtWidgets.QDialog.__init__(self, parent)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt
@@ -137,7 +137,7 @@ class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
         self.save_settings_button = QtWidgets.QPushButton(
             ru(QCoreApplication.translate("FieldloggerImport", "Save settings"))
         )
-        self.gridLayout_buttons.addWidget(self.save_settings_button, 0, 0)
+        self.grid_layout_buttons.addWidget(self.save_settings_button, 0, 0)
         self.save_settings_button.clicked.connect(
             lambda: [
                 x()
@@ -163,7 +163,7 @@ class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
                 )
             )
         )
-        self.gridLayout_buttons.addWidget(self.clear_settings_button, 1, 0)
+        self.grid_layout_buttons.addWidget(self.clear_settings_button, 1, 0)
         self.clear_settings_button.clicked.connect(
             lambda: [
                 x()
@@ -191,12 +191,12 @@ class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
             )
         )
         self.close_after_import.setChecked(True)
-        self.gridLayout_buttons.addWidget(self.close_after_import, 2, 0)
+        self.grid_layout_buttons.addWidget(self.close_after_import, 2, 0)
 
         self.start_import_button = QtWidgets.QPushButton(
             ru(QCoreApplication.translate("FieldloggerImport", "Start import"))
         )
-        self.gridLayout_buttons.addWidget(self.start_import_button, 3, 0)
+        self.grid_layout_buttons.addWidget(self.start_import_button, 3, 0)
         self.start_import_button.clicked.connect(
             lambda: self.start_import(self.observations)
         )
@@ -210,7 +210,7 @@ class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
             lambda: self.update_input_fields_from_button()
         )
 
-        self.gridLayout_buttons.setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
+        self.grid_layout_buttons.setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
 
         self.setGeometry(500, 150, 1100, 700)
 
@@ -671,7 +671,7 @@ class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
             observations
         )
 
-        importer = import_data_to_db.midv_data_importer()
+        importer = import_data_to_db.MidvDataImporter()
 
         data_preparers = {
             "w_levels": self.prepare_w_levels_data,

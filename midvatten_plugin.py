@@ -1561,7 +1561,7 @@ class Midvatten:
 
     def project_opened(self):
         self.ms.reset_settings()
-        self.ms.loadSettings()
+        self.ms.load_settings()
         try:  # if midvsettingsdock is shown, then it must be reloaded
             self.midvsettingsdialog.activateWindow()
             self.midvsettingsdialog.clear_everything()

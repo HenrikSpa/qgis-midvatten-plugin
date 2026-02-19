@@ -55,7 +55,7 @@ class Interlab4Import(qgis.PyQt.QtWidgets.QMainWindow, import_fieldlogger_ui_dia
         self.status = False
         self.iface = parent
         self.ms = msettings
-        self.ms.loadSettings()
+        self.ms.load_settings()
         qgis.PyQt.QtWidgets.QDialog.__init__(self, parent)
         self.setAttribute(qgis.PyQt.QtCore.Qt.WA_DeleteOnClose)
         self.setWindowTitle(
@@ -199,15 +199,15 @@ class Interlab4Import(qgis.PyQt.QtWidgets.QMainWindow, import_fieldlogger_ui_dia
             )
             self.use_obsid_assignment_table.setChecked(True)
 
-        self.gridLayout_buttons.addWidget(self.skip_imported_reports, 0, 0)
-        self.gridLayout_buttons.addWidget(self.select_files_button, 1, 0)
-        self.gridLayout_buttons.addWidget(get_line(), 2, 0)
-        self.gridLayout_buttons.addWidget(self.close_after_import, 3, 0)
-        self.gridLayout_buttons.addWidget(self.dump_2_temptable, 4, 0)
-        self.gridLayout_buttons.addWidget(self.use_obsid_assignment_table, 5, 0)
-        self.gridLayout_buttons.addWidget(self.start_import_button, 6, 0)
-        self.gridLayout_buttons.addWidget(self.help_label, 7, 0)
-        self.gridLayout_buttons.setRowStretch(8, 1)
+        self.grid_layout_buttons.addWidget(self.skip_imported_reports, 0, 0)
+        self.grid_layout_buttons.addWidget(self.select_files_button, 1, 0)
+        self.grid_layout_buttons.addWidget(get_line(), 2, 0)
+        self.grid_layout_buttons.addWidget(self.close_after_import, 3, 0)
+        self.grid_layout_buttons.addWidget(self.dump_2_temptable, 4, 0)
+        self.grid_layout_buttons.addWidget(self.use_obsid_assignment_table, 5, 0)
+        self.grid_layout_buttons.addWidget(self.start_import_button, 6, 0)
+        self.grid_layout_buttons.addWidget(self.help_label, 7, 0)
+        self.grid_layout_buttons.setRowStretch(8, 1)
 
         self.start_import_button.clicked.connect(
             lambda: self.start_import(
@@ -363,7 +363,7 @@ class Interlab4Import(qgis.PyQt.QtWidgets.QMainWindow, import_fieldlogger_ui_dia
 
         self.wquallab_data_table = self.to_table(all_lab_results)
 
-        importer = import_data_to_db.midv_data_importer()
+        importer = import_data_to_db.MidvDataImporter()
 
         answer = importer.general_import(
             dest_table="w_qual_lab",

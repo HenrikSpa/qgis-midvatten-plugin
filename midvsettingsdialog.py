@@ -43,20 +43,20 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
         self.parent = parent
         self.iface = iface
         self.ms = msettings
-        self.ms.loadSettings()
+        self.ms.load_settings()
         QDockWidget.__init__(self, self.parent)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.setupUi(self)
-        self.initUI()
+        self.init_ui()
 
-    def initUI(self):
+    def init_ui(self):
         """The settings dialog is cleared, filled with relevant information and
         the last selected settings are preset
         """
-        self.database_settings = DatabaseSettings(self, self.gridLayout_db)
+        self.database_settings = DatabaseSettings(self, self.grid_layout_db)
         self.clear_everything()
 
-        self.MarkerComboBox.addItems(
+        self.marker_combo_box.addItems(
             ["obsid", "type", "date_time", "obsid but no legend", "simple marker"]
         )
 
@@ -71,200 +71,200 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
         self.dockLocationChanged.connect(self.set_location)
 
         # tab TS
-        self.ListOfTables.currentIndexChanged.connect(partial(self.TSTableUpdated))
-        self.ListOfColumns.currentIndexChanged.connect(
-            partial(self.ChangedListOfColumns)
+        self.list_of_tables.currentIndexChanged.connect(partial(self.ts_table_updated))
+        self.list_of_columns.currentIndexChanged.connect(
+            partial(self.changed_list_of_columns)
         )
-        self.checkBoxDataPoints.stateChanged.connect(self.ChangedCheckBoxDataPoints)
-        self.checkBoxStepPlot.stateChanged.connect(self.ChangedCheckBoxStepPlot)
+        self.check_box_data_points.stateChanged.connect(self.changed_check_box_data_points)
+        self.check_box_step_plot.stateChanged.connect(self.changed_check_box_step_plot)
         # tab XY
-        self.ListOfTables_2.currentIndexChanged.connect(partial(self.XYTableUpdated))
-        self.ListOfColumns_2.currentIndexChanged.connect(
-            partial(self.ChangedListOfColumns2)
+        self.list_of_tables_2.currentIndexChanged.connect(partial(self.xy_table_updated))
+        self.list_of_columns_2.currentIndexChanged.connect(
+            partial(self.changed_list_of_columns2)
         )
-        self.ListOfColumns_3.currentIndexChanged.connect(
-            partial(self.ChangedListOfColumns3)
+        self.list_of_columns_3.currentIndexChanged.connect(
+            partial(self.changed_list_of_columns3)
         )
-        self.ListOfColumns_4.currentIndexChanged.connect(
-            partial(self.ChangedListOfColumns4)
+        self.list_of_columns_4.currentIndexChanged.connect(
+            partial(self.changed_list_of_columns4)
         )
-        self.ListOfColumns_5.currentIndexChanged.connect(
-            partial(self.ChangedListOfColumns5)
+        self.list_of_columns_5.currentIndexChanged.connect(
+            partial(self.changed_list_of_columns5)
         )
-        self.checkBoxDataPoints_2.stateChanged.connect(self.ChangedCheckBoxDataPoints2)
+        self.check_box_data_points_2.stateChanged.connect(self.changed_check_box_data_points2)
         # tab wqualreport
-        self.ListOfTables_WQUAL.currentIndexChanged.connect(
-            partial(self.WQUALTableUpdated)
+        self.list_of_tables_wqual.currentIndexChanged.connect(
+            partial(self.wqual_table_updated)
         )
-        self.ListOfColumns_WQUALPARAM.currentIndexChanged.connect(
-            partial(self.ChangedListOfColumnsWQualParam)
+        self.list_of_columns_wqualparam.currentIndexChanged.connect(
+            partial(self.changed_list_of_columns_w_qual_param)
         )
-        self.ListOfColumns_WQUALVALUE.currentIndexChanged.connect(
-            partial(self.ChangedListOfColumnsWQualValue)
+        self.list_of_columns_wqualvalue.currentIndexChanged.connect(
+            partial(self.changed_list_of_columns_w_qual_value)
         )
-        self.ListOfdate_time_format.currentIndexChanged.connect(
-            partial(self.ChangedListOfdate_time_format)
+        self.list_ofdate_time_format.currentIndexChanged.connect(
+            partial(self.changed_list_ofdate_time_format)
         )
-        self.ListOfColumns_WQUALUNIT.currentIndexChanged.connect(
-            partial(self.ChangedListOfColumnsWQualUnit)
+        self.list_of_columns_wqualunit.currentIndexChanged.connect(
+            partial(self.changed_list_of_columns_w_qual_unit)
         )
-        self.ListOfColumns_WQUALSORTING.currentIndexChanged.connect(
-            partial(self.ChangedListOfColumnsWQualSorting)
+        self.list_of_columns_wqualsorting.currentIndexChanged.connect(
+            partial(self.changed_list_of_columns_w_qual_sorting)
         )
 
         # tab piper
-        self.paramCl.currentIndexChanged.connect(partial(self.ChangedParamCl))
-        self.paramHCO3.currentIndexChanged.connect(partial(self.ChangedParamHCO3))
-        self.paramSO4.currentIndexChanged.connect(partial(self.ChangedParamSO4))
-        self.paramNa.currentIndexChanged.connect(partial(self.ChangedParamNa))
-        self.paramK.currentIndexChanged.connect(partial(self.ChangedParamK))
-        self.paramCa.currentIndexChanged.connect(partial(self.ChangedParamCa))
-        self.paramMg.currentIndexChanged.connect(partial(self.ChangedParamMg))
-        self.MarkerComboBox.currentIndexChanged.connect(
-            partial(self.ChangedPiperMarkerComboBox)
+        self.param_cl.currentIndexChanged.connect(partial(self.changed_param_cl))
+        self.param_hco3.currentIndexChanged.connect(partial(self.changed_param_hco3))
+        self.param_so4.currentIndexChanged.connect(partial(self.changed_param_so4))
+        self.param_na.currentIndexChanged.connect(partial(self.changed_param_na))
+        self.param_k.currentIndexChanged.connect(partial(self.changed_param_k))
+        self.param_ca.currentIndexChanged.connect(partial(self.changed_param_ca))
+        self.param_mg.currentIndexChanged.connect(partial(self.changed_param_mg))
+        self.marker_combo_box.currentIndexChanged.connect(
+            partial(self.changed_piper_marker_combo_box)
         )
 
         # Draw the widget
         self.iface.addDockWidget(max(self.ms.settingsdict["settingslocation"], 1), self)
         self.iface.mapCanvas().setRenderFlag(True)
 
-    def ChangedCheckBoxDataPoints(self):
-        self.ms.settingsdict["tsdotmarkers"] = self.checkBoxDataPoints.checkState()
+    def changed_check_box_data_points(self):
+        self.ms.settingsdict["tsdotmarkers"] = self.check_box_data_points.checkState()
         self.ms.save_settings("tsdotmarkers")
 
-    def ChangedCheckBoxDataPoints2(self):
-        self.ms.settingsdict["xydotmarkers"] = self.checkBoxDataPoints_2.checkState()
+    def changed_check_box_data_points2(self):
+        self.ms.settingsdict["xydotmarkers"] = self.check_box_data_points_2.checkState()
         self.ms.save_settings("xydotmarkers")
 
-    def ChangedCheckBoxStepPlot(self):
-        self.ms.settingsdict["tsstepplot"] = self.checkBoxStepPlot.checkState()
+    def changed_check_box_step_plot(self):
+        self.ms.settingsdict["tsstepplot"] = self.check_box_step_plot.checkState()
         self.ms.save_settings("tsstepplot")
 
-    def ChangedListOfColumns(self):
-        self.ms.settingsdict["tscolumn"] = self.ListOfColumns.currentText()
+    def changed_list_of_columns(self):
+        self.ms.settingsdict["tscolumn"] = self.list_of_columns.currentText()
         self.ms.save_settings("tscolumn")
 
-    def ChangedListOfColumns2(self):
-        self.ms.settingsdict["xy_xcolumn"] = self.ListOfColumns_2.currentText()
+    def changed_list_of_columns2(self):
+        self.ms.settingsdict["xy_xcolumn"] = self.list_of_columns_2.currentText()
         self.ms.save_settings("xy_xcolumn")
 
-    def ChangedListOfColumns3(self):
-        self.ms.settingsdict["xy_y1column"] = self.ListOfColumns_3.currentText()
+    def changed_list_of_columns3(self):
+        self.ms.settingsdict["xy_y1column"] = self.list_of_columns_3.currentText()
         self.ms.save_settings("xy_y1column")
 
-    def ChangedListOfColumns4(self):
-        self.ms.settingsdict["xy_y2column"] = self.ListOfColumns_4.currentText()
+    def changed_list_of_columns4(self):
+        self.ms.settingsdict["xy_y2column"] = self.list_of_columns_4.currentText()
         self.ms.save_settings("xy_y2column")
 
-    def ChangedListOfColumns5(self):
-        self.ms.settingsdict["xy_y3column"] = self.ListOfColumns_5.currentText()
+    def changed_list_of_columns5(self):
+        self.ms.settingsdict["xy_y3column"] = self.list_of_columns_5.currentText()
         self.ms.save_settings("xy_y3column")
 
-    def ChangedListOfColumnsWQualParam(self):
+    def changed_list_of_columns_w_qual_param(self):
         self.ms.settingsdict["wqual_paramcolumn"] = (
-            self.ListOfColumns_WQUALPARAM.currentText()
+            self.list_of_columns_wqualparam.currentText()
         )
         self.ms.save_settings("wqual_paramcolumn")
 
-    def ChangedListOfColumnsWQualValue(self):
+    def changed_list_of_columns_w_qual_value(self):
         self.ms.settingsdict["wqual_valuecolumn"] = (
-            self.ListOfColumns_WQUALVALUE.currentText()
+            self.list_of_columns_wqualvalue.currentText()
         )
         self.ms.save_settings("wqual_valuecolumn")
 
-    def ChangedListOfColumnsWQualUnit(self):
+    def changed_list_of_columns_w_qual_unit(self):
         self.ms.settingsdict["wqual_unitcolumn"] = (
-            self.ListOfColumns_WQUALUNIT.currentText()
+            self.list_of_columns_wqualunit.currentText()
         )
         self.ms.save_settings("wqual_unitcolumn")
 
-    def ChangedListOfColumnsWQualSorting(self):
+    def changed_list_of_columns_w_qual_sorting(self):
         self.ms.settingsdict["wqual_sortingcolumn"] = (
-            self.ListOfColumns_WQUALSORTING.currentText()
+            self.list_of_columns_wqualsorting.currentText()
         )
         self.ms.save_settings("wqual_sortingcolumn")
 
-    def ChangedListOfdate_time_format(self):
+    def changed_list_ofdate_time_format(self):
         self.ms.settingsdict["wqual_date_time_format"] = (
-            self.ListOfdate_time_format.currentText()
+            self.list_ofdate_time_format.currentText()
         )
         self.ms.save_settings("wqual_date_time_format")
 
-    def ChangedParamCl(self):
-        self.ms.settingsdict["piper_cl"] = self.paramCl.currentText()
+    def changed_param_cl(self):
+        self.ms.settingsdict["piper_cl"] = self.param_cl.currentText()
         self.ms.save_settings("piper_cl")
 
-    def ChangedParamHCO3(self):
-        self.ms.settingsdict["piper_hco3"] = self.paramHCO3.currentText()
+    def changed_param_hco3(self):
+        self.ms.settingsdict["piper_hco3"] = self.param_hco3.currentText()
         self.ms.save_settings("piper_hco3")
 
-    def ChangedParamSO4(self):
-        self.ms.settingsdict["piper_so4"] = self.paramSO4.currentText()
+    def changed_param_so4(self):
+        self.ms.settingsdict["piper_so4"] = self.param_so4.currentText()
         self.ms.save_settings("piper_so4")
 
-    def ChangedParamNa(self):
-        self.ms.settingsdict["piper_na"] = self.paramNa.currentText()
+    def changed_param_na(self):
+        self.ms.settingsdict["piper_na"] = self.param_na.currentText()
         self.ms.save_settings("piper_na")
 
-    def ChangedParamK(self):
-        self.ms.settingsdict["piper_k"] = self.paramK.currentText()
+    def changed_param_k(self):
+        self.ms.settingsdict["piper_k"] = self.param_k.currentText()
         self.ms.save_settings("piper_k")
 
-    def ChangedParamCa(self):
-        self.ms.settingsdict["piper_ca"] = self.paramCa.currentText()
+    def changed_param_ca(self):
+        self.ms.settingsdict["piper_ca"] = self.param_ca.currentText()
         self.ms.save_settings("piper_ca")
 
-    def ChangedParamMg(self):
-        self.ms.settingsdict["piper_mg"] = self.paramMg.currentText()
+    def changed_param_mg(self):
+        self.ms.settingsdict["piper_mg"] = self.param_mg.currentText()
         self.ms.save_settings("piper_mg")
 
-    def ChangedPiperMarkerComboBox(self):
-        self.ms.settingsdict["piper_markers"] = self.MarkerComboBox.currentText()
+    def changed_piper_marker_combo_box(self):
+        self.ms.settingsdict["piper_markers"] = self.marker_combo_box.currentText()
         self.ms.save_settings("piper_markers")
 
     def changed_combobox(self, combobox, settings_string):
         """All "ChangedX" that are comboboxed should be replaced to this one
         Usage:
-        self.paramHCO3, SIGNAL("activated(int)"), partial(self.changed_combobox, self.paramHCO3, 'piper_hco3'))
+        self.param_hco3, SIGNAL("activated(int)"), partial(self.changed_combobox, self.param_hco3, 'piper_hco3'))
         """
         self.ms.settingsdict[settings_string] = combobox.currentText()
         self.ms.save_settings(settings_string)
 
-    def ClearColumnLists(self):
-        self.ListOfColumns.clear()
-        self.ListOfColumns_2.clear()
-        self.ListOfColumns_3.clear()
-        self.ListOfColumns_4.clear()
-        self.ListOfColumns_5.clear()
-        self.ListOfColumns_WQUALPARAM.clear()
-        self.ListOfColumns_WQUALVALUE.clear()
-        self.ListOfColumns_WQUALUNIT.clear()
-        self.ListOfColumns_WQUALSORTING.clear()
+    def clear_column_lists(self):
+        self.list_of_columns.clear()
+        self.list_of_columns_2.clear()
+        self.list_of_columns_3.clear()
+        self.list_of_columns_4.clear()
+        self.list_of_columns_5.clear()
+        self.list_of_columns_wqualparam.clear()
+        self.list_of_columns_wqualvalue.clear()
+        self.list_of_columns_wqualunit.clear()
+        self.list_of_columns_wqualsorting.clear()
 
     def clear_everything(self):
         self.database_settings.clear()
-        self.ClearTableLists()
-        self.ClearColumnLists()
-        self.ClearPiperParams()
+        self.clear_table_lists()
+        self.clear_column_lists()
+        self.clear_piper_params()
 
-    def ClearTableLists(self):
-        self.ListOfTables.clear()
-        self.ListOfTables_2.clear()
-        self.ListOfTables_WQUAL.clear()
+    def clear_table_lists(self):
+        self.list_of_tables.clear()
+        self.list_of_tables_2.clear()
+        self.list_of_tables_wqual.clear()
 
-    def ClearPiperParams(self):
-        self.paramCl.clear()
-        self.paramHCO3.clear()
-        self.paramSO4.clear()
-        self.paramNa.clear()
-        self.paramK.clear()
-        self.paramCa.clear()
-        self.paramMg.clear()
+    def clear_piper_params(self):
+        self.param_cl.clear()
+        self.param_hco3.clear()
+        self.param_so4.clear()
+        self.param_na.clear()
+        self.param_k.clear()
+        self.param_ca.clear()
+        self.param_mg.clear()
 
-    def ColumnsToComboBox(self, comboboxname: str = "", table: Optional[str] = None):
+    def columns_to_combo_box(self, comboboxname: str = "", table: Optional[str] = None):
         getattr(self, comboboxname).clear()
         """This method fills comboboxes with columns for selected tool and table"""
-        columns = self.LoadColumnsFromTable(
+        columns = self.load_columns_from_table(
             table
         )  # Load all columns into a list 'columns'
         if len(columns) > 0:  # Transfer information from list 'columns' to the combobox
@@ -282,8 +282,8 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
 
     @common_utils.general_exception_handler
     def load_plot_settings(self):
-        self.loadTablesFromDB()  # All ListOfTables are filled with relevant information
-        self.LoadDistinctPiperParams()
+        self.load_tables_from_db()  # All ListOfTables are filled with relevant information
+        self.load_distinct_piper_params()
 
         # TS plot settings
         self.load_and_select_last_ts_plot_settings()
@@ -298,35 +298,35 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
         self.load_and_select_last_piper_settings()
 
         # finally, set dockwidget to last choosen tab
-        self.tabWidget.setCurrentIndex(int(self.ms.settingsdict["tabwidget"]))
+        self.tab_widget.setCurrentIndex(int(self.ms.settingsdict["tabwidget"]))
 
     def load_and_select_last_piper_settings(self):
-        searchindex = self.paramCl.findText(self.ms.settingsdict["piper_cl"])
+        searchindex = self.param_cl.findText(self.ms.settingsdict["piper_cl"])
         if searchindex >= 0:
-            self.paramCl.setCurrentIndex(searchindex)
-        searchindex = self.paramHCO3.findText(self.ms.settingsdict["piper_hco3"])
+            self.param_cl.setCurrentIndex(searchindex)
+        searchindex = self.param_hco3.findText(self.ms.settingsdict["piper_hco3"])
         if searchindex >= 0:
-            self.paramHCO3.setCurrentIndex(searchindex)
-        searchindex = self.paramSO4.findText(self.ms.settingsdict["piper_so4"])
+            self.param_hco3.setCurrentIndex(searchindex)
+        searchindex = self.param_so4.findText(self.ms.settingsdict["piper_so4"])
         if searchindex >= 0:
-            self.paramSO4.setCurrentIndex(searchindex)
-        searchindex = self.paramNa.findText(self.ms.settingsdict["piper_na"])
+            self.param_so4.setCurrentIndex(searchindex)
+        searchindex = self.param_na.findText(self.ms.settingsdict["piper_na"])
         if searchindex >= 0:
-            self.paramNa.setCurrentIndex(searchindex)
-        searchindex = self.paramK.findText(self.ms.settingsdict["piper_k"])
+            self.param_na.setCurrentIndex(searchindex)
+        searchindex = self.param_k.findText(self.ms.settingsdict["piper_k"])
         if searchindex >= 0:
-            self.paramK.setCurrentIndex(searchindex)
-        searchindex = self.paramCa.findText(self.ms.settingsdict["piper_ca"])
+            self.param_k.setCurrentIndex(searchindex)
+        searchindex = self.param_ca.findText(self.ms.settingsdict["piper_ca"])
         if searchindex >= 0:
-            self.paramCa.setCurrentIndex(searchindex)
-        searchindex = self.paramMg.findText(self.ms.settingsdict["piper_mg"])
+            self.param_ca.setCurrentIndex(searchindex)
+        searchindex = self.param_mg.findText(self.ms.settingsdict["piper_mg"])
         if searchindex >= 0:
-            self.paramMg.setCurrentIndex(searchindex)
-        searchindex = self.MarkerComboBox.findText(
+            self.param_mg.setCurrentIndex(searchindex)
+        searchindex = self.marker_combo_box.findText(
             self.ms.settingsdict["piper_markers"]
         )
         if searchindex >= 0:
-            self.MarkerComboBox.setCurrentIndex(searchindex)
+            self.marker_combo_box.setCurrentIndex(searchindex)
 
     def load_and_select_last_ts_plot_settings(self):
         if len(
@@ -335,68 +335,68 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
             notfound = 0
             i = 0
             while notfound == 0:  # Loop until the last selected tstable is found
-                self.ListOfTables.setCurrentIndex(i)
-                if str(self.ListOfTables.currentText()) == str(
+                self.list_of_tables.setCurrentIndex(i)
+                if str(self.list_of_tables.currentText()) == str(
                     self.ms.settingsdict["tstable"]
                 ):  # The index count stops when last selected table is found #MacOSX fix1
                     notfound = 1
-                    self.TSTableUpdated()  # Fill the given combobox with columns from the given table and also perform a sanity check of table
-                    searchindex = self.ListOfColumns.findText(
+                    self.ts_table_updated()  # Fill the given combobox with columns from the given table and also perform a sanity check of table
+                    searchindex = self.list_of_columns.findText(
                         self.ms.settingsdict["tscolumn"]
                     )
                     if searchindex >= 0:
-                        self.ListOfColumns.setCurrentIndex(searchindex)
-                elif i > len(self.ListOfTables):
+                        self.list_of_columns.setCurrentIndex(searchindex)
+                elif i > len(self.list_of_tables):
                     notfound = 1
                 i = i + 1
 
         if (
             self.ms.settingsdict["tsdotmarkers"] == 2
         ):  # If the TSPlot dot markers checkbox was checked last time it will be so now #MacOSX fix1
-            self.checkBoxDataPoints.setChecked(True)
+            self.check_box_data_points.setChecked(True)
         else:
-            self.checkBoxDataPoints.setChecked(False)
+            self.check_box_data_points.setChecked(False)
         if (
             self.ms.settingsdict["tsstepplot"] == 2
         ):  # If the TSPlot stepplot checkbox was checked last time it will be so now #MacOSX fix1
-            self.checkBoxStepPlot.setChecked(True)
+            self.check_box_step_plot.setChecked(True)
         else:
-            self.checkBoxStepPlot.setChecked(False)
+            self.check_box_step_plot.setChecked(False)
 
     def load_and_select_last_wqual_settings(self):
-        searchindexouter = self.ListOfTables_WQUAL.findText(
+        searchindexouter = self.list_of_tables_wqual.findText(
             self.ms.settingsdict["wqualtable"]
         )
         if searchindexouter >= 0:
-            self.ListOfTables_WQUAL.setCurrentIndex(searchindexouter)
-            self.WQUALTableUpdated()
+            self.list_of_tables_wqual.setCurrentIndex(searchindexouter)
+            self.wqual_table_updated()
             # and then check all possible last selected columns for parameters, values etc.
-            searchindex = self.ListOfColumns_WQUALPARAM.findText(
+            searchindex = self.list_of_columns_wqualparam.findText(
                 self.ms.settingsdict["wqual_paramcolumn"]
             )
             if searchindex >= 0:
-                self.ListOfColumns_WQUALPARAM.setCurrentIndex(searchindex)
-            searchindex = self.ListOfColumns_WQUALVALUE.findText(
+                self.list_of_columns_wqualparam.setCurrentIndex(searchindex)
+            searchindex = self.list_of_columns_wqualvalue.findText(
                 self.ms.settingsdict["wqual_valuecolumn"]
             )
             if searchindex >= 0:
-                self.ListOfColumns_WQUALVALUE.setCurrentIndex(searchindex)
-            searchindex = self.ListOfdate_time_format.findText(
+                self.list_of_columns_wqualvalue.setCurrentIndex(searchindex)
+            searchindex = self.list_ofdate_time_format.findText(
                 self.ms.settingsdict["wqual_date_time_format"]
             )
             if searchindex == -1:
                 searchindex = 1
-            self.ListOfdate_time_format.setCurrentIndex(searchindex)
-            searchindex = self.ListOfColumns_WQUALUNIT.findText(
+            self.list_ofdate_time_format.setCurrentIndex(searchindex)
+            searchindex = self.list_of_columns_wqualunit.findText(
                 self.ms.settingsdict["wqual_unitcolumn"]
             )
             if searchindex >= 0:
-                self.ListOfColumns_WQUALUNIT.setCurrentIndex(searchindex)
-            searchindex = self.ListOfColumns_WQUALSORTING.findText(
+                self.list_of_columns_wqualunit.setCurrentIndex(searchindex)
+            searchindex = self.list_of_columns_wqualsorting.findText(
                 self.ms.settingsdict["wqual_sortingcolumn"]
             )
             if searchindex >= 0:
-                self.ListOfColumns_WQUALSORTING.setCurrentIndex(searchindex)
+                self.list_of_columns_wqualsorting.setCurrentIndex(searchindex)
 
     def load_and_select_last_xyplot_settings(self):
         if len(
@@ -407,76 +407,76 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
             while (
                 notfound == 0
             ):  # looping through ListOfTables_2 looking for last selected xytable
-                self.ListOfTables_2.setCurrentIndex(i)
-                if str(self.ListOfTables_2.currentText()) == str(
+                self.list_of_tables_2.setCurrentIndex(i)
+                if str(self.list_of_tables_2.currentText()) == str(
                     self.ms.settingsdict["xytable"]
                 ):  # when last selected xytable found, it is selected in list and a lot of columns is searced for #MacOSX fix1
                     notfound = 1
-                    self.XYTableUpdated()  # Fill the given combobox with columns from the given table and performs a test
-                    searchindex = self.ListOfColumns_2.findText(
+                    self.xy_table_updated()  # Fill the given combobox with columns from the given table and performs a test
+                    searchindex = self.list_of_columns_2.findText(
                         self.ms.settingsdict["xy_xcolumn"]
                     )
                     if searchindex >= 0:
-                        self.ListOfColumns_2.setCurrentIndex(searchindex)
-                    searchindex = self.ListOfColumns_3.findText(
+                        self.list_of_columns_2.setCurrentIndex(searchindex)
+                    searchindex = self.list_of_columns_3.findText(
                         self.ms.settingsdict["xy_y1column"]
                     )
                     if searchindex >= 0:
-                        self.ListOfColumns_3.setCurrentIndex(searchindex)
-                    searchindex = self.ListOfColumns_4.findText(
+                        self.list_of_columns_3.setCurrentIndex(searchindex)
+                    searchindex = self.list_of_columns_4.findText(
                         self.ms.settingsdict["xy_y2column"]
                     )
                     if searchindex >= 0:
-                        self.ListOfColumns_4.setCurrentIndex(searchindex)
-                    searchindex = self.ListOfColumns_5.findText(
+                        self.list_of_columns_4.setCurrentIndex(searchindex)
+                    searchindex = self.list_of_columns_5.findText(
                         self.ms.settingsdict["xy_y3column"]
                     )
                     if searchindex >= 0:
-                        self.ListOfColumns_5.setCurrentIndex(searchindex)
-                elif i > len(self.ListOfTables_2):
+                        self.list_of_columns_5.setCurrentIndex(searchindex)
+                elif i > len(self.list_of_tables_2):
                     notfound = 1
                 i = i + 1
 
         if (
             self.ms.settingsdict["xydotmarkers"] == 2
         ):  # If the XYPlot dot markers checkbox was checked last time it will be so now #MacOSX fix1
-            self.checkBoxDataPoints_2.setChecked(True)
+            self.check_box_data_points_2.setChecked(True)
         else:
-            self.checkBoxDataPoints_2.setChecked(False)
+            self.check_box_data_points_2.setChecked(False)
 
-    def LoadColumnsFromTable(self, table: str = "") -> List[Any]:
+    def load_columns_from_table(self, table: str = "") -> List[Any]:
         return db_utils.tables_columns().get(table, [])
 
-    def loadTablesFromDB(
+    def load_tables_from_db(
         self,
     ):  # This method populates all table-comboboxes with the tables inside the database
         # Execute a query in SQLite to return all available tables (sql syntax excludes some of the predefined tables)
         # start with cleaning comboboxes before filling with new entries
         tables = list(db_utils.tables_columns().keys())
 
-        self.ListOfTables.addItem("")
-        self.ListOfTables_2.addItem("")
-        self.ListOfTables_WQUAL.addItem("")
+        self.list_of_tables.addItem("")
+        self.list_of_tables_2.addItem("")
+        self.list_of_tables_wqual.addItem("")
 
         for table in sorted(tables):
-            self.ListOfTables.addItem(table)
-            self.ListOfTables_2.addItem(table)
-            self.ListOfTables_WQUAL.addItem(table)
+            self.list_of_tables.addItem(table)
+            self.list_of_tables_2.addItem(table)
+            self.list_of_tables_wqual.addItem(table)
 
-    def LoadDistinctPiperParams(self):
-        self.ClearPiperParams()
+    def load_distinct_piper_params(self):
+        self.clear_piper_params()
 
         # Dict not implemented yet.
         lab_parameters = {}
         if lab_parameters:
             for param_list in [
-                self.paramCl,
-                self.paramHCO3,
-                self.paramSO4,
-                self.paramNa,
-                self.paramK,
-                self.paramCa,
-                self.paramMg,
+                self.param_cl,
+                self.param_hco3,
+                self.param_so4,
+                self.param_na,
+                self.param_k,
+                self.param_ca,
+                self.param_mg,
             ]:
                 new_list = [""]
                 new_list.extend(sorted(lab_parameters.keys()))
@@ -486,48 +486,48 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
                 r"""SELECT DISTINCT parameter FROM w_qual_lab ORDER BY parameter"""
             )
             if connection_ok:
-                self.paramCl.addItem("")
-                self.paramHCO3.addItem("")
-                self.paramSO4.addItem("")
-                self.paramNa.addItem("")
-                self.paramK.addItem("")
-                self.paramCa.addItem("")
-                self.paramMg.addItem("")
+                self.param_cl.addItem("")
+                self.param_hco3.addItem("")
+                self.param_so4.addItem("")
+                self.param_na.addItem("")
+                self.param_k.addItem("")
+                self.param_ca.addItem("")
+                self.param_mg.addItem("")
                 for row in result:
-                    self.paramCl.addItem(row[0])
-                    self.paramHCO3.addItem(row[0])
-                    self.paramSO4.addItem(row[0])
-                    self.paramNa.addItem(row[0])
-                    self.paramK.addItem(row[0])
-                    self.paramCa.addItem(row[0])
-                    self.paramMg.addItem(row[0])
+                    self.param_cl.addItem(row[0])
+                    self.param_hco3.addItem(row[0])
+                    self.param_so4.addItem(row[0])
+                    self.param_na.addItem(row[0])
+                    self.param_k.addItem(row[0])
+                    self.param_ca.addItem(row[0])
+                    self.param_mg.addItem(row[0])
 
-    def PiperClUpdated(self):
-        self.ms.settingsdict["piper_cl"] = str(self.paramCl.currentText())
+    def piper_cl_updated(self):
+        self.ms.settingsdict["piper_cl"] = str(self.param_cl.currentText())
         self.ms.save_settings("piper_cl")  # save this specific setting
 
-    def PiperHCO3Updated(self):
-        self.ms.settingsdict["piper_hco3"] = str(self.paramHCO3.currentText())
+    def piper_hco3_updated(self):
+        self.ms.settingsdict["piper_hco3"] = str(self.param_hco3.currentText())
         self.ms.save_settings("piper_hco3")  # save this specific setting
 
-    def PiperSO4Updated(self):
-        self.ms.settingsdict["piper_so4"] = str(self.paramSO4.currentText())
+    def piper_so4_updated(self):
+        self.ms.settingsdict["piper_so4"] = str(self.param_so4.currentText())
         self.ms.save_settings("piper_so4")  # save this specific setting
 
-    def PiperNaUpdated(self):
-        self.ms.settingsdict["piper_na"] = str(self.paramNa.currentText())
+    def piper_na_updated(self):
+        self.ms.settingsdict["piper_na"] = str(self.param_na.currentText())
         self.ms.save_settings("piper_na")  # save this specific setting
 
-    def PiperKUpdated(self):
-        self.ms.settingsdict["piper_k"] = str(self.paramK.currentText())
+    def piper_k_updated(self):
+        self.ms.settingsdict["piper_k"] = str(self.param_k.currentText())
         self.ms.save_settings("piper_k")  # save this specific setting
 
-    def PiperCaUpdated(self):
-        self.ms.settingsdict["piper_ca"] = str(self.paramCa.currentText())
+    def piper_ca_updated(self):
+        self.ms.settingsdict["piper_ca"] = str(self.param_ca.currentText())
         self.ms.save_settings("piper_ca")  # save this specific setting
 
-    def PiperMgUpdated(self):
-        self.ms.settingsdict["piper_mg"] = str(self.paramMg.currentText())
+    def piper_mg_updated(self):
+        self.ms.settingsdict["piper_mg"] = str(self.param_mg.currentText())
         self.ms.save_settings("piper_mg")  # save this specific setting
 
     def set_location(self):
@@ -535,15 +535,15 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
         self.ms.settingsdict["settingslocation"] = dockarea
         self.ms.save_settings("settingslocation")
 
-    def TSTableUpdated(self):
+    def ts_table_updated(self):
         """This method is called whenever time series table is changed"""
         # First, update combobox with columns
-        self.ColumnsToComboBox(
-            "ListOfColumns", self.ListOfTables.currentText()
+        self.columns_to_combo_box(
+            "list_of_columns", self.list_of_tables.currentText()
         )  # For some reason it is not possible to send currentText with the SIGNAL-trigger
         # Second, Make sure that columns obsid and date_time exists
-        columns = self.LoadColumnsFromTable(
-            self.ListOfTables.currentText()
+        columns = self.load_columns_from_table(
+            self.list_of_tables.currentText()
         )  # For some reason it is not possible to send currentText with the SIGNAL-trigger
         if ("obsid" in columns) and ("date_time" in columns):
             text = "<font color=green>%s</font>" % ru(
@@ -559,74 +559,74 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
                     "Wrong table! obsid and/or date_time is missing.",
                 )
             )
-        self.InfoTxtTSPlot.setText(text)
+        self.info_txt_ts_plot.setText(text)
         # finally, save to qgis project settings
-        self.ms.settingsdict["tstable"] = self.ListOfTables.currentText()
+        self.ms.settingsdict["tstable"] = self.list_of_tables.currentText()
         self.ms.save_settings("tstable")  # save this specific setting
 
-    def WQUALTableUpdated(self):
+    def wqual_table_updated(self):
         """This method is called whenever water quality table is changed and fils comboboxes with columns for wqual report"""
-        self.ListOfColumns_WQUALPARAM.clear()
-        self.ListOfColumns_WQUALVALUE.clear()
-        self.ListOfdate_time_format.clear()
-        self.ListOfColumns_WQUALUNIT.clear()
-        self.ListOfColumns_WQUALSORTING.clear()
-        columns = self.LoadColumnsFromTable(
-            self.ListOfTables_WQUAL.currentText()
+        self.list_of_columns_wqualparam.clear()
+        self.list_of_columns_wqualvalue.clear()
+        self.list_ofdate_time_format.clear()
+        self.list_of_columns_wqualunit.clear()
+        self.list_of_columns_wqualsorting.clear()
+        columns = self.load_columns_from_table(
+            self.list_of_tables_wqual.currentText()
         )  # Load all columns into a list (dict?) 'columns'
         if len(columns):  # Transfer information from list 'columns' to the combobox
-            self.ListOfColumns_WQUALPARAM.addItem("")
-            self.ListOfColumns_WQUALVALUE.addItem("")
-            self.ListOfdate_time_format.addItem("YYYY")
-            self.ListOfColumns_WQUALUNIT.addItem("")
-            self.ListOfColumns_WQUALSORTING.addItem("")
+            self.list_of_columns_wqualparam.addItem("")
+            self.list_of_columns_wqualvalue.addItem("")
+            self.list_ofdate_time_format.addItem("YYYY")
+            self.list_of_columns_wqualunit.addItem("")
+            self.list_of_columns_wqualsorting.addItem("")
             for columnName in columns:
-                self.ListOfColumns_WQUALPARAM.addItem(columnName)
-                self.ListOfColumns_WQUALVALUE.addItem(columnName)
-                self.ListOfColumns_WQUALUNIT.addItem(columnName)
-                self.ListOfColumns_WQUALSORTING.addItem(columnName)
-        self.ListOfdate_time_format.addItem("YYYY-MM")
-        self.ListOfdate_time_format.addItem("YYYY-MM-DD")
-        self.ListOfdate_time_format.addItem("YYYY-MM-DD hh")
-        self.ListOfdate_time_format.addItem("YYYY-MM-DD hh:mm")
-        self.ListOfdate_time_format.addItem("YYYY-MM-DD hh:mm:ss")
+                self.list_of_columns_wqualparam.addItem(columnName)
+                self.list_of_columns_wqualvalue.addItem(columnName)
+                self.list_of_columns_wqualunit.addItem(columnName)
+                self.list_of_columns_wqualsorting.addItem(columnName)
+        self.list_ofdate_time_format.addItem("YYYY-MM")
+        self.list_ofdate_time_format.addItem("YYYY-MM-DD")
+        self.list_ofdate_time_format.addItem("YYYY-MM-DD hh")
+        self.list_ofdate_time_format.addItem("YYYY-MM-DD hh:mm")
+        self.list_ofdate_time_format.addItem("YYYY-MM-DD hh:mm:ss")
         # self.ChangedListOfColumnsWQualParam()
         # self.ChangedListOfColumnsWQualValue()
         # self.ChangedListOfdate_time_format()
         # self.ChangedListOfColumnsWQualUnit()
         # self.ChangedListOfColumnsWQualSorting()
-        self.ms.settingsdict["wqualtable"] = self.ListOfTables_WQUAL.currentText()
+        self.ms.settingsdict["wqualtable"] = self.list_of_tables_wqual.currentText()
         self.ms.save_settings("wqualtable")  # save this specific setting
 
-    def XYColumnsToComboBox(self, table: Optional[str] = None):
+    def xy_columns_to_combo_box(self, table: Optional[str] = None):
         """This method fills comboboxes with columns for xyplot"""
-        self.ListOfColumns_2.clear()
-        self.ListOfColumns_3.clear()
-        self.ListOfColumns_4.clear()
-        self.ListOfColumns_5.clear()
-        columns = self.LoadColumnsFromTable(
+        self.list_of_columns_2.clear()
+        self.list_of_columns_3.clear()
+        self.list_of_columns_4.clear()
+        self.list_of_columns_5.clear()
+        columns = self.load_columns_from_table(
             table
         )  # Load all columns into a list (dict?) 'columns'
         if len(columns):  # Transfer information from list 'columns' to the combobox
-            self.ListOfColumns_2.addItem("")
-            self.ListOfColumns_3.addItem("")
-            self.ListOfColumns_4.addItem("")
-            self.ListOfColumns_5.addItem("")
+            self.list_of_columns_2.addItem("")
+            self.list_of_columns_3.addItem("")
+            self.list_of_columns_4.addItem("")
+            self.list_of_columns_5.addItem("")
             for columnName in columns:
-                self.ListOfColumns_2.addItem(columnName)
-                self.ListOfColumns_3.addItem(columnName)
-                self.ListOfColumns_4.addItem(columnName)
-                self.ListOfColumns_5.addItem(columnName)
+                self.list_of_columns_2.addItem(columnName)
+                self.list_of_columns_3.addItem(columnName)
+                self.list_of_columns_4.addItem(columnName)
+                self.list_of_columns_5.addItem(columnName)
 
-    def XYTableUpdated(self):
+    def xy_table_updated(self):
         """This method is called whenever xy table is changed"""
         # First, update comboboxes with columns
-        self.XYColumnsToComboBox(
-            self.ListOfTables_2.currentText()
+        self.xy_columns_to_combo_box(
+            self.list_of_tables_2.currentText()
         )  # For some reason it is not possible to send currentText with the SIGNAL-trigger
         # Second, Make sure that column obsid exists
-        columns = self.LoadColumnsFromTable(
-            self.ListOfTables_2.currentText()
+        columns = self.load_columns_from_table(
+            self.list_of_tables_2.currentText()
         )  # For some reason it is not possible to send currentText with the SIGNAL-trigger
         if "obsid" in columns:
             text = "<font color=green>%s</font>" % ru(
@@ -640,8 +640,8 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
                     "midvsettingsdialogdock", "Wrong table! obsid is missing."
                 )
             )
-        self.InfoTxtXYPlot.setText(text)
-        self.ms.settingsdict["xytable"] = self.ListOfTables_2.currentText()
+        self.info_txt_xy_plot.setText(text)
+        self.ms.settingsdict["xytable"] = self.list_of_tables_2.currentText()
         self.ms.save_settings("xytable")  # save this specific setting
 
 

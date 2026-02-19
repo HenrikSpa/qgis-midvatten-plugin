@@ -43,12 +43,12 @@ from qgis.core import QgsProject, QgsVectorLayer, QgsFeature, QgsFields
 
 from midvatten.midvatten_plugin import Midvatten
 from midvatten.test.mocks_for_tests import DummyInterface2
-from midvatten.tools.import_data_to_db import midv_data_importer
+from midvatten.tools.import_data_to_db import MidvDataImporter
 from midvatten.tools.utils import common_utils
 from midvatten.tools.utils import db_utils
 
 
-class test_qapplication_is_running(object):
+class TestQapplicationIsRunning(object):
     """Tests that the QApplication is running"""
 
     def test_iface(self):
@@ -249,7 +249,7 @@ class MidvattenTestSpatialiteDbEn(MidvattenTestSpatialiteNotCreated):
 class MidvattenTestSpatialiteDbSvImportInstance(MidvattenTestSpatialiteDbSv):
     def setUp(self):
         super().setUp()
-        self.importinstance = midv_data_importer()
+        self.importinstance = MidvDataImporter()
 
     def tearDown(self):
         self.importinstance = None
@@ -383,7 +383,7 @@ class MidvattenTestPostgisDbEn(MidvattenTestPostgisNotCreated):
 class MidvattenTestPostgisDbSvImportInstance(MidvattenTestPostgisDbSv):
     def setUp(self):
         super().setUp()
-        self.importinstance = midv_data_importer()
+        self.importinstance = MidvDataImporter()
 
     def tearDown(self):
         self.importinstance = None

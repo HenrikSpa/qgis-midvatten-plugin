@@ -22,4 +22,21 @@ The following features are included:
 
 Please visit the [wiki](https://github.com/henrikspa/qgis-midvatten-plugin/wiki) for more information.
 
+## Coding style
+
+This project follows PEP 8 naming conventions:
+
+- **Classes:** CapWords (e.g. `MidvattenSettingsDock`)
+- **Functions, methods, variables:** `lowercase_with_underscores`
+- **Constants:** `UPPER_CASE_WITH_UNDERSCORES`
+
+Run the linter from the repository root:
+
+```bash
+ruff check midvatten/
+ruff format midvatten/
+```
+
+New code must pass `ruff check` before merging.
+
 _Copyright (c) 2016 Josef Källgården_

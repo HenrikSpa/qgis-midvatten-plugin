@@ -2,7 +2,7 @@
 <ui version="4.0">
  <author>groundwatergis@gmail.com</author>
  <class>mainWindow</class>
- <widget class="QMainWindow" name="mainWindow">
+ <widget class="QMainWindow" name="main_window">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -18,7 +18,7 @@
    <bool>false</bool>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout_8">
+   <layout class="QVBoxLayout" name="vertical_layout_8">
     <property name="spacing">
      <number>0</number>
     </property>
@@ -54,7 +54,7 @@
         <height>45</height>
        </size>
       </property>
-      <layout class="QHBoxLayout" name="horizontalLayout_3">
+      <layout class="QHBoxLayout" name="horizontal_layout_3">
        <property name="spacing">
         <number>0</number>
        </property>
@@ -71,7 +71,7 @@
         <number>0</number>
        </property>
        <item>
-        <widget class="QLabel" name="INFO">
+        <widget class="QLabel" name="info">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
            <horstretch>0</horstretch>
@@ -194,7 +194,7 @@
          <bold>false</bold>
         </font>
        </property>
-       <layout class="QVBoxLayout" name="verticalLayout_6">
+       <layout class="QVBoxLayout" name="vertical_layout_6">
         <property name="leftMargin">
          <number>6</number>
         </property>
@@ -208,9 +208,9 @@
          <number>0</number>
         </property>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout">
+         <layout class="QHBoxLayout" name="horizontal_layout">
           <item>
-           <widget class="QLabel" name="table_QLabel">
+           <widget class="QLabel" name="table_q_label">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -308,7 +308,7 @@
          </widget>
         </item>
         <item>
-         <layout class="QGridLayout" name="gridLayout">
+         <layout class="QGridLayout" name="grid_layout">
           <item row="0" column="0">
            <widget class="QLabel" name="label_2">
             <property name="sizePolicy">
@@ -337,7 +337,7 @@
            </widget>
           </item>
           <item row="0" column="1">
-           <widget class="QDateTimeEdit" name="FromDateTime">
+           <widget class="QDateTimeEdit" name="from_date_time">
             <property name="sizePolicy">
              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Minimum">
               <horstretch>0</horstretch>
@@ -404,7 +404,7 @@
            </widget>
           </item>
           <item row="1" column="0">
-           <widget class="QPushButton" name="pushButtonFrom">
+           <widget class="QPushButton" name="push_button_from">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
               <horstretch>0</horstretch>
@@ -434,7 +434,7 @@
            </widget>
           </item>
           <item row="1" column="1">
-           <widget class="QPushButton" name="pushButton_from_extent">
+           <widget class="QPushButton" name="push_button_from_extent">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
               <horstretch>0</horstretch>
@@ -498,7 +498,7 @@
            </widget>
           </item>
           <item row="3" column="1">
-           <widget class="QDateTimeEdit" name="ToDateTime">
+           <widget class="QDateTimeEdit" name="to_date_time">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
               <horstretch>0</horstretch>
@@ -551,7 +551,7 @@
            </widget>
           </item>
           <item row="4" column="0">
-           <widget class="QPushButton" name="pushButtonTo">
+           <widget class="QPushButton" name="push_button_to">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
               <horstretch>0</horstretch>
@@ -581,7 +581,7 @@
            </widget>
           </item>
           <item row="4" column="1">
-           <widget class="QPushButton" name="pushButton_to_extent">
+           <widget class="QPushButton" name="push_button_to_extent">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
               <horstretch>0</horstretch>
@@ -634,7 +634,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QTabWidget" name="tabWidget">
+         <widget class="QTabWidget" name="tab_widget">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
             <horstretch>0</horstretch>
@@ -677,7 +677,7 @@
            <attribute name="title">
             <string>Adjust level</string>
            </attribute>
-           <layout class="QVBoxLayout" name="verticalLayout_5">
+           <layout class="QVBoxLayout" name="vertical_layout_5">
             <property name="spacing">
              <number>5</number>
             </property>
@@ -751,7 +751,7 @@
              </widget>
             </item>
             <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_4">
+             <layout class="QHBoxLayout" name="horizontal_layout_4">
               <item>
                <widget class="QLabel" name="label_7">
                 <property name="sizePolicy">
@@ -925,7 +925,7 @@
              </widget>
             </item>
             <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_5">
+             <layout class="QHBoxLayout" name="horizontal_layout_5">
               <item>
                <widget class="QLabel" name="label_12">
                 <property name="sizePolicy">
@@ -1065,7 +1065,7 @@
              </widget>
             </item>
             <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_9">
+             <layout class="QHBoxLayout" name="horizontal_layout_9">
               <item>
                <widget class="QLabel" name="label_15">
                 <property name="sizePolicy">
@@ -1094,7 +1094,7 @@
                </widget>
               </item>
               <item>
-               <widget class="QLineEdit" name="bestFitSearchRadius">
+               <widget class="QLineEdit" name="best_fit_search_radius">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
                   <horstretch>0</horstretch>
@@ -1162,7 +1162,7 @@
            <attribute name="title">
             <string>Adjust trend</string>
            </attribute>
-           <layout class="QVBoxLayout" name="verticalLayout">
+           <layout class="QVBoxLayout" name="vertical_layout">
             <property name="leftMargin">
              <number>0</number>
             </property>
@@ -1177,7 +1177,7 @@
             </property>
             <item>
              <widget class="QWidget" name="widget" native="true">
-              <layout class="QVBoxLayout" name="verticalLayout_10">
+              <layout class="QVBoxLayout" name="vertical_layout_10">
                <property name="leftMargin">
                 <number>3</number>
                </property>
@@ -1191,14 +1191,14 @@
                 <number>3</number>
                </property>
                <item>
-                <widget class="QScrollArea" name="scrollArea">
+                <widget class="QScrollArea" name="scroll_area">
                  <property name="horizontalScrollBarPolicy">
                   <enum>Qt::ScrollBarAlwaysOff</enum>
                  </property>
                  <property name="widgetResizable">
                   <bool>true</bool>
                  </property>
-                 <widget class="QWidget" name="scrollAreaWidgetContents">
+                 <widget class="QWidget" name="scroll_area_widget_contents">
                   <property name="geometry">
                    <rect>
                     <x>0</x>
@@ -1207,7 +1207,7 @@
                     <height>347</height>
                    </rect>
                   </property>
-                  <layout class="QVBoxLayout" name="verticalLayout_9">
+                  <layout class="QVBoxLayout" name="vertical_layout_9">
                    <property name="leftMargin">
                     <number>6</number>
                    </property>
@@ -1255,7 +1255,7 @@
                 </widget>
                </item>
                <item>
-                <layout class="QGridLayout" name="gridLayout_4">
+                <layout class="QGridLayout" name="grid_layout_4">
                  <item row="1" column="1">
                   <widget class="QLabel" name="label_11">
                    <property name="text">
@@ -1264,7 +1264,7 @@
                   </widget>
                  </item>
                  <item row="4" column="2">
-                  <widget class="QLineEdit" name="L2_level">
+                  <widget class="QLineEdit" name="l2_level">
                    <property name="sizePolicy">
                     <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
                      <horstretch>0</horstretch>
@@ -1286,7 +1286,7 @@
                   </widget>
                  </item>
                  <item row="7" column="2">
-                  <widget class="QLineEdit" name="M2_level">
+                  <widget class="QLineEdit" name="m2_level">
                    <property name="sizePolicy">
                     <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
                      <horstretch>0</horstretch>
@@ -1308,7 +1308,7 @@
                   </widget>
                  </item>
                  <item row="3" column="0">
-                  <widget class="QLabel" name="L1_label">
+                  <widget class="QLabel" name="l1_label">
                    <property name="minimumSize">
                     <size>
                      <width>10</width>
@@ -1324,7 +1324,7 @@
                   </widget>
                  </item>
                  <item row="3" column="3">
-                  <widget class="QPushButton" name="L1_button">
+                  <widget class="QPushButton" name="l1_button">
                    <property name="toolTip">
                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select the first logger node that represents the old trend.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                    </property>
@@ -1334,7 +1334,7 @@
                   </widget>
                  </item>
                  <item row="4" column="0">
-                  <widget class="QLabel" name="L2_label">
+                  <widget class="QLabel" name="l2_label">
                    <property name="minimumSize">
                     <size>
                      <width>10</width>
@@ -1350,7 +1350,7 @@
                   </widget>
                  </item>
                  <item row="4" column="1">
-                  <widget class="QDateTimeEdit" name="L2_date">
+                  <widget class="QDateTimeEdit" name="l2_date">
                    <property name="sizePolicy">
                     <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
                      <horstretch>0</horstretch>
@@ -1423,7 +1423,7 @@
                   </widget>
                  </item>
                  <item row="4" column="3">
-                  <widget class="QPushButton" name="L2_button">
+                  <widget class="QPushButton" name="l2_button">
                    <property name="toolTip">
                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select the last logger node that represents the old trend.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                    </property>
@@ -1433,7 +1433,7 @@
                   </widget>
                  </item>
                  <item row="6" column="0">
-                  <widget class="QLabel" name="M1_Label">
+                  <widget class="QLabel" name="m1_label">
                    <property name="minimumSize">
                     <size>
                      <width>10</width>
@@ -1449,7 +1449,7 @@
                   </widget>
                  </item>
                  <item row="6" column="1">
-                  <widget class="QDateTimeEdit" name="M1_date">
+                  <widget class="QDateTimeEdit" name="m1_date">
                    <property name="sizePolicy">
                     <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
                      <horstretch>0</horstretch>
@@ -1522,7 +1522,7 @@
                   </widget>
                  </item>
                  <item row="6" column="3">
-                  <widget class="QPushButton" name="M1_button">
+                  <widget class="QPushButton" name="m1_button">
                    <property name="toolTip">
                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select the start point for the new trend.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                    </property>
@@ -1532,7 +1532,7 @@
                   </widget>
                  </item>
                  <item row="7" column="0">
-                  <widget class="QLabel" name="M2_label">
+                  <widget class="QLabel" name="m2_label">
                    <property name="minimumSize">
                     <size>
                      <width>10</width>
@@ -1548,7 +1548,7 @@
                   </widget>
                  </item>
                  <item row="7" column="1">
-                  <widget class="QDateTimeEdit" name="M2_date">
+                  <widget class="QDateTimeEdit" name="m2_date">
                    <property name="sizePolicy">
                     <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
                      <horstretch>0</horstretch>
@@ -1621,7 +1621,7 @@
                   </widget>
                  </item>
                  <item row="7" column="3">
-                  <widget class="QPushButton" name="M2_button">
+                  <widget class="QPushButton" name="m2_button">
                    <property name="toolTip">
                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select the end point for the new trend.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                    </property>
@@ -1631,7 +1631,7 @@
                   </widget>
                  </item>
                  <item row="3" column="2">
-                  <widget class="QLineEdit" name="L1_level">
+                  <widget class="QLineEdit" name="l1_level">
                    <property name="sizePolicy">
                     <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
                      <horstretch>0</horstretch>
@@ -1656,7 +1656,7 @@
                   </widget>
                  </item>
                  <item row="6" column="2">
-                  <widget class="QLineEdit" name="M1_level">
+                  <widget class="QLineEdit" name="m1_level">
                    <property name="sizePolicy">
                     <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
                      <horstretch>0</horstretch>
@@ -1678,7 +1678,7 @@
                   </widget>
                  </item>
                  <item row="3" column="1" alignment="Qt::AlignTop">
-                  <widget class="QDateTimeEdit" name="L1_date">
+                  <widget class="QDateTimeEdit" name="l1_date">
                    <property name="sizePolicy">
                     <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
                      <horstretch>0</horstretch>
@@ -1808,7 +1808,7 @@
            <attribute name="title">
             <string>Delete data</string>
            </attribute>
-           <layout class="QGridLayout" name="gridLayout_6">
+           <layout class="QGridLayout" name="grid_layout_6">
             <property name="leftMargin">
              <number>0</number>
             </property>
@@ -1822,7 +1822,7 @@
              <number>0</number>
             </property>
             <item row="0" column="0">
-             <layout class="QVBoxLayout" name="verticalLayout_4">
+             <layout class="QVBoxLayout" name="vertical_layout_4">
               <property name="topMargin">
                <number>3</number>
               </property>
@@ -1865,14 +1865,14 @@
                </widget>
               </item>
               <item>
-               <widget class="QPushButton" name="pushButton_set_null">
+               <widget class="QPushButton" name="push_button_set_null">
                 <property name="text">
                  <string>Set level_masl to NULL</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QPushButton" name="pushButton_delete_logger">
+               <widget class="QPushButton" name="push_button_delete_logger">
                 <property name="minimumSize">
                  <size>
                   <width>80</width>
@@ -1897,7 +1897,7 @@
        <zorder>line_12</zorder>
        <zorder></zorder>
       </widget>
-      <widget class="QWidget" name="layoutWidget">
+      <widget class="QWidget" name="layout_widget">
        <property name="font">
         <font>
          <family>Noto Sans</family>
@@ -1906,9 +1906,9 @@
          <bold>false</bold>
         </font>
        </property>
-       <layout class="QVBoxLayout" name="verticalLayout_3">
+       <layout class="QVBoxLayout" name="vertical_layout_3">
         <item>
-         <widget class="QWidget" name="widgetPlot" native="true">
+         <widget class="QWidget" name="widget_plot" native="true">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -1929,7 +1929,7 @@
             <bold>false</bold>
            </font>
           </property>
-          <layout class="QGridLayout" name="gridLayout_5">
+          <layout class="QGridLayout" name="grid_layout_5">
            <property name="leftMargin">
             <number>0</number>
            </property>
@@ -1987,11 +1987,11 @@
          </widget>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <layout class="QHBoxLayout" name="horizontal_layout_2">
           <item>
-           <layout class="QGridLayout" name="gridLayout_7">
+           <layout class="QGridLayout" name="grid_layout_7">
             <item row="0" column="0">
-             <widget class="QCheckBox" name="loggerLineNodes">
+             <widget class="QCheckBox" name="logger_line_nodes">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -2094,7 +2094,7 @@
            </layout>
           </item>
           <item>
-           <widget class="QPushButton" name="pushButtonupdateplot">
+           <widget class="QPushButton" name="push_buttonupdateplot">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
               <horstretch>0</horstretch>

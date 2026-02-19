@@ -64,14 +64,14 @@ class CalculateLevel(
         self.setWindowTitle(
             ru(QCoreApplication.translate("Calclvl", "Calculate levels"))
         )
-        self.pushButton_All.clicked.connect(lambda x: self.calcall())
-        self.pushButton_Selected.clicked.connect(lambda x: self.calcselected())
-        self.pushButton_Cancel.clicked.connect(lambda x: self.close())
+        self.push_button_all.clicked.connect(lambda x: self.calcall())
+        self.push_button_selected.clicked.connect(lambda x: self.calcselected())
+        self.push_button_cancel.clicked.connect(lambda x: self.close())
         self.layer = layerin
 
     def calc(self, obsids: List[str]):
-        fr_d_t = self.FromDateTime.dateTime().toPyDateTime()
-        to_d_t = self.ToDateTime.dateTime().toPyDateTime()
+        fr_d_t = self.from_date_time.dateTime().toPyDateTime()
+        to_d_t = self.to_date_time.dateTime().toPyDateTime()
         dbconnection = db_utils.DbConnectionManager()
         try:
             in_clause, in_args = dbconnection.in_clause(obsids)
@@ -83,7 +83,7 @@ class CalculateLevel(
             )[1]
             if obsid_with_h_toc_null:
                 obsid_with_h_toc_null = [x[0] for x in obsid_with_h_toc_null]
-                if self.checkBox_stop_if_null.isChecked():
+                if self.check_box_stop_if_null.isChecked():
                     any_nulls = [
                         obsid for obsid in obsids if obsid in obsid_with_h_toc_null
                     ]
@@ -123,7 +123,7 @@ class CalculateLevel(
                 f"meas IS NOT NULL AND date_time >= {ph} AND date_time <= {ph} AND obsid IN {in_clause}"
             )
             where_sql_args = [fr_d_t, to_d_t] + in_args
-            if not self.checkBox_overwrite_prev.isChecked():
+            if not self.check_box_overwrite_prev.isChecked():
                 where_sql += """ AND level_masl IS NULL """
 
             sql1 = (

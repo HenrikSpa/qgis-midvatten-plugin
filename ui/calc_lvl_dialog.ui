@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>Dialog</class>
- <widget class="QDialog" name="Dialog">
+ <widget class="QDialog" name="dialog">
   <property name="windowModality">
    <enum>Qt::NonModal</enum>
   </property>
@@ -40,11 +40,11 @@
   <property name="modal">
    <bool>false</bool>
   </property>
-  <layout class="QGridLayout" name="gridLayout_2">
+  <layout class="QGridLayout" name="grid_layout_2">
    <item row="0" column="0">
-    <layout class="QGridLayout" name="gridLayout">
+    <layout class="QGridLayout" name="grid_layout">
      <item row="9" column="1">
-      <widget class="QPushButton" name="pushButton_All">
+      <widget class="QPushButton" name="push_button_all">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -69,7 +69,7 @@
       </widget>
      </item>
      <item row="0" column="0" colspan="4">
-      <widget class="QLabel" name="Instructions">
+      <widget class="QLabel" name="instructions">
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -195,7 +195,7 @@ obs_points.h_toc - w_levels.meas
       </widget>
      </item>
      <item row="3" column="0" colspan="2">
-      <widget class="QDateTimeEdit" name="FromDateTime">
+      <widget class="QDateTimeEdit" name="from_date_time">
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -252,7 +252,7 @@ obs_points.h_toc - w_levels.meas
       </widget>
      </item>
      <item row="3" column="2" colspan="2">
-      <widget class="QDateTimeEdit" name="ToDateTime">
+      <widget class="QDateTimeEdit" name="to_date_time">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -355,7 +355,7 @@ all or only the selected objects?</string>
       </widget>
      </item>
      <item row="9" column="2">
-      <widget class="QPushButton" name="pushButton_Selected">
+      <widget class="QPushButton" name="push_button_selected">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -380,7 +380,7 @@ all or only the selected objects?</string>
       </widget>
      </item>
      <item row="9" column="3">
-      <widget class="QPushButton" name="pushButton_Cancel">
+      <widget class="QPushButton" name="push_button_cancel">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -405,7 +405,7 @@ all or only the selected objects?</string>
       </widget>
      </item>
      <item row="5" column="0" colspan="4">
-      <widget class="QCheckBox" name="checkBox_overwrite_prev">
+      <widget class="QCheckBox" name="check_box_overwrite_prev">
        <property name="toolTip">
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Checked: H_toc and level_masl will be calculated for all rows.&lt;br/&gt;Unchecked: H_toc and level_masl will only be calculated for rows where level_masl is NULL.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
@@ -442,7 +442,7 @@ all or only the selected objects?</string>
       </widget>
      </item>
      <item row="6" column="0" colspan="4">
-      <widget class="QCheckBox" name="checkBox_stop_if_null">
+      <widget class="QCheckBox" name="check_box_stop_if_null">
        <property name="toolTip">
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Checked: If obs_points.h_toc is NULL for any obsid included in calculation, the calculation will not be performed for any obsid.&lt;br/&gt;Unchecked: Obsids where obs_points.h_toc is NULL will be skipped and calculation will be performed for the rest.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>

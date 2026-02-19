@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>Dialog</class>
- <widget class="QDialog" name="Dialog">
+ <widget class="QDialog" name="dialog">
   <property name="windowModality">
    <enum>Qt::NonModal</enum>
   </property>
@@ -40,11 +40,11 @@
   <property name="modal">
    <bool>false</bool>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_2">
+  <layout class="QVBoxLayout" name="vertical_layout_2">
    <item>
-    <layout class="QVBoxLayout" name="verticalLayout">
+    <layout class="QVBoxLayout" name="vertical_layout">
      <item>
-      <widget class="QLabel" name="Instructions">
+      <widget class="QLabel" name="instructions">
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
          <horstretch>0</horstretch>
@@ -107,7 +107,7 @@ Aveflow is to be calculated for Accvol observations within this interval:</strin
       </widget>
      </item>
      <item>
-      <layout class="QHBoxLayout" name="horizontalLayout">
+      <layout class="QHBoxLayout" name="horizontal_layout">
        <item>
         <widget class="QLabel" name="label_2">
          <property name="sizePolicy">
@@ -140,7 +140,7 @@ Aveflow is to be calculated for Accvol observations within this interval:</strin
         </widget>
        </item>
        <item>
-        <widget class="QDateTimeEdit" name="FromDateTime">
+        <widget class="QDateTimeEdit" name="from_date_time">
          <property name="sizePolicy">
           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -228,7 +228,7 @@ Aveflow is to be calculated for Accvol observations within this interval:</strin
         </widget>
        </item>
        <item>
-        <widget class="QDateTimeEdit" name="ToDateTime">
+        <widget class="QDateTimeEdit" name="to_date_time">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -332,9 +332,9 @@ Aveflow is to be calculated for Accvol observations within this interval:</strin
       </widget>
      </item>
      <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <layout class="QHBoxLayout" name="horizontal_layout_2">
        <item>
-        <widget class="QPushButton" name="pushButton_All">
+        <widget class="QPushButton" name="push_button_all">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -359,7 +359,7 @@ Aveflow is to be calculated for Accvol observations within this interval:</strin
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="pushButton_Selected">
+        <widget class="QPushButton" name="push_button_selected">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -384,7 +384,7 @@ Aveflow is to be calculated for Accvol observations within this interval:</strin
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="pushButton_Cancel">
+        <widget class="QPushButton" name="push_button_cancel">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
            <horstretch>0</horstretch>

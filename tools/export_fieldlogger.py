@@ -274,11 +274,11 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         )
         self.export_format_row.layout.addWidget(self.export_as_fieldlogger)
         self.export_format_row.layout.addWidget(self.export_as_fieldform)
-        self.gridLayout_buttons.addWidget(
-            self.export_format_row.widget, self.gridLayout_buttons.rowCount(), 0
+        self.grid_layout_buttons.addWidget(
+            self.export_format_row.widget, self.grid_layout_buttons.rowCount(), 0
         )
-        self.gridLayout_buttons.addWidget(
-            get_line(), self.gridLayout_buttons.rowCount(), 0
+        self.grid_layout_buttons.addWidget(
+            get_line(), self.grid_layout_buttons.rowCount(), 0
         )
         self.export_as_fieldlogger.setChecked(True)
         self.export_as_fieldform.clicked.connect(
@@ -351,8 +351,8 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         self.parameter_browser_button = QtWidgets.QPushButton(
             ru(QCoreApplication.translate("ExportToFieldLogger", "Create Input Fields"))
         )
-        self.gridLayout_buttons.addWidget(
-            self.parameter_browser_button, self.gridLayout_buttons.rowCount(), 0
+        self.grid_layout_buttons.addWidget(
+            self.parameter_browser_button, self.grid_layout_buttons.rowCount(), 0
         )
         self.parameter_browser_button.clicked.connect(
             lambda: self.parameter_browser.show()
@@ -380,30 +380,30 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
                 )
             )
         )
-        self.gridLayout_buttons.addWidget(
-            self.add_parameter_group, self.gridLayout_buttons.rowCount(), 0
+        self.grid_layout_buttons.addWidget(
+            self.add_parameter_group, self.grid_layout_buttons.rowCount(), 0
         )
         # Lambda and map is used to run several functions for every button click
         self.add_parameter_group.clicked.connect(self._add_parameter_group)
 
-        self.gridLayout_buttons.addWidget(
-            get_line(), self.gridLayout_buttons.rowCount(), 0
+        self.grid_layout_buttons.addWidget(
+            get_line(), self.grid_layout_buttons.rowCount(), 0
         )
 
         # obsid-layers:
-        self.gridLayout_buttons.addWidget(
+        self.grid_layout_buttons.addWidget(
             QtWidgets.QLabel(
                 QCoreApplication.translate("ExportToFieldLogger", "Locations from:")
             )
         )
-        self.gridLayout_buttons.addWidget(
-            self.obs_from_row.widget, self.gridLayout_buttons.rowCount(), 0
+        self.grid_layout_buttons.addWidget(
+            self.obs_from_row.widget, self.grid_layout_buttons.rowCount(), 0
         )
-        self.gridLayout_buttons.addWidget(
-            self.obslayer.widget, self.gridLayout_buttons.rowCount(), 0
+        self.grid_layout_buttons.addWidget(
+            self.obslayer.widget, self.grid_layout_buttons.rowCount(), 0
         )
-        self.gridLayout_buttons.addWidget(
-            get_line(), self.gridLayout_buttons.rowCount(), 0
+        self.grid_layout_buttons.addWidget(
+            get_line(), self.grid_layout_buttons.rowCount(), 0
         )
 
         if tables_columns:
@@ -424,8 +424,8 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
                 )
             )
         )
-        self.gridLayout_buttons.addWidget(
-            self.save_settings_button, self.gridLayout_buttons.rowCount(), 0
+        self.grid_layout_buttons.addWidget(
+            self.save_settings_button, self.grid_layout_buttons.rowCount(), 0
         )
         self.save_settings_button.clicked.connect(self.save_stored_settings)
 
@@ -439,8 +439,8 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
                 )
             )
         )
-        self.gridLayout_buttons.addWidget(
-            self.clear_settings_button, self.gridLayout_buttons.rowCount(), 0
+        self.grid_layout_buttons.addWidget(
+            self.clear_settings_button, self.grid_layout_buttons.rowCount(), 0
         )
         self.clear_settings_button.clicked.connect(self.clear_settings)
 
@@ -455,8 +455,8 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
                 )
             )
         )
-        self.gridLayout_buttons.addWidget(
-            self.settings_strings_button, self.gridLayout_buttons.rowCount(), 0
+        self.grid_layout_buttons.addWidget(
+            self.settings_strings_button, self.grid_layout_buttons.rowCount(), 0
         )
         self.settings_strings_button.clicked.connect(
             lambda x: self.settings_strings_dialogs()
@@ -473,15 +473,15 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
                 )
             )
         )
-        self.gridLayout_buttons.addWidget(
-            self.default_settings_button, self.gridLayout_buttons.rowCount(), 0
+        self.grid_layout_buttons.addWidget(
+            self.default_settings_button, self.grid_layout_buttons.rowCount(), 0
         )
         self.default_settings_button.clicked.connect(
             lambda x: self.restore_default_settings()
         )
 
-        self.gridLayout_buttons.addWidget(
-            get_line(), self.gridLayout_buttons.rowCount(), 0
+        self.grid_layout_buttons.addWidget(
+            get_line(), self.grid_layout_buttons.rowCount(), 0
         )
 
         self.preview_button = QtWidgets.QPushButton(
@@ -495,8 +495,8 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
                 )
             )
         )
-        self.gridLayout_buttons.addWidget(
-            self.preview_button, self.gridLayout_buttons.rowCount(), 0
+        self.grid_layout_buttons.addWidget(
+            self.preview_button, self.grid_layout_buttons.rowCount(), 0
         )
         # Lambda and map is used to run several functions for every button click
         self.preview_button.clicked.connect(lambda x: self.preview())
@@ -512,13 +512,13 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
                 )
             )
         )
-        self.gridLayout_buttons.addWidget(
-            self.export_button, self.gridLayout_buttons.rowCount(), 0
+        self.grid_layout_buttons.addWidget(
+            self.export_button, self.grid_layout_buttons.rowCount(), 0
         )
         # Lambda and map is used to run several functions for every button click
         self.export_button.clicked.connect(lambda x: self.export())
 
-        self.gridLayout_buttons.setRowStretch(self.gridLayout_buttons.rowCount(), 1)
+        self.grid_layout_buttons.setRowStretch(self.grid_layout_buttons.rowCount(), 1)
 
         self.show()
 
@@ -1191,7 +1191,7 @@ class ParameterBrowser(QtWidgets.QDialog, parameter_browser_dialog):
         )
         self._input_field_list.setMinimumWidth(200)
         # ------------------------------------------------------------------------------------
-        self.horizontalLayout.addWidget(self._input_field_list)
+        self.horizontal_layout.addWidget(self._input_field_list)
 
         self._options.setToolTip(
             ru(

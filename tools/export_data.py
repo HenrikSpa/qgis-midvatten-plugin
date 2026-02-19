@@ -28,7 +28,7 @@ from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.common_utils import returnunicode as ru
 from midvatten.definitions import midvatten_defs as defs, db_defs
 
-from midvatten.tools.import_data_to_db import midv_data_importer
+from midvatten.tools.import_data_to_db import MidvDataImporter
 from midvatten.tools.utils.db_utils import DbConnectionManager
 from typing import Any, Callable, List, Optional, Tuple, Union
 
@@ -88,7 +88,7 @@ class ExportData(object):
         self.dest_dbconnection = db_utils.DbConnectionManager(target_db)
         self.dest_dbconnection.connect2db()
 
-        self.midv_data_importer = midv_data_importer()
+        self.midv_data_importer = MidvDataImporter()
 
         self.write_data(
             self.to_sql,

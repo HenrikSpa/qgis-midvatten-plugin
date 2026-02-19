@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>MainWindow</class>
- <widget class="QMainWindow" name="MainWindow">
+ <widget class="QMainWindow" name="main_window">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -14,7 +14,7 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout_3">
+   <layout class="QVBoxLayout" name="vertical_layout_3">
     <property name="leftMargin">
      <number>3</number>
     </property>
@@ -41,11 +41,11 @@
      </widget>
     </item>
     <item>
-     <widget class="QGroupBox" name="groupBox_2">
+     <widget class="QGroupBox" name="group_box_2">
       <property name="title">
        <string>Table data</string>
       </property>
-      <layout class="QGridLayout" name="gridLayout_2">
+      <layout class="QGridLayout" name="grid_layout_2">
        <property name="leftMargin">
         <number>3</number>
        </property>
@@ -122,11 +122,11 @@
      </widget>
     </item>
     <item>
-     <widget class="QGroupBox" name="groupBox_5">
+     <widget class="QGroupBox" name="group_box_5">
       <property name="title">
        <string>Aggregation</string>
       </property>
-      <layout class="QGridLayout" name="gridLayout_3">
+      <layout class="QGridLayout" name="grid_layout_3">
        <property name="leftMargin">
         <number>3</number>
        </property>
@@ -166,11 +166,11 @@
      </widget>
     </item>
     <item>
-     <widget class="QGroupBox" name="groupBox_3">
+     <widget class="QGroupBox" name="group_box_3">
       <property name="title">
        <string>Table layout</string>
       </property>
-      <layout class="QGridLayout" name="gridLayout">
+      <layout class="QGridLayout" name="grid_layout">
        <property name="leftMargin">
         <number>3</number>
        </property>
@@ -245,11 +245,11 @@ p, li { white-space: pre-wrap; }
      </widget>
     </item>
     <item>
-     <widget class="QGroupBox" name="groupBox_6">
+     <widget class="QGroupBox" name="group_box_6">
       <property name="title">
        <string>Date_time layout</string>
       </property>
-      <layout class="QVBoxLayout" name="verticalLayout_5">
+      <layout class="QVBoxLayout" name="vertical_layout_5">
        <property name="spacing">
         <number>0</number>
        </property>
@@ -286,11 +286,11 @@ p, li { white-space: pre-wrap; }
      </widget>
     </item>
     <item>
-     <widget class="QGroupBox" name="groupBox">
+     <widget class="QGroupBox" name="group_box">
       <property name="title">
        <string>Header columns and sort order  (only with Date_time layout as columns)</string>
       </property>
-      <layout class="QHBoxLayout" name="horizontalLayout">
+      <layout class="QHBoxLayout" name="horizontal_layout">
        <item>
         <widget class="QComboBox" name="sort1"/>
        </item>
@@ -304,11 +304,11 @@ p, li { white-space: pre-wrap; }
      </widget>
     </item>
     <item>
-     <widget class="QGroupBox" name="groupBox_4">
+     <widget class="QGroupBox" name="group_box_4">
       <property name="title">
        <string>Sort parameter rows</string>
       </property>
-      <layout class="QVBoxLayout" name="verticalLayout_2">
+      <layout class="QVBoxLayout" name="vertical_layout_2">
        <property name="spacing">
         <number>0</number>
        </property>
@@ -335,7 +335,7 @@ p, li { white-space: pre-wrap; }
         </widget>
        </item>
        <item>
-        <widget class="QRadioButton" name="radioButton">
+        <widget class="QRadioButton" name="radio_button">
          <property name="toolTip">
           <string>Sorting using the same order as read from the source table or active layer.</string>
          </property>
@@ -348,14 +348,14 @@ p, li { white-space: pre-wrap; }
      </widget>
     </item>
     <item>
-     <widget class="QPushButton" name="pushButton_update_from_string">
+     <widget class="QPushButton" name="push_button_update_from_string">
       <property name="text">
        <string>Update settings from string</string>
       </property>
      </widget>
     </item>
     <item>
-     <widget class="QPushButton" name="pushButton_ok">
+     <widget class="QPushButton" name="push_button_ok">
       <property name="text">
        <string>Ok</string>
       </property>

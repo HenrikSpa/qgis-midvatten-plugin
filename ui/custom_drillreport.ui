@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>MainWindow</class>
- <widget class="QMainWindow" name="MainWindow">
+ <widget class="QMainWindow" name="main_window">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -14,7 +14,7 @@
    <string>Custom general report</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout">
+   <layout class="QVBoxLayout" name="vertical_layout">
     <property name="leftMargin">
      <number>3</number>
     </property>
@@ -28,7 +28,7 @@
      <number>3</number>
     </property>
     <item>
-     <layout class="QGridLayout" name="gridLayout">
+     <layout class="QGridLayout" name="grid_layout">
       <item row="1" column="2" colspan="2">
        <widget class="QLineEdit" name="general_metadata_header">
         <property name="toolTip">
@@ -156,7 +156,7 @@
      </layout>
     </item>
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_9">
+     <layout class="QHBoxLayout" name="horizontal_layout_9">
       <item>
        <widget class="QCheckBox" name="include_comments">
         <property name="toolTip">
@@ -171,7 +171,7 @@
        </widget>
       </item>
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_8">
+       <layout class="QHBoxLayout" name="horizontal_layout_8">
         <item>
          <widget class="QLabel" name="label_7">
           <property name="text">
@@ -230,7 +230,7 @@
      </widget>
     </item>
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_4">
+     <layout class="QHBoxLayout" name="horizontal_layout_4">
       <item>
        <widget class="QLabel" name="label_12">
         <property name="text">
@@ -251,7 +251,7 @@
      </layout>
     </item>
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <layout class="QHBoxLayout" name="horizontal_layout_2">
       <item>
        <widget class="QLabel" name="label_10">
         <property name="text">
@@ -272,23 +272,23 @@
      </layout>
     </item>
     <item>
-     <widget class="QPushButton" name="pushButton_update_from_string">
+     <widget class="QPushButton" name="push_button_update_from_string">
       <property name="text">
        <string>Update settings from string</string>
       </property>
      </widget>
     </item>
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout">
+     <layout class="QHBoxLayout" name="horizontal_layout">
       <item>
-       <widget class="QPushButton" name="pushButton_cancel">
+       <widget class="QPushButton" name="push_button_cancel">
         <property name="text">
          <string>Cancel</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="pushButton_ok">
+       <widget class="QPushButton" name="push_button_ok">
         <property name="text">
          <string>Ok</string>
         </property>
@@ -309,7 +309,7 @@
     </rect>
    </property>
   </widget>
-  <widget class="QToolBar" name="toolBar">
+  <widget class="QToolBar" name="tool_bar">
    <property name="windowTitle">
     <string>toolBar</string>
    </property>

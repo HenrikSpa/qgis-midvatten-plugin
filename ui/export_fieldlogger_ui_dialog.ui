@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>MainWindow</class>
- <widget class="QMainWindow" name="MainWindow">
+ <widget class="QMainWindow" name="main_window">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -14,7 +14,7 @@
    <string>Export data to FieldLogger</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QGridLayout" name="gridLayout_main">
+   <layout class="QGridLayout" name="grid_layout_main">
     <property name="leftMargin">
      <number>3</number>
     </property>
@@ -41,7 +41,7 @@
         <height>0</height>
        </size>
       </property>
-      <layout class="QGridLayout" name="gridLayout_buttons">
+      <layout class="QGridLayout" name="grid_layout_buttons">
        <property name="leftMargin">
         <number>3</number>
        </property>
@@ -55,7 +55,7 @@
         <number>3</number>
        </property>
        <item row="0" column="0">
-        <widget class="QPushButton" name="pushButtonExport">
+        <widget class="QPushButton" name="push_button_export">
          <property name="sizePolicy">
           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -80,7 +80,7 @@
         </widget>
        </item>
        <item row="1" column="0">
-        <widget class="QPushButton" name="pushButtonImportWellsfile">
+        <widget class="QPushButton" name="push_button_import_wellsfile">
          <property name="text">
           <string>Select
 from
@@ -111,7 +111,7 @@ wells file</string>
      </widget>
     </item>
     <item row="0" column="2" rowspan="3">
-     <widget class="QScrollArea" name="scrollArea">
+     <widget class="QScrollArea" name="scroll_area">
       <property name="sizePolicy">
        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
         <horstretch>0</horstretch>
@@ -133,7 +133,7 @@ wells file</string>
       <property name="widgetResizable">
        <bool>true</bool>
       </property>
-      <widget class="QWidget" name="scrollAreaWidgetContents">
+      <widget class="QWidget" name="scroll_area_widget_contents">
        <property name="geometry">
         <rect>
          <x>0</x>
@@ -154,7 +154,7 @@ wells file</string>
          <height>400</height>
         </size>
        </property>
-       <layout class="QVBoxLayout" name="verticalLayout_2">
+       <layout class="QVBoxLayout" name="vertical_layout_2">
         <property name="sizeConstraint">
          <enum>QLayout::SetMinimumSize</enum>
         </property>
@@ -171,7 +171,7 @@ wells file</string>
          <number>3</number>
         </property>
         <item>
-         <widget class="QWidget" name="gridWidget_selections" native="true">
+         <widget class="QWidget" name="grid_widget_selections" native="true">
           <property name="sizePolicy">
            <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
             <horstretch>0</horstretch>
@@ -187,7 +187,7 @@ wells file</string>
           <property name="autoFillBackground">
            <bool>false</bool>
           </property>
-          <layout class="QGridLayout" name="gridLayout_selections" columnminimumwidth="0">
+          <layout class="QGridLayout" name="grid_layout_selections" columnminimumwidth="0">
            <property name="sizeConstraint">
             <enum>QLayout::SetMinimumSize</enum>
            </property>

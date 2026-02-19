@@ -127,7 +127,7 @@ class CompactWqualReportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_d
 
         self.stored_settings_key = "compactwqualreport"
 
-        self.pushButton_ok.clicked.connect(lambda x: self.wqualreport())
+        self.push_button_ok.clicked.connect(lambda x: self.wqualreport())
 
         self.from_active_layer.clicked.connect(
             lambda x: self.set_columns_from_activelayer()
@@ -137,7 +137,7 @@ class CompactWqualReportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_d
             lambda x: self.set_columns_from_sql_layer()
         )
 
-        self.pushButton_update_from_string.clicked.connect(
+        self.push_button_update_from_string.clicked.connect(
             lambda x: self.ask_and_update_stored_settings()
         )
 

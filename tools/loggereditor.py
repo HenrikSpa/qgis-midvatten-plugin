@@ -73,7 +73,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self.calibrplotfigure = plt.figure()
         self.axes = self.calibrplotfigure.add_subplot(111)
         self.canvas = FigureCanvas(self.calibrplotfigure)
-        self.mpltoolbar = NavigationToolbar(self.canvas, self.widgetPlot)
+        self.mpltoolbar = NavigationToolbar(self.canvas, self.widget_plot)
         self.layoutplot.addWidget(self.canvas)
         self.layoutplot.addWidget(self.mpltoolbar)
 
@@ -83,37 +83,37 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
         self.button_calculate.clicked.connect(lambda x: self.set_logger_pos())
         self.button_add_offset.clicked.connect(lambda x: self.add_to_level_masl())
-        self.pushButtonFrom.clicked.connect(lambda x: self.set_from_date_from_x())
-        self.pushButtonTo.clicked.connect(lambda x: self.set_to_date_from_x())
-        self.L1_button.clicked.connect(
+        self.push_button_from.clicked.connect(lambda x: self.set_from_date_from_x())
+        self.push_button_to.clicked.connect(lambda x: self.set_to_date_from_x())
+        self.l1_button.clicked.connect(
             lambda x: self.set_adjust_data("L1_date", "L1_level")
         )
-        self.L2_button.clicked.connect(
+        self.l2_button.clicked.connect(
             lambda x: self.set_adjust_data("L2_date", "L2_level")
         )
-        self.M1_button.clicked.connect(
+        self.m1_button.clicked.connect(
             lambda x: self.set_adjust_data("M1_date", "M1_level")
         )
-        self.M2_button.clicked.connect(
+        self.m2_button.clicked.connect(
             lambda x: self.set_adjust_data("M2_date", "M2_level")
         )
-        self.pushButton_from_extent.clicked.connect(
+        self.push_button_from_extent.clicked.connect(
             lambda: self.update_date_from_extent(
-                self.FromDateTime, self.axes.get_xbound()[0]
+                self.from_date_time, self.axes.get_xbound()[0]
             )
         )
-        self.pushButton_to_extent.clicked.connect(
+        self.push_button_to_extent.clicked.connect(
             lambda: self.update_date_from_extent(
-                self.ToDateTime, self.axes.get_xbound()[1]
+                self.to_date_time, self.axes.get_xbound()[1]
             )
         )
-        self.pushButtonupdateplot.clicked.connect(lambda x: self.update_plot())
+        self.push_buttonupdateplot.clicked.connect(lambda x: self.update_plot())
         self.button_auto_calculate.clicked.connect(lambda x: self.logger_pos_best_fit())
         self.button_auto_fit.clicked.connect(lambda x: self.level_masl_best_fit())
-        self.pushButton_delete_logger.clicked.connect(
+        self.push_button_delete_logger.clicked.connect(
             lambda: self.delete_selected_range("w_levels_logger")
         )
-        self.pushButton_set_null.clicked.connect(
+        self.push_button_set_null.clicked.connect(
             lambda: self.delete_selected_range(
                 "w_levels_logger", set_to_null_instead=True
             )
@@ -155,10 +155,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self.select_nodes_button = SelectNodesButton(self, self.calibrplotfigure)
         self.move_nodes_button = MoveNodesButton(self, self.calibrplotfigure)
 
-        self.FromDateTime.dateTimeChanged.connect(
+        self.from_date_time.dateTimeChanged.connect(
             lambda: self.plot_or_update_selected_line()
         )
-        self.ToDateTime.dateTimeChanged.connect(
+        self.to_date_time.dateTimeChanged.connect(
             lambda: self.plot_or_update_selected_line()
         )
         self.get_search_radius()
@@ -434,7 +434,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                         str(self.lastcalibr[0][0]),
                     )
 
-            self.INFO.setText(text)
+            self.info.setText(text)
 
     @fn_timer
     def getlastcalibration(self, obsid):
@@ -470,8 +470,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             obsid = self.load_obsid_and_init()
 
         if not obsid == "":
-            fr_d_t = self.FromDateTime.dateTime().toPyDateTime()
-            to_d_t = self.ToDateTime.dateTime().toPyDateTime()
+            fr_d_t = self.from_date_time.dateTime().toPyDateTime()
+            to_d_t = self.to_date_time.dateTime().toPyDateTime()
 
             if self.loggerpos_masl_or_offset_state == 1:
                 self.update_level_masl_from_head(
@@ -622,7 +622,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             handles.append(a)
             labels.append(a.get_label())
 
-        if self.loggerLineNodes.isChecked():
+        if self.logger_line_nodes.isChecked():
             marker = "o"
         else:
             marker = ""
@@ -814,9 +814,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
     @fn_timer
     def set_from_date_from_x(self):
-        """Used to set the self.FromDateTime by clicking on a line node in the plot self.canvas"""
+        """Used to set the self.from_date_time by clicking on a line node in the plot self.canvas"""
         self.set_date_from_x(
-            self.FromDateTime,
+            self.from_date_time,
             ru(
                 QCoreApplication.translate(
                     "Calibrlogger", 'Select a date to use as "from"'
@@ -827,9 +827,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
     @fn_timer
     def set_to_date_from_x(self):
-        """Used to set the self.ToDateTime by clicking on a line node in the plot self.canvas"""
+        """Used to set the self.to_date_time by clicking on a line node in the plot self.canvas"""
         self.set_date_from_x(
-            self.ToDateTime,
+            self.to_date_time,
             ru(
                 QCoreApplication.translate(
                     "Calibrlogger", 'Select a date to use as "to"'
@@ -861,22 +861,22 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     @fn_timer
     def reset_settings(self):
 
-        self.ToDateTime.setDateTime(datestring_to_date("2099-12-31 23:59:59"))
+        self.to_date_time.setDateTime(datestring_to_date("2099-12-31 23:59:59"))
         self.offset.setText("")
-        self.bestFitSearchRadius.setText("60 minutes")
+        self.best_fit_search_radius.setText("60 minutes")
         # self.mpltoolbar.home()
 
         last_calibration = self.getlastcalibration(self.obsid)
         try:
             if last_calibration[0][1] and last_calibration[0][0]:
                 self.logger_elevation.setText("{:.5f}".format(last_calibration[0][1]))
-                self.FromDateTime.setDateTime(
+                self.from_date_time.setDateTime(
                     datestring_to_date(last_calibration[0][0])
                     + datetime.timedelta(milliseconds=1)
                 )
             else:
                 self.logger_elevation.setText("")
-                self.FromDateTime.setDateTime(datestring_to_date("2099-12-31 23:59:59"))
+                self.from_date_time.setDateTime(datestring_to_date("2099-12-31 23:59:59"))
         except Exception as e:
             common_utils.MessagebarAndLog.info(
                 log_msg=ru(
@@ -888,7 +888,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 % (self.obsid, str(e))
             )
             self.logger_elevation.setText("")
-            self.FromDateTime.setDateTime(datestring_to_date("2099-12-31 23:59:59"))
+            self.from_date_time.setDateTime(datestring_to_date("2099-12-31 23:59:59"))
 
     @fn_timer
     def reset_cid(self):
@@ -998,8 +998,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
         all_done = False
         # The .replace(tzinfo=None) is used to remove info about timezone. Needed for the comparisons. This should not be a problem though as the date scale in the plot is based on the dates from the database.
-        outer_begin = self.FromDateTime.dateTime().toPyDateTime().replace(tzinfo=None)
-        outer_end = self.ToDateTime.dateTime().toPyDateTime().replace(tzinfo=None)
+        outer_begin = self.from_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
+        outer_end = self.to_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
         logger_step = datestring_to_date(l[0]).replace(tzinfo=None)
         for m in meas_ts:
             if logger_step is None:
@@ -1050,11 +1050,11 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     @fn_timer
     def get_search_radius(self):
         """Get the period search radius, default to 60 minutes"""
-        if not self.bestFitSearchRadius.text():
+        if not self.best_fit_search_radius.text():
             search_radius = "60 minutes"
-            self.bestFitSearchRadius.setText(search_radius)
+            self.best_fit_search_radius.setText(search_radius)
         else:
-            search_radius = self.bestFitSearchRadius.text()
+            search_radius = self.best_fit_search_radius.text()
 
         search_radius_splitted = ru(search_radius).split()
         if len(search_radius_splitted) != 2:
@@ -1113,13 +1113,13 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
         fr_d_t = str(
             (
-                self.FromDateTime.dateTime().toPyDateTime()
+                self.from_date_time.dateTime().toPyDateTime()
                 - datetime.datetime(1970, 1, 1)
             ).total_seconds()
         )
         to_d_t = str(
             (
-                self.ToDateTime.dateTime().toPyDateTime()
+                self.to_date_time.dateTime().toPyDateTime()
                 - datetime.datetime(1970, 1, 1)
             ).total_seconds()
         )
@@ -1143,8 +1143,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                     "Do you want to set level_masl to NULL for the period %s to %s for obsid %s in table %s?",
                 )
             ) % (
-                str(self.FromDateTime.dateTime().toPyDateTime()),
-                str(self.ToDateTime.dateTime().toPyDateTime()),
+                str(self.from_date_time.dateTime().toPyDateTime()),
+                str(self.to_date_time.dateTime().toPyDateTime()),
                 selected_obsid,
                 table_name,
             )
@@ -1156,8 +1156,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                     "Do you want to delete the period %s to %s for obsid %s from table %s?",
                 )
             ) % (
-                str(self.FromDateTime.dateTime().toPyDateTime()),
-                str(self.ToDateTime.dateTime().toPyDateTime()),
+                str(self.from_date_time.dateTime().toPyDateTime()),
+                str(self.to_date_time.dateTime().toPyDateTime()),
                 selected_obsid,
                 table_name,
             )
@@ -1171,7 +1171,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
     @fn_timer
     def set_date_from_x(self, datetimeedit, help_msg=None, from_node=False):
-        """Used to set the self.ToDateTime by clicking on a line node in the plot self.canvas"""
+        """Used to set the self.to_date_time by clicking on a line node in the plot self.canvas"""
         self.reset_plot_selects_and_calib_help()
         self.deactivate_pan_zoom()
         if help_msg:
@@ -1222,27 +1222,27 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         data = {
             "obsid": obsid,
             "adjust_start_date": long_dateformat(
-                self.FromDateTime.dateTime().toPyDateTime()
+                self.from_date_time.dateTime().toPyDateTime()
             ),
             "adjust_end_date": long_dateformat(
-                self.ToDateTime.dateTime().toPyDateTime()
+                self.to_date_time.dateTime().toPyDateTime()
             ),
             "L1_date": db_utils.cast_date_time_as_epoch(
-                date_time=long_dateformat(self.L1_date.dateTime().toPyDateTime())
+                date_time=long_dateformat(self.l1_date.dateTime().toPyDateTime())
             ),
             "L2_date": db_utils.cast_date_time_as_epoch(
-                date_time=long_dateformat(self.L2_date.dateTime().toPyDateTime())
+                date_time=long_dateformat(self.l2_date.dateTime().toPyDateTime())
             ),
             "M1_date": db_utils.cast_date_time_as_epoch(
-                date_time=long_dateformat(self.M1_date.dateTime().toPyDateTime())
+                date_time=long_dateformat(self.m1_date.dateTime().toPyDateTime())
             ),
             "M2_date": db_utils.cast_date_time_as_epoch(
-                date_time=long_dateformat(self.M2_date.dateTime().toPyDateTime())
+                date_time=long_dateformat(self.m2_date.dateTime().toPyDateTime())
             ),
-            "L1_level": str(float(self.L1_level.text())),
-            "L2_level": str(float(self.L2_level.text())),
-            "M1_level": str(float(self.M1_level.text())),
-            "M2_level": str(float(self.M2_level.text())),
+            "L1_level": str(float(self.l1_level.text())),
+            "L2_level": str(float(self.l2_level.text())),
+            "M1_level": str(float(self.m1_level.text())),
+            "M2_level": str(float(self.m2_level.text())),
             "date_as_numeric": db_utils.cast_date_time_as_epoch(),
         }
 
@@ -1292,8 +1292,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     def plot_or_update_selected_line(self):
         if self.logger_artist is None:
             return
-        fr_d_t = self.FromDateTime.dateTime().toPyDateTime().replace(tzinfo=None)
-        to_d_t = self.ToDateTime.dateTime().toPyDateTime().replace(tzinfo=None)
+        fr_d_t = self.from_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
+        to_d_t = self.to_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
         xdata = self.logger_artist.get_xdata()
         ydata = [
             y if fr_d_t <= xdata[idx].replace(tzinfo=None) <= to_d_t else None
@@ -1380,8 +1380,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                                 True, False)]
 
         if len(filtered):
-            self.FromDateTime.setDateTime(num2date(min(filtered[:,0])))
-            self.ToDateTime.setDateTime(num2date(max(filtered[:,0])))"""
+            self.from_date_time.setDateTime(num2date(min(filtered[:,0])))
+            self.to_date_time.setDateTime(num2date(max(filtered[:,0])))"""
 
         self.logger_artist.get_xdata()
         y_idx = [
@@ -1396,10 +1396,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         ]
         found_idx = [idx for idx in x_idx if idx in y_idx]
         if found_idx:
-            self.FromDateTime.setDateTime(
+            self.from_date_time.setDateTime(
                 self.logger_artist.get_xdata()[min(found_idx)]
             )
-            self.ToDateTime.setDateTime(self.logger_artist.get_xdata()[max(found_idx)])
+            self.to_date_time.setDateTime(self.logger_artist.get_xdata()[max(found_idx)])
 
     def toggle_move_nodes(self, on):
         if on:

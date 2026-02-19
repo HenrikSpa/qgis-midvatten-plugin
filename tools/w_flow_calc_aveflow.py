@@ -43,9 +43,9 @@ class CalculateAveflow(qgis.PyQt.QtWidgets.QDialog, Calc_Ui_Dialog):
         self.setWindowTitle(
             ru(QCoreApplication.translate("Calcave", "Calculate average flow"))
         )
-        self.pushButton_All.clicked.connect(lambda x: self.calcall())
-        self.pushButton_Selected.clicked.connect(lambda x: self.calcselected())
-        self.pushButton_Cancel.clicked.connect(lambda x: self.close())
+        self.push_button_all.clicked.connect(lambda x: self.calcall())
+        self.push_button_selected.clicked.connect(lambda x: self.calcselected())
+        self.push_button_cancel.clicked.connect(lambda x: self.close())
 
     def calcall(self):
         ok, obsar = db_utils.sql_load_fr_db(
@@ -72,8 +72,8 @@ class CalculateAveflow(qgis.PyQt.QtWidgets.QDialog, Calc_Ui_Dialog):
 
     def calc_aveflow(self, observations):
         common_utils.start_waiting_cursor()
-        date_from = self.FromDateTime.dateTime().toPyDateTime()
-        date_to = self.ToDateTime.dateTime().toPyDateTime()
+        date_from = self.from_date_time.dateTime().toPyDateTime()
+        date_to = self.to_date_time.dateTime().toPyDateTime()
 
         dbconnection = db_utils.DbConnectionManager()
         ph = dbconnection.placeholder_sign()
@@ -126,7 +126,7 @@ class CalculateAveflow(qgis.PyQt.QtWidgets.QDialog, Calc_Ui_Dialog):
 
         # print('\n'.join([', '.join([str(x) for x in row]) for row in file_data]))
 
-        importer = import_data_to_db.midv_data_importer()
+        importer = import_data_to_db.MidvDataImporter()
         importer.general_import(dest_table="w_flow", file_data=file_data)
 
         common_utils.stop_waiting_cursor()

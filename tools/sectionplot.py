@@ -117,37 +117,37 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
 
     def initUI(self):
         # connect signal
-        self.pushButton.clicked.connect(lambda x: self.draw_plot())
+        self.push_button.clicked.connect(lambda x: self.draw_plot())
         self.topLevelChanged.connect(lambda x: self.add_titlebar(self))
-        self.settingsdockWidget.topLevelChanged.connect(lambda x: self.float_settings())
-        self.include_views_checkBox.clicked.connect(
-            lambda x: self.fill_wlvltable(self.include_views_checkBox.isChecked())
+        self.settingsdock_widget.topLevelChanged.connect(lambda x: self.float_settings())
+        self.include_views_check_box.clicked.connect(
+            lambda x: self.fill_wlvltable(self.include_views_check_box.isChecked())
         )
-        self.tabWidget.currentChanged.connect(lambda: tabwidget_resize(self.tabWidget))
-        tabwidget_resize(self.tabWidget)
+        self.tab_widget.currentChanged.connect(lambda: tabwidget_resize(self.tab_widget))
+        tabwidget_resize(self.tab_widget)
         self.wlvl_groupbox.collapsedStateChanged.connect(
-            lambda: self.resize_widget(self.settingsdockWidget)
+            lambda: self.resize_widget(self.settingsdock_widget)
         )
         self.dem_groupbox.collapsedStateChanged.connect(
-            lambda: self.resize_widget(self.settingsdockWidget)
+            lambda: self.resize_widget(self.settingsdock_widget)
         )
         self.bar_groupbox.collapsedStateChanged.connect(
-            lambda: self.resize_widget(self.settingsdockWidget)
+            lambda: self.resize_widget(self.settingsdock_widget)
         )
         self.plots_groupbox.collapsedStateChanged.connect(
-            lambda: self.resize_widget(self.settingsdockWidget)
+            lambda: self.resize_widget(self.settingsdock_widget)
         )
         self.tem_groupbox.collapsedStateChanged.connect(
-            lambda: self.resize_widget(self.settingsdockWidget)
+            lambda: self.resize_widget(self.settingsdock_widget)
         )
         self.images_groupbox.collapsedStateChanged.connect(
-            lambda: self.resize_widget(self.settingsdockWidget)
+            lambda: self.resize_widget(self.settingsdock_widget)
         )
-        self.tabWidget.setTabBarAutoHide(True)
-        self.settingsdockWidget.closeEvent = types.MethodType(
-            self.dock_settings, self.settingsdockWidget
+        self.tab_widget.setTabBarAutoHide(True)
+        self.settingsdock_widget.closeEvent = types.MethodType(
+            self.dock_settings, self.settingsdock_widget
         )
-        self.resize_widget(self.settingsdockWidget)
+        self.resize_widget(self.settingsdock_widget)
         self.resample_rule.setText("1D")
         self.resample_rule.setToolTip(defs.pandas_rule_tooltip())
         self.resample_offset.setText("0" if pd.__version__ < "1.1.0" else "")
@@ -250,23 +250,23 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
 
     def fill_check_boxes(self):  # sets checkboxes to last selection
         if self.ms.settingsdict["secplotincludeviews"]:
-            self.include_views_checkBox.setChecked(True)
+            self.include_views_check_box.setChecked(True)
         if self.ms.settingsdict["stratigraphyplotted"]:
-            self.Stratigraphy_radioButton.setChecked(True)
+            self.stratigraphy_radio_button.setChecked(True)
         else:
-            self.Stratigraphy_radioButton.setChecked(False)
+            self.stratigraphy_radio_button.setChecked(False)
         if self.ms.settingsdict["secplothydrologyplotted"]:
-            self.Hydrology_radioButton.setChecked(True)
+            self.hydrology_radio_button.setChecked(True)
         else:
-            self.Hydrology_radioButton.setChecked(False)
+            self.hydrology_radio_button.setChecked(False)
         if self.ms.settingsdict["secplotlabelsplotted"]:
-            self.Labels_checkBox.setChecked(True)
+            self.labels_check_box.setChecked(True)
         else:
-            self.Labels_checkBox.setChecked(False)
+            self.labels_check_box.setChecked(False)
         if self.ms.settingsdict["secplotlegendplotted"]:
-            self.Legend_checkBox.setChecked(True)
+            self.legend_check_box.setChecked(True)
         else:
-            self.Legend_checkBox.setChecked(False)
+            self.legend_check_box.setChecked(False)
         if self.ms.settingsdict["secplotwidthofplot"]:
             self.width_of_plot.setChecked(True)
         else:
@@ -279,11 +279,11 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             self.secplot_apply_graded_dems.setChecked(True)
 
     def fill_combo_boxes(self):
-        self.textcolComboBox.clear()
-        self.datetimetextEdit.clear()
-        self.drillstoplineEdit.clear()
+        self.textcol_combo_box.clear()
+        self.datetimetext_edit.clear()
+        self.drillstopline_edit.clear()
 
-        self.fill_wlvltable(self.include_views_checkBox.isChecked())
+        self.fill_wlvltable(self.include_views_check_box.isChecked())
 
         textitems = [
             "",
@@ -295,38 +295,38 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             "comment",
         ]
         for item in textitems:
-            self.textcolComboBox.addItem(item)
+            self.textcol_combo_box.addItem(item)
 
         for datum in self.ms.settingsdict["secplotdates"]:
-            self.datetimetextEdit.append(datum)
+            self.datetimetext_edit.append(datum)
 
         if len(str(self.ms.settingsdict["secplotwlvltab"])):
             set_combobox(
-                self.wlvltableComboBox,
+                self.wlvltable_combo_box,
                 str(self.ms.settingsdict["secplotwlvltab"]),
                 add_if_not_exists=False,
             )
 
         if len(str(self.ms.settingsdict["secplottext"])):
             set_combobox(
-                self.textcolComboBox,
+                self.textcol_combo_box,
                 str(self.ms.settingsdict["secplottext"]),
                 add_if_not_exists=False,
             )
 
         if self.ms.settingsdict["secplotbw"] != 0:
-            self.barwidthdoubleSpinBox.setValue(self.ms.settingsdict["secplotbw"])
+            self.barwidthdouble_spin_box.setValue(self.ms.settingsdict["secplotbw"])
         else:
-            self.barwidthdoubleSpinBox.setValue(2)
+            self.barwidthdouble_spin_box.setValue(2)
 
         drillstop = (
             self.ms.settingsdict["secplotdrillstop"]
             if self.ms.settingsdict["secplotdrillstop"]
             else "%{}%".format(defs.bedrock_geoshort())
         )
-        self.drillstoplineEdit.setText(drillstop)
+        self.drillstopline_edit.setText(drillstop)
         if self.ms.settingsdict["secplotincludeviews"]:
-            self.include_views_checkBox.setChecked(True)
+            self.include_views_check_box.setChecked(True)
 
     def fill_dem_list(self, line_layer=None):
         self.dem_list.clear()
@@ -375,8 +375,8 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
 
     def fill_wlvltable(self, include_views):
         self.ms.settingsdict["secplotincludeviews"] = include_views
-        current_text = self.wlvltableComboBox.currentText()
-        self.wlvltableComboBox.clear()
+        current_text = self.wlvltable_combo_box.currentText()
+        self.wlvltable_combo_box.clear()
         skip_views = True if not include_views else False
         tabeller = [
             x
@@ -405,10 +405,10 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                 "about_db",
             ]
         ]
-        self.wlvltableComboBox.addItem("")
+        self.wlvltable_combo_box.addItem("")
         for tabell in tabeller:
-            self.wlvltableComboBox.addItem(tabell)
-        set_combobox(self.wlvltableComboBox, str(current_text), add_if_not_exists=False)
+            self.wlvltable_combo_box.addItem(tabell)
+        set_combobox(self.wlvltable_combo_box, str(current_text), add_if_not_exists=False)
 
     def fill_spinboxes(self):
         if self.ms.settingsdict.get("secplotdem_sampling_distance", 0.0):
@@ -899,10 +899,10 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             common_utils.start_waiting_cursor()  # show the user this may take a long time...
             # load user settings from the ui
             self.ms.settingsdict["secplotwlvltab"] = str(
-                self.wlvltableComboBox.currentText()
+                self.wlvltable_combo_box.currentText()
             )
             temporarystring = ru(
-                self.datetimetextEdit.toPlainText()
+                self.datetimetext_edit.toPlainText()
             )  # this needs some cleanup
             try:
                 self.ms.settingsdict["secplotdates"] = [
@@ -912,20 +912,20 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                 ]
             except TypeError as e:
                 self.ms.settingsdict["secplotdates"] = ""
-            self.ms.settingsdict["secplottext"] = self.textcolComboBox.currentText()
-            self.ms.settingsdict["secplotbw"] = self.barwidthdoubleSpinBox.value()
-            self.ms.settingsdict["secplotdrillstop"] = self.drillstoplineEdit.text()
+            self.ms.settingsdict["secplottext"] = self.textcol_combo_box.currentText()
+            self.ms.settingsdict["secplotbw"] = self.barwidthdouble_spin_box.value()
+            self.ms.settingsdict["secplotdrillstop"] = self.drillstopline_edit.text()
             self.ms.settingsdict["stratigraphyplotted"] = (
-                self.Stratigraphy_radioButton.isChecked()
+                self.stratigraphy_radio_button.isChecked()
             )
             self.ms.settingsdict["secplothydrologyplotted"] = (
-                self.Hydrology_radioButton.isChecked()
+                self.hydrology_radio_button.isChecked()
             )
             self.ms.settingsdict["secplotlabelsplotted"] = (
-                self.Labels_checkBox.isChecked()
+                self.labels_check_box.isChecked()
             )
             self.ms.settingsdict["secplotlegendplotted"] = (
-                self.Legend_checkBox.isChecked()
+                self.legend_check_box.isChecked()
             )
             self.get_dem_selection()
             self.ms.settingsdict["secplotselectedDEMs"] = self.rasterselection
@@ -1231,7 +1231,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         self.figure._midv_ax_main = self.figure.add_subplot(self.gridspec[0:2, 0:1])
         canvas = FigureCanvas(self.figure)
 
-        mpltoolbar = NavigationToolbar(canvas, self.widgetPlot)
+        mpltoolbar = NavigationToolbar(canvas, self.widget_plot)
 
         try:
             matplotlib_replacements.replace_matplotlib_backends_backend_qt5agg_NavigationToolbar2QT_set_message_xylimits(
@@ -2248,7 +2248,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         self.update_legend(from_navbar=False, fig=self.figure)
 
         self.figure.canvas.draw_idle()
-        self.tabWidget.setCurrentIndex(0)
+        self.tab_widget.setCurrentIndex(0)
 
         """
         The plot is shown in the canvas. 
@@ -2313,17 +2313,17 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
 
     def update_plot_size(self):
         if self.dynamic_plot_size.isChecked():
-            self.widgetPlot.setMinimumWidth(10)
-            self.widgetPlot.setMaximumWidth(16777215)
-            self.widgetPlot.setMinimumHeight(10)
-            self.widgetPlot.setMaximumHeight(16777215)
+            self.widget_plot.setMinimumWidth(10)
+            self.widget_plot.setMaximumWidth(16777215)
+            self.widget_plot.setMinimumHeight(10)
+            self.widget_plot.setMaximumHeight(16777215)
         else:
             width_inches, height_inches = self.figure.get_size_inches()
             screen_dpi = QApplication.screens()[0].logicalDotsPerInch()
             width_pixels = width_inches * screen_dpi
             height_pixels = height_inches * screen_dpi
             self.figure.canvas.setFixedSize(int(width_pixels), int(height_pixels))
-            self.widgetPlot.setFixedWidth(
+            self.widget_plot.setFixedWidth(
                 int(
                     max(
                         self.figure.canvas.size().width(),
@@ -2331,7 +2331,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                     )
                 )
             )
-            self.widgetPlot.setFixedHeight(
+            self.widget_plot.setFixedHeight(
                 int(
                     self.figure.canvas.size().height()
                     + self.figure.canvas.toolbar.size().height() * 3
@@ -2356,35 +2356,35 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                 QCoreApplication.translate("SectionPlot", "Sectionplot settings")
             )
 
-            if self.tabWidget.count() > 1:
-                self.tabWidget.removeTab(1)
+            if self.tab_widget.count() > 1:
+                self.tab_widget.removeTab(1)
         dockwidget.setFeatures(QDockWidget.DockWidgetFeature.DockWidgetClosable)
 
     def dock_settings(self, _self, event):
-        self.tabWidget.addTab(self.settings_tab, "Settings")
-        self.old_settingsdockWidget = self.settingsdockWidget
-        self.settingsdockWidget = QDockWidget()
-        self.settingsdockWidget.setFeatures(
+        self.tab_widget.addTab(self.settings_tab, "Settings")
+        self.old_settingsdockWidget = self.settingsdock_widget
+        self.settingsdock_widget = QDockWidget()
+        self.settingsdock_widget.setFeatures(
             QDockWidget.DockWidgetFeature.DockWidgetFloatable | QDockWidget.DockWidgetFeature.DockWidgetMovable
         )
-        self.settingsdockWidget.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
-        self.settingsdockWidget.topLevelChanged.connect(lambda x: self.float_settings())
-        self.settingsdockWidget.closeEvent = types.MethodType(
-            self.dock_settings, self.settingsdockWidget
+        self.settingsdock_widget.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+        self.settingsdock_widget.topLevelChanged.connect(lambda x: self.float_settings())
+        self.settingsdock_widget.closeEvent = types.MethodType(
+            self.dock_settings, self.settingsdock_widget
         )
-        self.settingsdockWidget.setWidget(self.dockWidgetContents_2)
+        self.settingsdock_widget.setWidget(self.dock_widget_contents_2)
 
         # Remove the old widget widgetitem from the old settingsdockWidget
-        self.verticalLayout_4.takeAt(0)
+        self.vertical_layout_4.takeAt(0)
 
-        spacing = self.verticalLayout_4.takeAt(0)
+        spacing = self.vertical_layout_4.takeAt(0)
 
-        self.verticalLayout_4.addWidget(self.settingsdockWidget)
-        self.verticalLayout_4.insertSpacerItem(-1, spacing)
+        self.vertical_layout_4.addWidget(self.settingsdock_widget)
+        self.vertical_layout_4.insertSpacerItem(-1, spacing)
 
-        self.resize_widget(self.settingsdockWidget)
-        tabwidget_resize(self.tabWidget)
-        self.tabWidget.adjustSize()
+        self.resize_widget(self.settingsdock_widget)
+        tabwidget_resize(self.tab_widget)
+        self.tab_widget.adjustSize()
         event.accept()
 
     def set_location(self):  # not ready

@@ -71,7 +71,7 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         self.utc_offset = None
         self.iface = parent
         self.ms = msettings
-        self.ms.loadSettings()
+        self.ms.load_settings()
         qgis.PyQt.QtWidgets.QDialog.__init__(self, parent)
         self.setAttribute(qgis.PyQt.QtCore.Qt.WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt
@@ -196,7 +196,7 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         self.select_files_button = qgis.PyQt.QtWidgets.QPushButton(
             QCoreApplication.translate("DiverofficeImport", "Select files")
         )
-        self.gridLayout_buttons.addWidget(self.select_files_button, 0, 0)
+        self.grid_layout_buttons.addWidget(self.select_files_button, 0, 0)
         self.select_files_button.clicked.connect(lambda: self.select_files())
 
         self.close_after_import = qgis.PyQt.QtWidgets.QCheckBox(
@@ -207,12 +207,12 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
             )
         )
         self.close_after_import.setChecked(True)
-        self.gridLayout_buttons.addWidget(self.close_after_import, 1, 0)
+        self.grid_layout_buttons.addWidget(self.close_after_import, 1, 0)
 
         self.start_import_button = qgis.PyQt.QtWidgets.QPushButton(
             QCoreApplication.translate("DiverofficeImport", "Start import")
         )
-        self.gridLayout_buttons.addWidget(self.start_import_button, 2, 0)
+        self.grid_layout_buttons.addWidget(self.start_import_button, 2, 0)
         self.start_import_button.clicked.connect(
             lambda: self.start_import(
                 files=self.files,
@@ -230,7 +230,7 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         self.export_csv_button = qgis.PyQt.QtWidgets.QPushButton(
             QCoreApplication.translate("DiverofficeImport", "Export csv")
         )
-        self.gridLayout_buttons.addWidget(self.export_csv_button, 3, 0)
+        self.grid_layout_buttons.addWidget(self.export_csv_button, 3, 0)
         self.export_csv_button.clicked.connect(
             lambda: self.start_import(
                 files=self.files,
@@ -245,7 +245,7 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         )
         self.export_csv_button.setEnabled(False)
 
-        self.gridLayout_buttons.setRowStretch(4, 1)
+        self.grid_layout_buttons.setRowStretch(4, 1)
         self.main_vertical_layout.addStretch()
 
         self.setGeometry(500, 150, 1200, 700)
@@ -506,7 +506,7 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
                 [row.append(source) for row in file_to_import_to_db[1:]]
 
         if import_to_db:
-            importer = import_data_to_db.midv_data_importer()
+            importer = import_data_to_db.MidvDataImporter()
             try:
                 answer = importer.general_import(
                     "w_levels_logger", file_to_import_to_db

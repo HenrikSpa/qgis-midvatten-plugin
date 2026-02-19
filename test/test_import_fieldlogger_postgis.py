@@ -1570,7 +1570,7 @@ class TestFieldLoggerImporterDb(utils_for_tests.MidvattenTestPostgisDbSv):
             @mock.patch(
                 "midvatten.tools.import_fieldlogger.common_utils.MessagebarAndLog"
             )
-            # p_question = common_utils.Askuser("YesNo", '\n'.join(import_messages), ru(QCoreApplication.translate('midv_data_importer', "Info")))
+            # p_question = common_utils.Askuser("YesNo", '\n'.join(import_messages), ru(QCoreApplication.translate('MidvDataImporter', "Info")))
             def _test(
                 self,
                 filename,

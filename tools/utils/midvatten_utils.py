@@ -432,7 +432,15 @@ def list_of_lists_from_table(tablename):
     table_info = ru(table_info, keep_containers=True)
     column_names = [x[1] for x in table_info]
     list_of_lists.append(column_names)
-    table_contents = db_utils.sql_load_fr_db("SELECT * FROM %s" % tablename)[1]
+    dbconnection = db_utils.DbConnectionManager()
+    try:
+        sql = dbconnection.sql_ident("SELECT * FROM {t}", t=tablename)
+        table_contents = db_utils.sql_load_fr_db(sql, dbconnection=dbconnection)[1]
+    finally:
+        try:
+            dbconnection.closedb()
+        except Exception:
+            pass
     table_contents = ru(table_contents, keep_containers=True)
     list_of_lists.extend(table_contents)
     return list_of_lists

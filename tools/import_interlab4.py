@@ -329,13 +329,18 @@ class Interlab4Import(qgis.PyQt.QtWidgets.QMainWindow, import_fieldlogger_ui_dia
                         if current in add_to_table and current not in handled:
                             obsid = row[-1]
                             add_values = (current[0], current[1], obsid)
-                            sql = """INSERT INTO {} ({}, {}, obsid) VALUES ('{}', '{}', '{}')""".format(
-                                self.obsid_assignment_table,
-                                connection_columns[0].replace(" ", "_"),
-                                connection_columns[1],
-                                *add_values
-                            )
-                            sql_alter_db(sql)
+                            dbconnection = db_utils.DbConnectionManager()
+                            try:
+                                ph = dbconnection.placeholder_sign()
+                                sql = dbconnection.sql_ident(
+                                    f"INSERT INTO {{t}} ({{c1}}, {{c2}}, obsid) VALUES ({ph}, {ph}, {ph})",
+                                    t=self.obsid_assignment_table,
+                                    c1=connection_columns[0].replace(" ", "_"),
+                                    c2=connection_columns[1],
+                                )
+                                dbconnection.execute_and_commit(sql, all_args=[add_values])
+                            finally:
+                                dbconnection.closedb()
                             handled.add(current)
                     if handled:
                         common_utils.MessagebarAndLog.info(
@@ -389,13 +394,17 @@ class Interlab4Import(qgis.PyQt.QtWidgets.QMainWindow, import_fieldlogger_ui_dia
         _ask_obsid_table = [ask_obsid_table[0]]
         add_to_table = []
         try:
-            connection_table = sql_load_fr_db(
-                """SELECT {}, {}, "obsid" FROM {}""".format(
-                    connection_columns[0].replace(" ", "_"),
-                    connection_columns[1],
-                    self.obsid_assignment_table,
+            dbconnection = db_utils.DbConnectionManager()
+            try:
+                sql = dbconnection.sql_ident(
+                    'SELECT {c1}, {c2}, "obsid" FROM {t}',
+                    c1=connection_columns[0].replace(" ", "_"),
+                    c2=connection_columns[1],
+                    t=self.obsid_assignment_table,
                 )
-            )[1]
+                connection_table = dbconnection.execute_and_fetchall(sql)
+            finally:
+                dbconnection.closedb()
         except Exception as e:
             common_utils.MessagebarAndLog.warning(
                 bar_msg=ru(

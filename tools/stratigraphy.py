@@ -785,7 +785,7 @@ class SurveyWidget(QtWidgets.QFrame):
 
         # show print dialog
         dlg = QtPrintSupport.QPrintDialog(printer, self)
-        if dlg.exec_() != QtWidgets.QDialog.Accepted:
+        if dlg.exec() != QtWidgets.QDialog.Accepted:
             return
 
         p = QtGui.QPainter()

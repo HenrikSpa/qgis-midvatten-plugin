@@ -225,7 +225,7 @@ class PrepareForQgis2Threejs(object):
                     sqliteline = line.replace("CHANGETOVIEWNAME", key).replace(
                         "CHANGETOPLOTTYPESDICTVALUE",
                         "{} ({})".format(
-                            condition, common_utils.sql_unicode_list(params)
+                            condition, db_utils.sql_literal_list(params)
                         ),
                     )
 

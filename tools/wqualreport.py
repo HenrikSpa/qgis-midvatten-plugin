@@ -286,37 +286,37 @@ class Wqualreport(
                 parameters, start=self.nr_header_rows
             ):
                 p, u = p_u
-                sql = r"""SELECT {wqual_valuecolumn} FROM {wqualtable} WHERE obsid = '{obsid}' """.format(
-                    **{
-                        "wqual_valuecolumn": self.settingsdict["wqual_valuecolumn"],
-                        "wqualtable": self.settingsdict["wqualtable"],
-                        "obsid": obsid,
-                    }
-                )
+                ph = dbconnection.placeholder_sign()
+                value_col = dbconnection.ident(self.settingsdict["wqual_valuecolumn"])
+                wqual_table = dbconnection.ident(self.settingsdict["wqualtable"])
+                sql = f"SELECT {value_col} FROM {wqual_table} WHERE obsid = {ph}"
+                execute_args = [obsid]
                 if date_time is None or not date_time:
                     sql += r""" AND (date_time IS NULL OR date_time = '') """
                 else:
                     if len(self.settingsdict["wqual_date_time_format"]) > 16:
-                        sql += " AND date_time  = '{}' ".format(date_time)
+                        sql += f" AND date_time = {ph} "
+                        execute_args.append(date_time)
                     else:
-                        sql += " AND substr(date_time,1,{})  = '{}' ".format(
-                            str(len(self.settingsdict["wqual_date_time_format"])),
-                            date_time,
-                        )
+                        sql += f" AND substr(date_time,1,{len(self.settingsdict['wqual_date_time_format'])}) = {ph} "
+                        execute_args.append(date_time)
 
-                sql += r""" AND parameter = '{}' """.format(p.replace("'", "''"))
+                sql += f" AND parameter = {ph} "
+                execute_args.append(p)
 
                 if self.settingsdict["wqual_unitcolumn"] and u:
-                    sql += r""" AND {unitcol} = '{unit}' """.format(
-                        **{"unitcol": self.settingsdict["wqual_unitcolumn"], "unit": u}
-                    )
+                    unit_col = dbconnection.ident(self.settingsdict["wqual_unitcolumn"])
+                    sql += f" AND {unit_col} = {ph} "
+                    execute_args.append(u)
 
                 if self.settingsdict["wqual_sortingcolumn"]:
-                    sql += """ AND {} = '{}'""".format(
-                        self.settingsdict["wqual_sortingcolumn"], sorting
-                    )
+                    sorting_col = dbconnection.ident(self.settingsdict["wqual_sortingcolumn"])
+                    sql += f" AND {sorting_col} = {ph} "
+                    execute_args.append(sorting)
 
-                connection_ok, recs = db_utils.sql_load_fr_db(sql, dbconnection)
+                connection_ok, recs = db_utils.sql_load_fr_db(
+                    sql, dbconnection=dbconnection, execute_args=execute_args
+                )
                 # each value must be in unicode or string to be written as html report
                 if recs:
                     try:

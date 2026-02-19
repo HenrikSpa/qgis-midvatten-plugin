@@ -531,9 +531,12 @@ class midv_data_importer(
             )
 
         for colname in file_data[0]:
-            dbconnection.execute(
-                f"""UPDATE {self.temptable_name} SET {colname} = NULL WHERE {colname} = '' """
+            sql = dbconnection.sql_ident(
+                "UPDATE {t} SET {c} = NULL WHERE {c} = ''",
+                t=self.temptable_name,
+                c=colname,
             )
+            dbconnection.execute_safe(sql)
 
         # dbconnection.cursor.execute(f"""select * from {self.temptable_name}""")
 
@@ -569,8 +572,8 @@ class midv_data_importer(
         df = df.astype(object).where(pd.notnull(df), None)
 
         if dbconnection.dbtype == "spatialite":
-            sql = """INSERT INTO %s VALUES (%s)""" % (
-                temptable_name,
+            sql = "INSERT INTO {} VALUES ({})".format(
+                dbconnection.ident(temptable_name),
                 ", ".join(
                     [dbconnection.placeholder_sign() for x in range(len(df.columns))]
                 ),
@@ -815,12 +818,12 @@ class midv_data_importer(
     def convert_null_unit_to_empty_string(
         self, temptable_name: str, column: str, dbconnection: DbConnectionManager
     ):
-        dbconnection.execute(
-            """UPDATE {table} 
-                                SET {column} = TRIM(COALESCE({column}, ''))""".format(
-                table=temptable_name, column=column
-            )
+        sql = dbconnection.sql_ident(
+            "UPDATE {t} SET {c} = TRIM(COALESCE({c}, ''))",
+            t=temptable_name,
+            c=column,
         )
+        dbconnection.execute_safe(sql)
 
     def import_foreign_keys(
         self,

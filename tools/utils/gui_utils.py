@@ -40,7 +40,7 @@ from midvatten.tools.utils.common_utils import (
     sql_failed_msg,
 )
 from midvatten.tools.utils.date_utils import datestring_to_date
-from midvatten.tools.utils.db_utils import sql_load_fr_db
+from midvatten.tools.utils.db_utils import DbConnectionManager, sql_load_fr_db
 
 
 class SplitterWithHandel(qgis.PyQt.QtWidgets.QSplitter):
@@ -259,8 +259,20 @@ class DistinctValuesBrowser(VRowEntry):
     def get_distinct_values(tablename, columnname):
         if not tablename or not columnname:
             return []
-        sql = """SELECT DISTINCT %s FROM %s""" % (columnname, tablename)
-        connection_ok, result = sql_load_fr_db(sql)
+        dbconnection = DbConnectionManager()
+        try:
+            sql = dbconnection.sql_ident(
+                "SELECT DISTINCT {c} FROM {t}", c=columnname, t=tablename
+            )
+            result = dbconnection.execute_and_fetchall(sql)
+            connection_ok = True
+        except Exception:
+            connection_ok, result = False, []
+        finally:
+            try:
+                dbconnection.closedb()
+            except Exception:
+                pass
 
         if not connection_ok:
             MessagebarAndLog.critical(

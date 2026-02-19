@@ -148,10 +148,14 @@ class ExportData(object):
         self.source_dbconnection.closedb()
 
     def get_number_of_rows(self, obsids: Tuple[str], tname: str) -> int:
-        sql = "select count(obsid) from %s" % tname
+        sql = self.source_dbconnection.sql_ident(
+            "SELECT count(obsid) FROM {t}", t=tname
+        )
+        args = None
         if obsids:
-            sql += " WHERE obsid IN ({})".format(common_utils.sql_unicode_list(obsids))
-        nr_of_rows = self.source_dbconnection.execute_and_fetchall(sql)[0][0]
+            clause, args = self.source_dbconnection.in_clause(obsids)
+            sql += f" WHERE obsid IN {clause}"
+        nr_of_rows = self.source_dbconnection.execute_and_fetchall(sql, args)[0][0]
         return nr_of_rows
 
     def write_data(self, to_writer: Callable, obsids: Optional[Union[Tuple[str], Tuple[()]]], ptabs: List[str], replace: bool=False):
@@ -217,10 +221,12 @@ class ExportData(object):
         :param obsids:
         :return:
         """
-        sql = """SELECT * FROM "%s" """ % tname
+        sql = self.source_dbconnection.sql_ident('SELECT * FROM {t}', t=tname)
+        args = None
         if obsids:
-            sql += " WHERE obsid IN ({})".format(common_utils.sql_unicode_list(obsids))
-        data = self.source_dbconnection.execute_and_fetchall(sql)
+            clause, args = self.source_dbconnection.in_clause(obsids)
+            sql += f" WHERE obsid IN {clause}"
+        data = self.source_dbconnection.execute_and_fetchall(sql, args)
         printlist = [[col[0] for col in self.source_dbconnection.cursor.description]]
         printlist.extend(data)
         filename = os.path.join(self.exportfolder, tname + ".csv")
@@ -268,7 +274,9 @@ class ExportData(object):
                 tname, obsids, self.dest_dbconnection, file_data_srid
             )
             if dest_data:
-                self.dest_dbconnection.execute("""DELETE FROM {}""".format(tname))
+                self.dest_dbconnection.execute_safe(
+                    self.dest_dbconnection.sql_ident("DELETE FROM {t}", t=tname)
+                )
 
         if tname == "obs_points":
             geom_column = list(
@@ -303,7 +311,7 @@ class ExportData(object):
             self.dest_dbconnection.execute("""PRAGMA foreign_keys = ON;""")
 
     def get_table_data(self, tname: str, obsids: Optional[Union[Tuple[str], Tuple[()]]], dbconnection: DbConnectionManager, file_data_srid: Optional[int]) -> List[Any]:
-        dbconnection.execute("""SELECT * FROM "%s" LIMIT 1""" % tname)
+        dbconnection.execute_safe(dbconnection.sql_ident("SELECT * FROM {t} LIMIT 1", t=tname))
         columns = [x[0] for x in dbconnection.cursor.description]
 
         if file_data_srid:
@@ -322,13 +330,18 @@ class ExportData(object):
             for col in columns
         ]
 
-        sql = '''SELECT {} FROM "{}"'''.format(", ".join(select_columns), tname)
+        sql = "SELECT {} FROM {}".format(
+            ", ".join(select_columns),
+            dbconnection.ident(tname),
+        )
+        args = None
         if obsids:
-            sql += " WHERE obsid IN ({})".format(common_utils.sql_unicode_list(obsids))
-        dbconnection.execute(sql)
+            clause, args = dbconnection.in_clause(obsids)
+            sql += f" WHERE obsid IN {clause}"
+        dbconnection.execute_safe(sql, args)
 
         table_data = [[x.lower() for x in columns]]
-        table_data.extend([row for row in dbconnection.execute_and_fetchall(sql)])
+        table_data.extend([row for row in dbconnection.execute_and_fetchall(sql, args)])
 
         if len(table_data) < 2:
             return None
@@ -350,7 +363,7 @@ class ExportData(object):
         for alias, dbconnection in db_aliases_and_connections:
             tablenames = db_utils.get_tables(dbconnection, skip_views=True)
             for tablename in tablenames:
-                sql = """SELECT count(*) FROM "%s" """ % (tablename)
+                sql = dbconnection.sql_ident("SELECT count(*) FROM {t}", t=tablename)
                 try:
                     nr_of_rows = dbconnection.execute_and_fetchall(sql)[0][0]
                 except:

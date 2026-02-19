@@ -191,12 +191,13 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     def get_uncalibrated_obsids(self, obsid=None):
         dbconnection = db_utils.DbConnectionManager()
         try:
+            ph = dbconnection.placeholder_sign()
             if dbconnection.dbtype == "spatialite":
                 sql = """SELECT obsid FROM (SELECT obsid, MAX(date_time), level_masl, head_cm FROM w_levels_logger {} GROUP BY obsid)
                          WHERE level_masl IS NULL AND head_cm IS NOT NULL ORDER BY obsid""".format(
                     ""
                     if obsid is None
-                    else f" WHERE obsid = {dbconnection.placeholder_sign()}"
+                    else f" WHERE obsid = {ph}"
                 )
             else:
                 sql = """SELECT obsid FROM 
@@ -207,10 +208,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                         WHERE level_masl IS NULL AND head_cm IS NOT NULL ORDER BY obsid""".format(
                     ""
                     if obsid is None
-                    else f" WHERE obsid = '{dbconnection.placeholder_sign()}'"
+                    else f" WHERE obsid = {ph}"
                 )
 
-            execute_args = obsid if obsid is not None else None
+            execute_args = (obsid,) if obsid is not None else None
             res = [
                 row[0]
                 for row in db_utils.sql_load_fr_db(

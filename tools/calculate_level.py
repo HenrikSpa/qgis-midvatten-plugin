@@ -72,85 +72,93 @@ class CalculateLevel(
     def calc(self, obsids: List[str]):
         fr_d_t = self.FromDateTime.dateTime().toPyDateTime()
         to_d_t = self.ToDateTime.dateTime().toPyDateTime()
-        sql = """SELECT obsid FROM obs_points WHERE obsid IN ({}) AND h_toc IS NULL""".format(
-            ", ".join(["'{}'".format(x) for x in obsids])
-        )
+        dbconnection = db_utils.DbConnectionManager()
+        try:
+            in_clause, in_args = dbconnection.in_clause(obsids)
+            sql = (
+                f"SELECT obsid FROM obs_points WHERE obsid IN {in_clause} AND h_toc IS NULL"
+            )
+            obsid_with_h_toc_null = db_utils.sql_load_fr_db(
+                sql, dbconnection=dbconnection, execute_args=in_args
+            )[1]
+            if obsid_with_h_toc_null:
+                obsid_with_h_toc_null = [x[0] for x in obsid_with_h_toc_null]
+                if self.checkBox_stop_if_null.isChecked():
+                    any_nulls = [
+                        obsid for obsid in obsids if obsid in obsid_with_h_toc_null
+                    ]
+                    if any_nulls:
+                        common_utils.pop_up_info(
+                            ru(
+                                QCoreApplication.translate(
+                                    "Calclvl",
+                                    "Adjustment aborted! There seems to be NULL values in your table obs_points, column h_toc.",
+                                )
+                            ),
+                            ru(QCoreApplication.translate("Calclvl", "Error")),
+                        )
+                        return None
 
-        obsid_with_h_toc_null = db_utils.sql_load_fr_db(sql)[1]
-        if obsid_with_h_toc_null:
-            obsid_with_h_toc_null = [x[0] for x in obsid_with_h_toc_null]
-            if self.checkBox_stop_if_null.isChecked():
-                any_nulls = [
-                    obsid for obsid in obsids if obsid in obsid_with_h_toc_null
-                ]
-                if any_nulls:
+                else:
+                    obsids = [
+                        obsid
+                        for obsid in obsids
+                        if obsid not in obsid_with_h_toc_null
+                    ]
+
+                if not obsids:
                     common_utils.pop_up_info(
                         ru(
                             QCoreApplication.translate(
-                                "Calclvl",
-                                "Adjustment aborted! There seems to be NULL values in your table obs_points, column h_toc.",
+                                "Calclvl", "Adjustment aborted! All h_tocs were NULL."
                             )
                         ),
                         ru(QCoreApplication.translate("Calclvl", "Error")),
                     )
                     return None
 
-            else:
-                obsids = [
-                    obsid for obsid in obsids if obsid not in obsid_with_h_toc_null
-                ]
-
-            if not obsids:
-                common_utils.pop_up_info(
-                    ru(
-                        QCoreApplication.translate(
-                            "Calclvl", "Adjustment aborted! All h_tocs were NULL."
-                        )
-                    ),
-                    ru(QCoreApplication.translate("Calclvl", "Error")),
-                )
-                return None
-
-        formatted_obsids = ", ".join(["'{}'".format(x) for x in obsids])
-        where_args = {
-            "fr_dt": str(fr_d_t),
-            "to_dt": str(to_d_t),
-            "obsids": formatted_obsids,
-        }
-        where_sql = """meas IS NOT NULL AND date_time >= '{fr_dt}' AND date_time <= '{to_dt}' AND obsid IN ({obsids})""".format(
-            **where_args
-        )
-        if not self.checkBox_overwrite_prev.isChecked():
-            where_sql += """ AND level_masl IS NULL """
-
-        sql1 = """UPDATE w_levels SET h_toc = (SELECT obs_points.h_toc FROM obs_points WHERE w_levels.obsid = obs_points.obsid) WHERE {}""".format(
-            where_sql
-        )
-        self.updated_h_tocs = self.log_msg(where_sql)
-        db_utils.sql_alter_db(sql1)
-
-        where_sql += """ AND h_toc IS NOT NULL"""
-        sql2 = """UPDATE w_levels SET level_masl = h_toc - meas WHERE h_toc IS NOT NULL AND {}""".format(
-            where_sql
-        )
-        self.updated_level_masl = self.log_msg(where_sql)
-        db_utils.sql_alter_db(sql2)
-
-        common_utils.MessagebarAndLog.info(
-            bar_msg=ru(
-                QCoreApplication.translate(
-                    "Calclvl", "Calculation done, see log message panel"
-                )
-            ),
-            log_msg=ru(
-                QCoreApplication.translate(
-                    "Calclvl",
-                    "H_toc added and level_masl calculated for\nobsid;min date;max date;calculated number of measurements: \n%s",
-                )
+            in_clause, in_args = dbconnection.in_clause(obsids)
+            ph = dbconnection.placeholder_sign()
+            where_sql = (
+                f"meas IS NOT NULL AND date_time >= {ph} AND date_time <= {ph} AND obsid IN {in_clause}"
             )
-            % (self.updated_level_masl),
-        )
-        self.close()
+            where_sql_args = [fr_d_t, to_d_t] + in_args
+            if not self.checkBox_overwrite_prev.isChecked():
+                where_sql += """ AND level_masl IS NULL """
+
+            sql1 = (
+                "UPDATE w_levels "
+                "SET h_toc = (SELECT obs_points.h_toc FROM obs_points WHERE w_levels.obsid = obs_points.obsid) "
+                f"WHERE {where_sql}"
+            )
+            self.updated_h_tocs = self.log_msg(where_sql, where_sql_args)
+            db_utils.sql_alter_db(sql1, all_args=[where_sql_args])
+
+            where_sql += """ AND h_toc IS NOT NULL"""
+            sql2 = f"UPDATE w_levels SET level_masl = h_toc - meas WHERE h_toc IS NOT NULL AND {where_sql}"
+            self.updated_level_masl = self.log_msg(where_sql, where_sql_args)
+            db_utils.sql_alter_db(sql2, all_args=[where_sql_args])
+
+            common_utils.MessagebarAndLog.info(
+                bar_msg=ru(
+                    QCoreApplication.translate(
+                        "Calclvl", "Calculation done, see log message panel"
+                    )
+                ),
+                log_msg=ru(
+                    QCoreApplication.translate(
+                        "Calclvl",
+                        "H_toc added and level_masl calculated for\nobsid;min date;max date;calculated number of measurements: \n%s",
+                    )
+                )
+                % (self.updated_level_masl),
+            )
+            self.close()
+        finally:
+            try:
+                dbconnection.closedb()
+            except Exception:
+                pass
 
     @fn_timer
     def calcall(self):
@@ -185,12 +193,14 @@ class CalculateLevel(
         else:
             self.calc(obsids)
 
-    def log_msg(self, where_sql: str) -> str:
+    def log_msg(self, where_sql: str, where_sql_args: List) -> str:
         res_sql = """SELECT DISTINCT obsid, min(date_time), max(date_time), count(obsid) FROM w_levels WHERE {} GROUP BY obsid"""
         log_msg = "\n".join(
             [
                 ";".join(ru(row, keep_containers=True))
-                for row in db_utils.sql_load_fr_db(res_sql.format(where_sql))[1]
+                for row in db_utils.sql_load_fr_db(
+                    res_sql.format(where_sql), execute_args=where_sql_args
+                )[1]
             ]
         )
         return log_msg

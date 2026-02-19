@@ -163,3 +163,36 @@ class TestGetTimezoneFromDb(utils_for_tests.MidvattenTestPostgisDbSv):
         )
         tz = db_utils.get_timezone_from_db("w_levels")
         assert tz == "Europe/Stockholm"
+
+
+@attr(status="on")
+class TestSqlInjectionHardening(utils_for_tests.MidvattenTestPostgisDbSv):
+    def test_in_clause_does_not_expand_scope(self):
+        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('P1')""")
+        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('P2')""")
+
+        dbconnection = db_utils.DbConnectionManager()
+        try:
+            clause, args = dbconnection.in_clause(["P1') OR 1=1 --"])
+            sql = f"SELECT obsid FROM obs_points WHERE obsid IN {clause} ORDER BY obsid"
+            res = dbconnection.execute_and_fetchall(sql, args)
+            assert res == []
+
+            clause, args = dbconnection.in_clause(["P1"])
+            sql = f"SELECT obsid FROM obs_points WHERE obsid IN {clause} ORDER BY obsid"
+            res = dbconnection.execute_and_fetchall(sql, args)
+            assert [r[0] for r in res] == ["P1"]
+        finally:
+            dbconnection.closedb()
+
+    def test_ident_rejects_unsafe_identifier(self):
+        dbconnection = db_utils.DbConnectionManager()
+        try:
+            try:
+                dbconnection.ident('obs_points; DROP TABLE obs_points;--')
+            except db_utils.UnsafeIdentifierError:
+                pass
+            else:
+                raise AssertionError("Expected UnsafeIdentifierError")
+        finally:
+            dbconnection.closedb()

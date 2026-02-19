@@ -139,12 +139,14 @@ def get_statistics(
     if not isinstance(obsids, (list, tuple)):
         obsids = [obsids]
 
-    sql = "select obsid, %s from %s where obsid in (%s) group by obsid" % (
-        ", ".join(["%s(%s)" % (func, column) for func in sql_function_order]),
-        table,
-        ", ".join(["'{}'".format(x) for x in obsids]),
-    )
-    _res = db_utils.get_sql_result_as_dict(sql, dbconnection=dbconnection)[1]
+    clause, args = dbconnection.in_clause(obsids)
+    col_ident = dbconnection.ident(column)
+    table_ident = dbconnection.ident(table)
+    agg_cols = ", ".join([f"{func}({col_ident})" for func in sql_function_order])
+    sql = f"select obsid, {agg_cols} from {table_ident} where obsid in {clause} group by obsid"
+    _res = db_utils.get_sql_result_as_dict(
+        sql, dbconnection=dbconnection, execute_args=args
+    )[1]
     res = dict([(obsid, list(v[0])) for obsid, v in _res.items()])
     if median:
         [
@@ -166,13 +168,15 @@ def get_statistics_for_single_obsid(
     data_column = data_columns[0]  # default value
 
     # number of values, also decide wehter to use meas or level_masl in report
+    dbconnection = db_utils.DbConnectionManager()
+    ph = dbconnection.placeholder_sign()
+    table_ident = dbconnection.ident(table)
     for column in data_columns:
-        sql = r"""select Count(%s) from %s where obsid = '%s'""" % (
-            column,
-            table,
-            obsid,
+        col_ident = dbconnection.ident(column)
+        sql = f"select Count({col_ident}) from {table_ident} where obsid = {ph}"
+        ConnectionOK, number_of_values = db_utils.sql_load_fr_db(
+            sql, dbconnection=dbconnection, execute_args=(obsid,)
         )
-        ConnectionOK, number_of_values = db_utils.sql_load_fr_db(sql)
         if (
             number_of_values and number_of_values[0][0] > Statistics_list[2]
         ):  # this will select meas if meas >= level_masl
@@ -180,8 +184,11 @@ def get_statistics_for_single_obsid(
             Statistics_list[2] = number_of_values[0][0]
 
     # min value
-    sql = r"""select min(%s) from %s where obsid = '%s'""" % (data_column, table, obsid)
-    ConnectionOK, min_value = db_utils.sql_load_fr_db(sql)
+    col_ident = dbconnection.ident(data_column)
+    sql = f"select min({col_ident}) from {table_ident} where obsid = {ph}"
+    ConnectionOK, min_value = db_utils.sql_load_fr_db(
+        sql, dbconnection=dbconnection, execute_args=(obsid,)
+    )
     if min_value:
         Statistics_list[0] = min_value[0][0]
 
@@ -191,9 +198,16 @@ def get_statistics_for_single_obsid(
         Statistics_list[1] = median_value
 
     # max value
-    sql = r"""select max(%s) from %s where obsid = '%s'""" % (data_column, table, obsid)
-    ConnectionOK, max_value = db_utils.sql_load_fr_db(sql)
+    sql = f"select max({col_ident}) from {table_ident} where obsid = {ph}"
+    ConnectionOK, max_value = db_utils.sql_load_fr_db(
+        sql, dbconnection=dbconnection, execute_args=(obsid,)
+    )
     if max_value:
         Statistics_list[3] = max_value[0][0]
+
+    try:
+        dbconnection.closedb()
+    except Exception:
+        pass
 
     return data_column, Statistics_list

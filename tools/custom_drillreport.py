@@ -425,14 +425,12 @@ class Drillreport(object):  # general observation point info for the selected ob
             "com_onerow",
             "com_html",
         ]
+        clause, args = dbconnection.in_clause(obsids)
+        cols_sql = ", ".join([dbconnection.ident(c) for c in obs_points_cols])
+        sql = f"SELECT {cols_sql} FROM {dbconnection.ident('obs_points')} WHERE obsid IN {clause} ORDER BY obsid"
         all_obs_points_data = ru(
             db_utils.get_sql_result_as_dict(
-                "SELECT %s FROM obs_points WHERE obsid IN (%s) ORDER BY obsid"
-                % (
-                    ", ".join(obs_points_cols),
-                    ", ".join(["'{}'".format(x) for x in obsids]),
-                ),
-                dbconnection=dbconnection,
+                sql, dbconnection=dbconnection, execute_args=args
             )[1],
             keep_containers=True,
         )
@@ -448,12 +446,10 @@ class Drillreport(object):  # general observation point info for the selected ob
 
             all_stratigrapy_data = ru(
                 db_utils.get_sql_result_as_dict(
-                    "SELECT obsid, %s FROM stratigraphy WHERE obsid IN (%s) ORDER BY obsid, stratid"
-                    % (
-                        ", ".join(strat_sql_columns_list),
-                        ", ".join(["'{}'".format(x) for x in obsids]),
-                    ),
+                    "SELECT obsid, %s FROM stratigraphy WHERE obsid IN %s ORDER BY obsid, stratid"
+                    % (", ".join([dbconnection.ident(c) for c in strat_sql_columns_list]), clause),
                     dbconnection=dbconnection,
+                    execute_args=args,
                 )[1],
                 keep_containers=True,
             )

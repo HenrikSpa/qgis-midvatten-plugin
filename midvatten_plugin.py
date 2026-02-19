@@ -620,7 +620,7 @@ class Midvatten:
         dlg = common_utils.HtmlDialog(
             "About Midvatten plugin for QGIS", QUrl.fromLocalFile(str(outname))
         )
-        dlg.exec_()
+        dlg.exec()
 
     @common_utils.general_exception_handler
     def calculate_aveflow(self):
@@ -641,7 +641,7 @@ class Midvatten:
         err_flag = common_utils.verify_layer_selection(err_flag, 0)
         if err_flag == 0:
             dlg = CalculateAveflow(self.iface.mainWindow())
-            dlg.exec_()
+            dlg.exec()
 
     @common_utils.general_exception_handler
     def drillreport(self):
@@ -711,7 +711,7 @@ class Midvatten:
                     )
                 ),
                 ".",
-                QFileDialog.ShowDirsOnly,
+                QFileDialog.Option.ShowDirsOnly,
             )
             common_utils.start_waiting_cursor()
             if len(exportfolder) > 0:
@@ -1367,21 +1367,21 @@ class Midvatten:
         for feat in selected_layer.getSelectedFeatures():
             geom = feat.geometry()
             if geom.wkbType() in (
-                QgsWkbTypes.LineString,
+                QgsWkbTypes.Type.LineString,
                 2,
-                QgsWkbTypes.MultiLineString,
+                QgsWkbTypes.Type.MultiLineString,
                 5,
-                QgsWkbTypes.LineStringZ,
+                QgsWkbTypes.Type.LineStringZ,
                 1002,
-                QgsWkbTypes.MultiLineStringZ,
+                QgsWkbTypes.Type.MultiLineStringZ,
                 1005,
-                QgsWkbTypes.LineStringM,
+                QgsWkbTypes.Type.LineStringM,
                 2002,
-                QgsWkbTypes.MultiLineStringM,
+                QgsWkbTypes.Type.MultiLineStringM,
                 2005,
-                QgsWkbTypes.LineStringZM,
+                QgsWkbTypes.Type.LineStringZM,
                 3002,
-                QgsWkbTypes.MultiLineStringZM,
+                QgsWkbTypes.Type.MultiLineStringZM,
                 3005,
             ):
                 if nrofselected != 1:
@@ -1679,7 +1679,7 @@ class Midvatten:
             dlg = CalculateLevel(
                 self.iface.mainWindow(), qgis.utils.iface.activeLayer()
             )  # dock is an instance of calibrlogger
-            dlg.exec_()
+            dlg.exec()
 
     @common_utils.general_exception_handler
     def wlvlloggcalibrate(self):

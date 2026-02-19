@@ -85,6 +85,9 @@ class PiperPlot(object):
 
     def big_sql(self):
         # Data must be stored as mg/l in the database since it is converted to meq/l in code here...
+        dbconnection = db_utils.DbConnectionManager()
+        obsid_placeholders = dbconnection.placeholder_string(len(self.observations))
+        dbconnection.closedb()
         sql = """select a.obsid as obsid, date_time, obs_points.type as type, Cl_meqPl, HCO3_meqPl, SO4_meqPl, Na_meqPl + K_meqPl as NaK_meqPl, Ca_meqPl, Mg_meqPl
         from (select u.obsid, u.date_time, u.Cl_meqPl, u.HCO3_meqPl, u.SO4_meqPl, u.Na_meqPl, u.K_meqPl, u.Ca_meqPl, u.Mg_meqPl
             from (
@@ -108,9 +111,9 @@ class PiperPlot(object):
             ru(self.ParameterList[4]),
             ru(self.ParameterList[5]),
             ru(self.ParameterList[6]),
-            common_utils.sql_unicode_list(self.observations),
+            obsid_placeholders,
         )
-        return sql
+        return sql, list(self.observations)
 
     def create_markers(self):
         marker = itertools.cycle(
@@ -259,37 +262,53 @@ class PiperPlot(object):
                 )
 
     def get_selected_datetimes(self):
-        sql1 = self.big_sql()
+        sql1, args = self.big_sql()
         sql2 = (
             r""" select distinct date_time from ("""
             + sql1
             + r""") AS foo order by date_time"""
         )
-        ConnOK, self.date_times = db_utils.sql_load_fr_db(sql2)
+        ConnOK, self.date_times = db_utils.sql_load_fr_db(sql2, execute_args=args)
 
     def get_selected_observations(self):
         self.observations = common_utils.getselectedobjectnames(self.activelayer)
 
     def get_selected_obstypes(self):
-        sql = "select obsid, type from obs_points where obsid in ({})".format(
-            common_utils.sql_unicode_list(self.observations)
-        )
-        ConnOK, types = db_utils.sql_load_fr_db(sql)
+        dbconnection = db_utils.DbConnectionManager()
+        try:
+            clause, args = dbconnection.in_clause(self.observations)
+            sql = f"select obsid, type from obs_points where obsid in {clause}"
+            ConnOK, types = db_utils.sql_load_fr_db(
+                sql, dbconnection=dbconnection, execute_args=args
+            )
+        finally:
+            try:
+                dbconnection.closedb()
+            except Exception:
+                pass
         self.typedict = dict(types)  # make it a dictionary
-        sql = "select distinct type from obs_points where obsid in ({})".format(
-            common_utils.sql_unicode_list(self.observations)
-        )
-        ConnOK, self.distincttypes = db_utils.sql_load_fr_db(sql)
+        dbconnection = db_utils.DbConnectionManager()
+        try:
+            clause, args = dbconnection.in_clause(self.observations)
+            sql = f"select distinct type from obs_points where obsid in {clause}"
+            ConnOK, self.distincttypes = db_utils.sql_load_fr_db(
+                sql, dbconnection=dbconnection, execute_args=args
+            )
+        finally:
+            try:
+                dbconnection.closedb()
+            except Exception:
+                pass
 
     def get_piper_data(self):
         # These observations are supposed to be in mg/l and must be stored in a Midvatten database, table w_qual_lab
-        sql = self.big_sql()
+        sql, args = self.big_sql()
         try:
             print(sql)  # debug
         except:
             pass
         # get data into a list: obsid, date_time, type, Cl_meqPl, HCO3_meqPl, SO4_meqPl, Na+K_meqPl, Ca_meqPl, Mg_meqPl
-        obsimport = db_utils.sql_load_fr_db(sql)[1]
+        obsimport = db_utils.sql_load_fr_db(sql, execute_args=args)[1]
         # convert to numpy ndarray W/O format specified
         self.obsnp_nospecformat = np.array(obsimport)
         # define format

@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin handles calculation of average water flow
@@ -75,21 +75,23 @@ class CalculateAveflow(qgis.PyQt.QtWidgets.QDialog, Calc_Ui_Dialog):
         date_from = self.FromDateTime.dateTime().toPyDateTime()
         date_to = self.ToDateTime.dateTime().toPyDateTime()
 
-        sql = """SELECT date_time, reading, obsid, instrumentid, comment FROM 
-                    w_flow WHERE flowtype = 'Accvol' AND date_time >= '%s' 
-                    AND date_time <= '%s' AND obsid IN (%s)
-                 ORDER by obsid, instrumentid, date_time""" % (
-            date_from,
-            date_to,
-            common_utils.sql_unicode_list(observations),
-        )
         dbconnection = db_utils.DbConnectionManager()
+        ph = dbconnection.placeholder_sign()
+        in_clause, in_args = dbconnection.in_clause(observations)
+        sql = (
+            "SELECT date_time, reading, obsid, instrumentid, comment "
+            "FROM w_flow "
+            f"WHERE flowtype = 'Accvol' AND date_time >= {ph} AND date_time <= {ph} "
+            f"AND obsid IN {in_clause} "
+            "ORDER BY obsid, instrumentid, date_time"
+        )
+        params = [date_from, date_to] + in_args
         df = pd.read_sql(
             sql,
             dbconnection.conn,
             index_col=["date_time"],
             coerce_float=True,
-            params=None,
+            params=params,
             parse_dates={"date_time": {"format": "mixed"}},
             columns=None,
             chunksize=None,

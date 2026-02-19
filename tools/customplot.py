@@ -1268,14 +1268,11 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         dependent_filtering_box=None,
     ):
 
-        sql = (
-            "select distinct "
-            + str(filtercolumn)
-            + " from "
-            + table
-            + " order by "
-            + str(filtercolumn)
+        dbconnection = db_utils.DbConnectionManager()
+        sql = dbconnection.sql_ident(
+            "SELECT DISTINCT {c} FROM {t} ORDER BY {c}", c=str(filtercolumn), t=table
         )
+        args = None
 
         if dependent_filtering_box is not None:
             dependent_filtering = dependent_filtering_box.isChecked()
@@ -1293,15 +1290,27 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                 keep_containers=True,
             )
             if selected:
-                sql = "SELECT DISTINCT {} FROM {} WHERE {} IN ({}) ORDER BY {}".format(
-                    str(filtercolumn),
-                    table,
-                    other_filtercolumn,
-                    ", ".join(["'{}'".format(item) for item in selected]),
-                    str(filtercolumn),
+                clause, args = dbconnection.in_clause(selected)
+                sql = dbconnection.sql_ident(
+                    "SELECT DISTINCT {c} FROM {t} WHERE {oc} IN "
+                    + clause
+                    + " ORDER BY {c}",
+                    c=str(filtercolumn),
+                    t=table,
+                    oc=other_filtercolumn,
                 )
 
-        ConnectionOK, list_data = db_utils.sql_load_fr_db(sql)
+        try:
+            list_data = dbconnection.execute_and_fetchall(sql, args)
+            ConnectionOK = True
+        except Exception:
+            ConnectionOK, list_data = False, []
+        finally:
+            try:
+                dbconnection.closedb()
+            except Exception:
+                pass
+
         for post in list_data:
             item = QtWidgets.QListWidgetItem(str(post[0]))
             getattr(self, QListWidgetname).addItem(item)

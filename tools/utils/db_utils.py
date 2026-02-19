@@ -26,7 +26,7 @@ import os
 import traceback
 import zipfile
 from sqlite3 import Connection, Cursor
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 import qgis._core
 
@@ -39,6 +39,7 @@ except:
 
 import datetime
 import psycopg2
+import psycopg2.sql
 import re
 import tempfile
 from collections import OrderedDict
@@ -463,12 +464,12 @@ class DbConnectionManager(object):
 
     def drop_temporary_table(self, temptable_name: str):
         if self.dbtype == "spatialite":
-            self.execute("""DROP TABLE {}""".format(temptable_name))
+            self.execute_safe(self.sql_ident("DROP TABLE {t}", t=temptable_name))
         else:
-            self.execute("""DROP TABLE IF EXISTS {}""".format(temptable_name))
+            self.execute_safe(self.sql_ident("DROP TABLE IF EXISTS {t}", t=temptable_name))
 
     def dump_table_2_csv(self, table_name=None):
-        self.cursor.execute("select * from {}".format(table_name))
+        self.execute_safe(self.sql_ident("SELECT * FROM {t}", t=table_name))
         header = [col[0] for col in self.cursor.description]
         rows = self.cursor.fetchall()
         if rows:
@@ -483,8 +484,8 @@ class DbConnectionManager(object):
         srid = None
         if self.dbtype == "spatialite":
             srid = self.execute_and_fetchall(
-                """SELECT srid FROM geometry_columns WHERE f_table_name = '%s'"""
-                % table_name
+                "SELECT srid FROM geometry_columns WHERE f_table_name = ?",
+                (table_name,),
             )
             if not srid:
                 srid = None
@@ -493,9 +494,8 @@ class DbConnectionManager(object):
         else:
             try:
                 self.cursor.execute(
-                    """SELECT Find_SRID('{}', '{}', '{}');""".format(
-                        self.schema, table_name, geometry_column
-                    )
+                    "SELECT Find_SRID(%s, %s, %s);",
+                    (self.schema, table_name, geometry_column),
                 )
             except:
                 # Assume that the column doesn't have a srid/is a geometry.
@@ -515,15 +515,45 @@ class DbConnectionManager(object):
             count = len(count)
         return ", ".join([self.placeholder_sign()] * count)
 
+    def ident(self, name: str, *, allowed: Optional[Iterable[str]] = None):
+        """Safely quote/compose an identifier for current backend."""
+        return ident(self, name, allowed=allowed)
+
+    def sql_ident(self, template: str, /, **identifiers: str):
+        """Format a template where substitutions are identifiers only."""
+        return sql_ident(self, template, **identifiers)
+
+    def in_clause(self, values: Sequence[Any]) -> Tuple[str, List[Any]]:
+        """Build backend-correct `IN (...)` clause + args for VALUES."""
+        return in_clause(self, values)
+
+    def execute_safe(
+        self,
+        sql: Union[str, "psycopg2.sql.Composable"],
+        args: Optional[Sequence[Any]] = None,
+    ):
+        """Execute either plain SQL string or psycopg2 composable SQL."""
+        if self.dbtype == "postgis" and isinstance(sql, psycopg2.sql.Composable):
+            if args is None:
+                self.cursor.execute(sql)
+            else:
+                self.cursor.execute(sql, list(args))
+        else:
+            if args is None:
+                self.cursor.execute(str(sql))
+            else:
+                self.cursor.execute(str(sql), list(args))
+
     def drop_view(self, view_name):
         try:
             if self.dbtype == "spatialite":
                 self.cursor.execute(
-                    f"DELETE FROM views_geometry_columns WHERE view_name = '{view_name}'"
+                    "DELETE FROM views_geometry_columns WHERE view_name = ?",
+                    (view_name,),
                 )
-                self.cursor.execute("""DROP VIEW IF EXISTS {}""".format(view_name))
+                self.execute_safe(self.sql_ident("DROP VIEW IF EXISTS {v}", v=view_name))
             else:
-                self.cursor.execute(
+                self.execute_safe(
                     psycopg2.sql.SQL("DROP VIEW IF EXISTS {}").format(
                         psycopg2.sql.Identifier(view_name)
                     )
@@ -1052,7 +1082,9 @@ def postgis_internal_tables(as_tuple: bool = False) -> str:
 
 
 def get_sql_result_as_dict(
-    sql: str, dbconnection: Optional[DbConnectionManager] = None
+    sql: str,
+    dbconnection: Optional[DbConnectionManager] = None,
+    execute_args: Optional[Sequence[Any]] = None,
 ) -> Tuple[bool, OrderedDict]:
     """
     Runs sql and returns result as dict
@@ -1066,7 +1098,9 @@ def get_sql_result_as_dict(
     else:
         dbconnection_created = False
 
-    connection_ok, result_list = sql_load_fr_db(sql, dbconnection=dbconnection)
+    connection_ok, result_list = sql_load_fr_db(
+        sql, dbconnection=dbconnection, execute_args=execute_args
+    )
     if not connection_ok:
         return False, OrderedDict()
 
@@ -1115,10 +1149,8 @@ def get_geometry_types(
     dbconnection: DbConnectionManager, tablename: str
 ) -> OrderedDict:
     if dbconnection.dbtype == "spatialite":
-        sql = (
-            """SELECT f_geometry_column, geometry_type FROM geometry_columns WHERE f_table_name = '%s'"""
-            % tablename
-        )
+        sql = """SELECT f_geometry_column, geometry_type FROM geometry_columns WHERE f_table_name = ?"""
+        execute_args = (tablename,)
     else:
         sql = """SELECT f_geometry_column, type
                 FROM geometry_columns
@@ -1127,7 +1159,10 @@ def get_geometry_types(
             dbconnection.schema,
             tablename,
         )
-    result = get_sql_result_as_dict(sql, dbconnection=dbconnection)[1]
+        execute_args = None
+    result = get_sql_result_as_dict(
+        sql, dbconnection=dbconnection, execute_args=execute_args
+    )[1]
     return result
 
 
@@ -1188,6 +1223,92 @@ def placeholder_sign(dbconnection: Optional[DbConnectionManager] = None) -> str:
         dbconnection.closedb()
 
     return sign
+
+
+class UnsafeIdentifierError(ValueError):
+    pass
+
+
+_IDENT_PART_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
+def _split_qualified_identifier(name: str) -> List[str]:
+    if not isinstance(name, str) or not name.strip():
+        raise UnsafeIdentifierError(f"Identifier must be a non-empty string, got {name!r}")
+    # Disallow quotes and statement separators outright.
+    if any(ch in name for ch in ['"', "'", ";", "\\", "\n", "\r", "\t"]):
+        raise UnsafeIdentifierError(f"Identifier contained forbidden characters: {name!r}")
+    parts = [p for p in name.split(".") if p]
+    if not parts:
+        raise UnsafeIdentifierError(f"Identifier had no parts: {name!r}")
+    for part in parts:
+        if not _IDENT_PART_RE.match(part):
+            raise UnsafeIdentifierError(f"Unsafe identifier part {part!r} in {name!r}")
+    return parts
+
+
+def ident(
+    dbconnection: DbConnectionManager, name: str, *, allowed: Optional[Iterable[str]] = None
+) -> str:
+    """Safely quote/compose an SQL identifier.
+
+    Identifiers cannot be bound via DB-API parameters, so we validate + quote instead.
+    """
+    if allowed is not None and name not in set(allowed):
+        raise UnsafeIdentifierError(f"Identifier {name!r} was not in allowed list")
+    parts = _split_qualified_identifier(name)
+    # Use SQL-standard double quotes, supported by both sqlite and postgres.
+    return ".".join([f'"{p}"' for p in parts])
+
+
+def sql_ident(
+    dbconnection: DbConnectionManager, template: str, /, **identifiers: str
+) -> str:
+    """Format a template where substitutions are IDENTIFIERS ONLY.
+
+    Values must still be passed using DB-API parameters.
+    """
+    fmt = {k: ident(dbconnection, v) for k, v in identifiers.items()}
+    # ident() returns pre-quoted strings, safe to format in.
+    return template.format(**fmt)
+
+
+def in_clause(
+    dbconnection: DbConnectionManager, values: Sequence[Any]
+) -> Tuple[str, List[Any]]:
+    """Return `(clause_sql, args)` for use as: `... IN {clause_sql}`.
+
+    Empty sequences become `(NULL)` which yields no matches in `IN` expressions.
+    """
+    if values is None:
+        raise ValueError("values must not be None")
+    values_list = list(values)
+    if not values_list:
+        return "(NULL)", []
+    placeholders = dbconnection.placeholder_string(len(values_list))
+    return f"({placeholders})", values_list
+
+
+def sql_literal(value: Any) -> str:
+    """Safely embed a literal value into SQL text (last resort).
+
+    Prefer DB-API parameters whenever possible. This exists for contexts where
+    parameters are not supported (e.g., CREATE VIEW).
+    """
+    if value is None:
+        return "NULL"
+    if isinstance(value, bool):
+        return "1" if value else "0"
+    if isinstance(value, (int, float)):
+        return str(value)
+    text = str(value)
+    if "\x00" in text:
+        raise ValueError("NUL byte not allowed in SQL literal")
+    return "'" + text.replace("'", "''") + "'"
+
+
+def sql_literal_list(values: Sequence[Any]) -> str:
+    return ", ".join([sql_literal(v) for v in values])
 
 
 def get_dbtype(dbtype):
@@ -1344,7 +1465,8 @@ def get_srid_name(srid: int, dbconnection: None = None) -> str:
 
     if dbconnection.dbtype == "spatialite":
         ref_sys_name = dbconnection.execute_and_fetchall(
-            """SELECT ref_sys_name FROM spatial_ref_sys WHERE srid = '%s'""" % srid
+            "SELECT ref_sys_name FROM spatial_ref_sys WHERE srid = ?",
+            (srid,),
         )[0][0]
     else:
         try:
@@ -1428,20 +1550,19 @@ def calculate_median_value(
 
     if dbconnection.dbtype == "spatialite":
 
-        data = {"column": column, "table": table, "obsid": obsid}
-
-        sql = """SELECT AVG({column})
-                    FROM (SELECT {column}
-                          FROM {table}
-                          WHERE obsid = '{obsid}'
-                          ORDER BY {column}
-                          LIMIT 2 - (SELECT COUNT(*) FROM {table} WHERE obsid = '{obsid}') % 2 
-                          OFFSET (SELECT (COUNT(*) - 1) / 2
-                          FROM {table} WHERE obsid = '{obsid}'))""".format(
-            **data
-        ).replace(
-            "\n", " "
+        ph = dbconnection.placeholder_sign()
+        col_ident = dbconnection.ident(column)
+        table_ident = dbconnection.ident(table)
+        sql = (
+            f"SELECT AVG({col_ident}) "
+            f"FROM (SELECT {col_ident} "
+            f"      FROM {table_ident} "
+            f"      WHERE obsid = {ph} "
+            f"      ORDER BY {col_ident} "
+            f"      LIMIT 2 - (SELECT COUNT(*) FROM {table_ident} WHERE obsid = {ph}) % 2 "
+            f"      OFFSET (SELECT (COUNT(*) - 1) / 2 FROM {table_ident} WHERE obsid = {ph}))"
         )
+        execute_args = (obsid, obsid, obsid)
 
         # median value old variant
         # sql = r"""SELECT x.obsid, x.""" + column + r""" as median from (select obsid, """ + column + r""" FROM %s WHERE obsid = '"""%table
@@ -1450,7 +1571,9 @@ def calculate_median_value(
         # sql += obsid
         # sql += r"""' and (typeof(""" + column + r""")=typeof(0.01) or typeof(""" + column + r""")=typeof(1))) as y GROUP BY x.""" + column + r""" HAVING SUM(CASE WHEN y.""" + column + r""" <= x.""" + column + r""" THEN 1 ELSE 0 END)>=(COUNT(*)+1)/2 AND SUM(CASE WHEN y.""" + column + r""" >= x.""" + column + r""" THEN 1 ELSE 0 END)>=(COUNT(*)/2)+1"""
 
-        ConnectionOK, median_value = sql_load_fr_db(sql, dbconnection)
+        ConnectionOK, median_value = sql_load_fr_db(
+            sql, dbconnection=dbconnection, execute_args=execute_args
+        )
         try:
             median_value = median_value[0][0]
         except IndexError:
@@ -1471,16 +1594,18 @@ def calculate_median_value(
             median_value = None
 
     else:
+        ph = dbconnection.placeholder_sign()
+        col_ident = dbconnection.ident(column)
+        table_ident = dbconnection.ident(table)
         if sql_load_fr_db(
-            """SELECT {column} FROM {table} WHERE obsid = '{obsid}' AND {column} IS NOT NULL LIMIT 1""".format(
-                table=table, obsid=obsid, column=column
-            ),
+            f"SELECT {col_ident} FROM {table_ident} WHERE obsid = {ph} AND {col_ident} IS NOT NULL LIMIT 1",
             dbconnection,
+            execute_args=(obsid,),
         )[1]:
-            sql = """SELECT median({column}) FROM {table} t1 WHERE obsid = '{obsid}';""".format(
-                column=column, table=table, obsid=obsid
+            sql = f"SELECT median({col_ident}) FROM {table_ident} t1 WHERE obsid = {ph};"
+            ConnectionOK, median_value = sql_load_fr_db(
+                sql, dbconnection, execute_args=(obsid,)
             )
-            ConnectionOK, median_value = sql_load_fr_db(sql, dbconnection)
             try:
                 median_value = median_value[0][0]
             except IndexError:
@@ -1695,11 +1820,13 @@ def get_timezone_from_db(tablename: str, dbconnection: None = None) -> Optional[
     about_db_cols = tables_columns("about_db", dbconnection)["about_db"]
     if "tablename" in about_db_cols:
         res = dbconnection.execute_and_fetchall(
-            f"""SELECT description FROM about_db WHERE tablename = '{tablename}' AND columnname = 'date_time' LIMIT 1;"""
+            "SELECT description FROM about_db WHERE tablename = ? AND columnname = 'date_time' LIMIT 1;",
+            (tablename,),
         )
     else:
         res = dbconnection.execute_and_fetchall(
-            f"""SELECT description FROM about_db WHERE "table" = '{tablename}' AND "column" = 'date_time' LIMIT 1;"""
+            'SELECT description FROM about_db WHERE "table" = ? AND "column" = \'date_time\' LIMIT 1;',
+            (tablename,),
         )
 
     if dbconnection_created:

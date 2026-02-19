@@ -201,22 +201,22 @@ class Askuser(QtWidgets.QDialog):
             else:
                 self.result = 0  # 0="no"
         elif question == "AllSelected":  # All or Selected Dialog
-            btnAll = QtWidgets.QPushButton(
+            btn_all = QtWidgets.QPushButton(
                 tr("askuser", "All")
             )  # = "0"
-            btnSelected = QtWidgets.QPushButton(
+            btn_selected = QtWidgets.QPushButton(
                 tr("askuser", "Selected")
             )  # = "1"
-            # btnAll.clicked.connect(lambda x: self.DoForAll())
-            # btnSelected.clicked.connect(lambda x: self.DoForSelected())
-            msgBox = QtWidgets.QMessageBox(parent)
-            msgBox.setText(msg)
-            msgBox.setWindowTitle(dialogtitle)
-            # msgBox.setWindowModality(Qt.ApplicationModal)
-            msgBox.addButton(btnAll, QtWidgets.QMessageBox.ActionRole)
-            msgBox.addButton(btnSelected, QtWidgets.QMessageBox.ActionRole)
-            msgBox.addButton(QtWidgets.QMessageBox.Cancel)
-            reply = msgBox.exec()
+            # btn_all.clicked.connect(lambda x: self.DoForAll())
+            # btn_selected.clicked.connect(lambda x: self.DoForSelected())
+            msg_box = QtWidgets.QMessageBox(parent)
+            msg_box.setText(msg)
+            msg_box.setWindowTitle(dialogtitle)
+            # msg_box.setWindowModality(Qt.ApplicationModal)
+            msg_box.addButton(btn_all, QtWidgets.QMessageBox.ActionRole)
+            msg_box.addButton(btn_selected, QtWidgets.QMessageBox.ActionRole)
+            msg_box.addButton(QtWidgets.QMessageBox.Cancel)
+            reply = msg_box.exec()
             self.result = reply  # ALL=0, SELECTED=1
         elif question == "DateShift":
             supported_units = [

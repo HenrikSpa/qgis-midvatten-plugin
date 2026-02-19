@@ -268,7 +268,7 @@ class PiperPlot(object):
             + sql1
             + r""") AS foo order by date_time"""
         )
-        ConnOK, self.date_times = db_utils.sql_load_fr_db(sql2, execute_args=args)
+        conn_ok, self.date_times = db_utils.sql_load_fr_db(sql2, execute_args=args)
 
     def get_selected_observations(self):
         self.observations = common_utils.getselectedobjectnames(self.activelayer)
@@ -278,7 +278,7 @@ class PiperPlot(object):
         try:
             clause, args = dbconnection.in_clause(self.observations)
             sql = f"select obsid, type from obs_points where obsid in {clause}"
-            ConnOK, types = db_utils.sql_load_fr_db(
+            conn_ok, types = db_utils.sql_load_fr_db(
                 sql, dbconnection=dbconnection, execute_args=args
             )
         finally:
@@ -291,7 +291,7 @@ class PiperPlot(object):
         try:
             clause, args = dbconnection.in_clause(self.observations)
             sql = f"select distinct type from obs_points where obsid in {clause}"
-            ConnOK, self.distincttypes = db_utils.sql_load_fr_db(
+            conn_ok, self.distincttypes = db_utils.sql_load_fr_db(
                 sql, dbconnection=dbconnection, execute_args=args
             )
         finally:
@@ -314,16 +314,16 @@ class PiperPlot(object):
         # define format
         """ some problems with string fields
         np.str_
-        My_format = [('obsid', str), 
-        My_format = [('obsid', unicode), 
-        My_format = [('obsid', np.dtype('a35')), 
-        My_format = [('obsid', np.dtype(np.str_)),
-        My_format = [('obsid', np.str_),
-        My_format = [('obsid', object),
+        my_format = [('obsid', str), 
+        my_format = [('obsid', unicode), 
+        my_format = [('obsid', np.dtype('a35')), 
+        my_format = [('obsid', np.dtype(np.str_)),
+        my_format = [('obsid', np.str_),
+        my_format = [('obsid', object),
         none is working besides from 'a35' which limits string length to 35 characters 
         least bad is the "object" type, then everything is loaded, but all strings as unicode strings which _should_ be ok
         """
-        My_format = [
+        my_format = [
             ("obsid", object),
             ("date_time", datetime.datetime),
             ("obstype", object),
@@ -335,7 +335,7 @@ class PiperPlot(object):
             ("Mg_meqPl", float),
         ]
         # convert to numpy ndarray W format specified - i.e. a structured array
-        self.obsnp_specified_format = np.array(obsimport, dtype=My_format)
+        self.obsnp_specified_format = np.array(obsimport, dtype=my_format)
         # convert to np recarray - takes the structured array and makes the columns into callable objects, i.e. write table2.Cl_meqPl
         self.obsrecarray = self.obsnp_specified_format.view(np.recarray)
 
@@ -1168,11 +1168,11 @@ def get_aspect(ax):
     :return:
     """
     # Total figure size
-    figW, figH = ax.get_figure().get_size_inches()
+    fig_w, fig_h = ax.get_figure().get_size_inches()
     # Axis size on figure
     _, _, w, h = ax.get_position().bounds
     # Ratio of display units
-    disp_ratio = (figH * h) / (figW * w)
+    disp_ratio = (fig_h * h) / (fig_w * w)
     # Ratio of data units
     # Negative over negative because of the order of subtraction
     data_ratio = sub(*ax.get_ylim()) / sub(*ax.get_xlim())

@@ -51,8 +51,8 @@ class TimeSeriesPlot(object):
         if kolumnindex == -1:
             kolumnindex = provider.fieldNameIndex("OBSID")  # backwards compatibility
         if layer:
-            nF = layer.selectedFeatureCount()
-            if nF > 0:
+            n_f = layer.selectedFeatureCount()
+            if n_f > 0:
                 # Load all selected observation points
                 ob = layer.getSelectedFeatures()
 
@@ -62,8 +62,8 @@ class TimeSeriesPlot(object):
                 )  # causes conflict with plugins "statist" and "chartmaker"
                 ax = fig.add_subplot(111)
 
-                p = [None] * nF  # List for plot objects
-                plabel = [None] * nF  # List for label strings
+                p = [None] * n_f  # List for plot objects
+                plabel = [None] * n_f  # List for label strings
 
                 for i, k in enumerate(
                     ob
@@ -80,21 +80,21 @@ class TimeSeriesPlot(object):
                     sql += """' ORDER BY date_time """
                     connection_ok, recs = db_utils.sql_load_fr_db(sql)
                     """Transform data to a numpy.recarray"""
-                    My_format = [
+                    my_format = [
                         ("date_time", datetime.datetime),
                         ("values", float),
                     ]  # Define format with help from function datetime
-                    table = np.array(recs, dtype=My_format)  # NDARRAY
+                    table = np.array(recs, dtype=my_format)  # NDARRAY
                     table2 = table.view(
                         np.recarray
                     )  # RECARRAY   Makes the two columns inte callable objects, i.e. write table2.values
 
                     """ Get help from function datestr2num to get date and time into float"""
-                    myTimestring = []  # LIST
+                    my_timestring = []  # LIST
                     for j, row in enumerate(table2):
-                        myTimestring.append(table2.date_time[j])
+                        my_timestring.append(table2.date_time[j])
                     numtime = datestr2num(
-                        myTimestring
+                        my_timestring
                     )  # conv list of strings to numpy.ndarray of floats
                     if (
                         self.settingsdict["tsdotmarkers"] == 2

@@ -161,7 +161,7 @@ def get_statistics(
 def get_statistics_for_single_obsid(
     obsid: str = "", table: str = "w_levels", data_columns: None = None
 ) -> Union[Tuple[str, List[Union[float, int]]], Tuple[str, List[Optional[int]]]]:
-    Statistics_list = [0] * 4
+    statistics_list = [0] * 4
 
     if data_columns is None:
         data_columns = ["meas", "level_masl"]
@@ -174,40 +174,40 @@ def get_statistics_for_single_obsid(
     for column in data_columns:
         col_ident = dbconnection.ident(column)
         sql = f"select Count({col_ident}) from {table_ident} where obsid = {ph}"
-        ConnectionOK, number_of_values = db_utils.sql_load_fr_db(
+        connection_ok, number_of_values = db_utils.sql_load_fr_db(
             sql, dbconnection=dbconnection, execute_args=(obsid,)
         )
         if (
-            number_of_values and number_of_values[0][0] > Statistics_list[2]
+            number_of_values and number_of_values[0][0] > statistics_list[2]
         ):  # this will select meas if meas >= level_masl
             data_column = column
-            Statistics_list[2] = number_of_values[0][0]
+            statistics_list[2] = number_of_values[0][0]
 
     # min value
     col_ident = dbconnection.ident(data_column)
     sql = f"select min({col_ident}) from {table_ident} where obsid = {ph}"
-    ConnectionOK, min_value = db_utils.sql_load_fr_db(
+    connection_ok, min_value = db_utils.sql_load_fr_db(
         sql, dbconnection=dbconnection, execute_args=(obsid,)
     )
     if min_value:
-        Statistics_list[0] = min_value[0][0]
+        statistics_list[0] = min_value[0][0]
 
     # median value
     median_value = db_utils.calculate_median_value(table, data_column, obsid)
     if median_value:
-        Statistics_list[1] = median_value
+        statistics_list[1] = median_value
 
     # max value
     sql = f"select max({col_ident}) from {table_ident} where obsid = {ph}"
-    ConnectionOK, max_value = db_utils.sql_load_fr_db(
+    connection_ok, max_value = db_utils.sql_load_fr_db(
         sql, dbconnection=dbconnection, execute_args=(obsid,)
     )
     if max_value:
-        Statistics_list[3] = max_value[0][0]
+        statistics_list[3] = max_value[0][0]
 
     try:
         dbconnection.closedb()
     except Exception:
         pass
 
-    return data_column, Statistics_list
+    return data_column, statistics_list

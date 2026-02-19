@@ -53,8 +53,8 @@ class XYPlot(object):
         if kolumnindex == -1:
             kolumnindex = provider.fieldNameIndex("OBSID")  # backwards compatibility
         if layer:
-            nF = layer.selectedFeatureCount()
-            if nF > 0:
+            n_f = layer.selectedFeatureCount()
+            if n_f > 0:
                 # Load all selected observation points
                 ob = layer.getSelectedFeatures()
 
@@ -65,13 +65,13 @@ class XYPlot(object):
                 ax = fig.add_subplot(111)
 
                 if len(self.y3col):
-                    nY = 3
+                    n_y = 3
                 elif len(self.y2col):
-                    nY = 2
+                    n_y = 2
                 else:
-                    nY = 1
-                p = [None] * nF * nY  # List for plot objects
-                plabel = [None] * nF * nY  # List for label strings
+                    n_y = 1
+                p = [None] * n_f * n_y  # List for plot objects
+                plabel = [None] * n_f * n_y  # List for label strings
 
                 j = 0
                 for (
@@ -108,12 +108,12 @@ class XYPlot(object):
                     connection_ok, recs = db_utils.sql_load_fr_db(sql)
                     """Transform data to a numpy.recarray"""
                     if len(self.y1col):
-                        My_format = [("x", float), ("y1", float)]
+                        my_format = [("x", float), ("y1", float)]
                     if len(self.y2col):
-                        My_format.append(("y2", float))
+                        my_format.append(("y2", float))
                     if len(self.y3col):
-                        My_format.append(("y3", float))
-                    table = np.array(recs, dtype=My_format)  # NDARRAY
+                        my_format.append(("y3", float))
+                    table = np.array(recs, dtype=my_format)  # NDARRAY
                     table2 = table.view(
                         np.recarray
                     )  # RECARRAY   Makes the two columns inte callable objects, i.e. write table2.values

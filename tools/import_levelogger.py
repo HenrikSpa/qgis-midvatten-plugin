@@ -72,7 +72,7 @@ class LeveloggerImport(import_diveroffice.DiverofficeImport):
         location = None
         timezone = None
         level_unit_factor_to_cm = 100
-        spec_cond_factor_to_mScm = 0.001
+        spec_cond_factor_to_mscm = 0.001
         filename = os.path.basename(path)
         if begindate is not None:
             begindate = date_utils.datestring_to_date(begindate)
@@ -173,9 +173,9 @@ class LeveloggerImport(import_diveroffice.DiverofficeImport):
             except ValueError:
                 spec_cond_colnr = None
             else:
-                spec_cond_factor_to_mScm = 1
+                spec_cond_factor_to_mscm = 1
         else:
-            spec_cond_factor_to_mScm = 0.001
+            spec_cond_factor_to_mscm = 0.001
 
         try:
             first_data_row = rows[data_header_idx + 1]
@@ -236,7 +236,7 @@ class LeveloggerImport(import_diveroffice.DiverofficeImport):
                     (
                         str(
                             float(row[spec_cond_colnr].replace(",", "."))
-                            * spec_cond_factor_to_mScm
+                            * spec_cond_factor_to_mscm
                         )
                         if (
                             common_utils.to_float_or_none(row[spec_cond_colnr])

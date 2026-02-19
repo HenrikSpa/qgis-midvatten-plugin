@@ -61,12 +61,12 @@ class NewDb(object):
 
         if user_select_CRS == "y":
             common_utils.stop_waiting_cursor()
-            EPSGID = str(self.ask_for_CRS(set_locale))
+            epsg_id = str(self.ask_for_CRS(set_locale))
             common_utils.start_waiting_cursor()
         else:
-            EPSGID = EPSG_code
+            epsg_id = EPSG_code
 
-        if EPSGID == "0" or not EPSGID:
+        if epsg_id == "0" or not epsg_id:
             raise common_utils.UserInterruptError()
         # If a CRS is selectd, go on and create the database
 
@@ -164,13 +164,13 @@ class NewDb(object):
 
         filenamestring = "create_db.sql"
 
-        SQLFile = os.path.join(
+        sql_file = os.path.join(
             os.sep, os.path.dirname(__file__), "..", "definitions", filenamestring
         )
         # We want to store info about which qgis-version that created the db
         qgisverno = ru(Qgis.QGIS_VERSION).replace("'", "")
         replace_word_replace_with = [
-            ("CHANGETORELEVANTEPSGID", ru(EPSGID)),
+            ("CHANGETORELEVANTepsg_id", ru(epsg_id)),
             ("CHANGETOPLUGINVERSION", ru(verno)),
             ("CHANGETOQGISVERSION", qgisverno),
             ("CHANGETODBANDVERSION", "SpatiaLite version %s" % ru(versionstext)),
@@ -178,7 +178,7 @@ class NewDb(object):
             (("SPATIALITE ", "")),
         ]
 
-        with open(SQLFile, "r") as f:
+        with open(sql_file, "r") as f:
             f.readline()  # first line is encoding info....
             lines = [ru(line) for line in f]
 
@@ -210,7 +210,7 @@ class NewDb(object):
                 raise
 
         if delete_srids:
-            db_utils.delete_srids(dbconnection, EPSGID)
+            db_utils.delete_srids(dbconnection, epsg_id)
 
         self.insert_datadomains(set_locale, dbconnection)
 
@@ -311,13 +311,13 @@ class NewDb(object):
 
         filenamestring = "create_db.sql"
 
-        SQLFile = os.path.join(
+        sql_file = os.path.join(
             os.sep, os.path.dirname(__file__), "..", "definitions", filenamestring
         )
         # We want to store info about which qgis-version that created the db
         qgisverno = ru(Qgis.QGIS_VERSION).replace("'", "")
         replace_word_replace_with = [
-            ("CHANGETORELEVANTEPSGID", ru(epsg_id)),
+            ("CHANGETORELEVANTepsg_id", ru(epsg_id)),
             ("CHANGETOPLUGINVERSION", ru(verno)),
             ("CHANGETOQGISVERSION", qgisverno),
             ("CHANGETODBANDVERSION", "PostGIS version %s" % ru(versionstext)),
@@ -329,7 +329,7 @@ class NewDb(object):
         ]
 
         created_tables_sqls = {}
-        with open(SQLFile, "r") as f:
+        with open(sql_file, "r") as f:
             f.readline()  # first line is encoding info....
             lines = [ru(line) for line in f]
         sql_lines = [
@@ -689,7 +689,7 @@ class AddLayerStyles(object):
         dbconnection.commit_and_closedb()
 
     def add_layer_styles_2_db(self, dbconnection):
-        SQLFile = os.path.join(
+        sql_file = os.path.join(
             os.sep,
             os.path.dirname(__file__),
             "..",
@@ -697,7 +697,7 @@ class AddLayerStyles(object):
             "add_layer_styles_2_db.sql",
         )
         datetimestring = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        f = open(SQLFile, "r")
+        f = open(sql_file, "r")
         for linecounter, line in enumerate(f):
             if linecounter > 1:  # first line is encoding info....
                 dbconnection.execute(

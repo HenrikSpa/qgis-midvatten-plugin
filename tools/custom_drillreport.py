@@ -969,7 +969,7 @@ class Drillreport(object):  # general observation point info for the selected ob
 
 
 def GetStatistics(obsid=""):
-    Statistics_list = [0] * 4
+    statistics_list = [0] * 4
 
     columns = ["meas", "level_masl"]
     # default value
@@ -978,12 +978,12 @@ def GetStatistics(obsid=""):
     # number of values, also decide wehter to use meas or level_masl in report
     for column in columns:
         sql = r"""select Count(%s) from w_levels where obsid = '%s'""" % (column, obsid)
-        ConnectionOK, number_of_values = db_utils.sql_load_fr_db(sql)
+        connection_ok, number_of_values = db_utils.sql_load_fr_db(sql)
         if (
-            number_of_values and number_of_values[0][0] > Statistics_list[2]
+            number_of_values and number_of_values[0][0] > statistics_list[2]
         ):  # this will select meas if meas >= level_masl
             meas_or_level_masl = column
-            Statistics_list[2] = number_of_values[0][0]
+            statistics_list[2] = number_of_values[0][0]
 
     # min value
     if meas_or_level_masl == "meas":
@@ -991,24 +991,24 @@ def GetStatistics(obsid=""):
     else:
         sql = r"""select max(level_masl) from w_levels where obsid = '%s'""" % obsid
 
-    ConnectionOK, min_value = db_utils.sql_load_fr_db(sql)
+    connection_ok, min_value = db_utils.sql_load_fr_db(sql)
     if min_value:
-        Statistics_list[0] = min_value[0][0]
+        statistics_list[0] = min_value[0][0]
 
     # median value
     median_value = db_utils.calculate_median_value(
         "w_levels", meas_or_level_masl, obsid
     )
     if median_value:
-        Statistics_list[1] = median_value
+        statistics_list[1] = median_value
 
     # max value
     if meas_or_level_masl == "meas":
         sql = r"""select max(meas) from w_levels where obsid = '%s' """ % obsid
     else:
         sql = r"""select min(level_masl) from w_levels where obsid = '%s' """ % obsid
-    ConnectionOK, max_value = db_utils.sql_load_fr_db(sql)
+    connection_ok, max_value = db_utils.sql_load_fr_db(sql)
     if max_value:
-        Statistics_list[3] = max_value[0][0]
+        statistics_list[3] = max_value[0][0]
 
-    return meas_or_level_masl, Statistics_list
+    return meas_or_level_masl, statistics_list

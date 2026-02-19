@@ -819,7 +819,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
 
     def get_plot_data_seismic(self, line_layer, line_feature):
         # Last step in get data - check if the line layer is obs_lines and if so, load seismic data if there are any
-        My_format = [
+        my_format = [
             ("obsline_x", float),
             ("obsline_y1", float),
             ("obsline_y2", float),
@@ -845,7 +845,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             recs = self.dbconnection.execute_and_fetchall(
                 sql, args=(line_feature.attribute("obsid"),)
             )
-            table = np.array(recs, dtype=My_format)
+            table = np.array(recs, dtype=my_format)
             obs_lines_plot_data = table.view(
                 np.recarray
             )  # RECARRAY   Makes the two columns inte callable objects, i.e. write self.obs_lines_plot_data.values
@@ -1272,7 +1272,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                         distance = self.ms.settingsdict["secplotdem_sampling_distance"]
 
                     temp_memorylayer, xarray = qchain(self.line_layer, distance)
-                    DEMdata = sampling(
+                    dem_data = sampling(
                         temp_memorylayer, self.dem_layers[str(layername)]
                     )
                     plotlable = get_plot_label_name(
@@ -1295,7 +1295,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                     settings["label"] = settings.get("label", plotlable)
                     settings["picker"] = 2
                     (lineplot,) = self.figure._midv_ax_main.plot(
-                        xarray, DEMdata, **settings
+                        xarray, dem_data, **settings
                     )  # The comma is terribly annoying and also different from a bar plot, see http://stackoverflow.com/questions/11983024/matplotlib-legends-not-working and http://stackoverflow.com/questions/10422504/line-plotx-sinx-what-does-comma-stand-for?rq=1
                     self.figure._midv_p.append(lineplot)
 
@@ -1323,7 +1323,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                                 temp_memorylayer,
                                 self.line_layer,
                                 xarray,
-                                DEMdata,
+                                dem_data,
                                 secplot_color_layer_name,
                                 layername,
                                 alpha_max=alpha_max,
@@ -1346,7 +1346,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         temp_memorylayer,
         sectionlinelayer,
         xarray,
-        DEMdata,
+        dem_data,
         layername,
         dem_layername,
         alpha_max=0.5,
@@ -1420,11 +1420,11 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
 
             polylabel = polylabel_color[0]
             _x.append(xarray[idx])
-            _y.append(DEMdata[idx])
+            _y.append(dem_data[idx])
             if prev_label is not None and prev_label != polylabel:
                 plot_spec.append([prev_label, _x, _y])
                 _x = [xarray[idx]]
-                _y = [DEMdata[idx]]
+                _y = [dem_data[idx]]
             prev_label = polylabel
         else:
             plot_spec.append([prev_label, _x, _y])
@@ -1539,10 +1539,10 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             return a
 
         shape = (number_of_layers, len(df["length"]))
-        X = create_array(shape)
-        Y = create_array(shape)
-        Z = create_array(shape)
-        Z_below_doi = create_array(shape)
+        x_arr = create_array(shape)
+        y_arr = create_array(shape)
+        z_arr = create_array(shape)
+        z_below_doi = create_array(shape)
 
         for idx, (
             length,
@@ -1588,18 +1588,18 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                 resistivity[~mask_above_doi] = np.NaN
                 resistivity_below_doi[mask_above_doi] = np.NaN
 
-            X[:, idx] = length
-            Y[: len(resistivity), idx] = layers_middle
-            Z[: len(resistivity), idx] = resistivity
+            x_arr[:, idx] = length
+            y_arr[: len(resistivity), idx] = layers_middle
+            z_arr[: len(resistivity), idx] = resistivity
             # if len(resistivity) < number_of_layers:
             #    # X and Y can't have NaN-values. Fill up with faked layers.
             #    Y[len(resistivity):, idx] = [layers[-1]-(idx*0.001) for idx in range(1, number_of_layers-len(resistivity)+1)]
-            Z_below_doi[: len(resistivity_below_doi), idx] = resistivity_below_doi
+            z_below_doi[: len(resistivity_below_doi), idx] = resistivity_below_doi
 
-        maximum_depth = max(Y[-1, :])
-        Y[-1, :] = np.where(np.isnan(Y[-1, :]), maximum_depth, Y[-1, :])
-        nans, x = nan_helper(Y)
-        Y[nans] = np.interp(x(nans), x(~nans), Y[~nans])
+        maximum_depth = max(y_arr[-1, :])
+        y_arr[-1, :] = np.where(np.isnan(y_arr[-1, :]), maximum_depth, y_arr[-1, :])
+        nans, x = nan_helper(y_arr)
+        y_arr[nans] = np.interp(x(nans), x(~nans), y_arr[~nans])
 
         if self.ms.settingsdict["secplot_tem_vmin"].strip():
             try:
@@ -1641,12 +1641,12 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         cmap = self.ms.settingsdict["secplot_tem_colormap"]
         norm = self.ms.settingsdict["secplot_tem_norm"]
 
-        Zm = np.ma.masked_invalid(Z)
+        z_masked = np.ma.masked_invalid(z_arr)
 
         above_doi = self.figure._midv_ax_main.pcolormesh(
-            X,
-            Y,
-            Zm,
+            x_arr,
+            y_arr,
+            z_masked,
             cmap=cmap,
             norm=norm,
             vmin=vmin,
@@ -1661,11 +1661,11 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
 
         self.figure._midv_p.append(above_doi)
         if not df["doi"].dropna().empty:
-            mZ_below_doi = np.ma.masked_invalid(Z_below_doi)
+            m_z_below_doi = np.ma.masked_invalid(z_below_doi)
             below_doi = self.figure._midv_ax_main.pcolormesh(
-                X,
-                Y,
-                mZ_below_doi,
+                x_arr,
+                y_arr,
+                m_z_below_doi,
                 cmap=cmap,
                 norm=norm,
                 vmin=vmin,
@@ -1913,7 +1913,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                 continue
             date_obsids = secplotdates.split(";")
             _date = date_obsids[0]
-            WL = []
+            wl = []
             x_wl = []
             for obs, x in self.obsids_x_position.items():
                 if len(date_obsids) > 1:
@@ -1956,7 +1956,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                 if val is None:
                     continue
 
-                WL.append(val)
+                wl.append(val)
                 x_wl.append(x)
                 if obs not in self.figure._midv_obsid_annotation or not any(
                     [
@@ -1964,8 +1964,8 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                         self.ms.settingsdict["secplothydrologyplotted"],
                     ]
                 ):
-                    self.figure._midv_obsid_annotation[obs] = (x_wl[-1], WL[-1])
-            self.waterlevel_lineplot(x_wl, WL, _date)
+                    self.figure._midv_obsid_annotation[obs] = (x_wl[-1], wl[-1])
+            self.waterlevel_lineplot(x_wl, wl, _date)
 
     def plot_obs_lines_data(self):
         def remove_nones(xdata, ydata):
@@ -2097,9 +2097,9 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         self.figure._midv_ax_wlvl.legend()
 
         self.figure._midv_ax_wlvl.set_xlabel("")
-        # Axes_set_ylabel = dict([(k, v) for k, v in self.secplot_templates.loaded_template.get('Axes_set_ylabel', {}).items() if k != 'ylabel'])
-        # ylabel = self.secplot_templates.loaded_template.get('Axes_set_ylabel', {}).get('ylabel', defs.secplot_default_template()['Axes_set_ylabel']['ylabel'])
-        # self.figure._midv_ax_wlvl.set_ylabel(ylabel, **Axes_set_ylabel)  #Allows international characters ('åäö') as ylabel
+        # axes_set_ylabel = dict([(k, v) for k, v in self.secplot_templates.loaded_template.get('axes_set_ylabel', {}).items() if k != 'ylabel'])
+        # ylabel = self.secplot_templates.loaded_template.get('axes_set_ylabel', {}).get('ylabel', defs.secplot_default_template()['axes_set_ylabel']['ylabel'])
+        # self.figure._midv_ax_wlvl.set_ylabel(ylabel, **axes_set_ylabel)  #Allows international characters ('åäö') as ylabel
         self.figure._midv_ax_wlvl.set_ylabel("")
 
         for label in self.figure._midv_ax_wlvl.yaxis.get_ticklabels():
@@ -2128,12 +2128,12 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         )
 
         current_idx = get_slider_idx(self.figure._midv_date_slider)
-        x_wl, WL = self.get_water_levels_from_df(
+        x_wl, wl = self.get_water_levels_from_df(
             df, current_idx, self.obsids_x_position, self.figure
         )
         self.waterlevel_lineplot(
             x_wl,
-            WL,
+            wl,
             longdateformat(df_idx_as_datetime(df, current_idx)),
             interactive_line=True,
         )
@@ -2154,20 +2154,20 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                         "ticklabels_Text_set_fontsize"
                     ]
                 )
-            Axes_set_xlabel = dict(
+            axes_set_xlabel = dict(
                 [
                     (k, v)
                     for k, v in self.secplot_templates.loaded_template.get(
-                        "Axes_set_xlabel", {}
+                        "axes_set_xlabel", {}
                     ).items()
                     if k != "xlabel"
                 ]
             )
             xlabel = self.secplot_templates.loaded_template.get(
-                "Axes_set_xlabel_stratplot", {}
+                "axes_set_xlabel_stratplot", {}
             ).get(
                 "xlabel",
-                defs.secplot_default_template()["Axes_set_xlabel_stratplot"]["xlabel"],
+                defs.secplot_default_template()["axes_set_xlabel_stratplot"]["xlabel"],
             )
 
         else:
@@ -2180,44 +2180,44 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                         "ticklabels_Text_set_fontsize"
                     ]
                 )
-            Axes_set_xlabel = dict(
+            axes_set_xlabel = dict(
                 [
                     (k, v)
                     for k, v in self.secplot_templates.loaded_template.get(
-                        "Axes_set_xlabel", {}
+                        "axes_set_xlabel", {}
                     ).items()
                     if k != "xlabel"
                 ]
             )
             xlabel = self.secplot_templates.loaded_template.get(
-                "Axes_set_xlabel", {}
+                "axes_set_xlabel", {}
             ).get(
-                "xlabel", defs.secplot_default_template()["Axes_set_xlabel"]["xlabel"]
+                "xlabel", defs.secplot_default_template()["axes_set_xlabel"]["xlabel"]
             )
         if self.line_layer:
             xlabel += f" {self.line_feature.attribute('obsid')}"
             self.figure._midv_figname = self.line_feature.attribute("obsid")
         self.figure._midv_ax_main.set_xlabel(
-            xlabel, **Axes_set_xlabel
+            xlabel, **axes_set_xlabel
         )  # Allows international characters ('åäö') as xlabel
         self.figure._midv_ax_main.yaxis.set_major_formatter(
             tick.ScalarFormatter(useOffset=False, useMathText=False)
         )
 
-        Axes_set_ylabel = dict(
+        axes_set_ylabel = dict(
             [
                 (k, v)
                 for k, v in self.secplot_templates.loaded_template.get(
-                    "Axes_set_ylabel", {}
+                    "axes_set_ylabel", {}
                 ).items()
                 if k != "ylabel"
             ]
         )
-        ylabel = self.secplot_templates.loaded_template.get("Axes_set_ylabel", {}).get(
-            "ylabel", defs.secplot_default_template()["Axes_set_ylabel"]["ylabel"]
+        ylabel = self.secplot_templates.loaded_template.get("axes_set_ylabel", {}).get(
+            "ylabel", defs.secplot_default_template()["axes_set_ylabel"]["ylabel"]
         )
         self.figure._midv_ax_main.set_ylabel(
-            ylabel, **Axes_set_ylabel
+            ylabel, **axes_set_ylabel
         )  # Allows international characters ('åäö') as ylabel
 
         for label in self.figure._midv_ax_main.yaxis.get_ticklabels():
@@ -2423,11 +2423,11 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
     def update_animation(self, fig, datevalue):
         if fig._midv_waterlevel_lineplot is not None and fig._midv_df is not None:
             current_idx = get_slider_idx(fig._midv_date_slider)
-            x_wl, WL = self.get_water_levels_from_df(
+            x_wl, wl = self.get_water_levels_from_df(
                 fig._midv_df, current_idx, fig._midv_obsids_x_position, fig
             )
 
-            fig._midv_waterlevel_lineplot.set_ydata(WL)
+            fig._midv_waterlevel_lineplot.set_ydata(wl)
             try:
                 fig._midv_axvline.set_xdata(
                     df_idx_as_datetime(fig._midv_df, current_idx)
@@ -2552,7 +2552,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             a.xy = (x, a.original_xy[1])
 
     def get_water_levels_from_df(self, df, idx, obsids_x_position, fig):
-        WL = []
+        wl = []
         x_wl = []
         for obs, x in obsids_x_position.items():
             try:
@@ -2578,7 +2578,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                     except KeyError:
                         continue
 
-            WL.append(val)
+            wl.append(val)
             x_wl.append(x)
             if obs not in fig._midv_obsid_annotation or not any(
                 [
@@ -2587,10 +2587,10 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                 ]
             ):
                 fig._midv_obsid_annotation[obs] = (x, val)
-        return x_wl, WL
+        return x_wl, wl
 
     # ----- Tools used during creation of a new figure -----
-    def waterlevel_lineplot(self, x_wl, WL, level_date, interactive_line=False):
+    def waterlevel_lineplot(self, x_wl, wl, level_date, interactive_line=False):
         plotlable = get_plot_label_name(
             level_date, self.water_level_labels_duplicate_check
         )
@@ -2607,7 +2607,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         ]
         settings["label"] = settings.get("label", plotlable)
         settings["picker"] = 2
-        lineplot = self.figure._midv_ax_main.plot(x_wl, WL, **settings)[0]
+        lineplot = self.figure._midv_ax_main.plot(x_wl, wl, **settings)[0]
         if interactive_line:
             self.figure._midv_waterlevel_lineplot = lineplot
         self.figure._midv_p.append(lineplot)
@@ -2679,15 +2679,15 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                 barheights.append(z_data["barheight"])
 
             if plotxleftbarcorner:
-                obsid_Axes_bar = copy.deepcopy(
-                    self.secplot_templates.loaded_template["obsid_Axes_bar"]
+                obsid_axes_bar = copy.deepcopy(
+                    self.secplot_templates.loaded_template["obsid_axes_bar"]
                 )
-                obsid_Axes_bar["width"] = obsid_Axes_bar.get("width", self.barwidth)
-                obsid_Axes_bar["bottom"] = obsid_Axes_bar.get("bottom", bottoms)
-                obsid_Axes_bar["label"] = "frame"
+                obsid_axes_bar["width"] = obsid_axes_bar.get("width", self.barwidth)
+                obsid_axes_bar["bottom"] = obsid_axes_bar.get("bottom", bottoms)
+                obsid_axes_bar["label"] = "frame"
                 # plot empty bars
                 p = self.figure._midv_ax_main.bar(
-                    plotxleftbarcorner, barheights, align="edge", **obsid_Axes_bar
+                    plotxleftbarcorner, barheights, align="edge", **obsid_axes_bar
                 )
                 p.skip_legend = True
                 self.figure._midv_p.append(p)
@@ -2737,7 +2737,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
 
 
 def sample_polygon(polyLayer, sectionlinelayer, xarray):
-    polyProvider = polyLayer.dataProvider()
+    poly_provider = polyLayer.dataProvider()
     renderer = polyLayer.renderer()
     if not isinstance(renderer, QgsRuleBasedRenderer):
         renderer = QgsRuleBasedRenderer.convertFromRenderer(renderer)
@@ -2754,7 +2754,7 @@ def sample_polygon(polyLayer, sectionlinelayer, xarray):
     x0_x1_poly = {}
     for linefeature in sectionlinelayer.getSelectedFeatures():
         linegeom = linefeature.geometry()
-        polyfeatures = polyProvider.getFeatures(
+        polyfeatures = poly_provider.getFeatures(
             QgsFeatureRequest().setFilterRect(linegeom.boundingBox())
         )
         for polyfeature in polyfeatures:

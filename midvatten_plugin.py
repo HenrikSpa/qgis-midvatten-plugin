@@ -695,9 +695,9 @@ class Midvatten:
         if err_flag == 0:
             common_utils.start_waiting_cursor()  # show the user this may take a long time...
 
-            # Get two lists (OBSID_P and OBSID_L) with selected obs_points and obs_lines
-            OBSID_P = common_utils.get_selected_features_as_tuple("obs_points")
-            OBSID_L = common_utils.get_selected_features_as_tuple("obs_lines")
+            # Get two lists (obsid_p and obsid_l) with selected obs_points and obs_lines
+            obsid_p = common_utils.get_selected_features_as_tuple("obs_points")
+            obsid_l = common_utils.get_selected_features_as_tuple("obs_lines")
 
             # sanity = midvatten_utils.Askuser("YesNo", ru(QCoreApplication.translate("Midvatten", """You are about to export data for the selected obs_points and obs_lines into a set of csv files. \n\nContinue?""")), ru(QCoreApplication.translate("Midvatten", 'Are you sure?')))
             # exportfolder =    QtWidgets.QFileDialog.getExistingDirectory(None, 'Select a folder:', 'C:\\', QtWidgets.QFileDialog.ShowDirsOnly)
@@ -715,7 +715,7 @@ class Midvatten:
             )
             common_utils.start_waiting_cursor()
             if len(exportfolder) > 0:
-                exportinstance = ExportData(OBSID_P, OBSID_L)
+                exportinstance = ExportData(obsid_p, obsid_l)
                 exportinstance.export_2_csv(exportfolder)
 
             common_utils.stop_waiting_cursor()
@@ -739,19 +739,19 @@ class Midvatten:
         if err_flag == 0:
             common_utils.start_waiting_cursor()  # show the user this may take a long time..
 
-            # Get two lists (OBSID_P and OBSID_L) with selected obs_points and obs_lines
-            OBSID_P = common_utils.get_selected_features_as_tuple("obs_points")
-            OBSID_L = common_utils.get_selected_features_as_tuple("obs_lines")
+            # Get two lists (obsid_p and obsid_l) with selected obs_points and obs_lines
+            obsid_p = common_utils.get_selected_features_as_tuple("obs_points")
+            obsid_l = common_utils.get_selected_features_as_tuple("obs_lines")
             try:
-                print(str(OBSID_P))
-                print(str(OBSID_L))
+                print(str(obsid_p))
+                print(str(obsid_l))
             except:
                 pass
             common_utils.stop_waiting_cursor()
 
             selected_all = (
                 ru(QCoreApplication.translate("Midvatten", "selected"))
-                if any([OBSID_P, OBSID_L])
+                if any([obsid_p, obsid_l])
                 else ru(QCoreApplication.translate("Midvatten", "all"))
             )
 
@@ -777,22 +777,22 @@ class Midvatten:
                 w_levels_timezone = db_utils.get_timezone_from_db("w_levels")
                 # Let the user chose an EPSG-code for the exported database
                 common_utils.stop_waiting_cursor()
-                user_chosen_EPSG_code = common_utils.ask_for_export_crs(source_srid)
+                user_chosen_epsg_code = common_utils.ask_for_export_crs(source_srid)
                 common_utils.start_waiting_cursor()
 
-                if not user_chosen_EPSG_code:
+                if not user_chosen_epsg_code:
                     common_utils.stop_waiting_cursor()
                     return None
 
                 filenamepath = os.path.join(os.path.dirname(__file__), "metadata.txt")
-                iniText = QSettings(filenamepath, QSettings.Format.IniFormat)
-                verno = str(iniText.value("version"))
+                ini_text = QSettings(filenamepath, QSettings.Format.IniFormat)
+                verno = str(ini_text.value("version"))
 
                 newdbinstance = NewDb()
                 newdbinstance.create_new_spatialite_db(
                     verno,
                     user_select_CRS="n",
-                    EPSG_code=user_chosen_EPSG_code,
+                    EPSG_code=user_chosen_epsg_code,
                     delete_srids=False,
                     w_levels_logger_timezone=w_levels_logger_timezone,
                     w_levels_timezone=w_levels_timezone,
@@ -814,8 +814,8 @@ class Midvatten:
                         )
                         common_utils.stop_waiting_cursor()
                         return
-                    exportinstance = ExportData(OBSID_P, OBSID_L)
-                    exportinstance.export_2_splite(new_dbpath, user_chosen_EPSG_code)
+                    exportinstance = ExportData(obsid_p, obsid_l)
+                    exportinstance.export_2_splite(new_dbpath, user_chosen_epsg_code)
 
                 common_utils.stop_waiting_cursor()
 
@@ -1204,8 +1204,8 @@ class Midvatten:
         )
         if sanity.result == 1:
             filenamepath = os.path.join(os.path.dirname(__file__), "metadata.txt")
-            iniText = QSettings(filenamepath, QSettings.Format.IniFormat)
-            _verno = iniText.value("version")
+            ini_text = QSettings(filenamepath, QSettings.Format.IniFormat)
+            _verno = ini_text.value("version")
             if isinstance(_verno, qgis.PyQt.QtCore.QVariant):
                 verno = _verno.toString()
             else:
@@ -1242,8 +1242,8 @@ class Midvatten:
         )
         if sanity.result == 1:
             filenamepath = os.path.join(os.path.dirname(__file__), "metadata.txt")
-            iniText = QSettings(filenamepath, QSettings.Format.IniFormat)
-            verno = str(iniText.value("version"))
+            ini_text = QSettings(filenamepath, QSettings.Format.IniFormat)
+            verno = str(ini_text.value("version"))
             newdbinstance = NewDb()
             newdbinstance.populate_postgis_db(verno)
             if newdbinstance.db_settings:

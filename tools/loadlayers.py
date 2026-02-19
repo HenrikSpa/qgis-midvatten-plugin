@@ -54,8 +54,8 @@ class LoadLayers(object):
             position_index = 0
         else:
             position_index = 1
-        MyGroup = qgis.core.QgsLayerTreeGroup(name=self.group_name, checked=True)
-        self.root.insertChildNode(position_index, MyGroup)
+        my_group = qgis.core.QgsLayerTreeGroup(name=self.group_name, checked=True)
+        self.root.insertChildNode(position_index, my_group)
         dbconnection = db_utils.DbConnectionManager()
 
         canvas = self.iface.mapCanvas()
@@ -91,8 +91,8 @@ class LoadLayers(object):
             # map_canvas_layer_list.append(QgsMapCanvasLayer(layer))
 
             QgsProject.instance().addMapLayers([layer], False)
-            MyGroup.insertLayer(0, layer)
-            # MyGroup.addLayer(layer)
+            my_group.insertLayer(0, layer)
+            # my_group.addLayer(layer)
 
             # TODO: Check if this isn't needed.
             # if self.group_name == 'Midvatten_OBS_DB':
@@ -133,7 +133,7 @@ class LoadLayers(object):
                 obsp_lyr = layer
                 canvas.setExtent(layer.extent())
             elif layer.name() in ("w_lvls_last_geom", "obs_p_w_lvl_logger"):
-                MyGroup.findLayer(layer).setItemVisibilityCheckedRecursive(False)
+                my_group.findLayer(layer).setItemVisibilityCheckedRecursive(False)
 
         # finally refresh canvas
         dbconnection.closedb()
@@ -148,9 +148,9 @@ class LoadLayers(object):
         this method is depreceated and should no longer be used
         """
         try:  # newstyle
-            MyGroup = self.legend.addGroup("Midvatten_OBS_DB", 1, -1)
+            my_group = self.legend.addGroup("Midvatten_OBS_DB", 1, -1)
         except:  # olddstyle
-            MyGroup = self.legend.addGroup("Midvatten_OBS_DB")
+            my_group = self.legend.addGroup("Midvatten_OBS_DB")
         uri = QgsDataSourceUri()
         uri.setDatabase(
             self.settingsdict["database"]

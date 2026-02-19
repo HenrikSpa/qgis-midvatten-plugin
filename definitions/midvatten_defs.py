@@ -611,7 +611,7 @@ def plot_colors_dict():
     The user may update these fields in the zz_strat table to use other colors
     Fallback method use dictionary defined in the code below
     """
-    success, Dict = create_dict_from_db_2_cols(
+    success, color_dict = create_dict_from_db_2_cols(
         ("strata", "color_mplot", "zz_stratigraphy_plots")
     )
     if not success:
@@ -624,7 +624,7 @@ def plot_colors_dict():
         if (
             getcurrentlocale() == "sv_SE"
         ):  # swedish forms are loaded only if locale settings indicate sweden
-            Dict = {
+            color_dict = {
                 "Okänt": "white",
                 "Berg": "red",
                 "Grovgrus": "DarkGreen",
@@ -642,7 +642,7 @@ def plot_colors_dict():
                 "Fyll": "white",
             }
         else:
-            Dict = {
+            color_dict = {
                 "Unknown": "white",
                 "Rock": "red",
                 "Coarse gravel": "DarkGreen",
@@ -659,9 +659,9 @@ def plot_colors_dict():
                 "Peat": "DarkGray",
                 "Fill": "white",
             }
-    # print Dict#debug!
-    Dict = {k.lower(): v for k, v in Dict.items()}
-    return Dict
+    # print color_dict#debug!
+    color_dict = {k.lower(): v for k, v in color_dict.items()}
+    return color_dict
 
 
 def plot_hatch_dict():
@@ -670,7 +670,7 @@ def plot_hatch_dict():
     The user may update these fields in the zz_strat table to use other hatches
     Fallback method use dictionary defined in the code below
     """
-    success, Dict = create_dict_from_db_2_cols(
+    success, hatch_dict = create_dict_from_db_2_cols(
         ("strata", "hatch_mplot", "zz_stratigraphy_plots")
     )
     if not success:
@@ -684,7 +684,7 @@ def plot_hatch_dict():
         if (
             getcurrentlocale() == "sv_SE"
         ):  # swedish forms are loaded only if locale settings indicate sweden
-            Dict = {
+            hatch_dict = {
                 "Okänt": "",
                 "Berg": "x",
                 "Grovgrus": "O",
@@ -702,7 +702,7 @@ def plot_hatch_dict():
                 "Fyll": "+",
             }
         else:
-            Dict = {
+            hatch_dict = {
                 "Unknown": "",
                 "Rock": "x",
                 "Coarse gravel": "O",
@@ -719,8 +719,8 @@ def plot_hatch_dict():
                 "Peat": "+",
                 "Fill": "+",
             }
-    Dict = {k.lower(): v for k, v in Dict.items()}
-    return Dict
+    hatch_dict = {k.lower(): v for k, v in hatch_dict.items()}
+    return hatch_dict
 
 
 def staff_list():

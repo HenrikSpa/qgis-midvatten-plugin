@@ -60,9 +60,9 @@ class MidvSettings(object):
         }
         output = {}
         for key, value in list(self.settingsdict.items()):
-            dataType = type(value).__name__
+            data_type = type(value).__name__
             try:
-                func = functions[dataType]
+                func = functions[data_type]
                 output[key] = func("Midvatten", key)
                 self.settingsdict[key] = output[key][0]
             except KeyError:

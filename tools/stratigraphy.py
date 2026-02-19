@@ -159,8 +159,8 @@ class StrataInfo(object):
     def __init__(
         self,
         stratid=0,
-        depthTop=0,
-        depthBot=0,
+        depth_top=0,
+        depth_bot=0,
         geology="",
         geo_short="",
         hydro="",
@@ -169,8 +169,8 @@ class StrataInfo(object):
     ):
         self.stratid = stratid  # This is id no for the geological information (1 = uppermost stratigraphy layer)
         self.geology = geology  # This is full text description of stratigraphy (the geologic descripition, e.g. "sandy till")
-        self.depthTop = depthTop  # This is depth to top of the stratigraphy layer
-        self.depthBot = depthBot  # This is depth to bottom for the stratigraphy layer
+        self.depth_top = depth_top  # This is depth to top of the stratigraphy layer
+        self.depth_bot = depth_bot  # This is depth to bottom for the stratigraphy layer
         self.geo_short = geo_short  # This is short name for the geology of the stratigraphy layer, also used for symbology and color
         self.comment = Comment  # Comment for the stratigraphy layer
         self.hydro = hydro  # Water loss or similar measurement of layer permeability, given as 1, 2, 3, etc, see below
@@ -182,8 +182,8 @@ class StrataInfo(object):
             self.hydro,
             self.geology,
             self.geo_short,
-            self.depthTop,
-            self.depthBot,
+            self.depth_top,
+            self.depth_bot,
         )
 
 
@@ -203,10 +203,10 @@ class SurveyStore(object):
                 "Could not get data from layer!",
             )
         try:
-            DataLoadingStatus, surveys = self._getDataStep2(surveys)
+            data_loading_status, surveys = self._getDataStep2(surveys)
         except:
-            DataLoadingStatus = False
-        if DataLoadingStatus == True:
+            data_loading_status = False
+        if data_loading_status == True:
             surveys = self.sanityCheck(surveys)
             return surveys
         else:
@@ -217,39 +217,39 @@ class SurveyStore(object):
         provider = (
             vlayer.dataProvider()
         )  # _CHANGE_  THIS IS TSPLOT-method, we do not use the db loadeds by ARPAT _init_ surveystore
-        obsid_ColNo = provider.fieldNameIndex(
+        obsid_col_no = provider.fieldNameIndex(
             "obsid"
         )  # _CHANGE_  THIS IS TSPLOT-method To find the column named 'obsid'
-        if obsid_ColNo == -1:
-            obsid_ColNo = provider.fieldNameIndex("OBSID")  # backwards compatibility
-        h_gs_ColNo = provider.fieldNameIndex(
+        if obsid_col_no == -1:
+            obsid_col_no = provider.fieldNameIndex("OBSID")  # backwards compatibility
+        h_gs_col_no = provider.fieldNameIndex(
             "h_gs"
         )  # _CHANGE_  THIS IS TSPLOT-method To find the column named 'h_gs'
-        h_toc_ColNo = provider.fieldNameIndex(
+        h_toc_col_no = provider.fieldNameIndex(
             "h_toc"
         )  # _CHANGE_  THIS IS TSPLOT-method To find the column named 'h_toc'
-        if h_gs_ColNo == -1 and h_toc_ColNo == -1:
-            h_gs_ColNo = provider.fieldNameIndex("SURF_LVL")  # backwards compatibility
-        length_ColNo = provider.fieldNameIndex("length")
+        if h_gs_col_no == -1 and h_toc_col_no == -1:
+            h_gs_col_no = provider.fieldNameIndex("SURF_LVL")  # backwards compatibility
+        length_col_no = provider.fieldNameIndex("length")
         surveys = {}
         strata = {}
         if vlayer:
-            nF = vlayer.selectedFeatureCount()
-            if nF > 0:
+            n_f = vlayer.selectedFeatureCount()
+            if n_f > 0:
                 # Load all selected observation points
                 ob = vlayer.getSelectedFeatures()
-                obsid_list = [None] * nF  # List for obsid
-                toplvl_list = [None] * nF  # List for top_lvl
-                coord_list = [None] * nF  # List for coordinates
+                obsid_list = [None] * n_f  # List for obsid
+                toplvl_list = [None] * n_f  # List for top_lvl
+                coord_list = [None] * n_f  # List for coordinates
                 for i, feature in enumerate(
                     ob
                 ):  # Loop through all selected objects, a plot is added for each one of the observation points (i.e. selected objects)
                     attributes = feature.attributes()
-                    obsid = ru(attributes[obsid_ColNo])
+                    obsid = ru(attributes[obsid_col_no])
                     obsid_list[i] = (
                         obsid  # Copy value in column obsid in the attribute list
                     )
-                    h_gs = ru(attributes[h_gs_ColNo])
+                    h_gs = ru(attributes[h_gs_col_no])
                     level_val = None
                     error_msg = False
                     if h_gs:
@@ -264,7 +264,7 @@ class SurveyStore(object):
                         except Exception as e:
                             error_msg = e
                     if level_val is None:
-                        h_toc = ru(attributes[h_toc_ColNo])
+                        h_toc = ru(attributes[h_toc_col_no])
                         try:
                             level_val = float(h_toc)
                         except:
@@ -299,11 +299,11 @@ class SurveyStore(object):
                     toplvl_list[i] = level_val
                     coord_list[i] = feature.geometry().asPoint()
 
-                    if length_ColNo == -1:
+                    if length_col_no == -1:
                         length = None
                     else:
                         try:
-                            length = float(ru(attributes[length_ColNo]))
+                            length = float(ru(attributes[length_col_no]))
                         except:
                             length = None
 
@@ -409,9 +409,9 @@ class SurveyStore(object):
                 survey.strata.append(st)
                 prev_depthbot = depthtobot
 
-            DataLoadingStatus = True
+            data_loading_status = True
         dbconnection.closedb()
-        return DataLoadingStatus, surveys
+        return data_loading_status, surveys
 
     def sanityCheck(self, _surveys):
         """does a sanity check on retreived data"""
@@ -428,11 +428,11 @@ class SurveyStore(object):
                 # del surveys[obsid]#simply remove the item without strata info
             else:
                 # check whether the depths are valid
-                top1 = survey.strata[0].depthTop
-                bed1 = survey.strata[0].depthBot
+                top1 = survey.strata[0].depth_top
+                bed1 = survey.strata[0].depth_bot
                 for strato in survey.strata[1:]:
                     # top (n) < top (n+1)
-                    if top1 > strato.depthTop:
+                    if top1 > strato.depth_top:
                         raise DataSanityError(
                             str(obsid),
                             ru(
@@ -441,10 +441,10 @@ class SurveyStore(object):
                                     "Top depth is incorrect (%.2f > %.2f)",
                                 )
                             )
-                            % (top1, strato.depthTop),
+                            % (top1, strato.depth_top),
                         )
                     # bed (n) < bed (n+1)
-                    if bed1 > strato.depthBot:
+                    if bed1 > strato.depth_bot:
                         raise DataSanityError(
                             str(obsid),
                             ru(
@@ -453,10 +453,10 @@ class SurveyStore(object):
                                     "Bed depth is incorrect (%.2f > %.2f)",
                                 )
                             )
-                            % (bed1, strato.depthBot),
+                            % (bed1, strato.depth_bot),
                         )
                     # bed (n) = top (n+1)
-                    if bed1 != strato.depthTop:
+                    if bed1 != strato.depth_top:
                         raise DataSanityError(
                             str(obsid),
                             ru(
@@ -465,11 +465,11 @@ class SurveyStore(object):
                                     "Top and bed depth don't match (%.2f != %.2f)",
                                 )
                             )
-                            % (bed1, strato.depthTop),
+                            % (bed1, strato.depth_top),
                         )
 
-                    top1 = strato.depthTop
-                    bed1 = strato.depthBot
+                    top1 = strato.depth_top
+                    bed1 = strato.depth_bot
             surveys[obsid] = survey
         return surveys
 
@@ -518,19 +518,19 @@ class SurveyWidget(QtWidgets.QFrame):
         # find out whether the overall distance is bigger on x or y axis
         # so columns will be sorted by their x or y coordinate
         inf = 999999999
-        (xMin, yMin, xMax, yMax) = (inf, inf, -inf, -inf)
+        (x_min, y_min, x_max, y_max) = (inf, inf, -inf, -inf)
         for s in sondaggio.values():
             (x, y) = (s.coord.x(), s.coord.y())
-            if x < xMin:
-                xMin = x
-            if y < yMin:
-                yMin = y
-            if x > xMax:
-                xMax = x
-            if y > yMax:
-                yMax = y
+            if x < x_min:
+                x_min = x
+            if y < y_min:
+                y_min = y
+            if x > x_max:
+                x_max = x
+            if y > y_max:
+                y_max = y
 
-        if xMax - xMin > yMax - yMin:
+        if x_max - x_min > y_max - y_min:
             # sort using x coordinate
             cc = lambda a: a.coord.x()
             # cc = lambda a,b: cmp(a.coord.x(), b.coord.x())
@@ -584,25 +584,25 @@ class SurveyWidget(QtWidgets.QFrame):
     def drawSurveys(self, rect, painter):
         """draw surveys to specified rect with specified painter"""
         surveys = len(self.sondaggio)
-        surveyWidth = rect.width() / surveys
-        surveyHeight = rect.height()
-        # columnWidth = rect.width() * 0.05
-        columnWidth = rect.width() * 0.03
+        survey_width = rect.width() / surveys
+        survey_height = rect.height()
+        # column_width = rect.width() * 0.05
+        column_width = rect.width() * 0.03
         x = 0
         margin = 4
 
         # find out depth interval
-        depthBot, depthTop = 999999, -999999
+        depth_bot, depth_top = 999999, -999999
         for survey in self.order:
             sond = self.sondaggio[survey.obsid]
             try:
-                dTop = survey.top_lvl - survey.strata[0].depthTop
-                dBed = survey.top_lvl - survey.strata[-1].depthBot
+                d_top = survey.top_lvl - survey.strata[0].depth_top
+                d_bed = survey.top_lvl - survey.strata[-1].depth_bot
 
-                if dTop > depthTop:
-                    depthTop = dTop
-                if dBed < depthBot:
-                    depthBot = dBed
+                if d_top > depth_top:
+                    depth_top = d_top
+                if d_bed < depth_bot:
+                    depth_bot = d_bed
             except:
                 pass
 
@@ -611,75 +611,75 @@ class SurveyWidget(QtWidgets.QFrame):
             r = QtCore.QRect(
                 int(x + margin),
                 int(0 + margin),
-                int(surveyWidth - 2 * margin),
-                int(surveyHeight - 2 * margin),
+                int(survey_width - 2 * margin),
+                int(survey_height - 2 * margin),
             )
-            x += surveyWidth
+            x += survey_width
             sond = self.sondaggio[survey.obsid]
             # draw the survey
             try:
-                self.drawSurvey(painter, sond, r, columnWidth, (depthBot, depthTop))
+                self.drawSurvey(painter, sond, r, column_width, (depth_bot, depth_top))
             except:
                 pass
 
-    def drawSurvey(self, p, sond, sRect, columnWidth, interval):
+    def drawSurvey(self, p, sond, sRect, column_width, interval):
         """draws one survey to rectangle in widget specified by sRect"""
-        depthTop = sond.top_lvl
-        depthBot = depthTop - sond.strata[-1].depthBot
+        depth_top = sond.top_lvl
+        depth_bot = depth_top - sond.strata[-1].depth_bot
 
         fm = QtGui.QFontMetrics(p.font())
-        nameHeight = fm.height()
-        depthHeight = fm.height()
+        name_height = fm.height()
+        depth_height = fm.height()
 
         # draw obsid 'name'
-        labelRect = QtCore.QRect(sRect.left(), sRect.top(), sRect.width(), nameHeight)
-        p.drawText(labelRect, QtCore.Qt.AlignVCenter, sond.obsid)
+        label_rect = QtCore.QRect(sRect.left(), sRect.top(), sRect.width(), name_height)
+        p.drawText(label_rect, QtCore.Qt.AlignVCenter, sond.obsid)
 
-        scale = (sRect.height() - nameHeight - depthHeight * 2) / (
+        scale = (sRect.height() - name_height - depth_height * 2) / (
             interval[1] - interval[0]
         )
 
-        top = sRect.top() + nameHeight + depthHeight
-        yTop = top + (interval[1] - depthTop) * scale
-        yBed = top + (interval[1] - depthBot) * scale
+        top = sRect.top() + name_height + depth_height
+        y_top = top + (interval[1] - depth_top) * scale
+        y_bed = top + (interval[1] - depth_bot) * scale
 
         # top depth
-        depthRect = QtCore.QRect(
-            sRect.left(), int(yTop - depthHeight), sRect.width(), int(depthHeight)
+        depth_rect = QtCore.QRect(
+            sRect.left(), int(y_top - depth_height), sRect.width(), int(depth_height)
         )
-        p.drawText(depthRect, QtCore.Qt.AlignVCenter, "%.1f m" % depthTop)
+        p.drawText(depth_rect, QtCore.Qt.AlignVCenter, "%.1f m" % depth_top)
 
         # bed depth
-        depthRect = QtCore.QRect(
-            sRect.left(), int(yBed + 1), sRect.width(), int(depthHeight)
+        depth_rect = QtCore.QRect(
+            sRect.left(), int(y_bed + 1), sRect.width(), int(depth_height)
         )
-        p.drawText(depthRect, QtCore.Qt.AlignVCenter, "%.1f m" % depthBot)
+        p.drawText(depth_rect, QtCore.Qt.AlignVCenter, "%.1f m" % depth_bot)
 
-        dRect = QtCore.QRect(
-            QtCore.QPoint(sRect.left(), int(yTop)),
-            QtCore.QPoint(int(sRect.left() + columnWidth), int(yBed)),
+        d_rect = QtCore.QRect(
+            QtCore.QPoint(sRect.left(), int(y_top)),
+            QtCore.QPoint(int(sRect.left() + column_width), int(y_bed)),
         )
 
-        p.drawRect(dRect)
+        p.drawRect(d_rect)
 
-        scale = dRect.height() / (depthTop - depthBot)
-        y = dRect.top()
+        scale = d_rect.height() / (depth_top - depth_bot)
+        y = d_rect.top()
 
         for layer in sond.strata:
-            y2 = (layer.depthBot - layer.depthTop) * scale
+            y2 = (layer.depth_bot - layer.depth_top) * scale
             # column rectangle
-            cRect = QtCore.QRect(
-                QtCore.QPoint(dRect.left(), int(y)),
-                QtCore.QPoint(dRect.right(), int(y + y2 - 1)),
+            c_rect = QtCore.QRect(
+                QtCore.QPoint(d_rect.left(), int(y)),
+                QtCore.QPoint(d_rect.right(), int(y + y2 - 1)),
             )
 
             # text rectangle
-            tRect = QtCore.QRect(
-                QtCore.QPoint(dRect.right() + 10, int(y)),
+            t_rect = QtCore.QRect(
+                QtCore.QPoint(d_rect.right() + 10, int(y)),
                 QtCore.QPoint(sRect.right(), int(y + y2)),
             )
 
-            bType = self.geoToSymbol(
+            b_type = self.geoToSymbol(
                 layer.geo_short
             )  # select brush pattern depending on the geo_short
             # select brush pattern depending on usage of geo or hydro
@@ -689,35 +689,35 @@ class SurveyWidget(QtWidgets.QFrame):
                 color = self.textToColor(layer.hydro, "hydro")
             # draw column with background color
             p.setBrush(color)
-            p.drawRect(cRect)
+            p.drawRect(c_rect)
 
             # draw column with specified hatch
-            p.setBrush(QtGui.QBrush(QtCore.Qt.black, bType))
-            p.drawRect(cRect)
+            p.setBrush(QtGui.QBrush(QtCore.Qt.black, b_type))
+            p.drawRect(c_rect)
 
             # draw associated text
             if self.showDesc:
                 if self.GeoOrComment == "geology":
                     p.drawText(
-                        tRect,
+                        t_rect,
                         QtCore.Qt.AlignVCenter,
                         "" if layer.geology == "NULL" else layer.geology,
                     )  #'Yes' if fruit == 'Apple' else 'No'
                 elif self.GeoOrComment == "comment":
                     p.drawText(
-                        tRect,
+                        t_rect,
                         QtCore.Qt.AlignVCenter,
                         "" if layer.comment == "NULL" else layer.comment,
                     )
                 elif self.GeoOrComment == "geoshort":
                     p.drawText(
-                        tRect,
+                        t_rect,
                         QtCore.Qt.AlignVCenter,
                         "" if layer.geo_short == "NULL" else layer.geo_short,
                     )
                 elif self.GeoOrComment == "hydro":
                     p.drawText(
-                        tRect,
+                        t_rect,
                         QtCore.Qt.AlignVCenter,
                         "" if layer.hydro == "NULL" else layer.hydro,
                     )
@@ -726,11 +726,11 @@ class SurveyWidget(QtWidgets.QFrame):
                         hydr = ""
                     else:
                         hydr = self.hydroColors.get(layer.hydro.strip(), "")[0]
-                    p.drawText(tRect, QtCore.Qt.AlignVCenter, hydr)
+                    p.drawText(t_rect, QtCore.Qt.AlignVCenter, hydr)
 
                 else:
                     p.drawText(
-                        tRect,
+                        t_rect,
                         QtCore.Qt.AlignVCenter,
                         "" if layer.development == "NULL" else layer.development,
                     )
@@ -831,8 +831,8 @@ class SurveyDialog(QtWidgets.QDialog):
         # self.radHydro.setChecked(False)  #Default is NOT to show colors as per hydro
         self.layout2.addWidget(self.radHydro)
 
-        spacerItem = QtWidgets.QSpacerItem(100, 0)
-        self.layout2.addItem(spacerItem)
+        spacer_item = QtWidgets.QSpacerItem(100, 0)
+        self.layout2.addItem(spacer_item)
 
         self.chkShowDesc = QtWidgets.QCheckBox(
             ru(QCoreApplication.translate("SurveyDialog", "Show text"))

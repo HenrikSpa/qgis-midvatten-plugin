@@ -76,7 +76,7 @@ class Wqualreport(
                 )  # debug
             except:
                 pass
-            ReportData = self.GetData(
+            report_data = self.GetData(
                 self.settingsdict["database"], obsid, dbconnection
             )  # one observation at a time
             try:
@@ -88,8 +88,8 @@ class Wqualreport(
                 )  # debug
             except:
                 pass
-            if ReportData:
-                self.WriteHTMLReport(ReportData, f)
+            if report_data:
+                self.WriteHTMLReport(report_data, f)
             try:
                 print(
                     "wrote html report for " + obsid + ", at time: " + str(time.time())
@@ -104,7 +104,7 @@ class Wqualreport(
 
         common_utils.stop_waiting_cursor()  # now this long process is done and the cursor is back as normal
 
-        if ReportData:
+        if report_data:
             QDesktopServices.openUrl(QUrl.fromLocalFile(reportpath))
 
     def GetData(
@@ -227,12 +227,12 @@ class Wqualreport(
         else:
             self.nr_header_rows = 2
 
-        ReportTable = [""] * (
+        report_table = [""] * (
             len(parameters) + self.nr_header_rows
-        )  # Define size of ReportTable
+        )  # Define size of report_table
 
         for i in range(len(parameters) + self.nr_header_rows):  # Fill the table with ''
-            ReportTable[i] = [""] * (len(date_times) + 1)
+            report_table[i] = [""] * (len(date_times) + 1)
 
         # Populate First 'column' w parameters
 
@@ -240,32 +240,32 @@ class Wqualreport(
             p, u = p_u
             if not (self.settingsdict["wqual_unitcolumn"] == ""):
                 if u:
-                    # ReportTable[parametercounter][0] = p.encode(utils.getcurrentlocale()[1]) + ", " +  u.encode(utils.getcurrentlocale()[1])
-                    ReportTable[parametercounter][0] = p + ", " + u
+                    # report_table[parametercounter][0] = p.encode(utils.getcurrentlocale()[1]) + ", " +  u.encode(utils.getcurrentlocale()[1])
+                    report_table[parametercounter][0] = p + ", " + u
                 else:
-                    # ReportTable[parametercounter][0] = p.encode(utils.getcurrentlocale()[1])
-                    ReportTable[parametercounter][0] = p
+                    # report_table[parametercounter][0] = p.encode(utils.getcurrentlocale()[1])
+                    report_table[parametercounter][0] = p
             else:
-                # ReportTable[parametercounter][0] = p.encode(utils.getcurrentlocale()[1])
-                ReportTable[parametercounter][0] = p
+                # report_table[parametercounter][0] = p.encode(utils.getcurrentlocale()[1])
+                report_table[parametercounter][0] = p
 
         try:
             print(
-                "Prepare ReportTable for " + obsid + ", at time: " + str(time.time())
+                "Prepare report_table for " + obsid + ", at time: " + str(time.time())
             )  # debug
         except:
             pass
-        ReportTable[0][0] = "obsid"
-        ReportTable[1][0] = "date_time"
+        report_table[0][0] = "obsid"
+        report_table[1][0] = "date_time"
         for datecounter, r_d in enumerate(
             date_times, start=1
         ):  # date_times includes both report and date_time (or possibly date_time and date_time if there is no reportnr)
             r, d = r_d
-            ReportTable[0][datecounter] = obsid
-            ReportTable[1][datecounter] = d  # d is date_time
+            report_table[0][datecounter] = obsid
+            report_table[1][datecounter] = d  # d is date_time
             if self.settingsdict["wqual_sortingcolumn"]:
-                ReportTable[2][0] = self.settingsdict["wqual_sortingcolumn"]
-                ReportTable[2][datecounter] = r
+                report_table[2][0] = self.settingsdict["wqual_sortingcolumn"]
+                report_table[2][datecounter] = r
 
         try:
             print(
@@ -320,9 +320,9 @@ class Wqualreport(
                 # each value must be in unicode or string to be written as html report
                 if recs:
                     try:
-                        ReportTable[parametercounter][datecounter] = ru(recs[0][0])
+                        report_table[parametercounter][datecounter] = ru(recs[0][0])
                     except:
-                        ReportTable[parametercounter][datecounter] = ""
+                        report_table[parametercounter][datecounter] = ""
                         common_utils.MessagebarAndLog.warning(
                             bar_msg=ru(
                                 QCoreApplication.translate(
@@ -333,14 +333,14 @@ class Wqualreport(
                             % (p, u, sorting, date_time)
                         )
                 else:
-                    ReportTable[parametercounter][datecounter] = " "
+                    report_table[parametercounter][datecounter] = " "
 
         self.htmlcols = (
             datecounter + 1
         )  # to be able to set a relevant width to the table
-        return ReportTable
+        return report_table
 
-    def WriteHTMLReport(self, ReportData, f):
+    def WriteHTMLReport(self, report_data, f):
         tabellbredd = 180 + 75 * self.htmlcols
         rpt = '<table width="'
         rpt += str(
@@ -349,7 +349,7 @@ class Wqualreport(
         rpt += '" border="1">\n'
         f.write(rpt)
 
-        for counter, sublist in enumerate(ReportData):
+        for counter, sublist in enumerate(report_data):
             try:
                 if counter < self.nr_header_rows:
                     rpt = "  <tr><th>"

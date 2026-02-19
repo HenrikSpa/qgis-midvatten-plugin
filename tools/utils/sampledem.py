@@ -37,17 +37,17 @@ def qchain(sectionlinelayer, distance):  # original start function from qchainag
     endpoint = 0
     # selectedOnly = self.selectOnlyRadioBtn.isChecked()
 
-    projectionSettingKey = "Projections/defaultBehaviour"
-    qgisSettings = qgis.PyQt.QtCore.QSettings()
-    oldProjectionSetting = qgisSettings.value(projectionSettingKey)
-    qgisSettings.setValue(projectionSettingKey, "useGlobal")
-    qgisSettings.sync()
+    projection_setting_key = "Projections/defaultBehaviour"
+    qgis_settings = qgis.PyQt.QtCore.QSettings()
+    old_projection_setting = qgis_settings.value(projection_setting_key)
+    qgis_settings.setValue(projection_setting_key, "useGlobal")
+    qgis_settings.sync()
 
     virt_layer, xarray = points_along_line(
         layerout, startpoint, endpoint, distance, layer
     )  # ,
     # selectedOnly)
-    qgisSettings.setValue(projectionSettingKey, oldProjectionSetting)
+    qgis_settings.setValue(projection_setting_key, old_projection_setting)
 
     return virt_layer, xarray
 

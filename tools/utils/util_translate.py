@@ -38,36 +38,36 @@ from qgis.PyQt.QtCore import (
 from qgis.core import QgsApplication, Qgis
 
 
-def getTranslate(namePlugin: str, nameDir: None = None):
-    if nameDir is None:
-        nameDir = namePlugin
+def getTranslate(name_plugin: str, name_dir: None = None):
+    if name_dir is None:
+        name_dir = name_plugin
 
-    pluginPath = os.path.join("python", "plugins", nameDir)
+    plugin_path = os.path.join("python", "plugins", name_dir)
 
-    userPath = QFileInfo(QgsApplication.qgisUserDatabaseFilePath()).path()
-    userPluginPath = os.path.join(userPath, pluginPath)
+    user_path = QFileInfo(QgsApplication.qgisUserDatabaseFilePath()).path()
+    user_plugin_path = os.path.join(user_path, plugin_path)
 
-    systemPath = QgsApplication.prefixPath()
-    systemPluginPath = os.path.join(systemPath, pluginPath)
+    system_path = QgsApplication.prefixPath()
+    system_plugin_path = os.path.join(system_path, plugin_path)
 
-    pp = userPluginPath if QFileInfo(userPluginPath).exists() else systemPluginPath
+    pp = user_plugin_path if QFileInfo(user_plugin_path).exists() else system_plugin_path
 
-    overrideLocale = QSettings().value("locale/overrideFlag", False, type=bool)
-    if overrideLocale:
-        qmPathFilepattern = os.path.join(
+    override_locale = QSettings().value("locale/overrideFlag", False, type=bool)
+    if override_locale:
+        qm_path_filepattern = os.path.join(
             "i18n",
             "{0}_{1}_*.qm".format(
-                namePlugin, QSettings().value("locale/userLocale", "")
+                name_plugin, QSettings().value("locale/userLocale", "")
             ),
         )
 
-        qmfiles = glob.glob(os.path.join(pp, qmPathFilepattern))
+        qmfiles = glob.glob(os.path.join(pp, qm_path_filepattern))
         if qmfiles:
-            translationFile = sorted(qmfiles)[0]
+            translation_file = sorted(qmfiles)[0]
             QgsApplication.messageLog().logMessage(
                 (
                     "QGIS location overried is activated. Using the first found translationfile for pattern {}.".format(
-                        qmPathFilepattern
+                        qm_path_filepattern
                     )
                 ),
                 "Midvatten",
@@ -77,7 +77,7 @@ def getTranslate(namePlugin: str, nameDir: None = None):
             QgsApplication.messageLog().logMessage(
                 (
                     "QGIS location overried is activated. No translation file found using pattern {}, no translation file installed!".format(
-                        qmPathFilepattern
+                        qm_path_filepattern
                     )
                 ),
                 "Midvatten",
@@ -85,18 +85,18 @@ def getTranslate(namePlugin: str, nameDir: None = None):
             )
             return
     else:
-        localeFullName = QLocale.system().name()
-        qmPathFile = os.path.join(
-            "i18n", "{0}_{1}.qm".format(namePlugin, localeFullName)
+        locale_full_name = QLocale.system().name()
+        qm_path_file = os.path.join(
+            "i18n", "{0}_{1}.qm".format(name_plugin, locale_full_name)
         )
-        translationFile = os.path.join(pp, qmPathFile)
+        translation_file = os.path.join(pp, qm_path_file)
 
-    if QFileInfo(translationFile).exists():
+    if QFileInfo(translation_file).exists():
         translator = QTranslator()
-        translator.load(translationFile)
+        translator.load(translation_file)
         QCoreApplication.installTranslator(translator)
         QgsApplication.messageLog().logMessage(
-            ("Installed translation file {}".format(translationFile)),
+            ("Installed translation file {}".format(translation_file)),
             "Midvatten",
             level=Qgis.Info,
         )
@@ -105,7 +105,7 @@ def getTranslate(namePlugin: str, nameDir: None = None):
         QgsApplication.messageLog().logMessage(
             (
                 "translationFile {} didn't exist, no translation file installed!".format(
-                    translationFile
+                    translation_file
                 )
             ),
             "Midvatten",

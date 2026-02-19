@@ -10,24 +10,24 @@
 from qgis.PyQt import QtCore
 
 try:
-    _fromUtf8 = QtCore.QString.fromUtf8
+    _from_utf8 = QtCore.QString.fromUtf8
 except AttributeError:
-    _fromUtf8 = lambda s: s
+    _from_utf8 = lambda s: s
 
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
-        Dialog.setObjectName(_fromUtf8("Dialog"))
+        Dialog.setObjectName(_from_utf8("Dialog"))
         Dialog.resize(625, 348)
         self.gridLayout_2 = QtWidgets.QGridLayout(Dialog)
-        self.gridLayout_2.setObjectName(_fromUtf8("gridLayout_2"))
+        self.gridLayout_2.setObjectName(_from_utf8("gridLayout_2"))
         self.plotareawidget = QtWidgets.QWidget(Dialog)
         self.plotareawidget.setMinimumSize(QtCore.QSize(0, 0))
-        self.plotareawidget.setObjectName(_fromUtf8("plotareawidget"))
+        self.plotareawidget.setObjectName(_from_utf8("plotareawidget"))
         self.gridLayout = QtWidgets.QGridLayout(self.plotareawidget)
         self.gridLayout.setMargin(0)
-        self.gridLayout.setObjectName(_fromUtf8("gridLayout"))
+        self.gridLayout.setObjectName(_from_utf8("gridLayout"))
         self.mplplotlayout = QtWidgets.QVBoxLayout()
-        self.mplplotlayout.setObjectName(_fromUtf8("mplplotlayout"))
+        self.mplplotlayout.setObjectName(_from_utf8("mplplotlayout"))
         self.gridLayout.addLayout(self.mplplotlayout, 0, 0, 1, 1)
         self.gridLayout_2.addWidget(self.plotareawidget, 0, 0, 1, 1)
 

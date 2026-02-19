@@ -391,7 +391,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                 self.axes.set_ylabel(self.yaxis_label)
 
             self.axes.legend_ = None
-        My_format = [
+        my_format = [
             ("date_time", datetime.datetime),
             ("values", float),
         ]
@@ -407,7 +407,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             dbconnection,
             nop,
             i,
-            My_format,
+            my_format,
             self.table_combo_box_1,
             self.xcol_combo_box_1,
             self.ycol_combo_box_1,
@@ -426,7 +426,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             dbconnection,
             nop,
             i,
-            My_format,
+            my_format,
             self.table_combo_box_2,
             self.xcol_combo_box_2,
             self.ycol_combo_box_2,
@@ -445,7 +445,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             dbconnection,
             nop,
             i,
-            My_format,
+            my_format,
             self.table_combo_box_3,
             self.xcol_combo_box_3,
             self.ycol_combo_box_3,
@@ -506,7 +506,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         dbconnection,
         nop,
         i,
-        My_format,
+        my_format,
         table_ComboBox,
         xcol_ComboBox,
         ycol_ComboBox,
@@ -594,7 +594,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                     self.createsingleplotobject(
                         recs,
                         i,
-                        My_format,
+                        my_format,
                         PlotType_comboBox.currentText(),
                         factor,
                         offset,
@@ -635,7 +635,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                             self.createsingleplotobject(
                                 recs,
                                 i,
-                                My_format,
+                                my_format,
                                 PlotType_comboBox.currentText(),
                                 factor,
                                 offset,
@@ -677,7 +677,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                                 self.createsingleplotobject(
                                     recs,
                                     i,
-                                    My_format,
+                                    my_format,
                                     PlotType_comboBox.currentText(),
                                     factor,
                                     offset,
@@ -693,7 +693,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         self,
         recs,
         i,
-        My_format,
+        my_format,
         plottype="line",
         factor=1.0,
         offset=0.0,
@@ -703,14 +703,14 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
     ):
         # Transform data to a numpy.recarray
         try:
-            table = np.array(recs, dtype=My_format)  # NDARRAY
+            table = np.array(recs, dtype=my_format)  # NDARRAY
             table2 = table.view(
                 np.recarray
             )  # RECARRAY transform the 2 cols into callable objects
-            FlagTimeXY = "time"
-            myTimestring = list(table2.date_time)
+            flag_time_xy = "time"
+            my_timestring = list(table2.date_time)
             numtime = datestr2num(
-                myTimestring
+                my_timestring
             )  # conv list of strings to numpy.ndarray of floats
         except Exception as e:
             common_utils.MessagebarAndLog.warning(
@@ -730,22 +730,22 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                 )
                 % ru(str(e))
             )
-            My_format = [("numx", float), ("values", float)]
+            my_format = [("numx", float), ("values", float)]
             table = np.array(
-                recs, dtype=My_format
+                recs, dtype=my_format
             )  # NDARRAY #define a format for xy-plot (to use if not datetime on x-axis)
 
             table2 = table.view(
                 np.recarray
             )  # RECARRAY transform the 2 cols into callable objects
 
-            FlagTimeXY = "XY"
+            flag_time_xy = "XY"
             numtime = list(table2.numx)
 
         if self.used_format is None:
-            self.used_format = FlagTimeXY
+            self.used_format = flag_time_xy
         else:
-            if self.used_format != FlagTimeXY:
+            if self.used_format != flag_time_xy:
                 raise common_utils.UsageError(
                     ru(
                         QCoreApplication.translate(
@@ -767,7 +767,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                     table2 = np.insert(table2, pos, np.nan)
                 except (ValueError, TypeError):
                     for_concat = []
-                    nan = np.array([(np.nan, np.nan)], dtype=My_format)
+                    nan = np.array([(np.nan, np.nan)], dtype=my_format)
                     for idx, p in enumerate(pos):
                         if idx == 0:
                             for_concat.append(table[0:p])
@@ -778,10 +778,10 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                     else:
                         for_concat.append(table[pos[-1] :])
                     table = np.concatenate(for_concat)
-                    table = table.astype(My_format)
+                    table = table.astype(my_format)
                     table2 = table.view(np.recarray)
 
-        if FlagTimeXY == "time" and plottype == "frequency":
+        if flag_time_xy == "time" and plottype == "frequency":
             if len(table2) < 2:
                 common_utils.MessagebarAndLog.warning(
                     bar_msg=ru(
@@ -810,7 +810,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                 table2.values, factor, offset
             )[:]
 
-        if pandas_calc and FlagTimeXY == "time":
+        if pandas_calc and flag_time_xy == "time":
             if pandas_calc.use_pandas():
                 df = pd.DataFrame.from_records(
                     table2, columns=["values"], exclude=["date_time"]
@@ -824,7 +824,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                 if df is not None:
                     try:
                         table = np.array(
-                            list(zip(df.index, df["values"])), dtype=My_format
+                            list(zip(df.index, df["values"])), dtype=my_format
                         )
                     except TypeError:
                         common_utils.MessagebarAndLog.info(log_msg=str(df))
@@ -842,9 +842,9 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                         )
                     )
 
-        if FlagTimeXY == "time":
+        if flag_time_xy == "time":
             plotfunc = self.axes.plot_date
-        elif FlagTimeXY == "XY":
+        elif flag_time_xy == "XY":
             plotfunc = self.axes.plot
         else:
             raise Exception("Programming error. Must be time or XY!")
@@ -913,7 +913,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                 label=self.plabels[i],
                 **next(self.line_cycler)
             )
-        elif plottype == "frequency" and FlagTimeXY == "time":
+        elif plottype == "frequency" and flag_time_xy == "time":
             try:
                 (self.p[i],) = plotfunc(
                     numtime,
@@ -1213,15 +1213,15 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                     getattr(self, comboboxname).addItem(column)
 
     def filter_changed(self, filterno, tabno):
-        TableCombobox = "table_combo_box_" + str(tabno)
-        FilterCombobox = "filter" + str(filterno) + "_combo_box_" + str(tabno)
-        FilterQListWidget = "filter" + str(filterno) + "_q_list_widget_" + str(tabno)
+        table_combobox = "table_combo_box_" + str(tabno)
+        filter_combobox = "filter" + str(filterno) + "_combo_box_" + str(tabno)
+        filter_q_list_widget = "filter" + str(filterno) + "_q_list_widget_" + str(tabno)
 
         other_filterno = {2: 1, 1: 2}[filterno]
-        other_FilterCombobox = (
+        other_filter_combobox = (
             "filter" + str(other_filterno) + "_combo_box_" + str(tabno)
         )
-        other_FilterQListWidget = (
+        other_filter_q_list_widget = (
             "filter" + str(other_filterno) + "_q_list_widget_" + str(tabno)
         )
 
@@ -1229,14 +1229,14 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             self, "dependent_filtering" + str(tabno), None
         )
 
-        getattr(self, FilterQListWidget).clear()
-        if not getattr(self, FilterCombobox).currentText() == "":
+        getattr(self, filter_q_list_widget).clear()
+        if not getattr(self, filter_combobox).currentText() == "":
             self.PopulateFilterList(
-                getattr(self, TableCombobox).currentText(),
-                FilterQListWidget,
-                getattr(self, FilterCombobox).currentText(),
-                other_FilterQListWidget,
-                getattr(self, other_FilterCombobox).currentText(),
+                getattr(self, table_combobox).currentText(),
+                filter_q_list_widget,
+                getattr(self, filter_combobox).currentText(),
+                other_filter_q_list_widget,
+                getattr(self, other_filter_combobox).currentText(),
                 dependent_filtering_box,
             )
 
@@ -1280,11 +1280,11 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             dependent_filtering = False
 
         if other_QListWidget is not None and other_filtercolumn and dependent_filtering:
-            other_QListWidget_wid = getattr(self, other_QListWidget)
+            other_q_list_widget_wid = getattr(self, other_QListWidget)
             selected = ru(
                 [
                     item.text()
-                    for item in other_QListWidget_wid.selectedItems()
+                    for item in other_q_list_widget_wid.selectedItems()
                     if item.text()
                 ],
                 keep_containers=True,
@@ -1302,9 +1302,9 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
 
         try:
             list_data = dbconnection.execute_and_fetchall(sql, args)
-            ConnectionOK = True
+            connection_ok = True
         except Exception:
-            ConnectionOK, list_data = False, []
+            connection_ok, list_data = False, []
         finally:
             try:
                 dbconnection.closedb()

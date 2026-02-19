@@ -65,7 +65,7 @@ class PrepareForQgis2Threejs(object):
     def add_layers(
         self,
     ):  # not tested and not ready, must fix basic styles (preferrably colors based on some definition dicitonary
-        MyGroup = self.root.insertGroup(
+        my_group = self.root.insertGroup(
             0, "stratigraphy_layers_for_qgis2threejs"
         )  # verify this is inserted at top
 
@@ -156,13 +156,13 @@ class PrepareForQgis2Threejs(object):
                     )
 
                 QgsProject.instance().addMapLayers([layer], False)
-                MyGroup.insertLayer(0, layer)
+                my_group.insertLayer(0, layer)
 
             # finally refresh canvas
             canvas.refresh()
 
     def create_db_views(self):
-        SQLFile = os.path.join(
+        sql_file = os.path.join(
             os.sep,
             os.path.dirname(__file__),
             "..",
@@ -198,7 +198,7 @@ class PrepareForQgis2Threejs(object):
                 )
 
         for key in self.strat_layers_dict.keys():
-            with open(SQLFile, "r") as f:
+            with open(sql_file, "r") as f:
                 for linecounter, line in enumerate(f):
                     if not linecounter:
                         # first line is encoding info....

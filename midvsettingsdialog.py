@@ -269,9 +269,9 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
         )  # Load all columns into a list 'columns'
         if len(columns) > 0:  # Transfer information from list 'columns' to the combobox
             getattr(self, comboboxname).addItem("")
-            for columnName in columns:
+            for column_name in columns:
                 getattr(self, comboboxname).addItem(
-                    columnName
+                    column_name
                 )  # getattr is to combine a function and a string to a combined function
 
     @db_utils.if_connection_ok
@@ -580,11 +580,11 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
             self.list_ofdate_time_format.addItem("YYYY")
             self.list_of_columns_wqualunit.addItem("")
             self.list_of_columns_wqualsorting.addItem("")
-            for columnName in columns:
-                self.list_of_columns_wqualparam.addItem(columnName)
-                self.list_of_columns_wqualvalue.addItem(columnName)
-                self.list_of_columns_wqualunit.addItem(columnName)
-                self.list_of_columns_wqualsorting.addItem(columnName)
+            for column_name in columns:
+                self.list_of_columns_wqualparam.addItem(column_name)
+                self.list_of_columns_wqualvalue.addItem(column_name)
+                self.list_of_columns_wqualunit.addItem(column_name)
+                self.list_of_columns_wqualsorting.addItem(column_name)
         self.list_ofdate_time_format.addItem("YYYY-MM")
         self.list_ofdate_time_format.addItem("YYYY-MM-DD")
         self.list_ofdate_time_format.addItem("YYYY-MM-DD hh")
@@ -612,11 +612,11 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
             self.list_of_columns_3.addItem("")
             self.list_of_columns_4.addItem("")
             self.list_of_columns_5.addItem("")
-            for columnName in columns:
-                self.list_of_columns_2.addItem(columnName)
-                self.list_of_columns_3.addItem(columnName)
-                self.list_of_columns_4.addItem(columnName)
-                self.list_of_columns_5.addItem(columnName)
+            for column_name in columns:
+                self.list_of_columns_2.addItem(column_name)
+                self.list_of_columns_3.addItem(column_name)
+                self.list_of_columns_4.addItem(column_name)
+                self.list_of_columns_5.addItem(column_name)
 
     def xy_table_updated(self):
         """This method is called whenever xy table is changed"""

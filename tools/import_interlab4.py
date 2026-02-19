@@ -1258,14 +1258,14 @@ class MetadataFilter(VRowEntry):
          if re.search(pattern, self.table.item(rownr, table_header_colnr[header]).text())]"""
 
         mode = QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows
-        selectedItems = self.table.selectionModel().selection()
+        selected_items = self.table.selectionModel().selection()
 
         def select(selected_items, table, rownr, mode):
             table.selectRow(rownr)
             selected_items.merge(table.selectionModel().selection(), mode)
 
         [
-            select(selectedItems, self.table, rownr, mode)
+            select(selected_items, self.table, rownr, mode)
             for rownr in range(nr_of_rows)
             for header, pattern in patterns.items()
             if re.search(
@@ -1274,7 +1274,7 @@ class MetadataFilter(VRowEntry):
         ]
 
         self.table.selectionModel().clearSelection()
-        self.table.selectionModel().select(selectedItems, mode)
+        self.table.selectionModel().select(selected_items, mode)
 
         # Hide all rows that aren't selected
         [

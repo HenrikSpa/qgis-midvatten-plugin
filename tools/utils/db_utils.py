@@ -83,9 +83,9 @@ class PostGisDBConnectorMod:
             self.dbname = uri.database() or os.environ.get("PGDATABASE") or username
             uri.setDatabase(self.dbname)
 
-        expandedConnInfo = str(uri.connectionInfo(True))
+        expanded_conn_info = str(uri.connectionInfo(True))
         try:
-            self.connection = psycopg2.connect(expandedConnInfo)
+            self.connection = psycopg2.connect(expanded_conn_info)
         except psycopg2.Error as e:
             # get credentials if cached or asking to the user no more than 3 times
             err = str(e)
@@ -104,9 +104,9 @@ class PostGisDBConnectorMod:
                 if password:
                     uri.setPassword(password)
 
-                newExpandedConnInfo = uri.connectionInfo(True)
+                new_expanded_conn_info = uri.connectionInfo(True)
                 try:
-                    self.connection = psycopg2.connect(newExpandedConnInfo)
+                    self.connection = psycopg2.connect(new_expanded_conn_info)
                     QgsCredentials.instance().put(conninfo, username, password)
                 except psycopg2.Error as e:
                     if i == 2:
@@ -114,10 +114,10 @@ class PostGisDBConnectorMod:
                     err = str(e)
                 finally:
                     # clear certs for each time trying to connect
-                    self._clearSslTempCertsIfAny(newExpandedConnInfo)
+                    self._clearSslTempCertsIfAny(new_expanded_conn_info)
         finally:
             # clear certs of the first connection try
-            self._clearSslTempCertsIfAny(expandedConnInfo)
+            self._clearSslTempCertsIfAny(expanded_conn_info)
 
         self.connection.set_isolation_level(
             psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT
@@ -125,11 +125,11 @@ class PostGisDBConnectorMod:
 
     def _clearSslTempCertsIfAny(self, connectionInfo):
         # Direct copy of db_manager.db_plugins.postgis.connector.PostGisDBConnector
-        expandedUri = QgsDataSourceUri(connectionInfo)
+        expanded_uri = QgsDataSourceUri(connectionInfo)
 
-        def removeCert(certFile):
-            certFile = certFile.replace("'", "")
-            file = QFile(certFile)
+        def remove_cert(cert_file):
+            cert_file = cert_file.replace("'", "")
+            file = QFile(cert_file)
             # set permission to allow removing on Win.
             # On linux and Mac if file is set with QFile::>ReadUser
             # does not create problem removing certs
@@ -142,17 +142,17 @@ class PostGisDBConnectorMod:
                     f"Cannot remove {file.fileName()}: error code: {file.error()}"
                 )
 
-        sslCertFile = expandedUri.param("sslcert")
-        if sslCertFile:
-            removeCert(sslCertFile)
+        ssl_cert_file = expanded_uri.param("sslcert")
+        if ssl_cert_file:
+            remove_cert(ssl_cert_file)
 
-        sslKeyFile = expandedUri.param("sslkey")
-        if sslKeyFile:
-            removeCert(sslKeyFile)
+        ssl_key_file = expanded_uri.param("sslkey")
+        if ssl_key_file:
+            remove_cert(ssl_key_file)
 
-        sslCAFile = expandedUri.param("sslrootcert")
-        if sslCAFile:
-            removeCert(sslCAFile)
+        ssl_ca_file = expanded_uri.param("sslrootcert")
+        if ssl_ca_file:
+            remove_cert(ssl_ca_file)
 
 
 class DbConnectionManager(object):
@@ -1603,7 +1603,7 @@ def calculate_median_value(
         # sql += obsid
         # sql += r"""' and (typeof(""" + column + r""")=typeof(0.01) or typeof(""" + column + r""")=typeof(1))) as y GROUP BY x.""" + column + r""" HAVING SUM(CASE WHEN y.""" + column + r""" <= x.""" + column + r""" THEN 1 ELSE 0 END)>=(COUNT(*)+1)/2 AND SUM(CASE WHEN y.""" + column + r""" >= x.""" + column + r""" THEN 1 ELSE 0 END)>=(COUNT(*)/2)+1"""
 
-        ConnectionOK, median_value = sql_load_fr_db(
+        connection_ok, median_value = sql_load_fr_db(
             sql, dbconnection=dbconnection, execute_args=execute_args
         )
         try:
@@ -1635,7 +1635,7 @@ def calculate_median_value(
             execute_args=(obsid,),
         )[1]:
             sql = f"SELECT median({col_ident}) FROM {table_ident} t1 WHERE obsid = {ph};"
-            ConnectionOK, median_value = sql_load_fr_db(
+            connection_ok, median_value = sql_load_fr_db(
                 sql, dbconnection, execute_args=(obsid,)
             )
             try:
@@ -1896,10 +1896,10 @@ def export_bytea_as_bytes(dbconnection: DbConnectionManager):
         if m is not None:
             return m.tobytes()
 
-    BYTEA2BYTES = psycopg2.extensions.new_type(
+    bytea2bytes_type = psycopg2.extensions.new_type(
         psycopg2.BINARY.values, "BYTEA2BYTES", bytea2bytes
     )
-    psycopg2.extensions.register_type(BYTEA2BYTES, dbconnection.conn)
+    psycopg2.extensions.register_type(bytea2bytes_type, dbconnection.conn)
 
 
 def is_distinct_from(dbconnection):

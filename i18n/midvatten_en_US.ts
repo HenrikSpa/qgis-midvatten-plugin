@@ -349,17 +349,17 @@ imported rows instead of being read from file column.</source>
 <context>
     <name>CustomPlot</name>
     <message>
-        <location filename="../tools/customplot.py" line="284"/>
+        <location filename="../tools/customplot.py" line="283"/>
         <source>Plot not updated.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/customplot.py" line="369"/>
+        <location filename="../tools/customplot.py" line="367"/>
         <source>No plottable data for %s.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/customplot.py" line="405"/>
+        <location filename="../tools/customplot.py" line="401"/>
         <source>Plotting both xy and time plot at the same time doesn&apos;t work! Check the x-y axix settings in all tabs!</source>
         <translation type="unfinished"></translation>
     </message>
@@ -367,19 +367,19 @@ imported rows instead of being read from file column.</source>
 <context>
     <name>Customplot</name>
     <message>
-        <location filename="../tools/customplot.py" line="721"/>
+        <location filename="../tools/customplot.py" line="717"/>
         <source>Loaded style:
 %s </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/customplot.py" line="291"/>
+        <location filename="../tools/customplot.py" line="290"/>
         <source>Setting intervald failed! msg:
 %s </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/customplot.py" line="751"/>
+        <location filename="../tools/customplot.py" line="747"/>
         <source>Setting regular xaxis interval failed! msg:
 %s </source>
         <translation type="unfinished"></translation>
@@ -4920,46 +4920,46 @@ Continue?</source>
 <context>
     <name>NewDb</name>
     <message>
-        <location filename="../tools/create_db.py" line="87"/>
+        <location filename="../tools/create_db.py" line="89"/>
         <source>A database with the chosen name already existed. Cancelling...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/create_db.py" line="105"/>
+        <location filename="../tools/create_db.py" line="107"/>
         <source>Impossible to connect to selected DataBase, see log message panel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/create_db.py" line="105"/>
+        <location filename="../tools/create_db.py" line="107"/>
         <source>Msg:
 </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/create_db.py" line="115"/>
+        <location filename="../tools/create_db.py" line="117"/>
         <source>Midvatten plugin needs spatialite4.
 Database can not be created</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/create_db.py" line="355"/>
+        <location filename="../tools/create_db.py" line="367"/>
         <source>User input needed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/create_db.py" line="317"/>
+        <location filename="../tools/create_db.py" line="329"/>
         <source>Supply locale for the database.
 Currently, only locale sv_SE has special meaning,
 all other locales will use english.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/create_db.py" line="336"/>
+        <location filename="../tools/create_db.py" line="348"/>
         <source>Select CRS</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/create_db.py" line="336"/>
+        <location filename="../tools/create_db.py" line="348"/>
         <source>Give EPSG-ID (integer) corresponding to
 the CRS you want to use in the database:</source>
         <translation type="unfinished"></translation>
@@ -4974,12 +4974,12 @@ error msg:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/create_db.py" line="347"/>
+        <location filename="../tools/create_db.py" line="359"/>
         <source>Supply preferred timezone for logger data for table w_levels_logger (use as default timezone for some logger data imports).</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/create_db.py" line="351"/>
+        <location filename="../tools/create_db.py" line="363"/>
         <source>Supply preferred timezone for level data for table w_levels (on-the-fly conversion during logger data editing).</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5021,17 +5021,17 @@ error msg:
 <context>
     <name>PandasCalculations</name>
     <message>
-        <location filename="../tools/customplot.py" line="979"/>
+        <location filename="../tools/customplot.py" line="975"/>
         <source>Resample base must be an integer</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/customplot.py" line="1002"/>
+        <location filename="../tools/customplot.py" line="998"/>
         <source>Rolling mean window must be an integer</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/customplot.py" line="916"/>
+        <location filename="../tools/customplot.py" line="912"/>
         <source>The number of timesteps in each moving average (rolling mean) mean
 The result is stored at the center timestep of each mean.
 See Pandas pandas.DataFrame.rolling documentation for more info.
@@ -5039,7 +5039,7 @@ No rolling mean if field is empty.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/customplot.py" line="923"/>
+        <location filename="../tools/customplot.py" line="919"/>
         <source>Check (default) to store the rolling mean at the center timestep.
 Uncheck to store the rolling mean at the last timestep.
 See Pandas pandas.rolling_mean documentation for more info.</source>
@@ -5368,22 +5368,22 @@ Copy and paste obsids between Locations boxes.</source>
 <context>
     <name>SaveToCsvDialog</name>
     <message>
-        <location filename="../tools/customplot.py" line="1025"/>
+        <location filename="../tools/customplot.py" line="1021"/>
         <source>Save as csv</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/customplot.py" line="1038"/>
+        <location filename="../tools/customplot.py" line="1034"/>
         <source>Filename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/customplot.py" line="1060"/>
+        <location filename="../tools/customplot.py" line="1056"/>
         <source>Must give filename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/customplot.py" line="1080"/>
+        <location filename="../tools/customplot.py" line="1076"/>
         <source>Unable to export as columns (the x-axis contained duplicates)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7231,12 +7231,12 @@ Msg:
 <context>
     <name>newdb</name>
     <message>
-        <location filename="../tools/create_db.py" line="317"/>
+        <location filename="../tools/create_db.py" line="329"/>
         <source>Locales</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/create_db.py" line="355"/>
+        <location filename="../tools/create_db.py" line="367"/>
         <source>Timezone</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7289,22 +7289,22 @@ See pandas pandas.DataFrame.resample documentation for more info.</source>
 <context>
     <name>plotsqlitewindow</name>
     <message>
-        <location filename="../tools/customplot.py" line="391"/>
+        <location filename="../tools/customplot.py" line="387"/>
         <source>Plotting date_time failed, msg: %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/customplot.py" line="392"/>
+        <location filename="../tools/customplot.py" line="388"/>
         <source>Customplot, transforming to recarray with date_time as x-axis failed, msg: %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/customplot.py" line="462"/>
+        <location filename="../tools/customplot.py" line="458"/>
         <source>Pandas calculate failed.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/customplot.py" line="433"/>
+        <location filename="../tools/customplot.py" line="429"/>
         <source>Frequency plot failed for %s. The timeseries must be longer than 1 value!</source>
         <translation type="unfinished"></translation>
     </message>

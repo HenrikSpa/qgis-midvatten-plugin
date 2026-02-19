@@ -351,7 +351,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                                 i += 1
                                 continue
                             self.plabels[i] = label
-                            self.createsingleplotobject(recs, i, My_format, PlotType_comboBox.currentText(), factor, offset, remove_mean, pandas_calc)
+                            self.createsingleplotobject(recs, i, My_format, PlotType_comboBox.currentText(), factor, offset, remove_mean, pandas_calc, only_get_data=only_get_data)
                             i += 1
                 #One filter in use
                 else:

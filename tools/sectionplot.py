@@ -2018,10 +2018,11 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             self.plot_water_level_interactive()
 
     def plot_water_level_interactive(self):
+        placeholders = self.dbconnection.placeholder_string(
+            list(self.obsids_x_position.keys())
+        )
         sql = self.dbconnection.sql_ident(
-            "SELECT date_time, level_masl, obsid FROM {t} WHERE obsid IN ("
-            + self.dbconnection.placeholder_string(list(self.obsids_x_position.keys()))
-            + ")",
+            f"SELECT date_time, level_masl, obsid FROM {{t}} WHERE obsid IN ({placeholders})",
             t=self.ms.settingsdict["secplotwlvltab"],
         )
         df = pd.read_sql(
@@ -2644,11 +2645,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             geom_linestring = geom.convertToType(Qgis.GeometryType.Line)
         ph = self.dbconnection.placeholder_sign()
         sql = self.dbconnection.sql_ident(
-            "INSERT INTO {t} (dummyfield, geometry) VALUES ('0', ST_GeomFromText("
-            + ph
-            + ", "
-            + ph
-            + "))",
+            f"INSERT INTO {{t}} (dummyfield, geometry) VALUES ('0', ST_GeomFromText({ph}, {ph}))",
             t=self.temptable_name,
         )
         self.dbconnection.execute(sql, all_args=[(geom_linestring.asWkt(), srid)])

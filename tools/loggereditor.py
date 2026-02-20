@@ -297,11 +297,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
         dbconnection = db_utils.DbConnectionManager()
         ph = dbconnection.placeholder_sign()
-        meas_sql = (
-            "SELECT date_time, level_masl FROM w_levels WHERE obsid = "
-            + ph
-            + " ORDER BY date_time"
-        )
+        meas_sql = f"SELECT date_time, level_masl FROM w_levels WHERE obsid = {ph} ORDER BY date_time"
         _ok, meas_list = db_utils.sql_load_fr_db(
             meas_sql, dbconnection=dbconnection, execute_args=(obsid,)
         )
@@ -314,17 +310,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
         existing_columns = db_utils.tables_columns("w_levels_logger")["w_levels_logger"]
         if "source" in existing_columns:
-            head_level_masl_sql = (
-                "SELECT date_time, head_cm / 100, level_masl, TRIM(COALESCE(source, '')) FROM w_levels_logger WHERE obsid = "
-                + ph
-                + " ORDER BY date_time"
-            )
+            head_level_masl_sql = f"SELECT date_time, head_cm / 100, level_masl, TRIM(COALESCE(source, '')) FROM w_levels_logger WHERE obsid = {ph} ORDER BY date_time"
         else:
-            head_level_masl_sql = (
-                "SELECT date_time, head_cm / 100, level_masl, '' as source FROM w_levels_logger WHERE obsid = "
-                + ph
-                + " ORDER BY date_time"
-            )
+            head_level_masl_sql = f"SELECT date_time, head_cm / 100, level_masl, '' as source FROM w_levels_logger WHERE obsid = {ph} ORDER BY date_time"
         _ok, head_level_masl_list = db_utils.sql_load_fr_db(
             head_level_masl_sql, dbconnection=dbconnection, execute_args=(obsid,)
         )
@@ -446,12 +434,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     def getlastcalibration(self, obsid):
         dbconnection = db_utils.DbConnectionManager()
         ph = dbconnection.placeholder_sign()
-        sql = (
-            "SELECT date_time, (level_masl - (head_cm/100)) AS loggerpos FROM w_levels_logger WHERE date_time = (SELECT max(date_time) AS date_time FROM w_levels_logger WHERE obsid = "
-            + ph
-            + " AND (CASE WHEN level_masl IS NULL THEN -1000 ELSE level_masl END) > -990 AND level_masl IS NOT NULL AND head_cm IS NOT NULL) AND obsid = "
-            + ph
-        )
+        sql = f"SELECT date_time, (level_masl - (head_cm/100)) AS loggerpos FROM w_levels_logger WHERE date_time = (SELECT max(date_time) AS date_time FROM w_levels_logger WHERE obsid = {ph} AND (CASE WHEN level_masl IS NULL THEN -1000 ELSE level_masl END) > -990 AND level_masl IS NOT NULL AND head_cm IS NOT NULL) AND obsid = {ph}"
         _ok, lastcalibr = db_utils.sql_load_fr_db(
             sql, dbconnection=dbconnection, execute_args=(obsid, obsid)
         )
@@ -520,20 +503,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         date_time_as_epoch = db_utils.cast_date_time_as_epoch(dbconnection)
         fr_epoch = (fr_d_t - datetime.datetime(1970, 1, 1)).total_seconds()
         to_epoch = (to_d_t - datetime.datetime(1970, 1, 1)).total_seconds()
-        sql = (
-            "UPDATE w_levels_logger SET level_masl = "
-            + ph
-            + " + level_masl WHERE obsid = "
-            + ph
-            + " AND level_masl IS NOT NULL AND "
-            + date_time_as_epoch
-            + " >= "
-            + ph
-            + " AND "
-            + date_time_as_epoch
-            + " <= "
-            + ph
-        )
+        sql = f"UPDATE w_levels_logger SET level_masl = {ph} + level_masl WHERE obsid = {ph} AND level_masl IS NOT NULL AND {date_time_as_epoch} >= {ph} AND {date_time_as_epoch} <= {ph}"
         db_utils.sql_alter_db(
             sql, dbconnection=dbconnection, all_args=[(newzref, obsid, fr_epoch, to_epoch)]
         )
@@ -555,20 +525,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         date_time_as_epoch = db_utils.cast_date_time_as_epoch(dbconnection)
         fr_epoch = (fr_d_t - datetime.datetime(1970, 1, 1)).total_seconds()
         to_epoch = (to_d_t - datetime.datetime(1970, 1, 1)).total_seconds()
-        sql = (
-            "UPDATE w_levels_logger SET level_masl = "
-            + ph
-            + " + head_cm / 100 WHERE obsid = "
-            + ph
-            + " AND head_cm IS NOT NULL AND "
-            + date_time_as_epoch
-            + " >= "
-            + ph
-            + " AND "
-            + date_time_as_epoch
-            + " <= "
-            + ph
-        )
+        sql = f"UPDATE w_levels_logger SET level_masl = {ph} + head_cm / 100 WHERE obsid = {ph} AND head_cm IS NOT NULL AND {date_time_as_epoch} >= {ph} AND {date_time_as_epoch} <= {ph}"
         db_utils.sql_alter_db(
             sql, dbconnection=dbconnection, all_args=[(newzref, obsid, fr_epoch, to_epoch)]
         )
@@ -1153,26 +1110,11 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         ph = dbconnection.placeholder_sign()
         date_time_as_epoch = db_utils.cast_date_time_as_epoch(dbconnection)
         table_ident = dbconnection.ident(table_name)
-        where_dt_sql = (
-            " AND "
-            + date_time_as_epoch
-            + " >= "
-            + ph
-            + " AND "
-            + date_time_as_epoch
-            + " <= "
-            + ph
-        )
+        where_dt_sql = f" AND {date_time_as_epoch} >= {ph} AND {date_time_as_epoch} <= {ph}"
         alter_args = (selected_obsid, fr_d_t, to_d_t)
 
         if set_to_null_instead:
-            sql = (
-                "UPDATE "
-                + table_ident
-                + " SET level_masl = NULL WHERE obsid = "
-                + ph
-                + where_dt_sql
-            )
+            sql = f"UPDATE {table_ident} SET level_masl = NULL WHERE obsid = {ph}{where_dt_sql}"
             msg = ru(
                 QCoreApplication.translate(
                     "Calibrlogger",
@@ -1185,13 +1127,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 table_name,
             )
         else:
-            sql = (
-                "DELETE FROM "
-                + table_ident
-                + " WHERE obsid = "
-                + ph
-                + where_dt_sql
-            )
+            sql = f"DELETE FROM {table_ident} WHERE obsid = {ph}{where_dt_sql}"
             msg = ru(
                 QCoreApplication.translate(
                     "Calibrlogger",

@@ -1481,14 +1481,14 @@ def test_not_null_and_not_empty_string(table, column, dbconnection=None):
 
     col_ident = ident(dbconnection, column)
     if dbconnection.dbtype == "spatialite":
-        sql = col_ident + " IS NOT NULL AND " + col_ident + " !='' "
+        sql = f"{col_ident} IS NOT NULL AND {col_ident} !='' "
     else:
         table_info = [col for col in get_table_info(table, dbconnection) if col[1] == column][0]
         data_type = table_info[2]
         if data_type in postgresql_numeric_data_types():
-            sql = col_ident + " IS NOT NULL"
+            sql = f"{col_ident} IS NOT NULL"
         else:
-            sql = col_ident + " IS NOT NULL AND " + col_ident + " !='' "
+            sql = f"{col_ident} IS NOT NULL AND {col_ident} !='' "
 
     if dbconnection_created:
         dbconnection.closedb()
@@ -1536,9 +1536,7 @@ def get_srid_name(srid: int, dbconnection: None = None) -> str:
         try:
             ph = dbconnection.placeholder_sign()
             ref_sys_name = dbconnection.execute_and_fetchall(
-                "SELECT split_part(srtext, '\"', 2) AS \"name\" FROM spatial_ref_sys WHERE srid = "
-                + ph
-                + ";",
+                f"SELECT split_part(srtext, '\"', 2) AS \"name\" FROM spatial_ref_sys WHERE srid = {ph};",
                 (srid,),
             )[0][0]
         except Exception:
@@ -1560,14 +1558,12 @@ def test_if_numeric(column, dbconnection=None):
 
     col_ident = ident(dbconnection, column)
     if dbconnection.dbtype == "spatialite":
-        sql = (
-            "(typeof(" + col_ident + ")=typeof(0.01) OR typeof(" + col_ident + ")=typeof(1))"
-        )
+        sql = f"(typeof({col_ident})=typeof(0.01) OR typeof({col_ident})=typeof(1))"
     else:
         type_list = ", ".join(
             "'" + dt + "'" for dt in postgresql_numeric_data_types()
         )
-        sql = "pg_typeof(" + col_ident + ") in (" + type_list + ")"
+        sql = f"pg_typeof({col_ident}) in ({type_list})"
 
     if dbconnection_created:
         dbconnection.closedb()

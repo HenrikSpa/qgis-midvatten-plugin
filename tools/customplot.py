@@ -1271,9 +1271,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             if selected:
                 clause, args = dbconnection.in_clause(selected)
                 sql = dbconnection.sql_ident(
-                    "SELECT DISTINCT {c} FROM {t} WHERE {oc} IN "
-                    + clause
-                    + " ORDER BY {c}",
+                    f"SELECT DISTINCT {{c}} FROM {{t}} WHERE {{oc}} IN {clause} ORDER BY {{c}}",
                     c=str(filtercolumn),
                     t=table,
                     oc=other_filtercolumn,

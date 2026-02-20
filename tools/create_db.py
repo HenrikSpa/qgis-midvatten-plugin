@@ -552,9 +552,7 @@ class NewDb:
             # Get table and column comments
             if created_tables_sqls is None:
                 ph = dbconnection.placeholder_sign()
-                table_descr_sql = (
-                    "SELECT name, sql from sqlite_master WHERE name = " + ph + ";"
-                )
+                table_descr_sql = f"SELECT name, sql from sqlite_master WHERE name = {ph};"
                 create_table_sql = dbconnection.execute_and_fetchall(
                     table_descr_sql, (table,)
                 )[0][1]
@@ -581,11 +579,7 @@ class NewDb:
 
             ph = dbconnection.placeholder_sign()
             placeholders = ", ".join([ph] * 8)
-            sql = (
-                "INSERT INTO about_db (tablename, columnname, description, data_type, not_null, default_value, primary_key, foreign_key) VALUES ("
-                + placeholders
-                + ")"
-            )
+            sql = f"INSERT INTO about_db (tablename, columnname, description, data_type, not_null, default_value, primary_key, foreign_key) VALUES ({placeholders})"
             row_values = (
                 table,
                 "*",
@@ -613,11 +607,7 @@ class NewDb:
                     column_descr = column_descr.rstrip("\r")
                 ph = dbconnection.placeholder_sign()
                 placeholders = ", ".join([ph] * 8)
-                sql = (
-                    "INSERT INTO about_db (tablename, columnname, data_type, not_null, default_value, primary_key, foreign_key, description) VALUES ("
-                    + placeholders
-                    + ")"
-                )
+                sql = f"INSERT INTO about_db (tablename, columnname, data_type, not_null, default_value, primary_key, foreign_key, description) VALUES ({placeholders})"
                 row_values = (
                     table,
                     colname,
@@ -644,16 +634,7 @@ class NewDb:
             if tz:
                 tz_lit = f"({tz})"
                 tz_suffix = f" ({tz})"
-                sql = (
-                    "UPDATE about_db SET description = CASE WHEN description IS NULL THEN "
-                    + ph
-                    + " ELSE description || "
-                    + ph
-                    + " END WHERE tablename = "
-                    + ph
-                    + " and columnname = "
-                    + ph
-                )
+                sql = f"UPDATE about_db SET description = CASE WHEN description IS NULL THEN {ph} ELSE description || {ph} END WHERE tablename = {ph} and columnname = {ph}"
                 dbconnection.execute(
                     sql, all_args=[(tz_lit, tz_suffix, tname, "date_time")]
                 )

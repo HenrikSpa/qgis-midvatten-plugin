@@ -588,7 +588,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                     [dbconnection.placeholder_sign()] * len(df.columns)
                 )
                 sql = dbconnection.sql_ident(
-                    "INSERT INTO {t} VALUES (" + placeholders + ")",
+                    f"INSERT INTO {{t}} VALUES ({placeholders})",
                     t=temptable_name,
                 )
                 psycopg2.extras.execute_values(

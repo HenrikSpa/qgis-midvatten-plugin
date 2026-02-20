@@ -33,7 +33,7 @@ from midvatten.tools import piper
 #
 
 
-@attr(status="on")
+@attr(status="only")
 class TestPiperPlotDb(utils_for_tests.MidvattenTestSpatialiteDbSv):
     """The test doesn't go through the whole section plot unfortunately"""
 

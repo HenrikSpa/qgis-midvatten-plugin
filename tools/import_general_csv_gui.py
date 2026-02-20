@@ -270,8 +270,8 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         for feature in features:
             row = []
             for attr in feature:
-                if all([ru(attr).strip() != "NULL" ,
-                                attr is not None,]):
+                if all([ru(attr).strip() != "NULL",
+                        attr is not None,]):
                     row.append(ru(attr))
                 else:
                     row.append("")

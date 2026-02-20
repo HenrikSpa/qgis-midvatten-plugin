@@ -267,24 +267,16 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
 
         features = list(active_layer.getSelectedFeatures())
         file_data = [[ru(field.name()) for field in active_layer.fields()]]
-        [
-            file_data.append(
-                [
-                    (
-                        ru(attr)
-                        if all(
-                            [
-                                ru(attr).strip() != "NULL" if attr is not None else "",
-                                attr is not None,
-                            ]
-                        )
-                        else ""
-                    )
-                    for attr in feature
-                ]
-            )
-            for feature in features
-        ]
+        for feature in features:
+            row = []
+            for attr in feature:
+                if all([ru(attr).strip() != "NULL" ,
+                                attr is not None,]):
+                    row.append(ru(attr))
+                else:
+                    row.append("")
+            file_data.append(row)
+            
         geometries = [
             feature.geometry().asWkt() if feature.geometry().asWkt() else None
             for feature in features

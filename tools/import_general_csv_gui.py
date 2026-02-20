@@ -61,10 +61,7 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         self.table_chooser = None
         self.file_data = None
         self.srid = None
-        if dbconnection is not None:
-            self.dbconnection = dbconnection
-        else:
-            self.dbconnection = None
+        self.dbconnection = dbconnection
 
     def load_gui(self):
         self.tables_columns_info = {

@@ -52,7 +52,11 @@ class TestPiperPlotDb(utils_for_tests.MidvattenTestPostgisDbSv):
         piperplot.create_parameter_selection()
 
         test = common_utils.anything_to_string_representation(piperplot.parameters)
-        ref = """["(lower(parameter) like '%klorid%' or lower(parameter) like '%chloride%')", "(lower(parameter) like '%alkalinitet%' or lower(parameter) like '%alcalinity%')", "(lower(parameter) like '%sulfat%' or lower(parameter) like '%sulphat%')", "(lower(parameter) like '%natrium%')", "(lower(parameter) like '%kalium%' or lower(parameter) like '%potassium%')", "(lower(parameter) like '%kalcium%' or lower(parameter) like '%calcium%')", "(lower(parameter) like '%magnesium%')"]"""
+        ref = """{"piper_ca": ["%kalcium%", "%calcium%"], "piper_cl": ["%klorid%", "%chloride%"], "piper_hco3": ["%alkalinitet%", "%alcalinity%"], "piper_k": ["%kalium%", "%potassium%"], "piper_mg": ["%magnesium%"], "piper_na": ["%natrium%"], "piper_so4": ["%sulfat%", "%sulphat%"]}"""
+        print("Test:")
+        print(test)
+        print("Ref:")
+        print(ref)
         assert test == ref
 
     @mock.patch("matplotlib.pyplot.Figure.show")
@@ -72,10 +76,13 @@ class TestPiperPlotDb(utils_for_tests.MidvattenTestPostgisDbSv):
         piperplot.create_parameter_selection()
 
         test = common_utils.anything_to_string_representation(piperplot.parameters)
-        ref = """["parameter = 'cl'", "parameter = 'hco3'", "parameter = 'so4'", "parameter = 'na'", "parameter = 'k'", "parameter = 'ca'", "parameter = 'mg'"]"""
+        ref = """{"piper_ca": ["ca"], "piper_cl": ["cl"], "piper_hco3": ["hco3"], "piper_k": ["k"], "piper_mg": ["mg"], "piper_na": ["na"], "piper_so4": ["so4"]}"""
+        print("Test")
+        print(test)
+        print("Ref")
+        print(ref)
         assert test == ref
 
-    @attr(status="only")
     @mock.patch("midvatten.tools.piper.common_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.sectionplot.common_utils.getselectedobjectnames")
     @mock.patch("matplotlib.pyplot.Figure.show")
@@ -180,15 +187,15 @@ class TestPiperPlotDb(utils_for_tests.MidvattenTestPostgisDbSv):
                 l[idx] = "{0:.10f}".format(float(l[idx]))
         # print("data: " + str(data))
 
-        test_paramlist = common_utils.anything_to_string_representation(
+        test_parameters = common_utils.anything_to_string_representation(
             piperplot.parameters
         )
-        ref_paramlist = """["(lower(parameter) like '%klorid%' or lower(parameter) like '%chloride%')", "(lower(parameter) like '%alkalinitet%' or lower(parameter) like '%alcalinity%')", "(lower(parameter) like '%sulfat%' or lower(parameter) like '%sulphat%')", "(lower(parameter) like '%natrium%')", "(lower(parameter) like '%kalium%' or lower(parameter) like '%potassium%')", "(lower(parameter) like '%kalcium%' or lower(parameter) like '%calcium%')", "(lower(parameter) like '%magnesium%')"]"""
-        print("Test paramlist:")
-        print(test_paramlist)
-        print("Ref paramlist:")
-        print(ref_paramlist)
-        assert test_paramlist == ref_paramlist
+        ref_parameters = """{"piper_ca": ["%kalcium%", "%calcium%"], "piper_cl": ["%klorid%", "%chloride%"], "piper_hco3": ["%alkalinitet%", "%alcalinity%"], "piper_k": ["%kalium%", "%potassium%"], "piper_mg": ["%magnesium%"], "piper_na": ["%natrium%"], "piper_so4": ["%sulfat%", "%sulphat%"]}"""
+        print("Test parameters:")
+        print(test_parameters)
+        print("Ref parameters:")
+        print(ref_parameters)
+        assert test_parameters == ref_parameters
 
         test_data = tuple([tuple(_) for _ in data])
 

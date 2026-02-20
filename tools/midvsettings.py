@@ -25,7 +25,7 @@ class MidvSettings(object):
     def __init__(self):
         # settings...
         self.settingsareloaded = False
-        self.readingSettings = False  # To enable resetsettings
+        self.reading_settings = False  # To enable resetsettings
         self.settingsdict = self.createsettingsdict()
         try:
             # The settings are loaded each time a new qgis project is loaded
@@ -46,7 +46,7 @@ class MidvSettings(object):
     ):  # settingsdict is a dictionary belonging to instance midvsettings. Must be stored and loaded here.
         """read plugin settings from QgsProject instance"""
         self.settingsdict = self.createsettingsdict()
-        self.readingSettings = True
+        self.reading_settings = True
         # map data types to function names
         prj = QgsProject.instance()
         functions = {
@@ -75,7 +75,7 @@ class MidvSettings(object):
                     )
                     % (str(key))
                 )
-        self.readingSettings = False
+        self.reading_settings = False
         self.settingsareloaded = True
 
     def reset_settings(self):
@@ -86,7 +86,7 @@ class MidvSettings(object):
     def save_settings(
         self, key=None
     ):  # settingsdict is a dictionary belonging to instance midvatten. Must be stored and loaded here.
-        if not self.readingSettings:
+        if not self.reading_settings:
             if key is None:
                 # if no argument, then save all settings according to dictionary
                 for _key in list(self.settingsdict.keys()):

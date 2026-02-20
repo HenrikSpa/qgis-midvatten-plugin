@@ -76,7 +76,7 @@ class Wqualreport(
                 )  # debug
             except:
                 pass
-            report_data = self.GetData(
+            report_data = self.get_data(
                 self.settingsdict["database"], obsid, dbconnection
             )  # one observation at a time
             try:
@@ -89,7 +89,7 @@ class Wqualreport(
             except:
                 pass
             if report_data:
-                self.WriteHTMLReport(report_data, f)
+                self.write_html_report(report_data, f)
             try:
                 print(
                     "wrote html report for " + obsid + ", at time: " + str(time.time())
@@ -107,9 +107,9 @@ class Wqualreport(
         if report_data:
             QDesktopServices.openUrl(QUrl.fromLocalFile(reportpath))
 
-    def GetData(
+    def get_data(
         self, dbPath="", obsid="", dbconnection=None
-    ):  # GetData method that returns a table with water quality data
+    ):  # get_data method that returns a table with water quality data
         # Load all water quality parameters stored in two result columns: parameter, unit
         if not (
             str(self.settingsdict["wqual_unitcolumn"]) == ""
@@ -340,7 +340,7 @@ class Wqualreport(
         )  # to be able to set a relevant width to the table
         return report_table
 
-    def WriteHTMLReport(self, report_data, f):
+    def write_html_report(self, report_data, f):
         tabellbredd = 180 + 75 * self.htmlcols
         rpt = '<table width="'
         rpt += str(

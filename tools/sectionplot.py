@@ -2349,7 +2349,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             widget.show()
 
     def float_settings(self):
-        dockwidget = getattr(self, "settingsdockWidget")
+        dockwidget = getattr(self, "settingsdock_widget")
         if dockwidget.isWindow():
             self.add_titlebar(dockwidget)
             dockwidget.setWindowTitle(
@@ -2362,7 +2362,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
 
     def dock_settings(self, _self, event):
         self.tab_widget.addTab(self.settings_tab, "Settings")
-        self.old_settingsdockWidget = self.settingsdock_widget
+        self.old_settingsdock_widget = self.settingsdock_widget
         self.settingsdock_widget = QDockWidget()
         self.settingsdock_widget.setFeatures(
             QDockWidget.DockWidgetFeature.DockWidgetFloatable
@@ -2379,7 +2379,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         )
         self.settingsdock_widget.setWidget(self.dock_widget_contents_2)
 
-        # Remove the old widget widgetitem from the old settingsdockWidget
+        # Remove the old widget widgetitem from the old settingsdock_widget
         self.vertical_layout_4.takeAt(0)
 
         spacing = self.vertical_layout_4.takeAt(0)

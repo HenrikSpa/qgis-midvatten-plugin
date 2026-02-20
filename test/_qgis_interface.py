@@ -56,7 +56,7 @@ class QgisInterface(QObject):
         QgsMapLayerRegistry.instance().removeAll.connect(self.removeAllLayers)
 
         # For processing module
-        self.destCrs = None
+        self.dest_crs = None
 
     @pyqtSlot('QStringList')
     def addLayers(self, layers):

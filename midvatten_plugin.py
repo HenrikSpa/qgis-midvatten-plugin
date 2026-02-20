@@ -470,19 +470,19 @@ class Midvatten:
         )
 
         # Add toolbar with buttons
-        self.toolBar = self.iface.addToolBar("Midvatten")
-        self.toolBar.setObjectName("Midvatten")
-        self.toolBar.addAction(self.action_midvatten_settings)
-        self.toolBar.addAction(self.action_tsplot)
-        self.toolBar.addAction(self.action_xyplot)
-        self.toolBar.addAction(self.action_stratigraphyplot)
-        self.toolBar.addAction(self.action_sectionplot)
-        self.toolBar.addAction(self.action_customplot)
-        self.toolBar.addAction(self.action_piper2)
-        self.toolBar.addAction(self.action_drillreport)
-        self.toolBar.addAction(self.action_wqualreport)
-        self.toolBar.addAction(self.action_stratsymbology)
-        self.toolBar.addAction(self.action_list_selected_features)
+        self.tool_bar = self.iface.addToolBar("Midvatten")
+        self.tool_bar.setObjectName("Midvatten")
+        self.tool_bar.addAction(self.action_midvatten_settings)
+        self.tool_bar.addAction(self.action_tsplot)
+        self.tool_bar.addAction(self.action_xyplot)
+        self.tool_bar.addAction(self.action_stratigraphyplot)
+        self.tool_bar.addAction(self.action_sectionplot)
+        self.tool_bar.addAction(self.action_customplot)
+        self.tool_bar.addAction(self.action_piper2)
+        self.tool_bar.addAction(self.action_drillreport)
+        self.tool_bar.addAction(self.action_wqualreport)
+        self.tool_bar.addAction(self.action_stratsymbology)
+        self.tool_bar.addAction(self.action_list_selected_features)
 
         self.menu.import_data_menu = self.add_menu(
             self.tr("&Import data to database"), self.menu
@@ -583,7 +583,7 @@ class Midvatten:
             except:
                 pass
 
-        del self.toolBar
+        del self.tool_bar
 
         # Also remove F key triggers
         self.iface.unregisterMainWindowAction(self.action_midvatten_settings)

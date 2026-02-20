@@ -804,18 +804,18 @@ class SpatialiteSettings(gui_utils.RowEntryGrid):
     def __init__(self, midvsettingsdialogdock: MidvattenSettingsDock, label_width: int):
         super(SpatialiteSettings, self).__init__()
         self.midvsettingsdialogdock = midvsettingsdialogdock
-        self.btnSetDB = qgis.PyQt.QtWidgets.QPushButton(
+        self.btn_set_db = qgis.PyQt.QtWidgets.QPushButton(
             ru(QCoreApplication.translate("SpatialiteSettings", "Select db"))
         )
-        self.btnSetDB.setFixedWidth(label_width)
-        self.layout.addWidget(self.btnSetDB, 0, 0)
+        self.btn_set_db.setFixedWidth(label_width)
+        self.layout.addWidget(self.btn_set_db, 0, 0)
         self._dbpath = qgis.PyQt.QtWidgets.QLineEdit("")
         self._dbpath.textChanged.connect(lambda: self.database_chosen())
         self._dbpath.editingFinished.connect(self.database_chosen)
         self.layout.addWidget(self._dbpath, 0, 1)
 
         # select file
-        self.btnSetDB.clicked.connect(lambda x: self.select_file())
+        self.btn_set_db.clicked.connect(lambda x: self.select_file())
 
     @property
     def dbpath(self):

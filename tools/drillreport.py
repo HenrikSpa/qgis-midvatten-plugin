@@ -153,7 +153,7 @@ class Drillreport(object):  # general observation point info for the selected ob
         f.write(rpt)
 
         # GENERAL DATA UPPER LEFT QUADRANT
-        connection_ok, general_data = self.GetData(
+        connection_ok, general_data = self.get_data(
             obsid, "obs_points", "n"
         )  # MacOSX fix1
         # utils.pop_up_info(str(connection_ok))#debug
@@ -179,7 +179,7 @@ class Drillreport(object):  # general observation point info for the selected ob
             f.write(rpt)
 
             # STRATIGRAPHY DATA UPPER RIGHT QUADRANT
-            strat_data = self.GetData(obsid, "stratigraphy", "n")[1]  # MacOSX fix1
+            strat_data = self.get_data(obsid, "stratigraphy", "n")[1]  # MacOSX fix1
             if midvatten_utils.getcurrentlocale()[0] == "sv_SE":
                 reportdata_2 = self.rpt_upper_right_sv(strat_data)
             else:
@@ -922,7 +922,7 @@ class Drillreport(object):  # general observation point info for the selected ob
         rpt += r"""</p>"""
         return rpt
 
-    def GetData(self, obsid: str = "", tablename: str = "", debug: str = "n") -> Union[
+    def get_data(self, obsid: str = "", tablename: str = "", debug: str = "n") -> Union[
         Tuple[bool, List[Any]],
         Tuple[
             bool,
@@ -993,7 +993,7 @@ class Drillreport(object):  # general observation point info for the selected ob
             ],
         ],
         Tuple[bool, List[Tuple[str, int, float, float, str, str, str, str, None]]],
-    ]:  # GetData method that returns a table with water quality data
+    ]:  # get_data method that returns a table with water quality data
         # Load all data in obs_points table
         sql = r"""select * from """
         sql += tablename

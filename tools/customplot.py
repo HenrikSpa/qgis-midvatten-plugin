@@ -1209,7 +1209,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
 
         getattr(self, filter_q_list_widget).clear()
         if not getattr(self, filter_combobox).currentText() == "":
-            self.PopulateFilterList(
+            self.populate_filter_list(
                 getattr(self, table_combobox).currentText(),
                 filter_q_list_widget,
                 getattr(self, filter_combobox).currentText(),
@@ -1236,12 +1236,12 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
     def tab3_filter2_changed(self):
         self.filter_changed(2, 3)
 
-    def PopulateFilterList(
+    def populate_filter_list(
         self,
         table,
-        QListWidgetname="",
+        q_list_widget_name="",
         filtercolumn=None,
-        other_QListWidget=None,
+        other_q_list_widget=None,
         other_filtercolumn=None,
         dependent_filtering_box=None,
     ):
@@ -1257,8 +1257,8 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         else:
             dependent_filtering = False
 
-        if other_QListWidget is not None and other_filtercolumn and dependent_filtering:
-            other_q_list_widget_wid = getattr(self, other_QListWidget)
+        if other_q_list_widget is not None and other_filtercolumn and dependent_filtering:
+            other_q_list_widget_wid = getattr(self, other_q_list_widget)
             selected = ru(
                 [
                     item.text()
@@ -1291,7 +1291,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
 
         for post in list_data:
             item = QtWidgets.QListWidgetItem(str(post[0]))
-            getattr(self, QListWidgetname).addItem(item)
+            getattr(self, q_list_widget_name).addItem(item)
 
     @common_utils.general_exception_handler
     def redraw(self):

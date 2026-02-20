@@ -85,7 +85,7 @@ class Interlab4Import(qgis.PyQt.QtWidgets.QMainWindow, import_fieldlogger_ui_dia
                 self.specific_meta_filter.get_items_dict()
             )
         )
-        self.metadata_filter.buttonSave.clicked.connect(lambda: self.handle_save())
+        self.metadata_filter.button_save.clicked.connect(lambda: self.handle_save())
 
         self.skip_imported_reports = qgis.PyQt.QtWidgets.QCheckBox(
             ru(QCoreApplication.translate("Interlab4Import", "Skip imported reports"))
@@ -1188,8 +1188,8 @@ class MetadataFilter(VRowEntry):
         self.label_layout = RowEntry()
         self.label_layout.layout.addWidget(self.label)
 
-        self.buttonSave = qgis.PyQt.QtWidgets.QPushButton("Save metadata table to file")
-        self.buttonSave.setToolTip(
+        self.button_save = qgis.PyQt.QtWidgets.QPushButton("Save metadata table to file")
+        self.button_save.setToolTip(
             ru(
                 QCoreApplication.translate(
                     "Interlab4Import",
@@ -1197,7 +1197,7 @@ class MetadataFilter(VRowEntry):
                 )
             )
         )
-        self.label_layout.layout.addWidget(self.buttonSave)
+        self.label_layout.layout.addWidget(self.button_save)
 
         self.layout.addWidget(self.label_layout.widget)
 

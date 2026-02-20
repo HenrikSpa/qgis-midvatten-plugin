@@ -505,13 +505,13 @@ class SurveyWidget(QtWidgets.QFrame):
         # ------------------Please note!---------------------
         # Due to unicode normalize in getData function below, swedish national characters will be
         # transformed to a, a, and o when read from the stratigraphy table
-        self.geoColorSymbols = defs.geocolorsymbols()
-        # print(self.geoColorSymbols)#debug
-        self.hydroColors = defs.hydrocolors()
-        # print(self.hydroColors)#debug
-        self.switchGeoHydro = 0  # Default is to show colors according to geo
-        self.GeoOrComment = "geology"  # Default is that text =  geology description
-        self.showDesc = True  # Default is to show text
+        self.geo_color_symbols = defs.geocolorsymbols()
+        # print(self.geo_color_symbols)#debug
+        self.hydro_colors = defs.hydrocolors()
+        # print(self.hydro_colors)#debug
+        self.switch_geo_hydro = 0  # Default is to show colors according to geo
+        self.geo_or_comment = "geology"  # Default is that text =  geology description
+        self.show_desc = True  # Default is to show text
 
     def setData(self, sondaggio):
         self.sondaggio = sondaggio
@@ -548,18 +548,18 @@ class SurveyWidget(QtWidgets.QFrame):
         for s in sondaggio.values():
             self.order.append(s)
 
-    def setType(self, switchGeoHydro):
+    def setType(self, switch_geo_hydro):
         """sets whether fill columns with Geo colors (0) or Hydro colors (1)"""
-        self.switchGeoHydro = switchGeoHydro
+        self.switch_geo_hydro = switch_geo_hydro
         self.update()
 
-    def setGeoOrComment(self, GeoOrComment):
+    def setGeoOrComment(self, geo_or_comment):
         """sets whether to print geology ("geology") or Comment ("comment")"""
-        self.GeoOrComment = GeoOrComment
+        self.geo_or_comment = geo_or_comment
         self.update()
 
     def setShowDesc(self, show):
-        self.showDesc = show
+        self.show_desc = show
         self.update()
 
     def paintEvent(self, event):
@@ -683,7 +683,7 @@ class SurveyWidget(QtWidgets.QFrame):
                 layer.geo_short
             )  # select brush pattern depending on the geo_short
             # select brush pattern depending on usage of geo or hydro
-            if self.switchGeoHydro == 0:
+            if self.switch_geo_hydro == 0:
                 color = self.textToColor(layer.geo_short, "geo")
             else:
                 color = self.textToColor(layer.hydro, "hydro")
@@ -696,36 +696,36 @@ class SurveyWidget(QtWidgets.QFrame):
             p.drawRect(c_rect)
 
             # draw associated text
-            if self.showDesc:
-                if self.GeoOrComment == "geology":
+            if self.show_desc:
+                if self.geo_or_comment == "geology":
                     p.drawText(
                         t_rect,
                         QtCore.Qt.AlignVCenter,
                         "" if layer.geology == "NULL" else layer.geology,
                     )  #'Yes' if fruit == 'Apple' else 'No'
-                elif self.GeoOrComment == "comment":
+                elif self.geo_or_comment == "comment":
                     p.drawText(
                         t_rect,
                         QtCore.Qt.AlignVCenter,
                         "" if layer.comment == "NULL" else layer.comment,
                     )
-                elif self.GeoOrComment == "geoshort":
+                elif self.geo_or_comment == "geoshort":
                     p.drawText(
                         t_rect,
                         QtCore.Qt.AlignVCenter,
                         "" if layer.geo_short == "NULL" else layer.geo_short,
                     )
-                elif self.GeoOrComment == "hydro":
+                elif self.geo_or_comment == "hydro":
                     p.drawText(
                         t_rect,
                         QtCore.Qt.AlignVCenter,
                         "" if layer.hydro == "NULL" else layer.hydro,
                     )
-                elif self.GeoOrComment == "hydro explanation":
+                elif self.geo_or_comment == "hydro explanation":
                     if layer.hydro is None or layer.hydro == "NULL":
                         hydr = ""
                     else:
-                        hydr = self.hydroColors.get(layer.hydro.strip(), "")[0]
+                        hydr = self.hydro_colors.get(layer.hydro.strip(), "")[0]
                     p.drawText(t_rect, QtCore.Qt.AlignVCenter, hydr)
 
                 else:
@@ -743,21 +743,21 @@ class SurveyWidget(QtWidgets.QFrame):
         """returns QColor from the specified text"""
 
         if type == "hydro":
-            if id in self.hydroColors:
-                # return eval("PyQt4.QtCore.Qt" + self.hydroColors[id][2])    # Less sofisticated method to create a function call from a string (function syntax is in the string)
+            if id in self.hydro_colors:
+                # return eval("PyQt4.QtCore.Qt" + self.hydro_colors[id][2])    # Less sofisticated method to create a function call from a string (function syntax is in the string)
                 return getattr(
-                    QtCore.Qt, self.hydroColors[id][1]
+                    QtCore.Qt, self.hydro_colors[id][1]
                 )  # getattr is to combine a function and a string to a combined function
             else:
                 return QtCore.Qt.white
         elif type == "geo":
-            # if id.lower() in self.geoColorSymbols:
-            if id in self.geoColorSymbols:
+            # if id.lower() in self.geo_color_symbols:
+            if id in self.geo_color_symbols:
                 try:  # first we assume it is a predefined Qt color, hence use PyQt4.QtCore.Qt
-                    # return getattr(PyQt4.QtCore.Qt, self.geoColorSymbols[id.lower()][1])
-                    return getattr(QtCore.Qt, self.geoColorSymbols[id][1])
+                    # return getattr(PyQt4.QtCore.Qt, self.geo_color_symbols[id.lower()][1])
+                    return getattr(QtCore.Qt, self.geo_color_symbols[id][1])
                 except:  # otherwise it must be a SVG 1.0 color name, then it must be created by QtGui.QColor instead
-                    return QtGui.QColor(self.geoColorSymbols[id][1])
+                    return QtGui.QColor(self.geo_color_symbols[id][1])
             else:
                 return QtCore.Qt.white
 
@@ -765,11 +765,11 @@ class SurveyWidget(QtWidgets.QFrame):
         self, id=""
     ):  # A function to return fill type for the box representing the stratigraphy layer
         """returns Symbol from the specified text"""
-        # if id.lower() in self.geoColorSymbols:
+        # if id.lower() in self.geo_color_symbols:
 
-        if id in self.geoColorSymbols:
-            # return getattr(PyQt4.QtCore.Qt, self.geoColorSymbols[id.lower()][0])   # Or possibly [0]?
-            return getattr(QtCore.Qt, self.geoColorSymbols[id][0])  # Or possibly [0]?
+        if id in self.geo_color_symbols:
+            # return getattr(PyQt4.QtCore.Qt, self.geo_color_symbols[id.lower()][0])   # Or possibly [0]?
+            return getattr(QtCore.Qt, self.geo_color_symbols[id][0])  # Or possibly [0]?
         else:
             return QtCore.Qt.NoBrush
 
@@ -824,50 +824,50 @@ class SurveyDialog(QtWidgets.QDialog):
         self.widget = SurveyWidget()
         self.layout.addWidget(self.widget)
 
-        self.radGeo = QtWidgets.QRadioButton("Geo")
-        self.radGeo.setChecked(True)  # Default is to show colors as per geo
-        self.layout2.addWidget(self.radGeo)
-        self.radHydro = QtWidgets.QRadioButton("Hydro")
-        # self.radHydro.setChecked(False)  #Default is NOT to show colors as per hydro
-        self.layout2.addWidget(self.radHydro)
+        self.rad_geo = QtWidgets.QRadioButton("Geo")
+        self.rad_geo.setChecked(True)  # Default is to show colors as per geo
+        self.layout2.addWidget(self.rad_geo)
+        self.rad_hydro = QtWidgets.QRadioButton("Hydro")
+        # self.rad_hydro.setChecked(False)  #Default is NOT to show colors as per hydro
+        self.layout2.addWidget(self.rad_hydro)
 
         spacer_item = QtWidgets.QSpacerItem(100, 0)
         self.layout2.addItem(spacer_item)
 
-        self.chkShowDesc = QtWidgets.QCheckBox(
+        self.chk_show_desc = QtWidgets.QCheckBox(
             ru(QCoreApplication.translate("SurveyDialog", "Show text"))
         )
-        self.chkShowDesc.setChecked(True)
-        self.layout2.addWidget(self.chkShowDesc)
+        self.chk_show_desc.setChecked(True)
+        self.layout2.addWidget(self.chk_show_desc)
 
-        self.GeologyOrCommentCBox = QtWidgets.QComboBox(self)
-        self.GeologyOrCommentCBox.addItem("geology")
-        self.GeologyOrCommentCBox.addItem("comment")
-        self.GeologyOrCommentCBox.addItem("geoshort")
-        self.GeologyOrCommentCBox.addItem("hydro")
-        self.GeologyOrCommentCBox.addItem("hydro explanation")
-        self.GeologyOrCommentCBox.addItem("development")
-        self.layout2.addWidget(self.GeologyOrCommentCBox)
+        self.geology_or_comment_cbox = QtWidgets.QComboBox(self)
+        self.geology_or_comment_cbox.addItem("geology")
+        self.geology_or_comment_cbox.addItem("comment")
+        self.geology_or_comment_cbox.addItem("geoshort")
+        self.geology_or_comment_cbox.addItem("hydro")
+        self.geology_or_comment_cbox.addItem("hydro explanation")
+        self.geology_or_comment_cbox.addItem("development")
+        self.layout2.addWidget(self.geology_or_comment_cbox)
 
-        self.btnPrint = QtWidgets.QPushButton(
+        self.btn_print = QtWidgets.QPushButton(
             ru(QCoreApplication.translate("SurveyDialog", "Print"))
         )
-        self.layout2.addWidget(self.btnPrint)
+        self.layout2.addWidget(self.btn_print)
 
-        self.btnClose = QtWidgets.QPushButton(
+        self.btn_close = QtWidgets.QPushButton(
             ru(QCoreApplication.translate("SurveyDialog", "Close"))
         )
-        self.layout2.addWidget(self.btnClose)
+        self.layout2.addWidget(self.btn_close)
 
         self.layout.addLayout(self.layout2)
 
-        self.btnClose.clicked.connect(lambda x: self.close())
-        self.btnPrint.clicked.connect(self.widget.printDiagram)
-        self.radGeo.toggled.connect(self.typeToggled)
-        self.radHydro.toggled.connect(self.typeToggled)
-        self.chkShowDesc.toggled.connect(self.widget.setShowDesc)
-        self.GeologyOrCommentCBox.currentIndexChanged.connect(
-            partial(self.ComboBoxUpdated)
+        self.btn_close.clicked.connect(lambda x: self.close())
+        self.btn_print.clicked.connect(self.widget.printDiagram)
+        self.rad_geo.toggled.connect(self.typeToggled)
+        self.rad_hydro.toggled.connect(self.typeToggled)
+        self.chk_show_desc.toggled.connect(self.widget.setShowDesc)
+        self.geology_or_comment_cbox.currentIndexChanged.connect(
+            partial(self.combo_box_updated)
         )
         # whenever the combobox is changed, function partial is used due to problems with currentindexChanged and Combobox)
 
@@ -875,13 +875,13 @@ class SurveyDialog(QtWidgets.QDialog):
         self.accept()
 
     def typeToggled(self):
-        if self.radGeo.isChecked():
+        if self.rad_geo.isChecked():
             self.widget.setType(0)
         else:
             self.widget.setType(1)
 
-    def ComboBoxUpdated(self):
-        text = self.GeologyOrCommentCBox.currentText()
+    def combo_box_updated(self):
+        text = self.geology_or_comment_cbox.currentText()
         self.widget.setGeoOrComment(text)
 
 

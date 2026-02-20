@@ -31,10 +31,7 @@ from midvatten.test import utils_for_tests
 from midvatten.tools import piper
 
 
-#
-
-
-@attr(status="only")
+@attr(status="on")
 class TestPiperPlotDb(utils_for_tests.MidvattenTestPostgisDbSv):
     """The test doesn't go through the whole section plot unfortunately"""
 
@@ -54,7 +51,7 @@ class TestPiperPlotDb(utils_for_tests.MidvattenTestPostgisDbSv):
         piperplot = piper.PiperPlot(mock_ms, mock_active_layer)
         piperplot.create_parameter_selection()
 
-        test = common_utils.anything_to_string_representation(piperplot.ParameterList)
+        test = common_utils.anything_to_string_representation(piperplot.parameters)
         ref = """["(lower(parameter) like '%klorid%' or lower(parameter) like '%chloride%')", "(lower(parameter) like '%alkalinitet%' or lower(parameter) like '%alcalinity%')", "(lower(parameter) like '%sulfat%' or lower(parameter) like '%sulphat%')", "(lower(parameter) like '%natrium%')", "(lower(parameter) like '%kalium%' or lower(parameter) like '%potassium%')", "(lower(parameter) like '%kalcium%' or lower(parameter) like '%calcium%')", "(lower(parameter) like '%magnesium%')"]"""
         assert test == ref
 
@@ -74,10 +71,11 @@ class TestPiperPlotDb(utils_for_tests.MidvattenTestPostgisDbSv):
         piperplot = piper.PiperPlot(mock_ms, mock_active_layer)
         piperplot.create_parameter_selection()
 
-        test = common_utils.anything_to_string_representation(piperplot.ParameterList)
+        test = common_utils.anything_to_string_representation(piperplot.parameters)
         ref = """["parameter = 'cl'", "parameter = 'hco3'", "parameter = 'so4'", "parameter = 'na'", "parameter = 'k'", "parameter = 'ca'", "parameter = 'mg'"]"""
         assert test == ref
 
+    @attr(status="only")
     @mock.patch("midvatten.tools.piper.common_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.sectionplot.common_utils.getselectedobjectnames")
     @mock.patch("matplotlib.pyplot.Figure.show")
@@ -176,16 +174,20 @@ class TestPiperPlotDb(utils_for_tests.MidvattenTestPostgisDbSv):
         piperplot.ms.settingsdict["piper_markers"] = "obsid"
         piperplot.get_data_and_make_plot()
         data = piperplot.obsnp_nospecformat
-        print("data: " + str(data))
+        # print("data: " + str(data))
         for l in data:
             for idx in range(3, 9):
                 l[idx] = "{0:.10f}".format(float(l[idx]))
-        print("data: " + str(data))
+        # print("data: " + str(data))
 
         test_paramlist = common_utils.anything_to_string_representation(
-            piperplot.ParameterList
+            piperplot.parameters
         )
         ref_paramlist = """["(lower(parameter) like '%klorid%' or lower(parameter) like '%chloride%')", "(lower(parameter) like '%alkalinitet%' or lower(parameter) like '%alcalinity%')", "(lower(parameter) like '%sulfat%' or lower(parameter) like '%sulphat%')", "(lower(parameter) like '%natrium%')", "(lower(parameter) like '%kalium%' or lower(parameter) like '%potassium%')", "(lower(parameter) like '%kalcium%' or lower(parameter) like '%calcium%')", "(lower(parameter) like '%magnesium%')"]"""
+        print("Test paramlist:")
+        print(test_paramlist)
+        print("Ref paramlist:")
+        print(ref_paramlist)
         assert test_paramlist == ref_paramlist
 
         test_data = tuple([tuple(_) for _ in data])
@@ -219,8 +221,9 @@ class TestPiperPlotDb(utils_for_tests.MidvattenTestPostgisDbSv):
         print(test_data)
         print("REF")
         print(ref_data)
+        print(f"{mock_messagebar.mock_calls=}")
         assert test_data == ref_data
-        print(f"calls: {mock_messagebar.mock_calls}")
+
         assert len(mock_messagebar.mock_calls) == 1 and mock.call.info(
             log_msg="PickAnnotator initialized."
         )

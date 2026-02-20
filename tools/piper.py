@@ -88,32 +88,49 @@ class PiperPlot(object):
         dbconnection = db_utils.DbConnectionManager()
         obsid_placeholders = dbconnection.placeholder_string(len(self.observations))
         dbconnection.closedb()
+
+        ph = dbconnection.placeholder_sign()
+
+        def equal_or_like(placeholder, value):
+            if value.startswith("%"):
+                return f"lower(parameter) LIKE {placeholder}", value.lstrip()
+            else:
+                return f"parameter = {placeholder}", value
+
+        def format_list(ph, parameter_list_entry):
+            return "({})".format(
+                " OR ".join([equal_or_like(ph, x)[0] for x in parameter_list_entry])
+            )
+
         sql = """select a.obsid as obsid, date_time, obs_points.type as type, Cl_meqPl, HCO3_meqPl, SO4_meqPl, Na_meqPl + K_meqPl as NaK_meqPl, Ca_meqPl, Mg_meqPl
         from (select u.obsid, u.date_time, u.Cl_meqPl, u.HCO3_meqPl, u.SO4_meqPl, u.Na_meqPl, u.K_meqPl, u.Ca_meqPl, u.Mg_meqPl
             from (
                   select obsid, date_time, 
-                      (max (case when %s then reading_num end))/35.453 as Cl_meqPl,
-                      (max (case when %s then reading_num end))/61.0168 as HCO3_meqPl,
-                      2*(max (case when %s then reading_num end))/96.063 as SO4_meqPl,
-                      (max (case when %s then reading_num end))/22.9898 as Na_meqPl,
-                      (max (case when %s then reading_num end))/39.0983 as K_meqPl,
-                      2*(max (case when %s then reading_num end))/40.078 as Ca_meqPl,
-                      2*(max (case when %s then reading_num end))/24.305 as Mg_meqPl
-                  from w_qual_lab where obsid in (%s) 
+                      (max (case when {cl} then reading_num end))/35.453 as Cl_meqPl,
+                      (max (case when {hco3} then reading_num end))/61.0168 as HCO3_meqPl,
+                      2*(max (case when {so4} then reading_num end))/96.063 as SO4_meqPl,
+                      (max (case when {na} then reading_num end))/22.9898 as Na_meqPl,
+                      (max (case when {k} then reading_num end))/39.0983 as K_meqPl,
+                      2*(max (case when {ca} then reading_num end))/40.078 as Ca_meqPl,
+                      2*(max (case when {mg} then reading_num end))/24.305 as Mg_meqPl
+                  from w_qual_lab where obsid in ({obsids}) 
                   group by obsid, date_time
                 ) AS u
             where u.Ca_meqPl is not null and u.Mg_meqPl is not null and u.Na_meqPl is not null and u.K_meqPl is not null and u.HCO3_meqPl is not null and u.Cl_meqPl is not null and u.SO4_meqPl is not null
-            ) as a, obs_points WHERE a.obsid = obs_points.obsid""" % (
-            ru(self.ParameterList[0]),
-            ru(self.ParameterList[1]),
-            ru(self.ParameterList[2]),
-            ru(self.ParameterList[3]),
-            ru(self.ParameterList[4]),
-            ru(self.ParameterList[5]),
-            ru(self.ParameterList[6]),
-            obsid_placeholders,
+            ) as a, obs_points WHERE a.obsid = obs_points.obsid""".format(
+            cl=format_list(ph, self.parameters["piper_cl"]),
+            hco3=format_list(ph, self.parameters["piper_hco3"]),
+            so4=format_list(ph, self.parameters["piper_so4"]),
+            na=format_list(ph, self.parameters["piper_na"]),
+            k=format_list(ph, self.parameters["piper_k"]),
+            ca=format_list(ph, self.parameters["piper_ca"]),
+            mg=format_list(ph, self.parameters["piper_mg"]),
+            obsids=obsid_placeholders,
         )
-        return sql, list(self.observations)
+        placeholders = [x for row in self.parameters.values() for x in row]
+        placeholders.extend(self.observations)
+
+        return sql, placeholders
 
     def create_markers(self):
         marker = itertools.cycle(
@@ -215,9 +232,8 @@ class PiperPlot(object):
                 self.markerset[date_time[0]] = next(marker)
 
     def create_parameter_selection(self):
-        self.ParameterList = (
-            []
-        )  # ParameterList = ['Klorid, Cl','Alkalinitet, HCO3','Sulfat, SO4','Natrium, Na','Kalium, K','Kalcium, Ca','Magnesium, Mg']
+        # Parameters = ['Klorid, Cl','Alkalinitet, HCO3','Sulfat, SO4','Natrium, Na','Kalium, K','Kalcium, Ca','Magnesium, Mg']
+        self.parameters = {}
 
         # The dict is not implemented yet
         paramshorts_parameters = {}
@@ -237,29 +253,14 @@ class PiperPlot(object):
             if specified_name != "":
                 parameters = paramshorts_parameters.get(specified_name, None)
                 if parameters is None:
-                    self.ParameterList.append(r"""parameter = '%s'""" % specified_name)
+                    self.parameters[piper_setting] = [specified_name]
                 else:
-                    self.ParameterList.append(
-                        r"""("""
-                        + r""" or """.join(
-                            [
-                                r"""parameter = '""" + parameter + r"""'"""
-                                for parameter in parameters
-                            ]
-                        )
-                        + r""")"""
-                    )
+                    self.parameters[piper_setting] = parameters
+                    self.parameters.append(parameters)
             else:
-                self.ParameterList.append(
-                    r"""("""
-                    + r""" or """.join(
-                        [
-                            r"""lower(parameter) like '%""" + backup_name + r"""%'"""
-                            for backup_name in backup_names
-                        ]
-                    )
-                    + r""")"""
-                )
+                self.parameters[piper_setting] = [
+                    f"%{backup_name}%" for backup_name in backup_names
+                ]
 
     def get_selected_datetimes(self):
         sql1, args = self.big_sql()
@@ -303,10 +304,10 @@ class PiperPlot(object):
     def get_piper_data(self):
         # These observations are supposed to be in mg/l and must be stored in a Midvatten database, table w_qual_lab
         sql, args = self.big_sql()
-        try:
-            print(sql)  # debug
-        except:
-            pass
+        # try:
+        #    print(sql)  # debug
+        # except:
+        #    pass
         # get data into a list: obsid, date_time, type, Cl_meqPl, HCO3_meqPl, SO4_meqPl, Na+K_meqPl, Ca_meqPl, Mg_meqPl
         obsimport = db_utils.sql_load_fr_db(sql, execute_args=args)[1]
         # convert to numpy ndarray W/O format specified

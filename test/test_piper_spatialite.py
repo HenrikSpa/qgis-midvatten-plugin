@@ -33,7 +33,7 @@ from midvatten.tools import piper
 #
 
 
-@attr(status="only")
+@attr(status="on")
 class TestPiperPlotDb(utils_for_tests.MidvattenTestSpatialiteDbSv):
     """The test doesn't go through the whole section plot unfortunately"""
 
@@ -53,7 +53,7 @@ class TestPiperPlotDb(utils_for_tests.MidvattenTestSpatialiteDbSv):
         piperplot = piper.PiperPlot(mock_ms, mock_active_layer)
         piperplot.create_parameter_selection()
 
-        test = common_utils.anything_to_string_representation(piperplot.ParameterList)
+        test = common_utils.anything_to_string_representation(piperplot.parameters)
         ref = """["(lower(parameter) like '%klorid%' or lower(parameter) like '%chloride%')", "(lower(parameter) like '%alkalinitet%' or lower(parameter) like '%alcalinity%')", "(lower(parameter) like '%sulfat%' or lower(parameter) like '%sulphat%')", "(lower(parameter) like '%natrium%')", "(lower(parameter) like '%kalium%' or lower(parameter) like '%potassium%')", "(lower(parameter) like '%kalcium%' or lower(parameter) like '%calcium%')", "(lower(parameter) like '%magnesium%')"]"""
         assert test == ref
 
@@ -73,7 +73,7 @@ class TestPiperPlotDb(utils_for_tests.MidvattenTestSpatialiteDbSv):
         piperplot = piper.PiperPlot(mock_ms, mock_active_layer)
         piperplot.create_parameter_selection()
 
-        test = common_utils.anything_to_string_representation(piperplot.ParameterList)
+        test = common_utils.anything_to_string_representation(piperplot.parameters)
         ref = """["parameter = 'cl'", "parameter = 'hco3'", "parameter = 'so4'", "parameter = 'na'", "parameter = 'k'", "parameter = 'ca'", "parameter = 'mg'"]"""
         assert test == ref
 
@@ -182,7 +182,7 @@ class TestPiperPlotDb(utils_for_tests.MidvattenTestSpatialiteDbSv):
         print("data: " + str(data))
 
         test_paramlist = common_utils.anything_to_string_representation(
-            piperplot.ParameterList
+            piperplot.parameters
         )
         ref_paramlist = """["(lower(parameter) like '%klorid%' or lower(parameter) like '%chloride%')", "(lower(parameter) like '%alkalinitet%' or lower(parameter) like '%alcalinity%')", "(lower(parameter) like '%sulfat%' or lower(parameter) like '%sulphat%')", "(lower(parameter) like '%natrium%')", "(lower(parameter) like '%kalium%' or lower(parameter) like '%potassium%')", "(lower(parameter) like '%kalcium%' or lower(parameter) like '%calcium%')", "(lower(parameter) like '%magnesium%')"]"""
         assert test_paramlist == ref_paramlist

@@ -365,7 +365,6 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
                         else:
                             row.append(new_value)
 
-                    # [row.insert(obsidindex, selected[0]) if obsidindex + 1 < len(file_data[0]) else row.append(selected[0]) for row in file_data[1:]]
                     del translation_dict[file_column]
 
                     translation_dict[alter_colname] = [alter_colname]

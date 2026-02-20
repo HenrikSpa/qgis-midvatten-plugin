@@ -38,7 +38,6 @@ SOURCES = \
 ././tools/wqualreport_compact.py \
 ././tools/wqualreport.py \
 ././tools/xyplot.py \
-././ui/simpleplotdialog.py \
 
 FORMS = \
 ./ui/calc_aveflow_dialog.ui \
@@ -60,7 +59,6 @@ FORMS = \
 ./ui/obs_points.ui \
 ./ui/secplotdockwidget.ui \
 ./ui/selected_features.ui \
-./ui/simpleplotdialog.ui \
 ./ui/stratigraphy_en.ui \
 ./ui/stratigraphy.ui \
 ./ui/strat_symbology_dialog.ui \

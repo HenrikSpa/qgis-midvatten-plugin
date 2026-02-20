@@ -219,5 +219,7 @@ class TestPiperPlotDb(utils_for_tests.MidvattenTestSpatialiteDbSv):
         print("REF")
         print(ref_data)
         assert test_data == ref_data
-
-        assert len(mock_messagebar.mock_calls) == 0
+        print(f"calls: {mock_messagebar.mock_calls}")
+        assert len(mock_messagebar.mock_calls) == 1 and mock.call.info(
+            log_msg="PickAnnotator initialized."
+        )

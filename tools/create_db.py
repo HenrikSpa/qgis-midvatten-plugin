@@ -551,12 +551,13 @@ class NewDb:
         for table in tables:
             # Get table and column comments
             if created_tables_sqls is None:
+                ph = dbconnection.placeholder_sign()
                 table_descr_sql = (
-                    "SELECT name, sql from sqlite_master WHERE name = '%s';" % table
+                    "SELECT name, sql from sqlite_master WHERE name = " + ph + ";"
                 )
-                create_table_sql = dbconnection.execute_and_fetchall(table_descr_sql)[
-                    0
-                ][1]
+                create_table_sql = dbconnection.execute_and_fetchall(
+                    table_descr_sql, (table,)
+                )[0][1]
             else:
                 create_table_sql = created_tables_sqls[table]
             table_descr = table_descr_reg.findall(create_table_sql)
@@ -565,7 +566,7 @@ class NewDb:
             except IndexError:
                 table_descr = None
             else:
-                table_descr = table_descr.rstrip("\r").replace("'", "''")
+                table_descr = table_descr.rstrip("\r")
 
             columns_descr = dict(column_descr_reg.findall(create_table_sql))
 
@@ -578,18 +579,24 @@ class NewDb:
                 _to = _from_to[0][1]
                 foreign_keys_dict[_from] = (_table, _to)
 
-            sql = r"""INSERT INTO about_db (tablename, columnname, description, data_type, not_null, default_value, primary_key, foreign_key) VALUES """
-            sql += r"({});".format(
-                ", ".join(
-                    [
-                        """(CASE WHEN '%s' != '' or '%s' != ' ' or '%s' IS NOT NULL THEN '%s' else NULL END)"""
-                        % (col, col, col, col)
-                        for col in [table, r"*", table_descr, r"", r"", r"", r"", r""]
-                    ]
-                )
+            ph = dbconnection.placeholder_sign()
+            placeholders = ", ".join([ph] * 8)
+            sql = (
+                "INSERT INTO about_db (tablename, columnname, description, data_type, not_null, default_value, primary_key, foreign_key) VALUES ("
+                + placeholders
+                + ")"
             )
-
-            dbconnection.execute(sql)
+            row_values = (
+                table,
+                "*",
+                table_descr if table_descr else "",
+                "",
+                "",
+                "",
+                "",
+                "",
+            )
+            dbconnection.execute(sql, all_args=[row_values])
 
             for column in table_info:
                 colname = column[1]
@@ -599,47 +606,56 @@ class NewDb:
                 primary_key = str(column[5]) if str(column[5]) != "0" else ""
                 _foreign_keys = ""
                 if colname in foreign_keys_dict:
-                    _foreign_keys = "%s(%s)" % (foreign_keys_dict[colname])
+                    _ftable, _fcol = foreign_keys_dict[colname]
+                    _foreign_keys = f"{_ftable}({_fcol})"
                 column_descr = columns_descr.get(colname, None)
                 if column_descr:
-                    column_descr = column_descr.rstrip("\r").replace("'", "''")
-                sql = "INSERT INTO about_db (tablename, columnname, data_type, not_null, default_value, primary_key, foreign_key, description) VALUES "
-                sql += "({});".format(
-                    ", ".join(
-                        [
-                            """CASE WHEN '%s' != '' or '%s' != ' ' or '%s' IS NOT NULL THEN '%s' else NULL END"""
-                            % (col, col, col, col)
-                            for col in [
-                                table,
-                                colname,
-                                data_type,
-                                not_null,
-                                default_value.replace("'", "''"),
-                                primary_key,
-                                _foreign_keys,
-                                column_descr,
-                            ]
-                        ]
-                    )
+                    column_descr = column_descr.rstrip("\r")
+                ph = dbconnection.placeholder_sign()
+                placeholders = ", ".join([ph] * 8)
+                sql = (
+                    "INSERT INTO about_db (tablename, columnname, data_type, not_null, default_value, primary_key, foreign_key, description) VALUES ("
+                    + placeholders
+                    + ")"
+                )
+                row_values = (
+                    table,
+                    colname,
+                    data_type,
+                    not_null,
+                    default_value if default_value else "",
+                    primary_key,
+                    _foreign_keys,
+                    column_descr if column_descr is not None else "None",
                 )
                 try:
-                    dbconnection.execute(sql)
+                    dbconnection.execute(sql, all_args=[row_values])
                 except Exception:
                     try:
                         print(sql)
                     except Exception:
                         pass
                     raise
+        ph = dbconnection.placeholder_sign()
         for tz, tname in [
             (w_levels_logger_timezone, "w_levels_logger"),
             (w_levels_timezone, "w_levels"),
         ]:
             if tz:
+                tz_lit = f"({tz})"
+                tz_suffix = f" ({tz})"
+                sql = (
+                    "UPDATE about_db SET description = CASE WHEN description IS NULL THEN "
+                    + ph
+                    + " ELSE description || "
+                    + ph
+                    + " END WHERE tablename = "
+                    + ph
+                    + " and columnname = "
+                    + ph
+                )
                 dbconnection.execute(
-                    f"""UPDATE about_db SET description = 
-                                         CASE WHEN description IS NULL THEN '({tz})'
-                                         ELSE description || ' ({tz})' END
-                                         WHERE tablename = '{tname}' and columnname = 'date_time';"""
+                    sql, all_args=[(tz_lit, tz_suffix, tname, "date_time")]
                 )
 
 

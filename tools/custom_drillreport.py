@@ -443,10 +443,15 @@ class Drillreport:  # general observation point info for the selected object
                     x for x in strat_sql_columns_list if x not in ("obsid")
                 ]
 
+            cols_sql = ", ".join(
+                [dbconnection.ident(c) for c in strat_sql_columns_list]
+            )
+            strat_sql = (
+                f"SELECT obsid, {cols_sql} FROM stratigraphy WHERE obsid IN {clause} ORDER BY obsid, stratid"
+            )
             all_stratigrapy_data = ru(
                 db_utils.get_sql_result_as_dict(
-                    "SELECT obsid, %s FROM stratigraphy WHERE obsid IN %s ORDER BY obsid, stratid"
-                    % (", ".join([dbconnection.ident(c) for c in strat_sql_columns_list]), clause),
+                    strat_sql,
                     dbconnection=dbconnection,
                     execute_args=args,
                 )[1],

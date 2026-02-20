@@ -538,28 +538,31 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
 
             remove_mean = remove_mean.isChecked()
 
-            _sql = r"""SELECT %s, %s FROM %s """ % (
-                str(xcol.currentText()),
-                str(ycol.currentText()),
-                str(table.currentText()),
+            table_ident = dbconnection.ident(str(table.currentText()))
+            xcol_ident = dbconnection.ident(str(xcol.currentText()))
+            ycol_ident = dbconnection.ident(str(ycol.currentText()))
+            _sql = (
+                f"SELECT {xcol_ident}, {ycol_ident} FROM {table_ident} WHERE "
+                + db_utils.test_not_null_and_not_empty_string(
+                    str(table.currentText()),
+                    str(xcol.currentText()),
+                    dbconnection,
+                )
+                + " AND "
+                + db_utils.test_not_null_and_not_empty_string(
+                    str(table.currentText()),
+                    str(ycol.currentText()),
+                    dbconnection,
+                )
             )
-            _sql += r"""WHERE %s """ % db_utils.test_not_null_and_not_empty_string(
-                str(table.currentText()),
-                str(xcol.currentText()),
-                dbconnection,
-            )
-            _sql += r"""AND %s """ % db_utils.test_not_null_and_not_empty_string(
-                str(table.currentText()),
-                str(ycol.currentText()),
-                dbconnection,
-            )
+            ph = dbconnection.placeholder_sign()
 
             while i < len(self.p):
                 # Both filters empty
                 if (not filter1_col.strip() or not filter1list) and (
                     not filter2_col.strip() or not filter2list
                 ):
-                    sql = _sql + r""" ORDER BY %s""" % str(xcol.currentText())
+                    sql = _sql + f" ORDER BY {xcol_ident}"
                     recs = dbconnection.execute_and_fetchall(sql)
                     label = (
                         str(ycol.currentText()) + """, """ + str(table.currentText())
@@ -584,20 +587,17 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                 elif all(
                     (filter1_col.strip(), filter1list, filter2_col.strip(), filter2list)
                 ):
+                    filter1_ident = dbconnection.ident(filter1_col)
+                    filter2_ident = dbconnection.ident(filter2_col)
                     for item1 in filter1list:
                         for item2 in filter2list:
                             sql = (
                                 _sql
-                                + r""" AND %s = '%s' AND %s = '%s' ORDER BY %s"""
-                                % (
-                                    filter1_col,
-                                    str(item1.text()),
-                                    filter2_col,
-                                    str(item2.text()),
-                                    str(xcol.currentText()),
-                                )
+                                + f" AND {filter1_ident} = {ph} AND {filter2_ident} = {ph} ORDER BY {xcol_ident}"
                             )
-                            recs = dbconnection.execute_and_fetchall(sql)
+                            recs = dbconnection.execute_and_fetchall(
+                                sql, (str(item1.text()), str(item2.text()))
+                            )
                             label = str(item1.text()) + """, """ + str(item2.text())
                             if not recs:
                                 common_utils.MessagebarAndLog.info(
@@ -632,13 +632,15 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                         if not filter.strip() or not filterlist:
                             continue
                         else:
+                            filter_ident = dbconnection.ident(filter)
                             for item in filterlist:
-                                sql = _sql + r""" AND %s = '%s' ORDER BY %s""" % (
-                                    filter,
-                                    str(item.text()),
-                                    str(xcol.currentText()),
+                                sql = (
+                                    _sql
+                                    + f" AND {filter_ident} = {ph} ORDER BY {xcol_ident}"
                                 )
-                                recs = dbconnection.execute_and_fetchall(sql)
+                                recs = dbconnection.execute_and_fetchall(
+                                    sql, (str(item.text()),)
+                                )
                                 label = str(item.text())
                                 if not recs:
                                     common_utils.MessagebarAndLog.warning(

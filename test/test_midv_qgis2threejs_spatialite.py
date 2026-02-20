@@ -73,21 +73,29 @@ class TestPrepareQgis2Threejs(utils_for_tests.MidvattenTestSpatialiteDbSv):
             "strat_obs_p_for_qgsi2threejs",
         ]
 
-        view_contents = []
-        for layer_name in layers:
-            if layer_name != "strat_obs_p_for_qgsi2threejs":
-                view_contents.append(
-                    db_utils.sql_load_fr_db(
-                        f"""SELECT rowid, obsid, z_coord, height, ST_AsText(geometry) FROM {layer_name};"""
-                    )[1]
-                )
-        view_contents.append(
-            db_utils.sql_load_fr_db(
-                """SELECT rowid, obsid, ST_AsText(geometry) FROM {};""".format(
-                    "strat_obs_p_for_qgsi2threejs"
-                )
-            )[1]
-        )
+        dbconnection = db_utils.DbConnectionManager()
+        try:
+            view_contents = []
+            for layer_name in layers:
+                if layer_name != "strat_obs_p_for_qgsi2threejs":
+                    sql = dbconnection.sql_ident(
+                        "SELECT rowid, obsid, z_coord, height, ST_AsText(geometry) FROM {t}",
+                        t=layer_name,
+                    )
+                    view_contents.append(
+                        db_utils.sql_load_fr_db(
+                            sql, dbconnection=dbconnection
+                        )[1]
+                    )
+            sql = dbconnection.sql_ident(
+                "SELECT rowid, obsid, ST_AsText(geometry) FROM {t}",
+                t="strat_obs_p_for_qgsi2threejs",
+            )
+            view_contents.append(
+                db_utils.sql_load_fr_db(sql, dbconnection=dbconnection)[1]
+            )
+        finally:
+            dbconnection.closedb()
         test = common_utils.anything_to_string_representation(view_contents)
         print(str(test))
         ref = """[[(1, "1", 1.0, -1.0, "POINT(1 1)", )], [(2, "1", 0.0, -1.0, "POINT(1 1)", )], [], [], [], [], [], [], [], [], [], [], [], [], [(1, "1", "POINT(1 1)", )]]"""

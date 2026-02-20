@@ -295,11 +295,17 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             common_utils.stop_waiting_cursor()
             return None
 
+        dbconnection = db_utils.DbConnectionManager()
+        ph = dbconnection.placeholder_sign()
         meas_sql = (
-            r"""SELECT date_time, level_masl FROM w_levels WHERE obsid = '%s' ORDER BY date_time"""
-            % obsid
+            "SELECT date_time, level_masl FROM w_levels WHERE obsid = "
+            + ph
+            + " ORDER BY date_time"
         )
-        self.meas_ts = self.sql_into_recarray(meas_sql)
+        _ok, meas_list = db_utils.sql_load_fr_db(
+            meas_sql, dbconnection=dbconnection, execute_args=(obsid,)
+        )
+        self.meas_ts = self.list_of_list_to_recarray(meas_list)
         if self.w_levels_logger_tz and self.w_levels_tz:
             self.meas_ts.date_time = [
                 change_timezone(x, self.w_levels_tz, self.w_levels_logger_tz)
@@ -309,15 +315,20 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         existing_columns = db_utils.tables_columns("w_levels_logger")["w_levels_logger"]
         if "source" in existing_columns:
             head_level_masl_sql = (
-                r"""SELECT date_time, head_cm / 100, level_masl, TRIM(COALESCE(source, '')) FROM w_levels_logger WHERE obsid = '%s' ORDER BY date_time"""
-                % obsid
+                "SELECT date_time, head_cm / 100, level_masl, TRIM(COALESCE(source, '')) FROM w_levels_logger WHERE obsid = "
+                + ph
+                + " ORDER BY date_time"
             )
         else:
             head_level_masl_sql = (
-                r"""SELECT date_time, head_cm / 100, level_masl, '' as source FROM w_levels_logger WHERE obsid = '%s' ORDER BY date_time"""
-                % obsid
+                "SELECT date_time, head_cm / 100, level_masl, '' as source FROM w_levels_logger WHERE obsid = "
+                + ph
+                + " ORDER BY date_time"
             )
-        head_level_masl_list = db_utils.sql_load_fr_db(head_level_masl_sql)[1]
+        _ok, head_level_masl_list = db_utils.sql_load_fr_db(
+            head_level_masl_sql, dbconnection=dbconnection, execute_args=(obsid,)
+        )
+        dbconnection.closedb()
         head_list = [(row[0], row[1], row[3]) for row in head_level_masl_list]
         level_masl_list = [(row[0], row[2], row[3]) for row in head_level_masl_list]
 
@@ -433,11 +444,18 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
     @fn_timer
     def getlastcalibration(self, obsid):
+        dbconnection = db_utils.DbConnectionManager()
+        ph = dbconnection.placeholder_sign()
         sql = (
-            "SELECT date_time, (level_masl - (head_cm/100)) AS loggerpos FROM w_levels_logger WHERE date_time = (SELECT max(date_time) AS date_time FROM w_levels_logger WHERE obsid = '%s' AND (CASE WHEN level_masl IS NULL THEN -1000 ELSE level_masl END) > -990 AND level_masl IS NOT NULL AND head_cm IS NOT NULL) AND obsid = '%s' "
-            % (obsid, obsid)
+            "SELECT date_time, (level_masl - (head_cm/100)) AS loggerpos FROM w_levels_logger WHERE date_time = (SELECT max(date_time) AS date_time FROM w_levels_logger WHERE obsid = "
+            + ph
+            + " AND (CASE WHEN level_masl IS NULL THEN -1000 ELSE level_masl END) > -990 AND level_masl IS NOT NULL AND head_cm IS NOT NULL) AND obsid = "
+            + ph
         )
-        lastcalibr = db_utils.sql_load_fr_db(sql)[1]
+        _ok, lastcalibr = db_utils.sql_load_fr_db(
+            sql, dbconnection=dbconnection, execute_args=(obsid, obsid)
+        )
+        dbconnection.closedb()
         return lastcalibr
 
     @fn_timer
@@ -489,35 +507,42 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
     @fn_timer
     def update_level_masl_from_level_masl(self, obsid, fr_d_t, to_d_t, newzref):
-        common_utils.start_waiting_cursor()
-        """ Updates the level masl using newzref
+        """Updates the level masl using newzref.
         :param obsid: (str) The obsid
         :param fr_d_t: (datetime) start of calibration
         :param to_d_t: (datetime) end of calibration
         :param newzref: (int/float/str [m]) The correction that should be made against the head [m]
         :return: None
         """
-        sql = r"""UPDATE w_levels_logger SET level_masl = """
-        sql += str(newzref)
-        sql += """ + level_masl WHERE obsid = '"""
-        sql += obsid
-        sql += """' AND level_masl IS NOT NULL"""
-        # Sqlite seems to have problems with date comparison date_time >= a_date, so they have to be converted into total seconds first.
-        date_time_as_epoch = db_utils.cast_date_time_as_epoch()
-        sql += """ AND %s >= %s""" % (
-            date_time_as_epoch,
-            str((fr_d_t - datetime.datetime(1970, 1, 1)).total_seconds()),
+        common_utils.start_waiting_cursor()
+        dbconnection = db_utils.DbConnectionManager()
+        ph = dbconnection.placeholder_sign()
+        date_time_as_epoch = db_utils.cast_date_time_as_epoch(dbconnection)
+        fr_epoch = (fr_d_t - datetime.datetime(1970, 1, 1)).total_seconds()
+        to_epoch = (to_d_t - datetime.datetime(1970, 1, 1)).total_seconds()
+        sql = (
+            "UPDATE w_levels_logger SET level_masl = "
+            + ph
+            + " + level_masl WHERE obsid = "
+            + ph
+            + " AND level_masl IS NOT NULL AND "
+            + date_time_as_epoch
+            + " >= "
+            + ph
+            + " AND "
+            + date_time_as_epoch
+            + " <= "
+            + ph
         )
-        sql += """ AND %s <= %s""" % (
-            date_time_as_epoch,
-            str((to_d_t - datetime.datetime(1970, 1, 1)).total_seconds()),
+        db_utils.sql_alter_db(
+            sql, dbconnection=dbconnection, all_args=[(newzref, obsid, fr_epoch, to_epoch)]
         )
-        dummy = db_utils.sql_alter_db(sql)
+        dbconnection.closedb()
         common_utils.stop_waiting_cursor()
 
     @fn_timer
     def update_level_masl_from_head(self, obsid, fr_d_t, to_d_t, newzref):
-        """Updates the level masl using newzref
+        """Updates the level masl using newzref.
         :param obsid: (str) The obsid
         :param fr_d_t: (datetime) start of calibration
         :param to_d_t: (datetime) end of calibration
@@ -525,26 +550,29 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         :return: None
         """
         common_utils.start_waiting_cursor()
-        sql = r"""UPDATE w_levels_logger SET level_masl = """
-        sql += str(newzref)
-        sql += """ + head_cm / 100 WHERE obsid = '"""
-        sql += obsid
-        sql += """' AND head_cm IS NOT NULL"""
-        # Sqlite seems to have problems with date comparison date_time >= a_date, so they have to be converted into total seconds first (but now we changed to > but kept .total_seconds())
-        date_time_as_epoch = db_utils.cast_date_time_as_epoch()
-        sql += """ AND %s >= %s""" % (
-            date_time_as_epoch,
-            str((fr_d_t - datetime.datetime(1970, 1, 1)).total_seconds()),
+        dbconnection = db_utils.DbConnectionManager()
+        ph = dbconnection.placeholder_sign()
+        date_time_as_epoch = db_utils.cast_date_time_as_epoch(dbconnection)
+        fr_epoch = (fr_d_t - datetime.datetime(1970, 1, 1)).total_seconds()
+        to_epoch = (to_d_t - datetime.datetime(1970, 1, 1)).total_seconds()
+        sql = (
+            "UPDATE w_levels_logger SET level_masl = "
+            + ph
+            + " + head_cm / 100 WHERE obsid = "
+            + ph
+            + " AND head_cm IS NOT NULL AND "
+            + date_time_as_epoch
+            + " >= "
+            + ph
+            + " AND "
+            + date_time_as_epoch
+            + " <= "
+            + ph
         )
-        sql += """ AND %s <= %s""" % (
-            date_time_as_epoch,
-            str((to_d_t - datetime.datetime(1970, 1, 1)).total_seconds()),
+        db_utils.sql_alter_db(
+            sql, dbconnection=dbconnection, all_args=[(newzref, obsid, fr_epoch, to_epoch)]
         )
-        dummy = db_utils.sql_alter_db(sql)
-        try:
-            print(str(dummy))
-        except Exception:
-            pass
+        dbconnection.closedb()
         common_utils.stop_waiting_cursor()
 
     @fn_timer
@@ -1122,18 +1150,29 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         )
 
         dbconnection = db_utils.DbConnectionManager()
-        dbtype = dbconnection.dbtype
-        dbconnection.closedb()
-
-        if dbtype == "spatialite":
-            where_dt = f"""CAST(strftime('%s', date_time) AS NUMERIC) >= '{fr_d_t}'
-                         AND CAST(strftime('%s', date_time) AS NUMERIC) <= '{to_d_t}'"""
-        else:
-            where_dt = f"""EXTRACT(EPOCH FROM date_time::timestamp) >= '{fr_d_t}'
-                      AND EXTRACT(EPOCH FROM date_time::timestamp) <= '{to_d_t}'"""
+        ph = dbconnection.placeholder_sign()
+        date_time_as_epoch = db_utils.cast_date_time_as_epoch(dbconnection)
+        table_ident = dbconnection.ident(table_name)
+        where_dt_sql = (
+            " AND "
+            + date_time_as_epoch
+            + " >= "
+            + ph
+            + " AND "
+            + date_time_as_epoch
+            + " <= "
+            + ph
+        )
+        alter_args = (selected_obsid, fr_d_t, to_d_t)
 
         if set_to_null_instead:
-            sql = f"""UPDATE "{table_name}" SET level_masl = NULL WHERE obsid = '{selected_obsid}' AND {where_dt};"""
+            sql = (
+                "UPDATE "
+                + table_ident
+                + " SET level_masl = NULL WHERE obsid = "
+                + ph
+                + where_dt_sql
+            )
             msg = ru(
                 QCoreApplication.translate(
                     "Calibrlogger",
@@ -1146,7 +1185,13 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 table_name,
             )
         else:
-            sql = f"""DELETE FROM "{table_name}" WHERE obsid = '{selected_obsid}' AND {where_dt};"""
+            sql = (
+                "DELETE FROM "
+                + table_ident
+                + " WHERE obsid = "
+                + ph
+                + where_dt_sql
+            )
             msg = ru(
                 QCoreApplication.translate(
                     "Calibrlogger",
@@ -1162,7 +1207,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         really_delete = common_utils.Askuser("YesNo", msg).result
         if really_delete:
             common_utils.start_waiting_cursor()
-            db_utils.sql_alter_db(sql)
+            db_utils.sql_alter_db(
+                sql, dbconnection=dbconnection, all_args=[alter_args]
+            )
+            dbconnection.closedb()
             common_utils.stop_waiting_cursor()
             self.update_plot()
 

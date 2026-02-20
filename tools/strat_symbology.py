@@ -637,8 +637,9 @@ def add_views_to_db(dbconnection, bedrock_geoshort):
         )
 
     if dbconnection.dbtype == "spatialite":
+        view_ident = dbconnection.ident(view_name)
         sql = f"""
-            CREATE VIEW {view_name} AS
+            CREATE VIEW {view_ident} AS
             SELECT row_number() OVER (ORDER BY "obsid", "stratid") "rowid", "obsid", 
             (SELECT 
             MAX(depthbot) 

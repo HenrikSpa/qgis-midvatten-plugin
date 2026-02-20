@@ -86,10 +86,10 @@ class TestVectorlayer(utils_for_tests.MidvattenTestSpatialiteDbSv):
         :param mock_messagebar:
         :return:
         """
+        ph = db_utils.placeholder_sign()
+        insert_sql = "INSERT INTO obs_points (obsid) VALUES (" + ph + ")"
         for obsid in [1, 2, 3]:
-            db_utils.sql_alter_db(
-                f"""INSERT INTO obs_points (obsid) VALUES ({str(obsid)})"""
-            )
+            db_utils.sql_alter_db(insert_sql, all_args=[(obsid,)])
 
         self.create_vlayer()
         self.select_features()
@@ -122,10 +122,10 @@ class TestVectorlayer(utils_for_tests.MidvattenTestSpatialiteDbSv):
         :param mock_messagebar:
         :return:
         """
+        ph = db_utils.placeholder_sign()
+        insert_sql = "INSERT INTO obs_points (obsid) VALUES (" + ph + ")"
         for obsid in [4, 5, 6]:
-            db_utils.sql_alter_db(
-                f"""INSERT INTO obs_points (obsid) VALUES ({str(obsid)})"""
-            )
+            db_utils.sql_alter_db(insert_sql, all_args=[(obsid,)])
 
         self.create_vlayer()
         self.select_features()
@@ -158,10 +158,10 @@ class TestVectorlayer(utils_for_tests.MidvattenTestSpatialiteDbSv):
         :param mock_messagebar:
         :return:
         """
+        ph = db_utils.placeholder_sign()
+        insert_sql = "INSERT INTO obs_points (obsid) VALUES (" + ph + ")"
         for obsid in ["A", "b", "c1"]:
-            db_utils.sql_alter_db(
-                f"""INSERT INTO obs_points (obsid) VALUES ('{str(obsid)}')"""
-            )
+            db_utils.sql_alter_db(insert_sql, all_args=[(obsid,)])
 
         self.create_vlayer()
         self.select_features()
@@ -196,12 +196,12 @@ class TestVectorlayer(utils_for_tests.MidvattenTestSpatialiteDbSv):
         """
         dbconnection = db_utils.DbConnectionManager()
         cur = dbconnection.cursor
+        ph = dbconnection.placeholder_sign()
+        insert_sql = "INSERT INTO obs_points (obsid) VALUES (" + ph + ")"
 
         cur.execute("""BEGIN TRANSACTION;""")
         for obsid in range(1000):
-            cur.execute(
-                f"""INSERT INTO obs_points (obsid) VALUES ('{str(obsid)}');"""
-            )
+            cur.execute(insert_sql, (str(obsid),))
         cur.execute("""END TRANSACTION;""")
 
         self.create_vlayer(no_print=True)
@@ -243,12 +243,12 @@ class TestVectorlayer(utils_for_tests.MidvattenTestSpatialiteDbSv):
         """
         dbconnection = db_utils.DbConnectionManager()
         cur = dbconnection.cursor
+        ph = dbconnection.placeholder_sign()
+        insert_sql = "INSERT INTO obs_points (obsid) VALUES (" + ph + ")"
 
         cur.execute("""BEGIN TRANSACTION;""")
         for obsid in range(2000):
-            cur.execute(
-                f"""INSERT INTO obs_points (obsid) VALUES ('{str(obsid)}');"""
-            )
+            cur.execute(insert_sql, (str(obsid),))
         cur.execute("""END TRANSACTION;""")
 
         self.create_vlayer(no_print=True)
@@ -290,6 +290,8 @@ class TestVectorlayer(utils_for_tests.MidvattenTestSpatialiteDbSv):
         """
         dbconnection = db_utils.DbConnectionManager()
         cur = dbconnection.cursor
+        ph = dbconnection.placeholder_sign()
+        insert_sql = "INSERT INTO obs_points (obsid) VALUES (" + ph + ")"
 
         obsids = [
             letter + str(_int) for letter in string.ascii_letters for _int in range(80)
@@ -297,9 +299,7 @@ class TestVectorlayer(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
         cur.execute("""BEGIN TRANSACTION;""")
         for obsid in obsids:
-            cur.execute(
-                f"""INSERT INTO obs_points (obsid) VALUES ('{str(obsid)}');"""
-            )
+            cur.execute(insert_sql, (str(obsid),))
         cur.execute("""END TRANSACTION;""")
         dbconnection.commit()
 

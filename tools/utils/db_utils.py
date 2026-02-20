@@ -923,7 +923,7 @@ def get_table_info(
         dbconnection_created = False
 
     if dbconnection.dbtype == "spatialite":
-        columns_sql = """PRAGMA table_info ('%s')""" % (tablename)
+        columns_sql = dbconnection.sql_ident("PRAGMA table_info({t})", t=tablename)
         try:
             columns = dbconnection.execute_and_fetchall(columns_sql)
         except Exception as e:
@@ -939,20 +939,34 @@ def get_table_info(
             return None
 
     else:
+        ph = dbconnection.placeholder_sign()
         columns_sql = (
-            "SELECT ordinal_position, column_name, data_type, CASE WHEN is_nullable = 'NO' THEN 1 ELSE 0 END AS notnull, column_default, 0 AS primary_key FROM information_schema.columns WHERE table_schema = '%s' AND table_name = '%s'"
-            % (dbconnection.schemas(), tablename)
+            "SELECT ordinal_position, column_name, data_type, CASE WHEN is_nullable = 'NO' THEN 1 ELSE 0 END AS notnull, column_default, 0 AS primary_key FROM information_schema.columns WHERE table_schema = "
+            + ph
+            + " AND table_name = "
+            + ph
         )
-        columns = [list(x) for x in dbconnection.execute_and_fetchall(columns_sql)]
+        columns = [
+            list(x)
+            for x in dbconnection.execute_and_fetchall(
+                columns_sql, (dbconnection.schemas(), tablename)
+            )
+        ]
 
+        primary_keys_sql = (
+            "SELECT a.attname, format_type(a.atttypid, a.atttypmod) AS data_type "
+            "FROM pg_index i "
+            "JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey) "
+            "WHERE i.indrelid = (SELECT (n.nspname || '.' || c.relname)::regclass FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = "
+            + ph
+            + " AND c.relname = "
+            + ph
+            + ") AND i.indisprimary;"
+        )
         primary_keys = [
             x[0]
             for x in dbconnection.execute_and_fetchall(
-                "SELECT a.attname, format_type(a.atttypid, a.atttypmod) AS data_type "
-                "FROM pg_index i "
-                "JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey) "
-                "WHERE i.indrelid = '%s.%s'::regclass AND i.indisprimary;"
-                % (dbconnection.schemas(), tablename)
+                primary_keys_sql, (dbconnection.schemas(), tablename)
             )
         ]
         for column in columns:
@@ -961,22 +975,21 @@ def get_table_info(
 
         if not columns:
             # Materialized views
-            # ordinal_position, column_name, data_type, CASE WHEN is_nullable = 'NO' THEN 1 ELSE 0 END AS notnull, column_default, 0 AS primary_key
-            columns_sql = f"""SELECT a.attnum,
-                                      a.attname,
-                                      pg_catalog.format_type(a.atttypid, a.atttypmod) as datatype,
-                                      a.attnotnull,
-                                      NULL AS default,
-                                      NULL as primary_key
-                                FROM pg_attribute a
-                                  JOIN pg_class t on a.attrelid = t.oid
-                                  JOIN pg_namespace s on t.relnamespace = s.oid
-                                WHERE a.attnum > 0
-                                  AND NOT a.attisdropped
-                                  AND t.relname = '{tablename}'
-                                  AND s.nspname = '{dbconnection.schemas()}'
-                                ORDER BY a.attnum;"""
-            columns = dbconnection.execute_and_fetchall(columns_sql)
+            columns_sql = (
+                "SELECT a.attnum, a.attname, pg_catalog.format_type(a.atttypid, a.atttypmod) as datatype, "
+                "a.attnotnull, NULL AS default, NULL as primary_key "
+                "FROM pg_attribute a "
+                "JOIN pg_class t on a.attrelid = t.oid "
+                "JOIN pg_namespace s on t.relnamespace = s.oid "
+                "WHERE a.attnum > 0 AND NOT a.attisdropped AND t.relname = "
+                + ph
+                + " AND s.nspname = "
+                + ph
+                + " ORDER BY a.attnum;"
+            )
+            columns = dbconnection.execute_and_fetchall(
+                columns_sql, (tablename, dbconnection.schemas())
+            )
 
         columns = [tuple(column) for column in columns]
 
@@ -1004,9 +1017,8 @@ def get_foreign_keys(
 
     foreign_keys = {}
     if dbconnection.dbtype == "spatialite":
-        result_list = dbconnection.execute_and_fetchall(
-            """PRAGMA foreign_key_list('%s')""" % table
-        )
+        pragma_sql = dbconnection.sql_ident("PRAGMA foreign_key_list({t})", t=table)
+        result_list = dbconnection.execute_and_fetchall(pragma_sql)
         for row in result_list:
             foreign_keys.setdefault(row[2], []).append((row[3], row[4]))
     else:
@@ -1224,10 +1236,9 @@ def activate_foreign_keys(
 
     if dbconnection.dbtype == "spatialite":
         if activated:
-            _activated = "ON"
+            dbconnection.execute("PRAGMA foreign_keys = ON")
         else:
-            _activated = "OFF"
-        dbconnection.execute("PRAGMA foreign_keys=%s" % _activated)
+            dbconnection.execute("PRAGMA foreign_keys = OFF")
 
     if dbconnection_created:
         dbconnection.closedb()
@@ -1444,7 +1455,16 @@ def cast_null(
     if dbconnection.dbtype == "spatialite":
         sql = "NULL"
     else:
-        sql = "NULL::%s" % data_type
+        allowed_types = set(postgresql_numeric_data_types()) | {"double precision"}
+        if data_type not in allowed_types:
+            raise UnsafeIdentifierError(
+                f"cast_null: data_type {data_type!r} not in allowed list"
+            )
+        if data_type == "double precision":
+            quoted_type = '"double precision"'
+        else:
+            quoted_type = ident(dbconnection, data_type)
+        sql = "NULL::" + quoted_type
 
     if dbconnection_created:
         dbconnection.closedb()
@@ -1459,15 +1479,16 @@ def test_not_null_and_not_empty_string(table, column, dbconnection=None):
     else:
         dbconnection_created = False
 
+    col_ident = ident(dbconnection, column)
     if dbconnection.dbtype == "spatialite":
-        sql = """%s IS NOT NULL AND %s !='' """ % (column, column)
+        sql = col_ident + " IS NOT NULL AND " + col_ident + " !='' "
     else:
-        table_info = [col for col in get_table_info(table) if col[1] == column][0]
+        table_info = [col for col in get_table_info(table, dbconnection) if col[1] == column][0]
         data_type = table_info[2]
         if data_type in postgresql_numeric_data_types():
-            sql = """%s IS NOT NULL""" % (column)
+            sql = col_ident + " IS NOT NULL"
         else:
-            sql = """%s IS NOT NULL AND %s !='' """ % (column, column)
+            sql = col_ident + " IS NOT NULL AND " + col_ident + " !='' "
 
     if dbconnection_created:
         dbconnection.closedb()
@@ -1513,10 +1534,12 @@ def get_srid_name(srid: int, dbconnection: None = None) -> str:
         )[0][0]
     else:
         try:
+            ph = dbconnection.placeholder_sign()
             ref_sys_name = dbconnection.execute_and_fetchall(
-                f"""SELECT split_part(srtext, '"', 2) AS "name"
-                                                                FROM spatial_ref_sys
-                                                                WHERE srid IN ({srid});"""
+                "SELECT split_part(srtext, '\"', 2) AS \"name\" FROM spatial_ref_sys WHERE srid = "
+                + ph
+                + ";",
+                (srid,),
             )[0][0]
         except Exception:
             MessagebarAndLog.info(log_msg=traceback.format_exc())
@@ -1535,15 +1558,16 @@ def test_if_numeric(column, dbconnection=None):
     else:
         dbconnection_created = False
 
+    col_ident = ident(dbconnection, column)
     if dbconnection.dbtype == "spatialite":
-        sql = """(typeof(%s)=typeof(0.01) OR typeof(%s)=typeof(1))""" % (column, column)
-    else:
-        sql = """pg_typeof(%s) in (%s)""" % (
-            column,
-            ", ".join(
-                ["'%s'" % data_type for data_type in postgresql_numeric_data_types()]
-            ),
+        sql = (
+            "(typeof(" + col_ident + ")=typeof(0.01) OR typeof(" + col_ident + ")=typeof(1))"
         )
+    else:
+        type_list = ", ".join(
+            "'" + dt + "'" for dt in postgresql_numeric_data_types()
+        )
+        sql = "pg_typeof(" + col_ident + ") in (" + type_list + ")"
 
     if dbconnection_created:
         dbconnection.closedb()
@@ -1812,14 +1836,15 @@ def create_dict_from_db_2_cols(params):  # params are (col1=keys,col2=values,db-
     return True, adict
 
 
-def get_all_obsids(table="obs_points"):
-    """Returns all obsids from obs_points
-    :return: All obsids from obs_points
+def get_all_obsids(table: str = "obs_points"):
+    """Returns all obsids from the given table (default obs_points).
+    :return: All obsids from the table
     """
     obsids = []
-    connection_ok, result = sql_load_fr_db(
-        """SELECT DISTINCT obsid FROM %s ORDER BY OBSID""" % table
-    )
+    dbconnection = DbConnectionManager()
+    sql = dbconnection.sql_ident("SELECT DISTINCT obsid FROM {t} ORDER BY obsid", t=table)
+    connection_ok, result = sql_load_fr_db(sql, dbconnection=dbconnection)
+    dbconnection.closedb()
     if connection_ok:
         obsids = [row[0] for row in result]
     return obsids

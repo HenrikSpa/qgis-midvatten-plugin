@@ -1630,29 +1630,38 @@ class Midvatten:
             )
         if err_flag == 0:
             fail = 0
-            for k in common_utils.getselectedobjectnames(
-                qgis.utils.iface.activeLayer()
-            ):  # all selected objects
-                if not db_utils.sql_load_fr_db(
-                    "select obsid from {} where obsid = '{}'".format(
-                        self.ms.settingsdict["wqualtable"], str(k)
-                    )
-                )[
-                    1
-                ]:  # if there is a selected object without water quality data
-                    common_utils.MessagebarAndLog.critical(
-                        bar_msg=ru(
-                            QCoreApplication.translate(
-                                "Midvatten", "No water quality data for %s"
+            dbconnection = db_utils.DbConnectionManager()
+            try:
+                sql = dbconnection.sql_ident(
+                    "SELECT obsid FROM {t} WHERE obsid = "
+                    + dbconnection.placeholder_sign(),
+                    t=self.ms.settingsdict["wqualtable"],
+                )
+                for k in common_utils.getselectedobjectnames(
+                    qgis.utils.iface.activeLayer()
+                ):  # all selected objects
+                    if not db_utils.sql_load_fr_db(
+                        sql,
+                        dbconnection=dbconnection,
+                        execute_args=(str(k),),
+                    )[
+                        1
+                    ]:  # if there is a selected object without water quality data
+                        common_utils.MessagebarAndLog.critical(
+                            bar_msg=ru(
+                                QCoreApplication.translate(
+                                    "Midvatten", "No water quality data for %s"
+                                )
                             )
+                            % str(k)
                         )
-                        % str(k)
-                    )
-                    fail = 1
-            if not fail == 1:  # only if all objects has data
-                Wqualreport(
-                    qgis.utils.iface.activeLayer(), self.ms.settingsdict
-                )  # TEMPORARY FOR GVAB
+                        fail = 1
+                if not fail == 1:  # only if all objects has data
+                    Wqualreport(
+                        qgis.utils.iface.activeLayer(), self.ms.settingsdict
+                    )  # TEMPORARY FOR GVAB
+            finally:
+                dbconnection.closedb()
 
     @common_utils.general_exception_handler
     def waterqualityreportcompact(self):

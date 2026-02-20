@@ -164,11 +164,14 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 dbconnection, dest_table, file_data, primary_keys_for_concat
             )
 
+            sql_remaining = dbconnection.sql_ident(
+                "SELECT {rowid} FROM {t}",
+                rowid=self.temptable_rowid_name,
+                t=self.temptable_name,
+            )
             get_remaining_rownumbers = lambda: [
                 x[0]
-                for x in dbconnection.execute_and_fetchall(
-                    f"""SELECT "{self.temptable_rowid_name}" FROM {self.temptable_name};"""
-                )
+                for x in dbconnection.execute_and_fetchall(sql_remaining)
             ]
             get_removed_rownumbers = lambda start_numbers, remaining: [
                 x for x in start_numbers if x not in remaining
@@ -581,7 +584,13 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             except psycopg2.errors.BadCopyFileFormat:
                 # This is probably due to the separator exists in the values.
                 data = list(df.itertuples(index=False))
-                sql = f"""INSERT INTO {temptable_name} VALUES {dbconnection.placeholder_sign()}"""
+                placeholders = ", ".join(
+                    [dbconnection.placeholder_sign()] * len(df.columns)
+                )
+                sql = dbconnection.sql_ident(
+                    "INSERT INTO {t} VALUES (" + placeholders + ")",
+                    t=temptable_name,
+                )
                 psycopg2.extras.execute_values(
                     dbconnection.cursor, sql, data, template=None
                 )

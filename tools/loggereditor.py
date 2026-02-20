@@ -86,10 +86,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self.push_button_from.clicked.connect(lambda x: self.set_from_date_from_x())
         self.push_button_to.clicked.connect(lambda x: self.set_to_date_from_x())
         self.l1_button.clicked.connect(
-            lambda x: self.set_adjust_data("L1_date", "L1_level")
+            lambda x: self.set_adjust_data("l1_date", "l1_level")
         )
         self.l2_button.clicked.connect(
-            lambda x: self.set_adjust_data("L2_date", "L2_level")
+            lambda x: self.set_adjust_data("L2_date", "l2_level")
         )
         self.m1_button.clicked.connect(
             lambda x: self.set_adjust_data("M1_date", "M1_level")
@@ -125,7 +125,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self.period_selector = RectangleSelector(
                 self.axes,
                 self.line_select_callback,
-                drawtype="box",
                 useblit=True,
                 button=[1],
                 minspanx=0,
@@ -195,9 +194,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             if dbconnection.dbtype == "spatialite":
                 sql = """SELECT obsid FROM (SELECT obsid, MAX(date_time), level_masl, head_cm FROM w_levels_logger {} GROUP BY obsid)
                          WHERE level_masl IS NULL AND head_cm IS NOT NULL ORDER BY obsid""".format(
-                    ""
-                    if obsid is None
-                    else f" WHERE obsid = {ph}"
+                    "" if obsid is None else f" WHERE obsid = {ph}"
                 )
             else:
                 sql = """SELECT obsid FROM 
@@ -206,9 +203,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                         {}
                         ORDER BY obsid, date_time desc) foo
                         WHERE level_masl IS NULL AND head_cm IS NOT NULL ORDER BY obsid""".format(
-                    ""
-                    if obsid is None
-                    else f" WHERE obsid = {ph}"
+                    "" if obsid is None else f" WHERE obsid = {ph}"
                 )
 
             execute_args = (obsid,) if obsid is not None else None
@@ -876,7 +871,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 )
             else:
                 self.logger_elevation.setText("")
-                self.from_date_time.setDateTime(datestring_to_date("2099-12-31 23:59:59"))
+                self.from_date_time.setDateTime(
+                    datestring_to_date("2099-12-31 23:59:59")
+                )
         except Exception as e:
             common_utils.MessagebarAndLog.info(
                 log_msg=ru(
@@ -1227,7 +1224,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             "adjust_end_date": long_dateformat(
                 self.to_date_time.dateTime().toPyDateTime()
             ),
-            "L1_date": db_utils.cast_date_time_as_epoch(
+            "l1_date": db_utils.cast_date_time_as_epoch(
                 date_time=long_dateformat(self.l1_date.dateTime().toPyDateTime())
             ),
             "L2_date": db_utils.cast_date_time_as_epoch(
@@ -1239,8 +1236,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             "M2_date": db_utils.cast_date_time_as_epoch(
                 date_time=long_dateformat(self.m2_date.dateTime().toPyDateTime())
             ),
-            "L1_level": str(float(self.l1_level.text())),
-            "L2_level": str(float(self.l2_level.text())),
+            "l1_level": str(float(self.l1_level.text())),
+            "l2_level": str(float(self.l2_level.text())),
             "M1_level": str(float(self.m1_level.text())),
             "M2_level": str(float(self.m2_level.text())),
             "date_as_numeric": db_utils.cast_date_time_as_epoch(),
@@ -1276,9 +1273,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         sql = """
                 UPDATE w_levels_logger SET level_masl = level_masl -
                 (
-                 ((({L1_level} - {L2_level}) / ({L1_date} - {L2_date}))
+                 ((({l1_level} - {l2_level}) / ({l1_date} - {L2_date}))
                  - (({M1_level} - {M2_level}) / ({M1_date} - {M2_date})))
-                  * ({date_as_numeric} - {L1_date})
+                  * ({date_as_numeric} - {l1_date})
                 )
                 WHERE obsid = '{obsid}' AND date_time >= '{adjust_start_date}' AND date_time <= '{adjust_end_date}'
             """.format(
@@ -1399,7 +1396,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self.from_date_time.setDateTime(
                 self.logger_artist.get_xdata()[min(found_idx)]
             )
-            self.to_date_time.setDateTime(self.logger_artist.get_xdata()[max(found_idx)])
+            self.to_date_time.setDateTime(
+                self.logger_artist.get_xdata()[max(found_idx)]
+            )
 
     def toggle_move_nodes(self, on):
         if on:

@@ -162,7 +162,7 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestPostgisDbSv):
             date_utils.datestring_to_date("2000-01-01 00:00:00")
         )
         gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
-        calibrlogger.bestFitSearchRadius.setText("2 hours")
+        calibrlogger.best_fit_search_radius.setText("2 hours")
 
         calibrlogger.calc_best_fit()
 
@@ -196,7 +196,7 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestPostgisDbSv):
             date_utils.datestring_to_date("2017-02-01 01:00")
         )
         gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
-        calibrlogger.bestFitSearchRadius.setText("2 hours")
+        calibrlogger.best_fit_search_radius.setText("2 hours")
 
         calibrlogger.calc_best_fit()
 
@@ -234,7 +234,7 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestPostgisDbSv):
             date_utils.datestring_to_date("2017-02-01 01:00")
         )
         gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
-        calibrlogger.bestFitSearchRadius.setText("2 hours")
+        calibrlogger.best_fit_search_radius.setText("2 hours")
 
         calibrlogger.calc_best_fit()
 
@@ -269,20 +269,20 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestPostgisDbSv):
         calibrlogger.from_date_time.setDateTime(
             date_utils.datestring_to_date("2000-01-01 00:00:00")
         )
-        calibrlogger.L1_date.setDateTime(
+        calibrlogger.l1_date.setDateTime(
             date_utils.datestring_to_date("2017-02-01 00:00")
         )
-        calibrlogger.L2_date.setDateTime(
+        calibrlogger.l2_date.setDateTime(
             date_utils.datestring_to_date("2017-02-10 00:00")
         )
-        calibrlogger.M1_date.setDateTime(
+        calibrlogger.m1_date.setDateTime(
             date_utils.datestring_to_date("2017-02-01 00:00")
         )
-        calibrlogger.M2_date.setDateTime(
+        calibrlogger.m2_date.setDateTime(
             date_utils.datestring_to_date("2017-02-10 00:00")
         )
-        calibrlogger.L1_level.setText("100")
-        calibrlogger.L2_level.setText("200")
+        calibrlogger.l1_level.setText("100")
+        calibrlogger.l2_level.setText("200")
         calibrlogger.M1_level.setText("200")
         calibrlogger.M2_level.setText("100")
 
@@ -319,7 +319,7 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestPostgisDbSv):
 
         calibrlogger.update_plot()
         res = calibrlogger.getlastcalibration(calibrlogger.selected_obsid)
-        test = utils_for_tests.create_test_string(calibrlogger.INFO.text())
+        test = utils_for_tests.create_test_string(calibrlogger.info.text())
         ref = "Last pos. for logger in rb1 was 99.500 masl at 2017-02-01 00:00"
 
         assert test == ref
@@ -339,7 +339,7 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestPostgisDbSv):
 
         calibrlogger.update_plot()
         res = calibrlogger.getlastcalibration(calibrlogger.selected_obsid)
-        test = utils_for_tests.create_test_string(calibrlogger.INFO.text())
+        test = utils_for_tests.create_test_string(calibrlogger.info.text())
         ref = "Last pos. for logger in rb1 was 0.000 masl at 2017-02-01 00:00"
         assert test == ref
 

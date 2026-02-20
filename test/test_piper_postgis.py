@@ -34,913 +34,193 @@ from midvatten.tools import piper
 #
 
 
-@attr(status="on")
+@attr(status="only")
 class TestPiperPlotDb(utils_for_tests.MidvattenTestPostgisDbSv):
     """The test doesn't go through the whole section plot unfortunately"""
 
-    def setUp(self):
-        super(TestSectionPlot, self).setUp()
-        self.midvatten.ms.settingsdict["secplot_loaded_template"] = ""
-        self.midvatten.ms.settingsdict["secplot_templates"] = ""
-        self.midvatten.ms.settingsdict["secplotlocation"] = 0
-
-    def create_and_select_vlayer(self):
-        self.midvatten.ms.settingsdict["secplotdrillstop"] = "%berg%"
-
-        dbconnection = db_utils.DbConnectionManager()
-        uri = dbconnection.uri
-        uri.setDataSource("", "obs_lines", "geometry", "", "obsid")
-        dbtype = db_utils.get_dbtype(dbconnection.dbtype)
-        self.vlayer = QgsVectorLayer(uri.uri(), "TestLayer", dbtype)
-        QgsProject.instance().addMapLayer(self.vlayer)
-        features = self.vlayer.getFeatures()
-        feature_ids = [feature.id() for feature in features]
-        self.vlayer.selectByIds(feature_ids)
-
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
-    def test_plot_section(self, mock_messagebar):
-        """For now, the test only initiates the plot. Check that it does not crash"""
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_lines (obsid, geometry) VALUES ('1', ST_GeomFromText('LINESTRING(633466.711659 6720684.24498, 633599.530455 6720727.016568)', 3006))"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, h_gs, length, drillstop) VALUES ('P1', ST_GeomFromText('POINT(633466 711659)', 3006), 2, 10, 'berg')"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, h_gs, length, drillstop) VALUES ('P2', ST_GeomFromText('POINT(6720727 016568)', 3006), 3, 20, NULL)"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, h_gs, length, drillstop) VALUES ('P3', ST_GeomFromText('POINT(6720728 016569)', 3006), 4, 30, NULL)"""
-        )
-
-        self.create_and_select_vlayer()
-        print(str(self.vlayer.selectedFeatureCount()))
-
-        @mock.patch("midvatten.tools.sectionplot.common_utils.find_layer")
-        @mock.patch(
-            "midvatten.tools.sectionplot.common_utils.getselectedobjectnames",
-            autospec=True,
-        )
-        @mock.patch("qgis.utils.iface", autospec=True)
-        def _test_plot_section(
-            self, mock_iface, mock_getselectedobjectnames, mock_findlayer
-        ):
-            mock_iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
-            mock_findlayer.return_value.isEditable.return_value = False
-            mock_getselectedobjectnames.return_value = ("P1", "P2", "P3")
-            mock_mapcanvas = mock_iface.mapCanvas.return_value
-            mock_mapcanvas.layerCount.return_value = 0
-            self.midvatten.plot_section()
-            self.sectionplot = self.midvatten.sectionplot
-            self.sectionplot.drillstop.setText("%berg%")
-            self.sectionplot.draw_plot()
-
-        _test_plot_section(self)
-        print(self.sectionplot.figure._midv_obsids_x_position.keys())
-        assert """call.info(log_msg='Settings {""" in str(mock_messagebar.mock_calls)
-        assert self.sectionplot.drillstop.text() == "%berg%"
-        assert (
-            anything_to_string_representation(
-                list(self.sectionplot.figure._midv_obsids_x_position.keys())
-            )
-            == """["P1", "P2", "P3"]"""
-        )
-        assert not mock_messagebar.warning.called
-        assert not mock_messagebar.critical.called
-        # print(str(mock_messagebar.mock_calls))
-        print(
-            "self.sectionplot.figure._midv_p {} get_legend_items_labels(self.sectionplot.figure._midv_p)[1] {}".format(
-                str(self.sectionplot.figure._midv_p),
-                str(get_legend_items_labels(self.sectionplot.figure._midv_p)[1]),
-            )
-        )
-        assert len(get_legend_items_labels(self.sectionplot.figure._midv_p)[0]) == len(
-            get_legend_items_labels(self.sectionplot.figure._midv_p)[1]
-        )
-        assert len(self.sectionplot.figure._midv_p) - 1 == len(
-            get_legend_items_labels(self.sectionplot.figure._midv_p)[0]
-        )  # The bars should not be labeled, so there is one less label than plot.
-
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
-    def test_plot_section_no_linelayer_message(self, mock_messagebar):
-
-        @mock.patch("midvatten.tools.sectionplot.SectionPlot.create_new_plot")
-        @mock.patch(
-            "midvatten.tools.sectionplot.common_utils.getselectedobjectnames",
-            autospec=True,
-        )
-        @mock.patch("qgis.utils.iface", autospec=True)
-        def _test(self, mock_iface, mock_getselectedobjectnames, mock_sectionplot):
-            mock_layer = mock.Mock(spec=QgsVectorLayer)
-            mock_iface.mapCanvas.return_value.currentLayer.return_value = mock_layer
-            mock_layer.selectedFeatureCount.return_value = 2
-            mock_geom = mock.Mock()
-            mock_geom.wkbType.return_value = "test"
-            mock_feature = mock.Mock()
-            mock_feature.geometry.return_value = mock_geom
-            mock_layer.getSelectedFeatures.return_value = [mock_feature]
-            self.midvatten.plot_section()
-
-        _test(self)
-        assert (
-            call.info(
-                bar_msg="No line layer was selected. The stratigraphy bars will be lined up from south-north or west-east and no DEMS will be plotted.",
-                duration=10,
-            )
-            in mock_messagebar.mock_calls
-        )
-        assert not mock_messagebar.warning.called
-        assert not mock_messagebar.critical.called
-
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
-    def test_plot_section_with_string_obsid(self, mock_messagebar):
-        """For now, the test only initiates the plot. Check that it does not crash with string obsid"""
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_lines (obsid, geometry) VALUES ('L1', ST_GeomFromText('LINESTRING(633466.711659 6720684.24498, 633599.530455 6720727.016568)', 3006))"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, h_gs) VALUES ('P1', ST_GeomFromText('POINT(633466 711659)', 3006), 1)"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, h_gs) VALUES ('P2', ST_GeomFromText('POINT(6720727 016568)', 3006), 2)"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, h_gs) VALUES ('P3', ST_GeomFromText('POINT(6720728 016569)', 3006), 3)"""
-        )
-
-        self.create_and_select_vlayer()
-        print(str(self.vlayer.selectedFeatureCount()))
-
-        @mock.patch("midvatten.tools.sectionplot.common_utils.find_layer")
-        @mock.patch(
-            "midvatten.tools.sectionplot.common_utils.getselectedobjectnames",
-            autospec=True,
-        )
-        @mock.patch("qgis.utils.iface", autospec=True)
-        def _test_plot_section(
-            self, mock_iface, mock_getselectedobjectnames, mock_findlayer
-        ):
-            mock_iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
-            mock_findlayer.return_value.isEditable.return_value = False
-            mock_getselectedobjectnames.return_value = ("P1", "P2", "P3")
-            mock_mapcanvas = mock_iface.mapCanvas.return_value
-            mock_mapcanvas.layerCount.return_value = 0
-            self.midvatten.plot_section()
-            self.sectionplot = self.midvatten.sectionplot
-            self.sectionplot.drillstop.setText("%berg%")
-            self.sectionplot.draw_plot()
-
-        _test_plot_section(self)
-
-        assert """call.info(log_msg='Settings {""" in str(mock_messagebar.mock_calls)
-        assert self.sectionplot.drillstop.text() == "%berg%"
-        assert (
-            anything_to_string_representation(
-                list(self.sectionplot.figure._midv_obsids_x_position.keys())
-            )
-            == """["P1", "P2", "P3"]"""
-        )
-        assert not mock_messagebar.warning.called
-        assert not mock_messagebar.critical.called
-
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
-    def test_plot_section_with_depth(self, mock_messagebar):
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_lines (obsid, geometry) VALUES ('1', ST_GeomFromText('LINESTRING(633466.711659 6720684.24498, 633599.530455 6720727.016568)', 3006))"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, length, h_gs) VALUES ('P1', ST_GeomFromText('POINT(633466 711659)', 3006), 2, 2)"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, length, h_gs) VALUES ('P2', ST_GeomFromText('POINT(6720727 016568)', 3006), '1', 3)"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, length, h_gs) VALUES ('P3', ST_GeomFromText('POINT(6720727 016568)', 3006), NULL, 4)"""
-        )
-
-        self.create_and_select_vlayer()
-
-        @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
-        @mock.patch("midvatten.tools.sectionplot.common_utils.find_layer")
-        @mock.patch(
-            "midvatten.tools.sectionplot.common_utils.getselectedobjectnames",
-            autospec=True,
-        )
-        @mock.patch("qgis.utils.iface", autospec=True)
-        def _test(
-            self,
-            mock_iface,
-            mock_getselectedobjectnames,
-            mock_messagebar,
-            mock_findlayer,
-        ):
-            mock_iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
-            mock_findlayer.return_value.isEditable.return_value = False
-            mock_getselectedobjectnames.return_value = ("P1", "P2", "P3")
-            mock_mapcanvas = mock_iface.mapCanvas.return_value
-            mock_mapcanvas.layerCount.return_value = 0
-            self.midvatten.plot_section()
-            print(str(mock_messagebar.mock_calls))
-            self.sectionplot = self.midvatten.sectionplot
-
-        _test(self)
-
-        print(str(mock_messagebar.mock_calls))
-        assert not mock_messagebar.warning.called
-        assert not mock_messagebar.critical.called
-
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
-    def test_plot_section_with_w_levels(self, mock_messagebar):
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_lines (obsid, geometry) VALUES ('1', ST_GeomFromText('LINESTRING(633466.711659 6720684.24498, 633599.530455 6720727.016568)', 3006))"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, length, h_gs) VALUES ('P1', ST_GeomFromText('POINT(633466 711659)', 3006), 2, 2)"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, length, h_gs) VALUES ('P2', ST_GeomFromText('POINT(6720727 016568)', 3006), '1', 3)"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, length, h_gs) VALUES ('P3', ST_GeomFromText('POINT(6720727 016568)', 3006), NULL, 4)"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO w_levels (obsid, date_time, meas, h_toc, level_masl) VALUES ('P1', '2015-01-01 00:00:00', '15', '200', '185')"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO w_levels (obsid, date_time, meas, h_toc, level_masl) VALUES ('P2', '2015-01-01 00:00:00', '17', '200', '183')"""
-        )
-
-        self.create_and_select_vlayer()
-
-        @mock.patch("midvatten.tools.sectionplot.common_utils.find_layer")
-        @mock.patch(
-            "midvatten.tools.sectionplot.common_utils.getselectedobjectnames",
-            autospec=True,
-        )
-        @mock.patch("qgis.utils.iface", autospec=True)
-        def _test(self, mock_iface, mock_getselectedobjectnames, mock_findlayer):
-            mock_iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
-            mock_findlayer.return_value.isEditable.return_value = False
-            mock_getselectedobjectnames.return_value = ("P1", "P2", "P3")
-            mock_mapcanvas = mock_iface.mapCanvas.return_value
-            mock_mapcanvas.layerCount.return_value = 0
-            self.midvatten.plot_section()
-            self.sectionplot = self.midvatten.sectionplot
-            gui_utils.set_combobox(self.sectionplot.wlvltable, "w_levels")
-            self.sectionplot.datetime.append("2015")
-            self.sectionplot.draw_plot()
-
-        _test(self)
-
-        print(str(mock_messagebar.mock_calls))
-        assert not mock_messagebar.warning.called
-        assert not mock_messagebar.critical.called
-
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
-    def test_plot_section_with_w_levels_duplicate_label(self, mock_messagebar):
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_lines (obsid, geometry) VALUES ('1', ST_GeomFromText('LINESTRING(633466.711659 6720684.24498, 633599.530455 6720727.016568)', 3006))"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, length, h_gs, drillstop) VALUES ('P1', ST_GeomFromText('POINT(633466 711659)', 3006), 2, 2, 'berg')"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, length, h_gs, drillstop) VALUES ('P2', ST_GeomFromText('POINT(6720727 016568)', 3006), '1', 3, NULL)"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, length, h_gs, drillstop) VALUES ('P3', ST_GeomFromText('POINT(6720727 016568)', 3006), NULL, 4, NULL)"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO w_levels (obsid, date_time, meas, h_toc, level_masl) VALUES ('P1', '2015-01-01 00:00:00', '15', '200', '185')"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO w_levels (obsid, date_time, meas, h_toc, level_masl) VALUES ('P2', '2015-01-01 00:00:00', '17', '200', '183')"""
-        )
-
-        self.create_and_select_vlayer()
-
-        @mock.patch("midvatten.tools.sectionplot.common_utils.find_layer")
-        @mock.patch(
-            "midvatten.tools.sectionplot.common_utils.getselectedobjectnames",
-            autospec=True,
-        )
-        @mock.patch("qgis.utils.iface", autospec=True)
-        def _test(self, mock_iface, mock_getselectedobjectnames, mock_findlayer):
-            mock_iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
-            mock_findlayer.return_value.isEditable.return_value = False
-            mock_getselectedobjectnames.return_value = ("P1", "P2", "P3")
-            mock_mapcanvas = mock_iface.mapCanvas.return_value
-            mock_mapcanvas.layerCount.return_value = 0
-            self.midvatten.plot_section()
-            self.sectionplot = self.midvatten.sectionplot
-            gui_utils.set_combobox(self.sectionplot.wlvltable, "w_levels")
-            self.sectionplot.datetime.append("2015")
-            self.sectionplot.datetime.append("2015")
-            self.sectionplot.secplot_templates.loaded_template["wlevels_Axes_plot"] = {
-                "2015": {
-                    "label": "1",
-                    "linestyle": "-",
-                    "linewidth": 1,
-                    "marker": "v",
-                    "markersize": 6,
-                    "zorder": 8,
-                },
-                "2015_2": {
-                    "label": "2",
-                    "linestyle": "-",
-                    "linewidth": 1,
-                    "marker": "v",
-                    "markersize": 6,
-                    "zorder": 8,
-                },
-                "DEFAULT": {
-                    "label": "DEFAULT",
-                    "linestyle": "-",
-                    "linewidth": 1,
-                    "marker": "v",
-                    "markersize": 6,
-                    "zorder": 8,
-                },
-            }
-            self.sectionplot.draw_plot()
-
-        _test(self)
-
-        print(str(mock_messagebar.mock_calls))
-        assert not mock_messagebar.warning.called
-        assert not mock_messagebar.critical.called
-        labels = [p.get_label() for p in self.sectionplot.figure._midv_p]
-        print(str(labels))
-        assert (
-            anything_to_string_representation(labels)
-            == """["1", "2", "drillstop like %berg%", "frame"]"""
-        )
-        assert (
-            anything_to_string_representation(
-                self.sectionplot.water_level_labels_duplicate_check
-            )
-            == """["2015", "2015_2"]"""
-        )
-
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
-    def test_plot_section_length_along_slope(self, mock_messagebar):
-        """For now, the test only initiates the plot. Check that it does not crash"""
-
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_lines (obsid, geometry) VALUES ('1', ST_GeomFromText('LINESTRING(2 0, 10 10)', 3006))"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, h_gs) VALUES ('P1', ST_GeomFromText('POINT(1 0)', 3006), 1)"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, h_gs) VALUES ('P2', ST_GeomFromText('POINT(3 0)', 3006), 2)"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, h_gs) VALUES ('P3', ST_GeomFromText('POINT(5 0)', 3006), 3)"""
-        )
-
-        self.create_and_select_vlayer()
-
-        @mock.patch("midvatten.tools.sectionplot.common_utils.find_layer")
-        @mock.patch(
-            "midvatten.tools.sectionplot.common_utils.getselectedobjectnames",
-            autospec=True,
-        )
-        @mock.patch("qgis.utils.iface", autospec=True)
-        def _test(
-            midvatten, vlayer, mock_iface, mock_getselectedobjectnames, mock_findlayer
-        ):
-            mock_iface.mapCanvas.return_value.currentLayer.return_value = vlayer
-            mock_findlayer.return_value.isEditable.return_value = False
-            mock_getselectedobjectnames.return_value = ("P1", "P2", "P3")
-            mock_mapcanvas = mock_iface.mapCanvas.return_value
-            mock_mapcanvas.layerCount.return_value = 0
-            midvatten.plot_section()
-            self.sectionplot = midvatten.sectionplot
-            self.sectionplot.drillstop.setText("%berg%")
-            self.sectionplot.draw_plot()
-
-        _test(self.midvatten, self.vlayer)
-
-        test_string = utils_for_tests.create_test_string(
-            {
-                k: round(v, 6)
-                for k, v in self.sectionplot.figure._midv_obsids_x_position.items()
-            }
-        )
-        print(str(test_string))
-        print(str(mock_messagebar.mock_calls))
-        assert test_string == "{P1: 0.0, P2: 0.624695, P3: 1.874085}"
-        assert not mock_messagebar.warning.called
-        assert not mock_messagebar.critical.called
-
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
-    def test_plot_section_length_along(self, mock_messagebar):
-        """For now, the test only initiates the plot. Check that it does not crash"""
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_lines (obsid, geometry) VALUES ('1', ST_GeomFromText('LINESTRING(0 0, 1 0, 10 0)', 3006))"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, h_gs) VALUES ('P1', ST_GeomFromText('POINT(1 0)', 3006), 2)"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, h_gs) VALUES ('P2', ST_GeomFromText('POINT(3 5)', 3006), 3)"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, h_gs) VALUES ('P3', ST_GeomFromText('POINT(5 10)', 3006), 4)"""
-        )
-
-        self.create_and_select_vlayer()
-
-        @mock.patch("midvatten.tools.sectionplot.common_utils.find_layer")
-        @mock.patch(
-            "midvatten.tools.sectionplot.common_utils.getselectedobjectnames",
-            autospec=True,
-        )
-        @mock.patch("qgis.utils.iface", autospec=True)
-        def _test(
-            midvatten, vlayer, mock_iface, mock_getselectedobjectnames, mock_findlayer
-        ):
-            mock_iface.mapCanvas.return_value.currentLayer.return_value = vlayer
-            mock_findlayer.return_value.isEditable.return_value = False
-            mock_getselectedobjectnames.return_value = ("P1", "P2", "P3")
-            mock_mapcanvas = mock_iface.mapCanvas.return_value
-            mock_mapcanvas.layerCount.return_value = 0
-            midvatten.plot_section()
-            myplot = midvatten.sectionplot
-            myplot.drillstop.setText("%berg%")
-            myplot.draw_plot()
-            return myplot
-
-        myplot = _test(self.midvatten, self.vlayer)
-        print(myplot.figure._midv_obsids_x_position)
-        test_string = utils_for_tests.create_test_string(
-            myplot.figure._midv_obsids_x_position
-        )
-        assert test_string == "{P1: 1.0, P2: 3.0, P3: 5.0}"
-        assert (
-            mock.call.info(
-                log_msg="Hidden features, obsids and length along section:\nP1;P2;P3\\1.0;3.0;5.0"
-            )
-            in mock_messagebar.mock_calls
-        )
-        assert not mock_messagebar.warning.called
-        assert not mock_messagebar.critical.called
-
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
-    def test_plot_section_p_label_lengths(self, mock_messagebar):
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_lines (obsid, geometry) VALUES ('1', ST_GeomFromText('LINESTRING(633466.711659 6720684.24498, 633599.530455 6720727.016568)', 3006))"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, length, drillstop) VALUES ('P1', ST_GeomFromText('POINT(633466 711659)', 3006), 2, 'berg')"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, length) VALUES ('P2', ST_GeomFromText('POINT(6720727 016568)', 3006), '1')"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, length) VALUES ('P3', ST_GeomFromText('POINT(6720727 016568)', 3006), NULL)"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO w_levels (obsid, date_time, meas, h_toc, level_masl) VALUES ('P1', '2015-01-01 00:00:00', '15', '200', '185')"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO w_levels (obsid, date_time, meas, h_toc, level_masl) VALUES ('P2', '2015-01-01 00:00:00', '17', '200', '183')"""
-        )
-
-        self.create_and_select_vlayer()
-
-        @mock.patch("midvatten.tools.sectionplot.common_utils.find_layer")
-        @mock.patch(
-            "midvatten.tools.sectionplot.common_utils.getselectedobjectnames",
-            autospec=True,
-        )
-        @mock.patch("qgis.utils.iface", autospec=True)
-        def _test(self, mock_iface, mock_getselectedobjectnames, mock_findlayer):
-            mock_iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
-            mock_findlayer.return_value.isEditable.return_value = False
-            mock_getselectedobjectnames.return_value = ("P1", "P2", "P3")
-            mock_mapcanvas = mock_iface.mapCanvas.return_value
-            mock_mapcanvas.layerCount.return_value = 0
-            self.midvatten.plot_section()
-            self.sectionplot = self.midvatten.sectionplot
-            self.sectionplot.plot_stratigraphy.setChecked(True)
-            self.sectionplot.create_legend.setChecked(True)
-            gui_utils.set_combobox(self.sectionplot.wlvltable, "w_levels")
-            self.sectionplot.datetime.append("2015")
-            self.sectionplot.draw_plot()
-
-        _test(self)
-
-        print(str(mock_messagebar.mock_calls))
-        print(str(self.sectionplot.figure._midv_p))
-        assert len(get_legend_items_labels(self.sectionplot.figure._midv_p)[0]) == 2
-        # assert False
-
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
-    def test_plot_section_p_label_lengths_with_geology(self, mock_messagebar):
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_lines (obsid, geometry) VALUES ('1', ST_GeomFromText('LINESTRING(633466.711659 6720684.24498, 633599.530455 6720727.016568)', 3006))"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, length, drillstop) VALUES ('P1', ST_GeomFromText('POINT(633466 711659)', 3006), 2, 'berg')"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, length) VALUES ('P2', ST_GeomFromText('POINT(6720727 016568)', 3006), '1')"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, length) VALUES ('P3', ST_GeomFromText('POINT(6720727 016568)', 3006), NULL)"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO w_levels (obsid, date_time, meas, h_toc, level_masl) VALUES ('P1', '2015-01-01 00:00:00', '15', '200', '185')"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO w_levels (obsid, date_time, meas, h_toc, level_masl) VALUES ('P2', '2015-01-01 00:00:00', '17', '200', '183')"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO stratigraphy (obsid, stratid, depthtop, depthbot, geoshort) VALUES ('P1', 1, 0, 1, 'sand')"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO stratigraphy (obsid, stratid, depthtop, depthbot, geoshort) VALUES ('P1', 2, 1, 2, 'gravel')"""
-        )
-
-        self.create_and_select_vlayer()
-
-        @mock.patch("midvatten.tools.sectionplot.common_utils.find_layer")
-        @mock.patch(
-            "midvatten.tools.sectionplot.common_utils.getselectedobjectnames",
-            autospec=True,
-        )
-        @mock.patch("qgis.utils.iface", autospec=True)
-        def _test(self, mock_iface, mock_getselectedobjectnames, mock_findlayer):
-            mock_iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
-            mock_findlayer.return_value.isEditable.return_value = False
-            mock_getselectedobjectnames.return_value = ("P1", "P2", "P3")
-            mock_mapcanvas = mock_iface.mapCanvas.return_value
-            mock_mapcanvas.layerCount.return_value = 0
-            self.midvatten.plot_section()
-            self.sectionplot = self.midvatten.sectionplot
-            self.sectionplot.plot_stratigraphy.setChecked(True)
-            self.sectionplot.create_legend.setChecked(True)
-            gui_utils.set_combobox(self.sectionplot.wlvltable, "w_levels")
-            self.sectionplot.datetime.append("2015")
-            self.sectionplot.draw_plot()
-
-        _test(self)
-
-        print(str(mock_messagebar.mock_calls))
-        print(str(self.sectionplot.figure._midv_p))
-        assert len(get_legend_items_labels(self.sectionplot.figure._midv_p)[0]) == len(
-            get_legend_items_labels(self.sectionplot.figure._midv_p)[1]
-        )
-        print(str(get_legend_items_labels(self.sectionplot.figure._midv_p)[1]))
-        assert len(get_legend_items_labels(self.sectionplot.figure._midv_p)[0]) == 4
-
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
-    def test_plot_section_p_label_lengths_with_geology_changed_label(
-        self, mock_messagebar
-    ):
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_lines (obsid, geometry) VALUES ('1', ST_GeomFromText('LINESTRING(633466.711659 6720684.24498, 633599.530455 6720727.016568)', 3006))"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, length, drillstop) VALUES ('P1', ST_GeomFromText('POINT(633466 711659)', 3006), 2, 'berg')"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, length) VALUES ('P2', ST_GeomFromText('POINT(6720727 016568)', 3006), '1')"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, length) VALUES ('P3', ST_GeomFromText('POINT(6720727 016568)', 3006), NULL)"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO w_levels (obsid, date_time, meas, h_toc, level_masl) VALUES ('P1', '2015-01-01 00:00:00', '15', '200', '185')"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO w_levels (obsid, date_time, meas, h_toc, level_masl) VALUES ('P2', '2015-01-01 00:00:00', '17', '200', '183')"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO stratigraphy (obsid, stratid, depthtop, depthbot, geoshort) VALUES ('P1', 1, 0, 1, 'sand')"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO stratigraphy (obsid, stratid, depthtop, depthbot, geoshort) VALUES ('P1', 2, 1, 2, 'gravel')"""
-        )
-
-        self.create_and_select_vlayer()
-
-        @mock.patch("midvatten.tools.sectionplot.common_utils.find_layer")
-        @mock.patch(
-            "midvatten.tools.sectionplot.common_utils.getselectedobjectnames",
-            autospec=True,
-        )
-        @mock.patch("qgis.utils.iface", autospec=True)
-        def _test(self, mock_iface, mock_getselectedobjectnames, mock_findlayer):
-            mock_iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
-            mock_findlayer.return_value.isEditable.return_value = False
-            mock_getselectedobjectnames.return_value = ("P1", "P2", "P3")
-            mock_mapcanvas = mock_iface.mapCanvas.return_value
-            mock_mapcanvas.layerCount.return_value = 0
-            self.midvatten.plot_section()
-            self.sectionplot = self.midvatten.sectionplot
-            self.sectionplot.secplot_templates.loaded_template["geology_Axes_bar"] = {
-                "sand": {"label": "sandtest", "edgecolor": "black", "zorder": 5},
-                "grus": {"label": "grustest", "edgecolor": "black", "zorder": 5},
-                "DEFAULT": {"edgecolor": "black", "zorder": 5},
-            }
-            print(
-                "before: "
-                + str(
-                    self.sectionplot.secplot_templates.loaded_template[
-                        "geology_Axes_bar"
-                    ]
-                )
-            )
-            self.sectionplot.plot_stratigraphy.setChecked(True)
-            self.sectionplot.create_legend.setChecked(True)
-            gui_utils.set_combobox(self.sectionplot.wlvltable, "w_levels")
-            self.sectionplot.datetime.append("2015")
-
-            self.sectionplot.draw_plot()
-
-        _test(self)
-
-        # print(str(mock_messagebar.mock_calls))
-        # print(str(self.sectionplot.figure._midv_p))
-        labels = [p.get_label() for p in self.sectionplot.figure._midv_p]
-        assert len(get_legend_items_labels(self.sectionplot.figure._midv_p)[0]) == len(
-            get_legend_items_labels(self.sectionplot.figure._midv_p)[1]
-        )
-        assert len(get_legend_items_labels(self.sectionplot.figure._midv_p)[1]) == 4
-        assert (
-            anything_to_string_representation(labels)
-            == """["sandtest", "grustest", "2015", "drillstop like %berg%", "frame"]"""
-        )
-        assert (
-            anything_to_string_representation(
-                self.sectionplot.water_level_labels_duplicate_check
-            )
-            == """["2015"]"""
-        )
-
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
-    def test_plot_section_with_w_levels_animation(self, mock_messagebar):
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_lines (obsid, geometry) VALUES ('1', ST_GeomFromText('LINESTRING(633466.711659 6720684.24498, 633599.530455 6720727.016568)', 3006))"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, length, h_gs) VALUES ('P1', ST_GeomFromText('POINT(633466 711659)', 3006), 2, 21)"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, length, h_gs) VALUES ('P2', ST_GeomFromText('POINT(6720727 016568)', 3006), '1', 22)"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, length, h_gs) VALUES ('P3', ST_GeomFromText('POINT(6720727 016568)', 3006), NULL, 23)"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO w_levels (obsid, date_time, meas, h_toc, level_masl) VALUES ('P1', '2015-01-01 00:00:00', '15', '200', '185')"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO w_levels (obsid, date_time, meas, h_toc, level_masl) VALUES ('P2', '2015-01-01 00:00:00', '17', '200', '183')"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO w_levels (obsid, date_time, meas, h_toc, level_masl) VALUES ('P1', '2015-01-02 00:00:00', '15', '200', '185')"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO w_levels (obsid, date_time, meas, h_toc, level_masl) VALUES ('P1', '2015-01-03 00:00:00', '15', '200', '185')"""
-        )
-        self.create_and_select_vlayer()
-
-        @mock.patch("midvatten.tools.sectionplot.common_utils.find_layer")
-        @mock.patch(
-            "midvatten.tools.sectionplot.common_utils.getselectedobjectnames",
-            autospec=True,
-        )
-        @mock.patch("qgis.utils.iface", autospec=True)
-        def _test(self, mock_iface, mock_getselectedobjectnames, mock_findlayer):
-            mock_iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
-            mock_findlayer.return_value.isEditable.return_value = False
-            mock_getselectedobjectnames.return_value = ("P1", "P2", "P3")
-            mock_mapcanvas = mock_iface.mapCanvas.return_value
-            mock_mapcanvas.layerCount.return_value = 0
-            self.midvatten.plot_section()
-            self.sectionplot = self.midvatten.sectionplot
-            gui_utils.set_combobox(self.sectionplot.wlvltable, "w_levels")
-            self.sectionplot.interactive_groupbox.setChecked(True)
-            # self.sectionplot.datetime.append('2015')
-
-            self.sectionplot.draw_plot()
-            return self.sectionplot
-
-        myplot = _test(self)
-        print(myplot.figure.axes)
-        print(str(mock_messagebar.mock_calls))
-        assert myplot.interactive_groupbox.isChecked()
-        assert len(myplot.figure.axes) > 1
-        assert not mock_messagebar.warning.called
-        assert not mock_messagebar.critical.called
-
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
-    def test_plot_section_obsids(self, mock_messagebar):
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_lines (obsid, geometry) VALUES ('1', ST_GeomFromText('LINESTRING(1 0, 4 0)', 3006))"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, h_gs, length) VALUES ('P1', ST_GeomFromText('POINT(1 1)', 3006), 50, 2)"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, h_gs, length) VALUES ('P2', ST_GeomFromText('POINT(2 2)', 3006), 70, '1')"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, h_toc,length) VALUES ('P3', ST_GeomFromText('POINT(4 4)', 3006), 90, NULL)"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO w_levels (obsid, date_time, meas, h_toc, level_masl) VALUES ('P1', '2015-01-01 00:00:00', '15', '200', '185')"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO w_levels (obsid, date_time, meas, h_toc, level_masl) VALUES ('P2', '2015-01-01 00:00:00', '17', '200', '183')"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO stratigraphy (obsid, stratid, depthtop, depthbot, geoshort) VALUES ('P1', 1, 0, 1, 'sand')"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO stratigraphy (obsid, stratid, depthtop, depthbot, geoshort) VALUES ('P3', 2, 1, 2, 'gravel')"""
-        )
-
-        self.create_and_select_vlayer()
-
-        @mock.patch("midvatten.tools.sectionplot.common_utils.find_layer")
-        @mock.patch(
-            "midvatten.tools.sectionplot.common_utils.getselectedobjectnames",
-            autospec=True,
-        )
-        @mock.patch("qgis.utils.iface", autospec=True)
-        def _test(self, mock_iface, mock_getselectedobjectnames, mock_findlayer):
-            mock_iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
-            mock_findlayer.return_value.isEditable.return_value = False
-            mock_getselectedobjectnames.return_value = ("P1", "P2", "P3")
-            mock_mapcanvas = mock_iface.mapCanvas.return_value
-            mock_mapcanvas.layerCount.return_value = 0
-            self.midvatten.plot_section()
-            self.sectionplot = self.midvatten.sectionplot
-            gui_utils.set_combobox(self.sectionplot.wlvltable, "w_levels")
-            self.sectionplot.datetime.append("2015")
-            self.sectionplot.draw_plot()
-
-        _test(self)
-        # print(str(self.sectionplot.figure._midv_obsid_annotation))
-        print(str(self.sectionplot.figure._midv_obsid_annotation))
-        # print(str(mock_messagebar.mock_calls))
-        assert (
-            str(self.sectionplot.figure._midv_obsid_annotation)
-            == """{'P1': (0.0, 50.0), 'P3': (3.0, 90.0), 'P2': (1.0, 183.0)}"""
-        )
-        assert mock_messagebar.warning.called
-        assert not mock_messagebar.critical.called
-
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
-    def test_plot_section_h_gs_h_toc_failed(self, mock_messagebar):
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_lines (obsid, geometry) VALUES ('1', ST_GeomFromText('LINESTRING(633466.711659 6720684.24498, 633599.530455 6720727.016568)', 3006))"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, h_gs, h_toc, geometry, length) VALUES ('P1', NULL, 123, ST_GeomFromText('POINT(633466 711659)', 3006), 2)"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, h_gs, h_toc, geometry, length) VALUES ('P2', NULL, NULL, ST_GeomFromText('POINT(6720727 016568)', 3006), '1')"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, h_gs, h_toc, geometry, length) VALUES ('P3', 456, 789, ST_GeomFromText('POINT(6720727 016568)', 3006), NULL)"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO stratigraphy (obsid, stratid, depthtop, depthbot, geoshort) VALUES ('P1', 1, 0, 1, 'sand')"""
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO stratigraphy (obsid, stratid, depthtop, depthbot, geoshort) VALUES ('P1', 2, 1, 2, 'gravel')"""
-        )
-
-        self.create_and_select_vlayer()
-
-        @mock.patch("midvatten.tools.sectionplot.common_utils.find_layer")
-        @mock.patch(
-            "midvatten.tools.sectionplot.common_utils.getselectedobjectnames",
-            autospec=True,
-        )
-        @mock.patch("qgis.utils.iface", autospec=True)
-        def _test(self, mock_iface, mock_getselectedobjectnames, mock_findlayer):
-            mock_iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
-            mock_findlayer.return_value.isEditable.return_value = False
-            mock_getselectedobjectnames.return_value = ("P1", "P2", "P3")
-            mock_mapcanvas = mock_iface.mapCanvas.return_value
-            mock_mapcanvas.layerCount.return_value = 0
-            self.midvatten.plot_section()
-            self.sectionplot = self.midvatten.sectionplot
-            self.sectionplot.plot_stratigraphy.setChecked(True)
-            self.sectionplot.create_legend.setChecked(True)
-            self.sectionplot.draw_plot()
-
-        _test(self)
-
-        print(str(mock_messagebar.mock_calls))
-        print(str(self.sectionplot.figure._midv_p))
-
-        pattern_obsids = {
-            """Obsid {}: using h_gs '[0-9None]+' failed, using 'h_toc' instead.""": [
-                "P1"
-            ],
-            """Obsid {}: using h_gs None or h_toc None failed, using 0 instead.""": [
-                "P2"
-            ],
+    @mock.patch("matplotlib.pyplot.Figure.show")
+    def test_piper_plot_default_settings(self, mock_showplot):
+        mock_ms = mock.MagicMock()
+        mock_ms.settingsdict = {
+            r"""piper_cl""": "",
+            r"""piper_hco3""": "",
+            r"""piper_so4""": "",
+            r"""piper_na""": "",
+            r"""piper_k""": "",
+            r"""piper_ca""": "",
+            r"""piper_mg""": "",
         }
-        for p in ["P1", "P2", "P3"]:
-            for pattern, obsids in pattern_obsids.items():
-                patt = pattern.format(p)
-                m = re.findall(patt, str(mock_messagebar.mock_calls))
-                print(str(m))
-                print(patt)
-                if p in obsids:
-                    assert m
-                else:
-                    assert not m
+        mock_active_layer = mock.MagicMock()
+        piperplot = piper.PiperPlot(mock_ms, mock_active_layer)
+        piperplot.create_parameter_selection()
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
-    def test_plot_section_detach_fig(self, mock_messagebar):
-        """Test that detatching figure works and that the legend still has a working signal for edit_parameters"""
+        test = common_utils.anything_to_string_representation(piperplot.ParameterList)
+        ref = """["(lower(parameter) like '%klorid%' or lower(parameter) like '%chloride%')", "(lower(parameter) like '%alkalinitet%' or lower(parameter) like '%alcalinity%')", "(lower(parameter) like '%sulfat%' or lower(parameter) like '%sulphat%')", "(lower(parameter) like '%natrium%')", "(lower(parameter) like '%kalium%' or lower(parameter) like '%potassium%')", "(lower(parameter) like '%kalcium%' or lower(parameter) like '%calcium%')", "(lower(parameter) like '%magnesium%')"]"""
+        assert test == ref
+
+    @mock.patch("matplotlib.pyplot.Figure.show")
+    def test_piper_plot_user_chosen_settings(self, mock_showplot):
+        mock_ms = mock.MagicMock()
+        mock_ms.settingsdict = {
+            r"""piper_cl""": "cl",
+            r"""piper_hco3""": "hco3",
+            r"""piper_so4""": "so4",
+            r"""piper_na""": "na",
+            r"""piper_k""": "k",
+            r"""piper_ca""": "ca",
+            r"""piper_mg""": "mg",
+        }
+        mock_active_layer = mock.MagicMock()
+        piperplot = piper.PiperPlot(mock_ms, mock_active_layer)
+        piperplot.create_parameter_selection()
+
+        test = common_utils.anything_to_string_representation(piperplot.ParameterList)
+        ref = """["parameter = 'cl'", "parameter = 'hco3'", "parameter = 'so4'", "parameter = 'na'", "parameter = 'k'", "parameter = 'ca'", "parameter = 'mg'"]"""
+        assert test == ref
+
+    @mock.patch("midvatten.tools.piper.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.sectionplot.common_utils.getselectedobjectnames")
+    @mock.patch("matplotlib.pyplot.Figure.show")
+    def test_piper_plot_get_data(self, mock_showplot, mock_selected, mock_messagebar):
+
         db_utils.sql_alter_db(
-            """INSERT INTO obs_lines (obsid, geometry) VALUES ('1', ST_GeomFromText('LINESTRING(633466.711659 6720684.24498, 633599.530455 6720727.016568)', 3006))"""
+            """INSERT INTO obs_points (obsid, type, geometry) VALUES ('P1', 'well', ST_GeomFromText('POINT(633466 711659)', 3006))"""
         )
         db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, h_gs, length, drillstop) VALUES ('P1', ST_GeomFromText('POINT(633466 711659)', 3006), 2, 10, 'berg')"""
+            """INSERT INTO obs_points (obsid, type, geometry) VALUES ('P2', 'notwell', ST_GeomFromText('POINT(6720727 016568)', 3006))"""
         )
         db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, h_gs, length, drillstop) VALUES ('P2', ST_GeomFromText('POINT(6720727 016568)', 3006), 3, 20, NULL)"""
+            """INSERT INTO w_qual_lab (obsid, report, parameter, reading_num, unit, date_time) VALUES ('P1', '1', 'chloride', '1', 'mg/l', '2017-01-01')"""
         )
         db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid, geometry, h_gs, length, drillstop) VALUES ('P3', ST_GeomFromText('POINT(6720728 016569)', 3006), 4, 30, NULL)"""
+            """INSERT INTO w_qual_lab (obsid, report, parameter, reading_num, unit, date_time) VALUES ('P1', '1', 'alcalinity', '2', 'mg/l', '2017-01-01')"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_qual_lab (obsid, report, parameter, reading_num, unit, date_time) VALUES ('P1', '1', 'sulphat', '3', 'mg/l', '2017-01-01')"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_qual_lab (obsid, report, parameter, reading_num, unit, date_time) VALUES ('P1', '1', 'natrium', '4', 'mg/l', '2017-01-01')"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_qual_lab (obsid, report, parameter, reading_num, unit, date_time) VALUES ('P1', '1', 'kalium', '5', 'mg/l', '2017-01-01')"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_qual_lab (obsid, report, parameter, reading_num, unit, date_time) VALUES ('P1', '1', 'kalcium', '6', 'mg/l', '2017-01-01')"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_qual_lab (obsid, report, parameter, reading_num, unit, date_time) VALUES ('P1', '1', 'magnesium', '7', 'mg/l', '2017-01-01')"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_qual_lab (obsid, report, parameter, reading_num, unit, date_time) VALUES ('P2', '2', 'chloride', '10', 'mg/l', '2017-01-01')"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_qual_lab (obsid, report, parameter, reading_num, unit, date_time) VALUES ('P2', '2', 'alcalinity', '20', 'mg/l', '2017-01-01')"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_qual_lab (obsid, report, parameter, reading_num, unit, date_time) VALUES ('P2', '2', 'sulphat', '30', 'mg/l', '2017-01-01')"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_qual_lab (obsid, report, parameter, reading_num, unit, date_time) VALUES ('P2', '2', 'natrium', '40', 'mg/l', '2017-01-01')"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_qual_lab (obsid, report, parameter, reading_num, unit, date_time) VALUES ('P2', '2', 'kalium', '50', 'mg/l', '2017-01-01')"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_qual_lab (obsid, report, parameter, reading_num, unit, date_time) VALUES ('P2', '2', 'kalcium', '60', 'mg/l', '2017-01-01')"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_qual_lab (obsid, report, parameter, reading_num, unit, date_time) VALUES ('P2', '2', 'magnesium', '70', 'mg/l', '2017-01-01')"""
         )
 
-        self.create_and_select_vlayer()
+        """
+        Manual calculation:
+        (factor1 * reading_num) / factor2 = meq 
+        1		1	/	35,453	=	0,028206357713029
+        1		2	/	61,0168	=	0,032777857901431
+        2	*	3	/	96,063	=	0,062459011273852
 
-        @mock.patch("midvatten.tools.sectionplot.common_utils.find_layer")
-        @mock.patch(
-            "midvatten.tools.sectionplot.common_utils.getselectedobjectnames",
-            autospec=True,
+        1		4	/	22,9898	=	0,173990204351495
+        1		5	/	39,0983	=	0,127882797973313
+        sum                         0,301873002
+
+        2	*	6	/	40,078	=	0,299416138529867
+        2	*	7	/	24,305	=	0,576013166015223
+                    /			
+        1		10	/	35,453	=	0,282063577130285
+        1		20	/	61,0168	=	0,327778579014304
+        2	*	30	/	96,063	=	0,624590112738515
+
+        1		40	/	22,9898	=	1,73990204351495
+        1		50	/	39,0983	=	1,27882797973313
+        sum                         3,018730023
+
+        2	*	60	/	40,078	=	2,99416138529867
+        2	*	70	/	24,305	=	5,76013166015223
+
+        """
+
+        mock_ms = mock.MagicMock()
+        mock_ms.settingsdict = {
+            r"""piper_cl""": "",
+            r"""piper_hco3""": "",
+            r"""piper_so4""": "",
+            r"""piper_na""": "",
+            r"""piper_k""": "",
+            r"""piper_ca""": "",
+            r"""piper_mg""": "",
+        }
+        mock_active_layer = mock.MagicMock()
+        mock_selected.return_value = ["P1", "P2"]
+        piperplot = piper.PiperPlot(mock_ms, mock_active_layer)
+        piperplot.create_parameter_selection()
+        piperplot.ms.settingsdict["piper_markers"] = "obsid"
+        piperplot.get_data_and_make_plot()
+        data = piperplot.obsnp_nospecformat
+        print("data: " + str(data))
+        for l in data:
+            for idx in range(3, 9):
+                l[idx] = "{0:.10f}".format(float(l[idx]))
+        print("data: " + str(data))
+
+        test_paramlist = common_utils.anything_to_string_representation(
+            piperplot.ParameterList
         )
-        @mock.patch("qgis.utils.iface", autospec=True)
-        def _test_plot_section(
-            self, mock_iface, mock_getselectedobjectnames, mock_findlayer
-        ):
-            mock_iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
-            mock_findlayer.return_value.isEditable.return_value = False
-            mock_getselectedobjectnames.return_value = ("P1", "P2", "P3")
-            mock_mapcanvas = mock_iface.mapCanvas.return_value
-            mock_mapcanvas.layerCount.return_value = 0
-            self.midvatten.plot_section()
-            self.sectionplot = self.midvatten.sectionplot
+        ref_paramlist = """["(lower(parameter) like '%klorid%' or lower(parameter) like '%chloride%')", "(lower(parameter) like '%alkalinitet%' or lower(parameter) like '%alcalinity%')", "(lower(parameter) like '%sulfat%' or lower(parameter) like '%sulphat%')", "(lower(parameter) like '%natrium%')", "(lower(parameter) like '%kalium%' or lower(parameter) like '%potassium%')", "(lower(parameter) like '%kalcium%' or lower(parameter) like '%calcium%')", "(lower(parameter) like '%magnesium%')"]"""
+        assert test_paramlist == ref_paramlist
 
-            self.sectionplot.drillstop.setText("%berg%")
-            self.sectionplot.create_legend.setChecked(True)
-            self.sectionplot.draw_plot()
-            return self.sectionplot
+        test_data = tuple([tuple(_) for _ in data])
 
-        secplot = _test_plot_section(self)
-        fig = secplot.figure
-        old_toolbar = fig.canvas.toolbar
-        for callback, qaction in secplot.figure.canvas.toolbar._actions.items():
-            print(f"{'DetachFigureButton' in str(callback)=} {callback=}")
-            if "DetachFigureButton" in str(callback):
-                # Detach the figure
-                # continue
-                callback()
-                break
+        ref_data = (
+            (
+                "P1",
+                "2017-01-01",
+                "well",
+                "0.0282063577",
+                "0.0327778579",
+                "0.0624590113",
+                "0.3018730023",
+                "0.2994161385",
+                "0.5760131660",
+            ),
+            (
+                "P2",
+                "2017-01-01",
+                "notwell",
+                "0.2820635771",
+                "0.3277785790",
+                "0.6245901127",
+                "3.0187300232",
+                "2.9941613853",
+                "5.7601316602",
+            ),
+        )
 
-        print(f"{mock_messagebar.mock_calls=}")
-        assert secplot.figure is None
-        assert old_toolbar is not fig.canvas.toolbar
-
-        # print(fig._midv_ax_main.__dict__)
-        print(f"{fig._midv_ax_main=}")
-        leg = fig._midv_ax_main.get_legend()
-
-        def markersize(leg):
-            return leg.legendHandles[0].get_markersize()
-
-        start_markersize = markersize(leg)
-
-        new_markersize = 17.543
-        assert (
-            start_markersize != new_markersize
-        )  # Make sure they are different for the test to work
-
-        for line in fig._midv_ax_main.get_lines():
-            line.set_markersize(new_markersize)
-
-        not_changed_markersize = markersize(leg)
-        assert start_markersize == not_changed_markersize
-
-        for callback, qaction in fig.canvas.toolbar._actions.items():
-            if callback == "edit_parameters":
-                print(f"Trigger:")
-                qaction.trigger()
-                break
-
-        changed_markersize = markersize(leg)
-        assert changed_markersize == changed_markersize
+        print("test")
+        print(test_data)
+        print("REF")
+        print(ref_data)
+        assert test_data == ref_data
+        print(f"calls: {mock_messagebar.mock_calls}")
+        assert len(mock_messagebar.mock_calls) == 1 and mock.call.info(
+            log_msg="PickAnnotator initialized."
+        )

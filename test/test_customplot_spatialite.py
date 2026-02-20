@@ -29,7 +29,7 @@ from midvatten.test import utils_for_tests
 from midvatten.tools.utils import db_utils, gui_utils
 
 
-@attr(status="on")
+@attr(status="only")
 class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
     """ """
 
@@ -67,13 +67,13 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
         self.midvatten.plot_sqlite()
         customplot = self.midvatten.customplot
-        gui_utils.set_combobox(customplot.table_ComboBox_1, "w_levels_logger")
+        gui_utils.set_combobox(customplot.tab1_table, "w_levels_logger")
         gui_utils.set_combobox(customplot.xcol_ComboBox_1, "date_time")
         gui_utils.set_combobox(customplot.ycol_ComboBox_1, "level_masl")
         gui_utils.set_combobox(customplot.Filter1_ComboBox_1, "obsid")
         customplot.Filter1_QListWidget_1.item(0).setSelected(True)
 
-        gui_utils.set_combobox(customplot.table_ComboBox_2, "w_levels_logger")
+        gui_utils.set_combobox(customplot.tab2_table, "w_levels_logger")
         gui_utils.set_combobox(customplot.xcol_ComboBox_2, "date_time")
         gui_utils.set_combobox(customplot.ycol_ComboBox_2, "level_masl")
         gui_utils.set_combobox(customplot.Filter1_ComboBox_2, "obsid")
@@ -137,13 +137,13 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
         self.midvatten.plot_sqlite()
         customplot = self.midvatten.customplot
-        gui_utils.set_combobox(customplot.table_ComboBox_1, "w_levels_logger")
+        gui_utils.set_combobox(customplot.tab1_table, "w_levels_logger")
         gui_utils.set_combobox(customplot.xcol_ComboBox_1, "date_time")
         gui_utils.set_combobox(customplot.ycol_ComboBox_1, "level_masl")
         gui_utils.set_combobox(customplot.Filter1_ComboBox_1, "obsid")
         customplot.Filter1_QListWidget_1.item(0).setSelected(True)
 
-        gui_utils.set_combobox(customplot.table_ComboBox_2, "w_levels_logger")
+        gui_utils.set_combobox(customplot.tab2_table, "w_levels_logger")
         gui_utils.set_combobox(customplot.xcol_ComboBox_2, "date_time")
         gui_utils.set_combobox(customplot.ycol_ComboBox_2, "level_masl")
         gui_utils.set_combobox(customplot.Filter1_ComboBox_2, "obsid")
@@ -208,13 +208,13 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
         self.midvatten.plot_sqlite()
         customplot = self.midvatten.customplot
-        gui_utils.set_combobox(customplot.table_ComboBox_1, "w_levels_logger")
+        gui_utils.set_combobox(customplot.tab1_table, "w_levels_logger")
         gui_utils.set_combobox(customplot.xcol_ComboBox_1, "date_time")
         gui_utils.set_combobox(customplot.ycol_ComboBox_1, "level_masl")
         gui_utils.set_combobox(customplot.Filter1_ComboBox_1, "obsid")
         customplot.Filter1_QListWidget_1.item(0).setSelected(True)
 
-        gui_utils.set_combobox(customplot.table_ComboBox_2, "w_levels_logger")
+        gui_utils.set_combobox(customplot.tab2_table, "w_levels_logger")
         gui_utils.set_combobox(customplot.xcol_ComboBox_2, "date_time")
         gui_utils.set_combobox(customplot.ycol_ComboBox_2, "level_masl")
         gui_utils.set_combobox(customplot.Filter1_ComboBox_2, "obsid")
@@ -277,13 +277,13 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
         self.midvatten.plot_sqlite()
         customplot = self.midvatten.customplot
-        gui_utils.set_combobox(customplot.table_ComboBox_1, "w_levels_logger")
+        gui_utils.set_combobox(customplot.tab1_table, "w_levels_logger")
         gui_utils.set_combobox(customplot.xcol_ComboBox_1, "date_time")
         gui_utils.set_combobox(customplot.ycol_ComboBox_1, "level_masl")
         gui_utils.set_combobox(customplot.Filter1_ComboBox_1, "obsid")
         customplot.Filter1_QListWidget_1.item(0).setSelected(True)
 
-        gui_utils.set_combobox(customplot.table_ComboBox_2, "w_levels_logger")
+        gui_utils.set_combobox(customplot.tab2_table, "w_levels_logger")
         gui_utils.set_combobox(customplot.xcol_ComboBox_2, "date_time")
         gui_utils.set_combobox(customplot.ycol_ComboBox_2, "level_masl")
         gui_utils.set_combobox(customplot.Filter1_ComboBox_2, "obsid")

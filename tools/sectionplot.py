@@ -119,11 +119,15 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         # connect signal
         self.push_button.clicked.connect(lambda x: self.draw_plot())
         self.topLevelChanged.connect(lambda x: self.add_titlebar(self))
-        self.settingsdock_widget.topLevelChanged.connect(lambda x: self.float_settings())
+        self.settingsdock_widget.topLevelChanged.connect(
+            lambda x: self.float_settings()
+        )
         self.include_views_check_box.clicked.connect(
             lambda x: self.fill_wlvltable(self.include_views_check_box.isChecked())
         )
-        self.tab_widget.currentChanged.connect(lambda: tabwidget_resize(self.tab_widget))
+        self.tab_widget.currentChanged.connect(
+            lambda: tabwidget_resize(self.tab_widget)
+        )
         tabwidget_resize(self.tab_widget)
         self.wlvl_groupbox.collapsedStateChanged.connect(
             lambda: self.resize_widget(self.settingsdock_widget)
@@ -252,9 +256,9 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         if self.ms.settingsdict["secplotincludeviews"]:
             self.include_views_check_box.setChecked(True)
         if self.ms.settingsdict["stratigraphyplotted"]:
-            self.stratigraphy_radio_button.setChecked(True)
+            self.plot_stratigraphy.setChecked(True)
         else:
-            self.stratigraphy_radio_button.setChecked(False)
+            self.plot_stratigraphy.setChecked(False)
         if self.ms.settingsdict["secplothydrologyplotted"]:
             self.hydrology_radio_button.setChecked(True)
         else:
@@ -264,9 +268,9 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         else:
             self.labels_check_box.setChecked(False)
         if self.ms.settingsdict["secplotlegendplotted"]:
-            self.legend_check_box.setChecked(True)
+            self.create_legend.setChecked(True)
         else:
-            self.legend_check_box.setChecked(False)
+            self.create_legend.setChecked(False)
         if self.ms.settingsdict["secplotwidthofplot"]:
             self.width_of_plot.setChecked(True)
         else:
@@ -280,8 +284,8 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
 
     def fill_combo_boxes(self):
         self.textcol_combo_box.clear()
-        self.datetimetext_edit.clear()
-        self.drillstopline_edit.clear()
+        self.datetime.clear()
+        self.drillstop.clear()
 
         self.fill_wlvltable(self.include_views_check_box.isChecked())
 
@@ -298,11 +302,11 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             self.textcol_combo_box.addItem(item)
 
         for datum in self.ms.settingsdict["secplotdates"]:
-            self.datetimetext_edit.append(datum)
+            self.datetime.append(datum)
 
         if len(str(self.ms.settingsdict["secplotwlvltab"])):
             set_combobox(
-                self.wlvltable_combo_box,
+                self.wlvltable,
                 str(self.ms.settingsdict["secplotwlvltab"]),
                 add_if_not_exists=False,
             )
@@ -324,7 +328,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             if self.ms.settingsdict["secplotdrillstop"]
             else "%{}%".format(defs.bedrock_geoshort())
         )
-        self.drillstopline_edit.setText(drillstop)
+        self.drillstop.setText(drillstop)
         if self.ms.settingsdict["secplotincludeviews"]:
             self.include_views_check_box.setChecked(True)
 
@@ -375,8 +379,8 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
 
     def fill_wlvltable(self, include_views):
         self.ms.settingsdict["secplotincludeviews"] = include_views
-        current_text = self.wlvltable_combo_box.currentText()
-        self.wlvltable_combo_box.clear()
+        current_text = self.wlvltable.currentText()
+        self.wlvltable.clear()
         skip_views = True if not include_views else False
         tabeller = [
             x
@@ -405,10 +409,10 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                 "about_db",
             ]
         ]
-        self.wlvltable_combo_box.addItem("")
+        self.wlvltable.addItem("")
         for tabell in tabeller:
-            self.wlvltable_combo_box.addItem(tabell)
-        set_combobox(self.wlvltable_combo_box, str(current_text), add_if_not_exists=False)
+            self.wlvltable.addItem(tabell)
+        set_combobox(self.wlvltable, str(current_text), add_if_not_exists=False)
 
     def fill_spinboxes(self):
         if self.ms.settingsdict.get("secplotdem_sampling_distance", 0.0):
@@ -898,12 +902,8 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         try:
             common_utils.start_waiting_cursor()  # show the user this may take a long time...
             # load user settings from the ui
-            self.ms.settingsdict["secplotwlvltab"] = str(
-                self.wlvltable_combo_box.currentText()
-            )
-            temporarystring = ru(
-                self.datetimetext_edit.toPlainText()
-            )  # this needs some cleanup
+            self.ms.settingsdict["secplotwlvltab"] = str(self.wlvltable.currentText())
+            temporarystring = ru(self.datetime.toPlainText())  # this needs some cleanup
             try:
                 self.ms.settingsdict["secplotdates"] = [
                     x
@@ -914,9 +914,9 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                 self.ms.settingsdict["secplotdates"] = ""
             self.ms.settingsdict["secplottext"] = self.textcol_combo_box.currentText()
             self.ms.settingsdict["secplotbw"] = self.barwidthdouble_spin_box.value()
-            self.ms.settingsdict["secplotdrillstop"] = self.drillstopline_edit.text()
+            self.ms.settingsdict["secplotdrillstop"] = self.drillstop.text()
             self.ms.settingsdict["stratigraphyplotted"] = (
-                self.stratigraphy_radio_button.isChecked()
+                self.plot_stratigraphy.isChecked()
             )
             self.ms.settingsdict["secplothydrologyplotted"] = (
                 self.hydrology_radio_button.isChecked()
@@ -925,7 +925,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                 self.labels_check_box.isChecked()
             )
             self.ms.settingsdict["secplotlegendplotted"] = (
-                self.legend_check_box.isChecked()
+                self.create_legend.isChecked()
             )
             self.get_dem_selection()
             self.ms.settingsdict["secplotselectedDEMs"] = self.rasterselection
@@ -986,6 +986,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
 
             self.plot_tem()
             self.plot_images()
+
             if self.obsids_x_position:
                 xmax, xmin = float(max(self.obsids_x_position.values())), float(
                     min(self.obsids_x_position.values())
@@ -2158,16 +2159,16 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                 [
                     (k, v)
                     for k, v in self.secplot_templates.loaded_template.get(
-                        "axes_set_xlabel", {}
+                        "Axes_set_xlabel", {}
                     ).items()
                     if k != "xlabel"
                 ]
             )
             xlabel = self.secplot_templates.loaded_template.get(
-                "axes_set_xlabel_stratplot", {}
+                "Axes_set_xlabel_stratplot", {}
             ).get(
                 "xlabel",
-                defs.secplot_default_template()["axes_set_xlabel_stratplot"]["xlabel"],
+                defs.secplot_default_template()["Axes_set_xlabel_stratplot"]["xlabel"],
             )
 
         else:
@@ -2184,15 +2185,15 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                 [
                     (k, v)
                     for k, v in self.secplot_templates.loaded_template.get(
-                        "axes_set_xlabel", {}
+                        "Axes_set_xlabel", {}
                     ).items()
                     if k != "xlabel"
                 ]
             )
             xlabel = self.secplot_templates.loaded_template.get(
-                "axes_set_xlabel", {}
+                "Axes_set_xlabel", {}
             ).get(
-                "xlabel", defs.secplot_default_template()["axes_set_xlabel"]["xlabel"]
+                "xlabel", defs.secplot_default_template()["Axes_set_xlabel"]["xlabel"]
             )
         if self.line_layer:
             xlabel += f" {self.line_feature.attribute('obsid')}"
@@ -2208,13 +2209,13 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             [
                 (k, v)
                 for k, v in self.secplot_templates.loaded_template.get(
-                    "axes_set_ylabel", {}
+                    "Axes_set_ylabel", {}
                 ).items()
                 if k != "ylabel"
             ]
         )
-        ylabel = self.secplot_templates.loaded_template.get("axes_set_ylabel", {}).get(
-            "ylabel", defs.secplot_default_template()["axes_set_ylabel"]["ylabel"]
+        ylabel = self.secplot_templates.loaded_template.get("Axes_set_ylabel", {}).get(
+            "ylabel", defs.secplot_default_template()["Axes_set_ylabel"]["ylabel"]
         )
         self.figure._midv_ax_main.set_ylabel(
             ylabel, **axes_set_ylabel
@@ -2246,7 +2247,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         self.update_plot_size()
         self.attach_signals(self.figure)
         self.update_legend(from_navbar=False, fig=self.figure)
-
         self.figure.canvas.draw_idle()
         self.tab_widget.setCurrentIndex(0)
 
@@ -2365,10 +2365,15 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         self.old_settingsdockWidget = self.settingsdock_widget
         self.settingsdock_widget = QDockWidget()
         self.settingsdock_widget.setFeatures(
-            QDockWidget.DockWidgetFeature.DockWidgetFloatable | QDockWidget.DockWidgetFeature.DockWidgetMovable
+            QDockWidget.DockWidgetFeature.DockWidgetFloatable
+            | QDockWidget.DockWidgetFeature.DockWidgetMovable
         )
-        self.settingsdock_widget.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
-        self.settingsdock_widget.topLevelChanged.connect(lambda x: self.float_settings())
+        self.settingsdock_widget.setSizePolicy(
+            QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum
+        )
+        self.settingsdock_widget.topLevelChanged.connect(
+            lambda x: self.float_settings()
+        )
         self.settingsdock_widget.closeEvent = types.MethodType(
             self.dock_settings, self.settingsdock_widget
         )
@@ -2680,7 +2685,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
 
             if plotxleftbarcorner:
                 obsid_axes_bar = copy.deepcopy(
-                    self.secplot_templates.loaded_template["obsid_axes_bar"]
+                    self.secplot_templates.loaded_template["obsid_Axes_bar"]
                 )
                 obsid_axes_bar["width"] = obsid_axes_bar.get("width", self.barwidth)
                 obsid_axes_bar["bottom"] = obsid_axes_bar.get("bottom", bottoms)

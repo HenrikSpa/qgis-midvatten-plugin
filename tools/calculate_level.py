@@ -75,15 +75,13 @@ class CalculateLevel(
         dbconnection = db_utils.DbConnectionManager()
         try:
             in_clause, in_args = dbconnection.in_clause(obsids)
-            sql = (
-                f"SELECT obsid FROM obs_points WHERE obsid IN {in_clause} AND h_toc IS NULL"
-            )
+            sql = f"SELECT obsid FROM obs_points WHERE obsid IN {in_clause} AND h_toc IS NULL"
             obsid_with_h_toc_null = db_utils.sql_load_fr_db(
                 sql, dbconnection=dbconnection, execute_args=in_args
             )[1]
             if obsid_with_h_toc_null:
                 obsid_with_h_toc_null = [x[0] for x in obsid_with_h_toc_null]
-                if self.check_box_stop_if_null.isChecked():
+                if self.stop_if_null.isChecked():
                     any_nulls = [
                         obsid for obsid in obsids if obsid in obsid_with_h_toc_null
                     ]
@@ -101,9 +99,7 @@ class CalculateLevel(
 
                 else:
                     obsids = [
-                        obsid
-                        for obsid in obsids
-                        if obsid not in obsid_with_h_toc_null
+                        obsid for obsid in obsids if obsid not in obsid_with_h_toc_null
                     ]
 
                 if not obsids:
@@ -119,11 +115,9 @@ class CalculateLevel(
 
             in_clause, in_args = dbconnection.in_clause(obsids)
             ph = dbconnection.placeholder_sign()
-            where_sql = (
-                f"meas IS NOT NULL AND date_time >= {ph} AND date_time <= {ph} AND obsid IN {in_clause}"
-            )
+            where_sql = f"meas IS NOT NULL AND date_time >= {ph} AND date_time <= {ph} AND obsid IN {in_clause}"
             where_sql_args = [fr_d_t, to_d_t] + in_args
-            if not self.check_box_overwrite_prev.isChecked():
+            if not self.overwrite_prev.isChecked():
                 where_sql += """ AND level_masl IS NULL """
 
             sql1 = (

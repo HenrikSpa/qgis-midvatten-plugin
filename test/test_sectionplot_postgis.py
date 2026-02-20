@@ -92,13 +92,13 @@ class TestSectionPlot(utils_for_tests.MidvattenTestPostgisDbSv):
             mock_mapcanvas.layerCount.return_value = 0
             self.midvatten.plot_section()
             self.sectionplot = self.midvatten.sectionplot
-            self.sectionplot.drillstoplineEdit.setText("%berg%")
+            self.sectionplot.drillstop.setText("%berg%")
             self.sectionplot.draw_plot()
 
         _test_plot_section(self)
 
         assert """call.info(log_msg='Settings {""" in str(mock_messagebar.mock_calls)
-        assert self.sectionplot.drillstoplineEdit.text() == "%berg%"
+        assert self.sectionplot.drillstop.text() == "%berg%"
         assert (
             anything_to_string_representation(
                 list(self.sectionplot.figure._midv_obsids_x_position.keys())
@@ -187,13 +187,13 @@ class TestSectionPlot(utils_for_tests.MidvattenTestPostgisDbSv):
             mock_mapcanvas.layerCount.return_value = 0
             self.midvatten.plot_section()
             self.sectionplot = self.midvatten.sectionplot
-            self.sectionplot.drillstoplineEdit.setText("%berg%")
+            self.sectionplot.drillstop.setText("%berg%")
             self.sectionplot.draw_plot()
 
         _test_plot_section(self)
 
         assert """call.info(log_msg='Settings {""" in str(mock_messagebar.mock_calls)
-        assert self.sectionplot.drillstoplineEdit.text() == "%berg%"
+        assert self.sectionplot.drillstop.text() == "%berg%"
         assert (
             anything_to_string_representation(
                 list(self.sectionplot.figure._midv_obsids_x_position.keys())
@@ -286,8 +286,8 @@ class TestSectionPlot(utils_for_tests.MidvattenTestPostgisDbSv):
             mock_mapcanvas.layerCount.return_value = 0
             self.midvatten.plot_section()
             self.sectionplot = self.midvatten.sectionplot
-            gui_utils.set_combobox(self.sectionplot.wlvltableComboBox, "w_levels")
-            self.sectionplot.datetimetextEdit.append("2015")
+            gui_utils.set_combobox(self.sectionplot.wlvltable, "w_levels")
+            self.sectionplot.datetime.append("2015")
             self.sectionplot.draw_plot()
 
         _test(self)
@@ -333,9 +333,9 @@ class TestSectionPlot(utils_for_tests.MidvattenTestPostgisDbSv):
             mock_mapcanvas.layerCount.return_value = 0
             self.midvatten.plot_section()
             self.sectionplot = self.midvatten.sectionplot
-            gui_utils.set_combobox(self.sectionplot.wlvltableComboBox, "w_levels")
-            self.sectionplot.datetimetextEdit.append("2015")
-            self.sectionplot.datetimetextEdit.append("2015")
+            gui_utils.set_combobox(self.sectionplot.wlvltable, "w_levels")
+            self.sectionplot.datetime.append("2015")
+            self.sectionplot.datetime.append("2015")
             self.sectionplot.secplot_templates.loaded_template["wlevels_Axes_plot"] = {
                 "2015": {
                     "label": "1",
@@ -417,7 +417,7 @@ class TestSectionPlot(utils_for_tests.MidvattenTestPostgisDbSv):
             mock_mapcanvas.layerCount.return_value = 0
             midvatten.plot_section()
             self.sectionplot = midvatten.sectionplot
-            self.sectionplot.drillstoplineEdit.setText("%berg%")
+            self.sectionplot.drillstop.setText("%berg%")
             self.sectionplot.draw_plot()
 
         _test(self.midvatten, self.vlayer)
@@ -468,7 +468,7 @@ class TestSectionPlot(utils_for_tests.MidvattenTestPostgisDbSv):
             mock_mapcanvas.layerCount.return_value = 0
             midvatten.plot_section()
             myplot = midvatten.sectionplot
-            myplot.drillstoplineEdit.setText("%berg%")
+            myplot.drillstop.setText("%berg%")
             myplot.draw_plot()
             return myplot
 
@@ -524,10 +524,10 @@ class TestSectionPlot(utils_for_tests.MidvattenTestPostgisDbSv):
             mock_mapcanvas.layerCount.return_value = 0
             self.midvatten.plot_section()
             self.sectionplot = self.midvatten.sectionplot
-            self.sectionplot.Stratigraphy_radioButton.setChecked(True)
-            self.sectionplot.Legend_checkBox.setChecked(True)
-            gui_utils.set_combobox(self.sectionplot.wlvltableComboBox, "w_levels")
-            self.sectionplot.datetimetextEdit.append("2015")
+            self.sectionplot.plot_stratigraphy.setChecked(True)
+            self.sectionplot.create_legend.setChecked(True)
+            gui_utils.set_combobox(self.sectionplot.wlvltable, "w_levels")
+            self.sectionplot.datetime.append("2015")
             self.sectionplot.draw_plot()
 
         _test(self)
@@ -580,10 +580,10 @@ class TestSectionPlot(utils_for_tests.MidvattenTestPostgisDbSv):
             mock_mapcanvas.layerCount.return_value = 0
             self.midvatten.plot_section()
             self.sectionplot = self.midvatten.sectionplot
-            self.sectionplot.Stratigraphy_radioButton.setChecked(True)
-            self.sectionplot.Legend_checkBox.setChecked(True)
-            gui_utils.set_combobox(self.sectionplot.wlvltableComboBox, "w_levels")
-            self.sectionplot.datetimetextEdit.append("2015")
+            self.sectionplot.plot_stratigraphy.setChecked(True)
+            self.sectionplot.create_legend.setChecked(True)
+            gui_utils.set_combobox(self.sectionplot.wlvltable, "w_levels")
+            self.sectionplot.datetime.append("2015")
             self.sectionplot.draw_plot()
 
         _test(self)
@@ -654,10 +654,10 @@ class TestSectionPlot(utils_for_tests.MidvattenTestPostgisDbSv):
                     ]
                 )
             )
-            self.sectionplot.Stratigraphy_radioButton.setChecked(True)
-            self.sectionplot.Legend_checkBox.setChecked(True)
-            gui_utils.set_combobox(self.sectionplot.wlvltableComboBox, "w_levels")
-            self.sectionplot.datetimetextEdit.append("2015")
+            self.sectionplot.plot_stratigraphy.setChecked(True)
+            self.sectionplot.create_legend.setChecked(True)
+            gui_utils.set_combobox(self.sectionplot.wlvltable, "w_levels")
+            self.sectionplot.datetime.append("2015")
 
             self.sectionplot.draw_plot()
 
@@ -723,9 +723,9 @@ class TestSectionPlot(utils_for_tests.MidvattenTestPostgisDbSv):
             mock_mapcanvas.layerCount.return_value = 0
             self.midvatten.plot_section()
             self.sectionplot = self.midvatten.sectionplot
-            gui_utils.set_combobox(self.sectionplot.wlvltableComboBox, "w_levels")
+            gui_utils.set_combobox(self.sectionplot.wlvltable, "w_levels")
             self.sectionplot.interactive_groupbox.setChecked(True)
-            # self.sectionplot.datetimetextEdit.append('2015')
+            # self.sectionplot.datetime.append('2015')
 
             self.sectionplot.draw_plot()
             return self.sectionplot
@@ -780,8 +780,8 @@ class TestSectionPlot(utils_for_tests.MidvattenTestPostgisDbSv):
             mock_mapcanvas.layerCount.return_value = 0
             self.midvatten.plot_section()
             self.sectionplot = self.midvatten.sectionplot
-            gui_utils.set_combobox(self.sectionplot.wlvltableComboBox, "w_levels")
-            self.sectionplot.datetimetextEdit.append("2015")
+            gui_utils.set_combobox(self.sectionplot.wlvltable, "w_levels")
+            self.sectionplot.datetime.append("2015")
             self.sectionplot.draw_plot()
 
         _test(self)
@@ -832,8 +832,8 @@ class TestSectionPlot(utils_for_tests.MidvattenTestPostgisDbSv):
             mock_mapcanvas.layerCount.return_value = 0
             self.midvatten.plot_section()
             self.sectionplot = self.midvatten.sectionplot
-            self.sectionplot.Stratigraphy_radioButton.setChecked(True)
-            self.sectionplot.Legend_checkBox.setChecked(True)
+            self.sectionplot.plot_stratigraphy.setChecked(True)
+            self.sectionplot.create_legend.setChecked(True)
             self.sectionplot.draw_plot()
 
         _test(self)
@@ -895,8 +895,8 @@ class TestSectionPlot(utils_for_tests.MidvattenTestPostgisDbSv):
             self.midvatten.plot_section()
             self.sectionplot = self.midvatten.sectionplot
 
-            self.sectionplot.drillstoplineEdit.setText("%berg%")
-            self.sectionplot.Legend_checkBox.setChecked(True)
+            self.sectionplot.drillstop.setText("%berg%")
+            self.sectionplot.create_legend.setChecked(True)
             self.sectionplot.draw_plot()
             return self.sectionplot
 
@@ -917,7 +917,7 @@ class TestSectionPlot(utils_for_tests.MidvattenTestPostgisDbSv):
         leg = fig._midv_ax_main.get_legend()
 
         def markersize(leg):
-            return leg.legend_handles[0].get_markersize()
+            return leg.legendHandles[0].get_markersize()
 
         start_markersize = markersize(leg)
 

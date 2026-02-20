@@ -405,7 +405,7 @@ all or only the selected objects?</string>
       </widget>
      </item>
      <item row="5" column="0" colspan="4">
-      <widget class="QCheckBox" name="check_box_overwrite_prev">
+      <widget class="QCheckBox" name="overwrite_prev">
        <property name="toolTip">
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Checked: H_toc and level_masl will be calculated for all rows.&lt;br/&gt;Unchecked: H_toc and level_masl will only be calculated for rows where level_masl is NULL.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
@@ -442,7 +442,7 @@ all or only the selected objects?</string>
       </widget>
      </item>
      <item row="6" column="0" colspan="4">
-      <widget class="QCheckBox" name="check_box_stop_if_null">
+      <widget class="QCheckBox" name="stop_if_null">
        <property name="toolTip">
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Checked: If obs_points.h_toc is NULL for any obsid included in calculation, the calculation will not be performed for any obsid.&lt;br/&gt;Unchecked: Obsids where obs_points.h_toc is NULL will be skipped and calculation will be performed for the rest.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>

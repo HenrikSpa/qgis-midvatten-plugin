@@ -185,34 +185,22 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         )
 
         self.tab1_listfilter1.editingFinished.connect(
-            partial(
-                self.filter_filterlist, self.tab1_filter1, self.tab1_listfilter1
-            )
+            partial(self.filter_filterlist, self.tab1_filter1, self.tab1_listfilter1)
         )
         self.tab1_listfilter2.editingFinished.connect(
-            partial(
-                self.filter_filterlist, self.tab1_filter2, self.tab1_listfilter2
-            )
+            partial(self.filter_filterlist, self.tab1_filter2, self.tab1_listfilter2)
         )
         self.tab2_listfilter1.editingFinished.connect(
-            partial(
-                self.filter_filterlist, self.tab2_filter1, self.tab2_listfilter1
-            )
+            partial(self.filter_filterlist, self.tab2_filter1, self.tab2_listfilter1)
         )
         self.tab2_listfilter2.editingFinished.connect(
-            partial(
-                self.filter_filterlist, self.tab2_filter2, self.tab2_listfilter2
-            )
+            partial(self.filter_filterlist, self.tab2_filter2, self.tab2_listfilter2)
         )
         self.tab3_listfilter1.editingFinished.connect(
-            partial(
-                self.filter_filterlist, self.tab3_filter1, self.tab3_listfilter1
-            )
+            partial(self.filter_filterlist, self.tab3_filter1, self.tab3_listfilter1)
         )
         self.tab3_listfilter2.editingFinished.connect(
-            partial(
-                self.filter_filterlist, self.tab3_filter2, self.tab3_listfilter2
-            )
+            partial(self.filter_filterlist, self.tab3_filter2, self.tab3_listfilter2)
         )
         self.filtersettings1.clicked.connect(
             partial(set_groupbox_children_visibility, self.filtersettings1)
@@ -372,7 +360,9 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             else:
                 ccycler = mpl.rcParams["axes.prop_cycle"]
                 self.line_cycler = (mpl.rcParams["axes.midv_line_cycle"] * ccycler)()
-                self.marker_cycler = (mpl.rcParams["axes.midv_marker_cycle"] * ccycler)()
+                self.marker_cycler = (
+                    mpl.rcParams["axes.midv_marker_cycle"] * ccycler
+                )()
                 self.line_and_marker_cycler = (
                     mpl.rcParams["axes.midv_marker_cycle"]
                     * mpl.rcParams["axes.midv_line_cycle"]
@@ -420,7 +410,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             self.tab1_remove_mean,
             self.tab1_factor,
             self.tab1_offset,
-            only_get_data=only_get_data
+            only_get_data=only_get_data,
         )
         nop, i = self.drawPlot(
             dbconnection,
@@ -439,7 +429,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             self.tab2_remove_mean,
             self.tab2_factor,
             self.tab2_offset,
-            only_get_data=only_get_data
+            only_get_data=only_get_data,
         )
         nop, i = self.drawPlot(
             dbconnection,
@@ -458,7 +448,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             self.tab3_remove_mean,
             self.tab3_factor,
             self.tab3_offset,
-            only_get_data=only_get_data
+            only_get_data=only_get_data,
         )
         if only_get_data:
             data = self.data
@@ -519,7 +509,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         checkBox_remove_mean,
         LineEditFactor,
         LineEditOffset,
-        only_get_data=False
+        only_get_data=False,
     ):
 
         if (
@@ -600,7 +590,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                         offset,
                         remove_mean,
                         pandas_calc,
-                        only_get_data = only_get_data
+                        only_get_data=only_get_data,
                     )
                     i += 1
                 # Both filters in use
@@ -641,7 +631,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                                 offset,
                                 remove_mean,
                                 pandas_calc,
-                                only_get_data=only_get_data
+                                only_get_data=only_get_data,
                             )
                             i += 1
                 # One filter in use
@@ -683,7 +673,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                                     offset,
                                     remove_mean,
                                     pandas_calc,
-                                    only_get_data=only_get_data
+                                    only_get_data=only_get_data,
                                 )
                                 i += 1
 
@@ -699,7 +689,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         offset=0.0,
         remove_mean=False,
         pandas_calc=None,
-        only_get_data=False
+        only_get_data=False,
     ):
         # Transform data to a numpy.recarray
         try:
@@ -1047,7 +1037,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         # max time step, titles, grid, legend
         self.spnmaxtstep.setValue(self.ms.settingsdict["custplot_maxtstep"])
 
-        self.legend_check_box.setChecked(self.ms.settingsdict["custplot_legend"])
+        self.create_legend.setChecked(self.ms.settingsdict["custplot_legend"])
         self.regular_xaxis_interval.setChecked(
             self.ms.settingsdict["custplot_regular_xaxis_interval"]
         )
@@ -1374,7 +1364,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             label.set_rotation(20)
 
         # The legend
-        if self.legend_check_box.isChecked():
+        if self.create_legend.isChecked():
             ncols = mpl.rcParams["legend.midv_ncol"]
             if self.axes.legend_ is None:
                 if (self.spn_leg_x.value() == 0) and (self.spn_leg_y.value() == 0):
@@ -1436,19 +1426,13 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             )
 
     def storesettings(self):
-        self.ms.settingsdict["custplot_table1"] = str(
-            self.tab1_table.currentText()
-        )
+        self.ms.settingsdict["custplot_table1"] = str(self.tab1_table.currentText())
         self.ms.settingsdict["custplot_xcol1"] = str(self.tab1_xcol.currentText())
         self.ms.settingsdict["custplot_ycol1"] = str(self.tab1_ycol.currentText())
-        self.ms.settingsdict["custplot_table2"] = str(
-            self.tab2_table.currentText()
-        )
+        self.ms.settingsdict["custplot_table2"] = str(self.tab2_table.currentText())
         self.ms.settingsdict["custplot_xcol2"] = str(self.tab2_xcol.currentText())
         self.ms.settingsdict["custplot_ycol2"] = str(self.tab2_ycol.currentText())
-        self.ms.settingsdict["custplot_table3"] = str(
-            self.tab3_table.currentText()
-        )
+        self.ms.settingsdict["custplot_table3"] = str(self.tab3_table.currentText())
         self.ms.settingsdict["custplot_xcol3"] = str(self.tab3_xcol.currentText())
         self.ms.settingsdict["custplot_ycol3"] = str(self.tab3_ycol.currentText())
         self.ms.settingsdict["custplot_filter1_1"] = str(
@@ -1509,7 +1493,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             self.tab3_plot_type.currentText()
         )
         self.ms.settingsdict["custplot_maxtstep"] = self.spnmaxtstep.value()
-        self.ms.settingsdict["custplot_legend"] = self.legend_check_box.isChecked()
+        self.ms.settingsdict["custplot_legend"] = self.create_legend.isChecked()
         self.ms.settingsdict["custplot_grid"] = self.grid_check_box.isChecked()
         # self.ms.settingsdict['custplot_title'] = unicode(self.axes.get_title())
         # self.ms.settingsdict['custplot_xtitle'] = unicode(self.axes.get_xlabel())
@@ -1748,8 +1732,9 @@ class SaveToCsvDialog(QtWidgets.QDialog):
     def __init__(self, parent, data):
         super().__init__(parent)
         self.setAttribute(qgis.PyQt.QtCore.Qt.WA_DeleteOnClose)
-        self.setWindowTitle(QCoreApplication.translate('SaveToCsvDialog',
-                                                                "Save as csv"))
+        self.setWindowTitle(
+            QCoreApplication.translate("SaveToCsvDialog", "Save as csv")
+        )
 
         self.setLayout(QtWidgets.QVBoxLayout())
         row = QtWidgets.QWidget()
@@ -1757,24 +1742,26 @@ class SaveToCsvDialog(QtWidgets.QDialog):
         row.layout().setContentsMargins(0, 0, 0, 0)
         self.layout().addWidget(row)
 
-        row.layout().addWidget(QtWidgets.QLabel(QCoreApplication.translate('SaveToCsvDialog',
-                                                                "Filename")))
+        row.layout().addWidget(
+            QtWidgets.QLabel(QCoreApplication.translate("SaveToCsvDialog", "Filename"))
+        )
         self.filename = qgis.gui.QgsFileWidget()
         self.filename.setStorageMode(qgis.gui.QgsFileWidget.SaveFile)
-        self.filename.setDialogTitle(QCoreApplication.translate('SaveToCsvDialog',
-                                                                "Filename"))
+        self.filename.setDialogTitle(
+            QCoreApplication.translate("SaveToCsvDialog", "Filename")
+        )
         row.layout().addWidget(self.filename)
-        self.filename.setFilter('csv (*.csv)')
+        self.filename.setFilter("csv (*.csv)")
 
-        self.as_columns = QtWidgets.QRadioButton('Series as columns')
-        self.as_rows = QtWidgets.QRadioButton('Series as rows')
+        self.as_columns = QtWidgets.QRadioButton("Series as columns")
+        self.as_rows = QtWidgets.QRadioButton("Series as rows")
         self.as_columns.setChecked(True)
         self.layout().addWidget(self.as_rows)
         self.layout().addWidget(self.as_columns)
 
         self.data = data
 
-        self.save_button = QtWidgets.QPushButton('Save')
+        self.save_button = QtWidgets.QPushButton("Save")
         self.layout().addWidget(self.save_button)
         self.save_button.clicked.connect(self.save_data)
         self.show()
@@ -1783,52 +1770,55 @@ class SaveToCsvDialog(QtWidgets.QDialog):
     def save_data(self, *args):
         filename = self.filename.filePath()
         if not filename:
-            MessagebarAndLog.critical(bar_msg=QCoreApplication.translate('SaveToCsvDialog',
-                                                                "Must give filename"))
+            MessagebarAndLog.critical(
+                bar_msg=QCoreApplication.translate(
+                    "SaveToCsvDialog", "Must give filename"
+                )
+            )
             return
         common_utils.start_waiting_cursor()
         if self.as_rows.isChecked():
             dfs = []
             for series in self.data:
                 df = pd.DataFrame()
-                df['index'] = self.parse_index(series[0])
-                df['values'] = series[0].values
-                df['label'] = series[1]
-                df = df.sort_values(by=['index'])
+                df["index"] = self.parse_index(series[0])
+                df["values"] = series[0].values
+                df["label"] = series[1]
+                df = df.sort_values(by=["index"])
                 dfs.append(df)
             df = pd.concat(dfs, axis=0)
-            df.to_csv(filename, sep=';', encoding='utf-8', index_label='rowid')
+            df.to_csv(filename, sep=";", encoding="utf-8", index_label="rowid")
         else:
             dfs = []
             for series in self.data:
-                df = pd.DataFrame(series[0].values, index=self.parse_index(series[0]), columns=[series[1]])
-                if not len(df) == len(df.loc[~df.index.duplicated(keep='first')]):
+                df = pd.DataFrame(
+                    series[0].values,
+                    index=self.parse_index(series[0]),
+                    columns=[series[1]],
+                )
+                if not len(df) == len(df.loc[~df.index.duplicated(keep="first")]):
                     MessagebarAndLog.critical(
-                        bar_msg=QCoreApplication.translate('SaveToCsvDialog',
-                                                           'Unable to export as columns (the x-axis contained duplicates)'))
+                        bar_msg=QCoreApplication.translate(
+                            "SaveToCsvDialog",
+                            "Unable to export as columns (the x-axis contained duplicates)",
+                        )
+                    )
                     common_utils.stop_waiting_cursor()
                     return
                 dfs.append(df)
-            df = pd.concat(dfs, axis=1) #.sort_index()
-            df.index.name = 'index'
+            df = pd.concat(dfs, axis=1)  # .sort_index()
+            df.index.name = "index"
             df = df.reset_index()
-            df.to_csv(filename, sep=';', encoding='utf-8', index_label='rowid')
+            df.to_csv(filename, sep=";", encoding="utf-8", index_label="rowid")
         common_utils.stop_waiting_cursor()
         self.close()
 
     def parse_index(self, array):
-        if hasattr(array, 'date_time'):
+        if hasattr(array, "date_time"):
             try:
-                index = pd.to_datetime(array.date_time,
-                                             format='mixed')
+                index = pd.to_datetime(array.date_time, format="mixed")
             except ValueError:
                 index = array.date_time
         else:
             index = array.numx
         return index
-
-
-
-
-
-

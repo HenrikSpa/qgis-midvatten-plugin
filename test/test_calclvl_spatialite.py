@@ -46,10 +46,12 @@ class TestCalclvl(utils_for_tests.MidvattenTestSpatialiteDbSv):
         db_utils.sql_alter_db(
             """INSERT into w_levels (obsid, meas, date_time) VALUES ('rb1', 222, '2005-01-01 00:00:00')"""
         )
-        self.calclvl.FromDateTime = QtWidgets.QDateTimeEdit()
-        self.calclvl.FromDateTime.setDateTime(datestring_to_date("2000-01-01 00:00:00"))
-        self.calclvl.ToDateTime = QtWidgets.QDateTimeEdit()
-        self.calclvl.ToDateTime.setDateTime(datestring_to_date("2010-01-01 00:00:00"))
+        self.calclvl.from_date_time = QtWidgets.QDateTimeEdit()
+        self.calclvl.from_date_time.setDateTime(
+            datestring_to_date("2000-01-01 00:00:00")
+        )
+        self.calclvl.to_date_time = QtWidgets.QDateTimeEdit()
+        self.calclvl.to_date_time.setDateTime(datestring_to_date("2010-01-01 00:00:00"))
         self.calclvl.calcall()
 
         test_string = utils_for_tests.create_test_string(
@@ -75,10 +77,12 @@ class TestCalclvl(utils_for_tests.MidvattenTestSpatialiteDbSv):
         db_utils.sql_alter_db(
             """INSERT into w_levels (obsid, meas, date_time) VALUES ('rb2', 444, '2005-01-01 00:00:00')"""
         )
-        self.calclvl.FromDateTime = QtWidgets.QDateTimeEdit()
-        self.calclvl.FromDateTime.setDateTime(datestring_to_date("2000-01-01 00:00:00"))
-        self.calclvl.ToDateTime = QtWidgets.QDateTimeEdit()
-        self.calclvl.ToDateTime.setDateTime(datestring_to_date("2010-01-01 00:00:00"))
+        self.calclvl.from_date_time = QtWidgets.QDateTimeEdit()
+        self.calclvl.from_date_time.setDateTime(
+            datestring_to_date("2000-01-01 00:00:00")
+        )
+        self.calclvl.to_date_time = QtWidgets.QDateTimeEdit()
+        self.calclvl.to_date_time.setDateTime(datestring_to_date("2010-01-01 00:00:00"))
         self.calclvl.calcselected()
 
         test_string = utils_for_tests.create_test_string(
@@ -107,10 +111,12 @@ class TestCalclvl(utils_for_tests.MidvattenTestSpatialiteDbSv):
         db_utils.sql_alter_db(
             """INSERT into w_levels (obsid, meas, level_masl, date_time) VALUES ('rb2', 555, 667, '2005-01-02 00:00:00')"""
         )
-        self.calclvl.FromDateTime = QtWidgets.QDateTimeEdit()
-        self.calclvl.FromDateTime.setDateTime(datestring_to_date("2000-01-01 00:00:00"))
-        self.calclvl.ToDateTime = QtWidgets.QDateTimeEdit()
-        self.calclvl.ToDateTime.setDateTime(datestring_to_date("2010-01-01 00:00:00"))
+        self.calclvl.from_date_time = QtWidgets.QDateTimeEdit()
+        self.calclvl.from_date_time.setDateTime(
+            datestring_to_date("2000-01-01 00:00:00")
+        )
+        self.calclvl.to_date_time = QtWidgets.QDateTimeEdit()
+        self.calclvl.to_date_time.setDateTime(datestring_to_date("2010-01-01 00:00:00"))
         self.calclvl.calcselected()
 
         test_string = utils_for_tests.create_test_string(
@@ -119,7 +125,10 @@ class TestCalclvl(utils_for_tests.MidvattenTestSpatialiteDbSv):
             )
         )
         reference_string = "(True, [(rb1, 2005-01-01 00:00:00, 222.0, 1.0, -221.0), (rb2, 2005-01-01 00:00:00, 444.0, 4.0, -440.0), (rb2, 2005-01-02 00:00:00, 555.0, 4.0, -551.0)])"
+        print("Test:")
         print(test_string)
+        print(f"Ref")
+        print(reference_string)
         assert test_string == reference_string
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
@@ -141,11 +150,13 @@ class TestCalclvl(utils_for_tests.MidvattenTestSpatialiteDbSv):
         db_utils.sql_alter_db(
             """INSERT into w_levels (obsid, meas, level_masl, date_time) VALUES ('rb2', 555, 667, '2005-01-02 00:00:00')"""
         )
-        self.calclvl.FromDateTime = QtWidgets.QDateTimeEdit()
-        self.calclvl.FromDateTime.setDateTime(datestring_to_date("2000-01-01 00:00:00"))
-        self.calclvl.ToDateTime = QtWidgets.QDateTimeEdit()
-        self.calclvl.ToDateTime.setDateTime(datestring_to_date("2010-01-01 00:00:00"))
-        self.calclvl.checkBox_overwrite_prev.setChecked(False)
+        self.calclvl.from_date_time = QtWidgets.QDateTimeEdit()
+        self.calclvl.from_date_time.setDateTime(
+            datestring_to_date("2000-01-01 00:00:00")
+        )
+        self.calclvl.to_date_time = QtWidgets.QDateTimeEdit()
+        self.calclvl.to_date_time.setDateTime(datestring_to_date("2010-01-01 00:00:00"))
+        self.calclvl.overwrite_prev.setChecked(False)
         self.calclvl.calcselected()
         # self.checkBox_skipnulls
 
@@ -181,11 +192,13 @@ class TestCalclvl(utils_for_tests.MidvattenTestSpatialiteDbSv):
         db_utils.sql_alter_db(
             """INSERT into w_levels (obsid, meas, level_masl, date_time) VALUES ('rb2', 555, 667, '2005-01-02 00:00:00')"""
         )
-        self.calclvl.FromDateTime = QtWidgets.QDateTimeEdit()
-        self.calclvl.FromDateTime.setDateTime(datestring_to_date("2000-01-01 00:00:00"))
-        self.calclvl.ToDateTime = QtWidgets.QDateTimeEdit()
-        self.calclvl.ToDateTime.setDateTime(datestring_to_date("2010-01-01 00:00:00"))
-        self.calclvl.checkBox_overwrite_prev.setChecked(False)
+        self.calclvl.from_date_time = QtWidgets.QDateTimeEdit()
+        self.calclvl.from_date_time.setDateTime(
+            datestring_to_date("2000-01-01 00:00:00")
+        )
+        self.calclvl.to_date_time = QtWidgets.QDateTimeEdit()
+        self.calclvl.to_date_time.setDateTime(datestring_to_date("2010-01-01 00:00:00"))
+        self.calclvl.overwrite_prev.setChecked(False)
 
         self.calclvl.calcselected()
         # self.checkBox_skipnulls
@@ -222,12 +235,14 @@ class TestCalclvl(utils_for_tests.MidvattenTestSpatialiteDbSv):
         db_utils.sql_alter_db(
             """INSERT into w_levels (obsid, meas, level_masl, date_time) VALUES ('rb2', 555, 667, '2005-01-02 00:00:00')"""
         )
-        self.calclvl.FromDateTime = QtWidgets.QDateTimeEdit()
-        self.calclvl.FromDateTime.setDateTime(datestring_to_date("2000-01-01 00:00:00"))
-        self.calclvl.ToDateTime = QtWidgets.QDateTimeEdit()
-        self.calclvl.ToDateTime.setDateTime(datestring_to_date("2010-01-01 00:00:00"))
-        self.calclvl.checkBox_overwrite_prev.setChecked(False)
-        self.calclvl.checkBox_stop_if_null.setChecked(False)
+        self.calclvl.from_date_time = QtWidgets.QDateTimeEdit()
+        self.calclvl.from_date_time.setDateTime(
+            datestring_to_date("2000-01-01 00:00:00")
+        )
+        self.calclvl.to_date_time = QtWidgets.QDateTimeEdit()
+        self.calclvl.to_date_time.setDateTime(datestring_to_date("2010-01-01 00:00:00"))
+        self.calclvl.overwrite_prev.setChecked(False)
+        self.calclvl.stop_if_null.setChecked(False)
 
         self.calclvl.calcselected()
         # self.checkBox_skipnulls

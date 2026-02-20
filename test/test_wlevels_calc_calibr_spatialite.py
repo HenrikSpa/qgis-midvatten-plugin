@@ -67,7 +67,7 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
         calibrlogger.update_plot()
 
-        calibrlogger.FromDateTime.setDateTime(
+        calibrlogger.from_date_time.setDateTime(
             date_utils.datestring_to_date("2000-01-01 00:00:00")
         )
         calibrlogger.logger_elevation.setText("2")
@@ -93,7 +93,7 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
         calibrlogger.update_plot()
 
-        calibrlogger.FromDateTime.setDateTime(
+        calibrlogger.from_date_time.setDateTime(
             date_utils.datestring_to_date("2000-01-01 00:00:00")
         )
         calibrlogger.offset.setText("50")
@@ -127,7 +127,7 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestSpatialiteDbSv):
         calibrlogger.update_plot()
 
         calibrlogger.loggerpos_masl_or_offset_state = 2
-        calibrlogger.FromDateTime.setDateTime(
+        calibrlogger.from_date_time.setDateTime(
             date_utils.datestring_to_date("2000-01-01 00:00:00")
         )
         gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
@@ -158,7 +158,7 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestSpatialiteDbSv):
         calibrlogger.update_plot()
 
         calibrlogger.loggerpos_masl_or_offset_state = 2
-        calibrlogger.FromDateTime.setDateTime(
+        calibrlogger.from_date_time.setDateTime(
             date_utils.datestring_to_date("2000-01-01 00:00:00")
         )
         gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
@@ -192,7 +192,7 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestSpatialiteDbSv):
         calibrlogger.update_plot()
 
         calibrlogger.loggerpos_masl_or_offset_state = 2
-        calibrlogger.FromDateTime.setDateTime(
+        calibrlogger.from_date_time.setDateTime(
             date_utils.datestring_to_date("2017-02-01 01:00")
         )
         gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
@@ -227,10 +227,10 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestSpatialiteDbSv):
         calibrlogger.update_plot()
 
         calibrlogger.loggerpos_masl_or_offset_state = 2
-        calibrlogger.FromDateTime.setDateTime(
+        calibrlogger.from_date_time.setDateTime(
             date_utils.datestring_to_date("2010-02-01 01:00")
         )
-        calibrlogger.ToDateTime.setDateTime(
+        calibrlogger.to_date_time.setDateTime(
             date_utils.datestring_to_date("2017-02-01 01:00")
         )
         gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
@@ -266,7 +266,7 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestSpatialiteDbSv):
         calibrlogger = LoggerEditor(self.iface.mainWindow(), self.midvatten.ms)
         gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
         calibrlogger.update_plot()
-        calibrlogger.FromDateTime.setDateTime(
+        calibrlogger.from_date_time.setDateTime(
             date_utils.datestring_to_date("2000-01-01 00:00:00")
         )
         calibrlogger.L1_date.setDateTime(
@@ -381,10 +381,10 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestSpatialiteDbSv):
         calibrlogger = LoggerEditor(self.iface.mainWindow(), self.midvatten.ms)
         gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
         calibrlogger.update_plot()
-        calibrlogger.FromDateTime.setDateTime(
+        calibrlogger.from_date_time.setDateTime(
             date_utils.datestring_to_date("2017-01-30 00:00")
         )
-        calibrlogger.ToDateTime.setDateTime(
+        calibrlogger.to_date_time.setDateTime(
             date_utils.datestring_to_date("2017-02-02 00:00")
         )
         askuser.return_value.result = True
@@ -589,7 +589,7 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
         calibrlogger.update_plot()
 
-        calibrlogger.FromDateTime.setDateTime(
+        calibrlogger.from_date_time.setDateTime(
             date_utils.datestring_to_date("2000-01-01 00:00:00")
         )
         calibrlogger.logger_elevation.setText("2")

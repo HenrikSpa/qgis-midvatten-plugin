@@ -53,7 +53,7 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
         widget = QtWidgets.QWidget()
         calcave = w_flow_calc_aveflow.CalculateAveflow(widget)
-        calcave.FromDateTime.setDateTime(
+        calcave.from_date_time.setDateTime(
             date_utils.datestring_to_date("2000-01-01 00:00:00")
         )
         calcave.calcall()
@@ -107,7 +107,7 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
         widget = QtWidgets.QWidget()
         calcave = w_flow_calc_aveflow.CalculateAveflow(widget)
-        calcave.FromDateTime.setDateTime(
+        calcave.from_date_time.setDateTime(
             date_utils.datestring_to_date("2000-01-01 00:00:00")
         )
         calcave.calcselected()
@@ -166,7 +166,7 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
         widget = QtWidgets.QWidget()
         calcave = w_flow_calc_aveflow.CalculateAveflow(widget)
-        calcave.FromDateTime.setDateTime(
+        calcave.from_date_time.setDateTime(
             date_utils.datestring_to_date("2000-01-01 00:00:00")
         )
         calcave.calcselected()
@@ -218,7 +218,7 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
         widget = QtWidgets.QWidget()
         calcave = w_flow_calc_aveflow.CalculateAveflow(widget)
-        calcave.FromDateTime.setDateTime(
+        calcave.from_date_time.setDateTime(
             date_utils.datestring_to_date("2000-01-01 00:00:00")
         )
         calcave.calcselected()

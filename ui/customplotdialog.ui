@@ -217,7 +217,7 @@
                     </widget>
                    </item>
                    <item>
-                    <widget class="QGroupBox" name="legend_check_box">
+                    <widget class="QGroupBox" name="create_legend">
                      <property name="font">
                       <font>
                        <kerning>true</kerning>

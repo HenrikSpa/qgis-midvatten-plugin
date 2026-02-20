@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  Midvatten
@@ -570,7 +569,7 @@ class Midvatten:
             self.menu.removeAction(self.action_load_layers)
             self.menu.removeAction(self.action_midvatten_settings)
             self.menu.removeAction(self.action_about)
-        except:
+        except Exception:
             pass
 
         if self.owns_midv_menu:
@@ -580,7 +579,7 @@ class Midvatten:
         for action in self.actions:
             try:
                 self.iface.removeToolBarIcon(action)
-            except:
+            except Exception:
                 pass
 
         del self.tool_bar
@@ -607,7 +606,7 @@ class Midvatten:
             out_folder / "midvatten_logga.png",
         )
 
-        with io.open(str(template_file), "rt", encoding="cp1252") as infile:
+        with open(str(template_file), encoding="cp1252") as infile:
             rows = [
                 row.replace("VERSIONCHANGETHIS", verno)
                 .replace("AUTHORCHANGETHIS", author)
@@ -615,7 +614,7 @@ class Midvatten:
                 .replace("HOMEPAGECHANGETHIS", homepage)
                 for row in infile
             ]
-        with io.open(str(outname), "w", encoding="cp1252") as outfile:
+        with open(str(outname), "w", encoding="cp1252") as outfile:
             outfile.write("\n".join(rows))
         dlg = common_utils.HtmlDialog(
             "About Midvatten plugin for QGIS", QUrl.fromLocalFile(str(outname))
@@ -745,7 +744,7 @@ class Midvatten:
             try:
                 print(str(obsid_p))
                 print(str(obsid_l))
-            except:
+            except Exception:
                 pass
             common_utils.stop_waiting_cursor()
 
@@ -828,7 +827,7 @@ class Midvatten:
         if hasattr(self, "export_to_field_logger"):
             try:
                 self.export_to_field_logger.activateWindow()
-            except:
+            except Exception:
                 self.export_to_field_logger = ExportToFieldLogger(
                     self.iface.mainWindow(), self.ms
                 )
@@ -882,7 +881,7 @@ class Midvatten:
                         try:
                             self.midvsettingsdialog.clear_everything()
                             self.midvsettingsdialog.select_last_settings()
-                        except:
+                        except Exception:
                             pass
             else:
                 common_utils.MessagebarAndLog.critical(
@@ -960,7 +959,7 @@ class Midvatten:
                     try:
                         self.midvsettingsdialog.clear_everything()
                         self.midvsettingsdialog.select_last_settings()
-                    except:
+                    except Exception:
                         pass
 
     @common_utils.general_exception_handler
@@ -1048,7 +1047,7 @@ class Midvatten:
                         try:
                             self.midvsettingsdialog.clear_everything()
                             self.midvsettingsdialog.select_last_settings()
-                        except:
+                        except Exception:
                             pass
             else:
                 common_utils.MessagebarAndLog.critical(
@@ -1101,7 +1100,7 @@ class Midvatten:
                         try:
                             self.midvsettingsdialog.clear_everything()
                             self.midvsettingsdialog.select_last_settings()
-                        except:
+                        except Exception:
                             pass
             else:
                 common_utils.MessagebarAndLog.critical(
@@ -1535,7 +1534,7 @@ class Midvatten:
             return
         try:
             self.customplot.activateWindow()
-        except:
+        except Exception:
             self.customplot = CustomPlot(self.iface.mainWindow(), self.ms)
 
     @common_utils.general_exception_handler
@@ -1566,7 +1565,7 @@ class Midvatten:
             self.midvsettingsdialog.activateWindow()
             self.midvsettingsdialog.clear_everything()
             self.midvsettingsdialog.select_last_settings()
-        except:
+        except Exception:
             pass
         midvatten_utils.warn_about_old_database()
 
@@ -1576,7 +1575,7 @@ class Midvatten:
         try:  # if midvsettingsdock is shown, then it must be reset
             self.midvsettingsdialog.activateWindow()
             self.midvsettingsdialog.clear_everything()
-        except:
+        except Exception:
             pass
 
     def setup(self):
@@ -1595,7 +1594,7 @@ class Midvatten:
     def _del_dialog(self, var):
         try:
             delattr(self, var)
-        except:
+        except Exception:
             common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
 
     def vacuum_db(self):
@@ -1635,8 +1634,9 @@ class Midvatten:
                 qgis.utils.iface.activeLayer()
             ):  # all selected objects
                 if not db_utils.sql_load_fr_db(
-                    "select obsid from %s where obsid = '%s'"
-                    % (self.ms.settingsdict["wqualtable"], str(k))
+                    "select obsid from {} where obsid = '{}'".format(
+                        self.ms.settingsdict["wqualtable"], str(k)
+                    )
                 )[
                     1
                 ]:  # if there is a selected object without water quality data
@@ -1690,7 +1690,7 @@ class Midvatten:
         if err_flag == 0:
             try:
                 self.calibrplot.activateWindow()
-            except:
+            except Exception:
                 self.calibrplot = LoggerEditor(
                     self.iface.mainWindow(), self.ms.settingsdict
                 )  # ,obsid)

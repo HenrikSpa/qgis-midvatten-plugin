@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  midvsettingsdialog
@@ -546,17 +545,21 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
             self.list_of_tables.currentText()
         )  # For some reason it is not possible to send currentText with the SIGNAL-trigger
         if ("obsid" in columns) and ("date_time" in columns):
-            text = "<font color=green>%s</font>" % ru(
-                QCoreApplication.translate(
-                    "midvsettingsdialogdock",
-                    "Correct table, both obsid and date_time columns have been found.",
+            text = "<font color=green>{}</font>".format(
+                ru(
+                    QCoreApplication.translate(
+                        "midvsettingsdialogdock",
+                        "Correct table, both obsid and date_time columns have been found.",
+                    )
                 )
             )
         else:
-            text = "<font color=red>%s</font>" % ru(
-                QCoreApplication.translate(
-                    "midvsettingsdialogdock",
-                    "Wrong table! obsid and/or date_time is missing.",
+            text = "<font color=red>{}</font>".format(
+                ru(
+                    QCoreApplication.translate(
+                        "midvsettingsdialogdock",
+                        "Wrong table! obsid and/or date_time is missing.",
+                    )
                 )
             )
         self.info_txt_ts_plot.setText(text)
@@ -629,15 +632,19 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
             self.list_of_tables_2.currentText()
         )  # For some reason it is not possible to send currentText with the SIGNAL-trigger
         if "obsid" in columns:
-            text = "<font color=green>%s</font>" % ru(
-                QCoreApplication.translate(
-                    "midvsettingsdialogdock", "Correct table! obsid column is found."
+            text = "<font color=green>{}</font>".format(
+                ru(
+                    QCoreApplication.translate(
+                        "midvsettingsdialogdock", "Correct table! obsid column is found."
+                    )
                 )
             )
         else:
-            text = "<font color=red>%s</font>" % ru(
-                QCoreApplication.translate(
-                    "midvsettingsdialogdock", "Wrong table! obsid is missing."
+            text = "<font color=red>{}</font>".format(
+                ru(
+                    QCoreApplication.translate(
+                        "midvsettingsdialogdock", "Wrong table! obsid is missing."
+                    )
                 )
             )
         self.info_txt_xy_plot.setText(text)
@@ -645,12 +652,12 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
         self.ms.save_settings("xytable")  # save this specific setting
 
 
-class DatabaseSettings(object):
+class DatabaseSettings:
     def __init__(
-        self, midvsettingsdialogdock: MidvattenSettingsDock, gridLayout_db: QGridLayout
+        self, midvsettingsdialogdock: MidvattenSettingsDock, grid_layout_db: QGridLayout
     ):
         self.midvsettingsdialogdock = midvsettingsdialogdock
-        self.layout = gridLayout_db
+        self.layout = grid_layout_db
         self.layout.setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
         self.db_settings_obj = None
         self.label_width = self.maximum_label_width()
@@ -689,19 +696,19 @@ class DatabaseSettings(object):
         for widget in self.child_widgets:
             try:
                 widget.clear_widgets()
-            except:
+            except Exception:
                 pass
             try:
                 self.layout.removeWidget(widget)
-            except:
+            except Exception:
                 pass
             try:
                 widget.deleteLater()
-            except:
+            except Exception:
                 pass
             try:
                 widget.close()
-            except:
+            except Exception:
                 pass
         self.child_widgets = []
 
@@ -726,7 +733,7 @@ class DatabaseSettings(object):
 
         try:
             db_settings = ast.literal_eval(_db_settings)
-        except:
+        except Exception:
             common_utils.MessagebarAndLog.warning(
                 log_msg=ru(
                     QCoreApplication.translate(
@@ -764,7 +771,7 @@ class DatabaseSettings(object):
                                 )
                                 % (dbtype, setting_name)
                             )
-                    except:
+                    except Exception:
                         print(str(setting_name))
                         raise
         else:
@@ -802,7 +809,7 @@ class DatabaseSettings(object):
 
 class SpatialiteSettings(gui_utils.RowEntryGrid):
     def __init__(self, midvsettingsdialogdock: MidvattenSettingsDock, label_width: int):
-        super(SpatialiteSettings, self).__init__()
+        super().__init__()
         self.midvsettingsdialogdock = midvsettingsdialogdock
         self.btn_set_db = qgis.PyQt.QtWidgets.QPushButton(
             ru(QCoreApplication.translate("SpatialiteSettings", "Select db"))
@@ -828,7 +835,7 @@ class SpatialiteSettings(gui_utils.RowEntryGrid):
     def select_file(self):
         """Open a dialog to locate the sqlite file and some more..."""
         dbpath, __ = QFileDialog.getOpenFileName(
-            None, str("Select database:"), "*.sqlite"
+            None, "Select database:", "*.sqlite"
         )
         if dbpath:  # Only get new db name if not cancelling the FileDialog
             self.dbpath = dbpath
@@ -865,7 +872,7 @@ class PostgisSettings(gui_utils.RowEntryGrid):
     """Using a guide from http://gis.stackexchange.com/questions/180427/retrieve-available-postgis-connections-in-pyqgis"""
 
     def __init__(self, midvsettingsdialogdock: MidvattenSettingsDock, label_width: int):
-        super(PostgisSettings, self).__init__()
+        super().__init__()
         self.midvsettingsdialogdock = midvsettingsdialogdock
 
         postgis_connections = db_utils.get_postgis_connections()

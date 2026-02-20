@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This is where a rectangular plt.plot is created 
@@ -35,7 +34,7 @@ from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.common_utils import returnunicode as ru, LEGEND_NCOL_KEY
 
 
-class PiperPlot(object):
+class PiperPlot:
     def __init__(self, msettings, activelayer):
         self.ms = msettings
         self.activelayer = activelayer
@@ -67,18 +66,18 @@ class PiperPlot(object):
             print(
                 """obsid, date_time, type, Cl_meqPl, HCO3_meqPl, SO4_meqPl, Na+K_meqPl, Ca_meqPl, Mg_meqPl"""
             )
-        except:
+        except Exception:
             pass
         for row in self.obsrecarray:
             # print ','.join([unicode(col).encode('utf-8') for col in row])
             try:
                 # fix_print_with_import
                 print(",".join([ru(col) for col in row]))
-            except:
+            except Exception:
                 try:
                     # fix_print_with_import
                     print("failed printing piper data...")
-                except:
+                except Exception:
                     pass
 
         self.plot_function()
@@ -306,7 +305,7 @@ class PiperPlot(object):
         sql, args = self.big_sql()
         # try:
         #    print(sql)  # debug
-        # except:
+        # except Exception:
         #    pass
         # get data into a list: obsid, date_time, type, Cl_meqPl, HCO3_meqPl, SO4_meqPl, Na+K_meqPl, Ca_meqPl, Mg_meqPl
         obsimport = db_utils.sql_load_fr_db(sql, execute_args=args)[1]
@@ -343,7 +342,7 @@ class PiperPlot(object):
     def make_plot(self):
         nosamples = len(self.obsrecarray.obsid)  # Determine number of samples in file
 
-        with plt.style.context((piperplot2_style())):
+        with plt.style.context(piperplot2_style()):
             fig = plt.figure()
             ax = fig.add_subplot(111)
 
@@ -1003,11 +1002,11 @@ class PiperPlot(object):
             )
 
     def set_rotated_axes_labels(self, event=None):
-        for l in self.labels_positive_rotation:
-            l.set_rotation(get_rotation(self.ax, self.side_length))
+        for label in self.labels_positive_rotation:
+            label.set_rotation(get_rotation(self.ax, self.side_length))
 
-        for l in self.labels_negative_rotation:
-            l.set_rotation(-get_rotation(self.ax, self.side_length))
+        for label in self.labels_negative_rotation:
+            label.set_rotation(-get_rotation(self.ax, self.side_length))
 
     def draw_crossing_lines(self, event):
         if event.button.name.lower() != "right":
@@ -1040,20 +1039,20 @@ class PiperPlot(object):
             try:
                 self.l1.remove()
                 self.l1 = None
-            except:
+            except Exception:
                 pass
         if isinstance(self.l2, mpl.lines.Line2D):
             try:
                 self.l2.remove()
                 self.l2 = None
-            except:
+            except Exception:
                 pass
 
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
 
 
-class TriangleGraph(object):
+class TriangleGraph:
     def __init__(self, side_length, hspace, xmin, ymin, xlim, ylim):
         self.side_length = side_length
         self.hspace = hspace
@@ -1072,7 +1071,7 @@ class TriangleGraph(object):
 
     def _transform(self, x, y):
         transformed_y = self.ymin + equilateral_height(
-            self.side_length * ((y / (self.ylim[1] - self.ylim[0])))
+            self.side_length * (y / (self.ylim[1] - self.ylim[0]))
         )
         transformed_x = self.xmin + self.side_length * (
             (x + (y / 2) - self.xlim[0]) / (self.xlim[1] - self.xlim[0])
@@ -1107,7 +1106,7 @@ class TriangleGraph(object):
         return x, y
 
 
-class RhomboidGraph(object):
+class RhomboidGraph:
     def __init__(self, side_length, hspace, xmin, ymin, xlim, ylim):
         self.side_length = side_length
         self.hspace = hspace
@@ -1158,7 +1157,7 @@ def equilateral_height(side_length):
 def get_rotation(ax, side_length):
     xlim = sub(*ax.get_xlim())
     return math.degrees(
-        math.atan(((equilateral_height(xlim) * get_aspect(ax)) / (xlim / 2)))
+        math.atan((equilateral_height(xlim) * get_aspect(ax)) / (xlim / 2))
     )
 
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin tests the module that handles exports to
@@ -24,7 +23,7 @@
 import io
 import os
 
-import mock
+from unittest import mock
 
 from midvatten.tools.utils import db_utils, common_utils
 from midvatten.test import utils_for_tests
@@ -131,20 +130,20 @@ class TestExport(utils_for_tests.MidvattenTestSpatialiteDbEn):
         self.midvatten.export_csv()
         file_contents = []
         for filename in TestExport.exported_csv_files_no_zz:
-            with io.open(filename, "r", encoding="utf-8") as f:
+            with open(filename, encoding="utf-8") as f:
                 file_contents.append(os.path.basename(filename) + "\n")
                 if os.path.basename(filename) == "obs_points.csv":
                     file_contents.append(
                         [
-                            ";".join(l.replace("\r", "").split(";")[:-1]) + "\n"
-                            for l in f
+                            ";".join(line.replace("\r", "").split(";")[:-1]) + "\n"
+                            for line in f
                         ]
                     )
                 else:
-                    file_contents.append([l.replace("\r", "") for l in f])
+                    file_contents.append([line.replace("\r", "") for line in f])
         test_string = utils_for_tests.create_test_string(file_contents)
 
-        with io.open("/tmp/refstring.txt", "w", encoding="utf-8") as of:
+        with open("/tmp/refstring.txt", "w", encoding="utf-8") as of:
             of.write(test_string)
 
         reference_string = "\n".join(
@@ -230,20 +229,20 @@ class TestExport(utils_for_tests.MidvattenTestSpatialiteDbEn):
         self.midvatten.export_csv()
         file_contents = []
         for filename in TestExport.exported_csv_files_no_zz:
-            with io.open(filename, "r", encoding="utf-8") as f:
+            with open(filename, encoding="utf-8") as f:
                 file_contents.append(os.path.basename(filename) + "\n")
                 if os.path.basename(filename) == "obs_points.csv":
                     file_contents.append(
                         [
-                            ";".join(l.replace("\r", "").split(";")[:-1]) + "\n"
-                            for l in f
+                            ";".join(line.replace("\r", "").split(";")[:-1]) + "\n"
+                            for line in f
                         ]
                     )
                 else:
-                    file_contents.append([l.replace("\r", "") for l in f])
+                    file_contents.append([line.replace("\r", "") for line in f])
         test_string = utils_for_tests.create_test_string(file_contents)
 
-        with io.open("/tmp/refstring.txt", "w", encoding="utf-8") as of:
+        with open("/tmp/refstring.txt", "w", encoding="utf-8") as of:
             of.write(test_string)
 
         reference_string = "\n".join(

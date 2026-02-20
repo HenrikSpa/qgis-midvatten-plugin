@@ -136,7 +136,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                     facecolor=None, edgecolor="black", alpha=0.5, fill=False
                 ),
             )
-        except:
+        except Exception:
             self.period_selector = RectangleSelector(
                 self.axes,
                 self.line_select_callback,
@@ -213,7 +213,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                     sql, dbconnection=dbconnection, execute_args=execute_args
                 )[1]
             ]
-        except:
+        except Exception:
             dbconnection.closedb()
             raise
         else:
@@ -289,7 +289,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         if not obsid:
             try:
                 print("error obsid " + str(obsid))
-            except:
+            except Exception:
                 pass
             # utils.pop_up_info(ru(QCoreApplication.translate('Calibrlogger', "ERROR: no obsid is chosen")))
             common_utils.stop_waiting_cursor()
@@ -425,7 +425,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                         )
                     ) % (
                         obsid,
-                        "{:.3f}".format(self.lastcalibr[0][1]),
+                        f"{self.lastcalibr[0][1]:.3f}",
                         str(self.lastcalibr[0][0]),
                     )
 
@@ -543,7 +543,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         dummy = db_utils.sql_alter_db(sql)
         try:
             print(str(dummy))
-        except:
+        except Exception:
             pass
         common_utils.stop_waiting_cursor()
 
@@ -864,7 +864,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         last_calibration = self.getlastcalibration(self.obsid)
         try:
             if last_calibration[0][1] and last_calibration[0][0]:
-                self.logger_elevation.setText("{:.5f}".format(last_calibration[0][1]))
+                self.logger_elevation.setText(f"{last_calibration[0][1]:.5f}")
                 self.from_date_time.setDateTime(
                     datestring_to_date(last_calibration[0][0])
                     + datetime.timedelta(milliseconds=1)
@@ -988,7 +988,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
         logger_gen = common_utils.ts_gen(logger_ts)
         try:
-            l = next(logger_gen)
+            log_row = next(logger_gen)
         except StopIteration:
             return None
         log_vals = []
@@ -997,7 +997,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         # The .replace(tzinfo=None) is used to remove info about timezone. Needed for the comparisons. This should not be a problem though as the date scale in the plot is based on the dates from the database.
         outer_begin = self.from_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
         outer_end = self.to_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
-        logger_step = datestring_to_date(l[0]).replace(tzinfo=None)
+        logger_step = datestring_to_date(log_row[0]).replace(tzinfo=None)
         for m in meas_ts:
             if logger_step is None:
                 break
@@ -1014,11 +1014,11 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             # Skip logger steps that are earlier than the chosen begin date or are not inside the measurement period.
             while logger_step <= step_begin or logger_step <= outer_begin:
                 try:
-                    l = next(logger_gen)
+                    log_row = next(logger_gen)
                 except StopIteration:
                     all_done = True
                     break
-                logger_step = datestring_to_date(l[0]).replace(tzinfo=None)
+                logger_step = datestring_to_date(log_row[0]).replace(tzinfo=None)
 
             log_vals = []
 
@@ -1027,14 +1027,14 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 and step_begin <= logger_step <= step_end
                 and outer_begin <= logger_step <= outer_end
             ):
-                if not math.isnan(float(l[1])) or l[1] in ("nan", "NULL"):
-                    log_vals.append(float(l[1]))
+                if not math.isnan(float(log_row[1])) or log_row[1] in ("nan", "NULL"):
+                    log_vals.append(float(log_row[1]))
                 try:
-                    l = next(logger_gen)
+                    log_row = next(logger_gen)
                 except StopIteration:
                     all_done = True
                     break
-                logger_step = datestring_to_date(l[0]).replace(tzinfo=None)
+                logger_step = datestring_to_date(log_row[0]).replace(tzinfo=None)
 
             if log_vals:
                 mean = np.mean(log_vals)
@@ -1205,7 +1205,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
     @fn_timer
     def set_adjust_data_on_click(self, event, date_var, level_var):
-        getattr(self, level_var).setText("{:.5f}".format(event.ydata))
+        getattr(self, level_var).setText(f"{event.ydata:.5f}")
         getattr(self, date_var).setDateTime(event.xdata)
         self.reset_cid()
 
@@ -1351,7 +1351,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 self.moving_idx = None
                 if offset:
                     self.loggerpos_masl_or_offset_state = 1
-                    self.offset.setText("{:.5f}".format(offset))
+                    self.offset.setText(f"{offset:.5f}")
                     self.add_to_level_masl()
             self.moving_idx = None
 

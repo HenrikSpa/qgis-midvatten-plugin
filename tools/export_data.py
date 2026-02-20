@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This is the part of the Midvatten plugin that enables quick export of data from the database
@@ -21,7 +20,8 @@
 
 import traceback
 
-import os, os.path
+import os
+import os.path
 from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools.utils import common_utils, db_utils
@@ -33,11 +33,11 @@ from midvatten.tools.utils.db_utils import DbConnectionManager
 from typing import Any, Callable, List, Optional, Tuple, Union
 
 
-class ExportData(object):
+class ExportData:
 
-    def __init__(self, OBSID_P: Union[Tuple[str], Tuple[()]], OBSID_L: Union[Tuple[str], Tuple[()]]):
-        self.ID_obs_points = OBSID_P
-        self.ID_obs_lines = OBSID_L
+    def __init__(self, obsid_p: Union[Tuple[str], Tuple[()]], obsid_l: Union[Tuple[str], Tuple[()]]):
+        self.ID_obs_points = obsid_p
+        self.ID_obs_lines = obsid_l
         self.dest_dbconnection = None
         self.source_dbconnection = None
 
@@ -255,7 +255,7 @@ class ExportData(object):
             source_data = self.get_table_data(
                 tname, obsids, self.source_dbconnection, file_data_srid
             )
-        except:
+        except Exception:
             common_utils.MessagebarAndLog.info(
                 bar_msg=ru(
                     QCoreApplication.translate(
@@ -366,7 +366,7 @@ class ExportData(object):
                 sql = dbconnection.sql_ident("SELECT count(*) FROM {t}", t=tablename)
                 try:
                     nr_of_rows = dbconnection.execute_and_fetchall(sql)[0][0]
-                except:
+                except Exception:
                     common_utils.MessagebarAndLog.warning(
                         log_msg=ru(
                             QCoreApplication.translate(
@@ -401,7 +401,7 @@ class ExportData(object):
 
         printable_msg = "\n".join(
             [
-                "{0:40}{1:15}{2:15}".format(result_row[0], result_row[1], result_row[2])
+                f"{result_row[0]:40}{result_row[1]:15}{result_row[2]:15}"
                 for result_row in printable_results
             ]
         )

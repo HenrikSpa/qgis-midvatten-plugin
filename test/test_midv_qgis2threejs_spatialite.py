@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin tests the module that prepares midvatten
@@ -21,8 +20,8 @@
 """
 
 
-import mock
-from mock import MagicMock
+from unittest import mock
+from unittest.mock import MagicMock
 from nose.plugins.attrib import attr
 
 from midvatten.test import utils_for_tests
@@ -75,13 +74,11 @@ class TestPrepareQgis2Threejs(utils_for_tests.MidvattenTestSpatialiteDbSv):
         ]
 
         view_contents = []
-        for l in layers:
-            if l != "strat_obs_p_for_qgsi2threejs":
+        for layer_name in layers:
+            if layer_name != "strat_obs_p_for_qgsi2threejs":
                 view_contents.append(
                     db_utils.sql_load_fr_db(
-                        """SELECT rowid, obsid, z_coord, height, ST_AsText(geometry) FROM {};""".format(
-                            l
-                        )
+                        f"""SELECT rowid, obsid, z_coord, height, ST_AsText(geometry) FROM {layer_name};"""
                     )[1]
                 )
         view_contents.append(

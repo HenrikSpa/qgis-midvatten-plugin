@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin handles the db connections
@@ -26,7 +25,8 @@ import os
 import traceback
 import zipfile
 from sqlite3 import Connection, Cursor
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from collections.abc import Iterable, Sequence
 
 import qgis._core
 
@@ -34,7 +34,7 @@ try:
     import zlib
 
     compression = zipfile.ZIP_DEFLATED
-except:
+except Exception:
     compression = zipfile.ZIP_STORED
 
 import datetime
@@ -123,9 +123,9 @@ class PostGisDBConnectorMod:
             psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT
         )
 
-    def _clearSslTempCertsIfAny(self, connectionInfo):
+    def _clearSslTempCertsIfAny(self, connection_info):
         # Direct copy of db_manager.db_plugins.postgis.connector.PostGisDBConnector
-        expanded_uri = QgsDataSourceUri(connectionInfo)
+        expanded_uri = QgsDataSourceUri(connection_info)
 
         def remove_cert(cert_file):
             cert_file = cert_file.replace("'", "")
@@ -155,7 +155,7 @@ class PostGisDBConnectorMod:
             remove_cert(ssl_ca_file)
 
 
-class DbConnectionManager(object):
+class DbConnectionManager:
     def __init__(self, db_settings: Optional[str] = None):
         """
         Manuals for db connectors:
@@ -189,7 +189,7 @@ class DbConnectionManager(object):
                 else:
                     try:
                         db_settings = ast.literal_eval(db_settings)
-                    except:
+                    except Exception:
                         raise UsageError(
                             ru(
                                 QCoreApplication.translate(
@@ -459,7 +459,7 @@ class DbConnectionManager(object):
                             )
                             % traceback.format_exc()
                         )
-                    except:
+                    except Exception:
                         pass
 
             if geometry_colname_type_srid is not None:
@@ -507,7 +507,7 @@ class DbConnectionManager(object):
         header = [col[0] for col in self.cursor.description]
         rows = self.cursor.fetchall()
         if rows:
-            filename = os.path.join(tempfile.gettempdir(), "{}.csv".format(table_name))
+            filename = os.path.join(tempfile.gettempdir(), f"{table_name}.csv")
             printlist = [header]
             printlist.extend(rows)
             write_printlist_to_file(filename, printlist)
@@ -531,7 +531,7 @@ class DbConnectionManager(object):
                     "SELECT Find_SRID(%s, %s, %s);",
                     (self.schema, table_name, geometry_column),
                 )
-            except:
+            except Exception:
                 # Assume that the column doesn't have a srid/is a geometry.
                 srid = None
             else:
@@ -594,7 +594,7 @@ class DbConnectionManager(object):
                         psycopg2.sql.Identifier(view_name)
                     )
                 )
-        except:
+        except Exception:
             MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
 
@@ -700,7 +700,7 @@ def sql_alter_db(
     if dbconnection.dbtype == "spatialite":
         try:
             dbconnection.execute("PRAGMA foreign_keys = ON")
-        except:
+        except Exception:
             pass
     try:
         dbconnection.execute_and_commit(sql, all_args=all_args)
@@ -725,7 +725,7 @@ def sql_alter_db(
 
 
 def execute_sqlfile_using_func(sqlfilename: str, function: Callable = sql_alter_db):
-    with open(sqlfilename, "r") as f:
+    with open(sqlfilename) as f:
         f.readline()  # first line is encoding info....
         for line in f:
             if not line:
@@ -741,7 +741,7 @@ def execute_sqlfile(
     dbtype_skip_keyword = {"spatialite": "postgis", "postgis": "spatialite"}
     skip_keyword = dbtype_skip_keyword[dbconnection.dbtype]
 
-    with open(sqlfilename, "r") as f:
+    with open(sqlfilename) as f:
         lines = [line.rstrip("\n") for rownr, line in enumerate(f) if rownr > 0]
     lines = [
         lstrip(dbconnection.dbtype.upper(), line)
@@ -757,7 +757,7 @@ def execute_sqlfile(
 
     if merge_newlines:
         lines = [
-            "{};".format(line) for line in " ".join(lines).split(";") if line.strip()
+            f"{line};" for line in " ".join(lines).split(";") if line.strip()
         ]
 
     for line in lines:
@@ -837,7 +837,7 @@ def db_tables_columns_info(
     for tablename in tablenames:
         try:
             columns = get_table_info(tablename, dbconnection=dbconnection)
-        except:
+        except Exception:
             columns = None
 
         if columns is None:
@@ -1376,11 +1376,11 @@ def cast_date_time_as_epoch(dbconnection=None, date_time=None):
     if date_time is None:
         date_time = "date_time"
     else:
-        date_time = "'{}'".format(date_time)
+        date_time = f"'{date_time}'"
     if dbconnection.dbtype == "spatialite":
-        sql = """CAST(strftime('%s', {}) AS NUMERIC)""".format(date_time)
+        sql = f"""CAST(strftime('%s', {date_time}) AS NUMERIC)"""
     else:
-        sql = """extract(epoch from {}::timestamp)""".format(date_time)
+        sql = f"""extract(epoch from {date_time}::timestamp)"""
 
     if dbconnection_created:
         dbconnection.closedb()
@@ -1514,13 +1514,11 @@ def get_srid_name(srid: int, dbconnection: None = None) -> str:
     else:
         try:
             ref_sys_name = dbconnection.execute_and_fetchall(
-                """SELECT split_part(srtext, '"', 2) AS "name"
+                f"""SELECT split_part(srtext, '"', 2) AS "name"
                                                                 FROM spatial_ref_sys
-                                                                WHERE srid IN ({});""".format(
-                    srid
-                )
+                                                                WHERE srid IN ({srid});"""
             )[0][0]
-        except:
+        except Exception:
             MessagebarAndLog.info(log_msg=traceback.format_exc())
             ref_sys_name = ""
 
@@ -1709,7 +1707,7 @@ def delete_srids(
     )
     try:
         execute_able_object.execute(delete_srid_sql_aux)
-    except:
+    except Exception:
         pass
 
     delete_srid_sql = (
@@ -1718,7 +1716,7 @@ def delete_srids(
     )
     try:
         execute_able_object.execute(delete_srid_sql)
-    except:
+    except Exception:
         MessagebarAndLog.info(
             log_msg=ru(
                 QCoreApplication.translate(
@@ -1740,7 +1738,7 @@ def get_spatialite_db_path_from_dbsettings_string(db_settings: str) -> str:
             except Exception as e:
                 try:
                     msg = str(e)
-                except:
+                except Exception:
                     msg = ru(
                         QCoreApplication.translate(
                             "get_spatialite_db_path_from_dbsettings_string",
@@ -1781,7 +1779,7 @@ def nonplot_tables(
         "zz_hydro",
     )
     if not as_tuple:
-        tables = "({})".format(", ".join(["'{}'".format(x) for x in tables]))
+        tables = "({})".format(", ".join([f"'{x}'" for x in tables]))
     return tables
 
 
@@ -1844,7 +1842,7 @@ def get_latlon_for_all_obsids(dbconnection=None):
         sql = "SELECT obsid, ST_Y(ST_Transform(geometry, 4326)) as lat, ST_X(ST_Transform(geometry, 4326)) as lon from obs_points"
     try:
         latlon_dict = get_sql_result_as_dict(sql, dbconnection=dbconnection)[1]
-    except:
+    except Exception:
         raise
     finally:
         if dbconnection_created:

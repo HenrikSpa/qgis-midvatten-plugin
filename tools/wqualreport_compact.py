@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This is the part of the Midvatten plugin that returns a report with water quality data for the selected obs_point. 
@@ -241,7 +240,7 @@ class CompactWqualReportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_d
             for attr, val in stored_settings.items():
                 try:
                     selfattr = getattr(self, attr)
-                except:
+                except Exception:
                     pass
                 else:
                     if isinstance(selfattr, qgis.PyQt.QtWidgets.QPlainTextEdit):
@@ -273,7 +272,7 @@ class CompactWqualReportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_d
         for attrname in save_attrnames:
             try:
                 attr = getattr(self, attrname)
-            except:
+            except Exception:
                 common_utils.MessagebarAndLog.info(
                     log_msg=ru(
                         QCoreApplication.translate(
@@ -361,9 +360,7 @@ class CompactWqualReportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_d
             return as_dict
 
 
-class Wqualreport(
-    object
-):  # extracts water quality data for selected objects, selected db and given table, results shown in html report
+class Wqualreport:  # extracts water quality data for selected objects, selected db and given table, results shown in html report
     @general_exception_handler
     def __init__(
         self,
@@ -436,7 +433,7 @@ class Wqualreport(
         if "depth" in df.columns:
             try:
                 df.loc[df["depth"] == "", "depth"] = np.NaN
-            except:
+            except Exception:
                 print(f"Something went wrong: {traceback.format_exc()}")
 
             df["depth"] = df["depth"].fillna(0)
@@ -675,7 +672,7 @@ class Wqualreport(
 
     def write_html_table(
         self,
-        ReportData,
+        report_data,
         f,
         rowheader_colwidth_percent,
         empty_row_between_tables=False,
@@ -686,15 +683,13 @@ class Wqualreport(
         rpt = """<TABLE WIDTH=100% BORDER=1 CELLPADDING=1 class="no-spacing" CELLSPACING=0 PADDING-BOTTOM=0 PADDING=0>"""
         f.write(rpt)
 
-        for counter, row in enumerate(ReportData):
+        for counter, row in enumerate(report_data):
             row = ru(row, keep_containers=True)
             try:
                 if counter < nr_header_rows:
                     rpt = "<tr>"
                     for idx in range(nr_row_header_columns):
-                        rpt += "<TH WIDTH={}%><font size=1>{}</font></th>".format(
-                            str(rowheader_colwidth_percent), row[idx]
-                        )
+                        rpt += f"<TH WIDTH={str(rowheader_colwidth_percent)}%><font size=1>{row[idx]}</font></th>"
 
                     data_colwidth = (
                         100.0
@@ -716,19 +711,17 @@ class Wqualreport(
                     rpt = "<tr>"
                     for idx in range(nr_row_header_columns):
                         rpt += (
-                            """<td align=\"left\"><font size=1>{}</font></td>""".format(
-                                row[idx]
-                            )
+                            f"""<td align=\"left\"><font size=1>{row[idx]}</font></td>"""
                         )
                     coltext = """<td align=\"right\"><font size=1>{}</font></td>"""
                     rpt += "".join(
                         [coltext.format(x) for x in row[nr_row_header_columns:]]
                     )
                     rpt += "</tr>\n"
-            except:
+            except Exception:
                 try:
                     print("here was an error: %s" % row)
-                except:
+                except Exception:
                     pass
             f.write(rpt)
 
@@ -755,7 +748,7 @@ def isnan(x):
 
 
 def sql_list(alist):
-    return ", ".join(["'{}'".format(x) for x in alist])
+    return ", ".join([f"'{x}'" for x in alist])
 
 
 def floatable(anything):

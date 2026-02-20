@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin tests the module that handles calibration
@@ -23,7 +22,7 @@
 
 from decimal import Decimal
 
-import mock
+from unittest import mock
 import numpy as np
 from nose.plugins.attrib import attr
 
@@ -297,9 +296,9 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestSpatialiteDbSv):
         res = db_utils.sql_load_fr_db(
             "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger"
         )
-        l = list(res[1][1])
-        l[5] = "%.11e" % Decimal(l[5])
-        res[1][1] = tuple(l)
+        row = list(res[1][1])
+        row[5] = "%.11e" % Decimal(row[5])
+        res[1][1] = tuple(row)
         test = utils_for_tests.create_test_string(res)
         print(f"{mock_messagebar.mock_calls=}")
 

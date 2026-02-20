@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin is more or less just a small tweak of
@@ -51,7 +50,7 @@ from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.common_utils import returnunicode as ru
 
 
-class Stratigraphy(object):
+class Stratigraphy:
 
     def __init__(self, iface, layer=None, settingsdict={}):
         self.iface = iface
@@ -72,7 +71,7 @@ class Stratigraphy(object):
             try:
                 # fix_print_with_import
                 print("Load failed due: " + e.problem)
-            except:
+            except Exception:
                 pass
             self.store = None
 
@@ -132,7 +131,7 @@ class Stratigraphy(object):
         self.w = w  # save reference so it doesn't get deleted immediately        This has to be done both here and also in midvatten instance
 
 
-class SurveyInfo(object):  # This class is to define the data structure...
+class SurveyInfo:  # This class is to define the data structure...
 
     def __init__(
         self, obsid="", top_lvl=0, coord=None, strata=None, length=None
@@ -155,7 +154,7 @@ class SurveyInfo(object):  # This class is to define the data structure...
         )  # _CHANGE_
 
 
-class StrataInfo(object):
+class StrataInfo:
     def __init__(
         self,
         stratid=0,
@@ -164,7 +163,7 @@ class StrataInfo(object):
         geology="",
         geo_short="",
         hydro="",
-        Comment="",
+        comment="",
         development="",
     ):
         self.stratid = stratid  # This is id no for the geological information (1 = uppermost stratigraphy layer)
@@ -172,7 +171,7 @@ class StrataInfo(object):
         self.depth_top = depth_top  # This is depth to top of the stratigraphy layer
         self.depth_bot = depth_bot  # This is depth to bottom for the stratigraphy layer
         self.geo_short = geo_short  # This is short name for the geology of the stratigraphy layer, also used for symbology and color
-        self.comment = Comment  # Comment for the stratigraphy layer
+        self.comment = comment  # Comment for the stratigraphy layer
         self.hydro = hydro  # Water loss or similar measurement of layer permeability, given as 1, 2, 3, etc, see below
         self.development = development
 
@@ -187,24 +186,24 @@ class StrataInfo(object):
         )
 
 
-class SurveyStore(object):
+class SurveyStore:
     def __init__(self, stratitable):
         self.stratitable = stratitable
         self.warning_popup = True
 
     def getData(
-        self, featureIds, vectorlayer
+        self, feature_ids, vectorlayer
     ):  # THIS FUNCTION IS ONLY CALLED FROM ARPATPLUGIN/SHOWSURVEY
         """get data from databases for array of features specified by their IDs"""
-        surveys = self._getDataStep1(featureIds, vectorlayer)
+        surveys = self._getDataStep1(feature_ids, vectorlayer)
         if not surveys:
             raise DataSanityError(
-                "feature ids {}".format(", ".join([str(x) for x in featureIds])),
+                "feature ids {}".format(", ".join([str(x) for x in feature_ids])),
                 "Could not get data from layer!",
             )
         try:
             data_loading_status, surveys = self._getDataStep2(surveys)
-        except:
+        except Exception:
             data_loading_status = False
         if data_loading_status == True:
             surveys = self.sanityCheck(surveys)
@@ -212,7 +211,7 @@ class SurveyStore(object):
         else:
             raise DataSanityError("Unknown obsid", "Dataloading failed!")
 
-    def _getDataStep1(self, featureIds, vlayer):
+    def _getDataStep1(self, feature_ids, vlayer):
         """STEP 1: get data from selected layer"""  # _CHANGE_ Completely revised to TSPLot method
         provider = (
             vlayer.dataProvider()
@@ -267,7 +266,7 @@ class SurveyStore(object):
                         h_toc = ru(attributes[h_toc_col_no])
                         try:
                             level_val = float(h_toc)
-                        except:
+                        except Exception:
                             using = "-1"
                             level_val = -1
                         else:
@@ -304,7 +303,7 @@ class SurveyStore(object):
                     else:
                         try:
                             length = float(ru(attributes[length_col_no]))
-                        except:
+                        except Exception:
                             length = None
 
                     # add to array
@@ -422,7 +421,7 @@ class SurveyStore(object):
                 # raise DataSanityError(str(obsid), "No strata information")
                 try:
                     print(str(obsid) + " has no strata information")
-                except:
+                except Exception:
                     pass
                 continue
                 # del surveys[obsid]#simply remove the item without strata info
@@ -603,7 +602,7 @@ class SurveyWidget(QtWidgets.QFrame):
                     depth_top = d_top
                 if d_bed < depth_bot:
                     depth_bot = d_bed
-            except:
+            except Exception:
                 pass
 
         # draw surveys
@@ -619,11 +618,11 @@ class SurveyWidget(QtWidgets.QFrame):
             # draw the survey
             try:
                 self.drawSurvey(painter, sond, r, column_width, (depth_bot, depth_top))
-            except:
+            except Exception:
                 pass
 
-    def drawSurvey(self, p, sond, sRect, column_width, interval):
-        """draws one survey to rectangle in widget specified by sRect"""
+    def drawSurvey(self, p, sond, s_rect, column_width, interval):
+        """draws one survey to rectangle in widget specified by s_rect"""
         depth_top = sond.top_lvl
         depth_bot = depth_top - sond.strata[-1].depth_bot
 
@@ -632,32 +631,32 @@ class SurveyWidget(QtWidgets.QFrame):
         depth_height = fm.height()
 
         # draw obsid 'name'
-        label_rect = QtCore.QRect(sRect.left(), sRect.top(), sRect.width(), name_height)
+        label_rect = QtCore.QRect(s_rect.left(), s_rect.top(), s_rect.width(), name_height)
         p.drawText(label_rect, QtCore.Qt.AlignVCenter, sond.obsid)
 
-        scale = (sRect.height() - name_height - depth_height * 2) / (
+        scale = (s_rect.height() - name_height - depth_height * 2) / (
             interval[1] - interval[0]
         )
 
-        top = sRect.top() + name_height + depth_height
+        top = s_rect.top() + name_height + depth_height
         y_top = top + (interval[1] - depth_top) * scale
         y_bed = top + (interval[1] - depth_bot) * scale
 
         # top depth
         depth_rect = QtCore.QRect(
-            sRect.left(), int(y_top - depth_height), sRect.width(), int(depth_height)
+            s_rect.left(), int(y_top - depth_height), s_rect.width(), int(depth_height)
         )
         p.drawText(depth_rect, QtCore.Qt.AlignVCenter, "%.1f m" % depth_top)
 
         # bed depth
         depth_rect = QtCore.QRect(
-            sRect.left(), int(y_bed + 1), sRect.width(), int(depth_height)
+            s_rect.left(), int(y_bed + 1), s_rect.width(), int(depth_height)
         )
         p.drawText(depth_rect, QtCore.Qt.AlignVCenter, "%.1f m" % depth_bot)
 
         d_rect = QtCore.QRect(
-            QtCore.QPoint(sRect.left(), int(y_top)),
-            QtCore.QPoint(int(sRect.left() + column_width), int(y_bed)),
+            QtCore.QPoint(s_rect.left(), int(y_top)),
+            QtCore.QPoint(int(s_rect.left() + column_width), int(y_bed)),
         )
 
         p.drawRect(d_rect)
@@ -676,7 +675,7 @@ class SurveyWidget(QtWidgets.QFrame):
             # text rectangle
             t_rect = QtCore.QRect(
                 QtCore.QPoint(d_rect.right() + 10, int(y)),
-                QtCore.QPoint(sRect.right(), int(y + y2)),
+                QtCore.QPoint(s_rect.right(), int(y + y2)),
             )
 
             b_type = self.geoToSymbol(
@@ -756,7 +755,7 @@ class SurveyWidget(QtWidgets.QFrame):
                 try:  # first we assume it is a predefined Qt color, hence use PyQt4.QtCore.Qt
                     # return getattr(PyQt4.QtCore.Qt, self.geo_color_symbols[id.lower()][1])
                     return getattr(QtCore.Qt, self.geo_color_symbols[id][1])
-                except:  # otherwise it must be a SVG 1.0 color name, then it must be created by QtGui.QColor instead
+                except Exception:  # otherwise it must be a SVG 1.0 color name, then it must be created by QtGui.QColor instead
                     return QtGui.QColor(self.geo_color_symbols[id][1])
             else:
                 return QtCore.Qt.white

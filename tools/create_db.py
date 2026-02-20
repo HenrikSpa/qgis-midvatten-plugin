@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin creates a new "midvatten project plugin". 
@@ -39,15 +38,15 @@ from midvatten.tools.utils.date_utils import get_pytz_timezones
 from midvatten.tools.utils.db_utils import DbConnectionManager, execute_sqlfile
 
 
-class NewDb(object):
+class NewDb:
     def __init__(self):
         self.db_settings = ""
 
     def create_new_spatialite_db(
         self,
         verno: str,
-        user_select_CRS: str = "y",
-        EPSG_code: str = "4326",
+        user_select_crs: str = "y",
+        epsg_code: str = "4326",
         delete_srids: bool = True,
         w_levels_logger_timezone: None = None,
         w_levels_timezone: None = None,
@@ -59,12 +58,12 @@ class NewDb(object):
         common_utils.start_waiting_cursor()
         # print("Got locale " + str(set_locale))
 
-        if user_select_CRS == "y":
+        if user_select_crs == "y":
             common_utils.stop_waiting_cursor()
             epsg_id = str(self.ask_for_CRS(set_locale))
             common_utils.start_waiting_cursor()
         else:
-            epsg_id = EPSG_code
+            epsg_id = epsg_code
 
         if epsg_id == "0" or not epsg_id:
             raise common_utils.UserInterruptError()
@@ -178,34 +177,34 @@ class NewDb(object):
             (("SPATIALITE ", "")),
         ]
 
-        with open(sql_file, "r") as f:
+        with open(sql_file) as f:
             f.readline()  # first line is encoding info....
             lines = [ru(line) for line in f]
 
         sql_lines = [
-            common_utils.lstrip("SPATIALITE", l)
-            for l in lines
+            common_utils.lstrip("SPATIALITE", line)
+            for line in lines
             if all(
                 [
-                    l,
-                    not l.startswith("#"),
-                    not l.startswith("--"),
-                    "POSTGIS" not in l,
-                    l.replace(";", "").strip().replace("\n", "").replace("\r", ""),
+                    line,
+                    not line.startswith("#"),
+                    not line.startswith("--"),
+                    "POSTGIS" not in line,
+                    line.replace(";", "").strip().replace("\n", "").replace("\r", ""),
                 ]
             )
         ]
         sql_lines = [
-            "{};".format(l.strip()) for l in " ".join(sql_lines).split(";") if l.strip()
+            f"{stmt.strip()};" for stmt in " ".join(sql_lines).split(";") if stmt.strip()
         ]
         for line in sql_lines:
             sql = self.replace_words(line, replace_word_replace_with)
             try:
                 dbconnection.execute(sql)
-            except:
+            except Exception:
                 try:
                     print(str(sql))
-                except:
+                except Exception:
                     pass
                 raise
 
@@ -250,8 +249,8 @@ class NewDb(object):
     def populate_postgis_db(
         self,
         verno: str,
-        user_select_CRS: str = "y",
-        EPSG_code: str = "4326",
+        user_select_crs: str = "y",
+        epsg_code: str = "4326",
         w_levels_logger_timezone: None = None,
         w_levels_timezone: None = None,
     ):
@@ -281,12 +280,12 @@ class NewDb(object):
         supplied_locale = self.ask_for_locale()
         common_utils.start_waiting_cursor()
 
-        if user_select_CRS == "y":
+        if user_select_crs == "y":
             common_utils.stop_waiting_cursor()
             epsg_id = str(self.ask_for_CRS(supplied_locale))
             common_utils.start_waiting_cursor()
         else:
-            epsg_id = EPSG_code
+            epsg_id = epsg_code
 
         if epsg_id == "0" or not epsg_id:
             raise common_utils.UserInterruptError()
@@ -329,39 +328,39 @@ class NewDb(object):
         ]
 
         created_tables_sqls = {}
-        with open(sql_file, "r") as f:
+        with open(sql_file) as f:
             f.readline()  # first line is encoding info....
             lines = [ru(line) for line in f]
         sql_lines = [
-            common_utils.lstrip("POSTGIS", l).lstrip()
-            for l in lines
+            common_utils.lstrip("POSTGIS", line).lstrip()
+            for line in lines
             if all(
                 [
-                    l.strip(),
-                    not l.startswith("#"),
-                    not l.startswith("--"),
-                    "SPATIALITE" not in l,
-                    "InitSpatialMetadata" not in l,
-                    l.replace(";", "").strip().replace("\n", "").replace("\r", ""),
+                    line.strip(),
+                    not line.startswith("#"),
+                    not line.startswith("--"),
+                    "SPATIALITE" not in line,
+                    "InitSpatialMetadata" not in line,
+                    line.replace(";", "").strip().replace("\n", "").replace("\r", ""),
                 ]
             )
         ]
         sql_lines = [
-            "{};".format(l.strip()) for l in " ".join(sql_lines).split(";") if l.strip()
+            f"{stmt.strip()};" for stmt in " ".join(sql_lines).split(";") if stmt.strip()
         ]
         for linenr, line in enumerate(sql_lines):
             sql = self.replace_words(line, replace_word_replace_with)
             try:
                 dbconnection.execute(sql)
-            except:
+            except Exception:
                 try:
                     print(str(sql))
                     print("numlines: " + str(len(sql_lines)))
-                    print("Error on line nr {}".format(str(linenr)))
+                    print(f"Error on line nr {str(linenr)}")
                     print("before " + sql_lines[linenr - 1])
                     if linenr + 1 < len(sql_lines):
                         print("after " + sql_lines[linenr + 1])
-                except:
+                except Exception:
                     pass
                 raise
             else:
@@ -385,7 +384,7 @@ class NewDb(object):
                 execute_sqlfile(
                     get_full_filename("insert_functions_postgis_pg17.sql"), dbconnection
                 )
-            except:
+            except Exception:
                 execute_sqlfile(
                     get_full_filename("insert_functions_postgis.sql"), dbconnection
                 )
@@ -394,7 +393,7 @@ class NewDb(object):
                 execute_sqlfile(
                     get_full_filename("insert_functions_postgis.sql"), dbconnection
                 )
-            except:
+            except Exception:
                 execute_sqlfile(
                     get_full_filename("insert_functions_postgis_pg17.sql"), dbconnection
                 )
@@ -625,10 +624,10 @@ class NewDb(object):
                 )
                 try:
                     dbconnection.execute(sql)
-                except:
+                except Exception:
                     try:
                         print(sql)
-                    except:
+                    except Exception:
                         pass
                     raise
         for tz, tname in [
@@ -644,7 +643,7 @@ class NewDb(object):
                 )
 
 
-class AddLayerStyles(object):
+class AddLayerStyles:
     """currently this class is not used although it should be, when storing layer styles in the database works better"""
 
     def __init__(self):
@@ -656,7 +655,7 @@ class AddLayerStyles(object):
             dbconnection.execute(
                 "PRAGMA foreign_keys = ON"
             )  # Foreign key constraints are disabled by default (for backwards compatibility), so must be enabled separately for each database dbconnection separately.
-        except:
+        except Exception:
             pass
 
         # add layer styles
@@ -684,7 +683,7 @@ class AddLayerStyles(object):
 
         try:
             dbconnection.execute("PRAGMA foreign_keys = OFF")
-        except:
+        except Exception:
             pass
         dbconnection.commit_and_closedb()
 
@@ -697,7 +696,7 @@ class AddLayerStyles(object):
             "add_layer_styles_2_db.sql",
         )
         datetimestring = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        f = open(sql_file, "r")
+        f = open(sql_file)
         for linecounter, line in enumerate(f):
             if linecounter > 1:  # first line is encoding info....
                 dbconnection.execute(
@@ -711,7 +710,6 @@ class AddLayerStyles(object):
             os.path.join(
                 os.sep, os.path.dirname(__file__), "..", "definitions", qml_file
             ),
-            "r",
         ) as content_file:
             content = content_file.read()
         dbconnection.execute(
@@ -722,7 +720,6 @@ class AddLayerStyles(object):
             os.path.join(
                 os.sep, os.path.dirname(__file__), "..", "definitions", sld_file
             ),
-            "r",
         ) as content_file:
             content = content_file.read()
         dbconnection.execute(

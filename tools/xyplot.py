@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin originates from the TimeSeriesPlot plugin. 
@@ -28,7 +27,7 @@ from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.common_utils import returnunicode as ru
 
 
-class XYPlot(object):
+class XYPlot:
 
     def __init__(
         self, layer=None, settingsdict={}
@@ -205,8 +204,7 @@ class XYPlot(object):
                     )  # leg = fig.legend(p, plabel, 'right')
                 except ValueError as e:
                     common_utils.MessagebarAndLog.info(
-                        log_msg="""Figure legend didn't work, using axis legend instead, msg: %s"""
-                        % str(e)
+                        log_msg=f"Figure legend didn't work, using axis legend instead, msg: {e}"
                     )
                     leg = ax.legend(
                         p, plabel, loc=0

@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This is where a section plot is created 
@@ -47,7 +46,7 @@ try:  # assume matplotlib >=1.5.1
     from matplotlib.backends.backend_qt5agg import (
         NavigationToolbar2QT as NavigationToolbar,
     )
-except:
+except Exception:
     from matplotlib.backends.backend_qt5agg import (
         NavigationToolbar2QTAgg as NavigationToolbar,
     )
@@ -79,7 +78,7 @@ from midvatten.tools.utils.sampledem import qchain, sampling
 
 try:
     import pandas as pd
-except:
+except Exception:
     pandas_on = False
 else:
     pandas_on = True
@@ -232,7 +231,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             self.obsid_annotation,
             strat_key="geoshort",
         )
-        hydro_subtypes = {k: "IN ('{}')".format(k) for k in self.hydro_colors.keys()}
+        hydro_subtypes = {k: f"IN ('{k}')" for k in self.hydro_colors.keys()}
         self.hydro_bars = self.get_plot_data_bars(
             hydro_subtypes,
             self.obsids_x_position,
@@ -326,7 +325,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         drillstop = (
             self.ms.settingsdict["secplotdrillstop"]
             if self.ms.settingsdict["secplotdrillstop"]
-            else "%{}%".format(defs.bedrock_geoshort())
+            else f"%{defs.bedrock_geoshort()}%"
         )
         self.drillstop.setText(drillstop)
         if self.ms.settingsdict["secplotincludeviews"]:
@@ -348,17 +347,13 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             if layer.type() == layer.RasterLayer:
                 if layer.bandCount() != 1:  # only single band raster layers
                     msg.append(
-                        'Sectionplot: Layer "{}" omitted due to more than one layer band.'.format(
-                            ru(layer.name())
-                        )
+                        f'Sectionplot: Layer "{ru(layer.name())}" omitted due to more than one layer band.'
                     )
                 elif (
                     layer.crs().authid()[5:] != line_crs.authid()[5:]
                 ):  # only raster layer with crs corresponding to line layer
                     msg.append(
-                        'Sectionplot: Layer "{}" omitted due to wrong CRS ("{}" is required, was "{}".'.format(
-                            ru(layer.name()), line_crs.authid(), layer.crs().authid()
-                        )
+                        f'Sectionplot: Layer "{ru(layer.name())}" omitted due to wrong CRS ("{line_crs.authid()}" is required, was "{layer.crs().authid()}".'
                     )
                 else:
                     self.dem_layers[str(layer.name())] = layer
@@ -490,7 +485,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             return
 
         tables = db_utils.get_tables()
-        if not "tem_data" in tables:
+        if "tem_data" not in tables:
             self.tem_model_name.setToolTip(
                 QCoreApplication.translate(
                     "SectionPlot",
@@ -528,7 +523,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             return
 
         tables = db_utils.get_tables()
-        if not "profile_images" in tables:
+        if "profile_images" not in tables:
             self.tem_model_name.addItem(
                 QCoreApplication.translate(
                     "SectionPlot", "Table tem_data missing in database."
@@ -574,7 +569,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                     log_msg=ru(
                         QCoreApplication.translate(
                             "SectionPlot",
-                            "Hidden features, obsids and length along section:\n%s\%s",
+                            "Hidden features, obsids and length along section:\n%s\\%s",
                         )
                     )
                     % (
@@ -620,7 +615,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                     """SELECT proname FROM pg_proc
                                                                  WHERE lower(proname) LIKE '%line%locate%point%';"""
                 )
-            except:
+            except Exception:
                 common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
             else:
                 if _funcname:
@@ -637,7 +632,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                     ),
                     tuple(obsidtuple),
                 )
-            except:
+            except Exception:
                 pass
             else:
                 res = cur.fetchall()
@@ -892,7 +887,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                 )
                 % self.secplot_templates.readable_output()
             )
-        except:
+        except Exception:
             pass
         if not isinstance(self.dbconnection, db_utils.DbConnectionManager):
             self.dbconnection = db_utils.DbConnectionManager()
@@ -1105,7 +1100,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             self.dbconnection.closedb()
             self.dbconnection = None
 
-        except:
+        except Exception:
             common_utils.MessagebarAndLog.critical(
                 bar_msg=ru(
                     QCoreApplication.translate(
@@ -1178,7 +1173,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         #    self.previous_title = self.figure._midv_ax_main.axes.get_title()
         #    self.previous_xaxis_label = self.figure._midv_ax_main.axes.get_xlabel()
         #    self.previous_yaxis_label = self.figure._midv_ax_main.axes.get_ylabel()
-        # except:
+        # except Exception:
         #    pass
 
         previous_canvas = self.figure.canvas
@@ -1334,12 +1329,12 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                                 skip_labels=skip_labels,
                             )
                     QgsProject.instance().removeMapLayer(temp_memorylayer.id())
-        except:
+        except Exception:
             raise
         finally:
             try:
                 QgsProject.instance().removeMapLayer(temp_memorylayer.id())
-            except:
+            except Exception:
                 pass
 
     def plot_graded_dems(
@@ -1473,7 +1468,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                 y_vals = list(y1)
 
             for _idx in [0, -1]:
-                if not x_vals[_idx] in plotted_axvlines:
+                if x_vals[_idx] not in plotted_axvlines:
                     self.figure._midv_ax_main.plot(
                         [x_vals[_idx], x_vals[_idx]],
                         [_y_vals[_idx] - graded_depth_m, _y_vals[_idx]],
@@ -1513,7 +1508,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             return
 
         tables = db_utils.get_tables()
-        if not "tem_data" in tables:
+        if "tem_data" not in tables:
             return
 
         df = pd.read_sql(
@@ -1607,7 +1602,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                 vmin = float(
                     self.ms.settingsdict["secplot_tem_vmin"].strip().replace(",", ".")
                 )
-            except:
+            except Exception:
                 common_utils.MessagebarAndLog.warning(
                     bar_msg=ru(
                         QCoreApplication.translate(
@@ -1621,7 +1616,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                 vmax = float(
                     self.ms.settingsdict["secplot_tem_vmax"].strip().replace(",", ".")
                 )
-            except:
+            except Exception:
                 common_utils.MessagebarAndLog.warning(
                     bar_msg=ru(
                         QCoreApplication.translate(
@@ -1732,7 +1727,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             return
 
         tables = db_utils.get_tables()
-        if not "profile_images" in tables:
+        if "profile_images" not in tables:
             return
 
         if not self.ms.settingsdict["secplot_images_images"]:
@@ -2298,7 +2293,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                 except AttributeError:
                     try:
                         fig.canvas.setWindowTitle(window_title)
-                    except:
+                    except Exception:
                         print(f"Error, {e}, followup:\n{traceback.format_exc()}")
 
     def resize_widget(self, parent):
@@ -2723,7 +2718,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         # try:
         #    fig.canvas.toolbar._actions['edit_parameters'].triggered.connect(lambda x: self.update_legend(True, fig))
         #    pass
-        # except:
+        # except Exception:
         #    common_utils.MessagebarAndLog.info(log_msg=ru(
         #        QCoreApplication.translate('SectionPlot', 'Programming error: Connection to qaction edit_parameters failed: %s')) % str(traceback.format_exc()))
 
@@ -2741,9 +2736,9 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         )
 
 
-def sample_polygon(polyLayer, sectionlinelayer, xarray):
-    poly_provider = polyLayer.dataProvider()
-    renderer = polyLayer.renderer()
+def sample_polygon(poly_layer, sectionlinelayer, xarray):
+    poly_provider = poly_layer.dataProvider()
+    renderer = poly_layer.renderer()
     if not isinstance(renderer, QgsRuleBasedRenderer):
         renderer = QgsRuleBasedRenderer.convertFromRenderer(renderer)
     root_rule = renderer.rootRule()

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin tests the module that handles importing of
@@ -22,7 +21,7 @@
 """
 
 
-import mock
+from unittest import mock
 from nose.plugins.attrib import attr
 
 from midvatten.tools.utils import common_utils
@@ -182,9 +181,9 @@ class TestPiperPlotDb(utils_for_tests.MidvattenTestPostgisDbSv):
         piperplot.get_data_and_make_plot()
         data = piperplot.obsnp_nospecformat
         # print("data: " + str(data))
-        for l in data:
+        for row in data:
             for idx in range(3, 9):
-                l[idx] = "{0:.10f}".format(float(l[idx]))
+                row[idx] = f"{float(row[idx]):.10f}"
         # print("data: " + str(data))
 
         test_parameters = common_utils.anything_to_string_representation(

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This is the part of the Midvatten plugin that enables quick export of data from the database
@@ -63,7 +62,7 @@ parameter_browser_dialog = qgis.PyQt.uic.loadUiType(
 )[0]
 
 
-class ParameterGroup(object):
+class ParameterGroup:
     def __init__(self, obslayer: None):
         """ """
         self.obslayer = obslayer
@@ -982,7 +981,7 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         try:
             with open(filename, "w", encoding="utf8") as f:
                 f.write(out_string)
-        except IOError as e:
+        except OSError as e:
             common_utils.pop_up_info(
                 ru(
                     QCoreApplication.translate(
@@ -1471,7 +1470,7 @@ class MessageBar(qgis.gui.QgsMessageBar):
     """
 
     def __init__(self, parent=None):
-        super(MessageBar, self).__init__(parent)
+        super().__init__(parent)
         self.parent().installEventFilter(self)
 
     def showEvent(self, event):
@@ -1486,9 +1485,9 @@ class MessageBar(qgis.gui.QgsMessageBar):
     def eventFilter(self, object, event):
         if event.type() == qgis.PyQt.QtCore.QEvent.Resize:
             self.showEvent(None)
-        return super(MessageBar, self).eventFilter(object, event)
+        return super().eventFilter(object, event)
 
-    def popWidget(self, QgsMessageBarItem=None):
+    def popWidget(self, qgs_message_bar_item=None):
         self.setParent(0)
         self.hide()
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This is the part of the Midvatten plugin that returns a report with water quality data for the selected obs_point. 
@@ -32,9 +31,7 @@ from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.common_utils import returnunicode as ru
 
 
-class Wqualreport(
-    object
-):  # extracts water quality data for selected objects, selected db and given table, results shown in html report
+class Wqualreport:  # extracts water quality data for selected objects, selected db and given table, results shown in html report
     def __init__(self, layer, settingsdict={}):
         # show the user this may take a long time...
         common_utils.start_waiting_cursor()
@@ -74,7 +71,7 @@ class Wqualreport(
                 print(
                     "about to get data for " + obsid + ", at time: " + str(time.time())
                 )  # debug
-            except:
+            except Exception:
                 pass
             report_data = self.get_data(
                 self.settingsdict["database"], obsid, dbconnection
@@ -86,7 +83,7 @@ class Wqualreport(
                     + ", at time: "
                     + str(time.time())
                 )  # debug
-            except:
+            except Exception:
                 pass
             if report_data:
                 self.write_html_report(report_data, f)
@@ -94,7 +91,7 @@ class Wqualreport(
                 print(
                     "wrote html report for " + obsid + ", at time: " + str(time.time())
                 )  # debug
-            except:
+            except Exception:
                 pass
 
         dbconnection.closedb()
@@ -108,7 +105,7 @@ class Wqualreport(
             QDesktopServices.openUrl(QUrl.fromLocalFile(reportpath))
 
     def get_data(
-        self, dbPath="", obsid="", dbconnection=None
+        self, db_path="", obsid="", dbconnection=None
     ):  # get_data method that returns a table with water quality data
         # Load all water quality parameters stored in two result columns: parameter, unit
         if not (
@@ -149,7 +146,7 @@ class Wqualreport(
             print(
                 "parameters for " + obsid + " is loaded at time: " + str(time.time())
             )  # debug
-        except:
+        except Exception:
             pass
         # Load all date_times, stored in two result columns: reportnr, date_time
         if self.settingsdict[
@@ -198,7 +195,7 @@ class Wqualreport(
                 + " at time: "
                 + str(time.time())
             )  # debug
-        except:
+        except Exception:
             pass
         if not date_times:
             common_utils.MessagebarAndLog.warning(
@@ -253,7 +250,7 @@ class Wqualreport(
             print(
                 "Prepare report_table for " + obsid + ", at time: " + str(time.time())
             )  # debug
-        except:
+        except Exception:
             pass
         report_table[0][0] = "obsid"
         report_table[1][0] = "date_time"
@@ -274,7 +271,7 @@ class Wqualreport(
                 + ", at time: "
                 + str(time.time())
             )  # debug
-        except:
+        except Exception:
             pass
         for datecounter, sorting_date_time in enumerate(
             date_times, start=1
@@ -321,7 +318,7 @@ class Wqualreport(
                 if recs:
                     try:
                         report_table[parametercounter][datecounter] = ru(recs[0][0])
-                    except:
+                    except Exception:
                         report_table[parametercounter][datecounter] = ""
                         common_utils.MessagebarAndLog.warning(
                             bar_msg=ru(
@@ -363,10 +360,10 @@ class Wqualreport(
                         [ru(x) if x is not None else "" for x in sublist]
                     )
                     rpt += "  </td></tr>\n"
-            except:
+            except Exception:
                 try:
                     print("here was an error: %s" % sublist)
-                except:
+                except Exception:
                     pass
             f.write(rpt)
         f.write("\n</table><p></p><p></p>")

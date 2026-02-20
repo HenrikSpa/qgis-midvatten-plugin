@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin handles dates.
@@ -43,7 +42,8 @@ from qgis.PyQt.QtWebKitWidgets import QWebView
 from matplotlib.dates import num2date
 from qgis.PyQt import QtWidgets, QtCore, uic
 from qgis.core import Qgis, QgsApplication, QgsLogger, QgsProject, QgsMapLayer
-from typing import Any, Callable, Iterator, List, Optional, Tuple, Type
+from typing import Any, Callable, List, Optional, Tuple, Type
+from collections.abc import Iterator
 
 not_found_dialog = uic.loadUiType(
     os.path.join(os.path.dirname(__file__), "../..", "ui", "not_found_gui.ui")
@@ -57,7 +57,7 @@ def tr(context: str, msg: str) -> str:
     return QCoreApplication.translate(context, msg)
 
 
-class MessagebarAndLog(object):
+class MessagebarAndLog:
     """Class that sends logmessages to messageBar and or to QgsMessageLog
 
     Usage: MessagebarAndLog.info(bar_msg='a', log_msg='b', duration=10,
@@ -118,7 +118,7 @@ class MessagebarAndLog(object):
                     qgis.utils.iface.optional_bar.pushWidget(
                         widget, level=messagebar_level, duration=duration
                     )
-                except:
+                except Exception:
                     pass
         QgsApplication.messageLog().logMessage(
             returnunicode(bar_msg), "Midvatten", level=log_level
@@ -379,7 +379,7 @@ class NotFoundQuestion(QtWidgets.QDialog, not_found_dialog):
         if self.answer is None:
             self.set_answer_and_value("cancel")
         NotFoundQuestion.window_position = self.geometry().topLeft()
-        super(NotFoundQuestion, self).closeEvent(event)
+        super().closeEvent(event)
 
         # self.close()
 
@@ -764,7 +764,7 @@ def unicode_2_utf8(anything):  # takes an unicode and tries to return it as utf8
     text = None
     try:
         if type(anything) == type(None):
-            text = ("").encode("utf-8")
+            text = (b"")
         elif isinstance(anything, str):
             text = anything.encode("utf-8")
         elif isinstance(anything, list):
@@ -783,7 +783,7 @@ def unicode_2_utf8(anything):  # takes an unicode and tries to return it as utf8
             text = anything
         elif isinstance(anything, bool):
             text = anything.encode("utf-8")
-    except:
+    except Exception:
         pass
 
     if text is None:
@@ -919,9 +919,9 @@ def calc_mean_diff(coupled_vals):
     """
     return np.mean(
         [
-            float(m) - float(l)
-            for m, l in coupled_vals
-            if not math.isnan(m) or math.isnan(l)
+            float(m) - float(val)
+            for m, val in coupled_vals
+            if not math.isnan(m) or math.isnan(val)
         ]
     )
 
@@ -1379,18 +1379,18 @@ def anything_to_string_representation(
             ]
         )
     elif isinstance(anything, (float, int)):
-        aunicode = "{}".format(returnunicode(anything))
+        aunicode = f"{returnunicode(anything)}"
     elif isinstance(anything, str):
         if '"' not in anything:
-            aunicode = '"{}"'.format(anything)
+            aunicode = f'"{anything}"'
         elif "'" not in anything:
-            aunicode = "'{}'".format(anything)
+            aunicode = f"'{anything}'"
         elif not anything.startswith('"') and not anything.endswith('"'):
-            aunicode = '"""{}"""'.format(anything)
+            aunicode = f'"""{anything}"""'
         elif not anything.startswith("'") and not anything.endswith("'"):
-            aunicode = "'''{}'''".format(anything)
+            aunicode = f"'''{anything}'''"
         else:
-            aunicode = '""" {} """'.format(anything)
+            aunicode = f'""" {anything} """'
     elif isinstance(anything, qgis.PyQt.QtCore.QVariant):
         aunicode = returnunicode(anything.toString().data())
     else:
@@ -1416,7 +1416,7 @@ def stop_waiting_cursor():
     qgis.PyQt.QtWidgets.QApplication.restoreOverrideCursor()
 
 
-class Cancel(object):
+class Cancel:
     """Object for transmitting cancel messages instead of using string 'cancel'.
     use isinstance(variable, Cancel) to check for it.
 
@@ -1448,7 +1448,7 @@ def get_delimiter(
                 "get_delimiter", "Must give filename or supply rows"
             )
         )
-    with io.open(filename, "r", encoding=charset) as f:
+    with open(filename, encoding=charset) as f:
         rows = f.readlines()
     if skip_empty_rows:
         rows = [row for row in rows if row.strip().strip("\r").strip("\n")]
@@ -1581,7 +1581,7 @@ def fn_timer(function: Callable) -> Callable:
             print(
                 "Total time running %s: %s seconds" % (function.__name__, str(t1 - t0))
             )
-        except IOError:
+        except OSError:
             pass
 
         return result
@@ -1627,7 +1627,7 @@ def general_exception_handler(func: Callable) -> Callable:
                     % str(e),
                     duration=30,
                 )
-        except:
+        except Exception:
             raise
         else:
             return result
@@ -1705,7 +1705,7 @@ def get_stored_settings(ms, settingskey, default=None, skip_ast=False):
             )
             % (settingskey, settings_string_raw)
         )
-    except:
+    except Exception:
         pass
 
     if skip_ast:
@@ -1765,7 +1765,7 @@ def to_float_or_none(anything):
             return None
         except ValueError:
             return None
-        except:
+        except Exception:
             return None
         else:
             return a_float
@@ -1774,7 +1774,7 @@ def to_float_or_none(anything):
     else:
         try:
             a_float = float(str(anything).replace(",", "."))
-        except:
+        except Exception:
             return None
         else:
             return a_float
@@ -1788,7 +1788,7 @@ def write_printlist_to_file(
     encoding: str = "utf-8",
     **kwds
 ):
-    with io.open(filename, "w", newline="", encoding=encoding) as csvfile:
+    with open(filename, "w", newline="", encoding=encoding) as csvfile:
         csvwriter = csv.writer(csvfile, delimiter=delimiter, dialect=dialect, **kwds)
         # csvwriter.writerows([[bytes(returnunicode(col), encoding) for col in row] for row in printlist])
         csvwriter.writerows(returnunicode(printlist, keep_containers=True))
@@ -1803,7 +1803,7 @@ def write_printlist_to_file(
 
 
 def sql_unicode_list(an_iterator: Tuple[str]) -> str:
-    return ", ".join(["'{}'".format(returnunicode(x)) for x in an_iterator])
+    return ", ".join([f"'{returnunicode(x)}'" for x in an_iterator])
 
 
 def get_save_file_name_no_extension(**kwargs) -> str:
@@ -1818,7 +1818,7 @@ def dict_to_tuple(adict: dict) -> tuple[tuple[Any, Any], ...]:
     return tuple([(k, v) for k, v in sorted(adict.items())])
 
 
-class ContinuousColorCycle(object):
+class ContinuousColorCycle:
     def __init__(
         self, color_cycle, color_cycle_len, style_cycler, used_style_color_combo
     ):
@@ -1867,7 +1867,7 @@ def get_full_filename(filename: str) -> str:
     )
 
 
-class PickAnnotator(object):
+class PickAnnotator:
     def __init__(self, fig, canvas=None, mousebutton="left"):
         self.fig = fig
         self.annotation = None
@@ -1896,15 +1896,15 @@ class PickAnnotator(object):
                 xtext = datetime.datetime.strftime(
                     num2date(mouseevent.xdata), "%Y-%m-%d %H:%M:%S"
                 )
-            except:
+            except Exception:
                 xtext = mouseevent.xdata
 
             try:
                 ytext = round(mouseevent.ydata, 3)
-            except:
+            except Exception:
                 ytext = mouseevent.ydata
             new_text = ", ".join(
-                ['"{}"'.format(artist.get_label()), str(xtext), str(ytext)]
+                [f'"{artist.get_label()}"', str(xtext), str(ytext)]
             )
 
             pos = (mouseevent.xdata, mouseevent.ydata)
@@ -1917,7 +1917,7 @@ class PickAnnotator(object):
                         xycoords="data",
                         bbox=dict(boxstyle="round", fc="w", ec="k", alpha=0.5),
                     )
-                except:
+                except Exception:
                     self.annotation = ax.annotate(
                         new_text,
                         xy=pos,
@@ -1957,7 +1957,7 @@ class PickAnnotator(object):
                 )
 
 
-class Timer(object):
+class Timer:
     def __init__(self, name):
         self.t0 = time.time()
         self.t1 = self.t0
@@ -2012,8 +2012,8 @@ def format_timezone_string(index: int) -> str:
     if index < -12 or index > 14:
         raise Exception("Error, timezone must be between -12 and + 14.")
     if index < 0:
-        return "UTC{}".format(str(index))
+        return f"UTC{str(index)}"
     elif not index:
         return "UTC"
     else:
-        return "UTC+{}".format(str(index))
+        return f"UTC+{str(index)}"

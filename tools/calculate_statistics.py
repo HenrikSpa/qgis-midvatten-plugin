@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This is the part of the Midvatten plugin that calculates some general statistics
@@ -112,7 +111,7 @@ class CalculateStatisticsGui(
 class DbBrowser(gui_utils.DistinctValuesBrowser):
 
     def __init__(self, tables_columns: Dict[str, List[str]]):
-        super(DbBrowser, self).__init__(tables_columns)
+        super().__init__(tables_columns)
 
         self.distinct_value_label.setVisible(False)
         self._distinct_value.setVisible(False)

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This is the part of the Midvatten plugin that load stratigraphy symbology
@@ -100,7 +99,7 @@ def strat_symbology(
     dbconnection = db_utils.DbConnectionManager()
     try:
         add_views_to_db(dbconnection, bedrock_geoshort)
-    except:
+    except Exception:
         common_utils.MessagebarAndLog.critical(
             bar_msg=QCoreApplication.translate(
                 "strat_symbology",
@@ -201,7 +200,7 @@ def strat_symbology(
                 )
             except StyleNotFoundError as e:
                 common_utils.MessagebarAndLog.info(bar_msg=str(e))
-            except:
+            except Exception:
                 common_utils.MessagebarAndLog.info(bar_msg=traceback.format_exc())
 
         symbology = "Layer texts"
@@ -215,7 +214,7 @@ def strat_symbology(
                 )
             except StyleNotFoundError as e:
                 common_utils.MessagebarAndLog.info(bar_msg=str(e))
-            except:
+            except Exception:
                 common_utils.MessagebarAndLog.info(bar_msg=traceback.format_exc())
 
         symbology = "W levels"
@@ -234,7 +233,7 @@ def strat_symbology(
                         )
                     except StyleNotFoundError as e:
                         common_utils.MessagebarAndLog.info(bar_msg=str(e))
-                    except:
+                    except Exception:
                         common_utils.MessagebarAndLog.info(
                             bar_msg=traceback.format_exc()
                         )
@@ -244,7 +243,7 @@ def strat_symbology(
                     )
                 except StyleNotFoundError as e:
                     common_utils.MessagebarAndLog.info(bar_msg=str(e))
-                except:
+                except Exception:
                     common_utils.MessagebarAndLog.info(bar_msg=traceback.format_exc())
 
         symbology = "Bedrock"
@@ -261,7 +260,7 @@ def strat_symbology(
                     )
                 except StyleNotFoundError as e:
                     common_utils.MessagebarAndLog.info(bar_msg=str(e))
-                except:
+                except Exception:
                     common_utils.MessagebarAndLog.info(bar_msg=traceback.format_exc())
                 else:
                     _bedrock_label = """LOWER("drillstop") LIKE '%{}%' """
@@ -284,7 +283,7 @@ def strat_symbology(
                 del layers[symbology]
             except StyleNotFoundError as e:
                 common_utils.MessagebarAndLog.info(bar_msg=str(e))
-            except:
+            except Exception:
                 common_utils.MessagebarAndLog.info(bar_msg=traceback.format_exc())
 
         symbology = "Frame"
@@ -295,7 +294,7 @@ def strat_symbology(
                 )
             except StyleNotFoundError as e:
                 common_utils.MessagebarAndLog.info(bar_msg=str(e))
-            except:
+            except Exception:
                 common_utils.MessagebarAndLog.info(bar_msg=traceback.format_exc())
 
         layers_group = add_group(group, "Layers", checked=True)
@@ -311,7 +310,7 @@ def strat_symbology(
             )
         except StyleNotFoundError as e:
             common_utils.MessagebarAndLog.info(bar_msg=str(e))
-        except:
+        except Exception:
             common_utils.MessagebarAndLog.info(bar_msg=traceback.format_exc())
 
         symbology = "Shadow"
@@ -322,7 +321,7 @@ def strat_symbology(
                 )
             except StyleNotFoundError as e:
                 common_utils.MessagebarAndLog.info(bar_msg=str(e))
-            except:
+            except Exception:
                 common_utils.MessagebarAndLog.info(bar_msg=traceback.format_exc())
 
         if any([spec.get("xfactor"), spec.get("yfactor"), spec.get("use_map_scale")]):
@@ -393,7 +392,7 @@ def add_layers_symbology(
         plot_types, geo_colors, geo_layer, layers_stylename, "geoshort"
     )
     symbology_using_cloning(
-        {k: "= '{}'".format(k) for k in sorted(hydro_colors.keys())},
+        {k: f"= '{k}'" for k in sorted(hydro_colors.keys())},
         hydro_colors,
         hydro_layer,
         layers_stylename,
@@ -432,32 +431,28 @@ def add_bedrock_symbology(
         # Bars with triangle
         bedrock_triangle = bedrock_rules[0]
         bedrock_triangle.setFilterExpression(
-            """LOWER("drillstop") LIKE '%{}%' """.format(bedrock_geoshort)
+            f"""LOWER("drillstop") LIKE '%{bedrock_geoshort}%' """
         )
     elif len(bedrock_rules) == 2:
         # Rings with open and closed ending
         bedrock_closed_ending, bedrock_open_ending = bedrock_rules
         bedrock_closed_ending.setFilterExpression(
-            """LOWER("drillstop") LIKE '%{}%' """.format(bedrock_geoshort)
+            f"""LOWER("drillstop") LIKE '%{bedrock_geoshort}%' """
         )
         bedrock_open_ending.setFilterExpression(
-            """LOWER("drillstop") NOT LIKE '%{}%' OR "drillstop" IS NULL """.format(
-                bedrock_geoshort
-            )
+            f"""LOWER("drillstop") NOT LIKE '%{bedrock_geoshort}%' OR "drillstop" IS NULL """
         )
     elif len(bedrock_rules) == 3:
         # Bars with triangle, open and closed ending
         bedrock_triangle, bedrock_closed_ending, bedrock_open_ending = bedrock_rules
         bedrock_triangle.setFilterExpression(
-            """LOWER("drillstop") LIKE '%{}%' """.format(bedrock_geoshort)
+            f"""LOWER("drillstop") LIKE '%{bedrock_geoshort}%' """
         )
         bedrock_closed_ending.setFilterExpression(
-            """LOWER("drillstop") LIKE '%{}%' """.format(bedrock_geoshort)
+            f"""LOWER("drillstop") LIKE '%{bedrock_geoshort}%' """
         )
         bedrock_open_ending.setFilterExpression(
-            """LOWER("drillstop") NOT LIKE '%{}%' OR "drillstop" IS NULL """.format(
-                bedrock_geoshort
-            )
+            f"""LOWER("drillstop") NOT LIKE '%{bedrock_geoshort}%' OR "drillstop" IS NULL """
         )
     else:
         common_utils.MessagebarAndLog.warning(
@@ -481,7 +476,7 @@ def apply_style(layer, stylename):
         "..",
         "definitions",
         "strat_symbology",
-        "{}_sv.qml".format(stylename),
+        f"{stylename}_sv.qml",
     )
     stylefile = os.path.join(
         os.sep,
@@ -489,14 +484,14 @@ def apply_style(layer, stylename):
         "..",
         "definitions",
         "strat_symbology",
-        "{}.qml".format(stylename),
+        f"{stylename}.qml",
     )
     if midvatten_utils.getcurrentlocale()[0] == "sv_SE" and os.path.isfile(
         stylefile_sv
     ):  # swedish forms are loaded only if locale settings indicate sweden
         try:
             layer.loadNamedStyle(stylefile_sv)
-        except:
+        except Exception:
             if not os.path.isfile(stylefile):
                 raise StyleNotFoundError(
                     ru(
@@ -529,7 +524,7 @@ def symbology_using_cloning(plot_types, colors, layer, stylename, column):
     renderer = layer.renderer()
     try:
         root = renderer.rootRule()
-    except:
+    except Exception:
         print(str(stylename))
         raise
     for_cloning = root.children()[-1]
@@ -546,7 +541,7 @@ def symbology_using_cloning(plot_types, colors, layer, stylename, column):
             condition = "IN"
         _types = ", ".join([f"'{x}'" for x in types])
         rule.setFilterExpression(
-            """trim(lower("{}")) {} ({})""".format(column, condition, _types)
+            f"""trim(lower("{column}")) {condition} ({_types})"""
         )
         rule.setLabel(key)
         sl = rule.symbol().symbolLayer(0)
@@ -630,7 +625,7 @@ def add_views_to_db(dbconnection, bedrock_geoshort):
 
     try:
         dbconnection.drop_view(view_name)
-    except:
+    except Exception:
         midvatten_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
     def insert_view(view_name):
@@ -666,7 +661,7 @@ def add_views_to_db(dbconnection, bedrock_geoshort):
         ).format(Identifier(view_name))
     try:
         cur.execute(sql)
-    except:
+    except Exception:
         midvatten_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
     if view_name not in list(db_utils.tables_columns(dbconnection=dbconnection).keys()):
@@ -686,7 +681,7 @@ def add_views_to_db(dbconnection, bedrock_geoshort):
     view_name = "w_lvls_last_geom"
     try:
         dbconnection.drop_view(view_name)
-    except:
+    except Exception:
         midvatten_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
     try:
         if dbconnection.dbtype == "spatialite":
@@ -710,7 +705,7 @@ def add_views_to_db(dbconnection, bedrock_geoshort):
             a.date_time=b.date_time JOIN obs_points AS c ON a.obsid=c.obsid;"""
                 ).format(Identifier(view_name))
             )
-    except:
+    except Exception:
         midvatten_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
     view_found = False
@@ -736,7 +731,7 @@ def add_views_to_db(dbconnection, bedrock_geoshort):
     view_name = "bedrock"
     try:
         dbconnection.drop_view(view_name)
-    except:
+    except Exception:
         midvatten_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
     # Hard coded the strata to ('rock', 'berg') to make the view query safe from sql
@@ -795,7 +790,7 @@ def add_views_to_db(dbconnection, bedrock_geoshort):
         )
     try:
         cur.execute(_bergy)
-    except:
+    except Exception:
         midvatten_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
     if dbconnection.dbtype == "spatialite":

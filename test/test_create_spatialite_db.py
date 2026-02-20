@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin tests the creating of the database.
@@ -21,7 +20,7 @@
 """
 
 
-import mock
+from unittest import mock
 from nose.plugins.attrib import attr
 
 from midvatten.definitions import midvatten_defs as defs
@@ -335,7 +334,7 @@ class TestCreateDb(utils_for_tests.MidvattenTestSpatialiteNotCreated):
 class TestObsPointsTriggers(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
     def setUp(self):
-        super(TestObsPointsTriggers, self).setUp()
+        super().setUp()
         db_utils.sql_alter_db(
             """DROP TRIGGER IF EXISTS after_insert_obs_points_geom_fr_coords"""
         )

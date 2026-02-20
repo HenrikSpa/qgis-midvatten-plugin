@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin tests the stratigraphy plot.
@@ -21,7 +20,7 @@
 """
 
 
-import mock
+from unittest import mock
 from nose.plugins.attrib import attr
 from qgis.core import QgsProject, QgsVectorLayer
 
@@ -46,7 +45,7 @@ class TestStratigraphy(utils_for_tests.MidvattenTestPostgisDbSv):
         features = self.vlayer.getFeatures()
         feature_ids = [feature.id() for feature in features]
         self.vlayer.selectByIds(feature_ids)
-        print("1. Valid vlayer '{}'".format(self.vlayer.isValid()))
+        print(f"1. Valid vlayer '{self.vlayer.isValid()}'")
         print("2. feature_ids: " + str(feature_ids))
         print(
             "3. QgsVectorLayer.selectedFeatureIds: "

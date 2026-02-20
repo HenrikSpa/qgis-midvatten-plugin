@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin tests the module w_flow_calc_aveflow.py.
@@ -20,7 +19,7 @@
 """
 
 
-import mock
+from unittest import mock
 from nose.plugins.attrib import attr
 from qgis.PyQt import QtWidgets
 

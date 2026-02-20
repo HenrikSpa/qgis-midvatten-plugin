@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
 
-import mock
+from unittest import mock
 from nose.plugins.attrib import attr
 from qgis.core import QgsProject
 
@@ -32,7 +31,7 @@ class TestStratSymbology(utils_for_tests.MidvattenTestPostgisDbSv):
             self.ss = self.midvatten.strat_symbology
             try:
                 self.ss.create_symbology()
-            except:
+            except Exception:
                 print(f"{mock_messagebar.mock_calls=}")
                 raise
 

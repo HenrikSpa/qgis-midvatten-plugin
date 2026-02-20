@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin tests the creating of the postgis database.
@@ -21,7 +20,7 @@
 """
 
 
-import mock
+from unittest import mock
 from nose.plugins.attrib import attr
 
 from midvatten.definitions import midvatten_defs as defs
@@ -228,7 +227,7 @@ class TestObsPointsTriggers(utils_for_tests.MidvattenTestPostgisDbSv):
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def setUp(self, mock_messagebar):
-        super(TestObsPointsTriggers, self).setUp()
+        super().setUp()
         db_utils.sql_alter_db(
             """DROP TRIGGER IF EXISTS trigger_after_insert_obs_points_geom_fr_coords ON obs_points;"""
         )

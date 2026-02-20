@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin tests the module that handles importing of
@@ -24,7 +23,7 @@
 
 import uuid
 
-import mock
+from unittest import mock
 
 from nose.plugins.attrib import attr
 

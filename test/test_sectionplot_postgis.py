@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin tests the sectionplot.
@@ -23,8 +22,8 @@
 
 import re
 
-import mock
-from mock import call
+from unittest import mock
+from unittest.mock import call
 from nose.plugins.attrib import attr
 from qgis.core import QgsProject, QgsVectorLayer
 
@@ -39,7 +38,7 @@ class TestSectionPlot(utils_for_tests.MidvattenTestPostgisDbSv):
     """The test doesn't go through the whole section plot unfortunately"""
 
     def setUp(self):
-        super(TestSectionPlot, self).setUp()
+        super().setUp()
         self.midvatten.ms.settingsdict["secplot_loaded_template"] = ""
         self.midvatten.ms.settingsdict["secplot_templates"] = ""
         self.midvatten.ms.settingsdict["secplotlocation"] = 0
@@ -110,10 +109,7 @@ class TestSectionPlot(utils_for_tests.MidvattenTestPostgisDbSv):
         assert not mock_messagebar.critical.called
         # print(f"{mock_messagebar.mock_calls=}")
         print(
-            "self.sectionplot.figure._midv_p {} get_legend_items_labels(self.sectionplot.figure._midv_p)[1] {}".format(
-                str(self.sectionplot.figure._midv_p),
-                str(get_legend_items_labels(self.sectionplot.figure._midv_p)[1]),
-            )
+            f"self.sectionplot.figure._midv_p {str(self.sectionplot.figure._midv_p)} get_legend_items_labels(self.sectionplot.figure._midv_p)[1] {str(get_legend_items_labels(self.sectionplot.figure._midv_p)[1])}"
         )
         assert len(get_legend_items_labels(self.sectionplot.figure._midv_p)[0]) == len(
             get_legend_items_labels(self.sectionplot.figure._midv_p)[1]

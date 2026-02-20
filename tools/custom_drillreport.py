@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This is the part of the Midvatten plugin that returns a report with general observation point info,
@@ -129,7 +128,7 @@ class DrillreportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
             for attr, val in stored_settings.items():
                 try:
                     selfattr = getattr(self, attr)
-                except:
+                except Exception:
                     pass
                 else:
                     if isinstance(selfattr, qgis.PyQt.QtWidgets.QPlainTextEdit):
@@ -233,7 +232,7 @@ class DrillreportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
         ]:
             try:
                 attr = getattr(self, attrname)
-            except:
+            except Exception:
                 common_utils.MessagebarAndLog.info(
                     log_msg=ru(
                         QCoreApplication.translate(
@@ -316,7 +315,7 @@ class DrillreportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
             return as_dict
 
 
-class Drillreport(object):  # general observation point info for the selected object
+class Drillreport:  # general observation point info for the selected object
 
     def __init__(
         self,
@@ -734,9 +733,7 @@ class Drillreport(object):  # general observation point info for the selected ob
             )
             col_widths = ["2*", "3*"]
 
-        rpt += r"""<TABLE style="font-family:'Ubuntu'; font-size:8pt; font-weight:400; font-style:normal;" WIDTH=100% BORDER=0 CELLPADDING=0 class="no-spacing" CELLSPACING=0><COL WIDTH={}><COL WIDTH={}>""".format(
-            col_widths[0], col_widths[1]
-        )
+        rpt += rf"""<TABLE style="font-family:'Ubuntu'; font-size:8pt; font-weight:400; font-style:normal;" WIDTH=100% BORDER=0 CELLPADDING=0 class="no-spacing" CELLSPACING=0><COL WIDTH={col_widths[0]}><COL WIDTH={col_widths[1]}>"""
 
         rpt += r"""<p style="font-family:'Ubuntu'; font-size:8pt; font-weight:400; font-style:normal;">"""
         for idx, header_value in enumerate(data):
@@ -780,9 +777,7 @@ class Drillreport(object):  # general observation point info for the selected ob
                 value = value.replace(".", decimal_separator)
 
             try:
-                rpt += r"""<TR VALIGN=TOP><TD WIDTH=33%><P><font size=1>{}</font></P></TD><TD WIDTH=50%><P><font size=1>{}</font></P></TD></TR>""".format(
-                    header, value
-                )
+                rpt += rf"""<TR VALIGN=TOP><TD WIDTH=33%><P><font size=1>{header}</font></P></TD><TD WIDTH=50%><P><font size=1>{value}</font></P></TD></TR>"""
             except UnicodeEncodeError:
                 try:
                     common_utils.MessagebarAndLog.critical(
@@ -800,7 +795,7 @@ class Drillreport(object):  # general observation point info for the selected ob
                         )
                         % (header, value),
                     )
-                except:
+                except Exception:
                     pass
                 raise
         rpt += r"""</p>"""
@@ -827,7 +822,7 @@ class Drillreport(object):  # general observation point info for the selected ob
 
         rpt += r"""<TABLE style="font-family:'Ubuntu'; font-size:8pt; font-weight:400; font-style:normal;" WIDTH=100% BORDER=0 CELLPADDING=0 class="no-spacing" CELLSPACING=0>"""
         for col_width in col_widths:
-            rpt += r"""<COL WIDTH={}>""".format(col_width)
+            rpt += rf"""<COL WIDTH={col_width}>"""
         rpt += r"""<p style="font-family:'Ubuntu'; font-size:8pt; font-weight:400; font-style:normal;">"""
 
         headers_txt = OrderedDict(
@@ -896,9 +891,7 @@ class Drillreport(object):  # general observation point info for the selected ob
         if len(strat_data) > 0:
             rpt += r"""<TR VALIGN=TOP>"""
             for header in strat_columns:
-                rpt += r"""<TD><P><font size=2><u>{}</font></P></u></TD>""".format(
-                    headers_txt[header]
-                )
+                rpt += rf"""<TD><P><font size=2><u>{headers_txt[header]}</font></P></u></TD>"""
             rpt += r"""</TR>"""
 
             for rownr, row in enumerate(strat_data):
@@ -918,9 +911,7 @@ class Drillreport(object):  # general observation point info for the selected ob
                                     )
                                 )
                             )
-                            rpt += r"""<TD><P><font size=1> </font></P></TD>""".format(
-                                value
-                            )
+                            rpt += r"""<TD><P><font size=1> </font></P></TD>"""
                         else:
                             depthtop = (
                                 ""
@@ -940,9 +931,7 @@ class Drillreport(object):  # general observation point info for the selected ob
                         value = "" if row[value_idx] == "NULL" else row[value_idx]
                         if col in ("depthtop", "depthbot") and decimal_separator != ".":
                             value = value.replace(".", decimal_separator)
-                        rpt += r"""<TD><P><font size=1>{}</font></P></TD>""".format(
-                            value
-                        )
+                        rpt += rf"""<TD><P><font size=1>{value}</font></P></TD>"""
 
                 rpt += r"""</TR>"""
         rpt += r"""</p>"""
@@ -953,7 +942,7 @@ class Drillreport(object):  # general observation point info for the selected ob
     def write_comment_data(self, comment_data, header):
         if comment_data:
             if header:
-                rpt = r"""<P><U><B><font size=3>{}</font></B></U></P>""".format(header)
+                rpt = rf"""<P><U><B><font size=3>{header}</font></B></U></P>"""
             else:
                 rpt = r""
 

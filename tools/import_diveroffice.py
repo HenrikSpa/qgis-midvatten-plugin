@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin handles importing of data to the database
@@ -54,7 +53,7 @@ from midvatten.tools.utils.gui_utils import (
 
 try:
     import pandas as pd
-except:
+except Exception:
     pandas_on = False
 else:
     pandas_on = True
@@ -307,7 +306,7 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
                     begindate=from_date,
                     enddate=to_date,
                 )
-            except:
+            except Exception:
                 common_utils.MessagebarAndLog.critical(
                     bar_msg=ru(
                         QCoreApplication.translate(
@@ -511,7 +510,7 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
                 answer = importer.general_import(
                     "w_levels_logger", file_to_import_to_db
                 )
-            except:
+            except Exception:
                 print(f"Got error {traceback.format_exc()}")
                 raise
         if export_csv:
@@ -555,7 +554,7 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         data_start_row = None
         metadata = {}
         # Parse metadata
-        with io.open(path, "rt", encoding=str(charset)) as f:
+        with open(path, encoding=str(charset)) as f:
             rows = [ru(rawrow).rstrip("\n").rstrip("\r").strip() for rawrow in f]
 
         for rownr, row in enumerate(rows):
@@ -756,7 +755,7 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         utc_offset = None
 
         data_rows = []
-        with io.open(path, "rt", encoding=str(charset)) as f:
+        with open(path, encoding=str(charset)) as f:
             location = None
             for rawrow in f:
                 rawrow = ru(rawrow)
@@ -779,7 +778,7 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
                     begin_extraction = True
 
                 if begin_extraction:
-                    if row and not "end of data" in row.lower():
+                    if row and "end of data" not in row.lower():
                         data_rows.append(row)
 
         if not begin_extraction:
@@ -889,7 +888,7 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
                         float(
                             cols[translated_header.index("head_cm")].replace(",", ".")
                         )
-                    except:
+                    except Exception:
                         skipped_rows += 1
                         continue
 
@@ -998,7 +997,7 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
 
 class CheckboxAndExplanation(VRowEntry):
     def __init__(self, checkbox_label, explanation=None):
-        super(CheckboxAndExplanation, self).__init__()
+        super().__init__()
         self.checkbox = qgis.PyQt.QtWidgets.QCheckBox(checkbox_label)
         self.layout.addWidget(self.checkbox)
         self.label = qgis.PyQt.QtWidgets.QLabel()

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin tests the module that handles often used
@@ -24,11 +23,11 @@
 import io
 
 
-import mock
+from unittest import mock
 import nose
 import numpy as np
 from cycler import cycler
-from mock import call
+from unittest.mock import call
 from nose.plugins.attrib import attr
 
 from midvatten.test.mocks_for_tests import MockUsingReturnValue
@@ -43,7 +42,7 @@ from midvatten.tools.utils.midvatten_utils import (
 
 
 @attr(status="on")
-class TestFilterNonexistingObsidsAndAsk(object):
+class TestFilterNonexistingObsidsAndAsk:
     @mock.patch("qgis.utils.iface", autospec=True)
     @mock.patch("midvatten.tools.utils.common_utils.NotFoundQuestion", autospec=True)
     def test_filter_nonexisting_obsids_and_ask_ok(self, mock_notfound, mock_iface):
@@ -308,18 +307,18 @@ class TestFilterNonexistingObsidsAndAsk(object):
 
 
 @attr(status="on")
-class TestTempinput(object):
+class TestTempinput:
     def test_tempinput(self):
         rows = "543\n21"
         with common_utils.tempinput(rows) as filename:
-            with io.open(filename, "r", encoding="utf-8") as f:
+            with open(filename, encoding="utf-8") as f:
                 res = f.readlines()
         reference_list = ["543\n", "21"]
         assert res == reference_list
 
 
 @attr(status="on")
-class TestAskUser(object):
+class TestAskUser:
     qgis_PyQt_QtGui_QInputDialog_getText = MockUsingReturnValue(["-1 hours"])
     cancel = MockUsingReturnValue([""])
 
@@ -338,7 +337,7 @@ class TestAskUser(object):
 
 
 @attr(status="on")
-class TestSqlToParametersUnitsTuple(object):
+class TestSqlToParametersUnitsTuple:
     @mock.patch("midvatten.tools.utils.db_utils.sql_load_fr_db", autospec=True)
     def test_sql_to_parameters_units_tuple(self, mock_sqlload):
         mock_sqlload.return_value = (True, [("par1", "un1"), ("par2", "un2")])
@@ -351,7 +350,7 @@ class TestSqlToParametersUnitsTuple(object):
 
 
 @attr(status="on")
-class TestGetCurrentLocale(object):
+class TestGetCurrentLocale:
 
     @mock.patch("midvatten.tools.utils.db_utils.DbConnectionManager")
     @mock.patch("midvatten.tools.utils.midvatten_utils.isinstance")
@@ -379,7 +378,7 @@ class TestGetCurrentLocale(object):
 
 
 @attr(status="on")
-class TestGetDelimiter(object):
+class TestGetDelimiter:
     def test_get_delimiter_only_one_column(self):
         file = ["obsid", "rb1"]
 
@@ -438,7 +437,7 @@ class TestGetDelimiter(object):
 
 
 @attr(status="on")
-class TestGeneralExceptionHandler(object):
+class TestGeneralExceptionHandler:
     def test_no_args_no_kwargs(self):
         @common_utils.general_exception_handler
         def no_args_no_kwargs():
@@ -496,7 +495,7 @@ class TestGeneralExceptionHandler(object):
 
 
 @attr(status="on")
-class TestContinuousColorCycle(object):
+class TestContinuousColorCycle:
     def setUp(self):
         perform_all_replacements()
 
@@ -623,7 +622,7 @@ class TestContinuousColorCycle(object):
 
 
 @attr(status="on")
-class TestVersionComparisonLists(object):
+class TestVersionComparisonLists:
     def test_compare_verson_lists_same_not_old(self):
         is_old = compare_verson_lists(
             version_comparison_list("3.16"), version_comparison_list("3.16")

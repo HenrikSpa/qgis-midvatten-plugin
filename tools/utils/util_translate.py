@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
 Name                 : Util Translator
@@ -66,9 +65,7 @@ def getTranslate(name_plugin: str, name_dir: None = None):
             translation_file = sorted(qmfiles)[0]
             QgsApplication.messageLog().logMessage(
                 (
-                    "QGIS location overried is activated. Using the first found translationfile for pattern {}.".format(
-                        qm_path_filepattern
-                    )
+                    f"QGIS location overried is activated. Using the first found translationfile for pattern {qm_path_filepattern}."
                 ),
                 "Midvatten",
                 level=Qgis.Info,
@@ -76,9 +73,7 @@ def getTranslate(name_plugin: str, name_dir: None = None):
         else:
             QgsApplication.messageLog().logMessage(
                 (
-                    "QGIS location overried is activated. No translation file found using pattern {}, no translation file installed!".format(
-                        qm_path_filepattern
-                    )
+                    f"QGIS location overried is activated. No translation file found using pattern {qm_path_filepattern}, no translation file installed!"
                 ),
                 "Midvatten",
                 level=Qgis.Info,
@@ -87,7 +82,7 @@ def getTranslate(name_plugin: str, name_dir: None = None):
     else:
         locale_full_name = QLocale.system().name()
         qm_path_file = os.path.join(
-            "i18n", "{0}_{1}.qm".format(name_plugin, locale_full_name)
+            "i18n", f"{name_plugin}_{locale_full_name}.qm"
         )
         translation_file = os.path.join(pp, qm_path_file)
 
@@ -96,7 +91,7 @@ def getTranslate(name_plugin: str, name_dir: None = None):
         translator.load(translation_file)
         QCoreApplication.installTranslator(translator)
         QgsApplication.messageLog().logMessage(
-            ("Installed translation file {}".format(translation_file)),
+            (f"Installed translation file {translation_file}"),
             "Midvatten",
             level=Qgis.Info,
         )
@@ -104,9 +99,7 @@ def getTranslate(name_plugin: str, name_dir: None = None):
     else:
         QgsApplication.messageLog().logMessage(
             (
-                "translationFile {} didn't exist, no translation file installed!".format(
-                    translation_file
-                )
+                f"translationFile {translation_file} didn't exist, no translation file installed!"
             ),
             "Midvatten",
             level=Qgis.Info,

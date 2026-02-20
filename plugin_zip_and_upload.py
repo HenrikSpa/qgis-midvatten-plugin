@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding=utf-8
 """
 This scripts zips the plugin into a compressed folder suitable for  uploading to a plugin repository
 The script is modified by JK and based on a  script that uploads a plugin package on the server.
@@ -114,7 +113,7 @@ def create_zipfile():
             file for file in files if not file.endswith(IGNORE_FILESUFFIX)
         ]  # exclude specific file extensions
         for file in files:
-            print("now adding this file {}".format(os.path.join(root, file)))
+            print(f"now adding this file {os.path.join(root, file)}")
             # print('in archive it is saved as ' + os.path.join(current_dir,file))
             print(
                 "in archive it is saved as {}".format(

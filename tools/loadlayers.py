@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This is the part of the Midvatten plugin that (removes) and loads default qgis layers for the selected database. 
@@ -29,7 +28,7 @@ from midvatten.tools.utils import common_utils, db_utils, midvatten_utils
 from midvatten.tools.utils.midvatten_utils import add_layers_to_list
 
 
-class LoadLayers(object):
+class LoadLayers:
     def __init__(self, iface, settingsdict={}, group_name="Midvatten_OBS_DB"):
         self.settingsdict = settingsdict
         self.group_name = group_name
@@ -118,15 +117,15 @@ class LoadLayers(object):
             ):  # swedish forms are loaded only if locale settings indicate sweden
                 try:
                     layer.loadNamedStyle(stylefile_sv)
-                except:
+                except Exception:
                     try:
                         layer.loadNamedStyle(stylefile)
-                    except:
+                    except Exception:
                         pass
             else:
                 try:
                     layer.loadNamedStyle(stylefile)
-                except:
+                except Exception:
                     pass
 
             if layer.name() == "obs_points":  # zoom to obs_points extent
@@ -149,7 +148,7 @@ class LoadLayers(object):
         """
         try:  # newstyle
             my_group = self.legend.addGroup("Midvatten_OBS_DB", 1, -1)
-        except:  # olddstyle
+        except Exception:  # olddstyle
             my_group = self.legend.addGroup("Midvatten_OBS_DB")
         uri = QgsDataSourceUri()
         uri.setDatabase(
@@ -192,7 +191,7 @@ class LoadLayers(object):
                         filename = tablename + "_en.ui"
                     try:  # python bindings for setEditorLayout were introduced in qgis-master commit 9183adce9f257a097fc54e5a8a700e4d494b2962 november 2012
                         layer.setEditorLayout(2)
-                    except:
+                    except Exception:
                         pass
                     uifile = os.path.join(
                         os.sep, os.path.dirname(__file__), "..", "ui", filename
@@ -231,7 +230,7 @@ class LoadLayers(object):
                     )
                     try:  # python bindings for setEditorLayout were introduced in qgis-master commit 9183adce9f257a097fc54e5a8a700e4d494b2962 november 2012
                         layer.setEditorLayout(2)
-                    except:
+                    except Exception:
                         pass
                     layer.setEditForm(uifile)
                     if tablename in ("obs_points", "obs_lines"):

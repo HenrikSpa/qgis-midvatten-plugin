@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin handles importing of data to the database. 
@@ -34,9 +33,7 @@ from midvatten.tools.utils.common_utils import returnunicode as ru, UserInterrup
 from midvatten.tools.utils.db_utils import DbConnectionManager
 
 
-class MidvDataImporter(
-    object
-):  # this class is intended to be a multipurpose import class  BUT loggerdata probably needs specific importer or its own subfunction
+class MidvDataImporter:  # this class is intended to be a multipurpose import class  BUT loggerdata probably needs specific importer or its own subfunction
 
     def __init__(self):
         self.columns = 0
@@ -347,11 +344,7 @@ class MidvDataImporter(
                     )
                 else:
                     sourcecols.append(
-                        """(CASE WHEN {colname} IS NOT NULL\n    THEN CAST({colname} AS {type}) ELSE {null} END)""".format(
-                            colname=colname,
-                            type=column_headers_types[colname],
-                            null=null_replacement,
-                        )
+                        f"""(CASE WHEN {colname} IS NOT NULL\n    THEN CAST({colname} AS {column_headers_types[colname]}) ELSE {null_replacement} END)"""
                     )
 
             if dbconnection.dbtype.lower() == "postgis":
@@ -452,18 +445,18 @@ class MidvDataImporter(
                 log_msg="--------------------",
             )
 
-        except:
+        except Exception:
             # If an external dbconnection is supplied, do not close it.
             if _dbconnection is None:
                 try:
                     dbconnection.closedb()
-                except:
+                except Exception:
                     pass
             else:
                 if self.temptable_name is not None:
                     # try:
                     dbconnection.drop_temporary_table(self.temptable_name)
-                    # except:
+                    # except Exception:
                     #    pass
             common_utils.stop_waiting_cursor()
             raise
@@ -473,13 +466,13 @@ class MidvDataImporter(
             if _dbconnection is None:
                 try:
                     dbconnection.closedb()
-                except:
+                except Exception:
                     pass
             else:
                 if self.temptable_name is not None:
                     # try:
                     dbconnection.drop_temporary_table(self.temptable_name)
-                    # except:
+                    # except Exception:
                     #    pass
             common_utils.stop_waiting_cursor()
 
@@ -711,16 +704,9 @@ class MidvDataImporter(
             ) from e
 
         if int(_source_srid) == int(dest_srid):
-            to_geometry = """{convert_func}({geometry}, {dest_srid})""".format(
-                geometry=geom_col, convert_func=convert_func, dest_srid=dest_srid
-            )
+            to_geometry = f"""{convert_func}({geom_col}, {dest_srid})"""
         else:
-            to_geometry = """ST_Transform({convert_func}({geometry}, {source_srid}), {dest_srid})""".format(
-                geometry=geom_col,
-                convert_func=convert_func,
-                dest_srid=dest_srid,
-                source_srid=_source_srid,
-            )
+            to_geometry = f"""ST_Transform({convert_func}({geom_col}, {_source_srid}), {dest_srid})"""
         kwargs["to_geometry"] = to_geometry
         return sql.format(**kwargs)
 
@@ -889,7 +875,7 @@ class MidvDataImporter(
                 "INSERT INTO %s (%s) SELECT DISTINCT %s FROM %s AS b WHERE %s NOT IN (SELECT %s FROM %s) AND %s"
                 % (
                     fk_table,
-                    ", ".join(['"{}"'.format(k) for k in to_list]),
+                    ", ".join([f'"{k}"' for k in to_list]),
                     ", ".join(
                         [
                             """CAST("b"."%s" as "%s")"""
@@ -903,7 +889,7 @@ class MidvDataImporter(
                     fk_table,
                     " AND ".join(
                         [
-                            """ b.{} IS NOT NULL and b.{} != '' """.format(k, k, k)
+                            f""" b.{k} IS NOT NULL and b.{k} != '' """
                             for k in from_list
                         ]
                     ),

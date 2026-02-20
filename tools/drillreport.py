@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This is the part of the Midvatten plugin that returns a report with general observation point info, 
@@ -33,7 +32,7 @@ from midvatten.tools.utils import common_utils, midvatten_utils, db_utils
 from midvatten.tools.utils.common_utils import returnunicode as ru
 
 
-class Drillreport(object):  # general observation point info for the selected object
+class Drillreport:  # general observation point info for the selected object
 
     def __init__(
         self,

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This is the place to store some global (for the Midvatten plugin) utility functions.
@@ -46,7 +45,7 @@ if TYPE_CHECKING:
 
 try:
     import pandas as pd
-except:
+except Exception:
     pandas_on = False
 else:
     pandas_on = True
@@ -414,7 +413,7 @@ def calculate_db_table_rows():
         printable_msg = "{0:40}{1:15}".format("Tablename", "Nr of rows\n")
         printable_msg += "\n".join(
             [
-                "{0:40}{1:15}".format(table_name, _nr_of_rows)
+                f"{table_name:40}{_nr_of_rows:15}"
                 for table_name, _nr_of_rows in sorted(results.items())
             ]
         )
@@ -499,7 +498,7 @@ def add_layers_to_list(
     for idx, tablename in enumerate(tablenames):  # first load all non-spatial layers
         orig_tablename = tablename
 
-        if not tablename in existing_tables:
+        if tablename not in existing_tables:
             print(f"Tablename {tablename} not found among {existing_tables}")
             continue
 
@@ -507,7 +506,7 @@ def add_layers_to_list(
 
         if (
             tablename in ["obs_points", "obs_lines"]
-            and "view_{}".format(tablename) in existing_tables
+            and f"view_{tablename}" in existing_tables
         ):
             # The bug that required view_obs_points (https://github.com/qgis/QGIS/issues/28453)
             # is fixed in 3.16 (and probably much sooner. So view_obs_points is no longer needed above that version.
@@ -516,7 +515,7 @@ def add_layers_to_list(
                 version_comparison_list(qgisversion), version_comparison_list("3.16")
             )
             if is_old:
-                tablename = "view_{}".format(tablename)
+                tablename = f"view_{tablename}"
 
         for key_column in key_columns:
             layer = create_layer(
@@ -546,7 +545,7 @@ def warn_about_old_database():
     except UsageError:
         try:
             dbconnection.closedb()
-        except:
+        except Exception:
             pass
         # Probably empty project
         return
@@ -569,7 +568,7 @@ def warn_about_old_database():
 
     try:
         row = rows[0][0]
-    except:
+    except Exception:
         MessagebarAndLog.info(
             log_msg=ru(
                 QCoreApplication.translate(
@@ -644,9 +643,7 @@ def version_comparison_list(version_string: str) -> List[int]:
                                 )
                                 % version_string,
                                 duration=5,
-                                log_msg="""aslist: {}, Entry: {}, inner_res: {}""".format(
-                                    str(aslist), str(entry), str(inner_res)
-                                ),
+                                log_msg=f"""aslist: {str(aslist)}, Entry: {str(entry)}, inner_res: {str(inner_res)}""",
                             )
 
                         else:
@@ -808,7 +805,7 @@ def create_markdown_table_from_table(
     if transposed:
         table = transpose_lists_of_lists(table)
         for row in table:
-            row[0] = "**{}**".format(row[0])
+            row[0] = f"**{row[0]}**"
 
     column_names = table[0]
     table_contents = table[1:]
@@ -828,7 +825,7 @@ def create_markdown_table_from_table(
     return "\n".join(printlist)
 
 
-class PlotTemplates(object):
+class PlotTemplates:
     def __init__(
         self,
         plot_object,
@@ -871,7 +868,7 @@ class PlotTemplates(object):
             self.loaded_template = self.string_to_dict(
                 self.ms.settingsdict[self.loaded_template_settingskey]
             )
-        except:
+        except Exception:
             MessagebarAndLog.warning(
                 bar_msg=returnunicode(
                     QCoreApplication.translate(
@@ -996,7 +993,7 @@ class PlotTemplates(object):
             filter="txt (*.txt)",
         )
         as_str = self.readable_output(self.loaded_template)
-        with io.open(filename, "w", encoding="utf8") as of:
+        with open(filename, "w", encoding="utf8") as of:
             of.write(as_str)
 
         name = os.path.splitext(os.path.basename(filename))[0]
@@ -1072,7 +1069,7 @@ class PlotTemplates(object):
                 % filename
             )
         try:
-            with io.open(filename, "rt", encoding="utf-8") as f:
+            with open(filename, encoding="utf-8") as f:
                 lines = "".join([line for line in f if line])
         except Exception as e:
             MessagebarAndLog.critical(
@@ -1170,7 +1167,7 @@ class PlotTemplates(object):
             return as_dict
 
 
-class MatplotlibStyles(object):
+class MatplotlibStyles:
     def __init__(
         self,
         plot_object,
@@ -1254,7 +1251,7 @@ class MatplotlibStyles(object):
             self.save_style_to_stylelib(self.defaultstyle_stylename)
         try:
             last_used_style = self.ms.settingsdict[self.last_used_style_settingskey]
-        except:
+        except Exception:
             MessagebarAndLog.warning(
                 bar_msg=returnunicode(
                     QCoreApplication.translate(
@@ -1275,7 +1272,7 @@ class MatplotlibStyles(object):
 
     def save_style_to_stylelib(self, stylestring_stylename):
         filename = self.filename_from_style(stylestring_stylename[1])
-        with io.open(filename, "w", encoding="utf-8") as of:
+        with open(filename, "w", encoding="utf-8") as of:
             of.write(stylestring_stylename[0])
         mpl.style.reload_library()
 
@@ -1383,7 +1380,7 @@ class MatplotlibStyles(object):
             filename = basename + ".mplstyle"
         with plt.style.context(self.get_selected_style()):
             rcparams = self.rcparams()
-        with io.open(filename, "w", encoding="utf8") as of:
+        with open(filename, "w", encoding="utf8") as of:
             of.write(rcparams)
         self.update_style_list()
 
@@ -1432,7 +1429,7 @@ class MatplotlibStyles(object):
 
         return "\n".join(
             [
-                "{}: {}".format(str(k), format_v(v))
+                f"{str(k)}: {format_v(v)}"
                 for k, v in sorted(mpl.rcParams.items())
             ]
         )

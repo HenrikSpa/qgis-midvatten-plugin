@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
 from collections import OrderedDict
 from operator import itemgetter
 
-import mock
-from mock import MagicMock, call
+from unittest import mock
+from unittest.mock import MagicMock, call
 from nose.plugins.attrib import attr
 
 from midvatten.test import utils_for_tests
@@ -19,7 +18,7 @@ from midvatten.tools.utils.date_utils import datestring_to_date
 
 
 @attr(status="on")
-class TestFieldLoggerImporterNoDb(object):
+class TestFieldLoggerImporterNoDb:
 
     @mock.patch("midvatten.tools.import_fieldlogger.common_utils.NotFoundQuestion")
     @mock.patch(
@@ -1010,7 +1009,7 @@ class TestFieldLoggerImporterNoDb(object):
 
 
 @attr(status="on")
-class TestCommentsImportFields(object):
+class TestCommentsImportFields:
     def setUp(self):
         mock_import_method_chooser = MagicMock()
         mock_import_method_chooser.parameter_name = "comment"
@@ -1094,7 +1093,7 @@ class TestCommentsImportFields(object):
 
 
 @attr(status="on")
-class TestStaffQuestion(object):
+class TestStaffQuestion:
 
     @mock.patch("midvatten.tools.import_fieldlogger.defs.staff_list")
     def setUp(self, mock_stafflist):
@@ -1113,7 +1112,7 @@ class TestStaffQuestion(object):
 
 
 @attr(status="on")
-class TestObsidFilter(object):
+class TestObsidFilter:
     def setUp(self):
         self.obsid_filter = import_fieldlogger.ObsidFilter()
 
@@ -1216,7 +1215,7 @@ def _test_SublocationFilter():
 
 
 @attr(status="on")
-class TestDateTimeFilter(object):
+class TestDateTimeFilter:
     def test_date_time_filter_observation_should_be_none(self):
         datetimefilter = DateTimeFilter()
         datetimefilter.from_date = "2016-01-01"

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This is the place to store the replacements/adjustments made to the matplotlib code
@@ -26,7 +25,7 @@ try:  # assume matplotlib >=1.5.1
     from matplotlib.backends.backend_qt5agg import (
         NavigationToolbar2QT as NavigationToolbar,
     )
-except:
+except Exception:
     from matplotlib.backends.backend_qt5agg import (
         NavigationToolbar2QTAgg as NavigationToolbar,
     )
@@ -91,13 +90,13 @@ def replace_matplotlib_backends_backend_qt5agg_NavigationToolbar2QT_functions():
         return use_style_context
 
     for old_func in ["edit_parameters", "configure_subplots", "save_figure"]:
-        new_name = "_midv_old_{}".format(old_func)
+        new_name = f"_midv_old_{old_func}"
         setattr(NavigationToolbar, new_name, getattr(NavigationToolbar, old_func))
         setattr(NavigationToolbar, old_func, apply_func(new_name))
 
     _funcs = ["edit_parameters", "configure_subplots", "save_figure"]
     for old_func in _funcs:
-        new_name = "_midv_old_{}".format(old_func)
+        new_name = f"_midv_old_{old_func}"
         if hasattr(NavigationToolbar, new_name):
             continue
         else:

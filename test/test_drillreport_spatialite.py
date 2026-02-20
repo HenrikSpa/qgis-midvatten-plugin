@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin tests the stratigraphy plot.
@@ -23,7 +22,7 @@
 
 import re
 
-import mock
+from unittest import mock
 from nose.plugins.attrib import attr
 from qgis.PyQt import QtCore
 
@@ -78,7 +77,7 @@ class TestDrillreport(utils_for_tests.MidvattenTestSpatialiteDbSv):
             in openurl.mock_calls
         )
 
-        with open("/tmp/midvatten_reports/drill_report.html", "r") as f:
+        with open("/tmp/midvatten_reports/drill_report.html") as f:
             report = "".join(f.readlines())
 
         # src="midvatten/tools/

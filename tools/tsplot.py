@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin originates from the TimeSeriesPlot plugin. 
@@ -32,7 +31,7 @@ from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.common_utils import returnunicode as ru
 
 
-class TimeSeriesPlot(object):
+class TimeSeriesPlot:
 
     def __init__(
         self, layer=None, settingsdict={}

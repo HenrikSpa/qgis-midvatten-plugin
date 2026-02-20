@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin tests the module that handles statistics
@@ -23,9 +22,9 @@
 
 from collections import OrderedDict
 
-import mock
-from mock import MagicMock
-from mock import call
+from unittest import mock
+from unittest.mock import MagicMock
+from unittest.mock import call
 from nose.plugins.attrib import attr
 
 from midvatten.test import utils_for_tests

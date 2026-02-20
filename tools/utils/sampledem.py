@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This is where a DEM is sampled along a vector polyline 
@@ -177,7 +176,7 @@ def sampling(pointsamplinglayer, rastersamplinglayer, bands=1, extract_type="val
                     result.append([float(sample[band]) for band in bands])
                 else:
                     result.append(float(sample[bands]))
-            except:  # point is out of raster extent
+            except Exception:  # point is out of raster extent
                 traceback.print_exc()
                 result.append(None)
         else:

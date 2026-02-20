@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin tests the module that handles importing of
@@ -24,8 +23,8 @@
 
 from collections import OrderedDict
 
-import mock
-from mock import MagicMock
+from unittest import mock
+from unittest.mock import MagicMock
 from nose.plugins.attrib import attr
 
 from midvatten.test import utils_for_tests
@@ -168,7 +167,7 @@ class TestWlvllogImportFromLeveloggerFiles(utils_for_tests.MidvattenTestSpatiali
                                 importer.confirm_names.checked,
                                 importer.import_all_data.checked,
                             )
-                        except:
+                        except Exception:
                             print(f"{mock_messagebar.mock_calls=}")
                             raise
 
@@ -1465,7 +1464,7 @@ class TestWlvllogImportFromLeveloggerFiles(utils_for_tests.MidvattenTestSpatiali
                                 importer.confirm_names.checked,
                                 importer.import_all_data.checked,
                             )
-                        except:
+                        except Exception:
                             print(f"{mock_messagebar.mock_calls=}")
                             raise
 
@@ -1560,7 +1559,7 @@ class TestWlvllogImportFromLeveloggerFiles(utils_for_tests.MidvattenTestSpatiali
                         importer.confirm_names.checked,
                         importer.import_all_data.checked,
                     )
-                except:
+                except Exception:
                     print(f"{mock_messagebar.mock_calls=}")
                     raise
 

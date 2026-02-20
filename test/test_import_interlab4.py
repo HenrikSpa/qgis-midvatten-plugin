@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin tests the module that handles importing of
@@ -22,8 +21,8 @@
 """
 
 
-import mock
-from mock import call
+from unittest import mock
+from unittest.mock import call
 from nose.plugins.attrib import attr
 
 from midvatten.test import utils_for_tests

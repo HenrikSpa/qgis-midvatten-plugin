@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin tests the sectionplot templates.
@@ -25,9 +24,9 @@ import ast
 import io
 import os
 
-import mock
+from unittest import mock
 import qgis.PyQt
-from mock import call
+from unittest.mock import call
 from nose.plugins.attrib import attr
 
 from midvatten.definitions import midvatten_defs as defs
@@ -278,7 +277,7 @@ class TestSecplotTemplates(utils_for_tests.MidvattenTestSpatialiteNotCreated):
                     self, f1, save_file
                 )
 
-        with io.open(save_file, encoding="utf-8") as f:
+        with open(save_file, encoding="utf-8") as f:
             lines = "".join(f.readlines())
 
         assert lines == afile
@@ -329,7 +328,7 @@ class TestSecplotTemplates(utils_for_tests.MidvattenTestSpatialiteNotCreated):
 
 
 @attr(status="on")
-class TestDefaultHardcodedTemplate(object):
+class TestDefaultHardcodedTemplate:
     def test_secplot_default_template(self):
         adict = defs.secplot_default_template()
         assert isinstance(adict, dict)

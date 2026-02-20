@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin originates from the PlotSQLite application which plots . 
@@ -40,7 +39,7 @@ try:  # assume matplotlib >=1.5.1
         NavigationToolbar2QT as NavigationToolbar,
     )
     from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
-except:
+except Exception:
     from matplotlib.backends.backend_qt5agg import (
         NavigationToolbar2QTAgg as NavigationToolbar,
     )
@@ -57,7 +56,7 @@ from midvatten.tools.utils.gui_utils import set_groupbox_children_visibility
 
 try:
     import pandas as pd
-except:
+except Exception:
     pandas_on = False
 else:
     pandas_on = True
@@ -280,7 +279,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             self.title = self.axes.get_title()
             self.xaxis_label = self.axes.get_xlabel()
             self.yaxis_label = self.axes.get_ylabel()
-        except:
+        except Exception:
             pass
 
         if hasattr(self, "mpltoolbar"):
@@ -317,7 +316,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                             - datestr2num(table2.date_time[j - 1])
                         )
                     )  # convert to seconds since numtime is days
-                except:
+                except Exception:
                     pass  # just skip inaccurate data values and use previous frequency
                 freqs[j] = diff / delta_time
         freqs[0] = freqs[1]  # assuming start frequency to get a nicer plot
@@ -907,7 +906,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                     **next(self.line_cycler),
                 )
                 self.plabels[i] = "frequency " + str(self.plabels[i])
-            except:
+            except Exception:
                 (self.p[i],) = plotfunc(
                     np.array([]),
                     np.array([]),
@@ -1112,7 +1111,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             table_combobox.addItem("")
             try:
                 table_combobox.addItems(tables)
-            except:
+            except Exception:
                 for table in tables:
                     table_combobox.addItem(table)
 
@@ -1190,7 +1189,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             getattr(self, comboboxname).addItem("")
             try:
                 getattr(self, comboboxname).addItems(columns)
-            except:
+            except Exception:
                 for column in columns:
                     getattr(self, comboboxname).addItem(column)
 
@@ -1538,7 +1537,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         self.save_file_dialog = SaveToCsvDialog(self, data)
 
 
-class PandasCalculations(object):
+class PandasCalculations:
     def __init__(self, gridlayout):
 
         self.widget = qgis.PyQt.QtWidgets.QWidget()
@@ -1637,7 +1636,7 @@ class PandasCalculations(object):
             try:
                 col1.setMaximumHeight(27)
                 col2.setMaximumHeight(27)
-            except:
+            except Exception:
                 pass
 
             gridlayout.addWidget(col1, current_row, 0)

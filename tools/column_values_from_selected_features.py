@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This is the part of the Midvatten plugin that prints column values from selected features.
@@ -150,7 +149,7 @@ class ValuesFromSelectedFeaturesGui(
             )
 
             if nulls:
-                filter_string += ' or "{}" IS NULL'.format(self.selected_column)
+                filter_string += f' or "{self.selected_column}" IS NULL'
 
             # filter_layer_checkbox
             bar_prefix = ""

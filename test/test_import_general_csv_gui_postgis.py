@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin tests the module that handles importing of
@@ -26,9 +25,9 @@ import datetime
 import timeit
 from collections import OrderedDict
 
-import mock
+from unittest import mock
 import qgis.PyQt
-from mock import MagicMock
+from unittest.mock import MagicMock
 from nose.plugins.attrib import attr
 from qgis.PyQt.QtCore import QMetaType
 from qgis.core import (

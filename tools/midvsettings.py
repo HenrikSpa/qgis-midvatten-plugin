@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  midvsettings
@@ -21,7 +20,7 @@ from midvatten.tools.utils.common_utils import MessagebarAndLog
 from midvatten.tools.utils.common_utils import returnunicode as ru
 
 
-class MidvSettings(object):
+class MidvSettings:
     def __init__(self):
         # settings...
         self.settingsareloaded = False
@@ -32,7 +31,7 @@ class MidvSettings(object):
             # (and several methods below do check that settings really are loaded)
             self.load_settings()
 
-        except:
+        except Exception:
             pass
 
     def createsettingsdict(
@@ -101,15 +100,10 @@ class MidvSettings(object):
 
                 try:
                     save_func("Midvatten", key, value)
-                except:
+                except Exception:
                     try:
                         print(
-                            "debug info; midvsettings.save_settings failed, key: '{}', value '{}', value type: '{}', msg:\n{}".format(
-                                key,
-                                str(value),
-                                str(type(value)),
-                                traceback.format_exc(),
-                            )
+                            f"debug info; midvsettings.save_settings failed, key: '{key}', value '{str(value)}', value type: '{str(type(value))}', msg:\n{traceback.format_exc()}"
                         )
-                    except:
+                    except Exception:
                         pass

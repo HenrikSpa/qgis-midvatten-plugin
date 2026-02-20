@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin handles importing of data to the database
@@ -482,7 +481,7 @@ class Interlab4Import(qgis.PyQt.QtWidgets.QMainWindow, import_fieldlogger_ui_dia
                 )
                 continue
 
-            with io.open(filename, "r", encoding=encoding) as f:
+            with open(filename, encoding=encoding) as f:
                 if quotechar:
                     unicode_reader = csv.reader(
                         f, dialect=csv.excel, quotechar=str(quotechar), delimiter=";"
@@ -568,7 +567,7 @@ class Interlab4Import(qgis.PyQt.QtWidgets.QMainWindow, import_fieldlogger_ui_dia
                                     decimalsign, "."
                                 )
 
-                            if not "parameter" in data:
+                            if "parameter" not in data:
                                 common_utils.pop_up_info(
                                     ru(
                                         QCoreApplication.translate(
@@ -652,7 +651,7 @@ class Interlab4Import(qgis.PyQt.QtWidgets.QMainWindow, import_fieldlogger_ui_dia
         # First find encoding
         for test_encoding in ["utf-16", "utf-8", "iso-8859-1"]:
             try:
-                with io.open(filename, "r", encoding=test_encoding) as f:
+                with open(filename, encoding=test_encoding) as f:
                     for rawrow in f:
                         if "#tecken=" in rawrow.lower():
                             row = rawrow.lstrip("#").rstrip("\n").lower()
@@ -685,7 +684,7 @@ class Interlab4Import(qgis.PyQt.QtWidgets.QMainWindow, import_fieldlogger_ui_dia
             raise common_utils.UserInterruptError()
 
         # Parse the filedescriptor
-        with io.open(filename, "r", encoding=encoding) as f:
+        with open(filename, encoding=encoding) as f:
             for rawrow in f:
                 if not rawrow.startswith("#"):
                     if any(x is None for x in (version, decimalsign, quotechar)):
@@ -1035,7 +1034,7 @@ class Interlab4Import(qgis.PyQt.QtWidgets.QMainWindow, import_fieldlogger_ui_dia
 
         try:
             splitted = str_value.split(".")
-        except:
+        except Exception:
             return None
         if len(splitted) == 0:
             return None
@@ -1146,7 +1145,7 @@ class Interlab4Import(qgis.PyQt.QtWidgets.QMainWindow, import_fieldlogger_ui_dia
 class MetaFilterSelection(VRowEntry):
     def __init__(self, all_lab_results):
         """ """
-        super(MetaFilterSelection, self).__init__()
+        super().__init__()
         self.layout.addWidget(qgis.PyQt.QtWidgets.QLabel("Column header"))
         self.combobox = qgis.PyQt.QtWidgets.QComboBox()
         if all_lab_results:
@@ -1169,7 +1168,7 @@ class MetadataFilter(VRowEntry):
     def __init__(self, all_lab_results):
         """ """
         self.all_lab_results = all_lab_results
-        super(MetadataFilter, self).__init__()
+        super().__init__()
 
         self.update_selection_button = qgis.PyQt.QtWidgets.QPushButton(
             "Update selection"

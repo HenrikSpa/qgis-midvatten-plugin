@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin tests the module that handles importing of
@@ -24,7 +23,7 @@
 
 import os
 
-import mock
+from unittest import mock
 from nose.plugins.attrib import attr
 
 from midvatten.test import utils_for_tests
@@ -38,7 +37,7 @@ from midvatten.tools.utils.date_utils import datestring_to_date
 
 
 @attr(status="on")
-class TestParseDiverofficeFile(object):
+class TestParseDiverofficeFile:
     utils_ask_user_about_stopping = MockReturnUsingDictIn(
         {
             "Failure, delimiter did not match": "cancel",
@@ -304,7 +303,7 @@ class TestParseDiverofficeFile(object):
 
 
 @attr(status="on")
-class TestFilterDatesFromFiledata(object):
+class TestFilterDatesFromFiledata:
 
     def test_filter_dates_from_filedata(self):
 

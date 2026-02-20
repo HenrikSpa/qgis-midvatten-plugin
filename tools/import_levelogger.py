@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin handles importing of data to the database
@@ -79,7 +78,7 @@ class LeveloggerImport(import_diveroffice.DiverofficeImport):
         if enddate is not None:
             enddate = date_utils.datestring_to_date(enddate)
 
-        with io.open(path, "rt", encoding=str(charset)) as f:
+        with open(path, encoding=str(charset)) as f:
             rows_unsplit = [row.lstrip().rstrip("\n").rstrip("\r") for row in f]
 
         try:

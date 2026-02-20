@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin tests the module that handles importing of
@@ -30,7 +29,7 @@ from midvatten.tools.utils import common_utils
 
 
 @attr(status="on")
-class TestStaticMethods(object):
+class TestStaticMethods:
 
     def test_translate_and_reorder_file_data(self):
         file_data = [["obsid", "acol", "acol2"], ["rb1", "1", "2"]]

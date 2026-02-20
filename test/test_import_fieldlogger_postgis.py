@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
 
 
 import copy
 from collections import OrderedDict
 
-import mock
-from mock import MagicMock
+from unittest import mock
+from unittest.mock import MagicMock
 from nose.plugins.attrib import attr
 
 from midvatten.tools.utils import db_utils

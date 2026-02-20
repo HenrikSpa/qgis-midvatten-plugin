@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin handles dates. 
@@ -184,7 +183,7 @@ def datestring_to_date(
             else:
                 try:
                     adate = datetime.datetime.fromtimestamp(float(astring))
-                except:
+                except Exception:
                     adate = None
     return adate
 
@@ -206,14 +205,14 @@ def reformat_date_time(astring: str):
 
     date = "-".join(
         [
-            "%{}".format(letter)
+            f"%{letter}"
             for letter in ["Y", "m", "d"]
             if letter
             in date_format.replace("b", "m").replace("B", "m").replace("y", "Y")
         ]
     )  # fix for rare cases where date_format contains month names instead of month no.
     time = ":".join(
-        ["%{}".format(letter) for letter in ["H", "M", "S"] if letter in date_format]
+        [f"%{letter}" for letter in ["H", "M", "S"] if letter in date_format]
     )
     outformat = " ".join([date, time])
     new_datestring = datetime.datetime.strftime(

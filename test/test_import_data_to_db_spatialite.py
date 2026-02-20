@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin tests the module that handles importing of
@@ -24,9 +23,9 @@
 
 from collections import OrderedDict
 
-import mock
+from unittest import mock
 import nose
-from mock import call
+from unittest.mock import call
 from nose.plugins.attrib import attr
 
 from midvatten.test import utils_for_tests
@@ -1530,7 +1529,7 @@ class TestWlevelsImportOldWlevels(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
     )
     def setUp(self):
-        super(TestWlevelsImportOldWlevels, self).setUp()
+        super().setUp()
         db_utils.sql_alter_db("drop table w_levels")
         db_utils.sql_alter_db(
             "CREATE TABLE w_levels (obsid text not null, date_time text not null, meas double, h_toc double, level_masl double not null default -999, comment text, primary key (obsid, date_time), foreign key(obsid) references obs_points(obsid))"

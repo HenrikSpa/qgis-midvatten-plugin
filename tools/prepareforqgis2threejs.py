@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This is the part of the Midvatten plugin that prepares a number of spatial views 
@@ -34,7 +33,7 @@ from midvatten.tools.utils import common_utils, db_utils, midvatten_utils
 from midvatten.tools.utils.common_utils import returnunicode as ru
 
 
-class PrepareForQgis2Threejs(object):
+class PrepareForQgis2Threejs:
     def __init__(self, iface, settingsdict={}):
 
         self.dbconnection = db_utils.DbConnectionManager()
@@ -125,7 +124,7 @@ class PrepareForQgis2Threejs(object):
             if not layer.isValid():
                 try:
                     print(layer.name() + " is not valid layer")
-                except:
+                except Exception:
                     pass
                 pass
             else:
@@ -142,10 +141,10 @@ class PrepareForQgis2Threejs(object):
                 )
                 try:
                     layer.loadNamedStyle(stylefile)
-                except:
+                except Exception:
                     try:
                         print("Loading stylefile %s failed." % stylefile)
-                    except:
+                    except Exception:
                         pass
 
                 color = colors[idx]
@@ -198,7 +197,7 @@ class PrepareForQgis2Threejs(object):
                 )
 
         for key in self.strat_layers_dict.keys():
-            with open(sql_file, "r") as f:
+            with open(sql_file) as f:
                 for linecounter, line in enumerate(f):
                     if not linecounter:
                         # first line is encoding info....
@@ -224,9 +223,7 @@ class PrepareForQgis2Threejs(object):
                     #  string concatenation for views.
                     sqliteline = line.replace("CHANGETOVIEWNAME", key).replace(
                         "CHANGETOPLOTTYPESDICTVALUE",
-                        "{} ({})".format(
-                            condition, db_utils.sql_literal_list(params)
-                        ),
+                        f"{condition} ({db_utils.sql_literal_list(params)})",
                     )
 
                     try:

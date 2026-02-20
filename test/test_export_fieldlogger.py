@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin tests the module that handles exports to
@@ -24,9 +23,9 @@
 from collections import OrderedDict
 
 
-import mock
+from unittest import mock
 
-from mock import MagicMock
+from unittest.mock import MagicMock
 from nose.plugins.attrib import attr
 from qgis.PyQt.QtWidgets import QWidget
 from qgis.PyQt.QtCore import QMetaType
@@ -817,7 +816,7 @@ class TestExportFieldloggerNoDb(MidvattenTestBase):
 
             export_fieldlogger.ExportToFieldLogger.write_to_file("\n".join(lines))
 
-        with open(testfile, "r") as f:
+        with open(testfile) as f:
             result_lines = [row.rstrip("\n") for row in f]
 
         print(f"{mock_messagebar.mock_calls=}")
@@ -899,7 +898,7 @@ class TestExportFieldloggerNoDb(MidvattenTestBase):
                     # String 'obsid1.proj;obsid1.proj.group;0.9019366063889331;19.489297537299507;par1'
                     alist = loc.split(";")
                     for colnr in [2, 3]:
-                        alist[colnr] = "{:.8f}".format(float(alist[colnr]))
+                        alist[colnr] = f"{float(alist[colnr]):.8f}"
                     testlist.append(";".join(alist))
                 else:
                     testlist.append(loc)

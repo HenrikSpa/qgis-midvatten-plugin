@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin tests creating vectorlayer from spatialite.
@@ -21,7 +20,7 @@
 
 import string
 
-import mock
+from unittest import mock
 from nose.plugins.attrib import attr
 from qgis.core import QgsProject, QgsVectorLayer
 
@@ -44,7 +43,7 @@ class TestVectorlayer(utils_for_tests.MidvattenTestSpatialiteDbSv):
         feature_ids = [feature.id() for feature in features]
 
         if not no_print:
-            print("1. Valid vlayer '{}'".format(self.vlayer.isValid()))
+            print(f"1. Valid vlayer '{self.vlayer.isValid()}'")
             print("2. feature_ids: " + str(feature_ids))
             print(
                 "5. QgsVectorLayer.getFeature(): "
@@ -89,7 +88,7 @@ class TestVectorlayer(utils_for_tests.MidvattenTestSpatialiteDbSv):
         """
         for obsid in [1, 2, 3]:
             db_utils.sql_alter_db(
-                """INSERT INTO obs_points (obsid) VALUES ({})""".format(str(obsid))
+                f"""INSERT INTO obs_points (obsid) VALUES ({str(obsid)})"""
             )
 
         self.create_vlayer()
@@ -125,7 +124,7 @@ class TestVectorlayer(utils_for_tests.MidvattenTestSpatialiteDbSv):
         """
         for obsid in [4, 5, 6]:
             db_utils.sql_alter_db(
-                """INSERT INTO obs_points (obsid) VALUES ({})""".format(str(obsid))
+                f"""INSERT INTO obs_points (obsid) VALUES ({str(obsid)})"""
             )
 
         self.create_vlayer()
@@ -161,7 +160,7 @@ class TestVectorlayer(utils_for_tests.MidvattenTestSpatialiteDbSv):
         """
         for obsid in ["A", "b", "c1"]:
             db_utils.sql_alter_db(
-                """INSERT INTO obs_points (obsid) VALUES ('{}')""".format(str(obsid))
+                f"""INSERT INTO obs_points (obsid) VALUES ('{str(obsid)}')"""
             )
 
         self.create_vlayer()
@@ -201,7 +200,7 @@ class TestVectorlayer(utils_for_tests.MidvattenTestSpatialiteDbSv):
         cur.execute("""BEGIN TRANSACTION;""")
         for obsid in range(1000):
             cur.execute(
-                """INSERT INTO obs_points (obsid) VALUES ('{}');""".format(str(obsid))
+                f"""INSERT INTO obs_points (obsid) VALUES ('{str(obsid)}');"""
             )
         cur.execute("""END TRANSACTION;""")
 
@@ -248,7 +247,7 @@ class TestVectorlayer(utils_for_tests.MidvattenTestSpatialiteDbSv):
         cur.execute("""BEGIN TRANSACTION;""")
         for obsid in range(2000):
             cur.execute(
-                """INSERT INTO obs_points (obsid) VALUES ('{}');""".format(str(obsid))
+                f"""INSERT INTO obs_points (obsid) VALUES ('{str(obsid)}');"""
             )
         cur.execute("""END TRANSACTION;""")
 
@@ -299,7 +298,7 @@ class TestVectorlayer(utils_for_tests.MidvattenTestSpatialiteDbSv):
         cur.execute("""BEGIN TRANSACTION;""")
         for obsid in obsids:
             cur.execute(
-                """INSERT INTO obs_points (obsid) VALUES ('{}');""".format(str(obsid))
+                f"""INSERT INTO obs_points (obsid) VALUES ('{str(obsid)}');"""
             )
         cur.execute("""END TRANSACTION;""")
         dbconnection.commit()

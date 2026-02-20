@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin handles importing of data to the database
@@ -237,7 +236,7 @@ class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
                     if delimiter is None:
                         return None
 
-                    with io.open(filename, "rt", encoding=encoding) as f:
+                    with open(filename, encoding=encoding) as f:
                         rows = f.readlines()
                         observations.extend(row_parser(rows, delimiter))
 
@@ -694,7 +693,7 @@ class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
         common_utils.stop_waiting_cursor()
 
 
-class ObsidFilter(object):
+class ObsidFilter:
     def __init__(self):
         self.obsid_rename_dict = {}
         pass
@@ -861,7 +860,7 @@ class DateShiftQuestion(QtWidgets.QWidget):
         try:
             step = float(step_steplength[0])
             steplength = step_steplength[1]
-        except:
+        except Exception:
             common_utils.MessagebarAndLog.warning(bar_msg=bar_msg, log_msg=log_msg)
             raise common_utils.UsageError()
 

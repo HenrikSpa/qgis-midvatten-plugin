@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin tests the module that handles importing of
@@ -24,7 +23,7 @@
 
 import os
 
-import mock
+from unittest import mock
 
 from nose.plugins.attrib import attr
 
@@ -34,7 +33,7 @@ from midvatten.tools.import_hobologger import HobologgerImport, TzConverter
 
 
 @attr(status="on")
-class TestParseHobologgerFile(object):
+class TestParseHobologgerFile:
 
     def setUp(self):
         pass

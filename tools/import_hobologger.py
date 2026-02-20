@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin handles importing of data to the database
@@ -82,7 +81,7 @@ class HobologgerImport(import_diveroffice.DiverofficeImport):
         if enddate is not None:
             enddate = date_utils.datestring_to_date(enddate)
 
-        with open(path, "rt", encoding=str(charset)) as f:
+        with open(path, encoding=str(charset)) as f:
             rows_unsplit = [row.lstrip().rstrip("\n").rstrip("\r") for row in f]
             csvreader = csv.reader(rows_unsplit, delimiter=",", quotechar='"')
 
@@ -140,7 +139,7 @@ class HobologgerImport(import_diveroffice.DiverofficeImport):
         else:
             temp_colnr = temp_colnr[0]
 
-        match = re.search("LBL: ([A-Za-z0-9_\-]+)", rows[1][temp_colnr])
+        match = re.search(r"LBL: ([A-Za-z0-9_\-]+)", rows[1][temp_colnr])
         if not match:
             location = filename
         else:
@@ -263,7 +262,7 @@ def get_tz_string(date_time_tz):
     'GMT-2:00'
 
     """
-    match = re.match("Date Time, ([A-Za-z0-9\+\-\:]+)", date_time_tz, re.IGNORECASE)
+    match = re.match(r"Date Time, ([A-Za-z0-9\+\-\:]+)", date_time_tz, re.IGNORECASE)
     if not match:
         return None
     else:
@@ -272,12 +271,12 @@ def get_tz_string(date_time_tz):
 
 class TzConverter(gui_utils.RowEntry):
     def __init__(self):
-        super(TzConverter, self).__init__()
+        super().__init__()
         self.source_tz = None
         self.label = QtWidgets.QLabel(
             ru(QCoreApplication.translate("TzSelector", "Select target timezone: "))
         )
-        timezones = ["GMT{:+d}".format(x) for x in range(-11, 15)]
+        timezones = [f"GMT{x:+d}" for x in range(-11, 15)]
 
         self._tz_list = QtWidgets.QComboBox()
         self._tz_list.addItems(timezones)

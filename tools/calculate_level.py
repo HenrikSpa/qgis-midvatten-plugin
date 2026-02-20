@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin handles importing of water level measurements
@@ -39,7 +38,7 @@ try:  # assume matplotlib >=1.5.1
     from matplotlib.backends.backend_qt5agg import (
         NavigationToolbar2QT as NavigationToolbar,
     )
-except:
+except Exception:
     from matplotlib.backends.backend_qt5agg import (
         NavigationToolbar2QTAgg as NavigationToolbar,
     )

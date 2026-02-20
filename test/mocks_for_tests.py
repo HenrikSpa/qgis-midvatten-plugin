@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin with mocks used for testing.
@@ -21,12 +20,12 @@
 """
 
 
-import mock
+from unittest import mock
 from qgis.PyQt import QtWidgets
 from qgis.core import QgsProject
 
 
-class MockUsingReturnValue(object):
+class MockUsingReturnValue:
     def __init__(self, v=None):
         self.v = v
         self.args_called_with = []
@@ -37,7 +36,7 @@ class MockUsingReturnValue(object):
         return self.v
 
 
-class MockReturnUsingDict(object):
+class MockReturnUsingDict:
     def __init__(self, adict, args_idx):
         self.adict = adict
         self.args_idx = args_idx
@@ -56,7 +55,7 @@ class MockReturnUsingDict(object):
         return return_value
 
 
-class MockReturnUsingDictIn(object):
+class MockReturnUsingDictIn:
     def __init__(self, adict, args_idx):
         self.adict = adict
         self.args_idx = args_idx
@@ -72,7 +71,7 @@ class MockReturnUsingDictIn(object):
                 try:
                     if isinstance(a, QString):
                         a = str(a)
-                except:
+                except Exception:
                     if str(type(a)) == "qgis.PyQt.QtCore.QString":
                         a = str(a)
                 if a.startswith(k):
@@ -91,13 +90,13 @@ class MockReturnUsingDictIn(object):
         return return_value
 
 
-class MockNotFoundQuestion(object):
+class MockNotFoundQuestion:
     def __init__(self, answer, value):
         self.value = value
         self.answer = answer
 
 
-class MockQgisUtilsIface(object):
+class MockQgisUtilsIface:
     """
     Usage:
     Put variable directly under class:
@@ -122,7 +121,7 @@ class MockQgisUtilsIface(object):
         return self.messagebar
 
 
-class MessageBar(object):
+class MessageBar:
     def __init__(self):
         self.messages = []
 
@@ -132,7 +131,7 @@ class MessageBar(object):
         return None
 
 
-class MockQgsProjectInstance(object):
+class MockQgsProjectInstance:
     def __init__(self, entry=""):
         self.entry = entry
 
@@ -140,7 +139,7 @@ class MockQgsProjectInstance(object):
         return self.entry
 
 
-class DummyInterface(object):
+class DummyInterface:
     def __init__(self):
         self.widget = QtWidgets.QWidget()
         self.mainwindow = QtWidgets.QMainWindow(self.widget)
@@ -168,7 +167,7 @@ class DummyInterface(object):
         return list(QgsProject.instance().mapLayers().values())
 
 
-class DummyInterface2(object):
+class DummyInterface2:
     """This should probably be used instead of DummyInterface
     Based on mock instad of an own type of object.
 

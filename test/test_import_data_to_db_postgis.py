@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin tests the module that handles importing of
@@ -24,9 +23,9 @@
 
 from collections import OrderedDict
 
-import mock
+from unittest import mock
 import nose
-from mock import call
+from unittest.mock import call
 from nose.plugins.attrib import attr
 
 from midvatten.test import utils_for_tests

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin tests the db_utils for postgis.
@@ -115,7 +114,7 @@ class TestVerifyTableExist(utils_for_tests.MidvattenTestPostgisDbSv):
 
 
 @attr(status="on")
-class TestNonplotTables(object):
+class TestNonplotTables:
     def test_as_tuple(self):
         tables = db_utils.nonplot_tables(as_tuple=True)
 

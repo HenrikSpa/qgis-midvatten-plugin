@@ -1,4 +1,3 @@
-# coding=utf-8
 """Tests QGIS plugin init."""
 
 __author__ = 'Tim Sutton <tim@linfiniti.com>'

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin handles shared gui tools
@@ -51,7 +50,7 @@ class SplitterWithHandel(qgis.PyQt.QtWidgets.QSplitter):
     """
 
     def __init__(self, *args, **kwargs):
-        super(SplitterWithHandel, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         handle = self.handle(1)
         self.setHandleWidth(10)
         layout = qgis.PyQt.QtWidgets.QVBoxLayout(handle)
@@ -66,21 +65,21 @@ class SplitterWithHandel(qgis.PyQt.QtWidgets.QSplitter):
         layout.addWidget(line)
 
 
-class RowEntry(object):
+class RowEntry:
     def __init__(self):
         self.widget = qgis.PyQt.QtWidgets.QWidget()
         self.layout = qgis.PyQt.QtWidgets.QHBoxLayout()
         self.widget.setLayout(self.layout)
 
 
-class VRowEntry(object):
+class VRowEntry:
     def __init__(self):
         self.widget = qgis.PyQt.QtWidgets.QWidget()
         self.layout = qgis.PyQt.QtWidgets.QVBoxLayout()
         self.widget.setLayout(self.layout)
 
 
-class RowEntryGrid(object):
+class RowEntryGrid:
     def __init__(self):
         self.widget = qgis.PyQt.QtWidgets.QWidget()
         self.layout = qgis.PyQt.QtWidgets.QGridLayout()
@@ -91,7 +90,7 @@ class ExtendedQPlainTextEdit(qgis.PyQt.QtWidgets.QPlainTextEdit):
     """ """
 
     def __init__(self, keep_sorted: bool = False, *args, **kwargs):
-        super(ExtendedQPlainTextEdit, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.keep_sorted = keep_sorted
 
     def paste_data(self, paste_list: List[str]):
@@ -210,7 +209,7 @@ def set_combobox(combobox: QComboBox, value: str, add_if_not_exists: bool = True
 
 class DistinctValuesBrowser(VRowEntry):
     def __init__(self, tables_columns: Dict[str, List[str]]):
-        super(DistinctValuesBrowser, self).__init__()
+        super().__init__()
 
         self.browser_label = qgis.PyQt.QtWidgets.QLabel(
             ru(QCoreApplication.translate("DistinctValuesBrowser", "DB browser:"))

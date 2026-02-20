@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin with utilities used for testing.
@@ -31,7 +30,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import mock
+from unittest import mock
 import qgis
 import qgis.PyQt
 import qgis.core
@@ -48,7 +47,7 @@ from midvatten.tools.utils import common_utils
 from midvatten.tools.utils import db_utils
 
 
-class TestQapplicationIsRunning(object):
+class TestQapplicationIsRunning:
     """Tests that the QApplication is running"""
 
     def test_iface(self):
@@ -135,7 +134,7 @@ class ContextualStringIO(io.StringIO):
         return False  # Indicate that we haven't handled the exception, if received
 
 
-class MidvattenTestBase(object):
+class MidvattenTestBase:
     def __init__(self):
         self.stop_show()
 
@@ -433,7 +432,7 @@ def compare_strings(str1, str2):
             diff = True
             break
     if diff:
-        return "diff at idx {}, \nstr1:{}\nstr2:{}".format(str(idx), str1_t, str2_t)
+        return f"diff at idx {str(idx)}, \nstr1:{str1_t}\nstr2:{str2_t}"
     else:
         return "The same"
 
@@ -463,7 +462,7 @@ def create_vectorlayer(
 ):
     """From GroupStats"""
     vlayer = QgsVectorLayer(
-        "{}?crs=epsg:{}".format(geomtype, str(crs)), "test", "memory"
+        f"{geomtype}?crs=epsg:{str(crs)}", "test", "memory"
     )
     provider = vlayer.dataProvider()
     # print(str(crs))
@@ -496,7 +495,7 @@ def create_vectorlayer(
 
     QgsProject.instance().addMapLayer(vlayer)
     if not hide_print:
-        print("1. Valid vlayer '{}'".format(vlayer.isValid()))
+        print(f"1. Valid vlayer '{vlayer.isValid()}'")
         print("2. feature_ids: " + str(feature_ids))
         print(
             "5. QgsVectorLayer.getFeature(): "

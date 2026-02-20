@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin handles importing of data to the database
@@ -238,13 +237,13 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
     def file_to_list(filename, charset, delimiter, quotechar='"'):
         common_utils.start_waiting_cursor()
         try:
-            with open(filename, "rt", encoding=str(charset)) as f:
+            with open(filename, encoding=str(charset)) as f:
                 rows_unsplit = [row.lstrip().rstrip("\n").rstrip("\r") for row in f]
                 csvreader = csv.reader(
                     rows_unsplit, delimiter=delimiter, quotechar=quotechar
                 )
                 file_data = [ru(row, keep_containers=True) for row in csvreader]
-        except:
+        except Exception:
             common_utils.stop_waiting_cursor()
             raise
         else:
@@ -577,7 +576,7 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
 
 class ImportTableChooser(VRowEntry):
     def __init__(self, tables_columns, file_header=None):
-        super(ImportTableChooser, self).__init__()
+        super().__init__()
         self.tables_columns = tables_columns
         self.file_header = file_header
         self.columns = []
@@ -677,7 +676,7 @@ class ImportTableChooser(VRowEntry):
         try:
             self.layout.removeWidget(self.grid.widget)
             self.grid.widget.close()
-        except:
+        except Exception:
             pass
 
         self.columns = []
@@ -747,7 +746,7 @@ class ImportTableChooser(VRowEntry):
         self.import_method = import_method
 
 
-class ColumnEntry(object):
+class ColumnEntry:
     def __init__(self, tables_columns_info, file_header, numeric_datatypes):
         self.tables_columns_info = tables_columns_info
         self.obsids_from_selection = None
@@ -769,7 +768,7 @@ class ColumnEntry(object):
             ]
         )
         label = qgis.PyQt.QtWidgets.QLabel(
-            " ".join(["Column ", self.db_column, "({})".format(concatted_info)])
+            " ".join(["Column ", self.db_column, f"({concatted_info})"])
         )
 
         self.column_widgets = [label]
@@ -941,12 +940,12 @@ class ColumnEntry(object):
             self._factor.setText(str(as_float))
 
 
-class Obsids_from_selection(object):
+class Obsids_from_selection:
     def __init__(self):
         pass
 
 
-class StaticValue(object):
+class StaticValue:
     def __init__(self, value):
         self.value = value
 

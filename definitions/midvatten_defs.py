@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This file contains dictionaries, lists and variable definitions for the Midvatten plugin. 
@@ -339,7 +338,7 @@ def geocolorsymbols():
                             log_msg=ru(
                                 QCoreApplication.translate(
                                     "geocolorsymbols",
-                                    'Error in geocolorsymbols, setting brush and color for strata "%s" using geoshort %s failed. Msg1:\n%s\nMsg2:\n%s\Msg3:\n%s',
+                                    'Error in geocolorsymbols, setting brush and color for strata "%s" using geoshort %s failed. Msg1:\n%s\nMsg2:\n%s\\Msg3:\n%s',
                                 )
                             )
                             % (strata, geoshort, str(a), str(b), str(c))
@@ -454,7 +453,7 @@ def hydrocolors():
     if not res:
         try:
             print("using fallback method for backwards compat.")
-        except:
+        except Exception:
             pass
         MessagebarAndLog.warning(
             bar_msg=ru(
@@ -1383,9 +1382,9 @@ def custplot_default_template():
 def custplot_default_style():
     stylename = "midv_custplot_default"
     filename = os.path.join(
-        os.path.dirname(__file__), "mpl_styles", "{}.mplstyle".format(stylename)
+        os.path.dirname(__file__), "mpl_styles", f"{stylename}.mplstyle"
     )
-    with io.open(filename, "r", encoding="utf-8") as f:
+    with open(filename, encoding="utf-8") as f:
         style = f.read()
     return (style, stylename)
 

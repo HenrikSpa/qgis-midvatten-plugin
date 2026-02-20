@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  This part of the Midvatten plugin tests the module that handles importing of
@@ -24,8 +23,8 @@
 
 from collections import OrderedDict
 
-import mock
-from mock import MagicMock
+from unittest import mock
+from unittest.mock import MagicMock
 from nose.plugins.attrib import attr
 from qgis.PyQt import QtWidgets
 
@@ -1828,7 +1827,7 @@ class TestWlvllogImportFromDiverofficeFiles(
                                 importer.confirm_names.checked,
                                 importer.import_all_data.checked,
                             )
-                        except:
+                        except Exception:
                             pass
 
                         print(
@@ -1966,7 +1965,7 @@ class TestWlvllogImportFromDiverofficeFiles(
                                 importer.confirm_names.checked,
                                 importer.import_all_data.checked,
                             )
-                        except:
+                        except Exception:
                             pass
 
                         print(
@@ -2064,7 +2063,7 @@ class TestWlvllogImportFromDiverofficeFiles(
                         importer.confirm_names.checked,
                         importer.import_all_data.checked,
                     )
-                except:
+                except Exception:
                     pass
 
                 print("\n".join([str(x) for x in mock_messagebar.mock_calls]))
@@ -2160,7 +2159,7 @@ class TestWlvllogImportFromDiverofficeFiles(
                         importer.confirm_names.checked,
                         importer.import_all_data.checked,
                     )
-                except:
+                except Exception:
                     pass
 
                 print("\n".join([str(x) for x in mock_messagebar.mock_calls]))

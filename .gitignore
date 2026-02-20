@@ -8,3 +8,6 @@ tools/wlevels_calc_calibr - Kopia.py
 tests/qgis-auth.db
 qgis-auth.db
 /:
+/test/:
+.venv
+.swp

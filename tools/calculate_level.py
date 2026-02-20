@@ -70,8 +70,12 @@ class CalculateLevel(
         self.layer = layerin
 
     def calc(self, obsids: List[str]):
-        fr_d_t = self.from_date_time.dateTime().toPyDateTime()
-        to_d_t = self.to_date_time.dateTime().toPyDateTime()
+        fr_d_t = (
+            self.from_date_time.dateTime().toPyDateTime().strftime("%Y-%m-%d %H:%M:%S")
+        )
+        to_d_t = (
+            self.to_date_time.dateTime().toPyDateTime().strftime("%Y-%m-%d %H:%M:%S")
+        )
         dbconnection = db_utils.DbConnectionManager()
         try:
             in_clause, in_args = dbconnection.in_clause(obsids)
@@ -125,7 +129,9 @@ class CalculateLevel(
                 "SET h_toc = (SELECT obs_points.h_toc FROM obs_points WHERE w_levels.obsid = obs_points.obsid) "
                 f"WHERE {where_sql}"
             )
+
             self.updated_h_tocs = self.log_msg(where_sql, where_sql_args)
+
             db_utils.sql_alter_db(sql1, all_args=[where_sql_args])
 
             where_sql += """ AND h_toc IS NOT NULL"""

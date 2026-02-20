@@ -121,13 +121,15 @@ class NewDb:
             )
         )
 
-        # dbconnection = db_utils.DbConnectionManager(self.db_settings)
         try:
-            # creating/connecting the test_db
+            
             dbconnection = db_utils.DbConnectionManager(self.db_settings)
+            # Foreign key constraints are disabled by default (for backwards compatibility), 
+            # so must be enabled separately for each database dbconnection separately.
             dbconnection.execute(
                 "PRAGMA foreign_keys = ON"
-            )  # Foreign key constraints are disabled by default (for backwards compatibility), so must be enabled separately for each database dbconnection separately.
+            )  
+            
         except Exception as e:
             common_utils.MessagebarAndLog.critical(
                 bar_msg=ru(
@@ -138,9 +140,9 @@ class NewDb:
                 ),
                 log_msg=ru(QCoreApplication.translate("NewDb", "Msg:\n") + str(e)),
             )
-            # utils.pop_up_info("Impossible to connect to selected DataBase")
             common_utils.stop_waiting_cursor()
             return ""
+            
         # First, find spatialite version
         versionstext = dbconnection.execute_and_fetchall("select spatialite_version()")[
             0

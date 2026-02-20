@@ -179,14 +179,14 @@ class MidvattenTestSpatialiteNotCreated(MidvattenTestBase):
             print(f"Error, the db did already exist: {self.TEMP_DBPATH}")
         self.remove_db()
         super().setUp()
-        
+
     def tearDown(self):
         # Delete database
         self.remove_db()
         super().tearDown()
 
     def remove_db(self):
-        for ending in ['', '-journal', '-wal', '-shm']:
+        for ending in ["", "-journal", "-wal", "-shm"]:
             try:
                 os.remove(self.TEMP_DBPATH + ending)
             except OSError:
@@ -303,7 +303,11 @@ class MidvattenTestPostgisNotCreated(MidvattenTestBase):
         except common_utils.UserInterruptError as e:
             raise unittest.SkipTest("PostGIS not available (no password): %s" % e)
         except Exception as e:
-            if "password" in str(e).lower() or "connect" in str(e).lower() or "could not connect" in str(e).lower():
+            if (
+                "password" in str(e).lower()
+                or "connect" in str(e).lower()
+                or "could not connect" in str(e).lower()
+            ):
                 raise unittest.SkipTest("PostGIS not available: %s" % e)
             print("Failure resetting db: " + str(e))
 
@@ -317,7 +321,13 @@ class MidvattenTestPostgisNotCreated(MidvattenTestBase):
             raise
         except Exception as e:
             err = str(e).lower()
-            if "privilege" in err or "superuser" in err or "extension" in err or "rättighet" in err or "saknas" in err:
+            if (
+                "privilege" in err
+                or "superuser" in err
+                or "extension" in err
+                or "rättighet" in err
+                or "saknas" in err
+            ):
                 raise unittest.SkipTest("PostGIS extension not available: %s" % e)
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
@@ -456,7 +466,7 @@ def create_vectorlayer(
         "{}?crs=epsg:{}".format(geomtype, str(crs)), "test", "memory"
     )
     provider = vlayer.dataProvider()
-    print(str(crs))
+    # print(str(crs))
     fields = QgsFields()
     for _field in _fields:
         fields.append(_field)

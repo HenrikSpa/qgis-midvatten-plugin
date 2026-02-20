@@ -436,32 +436,32 @@ class PiperPlot(object):
         ax.plot(
             *rhomb.transform([50, 50], [0, 100]),
             grid_linestyle,
-            **grid_linestyle_kwargs
+            **grid_linestyle_kwargs,
         )
         ax.plot(
             *rhomb.transform([0, 100], [50, 50]),
             grid_linestyle,
-            **grid_linestyle_kwargs
+            **grid_linestyle_kwargs,
         )
         ax.plot(
             *rhomb.transform([0, 100], [10, 10]),
             grid_linestyle,
-            **grid_linestyle_kwargs
+            **grid_linestyle_kwargs,
         )
         ax.plot(
             *rhomb.transform([0, 100], [90, 90]),
             grid_linestyle,
-            **grid_linestyle_kwargs
+            **grid_linestyle_kwargs,
         )
         ax.plot(
             *rhomb.transform([10, 10], [0, 100]),
             grid_linestyle,
-            **grid_linestyle_kwargs
+            **grid_linestyle_kwargs,
         )
         ax.plot(
             *rhomb.transform([90, 90], [0, 100]),
             grid_linestyle,
-            **grid_linestyle_kwargs
+            **grid_linestyle_kwargs,
         )
 
     def add_ticklabels(self, labels_zorder, ax, tri1, tri2, rhomb):
@@ -486,14 +486,14 @@ class PiperPlot(object):
             "10%",
             ha="right",
             va="bottom",
-            **shared_ticklabels_params
+            **shared_ticklabels_params,
         )
         ax.text(
             *tri1.transform(10, 90),
             "90%",
             ha="right",
             va="bottom",
-            **shared_ticklabels_params
+            **shared_ticklabels_params,
         )
         # Tri1 right side
         self.labels_positive_rotation.append(
@@ -502,7 +502,7 @@ class PiperPlot(object):
                 "90%",
                 ha="left",
                 va="top",
-                **shared_ticklabels_params
+                **shared_ticklabels_params,
             )
         )
         self.labels_positive_rotation.append(
@@ -511,7 +511,7 @@ class PiperPlot(object):
                 "10%",
                 ha="left",
                 va="top",
-                **shared_ticklabels_params
+                **shared_ticklabels_params,
             )
         )
         # Tri1 bottom
@@ -521,7 +521,7 @@ class PiperPlot(object):
                 "10%",
                 ha="left",
                 va="top",
-                **shared_ticklabels_params
+                **shared_ticklabels_params,
             )
         )
         self.labels_negative_rotation.append(
@@ -530,7 +530,7 @@ class PiperPlot(object):
                 "90%",
                 ha="left",
                 va="top",
-                **shared_ticklabels_params
+                **shared_ticklabels_params,
             )
         )
 
@@ -541,7 +541,7 @@ class PiperPlot(object):
                 "90%",
                 ha="right",
                 va="top",
-                **shared_ticklabels_params
+                **shared_ticklabels_params,
             )
         )
         self.labels_negative_rotation.append(
@@ -550,7 +550,7 @@ class PiperPlot(object):
                 "10%",
                 ha="right",
                 va="top",
-                **shared_ticklabels_params
+                **shared_ticklabels_params,
             )
         )
         # Tri2 right side
@@ -559,14 +559,14 @@ class PiperPlot(object):
             "10%",
             ha="left",
             va="bottom",
-            **shared_ticklabels_params
+            **shared_ticklabels_params,
         )
         ax.text(
             *tri2.transform(10, 90),
             "90%",
             ha="left",
             va="bottom",
-            **shared_ticklabels_params
+            **shared_ticklabels_params,
         )
         # Tri2 bottom
         self.labels_positive_rotation.append(
@@ -575,7 +575,7 @@ class PiperPlot(object):
                 "10%",
                 ha="right",
                 va="top",
-                **shared_ticklabels_params
+                **shared_ticklabels_params,
             )
         )
         self.labels_positive_rotation.append(
@@ -584,7 +584,7 @@ class PiperPlot(object):
                 "90%",
                 ha="right",
                 va="top",
-                **shared_ticklabels_params
+                **shared_ticklabels_params,
             )
         )
 
@@ -596,7 +596,7 @@ class PiperPlot(object):
                 "10%",
                 ha="right",
                 va="bottom",
-                **shared_ticklabels_params
+                **shared_ticklabels_params,
             )
         )
         self.labels_positive_rotation.append(
@@ -605,7 +605,7 @@ class PiperPlot(object):
                 "90%",
                 ha="right",
                 va="bottom",
-                **shared_ticklabels_params
+                **shared_ticklabels_params,
             )
         )
         # Top left
@@ -615,7 +615,7 @@ class PiperPlot(object):
                 "10%",
                 ha="right",
                 va="top",
-                **shared_ticklabels_params
+                **shared_ticklabels_params,
             )
         )
         self.labels_negative_rotation.append(
@@ -624,7 +624,7 @@ class PiperPlot(object):
                 "90%",
                 ha="right",
                 va="top",
-                **shared_ticklabels_params
+                **shared_ticklabels_params,
             )
         )
         # Top right
@@ -634,7 +634,7 @@ class PiperPlot(object):
                 "90%",
                 ha="left",
                 va="top",
-                **shared_ticklabels_params
+                **shared_ticklabels_params,
             )
         )
         self.labels_positive_rotation.append(
@@ -643,7 +643,7 @@ class PiperPlot(object):
                 "10%",
                 ha="left",
                 va="top",
-                **shared_ticklabels_params
+                **shared_ticklabels_params,
             )
         )
         # Bottom right
@@ -653,7 +653,7 @@ class PiperPlot(object):
                 "90%",
                 ha="left",
                 va="bottom",
-                **shared_ticklabels_params
+                **shared_ticklabels_params,
             )
         )
         self.labels_negative_rotation.append(
@@ -662,7 +662,7 @@ class PiperPlot(object):
                 "10%",
                 ha="left",
                 va="bottom",
-                **shared_ticklabels_params
+                **shared_ticklabels_params,
             )
         )
 
@@ -675,7 +675,7 @@ class PiperPlot(object):
             ax.plot(
                 *axes_edges,
                 color=mpl.rcParams["axes.edgecolor"],
-                linewidth=mpl.rcParams["axes.linewidth"]
+                linewidth=mpl.rcParams["axes.linewidth"],
             )
 
     def add_axes_labels(self, shared_axislabels_params, ax, tri1, tri2, rhomb):
@@ -685,7 +685,7 @@ class PiperPlot(object):
                 "Mg (% meq) =>",
                 ha="center",
                 va="bottom",
-                **shared_axislabels_params
+                **shared_axislabels_params,
             )
         )
         self.labels_negative_rotation.append(
@@ -694,7 +694,7 @@ class PiperPlot(object):
                 "Na+K (% meq) =>",
                 ha="center",
                 va="bottom",
-                **shared_axislabels_params
+                **shared_axislabels_params,
             )
         )
         ax.text(
@@ -702,7 +702,7 @@ class PiperPlot(object):
             "<= Ca (% meq)",
             ha="center",
             va="top",
-            **shared_axislabels_params
+            **shared_axislabels_params,
         )
 
         self.labels_negative_rotation.append(
@@ -711,7 +711,7 @@ class PiperPlot(object):
                 "<= SO4 (% meq)",
                 ha="center",
                 va="bottom",
-                **shared_axislabels_params
+                **shared_axislabels_params,
             )
         )
         self.labels_positive_rotation.append(
@@ -720,7 +720,7 @@ class PiperPlot(object):
                 "<= CO3+HCO3 (% meq)",
                 ha="center",
                 va="bottom",
-                **shared_axislabels_params
+                **shared_axislabels_params,
             )
         )
         ax.text(
@@ -728,7 +728,7 @@ class PiperPlot(object):
             "Cl (% meq) =>",
             ha="center",
             va="top",
-            **shared_axislabels_params
+            **shared_axislabels_params,
         )
 
         # Rhomb axes labels
@@ -738,7 +738,7 @@ class PiperPlot(object):
                 "<= CO3+HCO3 (% meq)",
                 ha="center",
                 va="top",
-                **shared_axislabels_params
+                **shared_axislabels_params,
             )
         )
         self.labels_positive_rotation.append(
@@ -747,7 +747,7 @@ class PiperPlot(object):
                 "SO4+Cl (% meq) =>",
                 ha="center",
                 va="bottom",
-                **shared_axislabels_params
+                **shared_axislabels_params,
             )
         )
         self.labels_negative_rotation.append(
@@ -756,7 +756,7 @@ class PiperPlot(object):
                 "Na+K (% meq) =>",
                 ha="center",
                 va="top",
-                **shared_axislabels_params
+                **shared_axislabels_params,
             )
         )
         self.labels_negative_rotation.append(
@@ -765,7 +765,7 @@ class PiperPlot(object):
                 "<= Ca+Mg (% meq)",
                 ha="center",
                 va="bottom",
-                **shared_axislabels_params
+                **shared_axislabels_params,
             )
         )
 
@@ -775,21 +775,21 @@ class PiperPlot(object):
             "Na type",
             ha="center",
             va="center",
-            **shared_axislabels_params
+            **shared_axislabels_params,
         )
         ax.text(
             *tri1.transform(65, 15),
             "Ca type",
             ha="center",
             va="center",
-            **shared_axislabels_params
+            **shared_axislabels_params,
         )
         ax.text(
             *tri1.transform(15, 65),
             "Mg type",
             ha="center",
             va="center",
-            **shared_axislabels_params
+            **shared_axislabels_params,
         )
 
         ax.text(
@@ -797,21 +797,21 @@ class PiperPlot(object):
             "SO4 type",
             ha="center",
             va="center",
-            **shared_axislabels_params
+            **shared_axislabels_params,
         )
         ax.text(
             *tri2.transform(65, 15),
             "Cl type",
             ha="center",
             va="center",
-            **shared_axislabels_params
+            **shared_axislabels_params,
         )
         ax.text(
             *tri2.transform(15, 15),
             "HCO3 type",
             ha="center",
             va="center",
-            **shared_axislabels_params
+            **shared_axislabels_params,
         )
 
         # Rhomb inner labels
@@ -821,7 +821,7 @@ class PiperPlot(object):
                 "CO3+HCO3",
                 ha="center",
                 va="bottom",
-                **shared_axislabels_params
+                **shared_axislabels_params,
             )
         )
         self.labels_negative_rotation.append(
@@ -830,7 +830,7 @@ class PiperPlot(object):
                 "CO3+HCO3, SO4+Cl",
                 ha="center",
                 va="bottom",
-                **shared_axislabels_params
+                **shared_axislabels_params,
             )
         )
         self.labels_negative_rotation.append(
@@ -839,7 +839,7 @@ class PiperPlot(object):
                 "SO4+Cl, CO3+HCO3",
                 ha="center",
                 va="top",
-                **shared_axislabels_params
+                **shared_axislabels_params,
             )
         )
         self.labels_negative_rotation.append(
@@ -848,7 +848,7 @@ class PiperPlot(object):
                 "SO4+Cl",
                 ha="center",
                 va="top",
-                **shared_axislabels_params
+                **shared_axislabels_params,
             )
         )
 
@@ -858,7 +858,7 @@ class PiperPlot(object):
                 "Na+K",
                 ha="center",
                 va="bottom",
-                **shared_axislabels_params
+                **shared_axislabels_params,
             )
         )
         self.labels_positive_rotation.append(
@@ -867,7 +867,7 @@ class PiperPlot(object):
                 "Na+K, Ca+Mg",
                 ha="center",
                 va="bottom",
-                **shared_axislabels_params
+                **shared_axislabels_params,
             )
         )
         self.labels_positive_rotation.append(
@@ -876,7 +876,7 @@ class PiperPlot(object):
                 "Ca+Mg, Na+K",
                 ha="center",
                 va="top",
-                **shared_axislabels_params
+                **shared_axislabels_params,
             )
         )
         self.labels_positive_rotation.append(
@@ -885,7 +885,7 @@ class PiperPlot(object):
                 "Ca+Mg",
                 ha="center",
                 va="top",
-                **shared_axislabels_params
+                **shared_axislabels_params,
             )
         )
 
@@ -945,7 +945,7 @@ class PiperPlot(object):
                 ),
                 markers.get(self.ms.settingsdict["piper_markers"], default_marker)(i),
                 **_labels.get(self.ms.settingsdict["piper_markers"], lambda i: {})(i),
-                picker=2
+                picker=2,
             )
 
         for i in range(0, nosamples):
@@ -968,7 +968,7 @@ class PiperPlot(object):
                 ),
                 markers.get(self.ms.settingsdict["piper_markers"], default_marker)(i),
                 **_labels.get(self.ms.settingsdict["piper_markers"], lambda i: {})(i),
-                picker=2
+                picker=2,
             )
 
         h = []
@@ -997,7 +997,7 @@ class PiperPlot(object):
                     **_labels.get(self.ms.settingsdict["piper_markers"], lambda i: {})(
                         i
                     ),
-                    picker=2
+                    picker=2,
                 )
             )
 

@@ -71,7 +71,7 @@ class TestDrillreport(utils_for_tests.MidvattenTestSpatialiteDbSv):
         # print(str(db_utils.sql_load_fr_db('select * from stratigraphy')))
         dlg = Drillreport(["1", "2", "3"], self.midvatten.ms.settingsdict)
 
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
 
         assert (
             mock.call(QtCore.QUrl("file:///tmp/midvatten_reports/drill_report.html"))

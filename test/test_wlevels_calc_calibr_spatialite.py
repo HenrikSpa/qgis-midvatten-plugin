@@ -52,6 +52,7 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestSpatialiteDbSv):
             calibrlogger.getlastcalibration(calibrlogger.selected_obsid)
         )
         ref = "[(2017-02-01 00:00, 99.5)]"
+        print(f"{mock_messagebar.mock_calls=}")
         assert test == ref
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
@@ -81,6 +82,7 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestSpatialiteDbSv):
             )
         )
         ref = "(True, [(rb1, 2017-02-01 00:00, 100.0, None, None, 3.0, None)])"
+        print(f"{mock_messagebar.mock_calls=}")
         assert test == ref
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
@@ -107,6 +109,7 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestSpatialiteDbSv):
             )
         )
         ref = "(True, [(rb1, 2017-02-01 00:00, None, None, None, 150.0, None)])"
+        print(f"{mock_messagebar.mock_calls=}")
         print(test)
         assert test == ref
 
@@ -140,6 +143,7 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestSpatialiteDbSv):
             )
         )
         ref = "(True, [(rb1, 2017-03-01 00:00, None, None, None, 50.0, None)])"
+        print(f"{mock_messagebar.mock_calls=}")
         print(test)
         assert test == ref
 
@@ -172,6 +176,7 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestSpatialiteDbSv):
             )
         )
         ref = "(True, [(rb1, 2017-02-01 01:00, None, None, None, 100.0, None)])"
+        print(f"{mock_messagebar.mock_calls=}")
         print(test)
         assert test == ref
 
@@ -206,6 +211,7 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestSpatialiteDbSv):
             )
         )
         ref = "(True, [(rb1, 2017-02-01 01:00, None, None, None, 100.0, None)])"
+        print(f"{mock_messagebar.mock_calls=}")
         print(test)
         print(ref)
         assert test == ref
@@ -244,6 +250,7 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestSpatialiteDbSv):
             )
         )
         ref = "(True, [(rb1, 2017-02-01 01:00, None, None, None, 100.0, None)])"
+        print(f"{mock_messagebar.mock_calls=}")
         print(test)
         assert test == ref
 
@@ -294,7 +301,7 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestSpatialiteDbSv):
         l[5] = "%.11e" % Decimal(l[5])
         res[1][1] = tuple(l)
         test = utils_for_tests.create_test_string(res)
-        print(mock_messagebar.mock_calls)
+        print(f"{mock_messagebar.mock_calls=}")
 
         ref = "(True, [(rb1, 2017-02-01 00:00, None, None, None, 100.0, None), (rb1, 2017-02-10 00:00, None, None, None, -2.84217094304e-14, None)])"
         print("Ref")
@@ -322,6 +329,7 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestSpatialiteDbSv):
         test = utils_for_tests.create_test_string(calibrlogger.info.text())
         ref = "Last pos. for logger in rb1 was 99.500 masl at 2017-02-01 00:00"
 
+        print(f"{mock_messagebar.mock_calls=}")
         assert test == ref
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
@@ -341,6 +349,7 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestSpatialiteDbSv):
         res = calibrlogger.getlastcalibration(calibrlogger.selected_obsid)
         test = utils_for_tests.create_test_string(calibrlogger.info.text())
         ref = "Last pos. for logger in rb1 was 0.000 masl at 2017-02-01 00:00"
+        print(f"{mock_messagebar.mock_calls=}")
         assert test == ref
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
@@ -361,6 +370,7 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestSpatialiteDbSv):
             calibrlogger.get_uncalibrated_obsids()
         )
         ref = "[rb1]"
+        print(f"{mock_messagebar.mock_calls=}")
         print(test)
         assert test == ref
 
@@ -395,7 +405,7 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestSpatialiteDbSv):
             "SELECT date_time FROM w_levels_logger ORDER BY date_time"
         )
         test = utils_for_tests.create_test_string(res)
-        print(mock_messagebar.mock_calls)
+        print(f"{mock_messagebar.mock_calls=}")
 
         ref = "(True, [(2017-01-28 00:00), (2017-02-10 00:00)])"
         print("Ref")
@@ -419,6 +429,7 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestSpatialiteDbSv):
             calibrlogger.combobox_obsid, "rb1", add_if_not_exists=False
         )
         calibrlogger.load_obsid_and_init()
+        print(f"{mock_messagebar.mock_calls=}")
         assert tuple(calibrlogger.meas_ts.tolist()) == (("2017-02-01 00:00", 2.0),)
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
@@ -445,6 +456,7 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestSpatialiteDbSv):
             calibrlogger.combobox_obsid, "rb1", add_if_not_exists=False
         )
         calibrlogger.load_obsid_and_init()
+        print(f"{mock_messagebar.mock_calls=}")
         assert tuple(calibrlogger.meas_ts.tolist()) == (("2017-02-01 00:00", 2.0),)
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
@@ -471,6 +483,7 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestSpatialiteDbSv):
             calibrlogger.combobox_obsid, "rb1", add_if_not_exists=False
         )
         calibrlogger.load_obsid_and_init()
+        print(f"{mock_messagebar.mock_calls=}")
         assert tuple(calibrlogger.meas_ts.tolist()) == (("2017-04-30 23:00", 2.0),)
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
@@ -497,6 +510,7 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestSpatialiteDbSv):
             calibrlogger.combobox_obsid, "rb1", add_if_not_exists=False
         )
         calibrlogger.load_obsid_and_init()
+        print(f"{mock_messagebar.mock_calls=}")
         assert tuple(calibrlogger.meas_ts.tolist()) == (("2017-05-01 00:00", 2.0),)
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
@@ -522,7 +536,7 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestSpatialiteDbSv):
         calibrlogger.load_obsid_and_init()
 
         # calibrlogger.update_plot()
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         test = tuple(calibrlogger.head_ts_for_plot.values)
 
         print(test)
@@ -553,7 +567,7 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestSpatialiteDbSv):
         calibrlogger.load_obsid_and_init()
 
         # calibrlogger.update_plot()
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         test = tuple(calibrlogger.head_ts_for_plot.values)
 
         print(test)
@@ -613,6 +627,7 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestSpatialiteDbSv):
         )
         # print(test)
         # print(ref)
+        print(f"{mock_messagebar.mock_calls=}")
         assert test == ref
 
         lines_data = []
@@ -629,6 +644,7 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestSpatialiteDbSv):
                 lines_data.append((line.get_label(), xydata))
                 # print(line.get_label())
         # print(tuple(line_labels))
+        print(f"{mock_messagebar.mock_calls=}")
         assert tuple(line_labels) == (
             "rb1 measurements",
             "rb1 logger water level for editing",

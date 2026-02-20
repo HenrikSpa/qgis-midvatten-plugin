@@ -33,7 +33,7 @@ class TestStratSymbology(utils_for_tests.MidvattenTestSpatialiteDbSv):
             try:
                 self.ss.create_symbology()
             except:
-                print(str(mock_messagebar.mock_calls))
+                print(f"{mock_messagebar.mock_calls=}")
                 raise
 
         _test(self)
@@ -44,6 +44,6 @@ class TestStratSymbology(utils_for_tests.MidvattenTestSpatialiteDbSv):
         ref = '["", "", [["Midvatten strat symbology", "", [["Bars", "", [["Obsid label", True, []], ["Layer texts", True, []], ["W levels", "", [["W levels label", True, []], ["W levels", True, []]]], ["Bedrock", "", [["Bedrock label", True, []], ["Bedrock", True, []]]], ["Frame", True, []], ["Layers", "", [["Geology", True, []], ["Hydro", True, []]]], ["Shadow", True, []]]], ["Static bars", "", [["Obsid label", True, []], ["Layer texts", True, []], ["W levels", "", [["W levels label", True, []], ["W levels", True, []]]], ["Bedrock", "", [["Bedrock label", True, []], ["Bedrock", True, []]]], ["Frame", True, []], ["Layers", "", [["Geology", True, []], ["Hydro", True, []]]], ["Shadow", True, []]]], ["Rings", "", [["Bedrock", "", [["Bedrock", True, []]]], ["Layers", "", [["Geology", True, []], ["Hydro", True, []]]]]]]]]]'
         print(f"Test")
         print(test)
-        print(mock_messagebar.mock_calls)
+        print(f"{mock_messagebar.mock_calls=}")
         assert test == ref
         assert mock_messagebar.mock_calls == []

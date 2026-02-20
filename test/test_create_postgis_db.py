@@ -273,6 +273,7 @@ class TestObsPointsTriggers(utils_for_tests.MidvattenTestPostgisDbSv):
         )
         reference_string = "(True, [(rb1, 1.0, 1.0, None)])"
 
+        print(f"{mock_messagebar.mock_calls=}")
         assert test_string == reference_string
 
     def test_add_triggers_add_east_north(self):
@@ -708,6 +709,6 @@ class TestSqls(utils_for_tests.MidvattenTestPostgisDbSvImportInstance):
             db_utils.sql_load_fr_db("select obsid, length FROM obs_points")
         )
         reference_string = "(True, [(rb1, None)])"
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         print(test_string)
         assert test_string == reference_string

@@ -68,7 +68,7 @@ class TestFieldLoggerImporterDb(utils_for_tests.MidvattenTestSpatialiteDbSv):
                 "midvatten.tools.import_fieldlogger.common_utils.MessagebarAndLog"
             )
             def _test_staff_not_given(
-                self, filename, mock_MessagebarAndLog, mock_charset, mock_savefilename
+                self, filename, mock_messagebar, mock_charset, mock_savefilename
             ):
                 mock_charset.return_value = ("utf-8", True)
                 mock_savefilename.return_value = [[filename]]
@@ -79,7 +79,7 @@ class TestFieldLoggerImporterDb(utils_for_tests.MidvattenTestSpatialiteDbSv):
                 importer.parse_observations_and_populate_gui()
 
                 importer.start_import(importer.observations)
-                mock_MessagebarAndLog.critical.assert_called_with(
+                mock_messagebar.critical.assert_called_with(
                     bar_msg="Import error, staff not given"
                 )
 
@@ -129,7 +129,7 @@ class TestFieldLoggerImporterDb(utils_for_tests.MidvattenTestSpatialiteDbSv):
             def _test(
                 self,
                 filename,
-                mock_MessagebarAndLog,
+                mock_messagebar,
                 mock_charset,
                 mock_savefilename,
                 mock_ask_instrument,
@@ -221,7 +221,7 @@ class TestFieldLoggerImporterDb(utils_for_tests.MidvattenTestSpatialiteDbSv):
                     stored_settings
                 )
                 importer.start_import(importer.observations)
-                print(str(mock_MessagebarAndLog.mock_calls))
+                print(f"{mock_messagebar.mock_calls=}")
 
             _test(self, filename)
             t = dict(
@@ -302,7 +302,7 @@ class TestFieldLoggerImporterDb(utils_for_tests.MidvattenTestSpatialiteDbSv):
             def _test(
                 self,
                 filename,
-                mock_MessagebarAndLog,
+                mock_messagebar,
                 mock_charset,
                 mock_savefilename,
                 mock_ask_instrument,
@@ -397,7 +397,7 @@ class TestFieldLoggerImporterDb(utils_for_tests.MidvattenTestSpatialiteDbSv):
                     stored_settings
                 )
                 importer.start_import(importer.observations)
-                print(str(mock_MessagebarAndLog.mock_calls))
+                print(f"{mock_messagebar.mock_calls=}")
 
             _test(self, filename)
             t = dict(
@@ -478,7 +478,7 @@ class TestFieldLoggerImporterDb(utils_for_tests.MidvattenTestSpatialiteDbSv):
             def _test(
                 self,
                 filename,
-                mock_MessagebarAndLog,
+                mock_messagebar,
                 mock_charset,
                 mock_savefilename,
                 mock_ask_instrument,
@@ -573,7 +573,7 @@ class TestFieldLoggerImporterDb(utils_for_tests.MidvattenTestSpatialiteDbSv):
                     stored_settings
                 )
                 importer.start_import(importer.observations)
-                print(str(mock_MessagebarAndLog.mock_calls))
+                print(f"{mock_messagebar.mock_calls=}")
 
             _test(self, filename)
             t = dict(
@@ -655,7 +655,7 @@ class TestFieldLoggerImporterDb(utils_for_tests.MidvattenTestSpatialiteDbSv):
             def _test(
                 self,
                 filename,
-                mock_MessagebarAndLog,
+                mock_messagebar,
                 mock_charset,
                 mock_savefilename,
                 mock_ask_instrument,
@@ -754,7 +754,7 @@ class TestFieldLoggerImporterDb(utils_for_tests.MidvattenTestSpatialiteDbSv):
                     stored_settings
                 )
                 importer.start_import(importer.observations)
-                print(str(mock_MessagebarAndLog.mock_calls))
+                print(f"{mock_messagebar.mock_calls=}")
 
             _test(self, filename)
             t = dict(
@@ -835,7 +835,7 @@ class TestFieldLoggerImporterDb(utils_for_tests.MidvattenTestSpatialiteDbSv):
             def _test(
                 self,
                 filename,
-                mock_MessagebarAndLog,
+                mock_messagebar,
                 mock_charset,
                 mock_savefilename,
                 mock_ask_instrument,
@@ -932,7 +932,7 @@ class TestFieldLoggerImporterDb(utils_for_tests.MidvattenTestSpatialiteDbSv):
                     stored_settings
                 )
                 importer.start_import(importer.observations)
-                print(str(mock_MessagebarAndLog.mock_calls))
+                print(f"{mock_messagebar.mock_calls=}")
 
             _test(self, filename)
             t = dict(
@@ -1015,7 +1015,7 @@ class TestFieldLoggerImporterDb(utils_for_tests.MidvattenTestSpatialiteDbSv):
             def _test(
                 self,
                 filename,
-                mock_MessagebarAndLog,
+                mock_messagebar,
                 mock_charset,
                 mock_savefilename,
                 mock_ask_instrument,
@@ -1124,7 +1124,7 @@ class TestFieldLoggerImporterDb(utils_for_tests.MidvattenTestSpatialiteDbSv):
                 )
 
                 importer.start_import(importer.observations)
-                print(str(mock_MessagebarAndLog.mock_calls))
+                print(f"{mock_messagebar.mock_calls=}")
 
             _test(self, filename)
             t = dict(
@@ -1215,7 +1215,7 @@ class TestFieldLoggerImporterDb(utils_for_tests.MidvattenTestSpatialiteDbSv):
             def _test(
                 self,
                 filename,
-                mock_MessagebarAndLog,
+                mock_messagebar,
                 mock_charset,
                 mock_savefilename,
                 mock_ask_instrument,
@@ -1334,7 +1334,7 @@ class TestFieldLoggerImporterDb(utils_for_tests.MidvattenTestSpatialiteDbSv):
                 )
 
                 importer.start_import(importer.observations)
-                print(str(mock_MessagebarAndLog.mock_calls))
+                print(f"{mock_messagebar.mock_calls=}")
 
             _test(self, filename)
             t = dict(
@@ -1421,7 +1421,7 @@ class TestFieldLoggerImporterDb(utils_for_tests.MidvattenTestSpatialiteDbSv):
             def _test(
                 self,
                 filename,
-                mock_MessagebarAndLog,
+                mock_messagebar,
                 mock_charset,
                 mock_savefilename,
                 mock_ask_instrument,
@@ -1573,7 +1573,7 @@ class TestFieldLoggerImporterDb(utils_for_tests.MidvattenTestSpatialiteDbSv):
             def _test(
                 self,
                 filename,
-                mock_MessagebarAndLog,
+                mock_messagebar,
                 mock_charset,
                 mock_savefilename,
                 mock_ask_instrument,
@@ -1697,7 +1697,7 @@ class TestFieldLoggerImporterDb(utils_for_tests.MidvattenTestSpatialiteDbSv):
             def _test(
                 self,
                 filename,
-                mock_MessagebarAndLog,
+                mock_messagebar,
                 mock_charset,
                 mock_savefilename,
                 mock_ask_instrument,
@@ -1854,7 +1854,7 @@ class TestFieldLoggerImporterDb(utils_for_tests.MidvattenTestSpatialiteDbSv):
             def _test(
                 self,
                 filename,
-                mock_MessagebarAndLog,
+                mock_messagebar,
                 mock_charset,
                 mock_savefilename,
                 mock_ask_instrument,
@@ -1942,7 +1942,7 @@ class TestFieldLoggerImporterDb(utils_for_tests.MidvattenTestSpatialiteDbSv):
                     stored_settings
                 )
                 importer.start_import(importer.observations)
-                print(str(mock_MessagebarAndLog.mock_calls))
+                print(f"{mock_messagebar.mock_calls=}")
 
             _test(self, filename)
             t = dict(

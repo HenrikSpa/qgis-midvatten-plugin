@@ -97,6 +97,7 @@ class TestSectionPlot(utils_for_tests.MidvattenTestPostgisDbSv):
 
         _test_plot_section(self)
 
+        print(f"{mock_messagebar.mock_calls=}")
         assert """call.info(log_msg='Settings {""" in str(mock_messagebar.mock_calls)
         assert self.sectionplot.drillstop.text() == "%berg%"
         assert (
@@ -107,7 +108,7 @@ class TestSectionPlot(utils_for_tests.MidvattenTestPostgisDbSv):
         )
         assert not mock_messagebar.warning.called
         assert not mock_messagebar.critical.called
-        # print(str(mock_messagebar.mock_calls))
+        # print(f"{mock_messagebar.mock_calls=}")
         print(
             "self.sectionplot.figure._midv_p {} get_legend_items_labels(self.sectionplot.figure._midv_p)[1] {}".format(
                 str(self.sectionplot.figure._midv_p),
@@ -240,12 +241,12 @@ class TestSectionPlot(utils_for_tests.MidvattenTestPostgisDbSv):
             mock_mapcanvas = mock_iface.mapCanvas.return_value
             mock_mapcanvas.layerCount.return_value = 0
             self.midvatten.plot_section()
-            print(str(mock_messagebar.mock_calls))
+            print(f"{mock_messagebar.mock_calls=}")
             self.sectionplot = self.midvatten.sectionplot
 
         _test(self)
 
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         assert not mock_messagebar.warning.called
         assert not mock_messagebar.critical.called
 
@@ -292,7 +293,7 @@ class TestSectionPlot(utils_for_tests.MidvattenTestPostgisDbSv):
 
         _test(self)
 
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         assert not mock_messagebar.warning.called
         assert not mock_messagebar.critical.called
 
@@ -366,7 +367,7 @@ class TestSectionPlot(utils_for_tests.MidvattenTestPostgisDbSv):
 
         _test(self)
 
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         assert not mock_messagebar.warning.called
         assert not mock_messagebar.critical.called
         labels = [p.get_label() for p in self.sectionplot.figure._midv_p]
@@ -429,7 +430,7 @@ class TestSectionPlot(utils_for_tests.MidvattenTestPostgisDbSv):
             }
         )
         print(str(test_string))
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         assert test_string == "{P1: 0.0, P2: 0.624695, P3: 1.874085}"
         assert not mock_messagebar.warning.called
         assert not mock_messagebar.critical.called
@@ -532,7 +533,7 @@ class TestSectionPlot(utils_for_tests.MidvattenTestPostgisDbSv):
 
         _test(self)
 
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         print(str(self.sectionplot.figure._midv_p))
         assert len(get_legend_items_labels(self.sectionplot.figure._midv_p)[0]) == 2
         # assert False
@@ -588,7 +589,7 @@ class TestSectionPlot(utils_for_tests.MidvattenTestPostgisDbSv):
 
         _test(self)
 
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         print(str(self.sectionplot.figure._midv_p))
         assert len(get_legend_items_labels(self.sectionplot.figure._midv_p)[0]) == len(
             get_legend_items_labels(self.sectionplot.figure._midv_p)[1]
@@ -663,7 +664,7 @@ class TestSectionPlot(utils_for_tests.MidvattenTestPostgisDbSv):
 
         _test(self)
 
-        # print(str(mock_messagebar.mock_calls))
+        # print(f"{mock_messagebar.mock_calls=}")
         # print(str(self.sectionplot.figure._midv_p))
         labels = [p.get_label() for p in self.sectionplot.figure._midv_p]
         assert len(get_legend_items_labels(self.sectionplot.figure._midv_p)[0]) == len(
@@ -731,7 +732,7 @@ class TestSectionPlot(utils_for_tests.MidvattenTestPostgisDbSv):
             return self.sectionplot
 
         myplot = _test(self)
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         assert myplot.interactive_groupbox.isChecked()
         assert len(myplot.figure.axes) > 1
         assert not mock_messagebar.warning.called
@@ -787,7 +788,7 @@ class TestSectionPlot(utils_for_tests.MidvattenTestPostgisDbSv):
         _test(self)
         # print(str(self.sectionplot.figure._midv_obsid_annotation))
         print(str(self.sectionplot.figure._midv_obsid_annotation))
-        # print(str(mock_messagebar.mock_calls))
+        # print(f"{mock_messagebar.mock_calls=}")
         assert (
             str(self.sectionplot.figure._midv_obsid_annotation)
             == """{'P1': (0.0, 50.0), 'P3': (3.0, 90.0), 'P2': (1.0, 183.0)}"""
@@ -838,7 +839,7 @@ class TestSectionPlot(utils_for_tests.MidvattenTestPostgisDbSv):
 
         _test(self)
 
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         print(str(self.sectionplot.figure._midv_p))
 
         pattern_obsids = {

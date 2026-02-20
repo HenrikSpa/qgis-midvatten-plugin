@@ -57,7 +57,7 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
             date_utils.datestring_to_date("2000-01-01 00:00:00")
         )
         calcave.calcall()
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         # insert or ignore into w_flow(obsid,instrumentid,flowtype,date_time,reading,unit) values('%s','%s','Aveflow','%s','%s','l/s')
         res = db_utils.sql_load_fr_db(
             """SELECT obsid, instrumentid, flowtype, date_time, ROUND(reading, 4), unit FROM w_flow ORDER BY obsid, flowtype, date_time"""
@@ -111,7 +111,7 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
             date_utils.datestring_to_date("2000-01-01 00:00:00")
         )
         calcave.calcselected()
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         # insert or ignore into w_flow(obsid,instrumentid,flowtype,date_time,reading,unit) values('%s','%s','Aveflow','%s','%s','l/s')
         res = db_utils.sql_load_fr_db(
             """SELECT obsid, instrumentid, flowtype, date_time, ROUND(reading, 4), unit FROM w_flow ORDER BY obsid, flowtype, date_time"""
@@ -170,7 +170,7 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
             date_utils.datestring_to_date("2000-01-01 00:00:00")
         )
         calcave.calcselected()
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         # insert or ignore into w_flow(obsid,instrumentid,flowtype,date_time,reading,unit) values('%s','%s','Aveflow','%s','%s','l/s')
         res = db_utils.sql_load_fr_db(
             """SELECT obsid, instrumentid, flowtype, date_time, ROUND(reading, 4), unit FROM w_flow ORDER BY obsid, flowtype, date_time"""
@@ -222,7 +222,7 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
             date_utils.datestring_to_date("2000-01-01 00:00:00")
         )
         calcave.calcselected()
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         # insert or ignore into w_flow(obsid,instrumentid,flowtype,date_time,reading,unit) values('%s','%s','Aveflow','%s','%s','l/s')
         res = db_utils.sql_load_fr_db(
             """SELECT obsid, instrumentid, flowtype, date_time, ROUND(reading, 4), unit FROM w_flow ORDER BY obsid, flowtype, date_time"""

@@ -91,6 +91,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         with open(temp.name) as f:
             rows = tuple([tuple(x.rstrip().split(";")) for x in f.readlines()])
         print(f"{rows=}")
+        print(f"{mock_messagebar.mock_calls=}")
         assert rows == (
             ("rowid", "index", "o1", "o2"),
             ("0", "2026-01-01 00:30:00", "5.0", "5.0"),
@@ -161,6 +162,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         with open(temp.name) as f:
             rows = tuple([tuple(x.rstrip().split(";")) for x in f.readlines()])
         print(f"{rows=}")
+        print(f"{mock_messagebar.mock_calls=}")
         assert rows == (
             ("rowid", "index", "values", "label"),
             ("0", "2026-01-01 00:30:00", "5.0", "o1"),
@@ -237,6 +239,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         with open(temp.name) as f:
             rows = tuple([tuple(x.rstrip().split(";")) for x in f.readlines()])
         print(f"{rows=}")
+        print(f"{mock_messagebar.mock_calls=}")
         assert rows == (
             ("rowid", "index", "o1", "o2"),
             ("0", "2026-01-01", "11.0", "5.75"),
@@ -303,6 +306,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         with open(temp.name) as f:
             rows = tuple([tuple(x.rstrip().split(";")) for x in f.readlines()])
         print(f"{rows=}")
+        print(f"{mock_messagebar.mock_calls=}")
         assert rows == (
             ("rowid", "index", "o1, o1", "o2"),
             ("0", "2026-01-01 00:30:00", "5.0", "5.0"),
@@ -375,6 +379,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         with open(temp.name) as f:
             rows = tuple([tuple(x.rstrip().split(";")) for x in f.readlines()])
         print(f"{rows=}")
+        print(f"{mock_messagebar.mock_calls=}")
         assert rows == (
             ("rowid", "index", "o1", "o2, o2"),
             ("0", "2026-01-01 00:30:00", "5.0", "5.0"),
@@ -447,6 +452,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         with open(temp.name) as f:
             rows = tuple([tuple(x.rstrip().split(";")) for x in f.readlines()])
         print(f"{rows=}")
+        print(f"{mock_messagebar.mock_calls=}")
         assert rows == (
             ("rowid", "index", "o1", "o2, o2"),
             ("0", "2026-01-01 00:30:00", "5.0", "5.0"),
@@ -519,6 +525,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         with open(temp.name) as f:
             rows = tuple([tuple(x.rstrip().split(";")) for x in f.readlines()])
         print(f"{rows=}")
+        print(f"{mock_messagebar.mock_calls=}")
         assert rows == (
             ("rowid", "index", "o1", "o2, o2"),
             ("0", "2026-01-01 00:30:00", "5.0", "5.0"),

@@ -922,7 +922,7 @@ class TestWlvllogImportFromDiverofficeFiles(utils_for_tests.MidvattenTestPostgis
                         mock_iface,
                         mock_askuser,
                         mock_notfoundquestion,
-                        mock_messagebarandlog,
+                        mock_messagebar,
                     ):
 
                         mocks_notfoundquestion = []
@@ -956,7 +956,7 @@ class TestWlvllogImportFromDiverofficeFiles(utils_for_tests.MidvattenTestPostgis
 
                         print(
                             "\n".join(
-                                [str(x) for x in mock_messagebarandlog.mock_calls]
+                                [str(x) for x in mock_messagebar.mock_calls]
                             )
                         )
 
@@ -1761,7 +1761,7 @@ class TestWlvllogImportFromDiverofficeFiles(utils_for_tests.MidvattenTestPostgis
                 mock_iface,
                 mock_askuser,
                 mock_notfoundquestion,
-                mock_messagebarandlog,
+                mock_messagebar,
                 mock_delimiter_question,
             ):
                 mock_delimiter_question.return_value = (";", True)
@@ -1785,7 +1785,7 @@ class TestWlvllogImportFromDiverofficeFiles(utils_for_tests.MidvattenTestPostgis
                 except:
                     pass
 
-                print("\n".join([str(x) for x in mock_messagebarandlog.mock_calls]))
+                print("\n".join([str(x) for x in mock_messagebar.mock_calls]))
 
             _test_wlvllogg_import_from_diveroffice_files(self, filenames)
 
@@ -1857,7 +1857,7 @@ class TestWlvllogImportFromDiverofficeFiles(utils_for_tests.MidvattenTestPostgis
                 mock_iface,
                 mock_askuser,
                 mock_notfoundquestion,
-                mock_messagebarandlog,
+                mock_messagebar,
                 mock_delimiter_question,
             ):
                 mock_delimiter_question.return_value = (";", True)
@@ -1881,7 +1881,7 @@ class TestWlvllogImportFromDiverofficeFiles(utils_for_tests.MidvattenTestPostgis
                 except:
                     pass
 
-                print("\n".join([str(x) for x in mock_messagebarandlog.mock_calls]))
+                print("\n".join([str(x) for x in mock_messagebar.mock_calls]))
 
             _test_wlvllogg_import_from_diveroffice_files(self, filenames)
 

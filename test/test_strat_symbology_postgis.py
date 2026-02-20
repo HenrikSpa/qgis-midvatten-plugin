@@ -33,7 +33,7 @@ class TestStratSymbology(utils_for_tests.MidvattenTestPostgisDbSv):
             try:
                 self.ss.create_symbology()
             except:
-                print(str(mock_messagebar.mock_calls))
+                print(f"{mock_messagebar.mock_calls=}")
                 raise
 
         _test(self)
@@ -46,6 +46,6 @@ class TestStratSymbology(utils_for_tests.MidvattenTestPostgisDbSv):
         print(str(test))
         print("Ref:")
         print(str(ref))
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         assert test == ref
         assert mock_messagebar.mock_calls == []

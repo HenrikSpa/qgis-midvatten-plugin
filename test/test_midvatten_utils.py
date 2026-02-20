@@ -599,7 +599,7 @@ class TestContinuousColorCycle(object):
 
         res = tuple(res)
         print(str(res))
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         assert res == (
             (("color", "r"), ("linestyle", "-")),
             (("color", "g"), ("linestyle", "-")),

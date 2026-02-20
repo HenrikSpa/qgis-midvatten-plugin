@@ -1352,7 +1352,7 @@ class TestGeneralCsvGui(utils_for_tests.MidvattenTestSpatialiteDbSv):
                 importer.start_import()
                 importer.start_import()
 
-                print(str(mock_messagebar.mock_calls))
+                print(f"{mock_messagebar.mock_calls=}")
 
             _test(self, filename)
             test_string = utils_for_tests.create_test_string(

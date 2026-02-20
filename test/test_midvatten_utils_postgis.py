@@ -82,7 +82,7 @@ class TestWarnAboutOldDatabase(utils_for_tests.MidvattenTestPostgisDbSv):
     def test_warn_about_old_database(self, mock_messagebar, mock_latest_version):
         mock_latest_version.return_value = "999.999.999"
         midvatten_utils.warn_about_old_database()
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         assert (
             call.info(
                 bar_msg="The database version appears to be older than 999.999.999. An upgrade is suggested! See https://github.com/jkall/qgis-midvatten-plugin/wiki/6.-Database-management#upgrade-database",
@@ -124,7 +124,7 @@ class TestAddViewObsPointsObsLines(utils_for_tests.MidvattenTestPostgisDbSv):
     @mock.patch("midvatten.tools.utils.midvatten_utils.MessagebarAndLog")
     def test_add_view_obs_points_obs_lines(self, mock_messagebar):
         midvatten_utils.add_view_obs_points_obs_lines()
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         assert mock_messagebar.mock_calls == [
             call.info(bar_msg="Views not added for PostGIS databases (not needed)!")
         ]

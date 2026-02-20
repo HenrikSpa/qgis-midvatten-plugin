@@ -99,7 +99,7 @@ class TestStratigraphy(utils_for_tests.MidvattenTestPostgisDbSv):
         # print(str(db_utils.sql_load_fr_db('select * from obs_points')))
         # print(str(db_utils.sql_load_fr_db('select * from stratigraphy')))
         dlg = Stratigraphy(self.iface, self.vlayer, self.midvatten.ms.settingsdict)
-        # print(str(mock_messagebar.mock_calls))
+        # print(f"{mock_messagebar.mock_calls=}")
         # print(str(mock_skippopup.mock_calls))
         dlg.showSurvey()
         test = common_utils.anything_to_string_representation(dlg.data)
@@ -111,7 +111,7 @@ class TestStratigraphy(utils_for_tests.MidvattenTestPostgisDbSv):
         )
 
         assert len(mock_skippopup.mock_calls) == 0
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         assert len(mock_messagebar.mock_calls) == 0
         assert (
             test
@@ -213,7 +213,7 @@ class TestStratigraphy(utils_for_tests.MidvattenTestPostgisDbSv):
         print(str(db_utils.sql_load_fr_db("select * from obs_points")))
         print(str(db_utils.sql_load_fr_db("select * from stratigraphy")))
         dlg = Stratigraphy(self.iface, self.vlayer, self.midvatten.ms.settingsdict)
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         print(str(mock_skippopup.mock_calls))
         dlg.showSurvey()
         test = common_utils.anything_to_string_representation(dlg.data)
@@ -225,7 +225,7 @@ class TestStratigraphy(utils_for_tests.MidvattenTestPostgisDbSv):
         )
 
         assert len(mock_skippopup.mock_calls) == 0
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         assert len(mock_messagebar.mock_calls) == 0
         assert (
             test
@@ -270,7 +270,7 @@ class TestStratigraphy(utils_for_tests.MidvattenTestPostgisDbSv):
         print(str(db_utils.sql_load_fr_db("select * from obs_points")))
         print(str(db_utils.sql_load_fr_db("select * from stratigraphy")))
         dlg = Stratigraphy(self.iface, self.vlayer, self.midvatten.ms.settingsdict)
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         print(str(mock_skippopup.mock_calls))
         dlg.showSurvey()
         test = common_utils.anything_to_string_representation(dlg.data)
@@ -347,7 +347,7 @@ class TestStratigraphy(utils_for_tests.MidvattenTestPostgisDbSv):
 
         assert len(mock_skippopup.mock_calls) == 1
         print(str(mock_skippopup.mock_calls))
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         assert mock_skippopup.mock_calls == [
             mock.call("Warning, h_gs is missing. See messagebar.")
         ]

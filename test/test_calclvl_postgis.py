@@ -60,6 +60,7 @@ class TestCalclvl(utils_for_tests.MidvattenTestPostgisDbSv):
             )
         )
         reference_string = "(True, [(rb1, 2005-01-01 00:00:00, 222.0, 1.0, -221.0)])"
+        print(f"{mock_messagebar.mock_calls=}")
         print("Test")
         print(test_string)
         print("Ref")
@@ -170,7 +171,7 @@ class TestCalclvl(utils_for_tests.MidvattenTestPostgisDbSv):
             )
         )
         reference_string = "(True, [(rb1, 2005-01-01 00:00:00, 222.0, 1.0, -221.0), (rb2, 2005-01-01 00:00:00, 444.0, 4.0, -440.0), (rb2, 2005-01-02 00:00:00, 555.0, None, 667.0)])"
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         print(test_string)
         assert test_string == reference_string
 
@@ -213,7 +214,7 @@ class TestCalclvl(utils_for_tests.MidvattenTestPostgisDbSv):
             )
         )
         reference_string = "(True, [(rb1, 2005-01-01 00:00:00, 222.0, None, None), (rb2, 2005-01-01 00:00:00, 444.0, None, None), (rb2, 2005-01-02 00:00:00, 555.0, None, 667.0)])"
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         print(test_string)
         assert test_string == reference_string
 
@@ -257,7 +258,7 @@ class TestCalclvl(utils_for_tests.MidvattenTestPostgisDbSv):
             )
         )
         reference_string = "(True, [(rb1, 2005-01-01 00:00:00, 222.0, 1.0, -221.0), (rb2, 2005-01-01 00:00:00, 444.0, None, None), (rb2, 2005-01-02 00:00:00, 555.0, None, 667.0)])"
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         print(test_string)
         assert test_string == reference_string
 

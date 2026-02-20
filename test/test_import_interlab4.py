@@ -617,7 +617,7 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
         print(str(reference_string))
         print(str(result_string))
         assert result_string == reference_string
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         assert (
             call.warning(
                 log_msg="Duplicate parameter 'Iron' found! Value and unit ('1.5', 'µg/l') was saved as primary parameter out of ('2.5', 'mg/l') and ('1.5', 'µg/l')."
@@ -669,7 +669,7 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
         print(str(result_string))
         assert result_string == reference_string
         print("Mock calls")
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         assert (
             call.warning(
                 log_msg="Duplicate parameter 'Iron' found! Value and unit ('1.5', 'µg/l') was saved as primary parameter out of ('2.5', 'mg/l') and ('1.5', 'µg/l')."
@@ -722,7 +722,7 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
         print(str(result_string))
         assert result_string == reference_string
         print("Mock calls")
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         assert (
             call.warning(
                 log_msg="Duplicate parameter 'Iron' found! Value and unit ('1.5', 'µg/l') was saved as primary parameter out of ('2.5', 'mg/l') and ('1.5', 'µg/l')."

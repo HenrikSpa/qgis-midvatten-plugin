@@ -217,7 +217,7 @@ class TestStratigraphy(utils_for_tests.MidvattenTestSpatialiteDbSv):
         )
 
         assert len(mock_skippopup.mock_calls) == 0
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         assert len(mock_messagebar.mock_calls) == 0
         assert (
             test
@@ -337,7 +337,7 @@ class TestStratigraphy(utils_for_tests.MidvattenTestSpatialiteDbSv):
         )
         print(str(mock_skippopup.mock_calls))
         assert len(mock_skippopup.mock_calls) == 1
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         assert mock_skippopup.mock_calls == [
             mock.call("Warning, h_gs is missing. See messagebar.")
         ]

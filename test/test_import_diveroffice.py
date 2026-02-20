@@ -201,7 +201,7 @@ class TestParseDiverofficeFile(object):
         assert file_data[2] == "rb1"
 
     @mock.patch("midvatten.tools.import_diveroffice.common_utils.MessagebarAndLog")
-    def test_parse_diveroffice_warning_missing_head_cm(self, mock_messagebarandlog):
+    def test_parse_diveroffice_warning_missing_head_cm(self, mock_messagebar):
         f = (
             "Location=rb1",
             "Temperature[°C];2:Spec.cond.[mS/cm];Date/time",
@@ -218,13 +218,14 @@ class TestParseDiverofficeFile(object):
         test_string = utils_for_tests.create_test_string(file_data[0])
         reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, , 5.18, 2.0], [2016-03-15 11:00:00, , 0.6, 3.0]]"
 
-        assert len(mock_messagebarandlog.mock_calls) == 1
+        print(f"{mock_messagebar.mock_calls=}")
+        assert len(mock_messagebar.mock_calls) == 1
         assert test_string == reference_string
         assert os.path.basename(path) == file_data[1]
         assert file_data[2] == "rb1"
 
     @mock.patch("midvatten.tools.import_diveroffice.common_utils.MessagebarAndLog")
-    def test_parse_diveroffice_warning_missing_date_time(self, mock_messagebarandlog):
+    def test_parse_diveroffice_warning_missing_date_time(self, mock_messagebar):
         f = (
             "Location=rb1",
             "Temperature[°C];2:Spec.cond.[mS/cm];dada",
@@ -238,11 +239,12 @@ class TestParseDiverofficeFile(object):
                 path, charset_of_diverofficefile
             )
 
+        print(f"{mock_messagebar.mock_calls=}")
         assert file_data == "skip"
-        assert len(mock_messagebarandlog.mock_calls) == 1
+        assert len(mock_messagebar.mock_calls) == 1
 
     @mock.patch("midvatten.tools.import_diveroffice.common_utils.MessagebarAndLog")
-    def test_parse_diveroffice_get_timezone(self, mock_messagebarandlog):
+    def test_parse_diveroffice_get_timezone(self, mock_messagebar):
 
         f = (
             "Location=rb1",
@@ -260,13 +262,14 @@ class TestParseDiverofficeFile(object):
 
         test_string = utils_for_tests.create_test_string(file_data[0])
         reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, 26.9, 5.18, ], [2016-03-15 11:00:00, 157.7, 0.6, ]]"
+        print(f"{mock_messagebar.mock_calls=}")
         assert test_string == reference_string
         assert os.path.basename(path) == file_data[1]
         assert file_data[2] == "rb1"
         assert file_data[3] == "UTC+1"
 
     @mock.patch("midvatten.tools.import_diveroffice.common_utils.MessagebarAndLog")
-    def test_parse_diveroffice_comma_missing_head_cm_value(self, mock_messagebarandlog):
+    def test_parse_diveroffice_comma_missing_head_cm_value(self, mock_messagebar):
         f = (
             "[Logger settings]",
             "Location=rb1",
@@ -293,6 +296,7 @@ class TestParseDiverofficeFile(object):
         test_string = utils_for_tests.create_test_string(file_data[0])
         reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, 1.2, 10, None], [2016-03-15 11:00:00, None, 101, None]]"
 
+        print(f"{mock_messagebar.mock_calls=}")
         print(f"Ref: {reference_string}\ntest: {test_string}")
         assert test_string == reference_string
         assert os.path.basename(path) == file_data[1]

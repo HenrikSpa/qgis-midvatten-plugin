@@ -271,7 +271,7 @@ class TestFieldLoggerImporterNoDb(object):
                 "midvatten.tools.import_fieldlogger.common_utils.MessagebarAndLog"
             )
             def _test(
-                self, filename, mock_MessagebarAndLog, mock_charset, mock_savefilename
+                self, filename, mock_messagebar, mock_charset, mock_savefilename
             ):
                 mock_charset.return_value = ("utf-8", True)
                 mock_savefilename.return_value = [[filename]]
@@ -406,7 +406,7 @@ class TestFieldLoggerImporterNoDb(object):
                 "midvatten.tools.import_fieldlogger.common_utils.MessagebarAndLog"
             )
             def _test(
-                self, filename, mock_MessagebarAndLog, mock_charset, mock_savefilename
+                self, filename, mock_messagebar, mock_charset, mock_savefilename
             ):
                 mock_charset.return_value = ("utf-8", True)
                 mock_savefilename.return_value = [[filename]]
@@ -543,7 +543,7 @@ class TestFieldLoggerImporterNoDb(object):
                 "midvatten.tools.import_fieldlogger.common_utils.MessagebarAndLog"
             )
             def _test(
-                self, filename, mock_MessagebarAndLog, mock_charset, mock_savefilename
+                self, filename, mock_messagebar, mock_charset, mock_savefilename
             ):
                 mock_charset.return_value = ("utf-8", True)
                 mock_savefilename.return_value = [[filename]]
@@ -683,7 +683,7 @@ class TestFieldLoggerImporterNoDb(object):
             def _test(
                 self,
                 filename,
-                mock_MessagebarAndLog,
+                mock_messagebar,
                 mock_charset,
                 mock_savefilename,
                 mock_delimiter_question,
@@ -903,7 +903,7 @@ class TestFieldLoggerImporterNoDb(object):
                 "midvatten.tools.import_fieldlogger.common_utils.MessagebarAndLog"
             )
             def _test(
-                self, filename, mock_MessagebarAndLog, mock_charset, mock_savefilename
+                self, filename, mock_messagebar, mock_charset, mock_savefilename
             ):
                 mock_charset.return_value = ("utf-8", True)
                 mock_savefilename.return_value = [[filename]]

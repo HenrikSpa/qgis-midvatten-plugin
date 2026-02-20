@@ -57,7 +57,7 @@ class TestGeneralImport(utils_for_tests.MidvattenTestSpatialiteDbSvImportInstanc
         reference_string = (
             r"""(True, [(rb1, 2016-03-15 10:30:00, 1.0, None, None, None, None)])"""
         )
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         print(test_string)
         assert test_string == reference_string
 
@@ -85,7 +85,7 @@ class TestGeneralImport(utils_for_tests.MidvattenTestSpatialiteDbSvImportInstanc
             )
         )
         reference_string = r"""(True, [(rb1, 2016-03-15 10:30:00, 1.0, None, None, None, None), (rb1, 2016-03-15 11:00:00, 3.0, None, None, None, None)])"""
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         print(test_string)
         assert test_string == reference_string
         assert (
@@ -293,7 +293,7 @@ class TestGeneralImport(utils_for_tests.MidvattenTestSpatialiteDbSvImportInstanc
         reference_string = (
             r"""(True, [(rb1, 2016-03-15 10:30:00, None, None, None, None, None)])"""
         )
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         print(test_string)
         assert test_string == reference_string
 
@@ -653,7 +653,7 @@ class TestImportObsPointsObsLines(
         ]
 
         self.importinstance.general_import(file_data=f, dest_table="obs_points")
-        print(mock_messagebar.mock_calls)
+        print(f"{mock_messagebar.mock_calls=}")
         assert (
             call.info(
                 bar_msg="1 rows imported and 2 excluded for table obs_points. See log message panel for details",
@@ -1464,7 +1464,7 @@ class TestWqualfieldImport(utils_for_tests.MidvattenTestSpatialiteDbSvImportInst
                 log_msg="--------------------",
             )
         ]
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         for test_call in test_calls_list:
             assert test_call in mock_messagebar.mock_calls
 

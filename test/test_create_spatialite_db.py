@@ -321,7 +321,7 @@ class TestCreateDb(utils_for_tests.MidvattenTestSpatialiteNotCreated):
             "SELECT tablename, columnname, data_type, not_null, default_value, primary_key, foreign_key, description, upd_date, upd_sign FROM about_db LIMIT 1"
         )
 
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         # print(str(db_utils.sql_load_fr_db("SELECT * FROM geometry_columns")))
         test_string = common_utils.anything_to_string_representation(result)
         print(test_string)
@@ -765,6 +765,6 @@ class TestSqls(utils_for_tests.MidvattenTestSpatialiteDbSv):
             db_utils.sql_load_fr_db("select obsid, length FROM obs_points")
         )
         reference_string = "(True, [(rb1, None)])"
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         print(test_string)
         assert test_string == reference_string

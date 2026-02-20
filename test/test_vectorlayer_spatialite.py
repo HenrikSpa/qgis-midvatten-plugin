@@ -97,6 +97,7 @@ class TestVectorlayer(utils_for_tests.MidvattenTestSpatialiteDbSv):
         feature_ids = [feature.id() for feature in self.vlayer.getFeatures()]
 
         reference_ids = (1, 2, 3)
+        print(f"{mock_messagebar.mock_calls=}")
         assert self.vlayer.isValid()
         assert len(feature_ids) == len(reference_ids)
         assert tuple(feature_ids) == reference_ids
@@ -132,6 +133,7 @@ class TestVectorlayer(utils_for_tests.MidvattenTestSpatialiteDbSv):
         feature_ids = [feature.id() for feature in self.vlayer.getFeatures()]
 
         reference_ids = (1, 2, 3)
+        print(f"{mock_messagebar.mock_calls=}")
         assert self.vlayer.isValid()
         assert len(feature_ids) == len(reference_ids)
         assert tuple(feature_ids) == reference_ids
@@ -167,6 +169,7 @@ class TestVectorlayer(utils_for_tests.MidvattenTestSpatialiteDbSv):
         feature_ids = [feature.id() for feature in self.vlayer.getFeatures()]
 
         reference_ids = (1, 2, 3)
+        print(f"{mock_messagebar.mock_calls=}")
         assert self.vlayer.isValid()
         assert len(feature_ids) == len(reference_ids)
         assert tuple(feature_ids) == reference_ids
@@ -213,6 +216,7 @@ class TestVectorlayer(utils_for_tests.MidvattenTestSpatialiteDbSv):
         print("First 10 reference_ids: " + str(reference_ids[:10]))
         print("Last 10 reference_ids: " + str(reference_ids[-10:]))
 
+        print(f"{mock_messagebar.mock_calls=}")
         assert self.vlayer.isValid()
         assert len(feature_ids) == len(reference_ids)
         assert tuple(feature_ids) == reference_ids
@@ -259,6 +263,7 @@ class TestVectorlayer(utils_for_tests.MidvattenTestSpatialiteDbSv):
         print("First 10 reference_ids: " + str(reference_ids[:10]))
         print("Last 10 reference_ids: " + str(reference_ids[-10:]))
 
+        print(f"{mock_messagebar.mock_calls=}")
         assert self.vlayer.isValid()
         assert len(feature_ids) == len(reference_ids)
         assert tuple(feature_ids) == reference_ids
@@ -311,6 +316,7 @@ class TestVectorlayer(utils_for_tests.MidvattenTestSpatialiteDbSv):
         print("Last 10 reference_ids: " + str(reference_ids[-10:]))
         print(str(self.vlayer.featureCount()))
 
+        print(f"{mock_messagebar.mock_calls=}")
         assert self.vlayer.isValid()
         assert len(feature_ids) == len(reference_ids)
         assert tuple(feature_ids) == reference_ids

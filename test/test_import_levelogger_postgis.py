@@ -169,7 +169,7 @@ class TestWlvllogImportFromLeveloggerFiles(utils_for_tests.MidvattenTestPostgisD
                                 importer.import_all_data.checked,
                             )
                         except:
-                            print(str(mock_messagebar.mock_calls))
+                            print(f"{mock_messagebar.mock_calls=}")
                             raise
 
                     _test_wlvllogg_import_from_levelogger_files(self, filenames)
@@ -1289,7 +1289,7 @@ class TestWlvllogImportFromLeveloggerFiles(utils_for_tests.MidvattenTestPostgisD
                         mock_iface,
                         mock_askuser,
                         mock_notfoundquestion,
-                        mock_messagebarandlog,
+                        mock_messagebar,
                     ):
 
                         mocks_notfoundquestion = []
@@ -1323,7 +1323,7 @@ class TestWlvllogImportFromLeveloggerFiles(utils_for_tests.MidvattenTestPostgisD
 
                         print(
                             "\n".join(
-                                [str(x) for x in mock_messagebarandlog.mock_calls]
+                                [str(x) for x in mock_messagebar.mock_calls]
                             )
                         )
 
@@ -1466,7 +1466,7 @@ class TestWlvllogImportFromLeveloggerFiles(utils_for_tests.MidvattenTestPostgisD
                                 importer.import_all_data.checked,
                             )
                         except:
-                            print(str(mock_messagebar.mock_calls))
+                            print(f"{mock_messagebar.mock_calls=}")
                             raise
 
                     _test_wlvllogg_import_from_levelogger_files(self, filenames)
@@ -1561,7 +1561,7 @@ class TestWlvllogImportFromLeveloggerFiles(utils_for_tests.MidvattenTestPostgisD
                         importer.import_all_data.checked,
                     )
                 except:
-                    print(str(mock_messagebar.mock_calls))
+                    print(f"{mock_messagebar.mock_calls=}")
                     raise
 
             _test_wlvllogg_import_from_levelogger_files(self, filenames)

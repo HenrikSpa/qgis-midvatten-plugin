@@ -76,7 +76,7 @@ class TestSecplotTemplates(utils_for_tests.MidvattenTestSpatialiteNotCreated):
             defs.secplot_default_template(),
             self.midvatten.ms,
         )
-        print(str(mock_messagebar.mock_calls))
+        print(f"{mock_messagebar.mock_calls=}")
         assert (
             call.info(
                 log_msg="Loaded template from midvatten settings secplot_loaded_template."

@@ -413,18 +413,13 @@ class DbConnectionManager(object):
 
     def check_db_is_locked(self):
         if self.dbtype == "spatialite":
-            for ext in ("journal", "wal"):
-                if os.path.exists("%s-%s" % (self.dbpath, ext)):
-                    raise DatabaseLockedError(
-                        ru(
-                            QCoreApplication.translate(
+            for ext in ("journal", "wal", 'shm'):
+                msg = ru(QCoreApplication.translate(
                                 "DbConnectionManager",
-                                "Error, The database is already in use (a %s-file was found)".format(
-                                    ext
-                                ),
-                            )
-                        )
-                    )
+                                "Error, The database is already in use "
+                                "(a %s-file was found)"))%ext
+                if os.path.exists(f"{self.dbpath}-{ext}"):
+                    raise DatabaseLockedError(msg)
 
     def vacuum(self):
         if self.dbtype == "spatialite":

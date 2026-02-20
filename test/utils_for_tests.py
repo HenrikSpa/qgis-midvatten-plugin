@@ -175,19 +175,22 @@ class MidvattenTestSpatialiteNotCreated(MidvattenTestBase):
         self.TEMP_DBPATH = "/tmp/tmp_midvatten_temp_db.sqlite"
 
     def setUp(self):
+        if self.TEMP_DBPATH and os.path.exists(self.TEMP_DBPATH):
+            print(f"Error, the db did already exist: {self.TEMP_DBPATH}")
+        self.remove_db()
         super().setUp()
-        try:
-            os.remove(self.TEMP_DBPATH)
-        except OSError:
-            pass
-
+        
     def tearDown(self):
         # Delete database
-        try:
-            os.remove(self.TEMP_DBPATH)
-        except OSError:
-            pass
+        self.remove_db()
         super().tearDown()
+
+    def remove_db(self):
+        for ending in ['', '-journal', '-wal', '-shm']:
+            try:
+                os.remove(self.TEMP_DBPATH + ending)
+            except OSError:
+                pass
 
 
 class MidvattenTestSpatialiteDbSv(MidvattenTestSpatialiteNotCreated):

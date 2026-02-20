@@ -13,7 +13,7 @@ _qgis_extra_paths.extend(
     [
         "/usr/share/qgis/python",
         "/usr/lib/qgis/python",
-        "/home/hsai1/dev/midv/qgis-midvatten-plugin"
+        os.path.join(__file__, '..')
     ]
 )
 

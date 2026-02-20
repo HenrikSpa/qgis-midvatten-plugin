@@ -266,17 +266,8 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
             active_layer.selectAll()
 
         features = list(active_layer.getSelectedFeatures())
-        file_data = [[ru(field.name()) for field in active_layer.fields()]]
-        for feature in features:
-            row = []
-            for attr in feature:
-                if all([ru(attr).strip() != "NULL",
-                        attr is not None,]):
-                    row.append(ru(attr))
-                else:
-                    row.append("")
-            file_data.append(row)
-            
+        file_data = self.parse_features_into_file_data(features, active_layer)
+        
         geometries = [
             feature.geometry().asWkt() if feature.geometry().asWkt() else None
             for feature in features
@@ -291,6 +282,13 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         self.file_data = file_data
         self.srid = active_layer.crs().authid()
         self.table_chooser.file_header = file_data[0]
+
+    def parse_features_into_file_data(self, features, active_layer):
+        return [[ru(field.name()) for field in active_layer.fields()]] + [
+            [ru(attr) if all([ru(attr).strip() != "NULL", attr is not None,]) else ""
+             for attr in feature]
+            for feature in features
+        ]
 
     @common_utils.waiting_cursor
     @common_utils.general_exception_handler

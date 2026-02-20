@@ -29,7 +29,7 @@ from midvatten.test import utils_for_tests
 from midvatten.tools.utils import db_utils, gui_utils
 
 
-@attr(status="only")
+@attr(status="on")
 class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
     """ """
 
@@ -68,16 +68,16 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         self.midvatten.plot_sqlite()
         customplot = self.midvatten.customplot
         gui_utils.set_combobox(customplot.tab1_table, "w_levels_logger")
-        gui_utils.set_combobox(customplot.xcol_ComboBox_1, "date_time")
-        gui_utils.set_combobox(customplot.ycol_ComboBox_1, "level_masl")
-        gui_utils.set_combobox(customplot.Filter1_ComboBox_1, "obsid")
-        customplot.Filter1_QListWidget_1.item(0).setSelected(True)
+        gui_utils.set_combobox(customplot.tab1_xcol, "date_time")
+        gui_utils.set_combobox(customplot.tab1_ycol, "level_masl")
+        gui_utils.set_combobox(customplot.tab1_filtercol1, "obsid")
+        customplot.tab1_filter1.item(0).setSelected(True)
 
         gui_utils.set_combobox(customplot.tab2_table, "w_levels_logger")
-        gui_utils.set_combobox(customplot.xcol_ComboBox_2, "date_time")
-        gui_utils.set_combobox(customplot.ycol_ComboBox_2, "level_masl")
-        gui_utils.set_combobox(customplot.Filter1_ComboBox_2, "obsid")
-        customplot.Filter1_QListWidget_2.item(1).setSelected(True)
+        gui_utils.set_combobox(customplot.tab2_xcol, "date_time")
+        gui_utils.set_combobox(customplot.tab2_ycol, "level_masl")
+        gui_utils.set_combobox(customplot.tab2_filtercol1, "obsid")
+        customplot.tab2_filter1.item(1).setSelected(True)
 
         customplot.start_csv_dialog()
         # tempinput(data, charset='UTF-8', suffix='.csv')
@@ -138,16 +138,16 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         self.midvatten.plot_sqlite()
         customplot = self.midvatten.customplot
         gui_utils.set_combobox(customplot.tab1_table, "w_levels_logger")
-        gui_utils.set_combobox(customplot.xcol_ComboBox_1, "date_time")
-        gui_utils.set_combobox(customplot.ycol_ComboBox_1, "level_masl")
-        gui_utils.set_combobox(customplot.Filter1_ComboBox_1, "obsid")
-        customplot.Filter1_QListWidget_1.item(0).setSelected(True)
+        gui_utils.set_combobox(customplot.tab1_xcol, "date_time")
+        gui_utils.set_combobox(customplot.tab1_ycol, "level_masl")
+        gui_utils.set_combobox(customplot.tab1_filtercol1, "obsid")
+        customplot.tab1_filter1.item(0).setSelected(True)
 
         gui_utils.set_combobox(customplot.tab2_table, "w_levels_logger")
-        gui_utils.set_combobox(customplot.xcol_ComboBox_2, "date_time")
-        gui_utils.set_combobox(customplot.ycol_ComboBox_2, "level_masl")
-        gui_utils.set_combobox(customplot.Filter1_ComboBox_2, "obsid")
-        customplot.Filter1_QListWidget_2.item(1).setSelected(True)
+        gui_utils.set_combobox(customplot.tab2_xcol, "date_time")
+        gui_utils.set_combobox(customplot.tab2_ycol, "level_masl")
+        gui_utils.set_combobox(customplot.tab2_filtercol1, "obsid")
+        customplot.tab2_filter1.item(1).setSelected(True)
 
         customplot.start_csv_dialog()
         # tempinput(data, charset='UTF-8', suffix='.csv')
@@ -209,16 +209,16 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         self.midvatten.plot_sqlite()
         customplot = self.midvatten.customplot
         gui_utils.set_combobox(customplot.tab1_table, "w_levels_logger")
-        gui_utils.set_combobox(customplot.xcol_ComboBox_1, "date_time")
-        gui_utils.set_combobox(customplot.ycol_ComboBox_1, "level_masl")
-        gui_utils.set_combobox(customplot.Filter1_ComboBox_1, "obsid")
-        customplot.Filter1_QListWidget_1.item(0).setSelected(True)
+        gui_utils.set_combobox(customplot.tab1_xcol, "date_time")
+        gui_utils.set_combobox(customplot.tab1_ycol, "level_masl")
+        gui_utils.set_combobox(customplot.tab1_filtercol1, "obsid")
+        customplot.tab1_filter1.item(0).setSelected(True)
 
         gui_utils.set_combobox(customplot.tab2_table, "w_levels_logger")
-        gui_utils.set_combobox(customplot.xcol_ComboBox_2, "date_time")
-        gui_utils.set_combobox(customplot.ycol_ComboBox_2, "level_masl")
-        gui_utils.set_combobox(customplot.Filter1_ComboBox_2, "obsid")
-        customplot.Filter1_QListWidget_2.item(1).setSelected(True)
+        gui_utils.set_combobox(customplot.tab2_xcol, "date_time")
+        gui_utils.set_combobox(customplot.tab2_ycol, "level_masl")
+        gui_utils.set_combobox(customplot.tab2_filtercol1, "obsid")
+        customplot.tab2_filter1.item(1).setSelected(True)
 
         customplot.tab1_pandas_calc.rule.setText("1d")
         customplot.tab1_pandas_calc.how.setText("mean")
@@ -244,7 +244,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         )
 
     @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
-    def test_save_to_csv_columns_two_filters(self, mock_messagebar):
+    def test_save_to_csv_columns_tab1_two_filters(self, mock_messagebar):
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('o1')""")
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('o2')""")
         db_utils.sql_alter_db(
@@ -278,18 +278,234 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         self.midvatten.plot_sqlite()
         customplot = self.midvatten.customplot
         gui_utils.set_combobox(customplot.tab1_table, "w_levels_logger")
-        gui_utils.set_combobox(customplot.xcol_ComboBox_1, "date_time")
-        gui_utils.set_combobox(customplot.ycol_ComboBox_1, "level_masl")
-        gui_utils.set_combobox(customplot.Filter1_ComboBox_1, "obsid")
-        customplot.Filter1_QListWidget_1.item(0).setSelected(True)
+        gui_utils.set_combobox(customplot.tab1_xcol, "date_time")
+        gui_utils.set_combobox(customplot.tab1_ycol, "level_masl")
+        gui_utils.set_combobox(customplot.tab1_filtercol1, "obsid")
+        customplot.tab1_filter1.item(0).setSelected(True)
+        gui_utils.set_combobox(customplot.tab1_filtercol2, "obsid")
+        customplot.tab1_filter2.item(0).setSelected(True)
 
         gui_utils.set_combobox(customplot.tab2_table, "w_levels_logger")
-        gui_utils.set_combobox(customplot.xcol_ComboBox_2, "date_time")
-        gui_utils.set_combobox(customplot.ycol_ComboBox_2, "level_masl")
-        gui_utils.set_combobox(customplot.Filter1_ComboBox_2, "obsid")
-        customplot.Filter1_QListWidget_2.item(1).setSelected(True)
-        gui_utils.set_combobox(customplot.Filter2_ComboBox_2, "obsid")
-        customplot.Filter2_QListWidget_2.item(0).setSelected(True)
+        gui_utils.set_combobox(customplot.tab2_xcol, "date_time")
+        gui_utils.set_combobox(customplot.tab2_ycol, "level_masl")
+        gui_utils.set_combobox(customplot.tab2_filtercol1, "obsid")
+        customplot.tab2_filter1.item(1).setSelected(True)
+
+        customplot.start_csv_dialog()
+        # tempinput(data, charset='UTF-8', suffix='.csv')
+        temp = tempfile.NamedTemporaryFile(delete=False, suffix=".csv")
+        temp.close()
+        customplot.save_file_dialog.filename.setFilePath(temp.name)
+
+        customplot.save_file_dialog.as_columns.setChecked(True)
+        customplot.save_file_dialog.save_data()
+
+        with open(temp.name) as f:
+            rows = tuple([tuple(x.rstrip().split(";")) for x in f.readlines()])
+        print(f"{rows=}")
+        assert rows == (
+            ("rowid", "index", "o1, o1", "o2"),
+            ("0", "2026-01-01 00:30:00", "5.0", "5.0"),
+            ("1", "2026-01-01 01:30:00", "", "5.0"),
+            ("2", "2026-01-01 02:30:00", "", "6.0"),
+            ("3", "2026-01-01 03:30:00", "", "7.0"),
+            ("4", "2026-01-01 10:31:00", "10.0", ""),
+            ("5", "2026-01-01 23:50:00", "17.0", ""),
+            ("6", "2026-01-02 09:00:00", "", "4.0"),
+            ("7", "2026-01-02 14:00:00", "", "10.0"),
+        )
+
+    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    def test_save_to_csv_columns_tab2_two_filters(self, mock_messagebar):
+        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('o1')""")
+        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('o2')""")
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('o1', '2026-01-01 00:30', 5.0)"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('o1', '2026-01-01 10:31', 10.0)"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('o1', '2026-01-01 23:50', 17.0)"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('o2', '2026-01-01 00:30', 5.0)"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('o2', '2026-01-01 01:30', 5.0)"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('o2', '2026-01-01 02:30', 6.0)"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('o2', '2026-01-01 03:30', 7.0)"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('o2', '2026-01-02 09:00', 4.0)"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('o2', '2026-01-02 14:00', 10.0)"""
+        )
+
+        self.midvatten.plot_sqlite()
+        customplot = self.midvatten.customplot
+        gui_utils.set_combobox(customplot.tab1_table, "w_levels_logger")
+        gui_utils.set_combobox(customplot.tab1_xcol, "date_time")
+        gui_utils.set_combobox(customplot.tab1_ycol, "level_masl")
+        gui_utils.set_combobox(customplot.tab1_filtercol1, "obsid")
+        customplot.tab1_filter1.item(0).setSelected(True)
+
+        gui_utils.set_combobox(customplot.tab2_table, "w_levels_logger")
+        gui_utils.set_combobox(customplot.tab2_xcol, "date_time")
+        gui_utils.set_combobox(customplot.tab2_ycol, "level_masl")
+        gui_utils.set_combobox(customplot.tab2_filtercol1, "obsid")
+        customplot.tab2_filter1.item(1).setSelected(True)
+        gui_utils.set_combobox(customplot.tab2_filtercol2, "obsid")
+        customplot.tab2_filter2.item(0).setSelected(True)
+
+        customplot.start_csv_dialog()
+        # tempinput(data, charset='UTF-8', suffix='.csv')
+        temp = tempfile.NamedTemporaryFile(delete=False, suffix=".csv")
+        temp.close()
+        customplot.save_file_dialog.filename.setFilePath(temp.name)
+
+        customplot.save_file_dialog.as_columns.setChecked(True)
+        customplot.save_file_dialog.save_data()
+
+        with open(temp.name) as f:
+            rows = tuple([tuple(x.rstrip().split(";")) for x in f.readlines()])
+        print(f"{rows=}")
+        assert rows == (
+            ("rowid", "index", "o1", "o2, o2"),
+            ("0", "2026-01-01 00:30:00", "5.0", "5.0"),
+            ("1", "2026-01-01 01:30:00", "", "5.0"),
+            ("2", "2026-01-01 02:30:00", "", "6.0"),
+            ("3", "2026-01-01 03:30:00", "", "7.0"),
+            ("4", "2026-01-01 10:31:00", "10.0", ""),
+            ("5", "2026-01-01 23:50:00", "17.0", ""),
+            ("6", "2026-01-02 09:00:00", "", "4.0"),
+            ("7", "2026-01-02 14:00:00", "", "10.0"),
+        )
+
+    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    def test_save_to_csv_columns_tab3_two_filters(self, mock_messagebar):
+        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('o1')""")
+        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('o2')""")
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('o1', '2026-01-01 00:30', 5.0)"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('o1', '2026-01-01 10:31', 10.0)"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('o1', '2026-01-01 23:50', 17.0)"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('o2', '2026-01-01 00:30', 5.0)"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('o2', '2026-01-01 01:30', 5.0)"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('o2', '2026-01-01 02:30', 6.0)"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('o2', '2026-01-01 03:30', 7.0)"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('o2', '2026-01-02 09:00', 4.0)"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('o2', '2026-01-02 14:00', 10.0)"""
+        )
+
+        self.midvatten.plot_sqlite()
+        customplot = self.midvatten.customplot
+        gui_utils.set_combobox(customplot.tab1_table, "w_levels_logger")
+        gui_utils.set_combobox(customplot.tab1_xcol, "date_time")
+        gui_utils.set_combobox(customplot.tab1_ycol, "level_masl")
+        gui_utils.set_combobox(customplot.tab1_filtercol1, "obsid")
+        customplot.tab1_filter1.item(0).setSelected(True)
+
+        gui_utils.set_combobox(customplot.tab3_table, "w_levels_logger")
+        gui_utils.set_combobox(customplot.tab3_xcol, "date_time")
+        gui_utils.set_combobox(customplot.tab3_ycol, "level_masl")
+        gui_utils.set_combobox(customplot.tab3_filtercol1, "obsid")
+        customplot.tab3_filter1.item(1).setSelected(True)
+        gui_utils.set_combobox(customplot.tab3_filtercol2, "obsid")
+        customplot.tab3_filter2.item(0).setSelected(True)
+
+        customplot.start_csv_dialog()
+        # tempinput(data, charset='UTF-8', suffix='.csv')
+        temp = tempfile.NamedTemporaryFile(delete=False, suffix=".csv")
+        temp.close()
+        customplot.save_file_dialog.filename.setFilePath(temp.name)
+
+        customplot.save_file_dialog.as_columns.setChecked(True)
+        customplot.save_file_dialog.save_data()
+
+        with open(temp.name) as f:
+            rows = tuple([tuple(x.rstrip().split(";")) for x in f.readlines()])
+        print(f"{rows=}")
+        assert rows == (
+            ("rowid", "index", "o1", "o2, o2"),
+            ("0", "2026-01-01 00:30:00", "5.0", "5.0"),
+            ("1", "2026-01-01 01:30:00", "", "5.0"),
+            ("2", "2026-01-01 02:30:00", "", "6.0"),
+            ("3", "2026-01-01 03:30:00", "", "7.0"),
+            ("4", "2026-01-01 10:31:00", "10.0", ""),
+            ("5", "2026-01-01 23:50:00", "17.0", ""),
+            ("6", "2026-01-02 09:00:00", "", "4.0"),
+            ("7", "2026-01-02 14:00:00", "", "10.0"),
+        )
+
+    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    def test_save_to_csv_columns_tab3_two_filters(self, mock_messagebar):
+        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('o1')""")
+        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('o2')""")
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('o1', '2026-01-01 00:30', 5.0)"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('o1', '2026-01-01 10:31', 10.0)"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('o1', '2026-01-01 23:50', 17.0)"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('o2', '2026-01-01 00:30', 5.0)"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('o2', '2026-01-01 01:30', 5.0)"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('o2', '2026-01-01 02:30', 6.0)"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('o2', '2026-01-01 03:30', 7.0)"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('o2', '2026-01-02 09:00', 4.0)"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('o2', '2026-01-02 14:00', 10.0)"""
+        )
+
+        self.midvatten.plot_sqlite()
+        customplot = self.midvatten.customplot
+        gui_utils.set_combobox(customplot.tab1_table, "w_levels_logger")
+        gui_utils.set_combobox(customplot.tab1_xcol, "date_time")
+        gui_utils.set_combobox(customplot.tab1_ycol, "level_masl")
+        gui_utils.set_combobox(customplot.tab1_filtercol1, "obsid")
+        customplot.tab1_filter1.item(0).setSelected(True)
+
+        gui_utils.set_combobox(customplot.tab2_table, "w_levels_logger")
+        gui_utils.set_combobox(customplot.tab2_xcol, "date_time")
+        gui_utils.set_combobox(customplot.tab2_ycol, "level_masl")
+        gui_utils.set_combobox(customplot.tab2_filtercol1, "obsid")
+        customplot.tab2_filter1.item(1).setSelected(True)
+        gui_utils.set_combobox(customplot.tab2_filtercol2, "obsid")
+        customplot.tab2_filter2.item(0).setSelected(True)
 
         customplot.start_csv_dialog()
         # tempinput(data, charset='UTF-8', suffix='.csv')

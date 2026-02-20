@@ -213,7 +213,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         )
 
         self.plot_chart_q_push_button.clicked.connect(
-            lambda x: self.drawplot_with_styles()
+            lambda x: self.draw_plot_with_styles()
         )
         self.save_as_csv_button.clicked.connect(lambda: self.start_csv_dialog())
         self.redraw_push_button.clicked.connect(lambda x: self.redraw())
@@ -324,11 +324,11 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
 
         return freqs
 
-    def drawplot_with_styles(self):
-        self.styles.load(self.drawPlot_all, (self, "mpltoolbar"))
+    def draw_plot_with_styles(self):
+        self.styles.load(self.draw_plot_all, (self, "mpltoolbar"))
 
     @common_utils.general_exception_handler
-    def drawPlot_all(self, only_get_data=False):
+    def draw_plot_all(self, only_get_data=False):
         self.data = []
         common_utils.start_waiting_cursor()  # show the user this may take a long time...
         if not only_get_data:
@@ -393,7 +393,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         self.p = []
         self.plabels = []
 
-        nop, i = self.drawPlot(
+        nop, i = self.draw_plot(
             dbconnection,
             nop,
             i,
@@ -412,7 +412,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             self.tab1_offset,
             only_get_data=only_get_data,
         )
-        nop, i = self.drawPlot(
+        nop, i = self.draw_plot(
             dbconnection,
             nop,
             i,
@@ -431,7 +431,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             self.tab2_offset,
             only_get_data=only_get_data,
         )
-        nop, i = self.drawPlot(
+        nop, i = self.draw_plot(
             dbconnection,
             nop,
             i,
@@ -491,91 +491,79 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             self.refreshPlot()
             common_utils.stop_waiting_cursor()
 
-    def drawPlot(
+    def draw_plot(
         self,
         dbconnection,
         nop,
         i,
         my_format,
-        table_ComboBox,
-        xcol_ComboBox,
-        ycol_ComboBox,
-        Filter1_ComboBox,
-        Filter1_QListWidget,
-        Filter2_ComboBox,
-        Filter2_QListWidget,
-        PlotType_comboBox,
+        table,
+        xcol,
+        ycol,
+        filter1_col,
+        filter1,
+        filter2_col,
+        filter2,
+        plot_type,
         pandas_calc,
-        checkBox_remove_mean,
-        LineEditFactor,
-        LineEditOffset,
+        remove_mean,
+        factor,
+        offset,
         only_get_data=False,
     ):
 
         if (
-            not (
-                table_ComboBox.currentText() == ""
-                or table_ComboBox.currentText() == " "
-            )
-            and not (
-                xcol_ComboBox.currentText() == "" or xcol_ComboBox.currentText() == " "
-            )
-            and not (
-                ycol_ComboBox.currentText() == "" or ycol_ComboBox.currentText() == " "
-            )
+            not (table.currentText() == "" or table.currentText() == " ")
+            and not (xcol.currentText() == "" or xcol.currentText() == " ")
+            and not (ycol.currentText() == "" or ycol.currentText() == " ")
         ):  # if anything is to be plotted from tab 1
             self.ms.settingsdict["custplot_maxtstep"] = (
-                self.spnmaxtstep.value()
+                self.spn_max_tstep.value()
             )  # if user selected a time step bigger than zero than thre may be discontinuous plots
-            plottable1 = "y"
-            filter1 = str(Filter1_ComboBox.currentText())
-            filter1list = []
-            filter2list = []
-            filter1list = Filter1_QListWidget.selectedItems()
-            filter2 = str(Filter2_ComboBox.currentText())
-            filter2list = Filter2_QListWidget.selectedItems()
+            filter1_col = str(filter1_col.currentText())
+            filter1list = filter1.selectedItems()
+            filter2_col = str(filter2_col.currentText())
+            filter2list = filter2.selectedItems()
             nop = max(len(filter1list), 1) * max(len(filter2list), 1)
             # self.p= [None]*nop#list for plot objects
             self.p.extend([None] * nop)  # list for plot objects
             self.plabels.extend([None] * nop)  # List for plot labels
             try:
-                factor = float(LineEditFactor.text().replace(",", "."))
+                factor = float(factor.text().replace(",", "."))
             except ValueError:
                 factor = 1.0
             try:
-                offset = float(LineEditOffset.text().replace(",", "."))
+                offset = float(offset.text().replace(",", "."))
             except ValueError:
                 offset = 0.0
 
-            remove_mean = checkBox_remove_mean.isChecked()
+            remove_mean = remove_mean.isChecked()
 
             _sql = r"""SELECT %s, %s FROM %s """ % (
-                str(xcol_ComboBox.currentText()),
-                str(ycol_ComboBox.currentText()),
-                str(table_ComboBox.currentText()),
+                str(xcol.currentText()),
+                str(ycol.currentText()),
+                str(table.currentText()),
             )
             _sql += r"""WHERE %s """ % db_utils.test_not_null_and_not_empty_string(
-                str(table_ComboBox.currentText()),
-                str(xcol_ComboBox.currentText()),
+                str(table.currentText()),
+                str(xcol.currentText()),
                 dbconnection,
             )
             _sql += r"""AND %s """ % db_utils.test_not_null_and_not_empty_string(
-                str(table_ComboBox.currentText()),
-                str(ycol_ComboBox.currentText()),
+                str(table.currentText()),
+                str(ycol.currentText()),
                 dbconnection,
             )
 
             while i < len(self.p):
                 # Both filters empty
-                if (not filter1.strip() or not filter1list) and (
-                    not filter2.strip() or not filter2list
+                if (not filter1_col.strip() or not filter1list) and (
+                    not filter2_col.strip() or not filter2list
                 ):
-                    sql = _sql + r""" ORDER BY %s""" % str(xcol_ComboBox.currentText())
+                    sql = _sql + r""" ORDER BY %s""" % str(xcol.currentText())
                     recs = dbconnection.execute_and_fetchall(sql)
                     label = (
-                        str(ycol_ComboBox.currentText())
-                        + """, """
-                        + str(table_ComboBox.currentText())
+                        str(ycol.currentText()) + """, """ + str(table.currentText())
                     )
                     if not recs:
                         i += 1
@@ -585,7 +573,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                         recs,
                         i,
                         my_format,
-                        PlotType_comboBox.currentText(),
+                        plot_type.currentText(),
                         factor,
                         offset,
                         remove_mean,
@@ -594,18 +582,20 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                     )
                     i += 1
                 # Both filters in use
-                elif all((filter1.strip(), filter1list, filter2.strip(), filter2list)):
+                elif all(
+                    (filter1_col.strip(), filter1list, filter2_col.strip(), filter2list)
+                ):
                     for item1 in filter1list:
                         for item2 in filter2list:
                             sql = (
                                 _sql
                                 + r""" AND %s = '%s' AND %s = '%s' ORDER BY %s"""
                                 % (
-                                    filter1,
+                                    filter1_col,
                                     str(item1.text()),
-                                    filter2,
+                                    filter2_col,
                                     str(item2.text()),
-                                    str(xcol_ComboBox.currentText()),
+                                    str(xcol.currentText()),
                                 )
                             )
                             recs = dbconnection.execute_and_fetchall(sql)
@@ -626,7 +616,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                                 recs,
                                 i,
                                 my_format,
-                                PlotType_comboBox.currentText(),
+                                plot_type.currentText(),
                                 factor,
                                 offset,
                                 remove_mean,
@@ -637,8 +627,8 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                 # One filter in use
                 else:
                     for filter, filterlist in [
-                        (filter1, filter1list),
-                        (filter2, filter2list),
+                        (filter1_col, filter1list),
+                        (filter2_col, filter2list),
                     ]:
                         if not filter.strip() or not filterlist:
                             continue
@@ -647,7 +637,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                                 sql = _sql + r""" AND %s = '%s' ORDER BY %s""" % (
                                     filter,
                                     str(item.text()),
-                                    str(xcol_ComboBox.currentText()),
+                                    str(xcol.currentText()),
                                 )
                                 recs = dbconnection.execute_and_fetchall(sql)
                                 label = str(item.text())
@@ -668,7 +658,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                                     recs,
                                     i,
                                     my_format,
-                                    PlotType_comboBox.currentText(),
+                                    plot_type.currentText(),
                                     factor,
                                     offset,
                                     remove_mean,
@@ -747,9 +737,11 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
 
         # from version 0.2 there is a possibility to make discontinuous plot if timestep bigger than maxtstep
         if (
-            self.spnmaxtstep.value() > 0
+            self.spn_max_tstep.value() > 0
         ):  # if user selected a time step bigger than zero than thre may be discontinuous plots
-            pos = np.where(np.abs(np.diff(numtime)) >= self.spnmaxtstep.value())[0] + 1
+            pos = (
+                np.where(np.abs(np.diff(numtime)) >= self.spn_max_tstep.value())[0] + 1
+            )
             pos = pos.tolist()
             if pos:
                 numtime = np.insert(numtime, pos, np.nan)
@@ -858,7 +850,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                 drawstyle="steps-pre",
                 marker="None",
                 label=self.plabels[i],
-                **next(self.line_cycler)
+                **next(self.line_cycler),
             )  # 'steps-pre' best for precipitation and flowmeters, optional types are 'steps', 'steps-mid', 'steps-post'
         elif plottype == "step-post":
             (self.p[i],) = plotfunc(
@@ -869,7 +861,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                 drawstyle="steps-post",
                 marker="None",
                 label=self.plabels[i],
-                **next(self.line_cycler)
+                **next(self.line_cycler),
             )
         elif plottype == "line and cross":
             (self.p[i],) = plotfunc(
@@ -880,7 +872,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                 marker="x",
                 label=self.plabels[i],
                 markeredgewidth=markeredgewidth,
-                **next(self.line_cycler)
+                **next(self.line_cycler),
             )
         elif plottype == "marker":
             (self.p[i],) = plotfunc(
@@ -891,7 +883,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                 linestyle="None",
                 label=self.plabels[i],
                 markeredgewidth=markeredgewidth,
-                **next(self.marker_cycler)
+                **next(self.marker_cycler),
             )
         elif plottype == "line":
             (self.p[i],) = plotfunc(
@@ -901,7 +893,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                 picker=2,
                 marker="None",
                 label=self.plabels[i],
-                **next(self.line_cycler)
+                **next(self.line_cycler),
             )
         elif plottype == "frequency" and flag_time_xy == "time":
             try:
@@ -912,7 +904,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                     picker=2,
                     marker="None",
                     label="frequency " + str(self.plabels[i]),
-                    **next(self.line_cycler)
+                    **next(self.line_cycler),
                 )
                 self.plabels[i] = "frequency " + str(self.plabels[i])
             except:
@@ -923,7 +915,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                     picker=2,
                     marker="None",
                     label="frequency " + str(self.plabels[i]),
-                    **next(self.line_cycler)
+                    **next(self.line_cycler),
                 )
                 self.plabels[i] = "frequency " + str(self.plabels[i])
         else:
@@ -935,7 +927,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                 picker=2,
                 label=self.plabels[i],
                 markeredgewidth=markeredgewidth,
-                **next(self.line_and_marker_cycler)
+                **next(self.line_and_marker_cycler),
             )
 
     def last_selections(self):  # set same selections as last plot
@@ -1035,13 +1027,13 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         if searchindex >= 0:
             self.tab3_plot_type.setCurrentIndex(searchindex)
         # max time step, titles, grid, legend
-        self.spnmaxtstep.setValue(self.ms.settingsdict["custplot_maxtstep"])
+        self.spn_max_tstep.setValue(self.ms.settingsdict["custplot_maxtstep"])
 
         self.create_legend.setChecked(self.ms.settingsdict["custplot_legend"])
         self.regular_xaxis_interval.setChecked(
             self.ms.settingsdict["custplot_regular_xaxis_interval"]
         )
-        self.grid_check_box.setChecked(self.ms.settingsdict["custplot_grid"])
+        self.grid.setChecked(self.ms.settingsdict["custplot_grid"])
 
     def set_last_selection(
         self,
@@ -1125,12 +1117,12 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                     table_combobox.addItem(table)
 
     def clearthings(self, tabno=1):  # clear xcol,ycol,filter1,filter2
-        xcolcombobox = "xcol_combo_box_" + str(tabno)
-        ycolcombobox = "ycol_combo_box_" + str(tabno)
-        filter1combobox = "filter1_combo_box_" + str(tabno)
-        filter2combobox = "filter2_combo_box_" + str(tabno)
-        filter1qlistwidget = "filter1_q_list_widget_" + str(tabno)
-        filter2qlistwidget = "filter2_q_list_widget_" + str(tabno)
+        xcolcombobox = f"tab{tabno}_xcol"
+        ycolcombobox = f"tab{tabno}_ycol"
+        filter1combobox = f"tab{tabno}_filtercol1"
+        filter2combobox = f"tab{tabno}_filtercol2"
+        filter1qlistwidget = f"tab{tabno}_filter1"
+        filter2qlistwidget = f"tab{tabno}_filter2"
         getattr(self, xcolcombobox).clear()
         getattr(self, ycolcombobox).clear()
         getattr(self, filter1combobox).clear()
@@ -1203,17 +1195,13 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                     getattr(self, comboboxname).addItem(column)
 
     def filter_changed(self, filterno, tabno):
-        table_combobox = "table_combo_box_" + str(tabno)
-        filter_combobox = "filter" + str(filterno) + "_combo_box_" + str(tabno)
-        filter_q_list_widget = "filter" + str(filterno) + "_q_list_widget_" + str(tabno)
+        table_combobox = f"tab{tabno}_table"
+        filter_combobox = f"tab{tabno}_filtercol{filterno}"
+        filter_q_list_widget = f"tab{tabno}_filter{filterno}"
 
         other_filterno = {2: 1, 1: 2}[filterno]
-        other_filter_combobox = (
-            "filter" + str(other_filterno) + "_combo_box_" + str(tabno)
-        )
-        other_filter_q_list_widget = (
-            "filter" + str(other_filterno) + "_q_list_widget_" + str(tabno)
-        )
+        other_filter_combobox = f"tab{tabno}_filtercol{other_filterno}"
+        other_filter_q_list_widget = f"tab{tabno}_filter{other_filterno}"
 
         dependent_filtering_box = getattr(
             self, "dependent_filtering" + str(tabno), None
@@ -1358,7 +1346,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                     % str(e)
                 )
 
-        self.axes.grid(self.grid_check_box.isChecked())  # grid
+        self.axes.grid(self.grid.isChecked())  # grid
 
         for label in self.axes.xaxis.get_ticklabels():
             label.set_rotation(20)
@@ -1377,7 +1365,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                         self.plabels,
                         bbox_to_anchor=(self.spn_leg_x.value(), self.spn_leg_y.value()),
                         loc=10,
-                        **{LEGEND_NCOL_KEY: ncols}
+                        **{LEGEND_NCOL_KEY: ncols},
                     )
             else:
                 if (self.spn_leg_x.value() == 0) and (self.spn_leg_y.value() == 0):
@@ -1386,7 +1374,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                     leg = self.axes.legend(
                         bbox_to_anchor=(self.spn_leg_x.value(), self.spn_leg_y.value()),
                         loc=10,
-                        **{LEGEND_NCOL_KEY: ncols}
+                        **{LEGEND_NCOL_KEY: ncols},
                     )
 
             leg.set_zorder(999)
@@ -1492,9 +1480,9 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         self.ms.settingsdict["custplot_plottype3"] = str(
             self.tab3_plot_type.currentText()
         )
-        self.ms.settingsdict["custplot_maxtstep"] = self.spnmaxtstep.value()
+        self.ms.settingsdict["custplot_maxtstep"] = self.spn_max_tstep.value()
         self.ms.settingsdict["custplot_legend"] = self.create_legend.isChecked()
-        self.ms.settingsdict["custplot_grid"] = self.grid_check_box.isChecked()
+        self.ms.settingsdict["custplot_grid"] = self.grid.isChecked()
         # self.ms.settingsdict['custplot_title'] = unicode(self.axes.get_title())
         # self.ms.settingsdict['custplot_xtitle'] = unicode(self.axes.get_xlabel())
         # self.ms.settingsdict['custplot_ytitle'] = unicode(self.axes.get_ylabel())
@@ -1546,7 +1534,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
 
     @common_utils.general_exception_handler
     def start_csv_dialog(self):
-        data = self.drawPlot_all(only_get_data=True)
+        data = self.draw_plot_all(only_get_data=True)
         self.save_file_dialog = SaveToCsvDialog(self, data)
 
 

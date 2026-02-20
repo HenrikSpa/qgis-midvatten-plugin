@@ -170,7 +170,7 @@ class NewDb(object):
         # We want to store info about which qgis-version that created the db
         qgisverno = ru(Qgis.QGIS_VERSION).replace("'", "")
         replace_word_replace_with = [
-            ("CHANGETORELEVANTepsg_id", ru(epsg_id)),
+            ("CHANGETORELEVANTEPSGID", ru(epsg_id)),
             ("CHANGETOPLUGINVERSION", ru(verno)),
             ("CHANGETOQGISVERSION", qgisverno),
             ("CHANGETODBANDVERSION", "SpatiaLite version %s" % ru(versionstext)),
@@ -317,7 +317,7 @@ class NewDb(object):
         # We want to store info about which qgis-version that created the db
         qgisverno = ru(Qgis.QGIS_VERSION).replace("'", "")
         replace_word_replace_with = [
-            ("CHANGETORELEVANTepsg_id", ru(epsg_id)),
+            ("CHANGETORELEVANTEPSGID", ru(epsg_id)),
             ("CHANGETOPLUGINVERSION", ru(verno)),
             ("CHANGETOQGISVERSION", qgisverno),
             ("CHANGETODBANDVERSION", "PostGIS version %s" % ru(versionstext)),

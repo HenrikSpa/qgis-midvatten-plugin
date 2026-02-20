@@ -288,8 +288,8 @@ class TestCalibrlogger(utils_for_tests.MidvattenTestPostgisDbSv):
         )
         calibrlogger.l1_level.setText("100")
         calibrlogger.l2_level.setText("200")
-        calibrlogger.M1_level.setText("200")
-        calibrlogger.M2_level.setText("100")
+        calibrlogger.m1_level.setText("200")
+        calibrlogger.m2_level.setText("100")
 
         calibrlogger.adjust_trend_func()
         res = db_utils.sql_load_fr_db(

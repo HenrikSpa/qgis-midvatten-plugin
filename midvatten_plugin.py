@@ -790,8 +790,8 @@ class Midvatten:
                 newdbinstance = NewDb()
                 newdbinstance.create_new_spatialite_db(
                     verno,
-                    user_select_CRS="n",
-                    EPSG_code=user_chosen_epsg_code,
+                    user_select_crs="n",
+                    epsg_code=user_chosen_epsg_code,
                     delete_srids=False,
                     w_levels_logger_timezone=w_levels_logger_timezone,
                     w_levels_timezone=w_levels_timezone,

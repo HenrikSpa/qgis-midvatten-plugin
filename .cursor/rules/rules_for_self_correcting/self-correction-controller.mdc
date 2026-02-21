@@ -150,5 +150,3 @@ This self-correction mechanism enables the agent to learn from its past mistakes
 - **Generated self-correction rules** are stored in: `.cursor/rules/self_corrected_rules`
 
 ---
-
-This is the complete text for the `self-correction-controller.mdc` file. You can now copy-paste it into your document, and it should reflect all the changes you requested (moving the index file, respecting folder isolation, and ensuring clean rule management).

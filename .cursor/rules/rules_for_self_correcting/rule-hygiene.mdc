@@ -58,6 +58,7 @@ Hard cap: 30 self-corrected rules.
 
 If limit exceeded:
   - Must merge or delete before adding new rule.
+  - Ask the user for permission before deleting a rule.
 
 ---
 

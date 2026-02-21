@@ -32,6 +32,10 @@ alwaysApply: {true or false}
 ### Organizational Folders (Create if non existent)
 All rules files will be under an organizational folder:
 - .cursor/rules/core-rules - rules related to cursor agent behavior or rule generation specifically
+- .cursor/rules/rules_for_self_correcting - rules that control how the self correcting
+rule mechanism behaves.
+- .cursor/rules/self_corrected_rules - rules that are written by the agent using the
+self correcting mechanism
 - .cursor/rules/my-rules - gitignore in a shared repo, rules specifically for ME only
 - .cursor/rules/global-rules - these will be rules that are ALWAYS applied to every chat and cmd/ctrl-k context
 - .cursor/rules/testing-rules - rules about testing

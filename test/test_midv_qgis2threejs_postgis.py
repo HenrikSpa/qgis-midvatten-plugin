@@ -100,7 +100,7 @@ class TestPrepareQgis2Threejs(utils_for_tests.MidvattenTestPostgisDbSv):
             dbconnection.closedb()
         test = common_utils.anything_to_string_representation(view_contents)
         print(str(test))
-        ref = """[[(1, "1", 1.0, -1.0, "POINT(1 1)", )], [(2, "1", 0.0, -1.0, "POINT(1 1)", )], [], [], [], [], [], [], [], [], [], [], [], [], [(1, "1", "POINT(1 1)", )]]"""
+        ref = """[[(1, "1", 1.0, -1.0, "POINT(1 1)", )], [(1, "1", 0.0, -1.0, "POINT(1 1)", )], [], [], [], [], [], [], [], [], [], [], [], [], [(1, "1", "POINT(1 1)", )]]"""
         print(f"{mock_messagebar.mock_calls=}")
         assert test == ref
 

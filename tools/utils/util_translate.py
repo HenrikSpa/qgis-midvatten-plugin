@@ -51,6 +51,10 @@ def getTranslate(name_plugin: str, name_dir: None = None):
 
     pp = user_plugin_path if QFileInfo(user_plugin_path).exists() else system_plugin_path
 
+    # If the plugin path didn't work, use relative path to the plugin directory
+    if not os.path.exists(os.path.join(pp, "i18n")):
+        pp = os.path.join(__file__, "..", "..")
+
     override_locale = QSettings().value("locale/overrideFlag", False, type=bool)
     if override_locale:
         qm_path_filepattern = os.path.join(

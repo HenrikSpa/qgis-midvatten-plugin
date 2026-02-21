@@ -301,14 +301,15 @@ class TestGeneralImport(utils_for_tests.MidvattenTestPostgisDbSvImportInstance):
 class TestImportObsPointsObsLines(
     utils_for_tests.MidvattenTestPostgisDbSvImportInstance
 ):
-
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
     )
-    def test_import_obsids_directly(self):
+    def test_import_obsids_directly(self, mock_messagebar):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('obsid1')")
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('obsid2')")
         result = db_utils.sql_load_fr_db("select * from obs_points")
+        print(f"{mock_messagebar.mock_calls=}")
         assert result == (
             True,
             [
@@ -373,10 +374,11 @@ class TestImportObsPointsObsLines(
             ],
         )
 
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
     )
-    def test_import_obs_points(self):
+    def test_import_obs_points(self, mock_messagebar):
         f = [
             [
                 "obsid",
@@ -445,6 +447,7 @@ class TestImportObsPointsObsLines(
         )
 
         reference_string = r"""(True, [(rb1, rb1, a, pipe, 1.0, 1, 1.0, 1, 1, 1, 1, 1, 1, 421484.0, 6542696.0, 1.0, 1, 1.0, 1.0, 1.0, 1.0, 1, 1, 1, 1, 1, POINT(421484 6542696))])"""
+        print(f"{mock_messagebar.mock_calls=}")
         assert test_string == reference_string
 
     @mock.patch("qgis.utils.iface")

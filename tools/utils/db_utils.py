@@ -1455,16 +1455,18 @@ def cast_null(
     if dbconnection.dbtype == "spatialite":
         sql = "NULL"
     else:
-        allowed_types = set(postgresql_numeric_data_types()) | {"double precision"}
+        # Types allowed for NULL cast in PostgreSQL (used by general_import etc.)
+        allowed_types = (
+            set(postgresql_numeric_data_types())
+            | set(postgresql_cast_null_types())
+        )
         if data_type not in allowed_types:
             raise UnsafeIdentifierError(
                 f"cast_null: data_type {data_type!r} not in allowed list"
             )
-        if data_type == "double precision":
-            quoted_type = '"double precision"'
-        else:
-            quoted_type = ident(dbconnection, data_type)
-        sql = "NULL::" + quoted_type
+        # In PostgreSQL, type names in :: casts must be unquoted (built-in types).
+        type_for_cast = data_type
+        sql = "NULL::" + type_for_cast
 
     if dbconnection_created:
         dbconnection.closedb()
@@ -1509,6 +1511,19 @@ def postgresql_numeric_data_types():
         "numeric",
         "real",
         "double precision",
+    ]
+
+
+def postgresql_cast_null_types():
+    """Types allowed in cast_null() for PostgreSQL (numeric + common column types)."""
+    return [
+        "text",
+        "character varying",
+        "timestamp with time zone",
+        "timestamp without time zone",
+        "date",
+        "boolean",
+        "geometry",  # PostGIS
     ]
 
 

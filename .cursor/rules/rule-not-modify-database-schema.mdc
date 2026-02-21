@@ -1,0 +1,13 @@
+---
+alwaysApply: true
+---
+
+# When To Trigger
+
+- When dealing with files that read or handles ".sql"-files.
+- When dealing with in-code queries that creates or modifies tables and views.
+
+# Don't modify database schema
+
+- NEVER make unrequested database changes.
+- NEVER change any database schemas (for example table names, column names, view names and so on) unless explicitly asked to do so.

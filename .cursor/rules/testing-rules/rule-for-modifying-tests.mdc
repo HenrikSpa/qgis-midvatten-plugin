@@ -1,0 +1,14 @@
+---
+alwaysApply: true
+---
+
+## When To Trigger
+
+- When modifying tests
+
+## Rules when modifying tests:
+
+- Read .cursor/rules/rule-for-creating-tests.mdc for information about how test should be written.
+- NEVER change the test reference data (the data that tests are compared against) unless explicitly told to do so.
+- ALWAYS find the true cause why tests fail. Do not change tests just to make then pass while leaving true bugs in the code.
+

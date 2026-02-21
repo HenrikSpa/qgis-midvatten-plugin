@@ -1,0 +1,59 @@
+---
+description: 
+alwaysApply: true
+---
+
+# When To Trigger
+
+- When creating new tests.
+
+# Style of tests:
+
+
+## Use mock for MessagebarAndLog and print the result.
+
+The purpose of this rule is to help the agent to see error messages that might otherwise be hidden.
+
+- Tests in the midvatten repository should have this mock:
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+- The method argument should be named:
+    mock_messagebar
+- Print "mock_messagebar.mock_calls" before groups of asserts (asserts not separated by other code):
+    print(f"{mock_messagebar.mock_calls=}")
+- Update tests to follow this rule if found not to.
+
+Example to follow:
+
+Class Test1:
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_1(self, mock_messagebar):
+        print(f"{mock_messagebar.mock_calls=}")
+        assert 1 == 1.0
+
+
+## Do not print the asserted values to stdout
+
+- Do not print the data included in an assert-comparison (This is instead automatically printed using nosetests3 argument "--failure-detail")
+- This rule does not have priority over the previous rule about mock for MessagebarAndLog.
+
+NOT DO, example 1:
+
+    print(test_string)
+    print(reference_string)
+    assert test_string == reference_string
+
+INSTEAD:
+
+    assert test_string == reference_string
+
+NOT DO, example 2:
+
+    print("Ref:")
+    print(ref)
+    print("Test")
+    print(test)
+    assert ref == test
+
+INSTEAD:
+
+    assert ref == test

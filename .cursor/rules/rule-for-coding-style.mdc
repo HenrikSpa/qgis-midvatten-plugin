@@ -1,0 +1,22 @@
+---
+alwaysApply: true
+---
+
+# When to trigger
+
+- When creating or modifying python code
+
+# Code style
+
+- The coding style should follow PEP8 using the ruff linter.
+
+    For example:
+    * Class names should normally use the CapWords convention.
+    * Function names, method names, variable names, and function arguments should be snake_case.
+    * Constants are usually defined on a module level and written in all capital letters with underscores separating words. Examples include MAX_OVERFLOW and TOTAL.
+    * Add python type hints (often using the python library typing) to the arguments of functions and methods.
+
+- After any Python code modifications, automatically run the following commands to ensure code quality:
+    1. Run linting and fixes: `ruff check --fix .`
+    2. Run formatting: `ruff format .`
+    3. If any errors persist, fix them automatically.

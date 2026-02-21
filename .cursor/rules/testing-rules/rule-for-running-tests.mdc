@@ -1,0 +1,21 @@
+---
+alwaysApply: true
+---
+
+## When To Trigger
+
+- Before running tests.
+
+
+## Steps when running tests
+
+1. Make sure tests named like test_create_*_db.py are passing without errors first. (If these fail, most of the other tests will also fail)
+2. Then run tests named like test_db_utils*.db, test_midvatten_utils*.py, test_midvatten_defs*-py (these are also central for all the other tests).
+3. Then run specific tests that covers the modified parts of the code.
+4. Complete by running the whole test suite.
+
+## How to run tests
+
+- The tests runs using nosetests3 from the "midvatten" repository folder or from the "midvatten/test" folder.
+- Run nosetests3 using "--failure-detail --with-doctest --nologcapture --stop" to see the cause of errors.
+- The argument "--nologcapture" can be ommitted if a test fails and doesn't give enough information for fixing it (though beware that some information written to the log can be more for information purpose and might not be a real error).

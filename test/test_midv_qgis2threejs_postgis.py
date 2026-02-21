@@ -32,7 +32,7 @@ from midvatten.tools.utils import db_utils
 # Not supported yet
 
 
-@attr(status="off")
+@attr(status="on)
 class TestPrepareQgis2Threejs(utils_for_tests.MidvattenTestPostgisDbSv):
     """This test has conflicts with sectionplot, so its off!"""
 

@@ -1,0 +1,32 @@
+# Self-Correction Workflow Rule
+
+## Purpose
+Ensure the agent improves itself by generating new rules when it creates recurring or structural bugs.
+
+## When To Trigger
+This workflow activates when:
+- The agent previously generated code that caused a bug.
+- The bug is due to reasoning failure, missing constraint, architectural mistake, or unsafe assumption.
+- The issue could recur in similar contexts.
+
+Do NOT trigger when:
+- The bug is purely a typo.
+- The user intentionally changed correct code.
+- The issue is subjective stylistic preference.
+
+## Self-Correction Steps
+
+1. Identify if the agent caused the bug.
+2. Perform root cause analysis:
+   - What assumption failed?
+   - What reasoning step was incorrect?
+   - What constraint was missing?
+3. Determine if a reusable prevention rule can be extracted.
+4. If YES:
+   - Invoke rule-generating-agent.mdc
+   - Provide:
+     - Context of the bug
+     - Root cause
+     - The generalized prevention principle
+5. Clearly label the output as:
+   SELF-CORRECTION RULE PROPOSAL

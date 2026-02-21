@@ -1,0 +1,19 @@
+# Rule Impact Ledger
+
+Tracks creation impact and post-creation stability observations.
+
+---
+
+## Rule Record Format
+
+- Rule Name:
+- Date Created:
+- Severity:
+- Recurrence:
+- Scope Breadth:
+- Impact Score:
+- Status:
+- Last Used Date: (timestamp of last use)
+- Regression Count:
+- Stability Notes:
+- Rollback Events:

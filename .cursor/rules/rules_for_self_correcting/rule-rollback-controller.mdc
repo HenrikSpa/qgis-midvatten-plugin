@@ -1,0 +1,88 @@
+# Self-Corrected Rule Rollback Controller
+
+## Purpose
+Provide a controlled mechanism to deactivate or revert unsafe, harmful,
+or low-value self-corrected rules.
+
+---
+
+# WHEN TO TRIGGER ROLLBACK REVIEW
+
+Trigger review if:
+
+1. A self-corrected rule causes:
+   - Repeated false positives
+   - Over-restriction
+   - Blocked valid solutions
+   - Conflict loops
+   - Reduced solution quality
+
+OR
+
+2. The rule is implicated in ≥ 2 regressions.
+
+OR
+
+3. User explicitly flags rule as problematic.
+
+---
+
+# ROLLBACK ANALYSIS (MANDATORY)
+
+### ROLLBACK EVALUATION
+
+- Rule Name:
+- Original Intent:
+- Observed Negative Effect:
+- Type of Failure:
+  - [ ] Overfitting
+  - [ ] Overgeneralization
+  - [ ] Conflicts with core rules
+  - [ ] Excessive restriction
+  - [ ] Redundant after merge
+- Is harm structural or contextual?
+- Impact Score at creation:
+- Current Observed Stability Impact:
+  - Positive
+  - Neutral
+  - Negative
+
+---
+
+# ROLLBACK DECISION OPTIONS
+
+Based on analysis:
+
+1. SOFT ROLLBACK
+   - Mark rule as "Inactive"
+   - Retain file with status header
+   - Do not delete
+
+2. HARD ROLLBACK (Requires Approval)
+   - Remove rule file
+   - Log removal in rule-impact-ledger.mdc
+
+3. REFACTOR
+   - Modify rule to narrower scope
+   - Recompute Impact Score
+
+---
+
+# STRICT SAFETY POLICY
+
+- Never delete a rule automatically.
+- Never modify rules outside:
+  .cursor/rules/self_corrected_rules
+- If rollback affects interaction with external rules:
+  Provide suggestion only.
+
+---
+
+# STATUS HEADER FORMAT
+
+Every rule must contain:
+
+Status: Active / Inactive / Refactored
+Impact Score at Creation:
+Last Reviewed:
+Rollback History:

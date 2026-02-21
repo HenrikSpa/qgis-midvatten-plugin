@@ -1,0 +1,20 @@
+# Rule Reputation Ledger
+
+Tracks the effectiveness and trustworthiness of each rule.
+
+---
+
+## Reputation Record Format
+
+- Rule Name:
+- Usage Count:
+- Impact Score:
+- Trustworthiness Score: (computed from usage frequency, failure rate, etc.)
+- Last Review Date:
+- Last Feedback:
+- Feedback Score: (e.g., 1-5 stars)
+- Reputation Score: (computed from Trustworthiness and Feedback)
+
+## Reputation Scoring (Example Formula)
+
+- Reputation Score = (Usage Count × Impact Score × Feedback Score) / (Failure Rate + 1)

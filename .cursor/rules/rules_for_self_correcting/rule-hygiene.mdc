@@ -1,0 +1,87 @@
+# Self-Corrected Rule Hygiene
+
+## Purpose
+Maintain clarity, prevent redundancy, and ensure long-term scalability
+of self-generated rules.
+
+---
+
+# WHEN TO RUN
+
+Run hygiene check when:
+
+- Total self-corrected rules > 10
+OR
+- A new rule overlaps with existing rule
+OR
+- A rule is triggered frequently
+
+---
+
+# HYGIENE CHECKLIST
+
+For each rule:
+
+1. Is it still relevant?
+2. Is it redundant?
+3. Can it merge with another?
+4. Is it too specific?
+5. Is it contradicted elsewhere?
+
+---
+
+# MERGE POLICY
+
+If two rules share ≥ 70% prevention scope:
+  - Merge them
+  - Keep broader formulation
+  - Archive the narrower rule
+
+---
+
+# CONFLICT POLICY
+
+If self_corrected rule conflicts with:
+  - core-rules
+  - user-defined rules outside folder
+
+Then:
+  - Do NOT auto-edit
+  - Produce suggestion
+  - Request approval
+
+---
+
+# RULE LIMIT
+
+Hard cap: 30 self-corrected rules.
+
+If limit exceeded:
+  - Must merge or delete before adding new rule.
+
+---
+
+# QUALITY STANDARD
+
+Each rule must:
+- Be generalizable
+- Prevent class of bugs
+- Be architecture-aware
+- Contain clear trigger conditions
+- Include example violation
+
+Otherwise reject.
+
+---
+
+# IMPACT PRIORITIZATION
+
+During hygiene:
+
+1. Sort rules by Impact Score.
+2. Review low-impact rules first for:
+   - Merge
+   - Deactivation
+   - Removal suggestion
+
+High-impact rules require more conservative changes.

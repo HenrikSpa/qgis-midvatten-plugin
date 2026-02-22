@@ -1,13 +1,15 @@
+---
+description: Apply when we're fixing a bug the agent caused or when we're reviewing self-correction. Use this workflow to decide whether to generate a new prevention rule after the agent introduced a structural or recurring bug. Trigger conditions and recurrence criteria are defined in the self-correction controller; only create a rule if the controller's conditions are satisfied.
+globs:
+alwaysApply: false
+---
 # Self-Correction Workflow Rule
 
 ## Purpose
 Ensure the agent improves itself by generating new rules when it creates recurring or structural bugs.
 
 ## When To Trigger
-This workflow activates when:
-- The agent previously generated code that caused a bug.
-- The bug is due to reasoning failure, missing constraint, architectural mistake, or unsafe assumption.
-- The issue could recur in similar contexts.
+**Defer to the controller.** This workflow activates only when the conditions in `.cursor/rules/rules-for-self-correction/self-correction-controller.mdc` are all satisfied (agent caused the bug, structural issue, confidence ≥ 70%, and Recurring Bug Detector allows rule creation). Do not create a rule on first occurrence unless the controller’s recurrence/severity conditions are met.
 
 Do NOT trigger when:
 - The bug is purely a typo.
@@ -21,9 +23,9 @@ Do NOT trigger when:
    - What assumption failed?
    - What reasoning step was incorrect?
    - What constraint was missing?
-3. Determine if a reusable prevention rule can be extracted.
+3. Determine if a reusable prevention rule can be extracted (and controller conditions are met).
 4. If YES:
-   - Invoke rule-generating-agent.mdc
+   - Read `.cursor/rules/core-rules/rule-generating-agent.mdc` and follow its Critical Rules and template to draft the new rule.
    - Provide:
      - Context of the bug
      - Root cause

@@ -44,6 +44,7 @@ import re
 import tempfile
 from collections import OrderedDict
 import sqlite3 as sqlite
+from contextlib import contextmanager
 
 import qgis.core
 from qgis.PyQt.QtCore import QCoreApplication, QSettings, QFile
@@ -655,74 +656,71 @@ def get_postgis_connections() -> Dict[str, Dict[str, str]]:
     return postgresql_connections
 
 
+
+@contextmanager
+def use_or_create_connection(dbconnection):
+    created = False
+    if dbconnection is None:
+        dbconnection = DbConnectionManager()
+        created = True
+    try:
+        yield dbconnection
+    except Exception:
+        raise
+    finally:
+        if created:
+            dbconnection.closedb()
+
+
 def sql_load_fr_db(
     sql: str,
     dbconnection: Optional[DbConnectionManager] = None,
     print_error_message_in_bar: bool = True,
     execute_args: None = None,
 ) -> Any:
-    if not isinstance(dbconnection, DbConnectionManager):
-        dbconnection = DbConnectionManager()
-        dbconnection_created = True
-    else:
-        dbconnection_created = False
-
-    try:
-        result = dbconnection.execute_and_fetchall(sql, execute_args)
-    except Exception as e:
-        textstring = ru(
-            QCoreApplication.translate(
-                "sql_load_fr_db", """DB error!\n SQL causing this error:%s\nMsg:\n%s"""
-            )
-        ) % (ru(sql), ru(str(e)))
-        if print_error_message_in_bar:
-            MessagebarAndLog.warning(bar_msg=sql_failed_msg(), duration=4)
-        MessagebarAndLog.warning(log_msg=textstring)
-        res = (False, [])
-    else:
-        res = (True, result)
-
-    if dbconnection_created:
-        dbconnection.closedb()
-
-    return res
-
+    with use_or_create_connection(dbconnection) as dbconnection:
+        try:
+            result = dbconnection.execute_and_fetchall(sql, execute_args)
+        except Exception as e:
+            textstring = ru(
+                QCoreApplication.translate(
+                    "sql_load_fr_db", """DB error!\n SQL causing this error:%s\nMsg:\n%s"""
+                )
+            ) % (ru(sql), ru(str(e)))
+            if print_error_message_in_bar:
+                MessagebarAndLog.warning(bar_msg=sql_failed_msg(), duration=4)
+            MessagebarAndLog.warning(log_msg=textstring)
+            res = (False, [])
+        else:
+            res = (True, result)
+        return res
 
 def sql_alter_db(
     sql: str, dbconnection: Optional[DbConnectionManager] = None, all_args: None = None
 ):
-    if not isinstance(dbconnection, DbConnectionManager):
-        dbconnection = DbConnectionManager()
-        dbconnection_created = True
-    else:
-        dbconnection_created = False
-
-    if dbconnection.dbtype == "spatialite":
+    with use_or_create_connection(dbconnection) as dbconnection:
+        if dbconnection.dbtype == "spatialite":
+            try:
+                dbconnection.execute("PRAGMA foreign_keys = ON")
+            except Exception:
+                pass
         try:
-            dbconnection.execute("PRAGMA foreign_keys = ON")
-        except Exception:
-            pass
-    try:
-        dbconnection.execute_and_commit(sql, all_args=all_args)
-    except Exception as e:
-        textstring = ru(
-            QCoreApplication.translate(
-                "sql_alter_db", """DB error!\n SQL causing this error:%s\nMsg:\n%s"""
-            )
-        ) % (ru(sql), ru(str(e)))
-        MessagebarAndLog.warning(
-            bar_msg=ru(
+            dbconnection.execute_and_commit(sql, all_args=all_args)
+        except Exception as e:
+            textstring = ru(
                 QCoreApplication.translate(
-                    "sql_alter_db", "Some sql failure, see log for additional info."
+                    "sql_alter_db", """DB error!\n SQL causing this error:%s\nMsg:\n%s"""
                 )
-            ),
-            log_msg=textstring,
-            duration=4,
-        )
-
-    if dbconnection_created:
-        dbconnection.closedb()
-
+            ) % (ru(sql), ru(str(e)))
+            MessagebarAndLog.warning(
+                bar_msg=ru(
+                    QCoreApplication.translate(
+                        "sql_alter_db", "Some sql failure, see log for additional info."
+                    )
+                ),
+                log_msg=textstring,
+                duration=4,
+            )
 
 def execute_sqlfile_using_func(sqlfilename: str, function: Callable = sql_alter_db):
     with open(sqlfilename) as f:
@@ -811,103 +809,83 @@ def db_tables_columns_info(
         ],
     ],
 ]:
-    """Returns a dict like {'tablename': (ordernumber, name, type, notnull, defaultvalue, primarykey)}"""
-    if not isinstance(dbconnection, DbConnectionManager):
-        dbconnection = DbConnectionManager()
-        dbconnection_created = True
-    else:
-        dbconnection_created = False
+    with use_or_create_connection(dbconnection) as dbconnection:
+        """Returns a dict like {'tablename': (ordernumber, name, type, notnull, defaultvalue, primarykey)}"""
+        existing_tablenames = get_tables(dbconnection=dbconnection)
 
-    existing_tablenames = get_tables(dbconnection=dbconnection)
+        if table is not None:
+            if table not in existing_tablenames:
+                return {}
+        if table is None:
+            tablenames = existing_tablenames
+        elif not isinstance(table, (list, tuple)):
+            tablenames = [table]
+        else:
+            tablenames = table
 
-    if table is not None:
-        if table not in existing_tablenames:
-            if dbconnection_created:
-                dbconnection.closedb()
-            return {}
-    if table is None:
-        tablenames = existing_tablenames
-    elif not isinstance(table, (list, tuple)):
-        tablenames = [table]
-    else:
-        tablenames = table
+        tables_dict = {}
 
-    tables_dict = {}
+        for tablename in tablenames:
+            try:
+                columns = get_table_info(tablename, dbconnection=dbconnection)
+            except Exception:
+                columns = None
 
-    for tablename in tablenames:
-        try:
-            columns = get_table_info(tablename, dbconnection=dbconnection)
-        except Exception:
-            columns = None
-
-        if columns is None:
-            MessagebarAndLog.warning(
-                log_msg=ru(
-                    QCoreApplication.translate(
-                        "db_tables_columns_info",
-                        "Getting columns from table %s failed!",
+            if columns is None:
+                MessagebarAndLog.warning(
+                    log_msg=ru(
+                        QCoreApplication.translate(
+                            "db_tables_columns_info",
+                            "Getting columns from table %s failed!",
+                        )
                     )
+                    % (tablename)
                 )
-                % (tablename)
-            )
-            continue
-        tables_dict[tablename] = columns
-
-    if dbconnection_created:
-        dbconnection.closedb()
-
-    return tables_dict
+                continue
+            tables_dict[tablename] = columns
+        return tables_dict
 
 
 def get_tables(
     dbconnection: Optional[DbConnectionManager] = None, skip_views: bool = False
 ) -> List[str]:
-    if not isinstance(dbconnection, DbConnectionManager):
-        dbconnection = DbConnectionManager()
-        dbconnection_created = True
-    else:
-        dbconnection_created = False
-
-    if dbconnection.dbtype == "spatialite":
-        if skip_views:
-            tabletype = "type='table'"
+    with use_or_create_connection(dbconnection) as dbconnection:
+        if dbconnection.dbtype == "spatialite":
+            if skip_views:
+                tabletype = "type='table'"
+            else:
+                tabletype = "type = 'table' or type = 'view'"
+            tables_sql = (
+                """SELECT tbl_name FROM sqlite_master WHERE (%s) AND tbl_name NOT IN %s ORDER BY tbl_name"""
+                % (tabletype, sqlite_internal_tables())
+            )
         else:
-            tabletype = "type = 'table' or type = 'view'"
-        tables_sql = (
-            """SELECT tbl_name FROM sqlite_master WHERE (%s) AND tbl_name NOT IN %s ORDER BY tbl_name"""
-            % (tabletype, sqlite_internal_tables())
-        )
-    else:
-        if skip_views:
-            tabletype = "AND table_type='BASE TABLE'"
-            pg_mat_views = ""
-        else:
-            tabletype = ""
-            pg_mat_views = """UNION SELECT relname FROM pg_class WHERE relkind = 'm'"""
-            if dbconnection.schema.lower() != "public":
-                pg_mat_views += (
-                    """ AND TRIM(TRIM(REPLACE(oid::regclass::text, relname, ''), '.'), '"') = '%s' """
-                    % dbconnection.schema
-                )
+            if skip_views:
+                tabletype = "AND table_type='BASE TABLE'"
+                pg_mat_views = ""
+            else:
+                tabletype = ""
+                pg_mat_views = """UNION SELECT relname FROM pg_class WHERE relkind = 'm'"""
+                if dbconnection.schema.lower() != "public":
+                    pg_mat_views += (
+                        """ AND TRIM(TRIM(REPLACE(oid::regclass::text, relname, ''), '.'), '"') = '%s' """
+                        % dbconnection.schema
+                    )
 
-        tables_sql = """SELECT table_name FROM (
-                        SELECT table_name FROM information_schema.tables 
-                        WHERE table_schema='%s' %s 
-                        AND table_name NOT IN %s
-                        %s) foo
-                        ORDER BY table_name""" % (
-            dbconnection.schema,
-            tabletype,
-            postgis_internal_tables(),
-            pg_mat_views,
-        )
-    tables = dbconnection.execute_and_fetchall(tables_sql)
-    tablenames = [col[0] for col in tables]
-
-    if dbconnection_created:
-        dbconnection.closedb()
-
-    return tablenames
+            tables_sql = """SELECT table_name FROM (
+                            SELECT table_name FROM information_schema.tables 
+                            WHERE table_schema='%s' %s 
+                            AND table_name NOT IN %s
+                            %s) foo
+                            ORDER BY table_name""" % (
+                dbconnection.schema,
+                tabletype,
+                postgis_internal_tables(),
+                pg_mat_views,
+            )
+        tables = dbconnection.execute_and_fetchall(tables_sql)
+        tablenames = [col[0] for col in tables]
+        return tablenames
 
 
 def get_table_info(
@@ -915,88 +893,78 @@ def get_table_info(
 ) -> List[
     Union[Tuple[int, str, str, int, str, int], Tuple[int, str, str, int, None, int]]
 ]:
-
-    if not isinstance(dbconnection, DbConnectionManager):
-        dbconnection = DbConnectionManager()
-        dbconnection_created = True
-    else:
-        dbconnection_created = False
-
-    if dbconnection.dbtype == "spatialite":
-        columns_sql = dbconnection.sql_ident("PRAGMA table_info({t})", t=tablename)
-        try:
-            columns = dbconnection.execute_and_fetchall(columns_sql)
-        except Exception as e:
-            MessagebarAndLog.warning(
-                bar_msg=sql_failed_msg(),
-                log_msg=ru(
-                    QCoreApplication.translate(
-                        "get_table_info", "Sql failed: %s\nmsg:%s"
+    with use_or_create_connection(dbconnection) as dbconnection:
+        if dbconnection.dbtype == "spatialite":
+            columns_sql = dbconnection.sql_ident("PRAGMA table_info({t})", t=tablename)
+            try:
+                columns = dbconnection.execute_and_fetchall(columns_sql)
+            except Exception as e:
+                MessagebarAndLog.warning(
+                    bar_msg=sql_failed_msg(),
+                    log_msg=ru(
+                        QCoreApplication.translate(
+                            "get_table_info", "Sql failed: %s\nmsg:%s"
+                        )
                     )
+                    % (columns_sql, str(e)),
                 )
-                % (columns_sql, str(e)),
-            )
-            return None
+                return None
 
-    else:
-        ph = dbconnection.placeholder_sign()
-        columns_sql = (
-            "SELECT ordinal_position, column_name, data_type, CASE WHEN is_nullable = 'NO' THEN 1 ELSE 0 END AS notnull, column_default, 0 AS primary_key FROM information_schema.columns WHERE table_schema = "
-            + ph
-            + " AND table_name = "
-            + ph
-        )
-        columns = [
-            list(x)
-            for x in dbconnection.execute_and_fetchall(
-                columns_sql, (dbconnection.schemas(), tablename)
-            )
-        ]
-
-        primary_keys_sql = (
-            "SELECT a.attname, format_type(a.atttypid, a.atttypmod) AS data_type "
-            "FROM pg_index i "
-            "JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey) "
-            "WHERE i.indrelid = (SELECT (n.nspname || '.' || c.relname)::regclass FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = "
-            + ph
-            + " AND c.relname = "
-            + ph
-            + ") AND i.indisprimary;"
-        )
-        primary_keys = [
-            x[0]
-            for x in dbconnection.execute_and_fetchall(
-                primary_keys_sql, (dbconnection.schemas(), tablename)
-            )
-        ]
-        for column in columns:
-            if column[1] in primary_keys:
-                column[5] = 1
-
-        if not columns:
-            # Materialized views
+        else:
+            ph = dbconnection.placeholder_sign()
             columns_sql = (
-                "SELECT a.attnum, a.attname, pg_catalog.format_type(a.atttypid, a.atttypmod) as datatype, "
-                "a.attnotnull, NULL AS default, NULL as primary_key "
-                "FROM pg_attribute a "
-                "JOIN pg_class t on a.attrelid = t.oid "
-                "JOIN pg_namespace s on t.relnamespace = s.oid "
-                "WHERE a.attnum > 0 AND NOT a.attisdropped AND t.relname = "
+                "SELECT ordinal_position, column_name, data_type, CASE WHEN is_nullable = 'NO' THEN 1 ELSE 0 END AS notnull, column_default, 0 AS primary_key FROM information_schema.columns WHERE table_schema = "
                 + ph
-                + " AND s.nspname = "
+                + " AND table_name = "
                 + ph
-                + " ORDER BY a.attnum;"
             )
-            columns = dbconnection.execute_and_fetchall(
-                columns_sql, (tablename, dbconnection.schemas())
+            columns = [
+                list(x)
+                for x in dbconnection.execute_and_fetchall(
+                    columns_sql, (dbconnection.schemas(), tablename)
+                )
+            ]
+
+            primary_keys_sql = (
+                "SELECT a.attname, format_type(a.atttypid, a.atttypmod) AS data_type "
+                "FROM pg_index i "
+                "JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey) "
+                "WHERE i.indrelid = (SELECT (n.nspname || '.' || c.relname)::regclass FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = "
+                + ph
+                + " AND c.relname = "
+                + ph
+                + ") AND i.indisprimary;"
             )
+            primary_keys = [
+                x[0]
+                for x in dbconnection.execute_and_fetchall(
+                    primary_keys_sql, (dbconnection.schemas(), tablename)
+                )
+            ]
+            for column in columns:
+                if column[1] in primary_keys:
+                    column[5] = 1
 
-        columns = [tuple(column) for column in columns]
+            if not columns:
+                # Materialized views
+                columns_sql = (
+                    "SELECT a.attnum, a.attname, pg_catalog.format_type(a.atttypid, a.atttypmod) as datatype, "
+                    "a.attnotnull, NULL AS default, NULL as primary_key "
+                    "FROM pg_attribute a "
+                    "JOIN pg_class t on a.attrelid = t.oid "
+                    "JOIN pg_namespace s on t.relnamespace = s.oid "
+                    "WHERE a.attnum > 0 AND NOT a.attisdropped AND t.relname = "
+                    + ph
+                    + " AND s.nspname = "
+                    + ph
+                    + " ORDER BY a.attnum;"
+                )
+                columns = dbconnection.execute_and_fetchall(
+                    columns_sql, (tablename, dbconnection.schemas())
+                )
 
-    if dbconnection_created:
-        dbconnection.closedb()
-
-    return columns
+            columns = [tuple(column) for column in columns]
+        return columns
 
 
 def get_foreign_keys(
@@ -1009,68 +977,59 @@ def get_foreign_keys(
     and
     https://stackoverflow.com/questions/39379939/how-to-access-information-schema-foreign-key-constraints-with-read-only-user-in
     """
-    if not isinstance(dbconnection, DbConnectionManager):
-        dbconnection = DbConnectionManager()
-        dbconnection_created = True
-    else:
-        dbconnection_created = False
+    with use_or_create_connection(dbconnection) as dbconnection:
+        foreign_keys = {}
+        if dbconnection.dbtype == "spatialite":
+            pragma_sql = dbconnection.sql_ident("PRAGMA foreign_key_list({t})", t=table)
+            result_list = dbconnection.execute_and_fetchall(pragma_sql)
+            for row in result_list:
+                foreign_keys.setdefault(row[2], []).append((row[3], row[4]))
+        else:
+            # Only works as administrator in postgresql
+            '''
+            sql = """
+                    SELECT
+                        tc.constraint_name, tc.table_name, kcu.column_name,
+                        ccu.table_name AS foreign_table_name,
+                        ccu.column_name AS foreign_column_name
+                    FROM
+                        information_schema.table_constraints AS tc
+                    JOIN information_schema.key_column_usage AS kcu
+                      ON tc.constraint_name = kcu.constraint_name
+                    JOIN information_schema.constraint_column_usage AS ccu
+                      ON ccu.constraint_name = tc.constraint_name
+                    WHERE constraint_type = 'FOREIGN KEY' AND tc.table_name='%s';""" % table
+            '''
 
-    foreign_keys = {}
-    if dbconnection.dbtype == "spatialite":
-        pragma_sql = dbconnection.sql_ident("PRAGMA foreign_key_list({t})", t=table)
-        result_list = dbconnection.execute_and_fetchall(pragma_sql)
-        for row in result_list:
-            foreign_keys.setdefault(row[2], []).append((row[3], row[4]))
-    else:
-        # Only works as administrator in postgresql
-        '''
-        sql = """
-                SELECT
-                    tc.constraint_name, tc.table_name, kcu.column_name,
-                    ccu.table_name AS foreign_table_name,
-                    ccu.column_name AS foreign_column_name
-                FROM
-                    information_schema.table_constraints AS tc
-                JOIN information_schema.key_column_usage AS kcu
-                  ON tc.constraint_name = kcu.constraint_name
-                JOIN information_schema.constraint_column_usage AS ccu
-                  ON ccu.constraint_name = tc.constraint_name
-                WHERE constraint_type = 'FOREIGN KEY' AND tc.table_name='%s';""" % table
-        '''
-
-        # Works for non-administrators also!
-        sql = """
-                SELECT 
-                  conrelid::regclass AS table_from,
-                  conname,
-                  pg_get_constraintdef(c.oid) AS cdef 
-                FROM pg_constraint c 
-                JOIN pg_namespace n 
-                  ON n.oid = c.connamespace 
-                WHERE contype IN ('f') 
-                AND n.nspname = '%s' 
-                AND conrelid::regclass::text = '%s'
-                ORDER BY conrelid::regclass::text, contype DESC;
-                """ % (
-            dbconnection.schema,
-            table,
-        )
-
-        result_list = dbconnection.execute_and_fetchall(sql)
-        for row in result_list:
-            info = row[2]
-            m = re.search(
-                r"FOREIGN KEY \(([a-zA-ZåäöÅÄÖ0-9\-\_]+)\) REFERENCES ([a-zA-ZåäöÅÄÖ0-9\-\_\.]+)\(([a-zA-ZåäöÅÄÖ0-9\-\_]+)\)",
-                info,
+            # Works for non-administrators also!
+            sql = """
+                    SELECT 
+                      conrelid::regclass AS table_from,
+                      conname,
+                      pg_get_constraintdef(c.oid) AS cdef 
+                    FROM pg_constraint c 
+                    JOIN pg_namespace n 
+                      ON n.oid = c.connamespace 
+                    WHERE contype IN ('f') 
+                    AND n.nspname = '%s' 
+                    AND conrelid::regclass::text = '%s'
+                    ORDER BY conrelid::regclass::text, contype DESC;
+                    """ % (
+                dbconnection.schema,
+                table,
             )
-            res = m.groups()
-            if res:
-                foreign_keys.setdefault(res[1], []).append((res[0], res[2]))
 
-    if dbconnection_created:
-        dbconnection.closedb()
-
-    return foreign_keys
+            result_list = dbconnection.execute_and_fetchall(sql)
+            for row in result_list:
+                info = row[2]
+                m = re.search(
+                    r"FOREIGN KEY \(([a-zA-ZåäöÅÄÖ0-9\-\_]+)\) REFERENCES ([a-zA-ZåäöÅÄÖ0-9\-\_\.]+)\(([a-zA-ZåäöÅÄÖ0-9\-\_]+)\)",
+                    info,
+                )
+                res = m.groups()
+                if res:
+                    foreign_keys.setdefault(res[1], []).append((res[0], res[2]))
+        return foreign_keys
 
 
 def sqlite_internal_tables(as_tuple: bool = False) -> str:
@@ -1140,26 +1099,17 @@ def get_sql_result_as_dict(
     :param dbconnection:
     :return: A dict with the first column as key and the rest in a tuple as value
     """
-    if not isinstance(dbconnection, DbConnectionManager):
-        dbconnection = DbConnectionManager()
-        dbconnection_created = True
-    else:
-        dbconnection_created = False
+    with use_or_create_connection(dbconnection) as dbconnection:
+        connection_ok, result_list = sql_load_fr_db(
+            sql, dbconnection=dbconnection, execute_args=execute_args
+        )
+        if not connection_ok:
+            return False, OrderedDict()
 
-    connection_ok, result_list = sql_load_fr_db(
-        sql, dbconnection=dbconnection, execute_args=execute_args
-    )
-    if not connection_ok:
-        return False, OrderedDict()
-
-    result_dict = OrderedDict()
-    for res in result_list:
-        result_dict.setdefault(res[0], []).append(tuple(res[1:]))
-
-    if dbconnection_created:
-        dbconnection.closedb()
-
-    return True, result_dict
+        result_dict = OrderedDict()
+        for res in result_list:
+            result_dict.setdefault(res[0], []).append(tuple(res[1:]))
+        return True, result_dict
 
 
 def verify_table_exists(
@@ -1175,10 +1125,10 @@ def change_cast_type_for_geometry_columns(
 ) -> Dict[str, str]:
     if dbconnection.dbtype == "spatialite":
         newtype = "BLOB"
-        geometry_columns_types = get_geometry_types(dbconnection, tablename)
+        geometry_columns_types = get_geometry_types(tablename, dbconnection=dbconnection)
     else:
         newtype = "geometry"
-        geometry_columns_types = get_geometry_types(dbconnection, tablename)
+        geometry_columns_types = get_geometry_types(tablename, dbconnection=dbconnection)
 
     column_headers_types = dict(
         [
@@ -1194,24 +1144,25 @@ def change_cast_type_for_geometry_columns(
 
 
 def get_geometry_types(
-    dbconnection: DbConnectionManager, tablename: str
+    tablename: str, dbconnection: DbConnectionManager,
 ) -> OrderedDict:
-    if dbconnection.dbtype == "spatialite":
-        sql = """SELECT f_geometry_column, geometry_type FROM geometry_columns WHERE f_table_name = ?"""
-        execute_args = (tablename,)
-    else:
-        sql = """SELECT f_geometry_column, type
-                FROM geometry_columns
-                WHERE f_table_schema = '%s'
-                AND f_table_name = '%s';""" % (
-            dbconnection.schema,
-            tablename,
-        )
-        execute_args = None
-    result = get_sql_result_as_dict(
-        sql, dbconnection=dbconnection, execute_args=execute_args
-    )[1]
-    return result
+    with use_or_create_connection(dbconnection) as dbconnection:
+        if dbconnection.dbtype == "spatialite":
+            sql = """SELECT f_geometry_column, geometry_type FROM geometry_columns WHERE f_table_name = ?"""
+            execute_args = (tablename,)
+        else:
+            sql = """SELECT f_geometry_column, type
+                    FROM geometry_columns
+                    WHERE f_table_schema = '%s'
+                    AND f_table_name = '%s';""" % (
+                dbconnection.schema,
+                tablename,
+            )
+            execute_args = None
+        result = get_sql_result_as_dict(
+            sql, dbconnection=dbconnection, execute_args=execute_args
+        )[1]
+        return result
 
 
 def delete_duplicate_values(dbconnection, tablename, primary_keys):
@@ -1228,20 +1179,12 @@ def delete_duplicate_values(dbconnection, tablename, primary_keys):
 def activate_foreign_keys(
     activated: bool = True, dbconnection: Optional[DbConnectionManager] = None
 ):
-    if not isinstance(dbconnection, DbConnectionManager):
-        dbconnection = DbConnectionManager()
-        dbconnection_created = True
-    else:
-        dbconnection_created = False
-
-    if dbconnection.dbtype == "spatialite":
-        if activated:
-            dbconnection.execute("PRAGMA foreign_keys = ON")
-        else:
-            dbconnection.execute("PRAGMA foreign_keys = OFF")
-
-    if dbconnection_created:
-        dbconnection.closedb()
+    with use_or_create_connection(dbconnection) as dbconnection:
+        if dbconnection.dbtype == "spatialite":
+            if activated:
+                dbconnection.execute("PRAGMA foreign_keys = ON")
+            else:
+                dbconnection.execute("PRAGMA foreign_keys = OFF")
 
 
 def add_insert_or_ignore_to_sql(sql: str, dbconnection: DbConnectionManager) -> str:
@@ -1257,19 +1200,10 @@ class DatabaseLockedError(Exception):
 
 
 def placeholder_sign(dbconnection: Optional[DbConnectionManager] = None) -> str:
-    if not isinstance(dbconnection, DbConnectionManager):
-        dbconnection = DbConnectionManager()
-        dbconnection_created = True
-    else:
-        dbconnection_created = False
-
-    signs = {"spatialite": "?", "postgis": "%s"}
-    sign = signs.get(dbconnection.dbtype, "%s")
-
-    if dbconnection_created:
-        dbconnection.closedb()
-
-    return sign
+    with use_or_create_connection(dbconnection) as dbconnection:
+        signs = {"spatialite": "?", "postgis": "%s"}
+        sign = signs.get(dbconnection.dbtype, "%s")
+        return sign
 
 
 class UnsafeIdentifierError(ValueError):
@@ -1378,124 +1312,89 @@ def get_dbtype(dbtype):
 
 
 def cast_date_time_as_epoch(dbconnection=None, date_time=None):
-    if not isinstance(dbconnection, DbConnectionManager):
-        dbconnection = DbConnectionManager()
-        dbconnection_created = True
-    else:
-        dbconnection_created = False
-
-    if date_time is None:
-        date_time = "date_time"
-    else:
-        date_time = f"'{date_time}'"
-    if dbconnection.dbtype == "spatialite":
-        sql = f"""CAST(strftime('%s', {date_time}) AS NUMERIC)"""
-    else:
-        sql = f"""extract(epoch from {date_time}::timestamp)"""
-
-    if dbconnection_created:
-        dbconnection.closedb()
-
-    return sql
+    with use_or_create_connection(dbconnection) as dbconnection:
+        if date_time is None:
+            date_time = "date_time"
+        else:
+            date_time = f"'{date_time}'"
+        if dbconnection.dbtype == "spatialite":
+            sql = f"""CAST(strftime('%s', {date_time}) AS NUMERIC)"""
+        else:
+            sql = f"""extract(epoch from {date_time}::timestamp)"""
+        return sql
 
 
 def backup_db(dbconnection=None):
-    if not isinstance(dbconnection, DbConnectionManager):
-        dbconnection = DbConnectionManager()
-        dbconnection_created = True
-    else:
-        dbconnection_created = False
-
-    if dbconnection.dbtype == "spatialite":
-        curs = dbconnection.cursor
-        curs.execute("begin immediate")
-        bkupname = (
-            dbconnection.dbpath
-            + datetime.datetime.now().strftime("%Y%m%dT%H%M")
-            + ".zip"
-        )
-        zf = zipfile.ZipFile(bkupname, mode="w")
-        zf.write(
-            dbconnection.dbpath, compress_type=compression
-        )  # compression will depend on if zlib is found or not
-        zf.close()
-        dbconnection.conn.rollback()
-        MessagebarAndLog.info(
-            bar_msg=ru(
-                QCoreApplication.translate(
-                    "backup_db", "Database backup was written to %s "
-                )
+    with use_or_create_connection(dbconnection) as dbconnection:
+        if dbconnection.dbtype == "spatialite":
+            curs = dbconnection.cursor
+            curs.execute("begin immediate")
+            bkupname = (
+                dbconnection.dbpath
+                + datetime.datetime.now().strftime("%Y%m%dT%H%M")
+                + ".zip"
             )
-            % bkupname,
-            duration=15,
-        )
-    else:
-        MessagebarAndLog.info(
-            bar_msg=ru(
-                QCoreApplication.translate(
-                    "backup_db", "Backup of PostGIS database not supported yet!"
+            zf = zipfile.ZipFile(bkupname, mode="w")
+            zf.write(
+                dbconnection.dbpath, compress_type=compression
+            )  # compression will depend on if zlib is found or not
+            zf.close()
+            dbconnection.conn.rollback()
+            MessagebarAndLog.info(
+                bar_msg=ru(
+                    QCoreApplication.translate(
+                        "backup_db", "Database backup was written to %s "
+                    )
                 )
-            ),
-            duration=15,
-        )
-
-    if dbconnection_created:
-        dbconnection.closedb()
+                % bkupname,
+                duration=15,
+            )
+        else:
+            MessagebarAndLog.info(
+                bar_msg=ru(
+                    QCoreApplication.translate(
+                        "backup_db", "Backup of PostGIS database not supported yet!"
+                    )
+                ),
+                duration=15,
+            )
 
 
 def cast_null(
     data_type: str, dbconnection: Optional[DbConnectionManager] = None
 ) -> str:
-    if not isinstance(dbconnection, DbConnectionManager):
-        dbconnection = DbConnectionManager()
-        dbconnection_created = True
-    else:
-        dbconnection_created = False
-
-    if dbconnection.dbtype == "spatialite":
-        sql = "NULL"
-    else:
-        # Types allowed for NULL cast in PostgreSQL (used by general_import etc.)
-        allowed_types = (
-            set(postgresql_numeric_data_types())
-            | set(postgresql_cast_null_types())
-        )
-        if data_type not in allowed_types:
-            raise UnsafeIdentifierError(
-                f"cast_null: data_type {data_type!r} not in allowed list"
+    with use_or_create_connection(dbconnection) as dbconnection:
+        if dbconnection.dbtype == "spatialite":
+            sql = "NULL"
+        else:
+            # Types allowed for NULL cast in PostgreSQL (used by general_import etc.)
+            allowed_types = (
+                set(postgresql_numeric_data_types())
+                | set(postgresql_cast_null_types())
             )
-        # In PostgreSQL, type names in :: casts must be unquoted (built-in types).
-        type_for_cast = data_type
-        sql = "NULL::" + type_for_cast
-
-    if dbconnection_created:
-        dbconnection.closedb()
-
-    return sql
+            if data_type not in allowed_types:
+                raise UnsafeIdentifierError(
+                    f"cast_null: data_type {data_type!r} not in allowed list"
+                )
+            # In PostgreSQL, type names in :: casts must be unquoted (built-in types).
+            type_for_cast = data_type
+            sql = "NULL::" + type_for_cast
+        return sql
 
 
 def test_not_null_and_not_empty_string(table, column, dbconnection=None):
-    if not isinstance(dbconnection, DbConnectionManager):
-        dbconnection = DbConnectionManager()
-        dbconnection_created = True
-    else:
-        dbconnection_created = False
-
-    col_ident = ident(dbconnection, column)
-    if dbconnection.dbtype == "spatialite":
-        sql = f"{col_ident} IS NOT NULL AND {col_ident} !='' "
-    else:
-        table_info = [col for col in get_table_info(table, dbconnection) if col[1] == column][0]
-        data_type = table_info[2]
-        if data_type in postgresql_numeric_data_types():
-            sql = f"{col_ident} IS NOT NULL"
-        else:
+    with use_or_create_connection(dbconnection) as dbconnection:
+        col_ident = ident(dbconnection, column)
+        if dbconnection.dbtype == "spatialite":
             sql = f"{col_ident} IS NOT NULL AND {col_ident} !='' "
-
-    if dbconnection_created:
-        dbconnection.closedb()
-
-    return sql
+        else:
+            table_info = [col for col in get_table_info(table, dbconnection) if col[1] == column][0]
+            data_type = table_info[2]
+            if data_type in postgresql_numeric_data_types():
+                sql = f"{col_ident} IS NOT NULL"
+            else:
+                sql = f"{col_ident} IS NOT NULL AND {col_ident} !='' "
+        return sql
 
 
 def postgresql_numeric_data_types():
@@ -1536,72 +1435,45 @@ def sqlite_numeric_data_types():
 
 
 def get_srid_name(srid: int, dbconnection: None = None) -> str:
-    if not isinstance(dbconnection, DbConnectionManager):
-        dbconnection = DbConnectionManager()
-        dbconnection_created = True
-    else:
-        dbconnection_created = False
-
-    if dbconnection.dbtype == "spatialite":
-        ref_sys_name = dbconnection.execute_and_fetchall(
-            "SELECT ref_sys_name FROM spatial_ref_sys WHERE srid = ?",
-            (srid,),
-        )[0][0]
-    else:
-        try:
-            ph = dbconnection.placeholder_sign()
+    with use_or_create_connection(dbconnection) as dbconnection:
+        if dbconnection.dbtype == "spatialite":
             ref_sys_name = dbconnection.execute_and_fetchall(
-                f"SELECT split_part(srtext, '\"', 2) AS \"name\" FROM spatial_ref_sys WHERE srid = {ph};",
+                "SELECT ref_sys_name FROM spatial_ref_sys WHERE srid = ?",
                 (srid,),
             )[0][0]
-        except Exception:
-            MessagebarAndLog.info(log_msg=traceback.format_exc())
-            ref_sys_name = ""
-
-    if dbconnection_created:
-        dbconnection.closedb()
-
-    return ref_sys_name
+        else:
+            try:
+                ph = dbconnection.placeholder_sign()
+                ref_sys_name = dbconnection.execute_and_fetchall(
+                    f"SELECT split_part(srtext, '\"', 2) AS \"name\" FROM spatial_ref_sys WHERE srid = {ph};",
+                    (srid,),
+                )[0][0]
+            except Exception:
+                MessagebarAndLog.info(log_msg=traceback.format_exc())
+                ref_sys_name = ""
+        return ref_sys_name
 
 
 def test_if_numeric(column, dbconnection=None):
-    if not isinstance(dbconnection, DbConnectionManager):
-        dbconnection = DbConnectionManager()
-        dbconnection_created = True
-    else:
-        dbconnection_created = False
-
-    col_ident = ident(dbconnection, column)
-    if dbconnection.dbtype == "spatialite":
-        sql = f"(typeof({col_ident})=typeof(0.01) OR typeof({col_ident})=typeof(1))"
-    else:
-        type_list = ", ".join(
-            "'" + dt + "'" for dt in postgresql_numeric_data_types()
-        )
-        sql = f"pg_typeof({col_ident}) in ({type_list})"
-
-    if dbconnection_created:
-        dbconnection.closedb()
-
-    return sql
+    with use_or_create_connection(dbconnection) as dbconnection:
+        col_ident = ident(dbconnection, column)
+        if dbconnection.dbtype == "spatialite":
+            sql = f"(typeof({col_ident})=typeof(0.01) OR typeof({col_ident})=typeof(1))"
+        else:
+            type_list = ", ".join(
+                "'" + dt + "'" for dt in postgresql_numeric_data_types()
+            )
+            sql = f"pg_typeof({col_ident}) in ({type_list})"
+        return sql
 
 
 def numeric_datatypes(dbconnection=None):
-    if not isinstance(dbconnection, DbConnectionManager):
-        dbconnection = DbConnectionManager()
-        dbconnection_created = True
-    else:
-        dbconnection_created = False
-
-    if dbconnection.dbtype == "spatialite":
-        res = sqlite_numeric_data_types()
-    else:
-        res = postgresql_numeric_data_types()
-
-    if dbconnection_created:
-        dbconnection.closedb()
-
-    return res
+    with use_or_create_connection(dbconnection) as dbconnection:
+        if dbconnection.dbtype == "spatialite":
+            res = sqlite_numeric_data_types()
+        else:
+            res = postgresql_numeric_data_types()
+        return res
 
 
 def calculate_median_value(
@@ -1618,71 +1490,32 @@ def calculate_median_value(
     :param dbconnection:
     :return:
     """
-    if not isinstance(dbconnection, DbConnectionManager):
-        dbconnection = DbConnectionManager()
-        dbconnection_created = True
-    else:
-        dbconnection_created = False
+    with use_or_create_connection(dbconnection) as dbconnection:
+        if dbconnection.dbtype == "spatialite":
 
-    if dbconnection.dbtype == "spatialite":
-
-        ph = dbconnection.placeholder_sign()
-        col_ident = dbconnection.ident(column)
-        table_ident = dbconnection.ident(table)
-        sql = (
-            f"SELECT AVG({col_ident}) "
-            f"FROM (SELECT {col_ident} "
-            f"      FROM {table_ident} "
-            f"      WHERE obsid = {ph} "
-            f"      ORDER BY {col_ident} "
-            f"      LIMIT 2 - (SELECT COUNT(*) FROM {table_ident} WHERE obsid = {ph}) % 2 "
-            f"      OFFSET (SELECT (COUNT(*) - 1) / 2 FROM {table_ident} WHERE obsid = {ph}))"
-        )
-        execute_args = (obsid, obsid, obsid)
-
-        # median value old variant
-        # sql = r"""SELECT x.obsid, x.""" + column + r""" as median from (select obsid, """ + column + r""" FROM %s WHERE obsid = '"""%table
-        # sql += obsid
-        # sql += r"""' and (typeof(""" + column + r""")=typeof(0.01) or typeof(""" + column + r""")=typeof(1))) as x, (select obsid, """ + column + r""" FROM %s WHERE obsid = '"""%table
-        # sql += obsid
-        # sql += r"""' and (typeof(""" + column + r""")=typeof(0.01) or typeof(""" + column + r""")=typeof(1))) as y GROUP BY x.""" + column + r""" HAVING SUM(CASE WHEN y.""" + column + r""" <= x.""" + column + r""" THEN 1 ELSE 0 END)>=(COUNT(*)+1)/2 AND SUM(CASE WHEN y.""" + column + r""" >= x.""" + column + r""" THEN 1 ELSE 0 END)>=(COUNT(*)/2)+1"""
-
-        connection_ok, median_value = sql_load_fr_db(
-            sql, dbconnection=dbconnection, execute_args=execute_args
-        )
-        try:
-            median_value = median_value[0][0]
-        except IndexError:
-            MessagebarAndLog.warning(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "calculate_median_value",
-                        "Median calculation error, see log message panel",
-                    )
-                ),
-                log_msg=ru(
-                    QCoreApplication.translate(
-                        "calculate_median_value", "Sql failed: %s"
-                    )
-                )
-                % sql,
-            )
-            median_value = None
-
-    else:
-        ph = dbconnection.placeholder_sign()
-        col_ident = dbconnection.ident(column)
-        table_ident = dbconnection.ident(table)
-        if sql_load_fr_db(
-            f"SELECT {col_ident} FROM {table_ident} WHERE obsid = {ph} AND {col_ident} IS NOT NULL LIMIT 1",
-            dbconnection,
-            execute_args=(obsid,),
-        )[1]:
+            ph = dbconnection.placeholder_sign()
+            col_ident = dbconnection.ident(column)
+            table_ident = dbconnection.ident(table)
             sql = (
-                f"SELECT median({col_ident}) FROM {table_ident} t1 WHERE obsid = {ph};"
+                f"SELECT AVG({col_ident}) "
+                f"FROM (SELECT {col_ident} "
+                f"      FROM {table_ident} "
+                f"      WHERE obsid = {ph} "
+                f"      ORDER BY {col_ident} "
+                f"      LIMIT 2 - (SELECT COUNT(*) FROM {table_ident} WHERE obsid = {ph}) % 2 "
+                f"      OFFSET (SELECT (COUNT(*) - 1) / 2 FROM {table_ident} WHERE obsid = {ph}))"
             )
+            execute_args = (obsid, obsid, obsid)
+
+            # median value old variant
+            # sql = r"""SELECT x.obsid, x.""" + column + r""" as median from (select obsid, """ + column + r""" FROM %s WHERE obsid = '"""%table
+            # sql += obsid
+            # sql += r"""' and (typeof(""" + column + r""")=typeof(0.01) or typeof(""" + column + r""")=typeof(1))) as x, (select obsid, """ + column + r""" FROM %s WHERE obsid = '"""%table
+            # sql += obsid
+            # sql += r"""' and (typeof(""" + column + r""")=typeof(0.01) or typeof(""" + column + r""")=typeof(1))) as y GROUP BY x.""" + column + r""" HAVING SUM(CASE WHEN y.""" + column + r""" <= x.""" + column + r""" THEN 1 ELSE 0 END)>=(COUNT(*)+1)/2 AND SUM(CASE WHEN y.""" + column + r""" >= x.""" + column + r""" THEN 1 ELSE 0 END)>=(COUNT(*)/2)+1"""
+
             connection_ok, median_value = sql_load_fr_db(
-                sql, dbconnection, execute_args=(obsid,)
+                sql, dbconnection=dbconnection, execute_args=execute_args
             )
             try:
                 median_value = median_value[0][0]
@@ -1702,31 +1535,52 @@ def calculate_median_value(
                     % sql,
                 )
                 median_value = None
+
         else:
-            median_value = None
-
-    if dbconnection_created:
-        dbconnection.closedb()
-
-    return median_value
+            ph = dbconnection.placeholder_sign()
+            col_ident = dbconnection.ident(column)
+            table_ident = dbconnection.ident(table)
+            if sql_load_fr_db(
+                f"SELECT {col_ident} FROM {table_ident} WHERE obsid = {ph} AND {col_ident} IS NOT NULL LIMIT 1",
+                dbconnection,
+                execute_args=(obsid,),
+            )[1]:
+                sql = (
+                    f"SELECT median({col_ident}) FROM {table_ident} t1 WHERE obsid = {ph};"
+                )
+                connection_ok, median_value = sql_load_fr_db(
+                    sql, dbconnection, execute_args=(obsid,)
+                )
+                try:
+                    median_value = median_value[0][0]
+                except IndexError:
+                    MessagebarAndLog.warning(
+                        bar_msg=ru(
+                            QCoreApplication.translate(
+                                "calculate_median_value",
+                                "Median calculation error, see log message panel",
+                            )
+                        ),
+                        log_msg=ru(
+                            QCoreApplication.translate(
+                                "calculate_median_value", "Sql failed: %s"
+                            )
+                        )
+                        % sql,
+                    )
+                    median_value = None
+            else:
+                median_value = None
+        return median_value
 
 
 def rowid_string(dbconnection=None):
-    if not isinstance(dbconnection, DbConnectionManager):
-        dbconnection = DbConnectionManager()
-        dbconnection_created = True
-    else:
-        dbconnection_created = False
-
-    if dbconnection.dbtype == "spatialite":
-        res = "ROWID"
-    else:
-        res = "ctid"
-
-    if dbconnection_created:
-        dbconnection.closedb()
-
-    return res
+    with use_or_create_connection(dbconnection) as dbconnection:
+        if dbconnection.dbtype == "spatialite":
+            res = "ROWID"
+        else:
+            res = "ctid"
+        return res
 
 
 def delete_srids(
@@ -1847,18 +1701,17 @@ def create_dict_from_db_2_cols(params):  # params are (col1=keys,col2=values,db-
     return True, adict
 
 
-def get_all_obsids(table: str = "obs_points"):
+def get_all_obsids(table: str = "obs_points", dbconnection=None):
     """Returns all obsids from the given table (default obs_points).
     :return: All obsids from the table
     """
-    obsids = []
-    dbconnection = DbConnectionManager()
-    sql = dbconnection.sql_ident("SELECT DISTINCT obsid FROM {t} ORDER BY obsid", t=table)
-    connection_ok, result = sql_load_fr_db(sql, dbconnection=dbconnection)
-    dbconnection.closedb()
-    if connection_ok:
-        obsids = [row[0] for row in result]
-    return obsids
+    with use_or_create_connection(dbconnection) as dbconnection:
+        obsids = []
+        sql = dbconnection.sql_ident("SELECT DISTINCT obsid FROM {t} ORDER BY obsid", t=table)
+        connection_ok, result = sql_load_fr_db(sql, dbconnection=dbconnection)
+        if connection_ok:
+            obsids = [row[0] for row in result]
+        return obsids
 
 
 def get_latlon_for_all_obsids(dbconnection=None):
@@ -1866,62 +1719,42 @@ def get_latlon_for_all_obsids(dbconnection=None):
     Returns lat, lon for all obsids
     :return: A dict of tuples with like {'obsid': (lat, lon)} for all obsids in obs_points
     """
-    if not isinstance(dbconnection, DbConnectionManager):
-        dbconnection = DbConnectionManager()
-        dbconnection_created = True
-    else:
-        dbconnection_created = False
-
-    if dbconnection.dbtype == "spatialite":
-        sql = "SELECT obsid, Y(Transform(geometry, 4326)) as lat, X(Transform(geometry, 4326)) as lon from obs_points"
-    else:
-        sql = "SELECT obsid, ST_Y(ST_Transform(geometry, 4326)) as lat, ST_X(ST_Transform(geometry, 4326)) as lon from obs_points"
-    try:
+    with use_or_create_connection(dbconnection) as dbconnection:
+        if dbconnection.dbtype == "spatialite":
+            sql = "SELECT obsid, Y(Transform(geometry, 4326)) as lat, X(Transform(geometry, 4326)) as lon from obs_points"
+        else:
+            sql = "SELECT obsid, ST_Y(ST_Transform(geometry, 4326)) as lat, ST_X(ST_Transform(geometry, 4326)) as lon from obs_points"
         latlon_dict = get_sql_result_as_dict(sql, dbconnection=dbconnection)[1]
-    except Exception:
-        raise
-    finally:
-        if dbconnection_created:
-            dbconnection.closedb()
-
-    latlon_dict = dict([(obsid, lat_lon[0]) for obsid, lat_lon in latlon_dict.items()])
-    return latlon_dict
+        latlon_dict = dict([(obsid, lat_lon[0]) for obsid, lat_lon in latlon_dict.items()])
+        return latlon_dict
 
 
 def get_timezone_from_db(tablename: str, dbconnection: None = None) -> Optional[str]:
-    timezone = None
-    if not isinstance(dbconnection, DbConnectionManager):
-        dbconnection = DbConnectionManager()
-        dbconnection_created = True
-    else:
-        dbconnection_created = False
-
-    about_db_cols = tables_columns("about_db", dbconnection)["about_db"]
-    if "tablename" in about_db_cols:
-        res = dbconnection.execute_and_fetchall(
-            f"SELECT description FROM about_db WHERE tablename = {dbconnection.placeholder_sign()} AND columnname = 'date_time' LIMIT 1;",
-            (tablename,),
-        )
-    else:
-        res = dbconnection.execute_and_fetchall(
-            f'SELECT description FROM about_db WHERE "table" = {dbconnection.placeholder_sign()} AND "column" = \'date_time\' LIMIT 1;',
-            (tablename,),
-        )
-
-    if dbconnection_created:
-        dbconnection.closedb()
-
-    if res:
-        pattern = r"[(]*[\-a-zA-Z0-9\ \t]*(gmt|utc)([\+\-]*)([0-9]+)([\:]*[0-9]*)\)[)]*"
-        m = re.search(pattern, res[0][0], re.IGNORECASE)
-
-        if m is not None:
-            timezone = m.group(0).lstrip("(").rstrip(")")
+    with use_or_create_connection(dbconnection) as dbconnection:
+        timezone = None
+        about_db_cols = tables_columns("about_db", dbconnection)["about_db"]
+        if "tablename" in about_db_cols:
+            res = dbconnection.execute_and_fetchall(
+                f"SELECT description FROM about_db WHERE tablename = {dbconnection.placeholder_sign()} AND columnname = 'date_time' LIMIT 1;",
+                (tablename,),
+            )
         else:
-            m = re.search(r"\([a-zA-Z0-9åäöÅÄÖ+-/]+\)", res[0][0], re.IGNORECASE)
+            res = dbconnection.execute_and_fetchall(
+                f'SELECT description FROM about_db WHERE "table" = {dbconnection.placeholder_sign()} AND "column" = \'date_time\' LIMIT 1;',
+                (tablename,),
+            )
+
+        if res:
+            pattern = r"[(]*[\-a-zA-Z0-9\ \t]*(gmt|utc)([\+\-]*)([0-9]+)([\:]*[0-9]*)\)[)]*"
+            m = re.search(pattern, res[0][0], re.IGNORECASE)
+
             if m is not None:
                 timezone = m.group(0).lstrip("(").rstrip(")")
-    return timezone
+            else:
+                m = re.search(r"\([a-zA-Z0-9åäöÅÄÖ+-/]+\)", res[0][0], re.IGNORECASE)
+                if m is not None:
+                    timezone = m.group(0).lstrip("(").rstrip(")")
+        return timezone
 
 
 def export_bytea_as_bytes(dbconnection: DbConnectionManager):

@@ -280,7 +280,7 @@ class ExportData:
 
         if tname == "obs_points":
             geom_column = list(
-                db_utils.get_geometry_types(self.source_dbconnection, tname).keys()
+                db_utils.get_geometry_types(tname, dbconnection=self.source_dbconnection).keys()
             )[0]
             source_data = [
                 (
@@ -319,7 +319,7 @@ class ExportData:
         else:
             astext = "ST_AsBinary({})"
 
-        geom_columns = list(db_utils.get_geometry_types(dbconnection, tname).keys())
+        geom_columns = list(db_utils.get_geometry_types(tname, dbconnection=dbconnection).keys())
         # Transform to 4326 just to be sure that both the source and dest database has support for the srid.
         select_columns = [
             (

@@ -1,0 +1,12 @@
+---
+alwaysApply: true
+---
+
+# When To Trigger
+
+- When creating, modifying or using sql queries.
+
+# Safe sql rule
+
+- NEVER make sql-queries using python string concatenation. Parameters and table and column identifiers must be implemented in an sql-injection safe way.
+- Use existing implementation for creating safe sql-queries from the module tools/utils/db_utils.py

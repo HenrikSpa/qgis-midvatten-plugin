@@ -328,7 +328,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                     )
 
             # Check if current table has geometry:
-            geom_columns = db_utils.get_geometry_types(dbconnection, dest_table)
+            geom_columns = db_utils.get_geometry_types(dest_table, dbconnection=dbconnection)
             sourcecols = []
             for colname in sorted(existing_columns_in_dest_table):
                 null_replacement = db_utils.cast_null(

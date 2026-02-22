@@ -1,0 +1,21 @@
+THIS IS ONLY AN EXAMPLE AND SHOULD NOT BE USED BY AN AGENT
+
+This is an example of a request I made for adding more tests.
+The request worked very well:
+
+"I want you to make a plan to write more tests for tools/customplot.py, class CustomPlot.
+
+Add more tools in test/test_customplot_spatialite.py. Check the other tests in that module for inspiration.
+
+I want you to create tests for widgets that the user of the CustomPlot can click on (buttons), select values from, (list and combobox), check (checkbox) and similar things.
+
+Look for widgets in ui/customplotdialog.ui that has not been used in the other tests.
+
+The effect of any buttons can be found by accessing the figure lines (of type matplotlib.lines.Line2D) as:
+
+for line in customplot.axes.get_lines():
+    data = line.get_xy_data()
+    marker = line.get_marker()
+    linestyle = line.get_linestyle()
+
+Make the plan."

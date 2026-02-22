@@ -1,0 +1,320 @@
+"""
+PostgreSQL (PostGIS) backend. Connection via psycopg2; connector logic merged in.
+"""
+
+import os
+import traceback
+from collections.abc import Sequence
+from typing import Any, Optional, Union
+
+import psycopg2
+import psycopg2.extensions
+import psycopg2.sql
+import qgis.core
+from qgis.PyQt.QtCore import QCoreApplication, QFile
+from qgis.core import QgsCredentials, QgsDataSourceUri
+
+from midvatten.tools.utils.common_utils import (
+    MessagebarAndLog,
+    returnunicode as ru,
+    UserInterruptError,
+    sql_failed_msg,
+)
+from midvatten.tools.utils.db.backends.base import Backend
+from midvatten.tools.utils.db.settings import get_postgis_connections
+
+
+def postgis_internal_tables(as_tuple: bool = False) -> str:
+    import ast
+
+    astring = """('geography_columns',
+               'geometry_columns',
+               'spatial_ref_sys',
+               'raster_columns',
+               'raster_overviews')"""
+    if as_tuple:
+        return ast.literal_eval(astring)
+    return astring
+
+
+def _clear_ssl_temp_certs_if_any(connection_info: str) -> None:
+    expanded_uri = QgsDataSourceUri(connection_info)
+
+    def remove_cert(cert_file: str) -> None:
+        cert_file = cert_file.replace("'", "")
+        file = QFile(cert_file)
+        if not file.setPermissions(QFile.Permission.WriteOwner):
+            raise Exception(
+                f"Cannot change permissions on {file.fileName()}: error code: {file.error()}"
+            )
+        if not file.remove():
+            raise Exception(
+                f"Cannot remove {file.fileName()}: error code: {file.error()}"
+            )
+
+    for param in ("sslcert", "sslkey", "sslrootcert"):
+        path = expanded_uri.param(param)
+        if path:
+            remove_cert(path)
+
+
+def _log_execute_error(sql: str, args: Any, e: Exception) -> None:
+    if args is None:
+        textstring = ru(
+            QCoreApplication.translate(
+                "sql_load_fr_db",
+                """DB error!\n SQL causing this error:%s\nMsg:\n%s""",
+            )
+        ) % (ru(sql), ru(str(e)))
+    else:
+        textstring = ru(
+            QCoreApplication.translate(
+                "sql_load_fr_db",
+                """DB error!\n SQL causing this error:%s\nusing args %s\nMsg:\n%s""",
+            )
+        ) % (ru(sql), ru(args), ru(str(e)))
+    MessagebarAndLog.warning(bar_msg=sql_failed_msg(), log_msg=textstring)
+
+
+class PostgreSQLBackend(Backend):
+    """
+    PostgreSQL (PostGIS) backend. dbtype is 'postgis' for settings compatibility.
+    Connector logic from PostGisDBConnectorMod merged in.
+    """
+
+    dbtype = "postgis"
+    schema = "public"
+
+    def __init__(self, connection_name: str) -> None:
+        self._connection_name = connection_name
+        self.postgis_settings = get_postgis_connections()[connection_name]
+        self.uri = QgsDataSourceUri()
+        if self.postgis_settings.get("service", "").strip():
+            self.uri.setConnection(
+                aService=self.postgis_settings["service"],
+                aDatabase=self.postgis_settings["database"],
+                aUsername=self.postgis_settings.get("username"),
+                aPassword=self.postgis_settings.get("password"),
+            )
+        else:
+            self.uri.setConnection(
+                self.postgis_settings["host"],
+                self.postgis_settings["port"],
+                self.postgis_settings["database"],
+                self.postgis_settings.get("username"),
+                self.postgis_settings.get("password"),
+            )
+        expanded_conn_info = str(self.uri.connectionInfo(True))
+        username = self.uri.username() or os.environ.get("PGUSER")
+        password = self.uri.password() or os.environ.get("PGPASSWORD")
+        last_error: Optional[Exception] = None
+        try:
+            self._conn = psycopg2.connect(expanded_conn_info)
+        except psycopg2.Error as e:
+            last_error = e
+            err = str(e)
+            conninfo = self.uri.connectionInfo(False)
+            for i in range(3):
+                (ok, username, password) = QgsCredentials.instance().get(
+                    conninfo, username, password, err
+                )
+                if not ok:
+                    raise ConnectionError(e)
+                if username:
+                    self.uri.setUsername(username)
+                if password:
+                    self.uri.setPassword(password)
+                new_expanded_conn_info = self.uri.connectionInfo(True)
+                try:
+                    self._conn = psycopg2.connect(new_expanded_conn_info)
+                    QgsCredentials.instance().put(conninfo, username, password)
+                    last_error = None
+                    break
+                except psycopg2.Error as e:
+                    last_error = e
+                    if i == 2:
+                        raise ConnectionError(e)
+                    err = str(e)
+                finally:
+                    _clear_ssl_temp_certs_if_any(new_expanded_conn_info)
+        finally:
+            _clear_ssl_temp_certs_if_any(expanded_conn_info)
+        if last_error:
+            if "no password supplied" in str(last_error):
+                MessagebarAndLog.warning(
+                    bar_msg=ru(
+                        QCoreApplication.translate(
+                            "DbConnectionManager",
+                            "No password supplied for postgis connection",
+                        )
+                    )
+                )
+                raise UserInterruptError()
+            raise last_error
+        self._conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+        self._cursor = self._conn.cursor()
+
+    @property
+    def conn(self):
+        return self._conn
+
+    @property
+    def cursor(self):
+        return self._cursor
+
+    def execute(self, sql: str, args: Optional[Sequence[Any]] = None) -> None:
+        if args is None:
+            try:
+                self._cursor.execute(sql)
+            except Exception as e:
+                _log_execute_error(sql, None, e)
+                raise
+        else:
+            try:
+                self._cursor.execute(sql, list(args))
+            except Exception as e:
+                _log_execute_error(sql, args, e)
+                raise
+
+    def execute_and_fetchall(
+        self, sql: str, args: Optional[Sequence[Any]] = None
+    ) -> list[Any]:
+        try:
+            if args is not None:
+                self._cursor.execute(sql, args)
+            else:
+                self._cursor.execute(sql)
+        except Exception as e:
+            textstring = ru(
+                QCoreApplication.translate(
+                    "sql_load_fr_db",
+                    """DB error!\n SQL causing this error:%s\nMsg:\n%s""",
+                )
+            ) % (ru(sql), ru(str(e)))
+            MessagebarAndLog.warning(bar_msg=sql_failed_msg(), log_msg=textstring)
+            raise
+        return self._cursor.fetchall()
+
+    def commit(self) -> None:
+        self._conn.commit()
+
+    def closedb(self) -> None:
+        self._conn.close()
+
+    def execute_safe(
+        self,
+        sql: Union[str, psycopg2.sql.Composable],
+        args: Optional[Sequence[Any]] = None,
+    ) -> None:
+        if isinstance(sql, psycopg2.sql.Composable):
+            if args is None:
+                self._cursor.execute(sql)
+            else:
+                self._cursor.execute(sql, list(args))
+        else:
+            if args is None:
+                self._cursor.execute(str(sql))
+            else:
+                self._cursor.execute(str(sql), list(args))
+
+    def placeholder_sign(self) -> str:
+        return "%s"
+
+    def internal_tables(self) -> str:
+        return postgis_internal_tables()
+
+    def get_srid(
+        self, table_name: str, geometry_column: str = "geometry"
+    ) -> Optional[int]:
+        try:
+            self._cursor.execute(
+                "SELECT Find_SRID(%s, %s, %s);",
+                (self.schema, table_name, geometry_column),
+            )
+        except Exception:
+            return None
+        rows = self._cursor.fetchall()
+        if not rows:
+            return None
+        return int(rows[0][0])
+
+    def create_temporary_table_for_import(
+        self,
+        temptable_name: str,
+        fieldnames_types: list[str],
+        geometry_colname_type_srid: Optional[tuple[str, str, int]] = None,
+    ) -> str:
+        if not temptable_name.startswith("temp_"):
+            temptable_name = f"temp_{temptable_name}"
+        self.execute(
+            """CREATE TEMPORARY table %s (%s)"""
+            % (temptable_name, ", ".join(fieldnames_types))
+        )
+        if geometry_colname_type_srid is not None:
+            geom_column, geom_type, srid = geometry_colname_type_srid
+            self.execute(
+                """ALTER TABLE %s ADD COLUMN %s geometry(%s, %s);"""
+                % (temptable_name, geom_column, geom_type, srid)
+            )
+        return temptable_name
+
+    def drop_temporary_table(self, temptable_name: str) -> None:
+        self.execute_safe(self.sql_ident("DROP TABLE IF EXISTS {t}", t=temptable_name))
+
+    def drop_view(self, view_name: str) -> None:
+        try:
+            self.execute_safe(
+                psycopg2.sql.SQL("DROP VIEW IF EXISTS {}").format(
+                    psycopg2.sql.Identifier(view_name)
+                )
+            )
+        except Exception:
+            MessagebarAndLog.warning(log_msg=traceback.format_exc())
+
+    def check_db_is_locked(self) -> None:
+        pass
+
+    def vacuum(self) -> None:
+        self.execute("VACUUM ANALYZE")
+
+    def add_insert_or_ignore_to_sql(self, sql: str) -> str:
+        return sql + " ON CONFLICT DO NOTHING"
+
+    def cast_date_time_as_epoch(self, date_time: Optional[str] = None) -> str:
+        if date_time is None:
+            date_time = "date_time"
+        else:
+            date_time = f"'{date_time}'"
+        return f"""extract(epoch from {date_time}::timestamp)"""
+
+    def cast_null(self, data_type: str) -> str:
+        from midvatten.tools.utils.db.dialect import UnsafeIdentifierError
+
+        allowed = {
+            "smallint",
+            "integer",
+            "bigint",
+            "decimal",
+            "numeric",
+            "real",
+            "double precision",
+        } | {
+            "text",
+            "character varying",
+            "timestamp with time zone",
+            "timestamp without time zone",
+            "date",
+            "boolean",
+            "geometry",
+        }
+        if data_type not in allowed:
+            raise UnsafeIdentifierError(
+                f"cast_null: data_type {data_type!r} not in allowed list"
+            )
+        return "NULL::" + data_type
+
+    def is_distinct_from_sql(self) -> str:
+        return "IS DISTINCT FROM"
+
+    def is_not_distinct_from_sql(self) -> str:
+        return "IS NOT DISTINCT FROM"

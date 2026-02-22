@@ -21,6 +21,7 @@ SQLite or PostgreSQL database.
  ***************************************************************************/
 
 """
+
 import io
 import os.path
 import shutil
@@ -203,7 +204,7 @@ class Midvatten:
         self.action_new_pgdb = self.add_action(
             "create_new.xpm",
             text=self.tr(
-                "Make selected PostgreSQL database into a Midvatten " "project database"
+                "Make selected PostgreSQL database into a Midvatten project database"
             ),
             callback=lambda x: self.new_postgis_db(),
         )
@@ -438,7 +439,7 @@ class Midvatten:
             text=self.tr("Calculate database table row"),
             callback=lambda x: self.calculate_db_table_rows(),
             whats_this=self.tr(
-                "Counts the number of rows for all tables in the " "database"
+                "Counts the number of rows for all tables in the database"
             ),
         )
 
@@ -1333,9 +1334,7 @@ class Midvatten:
 
     @common_utils.general_exception_handler
     def plot_section(self):
-        selected_layer = (
-            qgis.utils.iface.mapCanvas().currentLayer()
-        )  # MUST BE LINE VECTOR LAYER WITH SAME EPSG as MIDV_OBSDB AND THERE MUST BE ONLY ONE SELECTED FEATURE
+        selected_layer = qgis.utils.iface.mapCanvas().currentLayer()  # MUST BE LINE VECTOR LAYER WITH SAME EPSG as MIDV_OBSDB AND THERE MUST BE ONLY ONE SELECTED FEATURE
         if not selected_layer:
             common_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
@@ -1644,9 +1643,7 @@ class Midvatten:
                         sql,
                         dbconnection=dbconnection,
                         execute_args=(str(k),),
-                    )[
-                        1
-                    ]:  # if there is a selected object without water quality data
+                    )[1]:  # if there is a selected object without water quality data
                         common_utils.MessagebarAndLog.critical(
                             bar_msg=ru(
                                 QCoreApplication.translate(

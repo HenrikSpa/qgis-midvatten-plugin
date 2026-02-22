@@ -20,7 +20,6 @@
  ***************************************************************************/
 """
 
-
 import io
 import os
 import re
@@ -99,7 +98,7 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
             self.utc_offset.setToolTip(
                 QCoreApplication.translate(
                     "DiverofficeImport",
-                    "Identifies UTC-offset in file and " "changes to the selected one.",
+                    "Identifies UTC-offset in file and changes to the selected one.",
                 )
             )
             self.utc_offset.addItem("")
@@ -401,7 +400,7 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         if len(parsed_files) == 0:
             common_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
-                    "DiverofficeImport", "Import Failure: No files imported" ""
+                    "DiverofficeImport", "Import Failure: No files imported"
                 )
             )
             common_utils.stop_waiting_cursor()

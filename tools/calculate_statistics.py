@@ -17,7 +17,6 @@
  ***************************************************************************/
 """
 
-
 import os
 from typing import Any, Dict, List, Optional, Tuple, Union, TYPE_CHECKING
 
@@ -109,7 +108,6 @@ class CalculateStatisticsGui(
 
 
 class DbBrowser(gui_utils.DistinctValuesBrowser):
-
     def __init__(self, tables_columns: Dict[str, List[str]]):
         super().__init__(tables_columns)
 

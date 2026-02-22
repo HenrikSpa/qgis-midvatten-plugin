@@ -19,7 +19,6 @@
  ***************************************************************************/
 """
 
-
 from unittest import mock
 from nose.plugins.attrib import attr
 
@@ -332,7 +331,6 @@ class TestCreateDb(utils_for_tests.MidvattenTestSpatialiteNotCreated):
 
 @attr(status="on")
 class TestObsPointsTriggers(utils_for_tests.MidvattenTestSpatialiteDbSv):
-
     def setUp(self):
         super().setUp()
         db_utils.sql_alter_db(
@@ -751,7 +749,6 @@ class TestObsPointsTriggers(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
 @attr(status="on")
 class TestSqls(utils_for_tests.MidvattenTestSpatialiteDbSv):
-
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_import_null_as_double(self, mock_messagebar):
         """Adding triggers should not automatically change the db"""

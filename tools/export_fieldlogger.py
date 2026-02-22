@@ -17,7 +17,6 @@
  ***************************************************************************/
 """
 
-
 import ast
 import copy
 import json
@@ -955,7 +954,6 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
             lat, lon = locations_lat_lon[location]
 
             for sublocation in sorted(sublocations):
-
                 parameters = "|".join(sublocations_parameters[sublocation])
                 printrow = ";".join([location, sublocation, lat, lon, parameters])
                 # This test is really bad and is due to some logical error above.
@@ -1060,7 +1058,7 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         )
 
     def clear_settings(self):
-        common_utils.save_stored_settings(self.ms, [], self.stored_settingskey),
+        (common_utils.save_stored_settings(self.ms, [], self.stored_settingskey),)
         common_utils.save_stored_settings(
             self.ms, "FieldLogger", self.stored_settingskey_format, skip_ast=True
         )

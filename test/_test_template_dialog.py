@@ -7,9 +7,9 @@
 
 """
 
-__author__ = 'midvattenplugin@midvatten.se'
-__date__ = '2026-02-16'
-__copyright__ = 'Copyright 2026, Midvatten'
+__author__ = "midvattenplugin@midvatten.se"
+__date__ = "2026-02-16"
+__copyright__ = "Copyright 2026, Midvatten"
 
 import unittest
 
@@ -18,6 +18,7 @@ from qgis.PyQt.QtGui import QDialogButtonBox, QDialog
 from template_dialog import TemplateDialog
 
 from utilities import get_qgis_app
+
 QGIS_APP = get_qgis_app()
 
 
@@ -47,8 +48,8 @@ class TemplateDialogTest(unittest.TestCase):
         result = self.dialog.result()
         self.assertEqual(result, QDialog.DialogCode.Rejected)
 
+
 if __name__ == "__main__":
     suite = unittest.makeSuite(TemplateDialogTest)
     runner = unittest.TextTestRunner(verbosity=2)
     runner.run(suite)
-

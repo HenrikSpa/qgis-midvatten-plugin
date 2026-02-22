@@ -17,7 +17,6 @@
  ***************************************************************************/
 """
 
-
 import traceback
 
 import os
@@ -34,8 +33,11 @@ from typing import Any, Callable, List, Optional, Tuple, Union
 
 
 class ExportData:
-
-    def __init__(self, obsid_p: Union[Tuple[str], Tuple[()]], obsid_l: Union[Tuple[str], Tuple[()]]):
+    def __init__(
+        self,
+        obsid_p: Union[Tuple[str], Tuple[()]],
+        obsid_l: Union[Tuple[str], Tuple[()]],
+    ):
         self.ID_obs_points = obsid_p
         self.ID_obs_lines = obsid_l
         self.dest_dbconnection = None
@@ -158,7 +160,13 @@ class ExportData:
         nr_of_rows = self.source_dbconnection.execute_and_fetchall(sql, args)[0][0]
         return nr_of_rows
 
-    def write_data(self, to_writer: Callable, obsids: Optional[Union[Tuple[str], Tuple[()]]], ptabs: List[str], replace: bool=False):
+    def write_data(
+        self,
+        to_writer: Callable,
+        obsids: Optional[Union[Tuple[str], Tuple[()]]],
+        ptabs: List[str],
+        replace: bool = False,
+    ):
         for tname in ptabs:
             if not db_utils.verify_table_exists(
                 tname, dbconnection=self.source_dbconnection
@@ -214,14 +222,19 @@ class ExportData:
                 ):  # only go on if there are any observations for this obsid
                     to_writer(tname, obsids, replace)
 
-    def to_csv(self, tname: str, obsids: Optional[Union[Tuple[str], Tuple[()]]]=None, replace: bool=False):
+    def to_csv(
+        self,
+        tname: str,
+        obsids: Optional[Union[Tuple[str], Tuple[()]]] = None,
+        replace: bool = False,
+    ):
         """
         Write to csv
         :param tname: The destination database
         :param obsids:
         :return:
         """
-        sql = self.source_dbconnection.sql_ident('SELECT * FROM {t}', t=tname)
+        sql = self.source_dbconnection.sql_ident("SELECT * FROM {t}", t=tname)
         args = None
         if obsids:
             clause, args = self.source_dbconnection.in_clause(obsids)
@@ -232,7 +245,12 @@ class ExportData:
         filename = os.path.join(self.exportfolder, tname + ".csv")
         common_utils.write_printlist_to_file(filename, printlist)
 
-    def to_sql(self, tname: str, obsids: Optional[Union[Tuple[str], Tuple[()]]]=None, replace: bool=False):
+    def to_sql(
+        self,
+        tname: str,
+        obsids: Optional[Union[Tuple[str], Tuple[()]]] = None,
+        replace: bool = False,
+    ):
         """
         Write to new sql database
         :param tname: The destination database
@@ -280,7 +298,9 @@ class ExportData:
 
         if tname == "obs_points":
             geom_column = list(
-                db_utils.get_geometry_types(tname, dbconnection=self.source_dbconnection).keys()
+                db_utils.get_geometry_types(
+                    tname, dbconnection=self.source_dbconnection
+                ).keys()
             )[0]
             source_data = [
                 (
@@ -310,8 +330,16 @@ class ExportData:
             )
             self.dest_dbconnection.execute("""PRAGMA foreign_keys = ON;""")
 
-    def get_table_data(self, tname: str, obsids: Optional[Union[Tuple[str], Tuple[()]]], dbconnection: DbConnectionManager, file_data_srid: Optional[int]) -> List[Any]:
-        dbconnection.execute_safe(dbconnection.sql_ident("SELECT * FROM {t} LIMIT 1", t=tname))
+    def get_table_data(
+        self,
+        tname: str,
+        obsids: Optional[Union[Tuple[str], Tuple[()]]],
+        dbconnection: DbConnectionManager,
+        file_data_srid: Optional[int],
+    ) -> List[Any]:
+        dbconnection.execute_safe(
+            dbconnection.sql_ident("SELECT * FROM {t} LIMIT 1", t=tname)
+        )
         columns = [x[0] for x in dbconnection.cursor.description]
 
         if file_data_srid:
@@ -319,7 +347,9 @@ class ExportData:
         else:
             astext = "ST_AsBinary({})"
 
-        geom_columns = list(db_utils.get_geometry_types(tname, dbconnection=dbconnection).keys())
+        geom_columns = list(
+            db_utils.get_geometry_types(tname, dbconnection=dbconnection).keys()
+        )
         # Transform to 4326 just to be sure that both the source and dest database has support for the srid.
         select_columns = [
             (
@@ -408,7 +438,39 @@ class ExportData:
         return printable_msg
 
 
-def set_east_north_to_null(row: Tuple[str, None, None, None, None, None, None, None, None, None, None, None, None, float, float, None, None, None, None, None, None, None, None, None, None, None, bytes], header: List[str], geometry: str) -> List[Optional[Union[str, bytes]]]:
+def set_east_north_to_null(
+    row: Tuple[
+        str,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        float,
+        float,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        bytes,
+    ],
+    header: List[str],
+    geometry: str,
+) -> List[Optional[Union[str, bytes]]]:
     res = list(row)
     if res[header.index(geometry)]:
         res[header.index("east")] = None

@@ -21,6 +21,7 @@ SQLite or PostgreSQL database.
  ***************************************************************************/
  This script initializes the plugin, making it known to QGIS.
 """
+
 # TODO: This should probably not be needed when the code is run from within QGIS
 # ---------------------------------
 import os

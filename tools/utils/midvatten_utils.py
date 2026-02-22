@@ -1428,10 +1428,7 @@ class MatplotlibStyles:
                 return str(v)
 
         return "\n".join(
-            [
-                f"{str(k)}: {format_v(v)}"
-                for k, v in sorted(mpl.rcParams.items())
-            ]
+            [f"{str(k)}: {format_v(v)}" for k, v in sorted(mpl.rcParams.items())]
         )
 
     def select_style_in_list(self, style):

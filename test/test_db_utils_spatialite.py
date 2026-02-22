@@ -19,6 +19,7 @@
  ***************************************************************************/
 """
 
+from unittest import mock
 
 from nose.plugins.attrib import attr
 
@@ -28,7 +29,6 @@ from midvatten.tools.utils import db_utils
 
 @attr(status="on")
 class TestDbTablesColumnsInfo(utils_for_tests.MidvattenTestSpatialiteDbSv):
-
     def test_tables_columns_info_all_tables(self):
         """ """
         # Assert that obsid is primary key and not null in obs_points
@@ -64,7 +64,6 @@ class TestDbTablesColumnsInfo(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
 @attr(status="on")
 class TestTablesColumns(utils_for_tests.MidvattenTestSpatialiteDbSv):
-
     def test_tables_columns_no_dbconnection_supplied(self):
         """ """
         tables_columns = db_utils.tables_columns()
@@ -89,7 +88,6 @@ class TestTablesColumns(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
 @attr(status="on")
 class TestGetForeignKeys(utils_for_tests.MidvattenTestSpatialiteDbSv):
-
     def test_get_foreign_keys(self):
         """ """
         foreign_keys = db_utils.get_foreign_keys("w_levels")
@@ -107,7 +105,6 @@ class TestGetForeignKeys(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
 @attr(status="on")
 class TestVerifyTableExist(utils_for_tests.MidvattenTestSpatialiteDbSv):
-
     def test_verify_table_exists(self):
         exists = db_utils.verify_table_exists("obs_points")
         assert exists
@@ -166,7 +163,8 @@ class TestGetTimezoneFromDb(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
 @attr(status="on")
 class TestSqlInjectionHardening(utils_for_tests.MidvattenTestSpatialiteDbSv):
-    def test_in_clause_does_not_expand_scope(self):
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_in_clause_does_not_expand_scope(self, mock_messagebar):
         ph = db_utils.placeholder_sign()
         insert_sql = f"INSERT INTO obs_points (obsid) VALUES ({ph})"
         db_utils.sql_alter_db(insert_sql, all_args=[("P1",)])
@@ -177,23 +175,27 @@ class TestSqlInjectionHardening(utils_for_tests.MidvattenTestSpatialiteDbSv):
             clause, args = dbconnection.in_clause(["P1') OR 1=1 --"])
             sql = f"SELECT obsid FROM obs_points WHERE obsid IN {clause} ORDER BY obsid"
             res = dbconnection.execute_and_fetchall(sql, args)
+            print(f"{mock_messagebar.mock_calls=}")
             assert res == []
 
             clause, args = dbconnection.in_clause(["P1"])
             sql = f"SELECT obsid FROM obs_points WHERE obsid IN {clause} ORDER BY obsid"
             res = dbconnection.execute_and_fetchall(sql, args)
+            print(f"{mock_messagebar.mock_calls=}")
             assert [r[0] for r in res] == ["P1"]
         finally:
             dbconnection.closedb()
 
-    def test_ident_rejects_unsafe_identifier(self):
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_ident_rejects_unsafe_identifier(self, mock_messagebar):
         dbconnection = db_utils.DbConnectionManager()
         try:
             try:
-                dbconnection.ident('obs_points; DROP TABLE obs_points;--')
+                dbconnection.ident("obs_points; DROP TABLE obs_points;--")
             except db_utils.UnsafeIdentifierError:
                 pass
             else:
                 raise AssertionError("Expected UnsafeIdentifierError")
+            print(f"{mock_messagebar.mock_calls=}")
         finally:
             dbconnection.closedb()

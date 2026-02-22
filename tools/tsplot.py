@@ -1,6 +1,6 @@
 """
 /***************************************************************************
- This part of the Midvatten plugin originates from the TimeSeriesPlot plugin. 
+ This part of the Midvatten plugin originates from the TimeSeriesPlot plugin.
                              -------------------
         begin                : 2011-10-18
         copyright            : (C) 2011 by joskal
@@ -18,7 +18,6 @@
 
 """
 
-
 import datetime
 
 import matplotlib.pyplot as plt
@@ -32,7 +31,6 @@ from midvatten.tools.utils.common_utils import returnunicode as ru
 
 
 class TimeSeriesPlot:
-
     def __init__(
         self, layer=None, settingsdict={}
     ):  # Might need revision of variables and method for loading default variables

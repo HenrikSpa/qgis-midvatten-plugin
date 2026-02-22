@@ -1,13 +1,14 @@
 #! /usr/bin/env python
 """
 /***************************************************************************
- This is where a DEM is sampled along a vector polyline 
+ This is where a DEM is sampled along a vector polyline
                              -------------------
         begin                : 2014-08-22
         copyright            : (C) 2011 by joskal
         email                : groundwatergis [at] gmail.com
  ***************************************************************************/
 """
+
 """
 This code is inspired from the PointSamplingTool plugin Copyright (C) 2008 Borys Jurgiel
 and qchainage plugin (C) 2012 by Werner Macho

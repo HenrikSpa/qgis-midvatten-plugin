@@ -1,7 +1,7 @@
 """
 /***************************************************************************
- This part of the Midvatten plugin handles importing of data to the database. 
- 
+ This part of the Midvatten plugin handles importing of data to the database.
+
  This part is to a big extent based on QSpatialite plugin.
                              -------------------
         begin                : 2011-10-18
@@ -34,7 +34,6 @@ from midvatten.tools.utils.db_utils import DbConnectionManager
 
 
 class MidvDataImporter:  # this class is intended to be a multipurpose import class  BUT loggerdata probably needs specific importer or its own subfunction
-
     def __init__(self):
         self.columns = 0
         self.recsbefore = 0
@@ -170,8 +169,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 t=self.temptable_name,
             )
             get_remaining_rownumbers = lambda: [
-                x[0]
-                for x in dbconnection.execute_and_fetchall(sql_remaining)
+                x[0] for x in dbconnection.execute_and_fetchall(sql_remaining)
             ]
             get_removed_rownumbers = lambda start_numbers, remaining: [
                 x for x in start_numbers if x not in remaining
@@ -328,7 +326,9 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                     )
 
             # Check if current table has geometry:
-            geom_columns = db_utils.get_geometry_types(dest_table, dbconnection=dbconnection)
+            geom_columns = db_utils.get_geometry_types(
+                dest_table, dbconnection=dbconnection
+            )
             sourcecols = []
             for colname in sorted(existing_columns_in_dest_table):
                 null_replacement = db_utils.cast_null(
@@ -897,10 +897,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                     concatted_to_string,
                     fk_table,
                     " AND ".join(
-                        [
-                            f""" b.{k} IS NOT NULL and b.{k} != '' """
-                            for k in from_list
-                        ]
+                        [f""" b.{k} IS NOT NULL and b.{k} != '' """ for k in from_list]
                     ),
                 )
             )

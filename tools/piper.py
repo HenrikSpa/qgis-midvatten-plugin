@@ -1,6 +1,6 @@
 """
 /***************************************************************************
- This is where a rectangular plt.plot is created 
+ This is where a rectangular plt.plot is created
  NOTE - if using this file, it has to be imported by midvatten_plugin.py
                              -------------------
         begin                : 2013-11-27
@@ -18,7 +18,6 @@ __modified_date__ = "Nov 2013"
     Development date: 8/5/2011
 ***************************************************************************/
 """
-
 
 import datetime
 import itertools

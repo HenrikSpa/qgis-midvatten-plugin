@@ -20,7 +20,6 @@
  ***************************************************************************/
 """
 
-
 from collections import OrderedDict
 
 from unittest import mock
@@ -79,7 +78,6 @@ class TestWlvllogImportFromDiverofficeFiles(
                 with common_utils.tempinput(
                     "\n".join(files[2]), DiverofficeImport.charsetchoosen
                 ) as f3:
-
                     filenames = [f1, f2, f3]
                     utils_askuser_answer_no_obj = MockUsingReturnValue(None)
                     utils_askuser_answer_no_obj.result = 0
@@ -177,7 +175,6 @@ class TestWlvllogImportFromDiverofficeFiles(
                 with common_utils.tempinput(
                     "\n".join(files[2]), DiverofficeImport.charsetchoosen
                 ) as f3:
-
                     filenames = [f1, f2, f3]
 
                     @mock.patch(
@@ -270,7 +267,6 @@ class TestWlvllogImportFromDiverofficeFiles(
                 with common_utils.tempinput(
                     "\n".join(files[2]), DiverofficeImport.charsetchoosen
                 ) as f3:
-
                     filenames = [f1, f2, f3]
 
                     @mock.patch(
@@ -365,7 +361,6 @@ class TestWlvllogImportFromDiverofficeFiles(
                 with common_utils.tempinput(
                     "\n".join(files[2]), DiverofficeImport.charsetchoosen
                 ) as f3:
-
                     filenames = [f1, f2, f3]
 
                     @mock.patch(
@@ -609,7 +604,6 @@ class TestWlvllogImportFromDiverofficeFiles(
                 with common_utils.tempinput(
                     "\n".join(files[2]), DiverofficeImport.charsetchoosen
                 ) as f3:
-
                     filenames = [f1, f2, f3]
 
                     @mock.patch(
@@ -707,7 +701,6 @@ class TestWlvllogImportFromDiverofficeFiles(
                 with common_utils.tempinput(
                     "\n".join(files[2]), DiverofficeImport.charsetchoosen
                 ) as f3:
-
                     filenames = [f1, f2, f3]
 
                     @mock.patch(
@@ -798,7 +791,6 @@ class TestWlvllogImportFromDiverofficeFiles(
             with common_utils.tempinput(
                 "\n".join(files[1]), DiverofficeImport.charsetchoosen
             ) as f2:
-
                 filenames = [f1, f2]
 
                 @mock.patch(
@@ -892,7 +884,6 @@ class TestWlvllogImportFromDiverofficeFiles(
                 with common_utils.tempinput(
                     "\n".join(files[2]), DiverofficeImport.charsetchoosen
                 ) as f3:
-
                     filenames = [f1, f2, f3]
                     utils_askuser_answer_no_obj = MockUsingReturnValue(None)
                     utils_askuser_answer_no_obj.result = 0
@@ -959,11 +950,7 @@ class TestWlvllogImportFromDiverofficeFiles(
                             importer.import_all_data.checked,
                         )
 
-                        print(
-                            "\n".join(
-                                [str(x) for x in mock_messagebar.mock_calls]
-                            )
-                        )
+                        print("\n".join([str(x) for x in mock_messagebar.mock_calls]))
 
                     _test_wlvllogg_import_from_diveroffice_files(self, filenames)
 
@@ -1768,7 +1755,6 @@ class TestWlvllogImportFromDiverofficeFiles(
                 with common_utils.tempinput(
                     "\n".join(files[2]), DiverofficeImport.charsetchoosen, ".mon"
                 ) as f3:
-
                     filenames = [f1, f2, f3]
                     utils_askuser_answer_no_obj = MockUsingReturnValue(None)
                     utils_askuser_answer_no_obj.result = 0
@@ -1830,11 +1816,7 @@ class TestWlvllogImportFromDiverofficeFiles(
                         except Exception:
                             pass
 
-                        print(
-                            "\n".join(
-                                [str(x) for x in mock_messagebar.mock_calls]
-                            )
-                        )
+                        print("\n".join([str(x) for x in mock_messagebar.mock_calls]))
 
                     _test_wlvllogg_import_from_diveroffice_files(self, filenames)
 
@@ -1906,7 +1888,6 @@ class TestWlvllogImportFromDiverofficeFiles(
                 with common_utils.tempinput(
                     "\n".join(files[2]), DiverofficeImport.charsetchoosen, ".mon"
                 ) as f3:
-
                     filenames = [f1, f2, f3]
                     utils_askuser_answer_no_obj = MockUsingReturnValue(None)
                     utils_askuser_answer_no_obj.result = 0
@@ -1968,11 +1949,7 @@ class TestWlvllogImportFromDiverofficeFiles(
                         except Exception:
                             pass
 
-                        print(
-                            "\n".join(
-                                [str(x) for x in mock_messagebar.mock_calls]
-                            )
-                        )
+                        print("\n".join([str(x) for x in mock_messagebar.mock_calls]))
 
                     _test_wlvllogg_import_from_diveroffice_files(self, filenames)
 
@@ -2209,7 +2186,6 @@ class TestWlvllogImportFromDiverofficeFiles(
                 with common_utils.tempinput(
                     "\n".join(files[2]), DiverofficeImport.charsetchoosen
                 ) as f3:
-
                     filenames = [f1, f2, f3]
                     utils_askuser_answer_no_obj = MockUsingReturnValue(None)
                     utils_askuser_answer_no_obj.result = 0

@@ -1,9 +1,9 @@
 """
 /***************************************************************************
- This part of the Midvatten plugin originates from the PlotSQLite application which plots . 
+ This part of the Midvatten plugin originates from the PlotSQLite application which plots .
         Name                 : PlotSQLite
         Description          : Plots charts from data stored in a SQLite database
-        Date                 : 2012-12-03 
+        Date                 : 2012-12-03
         Author               : Josef Källgården
         copyright            : (C) 2011 by Josef Källgården
         email                : groundwatergis [at] gmail.com
@@ -20,7 +20,6 @@ The PlotSQLite application version 0.2.6 was merged into Midvatten plugin at 201
  *                                                                         *
  ***************************************************************************/
 """
-
 
 import os
 from functools import partial  # only to get combobox signals to work
@@ -1258,7 +1257,11 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         else:
             dependent_filtering = False
 
-        if other_q_list_widget is not None and other_filtercolumn and dependent_filtering:
+        if (
+            other_q_list_widget is not None
+            and other_filtercolumn
+            and dependent_filtering
+        ):
             other_q_list_widget_wid = getattr(self, other_q_list_widget)
             selected = ru(
                 [

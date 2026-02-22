@@ -9,7 +9,6 @@
         email                : groundwatergis [at] gmail.com
  ***************************************************************************/"""
 
-
 import traceback
 
 from qgis.PyQt.QtCore import QCoreApplication

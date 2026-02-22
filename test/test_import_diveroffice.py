@@ -20,7 +20,6 @@
  ***************************************************************************/
 """
 
-
 import os
 
 from unittest import mock
@@ -304,7 +303,6 @@ class TestParseDiverofficeFile:
 
 @attr(status="on")
 class TestFilterDatesFromFiledata:
-
     def test_filter_dates_from_filedata(self):
 
         file_data = [

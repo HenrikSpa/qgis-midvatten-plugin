@@ -1,4 +1,3 @@
-
 from unittest import mock
 from nose.plugins.attrib import attr
 from qgis.core import QgsProject
@@ -10,7 +9,6 @@ from midvatten.tools.utils import db_utils
 
 @attr(status="on")
 class TestStratSymbology(utils_for_tests.MidvattenTestSpatialiteDbSv):
-
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_strat_symbology(self, mock_messagebar):
         db_utils.sql_alter_db(

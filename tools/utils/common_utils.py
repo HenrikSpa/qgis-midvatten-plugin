@@ -17,7 +17,6 @@
  ***************************************************************************/
 """
 
-
 import ast
 import copy
 import csv
@@ -53,7 +52,7 @@ LEGEND_NCOL_KEY = "ncol" if mpl.__version__ < "3.6.0" else "ncols"
 
 
 def tr(context: str, msg: str) -> str:
-    """Shorter function alias for QCoreApplication.translate """
+    """Shorter function alias for QCoreApplication.translate"""
     return QCoreApplication.translate(context, msg)
 
 
@@ -201,12 +200,8 @@ class Askuser(QtWidgets.QDialog):
             else:
                 self.result = 0  # 0="no"
         elif question == "AllSelected":  # All or Selected Dialog
-            btn_all = QtWidgets.QPushButton(
-                tr("askuser", "All")
-            )  # = "0"
-            btn_selected = QtWidgets.QPushButton(
-                tr("askuser", "Selected")
-            )  # = "1"
+            btn_all = QtWidgets.QPushButton(tr("askuser", "All"))  # = "0"
+            btn_selected = QtWidgets.QPushButton(tr("askuser", "Selected"))  # = "1"
             # btn_all.clicked.connect(lambda x: self.DoForAll())
             # btn_selected.clicked.connect(lambda x: self.DoForSelected())
             msg_box = QtWidgets.QMessageBox(parent)
@@ -302,9 +297,7 @@ class NotFoundQuestion(QtWidgets.QDialog, not_found_dialog):
 
         if ignore_checkbox:
             self.ignore_checkbox = qgis.PyQt.QtWidgets.QCheckBox(
-                tr(
-                    "NotFoundQuestion", "Ignore database missmatch"
-                ),
+                tr("NotFoundQuestion", "Ignore database missmatch"),
                 self,
             )
             self.ignore_checkbox.setToolTip(
@@ -321,9 +314,7 @@ class NotFoundQuestion(QtWidgets.QDialog, not_found_dialog):
             button.clicked.connect(lambda x: self.button_clicked())
 
         self.reuse_label = qgis.PyQt.QtWidgets.QLabel(
-            tr(
-                "NotFoundQuestion", "Reuse answer for all identical"
-            )
+            tr("NotFoundQuestion", "Reuse answer for all identical")
         )
         self._reuse_column = qgis.PyQt.QtWidgets.QComboBox()
         self._reuse_column.addItem("")
@@ -385,7 +376,6 @@ class NotFoundQuestion(QtWidgets.QDialog, not_found_dialog):
 
 
 class HtmlDialog(QtWidgets.QDialog):
-
     def __init__(self, title="", filepath=""):
         QtWidgets.QDialog.__init__(self)
         self.setModal(True)
@@ -449,10 +439,7 @@ def find_layer(layer_name: str):
 
     if len(found_layers) == 0:
         raise UsageError(
-            returnunicode(
-                tr("find_layer", "The layer %s was not found!")
-            )
-            % layer_name
+            returnunicode(tr("find_layer", "The layer %s was not found!")) % layer_name
         )
     elif len(found_layers) > 1:
         raise UsageError(
@@ -572,9 +559,7 @@ def null_2_empty_string(input_string):
     return input_string.replace("NULL", "").replace("null", "")
 
 
-def pop_up_info(
-    msg="", title=tr("pop_up_info", "Information"), parent=None
-):
+def pop_up_info(msg="", title=tr("pop_up_info", "Information"), parent=None):
     """Display an info message via Qt box"""
     QtWidgets.QMessageBox.information(parent, title, "%s" % (msg))
 
@@ -688,11 +673,7 @@ def returnunicode(
             else:
                 break
         else:
-            decoded = str(
-                tr(
-                    "returnunicode", "data type unknown, check database"
-                )
-            )
+            decoded = str(tr("returnunicode", "data type unknown, check database"))
 
     return decoded
 
@@ -730,9 +711,7 @@ def selection_check(
             )
     else:
         pop_up_info(
-            tr(
-                "selection_check", "Select a qgis layer that has a field obsid!"
-            )
+            tr("selection_check", "Select a qgis layer that has a field obsid!")
         )
 
 
@@ -764,7 +743,7 @@ def unicode_2_utf8(anything):  # takes an unicode and tries to return it as utf8
     text = None
     try:
         if type(anything) == type(None):
-            text = (b"")
+            text = b""
         elif isinstance(anything, str):
             text = anything.encode("utf-8")
         elif isinstance(anything, list):
@@ -788,9 +767,7 @@ def unicode_2_utf8(anything):  # takes an unicode and tries to return it as utf8
 
     if text is None:
         text = returnunicode(
-            tr(
-                "unicode_2_utf8", "data type unknown, check database"
-            )
+            tr("unicode_2_utf8", "data type unknown, check database")
         ).encode("utf-8")
     return text
 
@@ -967,9 +944,7 @@ def ask_for_export_crs(default_crs: int = "") -> str:
         QtWidgets.QInputDialog.getText(
             None,
             tr("ask_for_export_crs", "Set export crs"),
-            tr(
-                "ask_for_export_crs", "Give the crs for the exported database.\n"
-            ),
+            tr("ask_for_export_crs", "Give the crs for the exported database.\n"),
             QtWidgets.QLineEdit.Normal,
             str(default_crs),
         )[0]
@@ -1019,7 +994,6 @@ def lists_to_string(alist_of_lists, quote=False):
     '"""a""";"b"\n"1";"2"'
     '''
     if isinstance(alist_of_lists, (list, tuple)):
-
         return_string = "\n".join(
             [
                 (
@@ -1176,9 +1150,7 @@ def filter_nonexisting_values_and_ask(
 
     headers_colnr = dict([(header, colnr) for colnr, header in enumerate(file_data[0])])
 
-    already_asked_values = (
-        {}
-    )  # {'obsid': {'asked_for': 'answer'}, 'report': {'asked_for_report': 'answer'}}
+    already_asked_values = {}  # {'obsid': {'asked_for': 'answer'}, 'report': {'asked_for_report': 'answer'}}
     reuse_column = ""
     for rownr, row in enumerate(data_to_ask_for):
         current_value = row[index]
@@ -1200,7 +1172,6 @@ def filter_nonexisting_values_and_ask(
                     found = True
                     break
         if found:
-
             continue
 
         submitted_value = None
@@ -1443,11 +1414,7 @@ def get_delimiter(
     skip_empty_rows: bool = True,
 ) -> str:
     if filename is None:
-        raise TypeError(
-            tr(
-                "get_delimiter", "Must give filename or supply rows"
-            )
-        )
+        raise TypeError(tr("get_delimiter", "Must give filename or supply rows"))
     with open(filename, encoding=charset) as f:
         rows = f.readlines()
     if skip_empty_rows:
@@ -1542,9 +1509,7 @@ def ask_for_delimiter(
     if not _delimiter[1]:
         MessagebarAndLog.info(
             bar_msg=returnunicode(
-                tr(
-                    "ask_for_delimiter", "Delimiter not given. Stopping."
-                )
+                tr("ask_for_delimiter", "Delimiter not given. Stopping.")
             )
         )
         raise UserInterruptError()
@@ -1561,9 +1526,7 @@ def transpose_lists_of_lists(list_of_lists):
 
 
 def sql_failed_msg() -> str:
-    return tr(
-        "sql_failed_msg", "Sql failed, see log message panel."
-    )
+    return tr("sql_failed_msg", "Sql failed, see log message panel.")
 
 
 def fn_timer(function: Callable) -> Callable:
@@ -1620,9 +1583,7 @@ def general_exception_handler(func: Callable) -> Callable:
             if msg:
                 MessagebarAndLog.critical(
                     bar_msg=returnunicode(
-                        tr(
-                            "general_exception_handler", "Usage error: %s"
-                        )
+                        tr("general_exception_handler", "Usage error: %s")
                     )
                     % str(e),
                     duration=30,
@@ -1653,9 +1614,7 @@ def save_stored_settings(ms, stored_settings, settingskey, skip_ast=False):
     ms.save_settings(settingskey)
     MessagebarAndLog.info(
         log_msg=returnunicode(
-            tr(
-                "save_stored_settings", "Settings %s stored for key %s."
-            )
+            tr("save_stored_settings", "Settings %s stored for key %s.")
         )
         % (settings_string, settingskey)
     )
@@ -1686,9 +1645,7 @@ def get_stored_settings(ms, settingskey, default=None, skip_ast=False):
     if not settings_string_raw:
         MessagebarAndLog.info(
             log_msg=returnunicode(
-                tr(
-                    "get_stored_settings", "Settings key %s was empty."
-                )
+                tr("get_stored_settings", "Settings key %s was empty.")
             )
             % settingskey
         )
@@ -1699,9 +1656,7 @@ def get_stored_settings(ms, settingskey, default=None, skip_ast=False):
     try:
         MessagebarAndLog.info(
             log_msg=returnunicode(
-                tr(
-                    "get_stored_settings", 'Reading stored settings "%s":\n%s'
-                )
+                tr("get_stored_settings", 'Reading stored settings "%s":\n%s')
             )
             % (settingskey, settings_string_raw)
         )
@@ -1786,18 +1741,14 @@ def write_printlist_to_file(
     dialect: Type[csv.excel] = csv.excel,
     delimiter: str = ";",
     encoding: str = "utf-8",
-    **kwds
+    **kwds,
 ):
     with open(filename, "w", newline="", encoding=encoding) as csvfile:
         csvwriter = csv.writer(csvfile, delimiter=delimiter, dialect=dialect, **kwds)
         # csvwriter.writerows([[bytes(returnunicode(col), encoding) for col in row] for row in printlist])
         csvwriter.writerows(returnunicode(printlist, keep_containers=True))
     MessagebarAndLog.info(
-        bar_msg=returnunicode(
-            tr(
-                "write_printlist_to_file", "Data written to file %s."
-            )
-        )
+        bar_msg=returnunicode(tr("write_printlist_to_file", "Data written to file %s."))
         % filename
     )
 
@@ -1878,11 +1829,7 @@ class PickAnnotator:
 
         canvas.mpl_connect("pick_event", lambda event: self.identify_plot(event))
         canvas.mpl_connect("figure_enter_event", self.remove_annotation)
-        MessagebarAndLog.info(
-            log_msg=tr(
-                "PickAnnotator", "PickAnnotator initialized."
-            )
-        )
+        MessagebarAndLog.info(log_msg=tr("PickAnnotator", "PickAnnotator initialized."))
 
     def identify_plot(self, event):
         try:
@@ -1903,9 +1850,7 @@ class PickAnnotator:
                 ytext = round(mouseevent.ydata, 3)
             except Exception:
                 ytext = mouseevent.ydata
-            new_text = ", ".join(
-                [f'"{artist.get_label()}"', str(xtext), str(ytext)]
-            )
+            new_text = ", ".join([f'"{artist.get_label()}"', str(xtext), str(ytext)])
 
             pos = (mouseevent.xdata, mouseevent.ydata)
             if not isinstance(self.annotation, mpl.text.Annotation):
@@ -1934,9 +1879,7 @@ class PickAnnotator:
             self.fig.canvas.flush_events()
         except Exception as e:
             MessagebarAndLog.info(
-                log_msg=tr(
-                    "PickAnnotator", "Adding annotation failed, msg: %s."
-                )
+                log_msg=tr("PickAnnotator", "Adding annotation failed, msg: %s.")
                 % str(e)
             )
             raise
@@ -1950,9 +1893,7 @@ class PickAnnotator:
                 self.fig.canvas.flush_events()
             except Exception as e:
                 MessagebarAndLog.info(
-                    log_msg=tr(
-                        "PickAnnotator", "Removing annotation failed, msg: %s."
-                    )
+                    log_msg=tr("PickAnnotator", "Removing annotation failed, msg: %s.")
                     % str(e)
                 )
 
@@ -1966,17 +1907,13 @@ class Timer:
     def stop(self):
         t = time.time()
         MessagebarAndLog.info(
-            log_msg=tr(
-                "Timer", "Total time running %s: %s seconds"
-            )
+            log_msg=tr("Timer", "Total time running %s: %s seconds")
             % (self.name, str(t - self.t0))
         )
 
     def current_time(self, info=""):
         MessagebarAndLog.info(
-            log_msg=tr(
-                "Timer", "Current time running %s%s: %s seconds"
-            )
+            log_msg=tr("Timer", "Current time running %s%s: %s seconds")
             % (self.name, info, str(time.time() - self.t0))
         )
 
@@ -1985,9 +1922,7 @@ class Timer:
         diff = time.time() - self.t1
         self.t1 = t
         MessagebarAndLog.info(
-            log_msg=tr(
-                "Timer", "Current time running %s%s: %s seconds"
-            )
+            log_msg=tr("Timer", "Current time running %s%s: %s seconds")
             % (self.name, info, str(diff))
         )
 
@@ -1998,8 +1933,7 @@ def timer(name):
     yield
     t1 = time.time()
     MessagebarAndLog.info(
-        log_msg=tr("timer", "Total time running %s: %s seconds")
-        % (name, str(t1 - t0))
+        log_msg=tr("timer", "Total time running %s: %s seconds") % (name, str(t1 - t0))
     )
 
 

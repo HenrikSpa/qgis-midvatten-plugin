@@ -1,7 +1,7 @@
 """
 /***************************************************************************
  This part of the Midvatten plugin handles calculation of average water flow
- based on readings of accumulated volume. Data is read from, and written to, table w_flow. 
+ based on readings of accumulated volume. Data is read from, and written to, table w_flow.
                               -------------------
         begin                : 2014-01-23
         copyright            : (C) 2011 by joskal

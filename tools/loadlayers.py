@@ -1,6 +1,6 @@
 """
 /***************************************************************************
- This is the part of the Midvatten plugin that (removes) and loads default qgis layers for the selected database. 
+ This is the part of the Midvatten plugin that (removes) and loads default qgis layers for the selected database.
                               -------------------
         begin                : 2011-10-18
         copyright            : (C) 2011 by joskal
@@ -16,7 +16,6 @@
  *                                                                         *
  ***************************************************************************/
 """
-
 
 import os
 
@@ -154,9 +153,7 @@ class LoadLayers:
         uri.setDatabase(
             self.settingsdict["database"]
         )  # MacOSX fix1 #earlier sent byte string, now intending to send unicode string
-        for (
-            tablename
-        ) in (
+        for tablename in (
             self.default_nonspatlayers
         ):  # first the non-spatial tables, THEY DO NOT ALL HAVE CUSTOM UI FORMS
             firststring = (

@@ -19,7 +19,6 @@
  ***************************************************************************/
 """
 
-
 from nose.plugins.attrib import attr
 
 from midvatten.tools.utils import common_utils
@@ -30,7 +29,6 @@ from midvatten.definitions import midvatten_defs
 
 @attr(status="on")
 class TestDefsFunctions(utils_for_tests.MidvattenTestPostgisDbSv):
-
     def test_tables_columns(self):
         res = db_utils.db_tables_columns_info()
         assert res
@@ -45,7 +43,6 @@ class TestDefsFunctions(utils_for_tests.MidvattenTestPostgisDbSv):
 
 @attr(status="on")
 class TestGeocolorsymbols(utils_for_tests.MidvattenTestPostgisDbSv):
-
     def test_only_moran(self):
         db_utils.sql_alter_db("DELETE FROM zz_strat")
         db_utils.sql_alter_db("DELETE FROM zz_stratigraphy_plots")

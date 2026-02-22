@@ -19,7 +19,6 @@
  ***************************************************************************/
 """
 
-
 from unittest import mock
 from nose.plugins.attrib import attr
 from qgis.PyQt import QtWidgets

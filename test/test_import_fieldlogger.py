@@ -19,7 +19,6 @@ from midvatten.tools.utils.date_utils import datestring_to_date
 
 @attr(status="on")
 class TestFieldLoggerImporterNoDb:
-
     @mock.patch("midvatten.tools.import_fieldlogger.common_utils.NotFoundQuestion")
     @mock.patch(
         "midvatten.tools.import_fieldlogger.midvatten_utils.get_last_used_flow_instruments"
@@ -269,9 +268,7 @@ class TestFieldLoggerImporterNoDb:
             @mock.patch(
                 "midvatten.tools.import_fieldlogger.common_utils.MessagebarAndLog"
             )
-            def _test(
-                self, filename, mock_messagebar, mock_charset, mock_savefilename
-            ):
+            def _test(self, filename, mock_messagebar, mock_charset, mock_savefilename):
                 mock_charset.return_value = ("utf-8", True)
                 mock_savefilename.return_value = [[filename]]
 
@@ -404,9 +401,7 @@ class TestFieldLoggerImporterNoDb:
             @mock.patch(
                 "midvatten.tools.import_fieldlogger.common_utils.MessagebarAndLog"
             )
-            def _test(
-                self, filename, mock_messagebar, mock_charset, mock_savefilename
-            ):
+            def _test(self, filename, mock_messagebar, mock_charset, mock_savefilename):
                 mock_charset.return_value = ("utf-8", True)
                 mock_savefilename.return_value = [[filename]]
 
@@ -541,9 +536,7 @@ class TestFieldLoggerImporterNoDb:
             @mock.patch(
                 "midvatten.tools.import_fieldlogger.common_utils.MessagebarAndLog"
             )
-            def _test(
-                self, filename, mock_messagebar, mock_charset, mock_savefilename
-            ):
+            def _test(self, filename, mock_messagebar, mock_charset, mock_savefilename):
                 mock_charset.return_value = ("utf-8", True)
                 mock_savefilename.return_value = [[filename]]
 
@@ -901,9 +894,7 @@ class TestFieldLoggerImporterNoDb:
             @mock.patch(
                 "midvatten.tools.import_fieldlogger.common_utils.MessagebarAndLog"
             )
-            def _test(
-                self, filename, mock_messagebar, mock_charset, mock_savefilename
-            ):
+            def _test(self, filename, mock_messagebar, mock_charset, mock_savefilename):
                 mock_charset.return_value = ("utf-8", True)
                 mock_savefilename.return_value = [[filename]]
 
@@ -1094,7 +1085,6 @@ class TestCommentsImportFields:
 
 @attr(status="on")
 class TestStaffQuestion:
-
     @mock.patch("midvatten.tools.import_fieldlogger.defs.staff_list")
     def setUp(self, mock_stafflist):
         mock_stafflist.return_value = (True, ["staff1", "staff2"])

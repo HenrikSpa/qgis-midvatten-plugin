@@ -19,7 +19,6 @@
  ***************************************************************************/
 """
 
-
 from unittest import mock
 from unittest.mock import call
 from nose.plugins.attrib import attr
@@ -31,7 +30,6 @@ from midvatten.tools.utils import db_utils, midvatten_utils
 
 @attr(status="on")
 class TestGetFunctions(utils_for_tests.MidvattenTestSpatialiteDbSv):
-
     def test_get_last_logger_dates(self):
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb1')""")
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb2')""")

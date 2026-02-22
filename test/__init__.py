@@ -10,11 +10,7 @@ if _env_path:
     _qgis_extra_paths.extend(_env_path.split(os.pathsep))
 
 _qgis_extra_paths.extend(
-    [
-        "/usr/share/qgis/python",
-        "/usr/lib/qgis/python",
-        os.path.join(__file__, '..')
-    ]
+    ["/usr/share/qgis/python", "/usr/lib/qgis/python", os.path.join(__file__, "..")]
 )
 
 for _p in _qgis_extra_paths:

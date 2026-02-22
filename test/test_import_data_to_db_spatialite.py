@@ -2,7 +2,7 @@
 /***************************************************************************
  This part of the Midvatten plugin tests the module that handles importing of
   measurements.
- 
+
  This part is to a big extent based on QSpatialite plugin.
                              -------------------
         begin                : 2016-03-08
@@ -19,7 +19,6 @@
  *                                                                         *
  ***************************************************************************/
 """
-
 
 from collections import OrderedDict
 
@@ -301,7 +300,6 @@ class TestGeneralImport(utils_for_tests.MidvattenTestSpatialiteDbSvImportInstanc
 class TestImportObsPointsObsLines(
     utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance
 ):
-
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
     )
@@ -372,6 +370,7 @@ class TestImportObsPointsObsLines(
                 ),
             ],
         )
+
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
@@ -912,7 +911,6 @@ class TestImportObsPointsObsLines(
 
 @attr(status="on")
 class TestWquallabImport(utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance):
-
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
     )
@@ -1051,7 +1049,6 @@ class TestWquallabImport(utils_for_tests.MidvattenTestSpatialiteDbSvImportInstan
 
 @attr(status="on")
 class TestWflowImport(utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance):
-
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
     )
@@ -1162,7 +1159,6 @@ class TestWflowImport(utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance)
 
 @attr(status="on")
 class TestWqualfieldImport(utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance):
-
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
     )
@@ -1551,7 +1547,6 @@ class TestWqualfieldImport(utils_for_tests.MidvattenTestSpatialiteDbSvImportInst
 
 @attr(status="on")
 class TestWlevelsImport(utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance):
-
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
     )
@@ -1647,7 +1642,6 @@ class TestWlevelsImportOldWlevels(
 
 @attr(status="on")
 class TestSeismicImport(utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance):
-
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
     )
@@ -1669,7 +1663,6 @@ class TestSeismicImport(utils_for_tests.MidvattenTestSpatialiteDbSvImportInstanc
 
 @attr(status="on")
 class TestCommentsImport(utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance):
-
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
     )
@@ -1695,7 +1688,6 @@ class TestCommentsImport(utils_for_tests.MidvattenTestSpatialiteDbSvImportInstan
 
 @attr(status="on")
 class TestStratImport(utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance):
-
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
     )
@@ -1886,7 +1878,6 @@ class TestStratImport(utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance)
 
 @attr(status="on")
 class TestMeteoImport(utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance):
-
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
     )
@@ -1926,7 +1917,6 @@ class TestMeteoImport(utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance)
 
 @attr(status="on")
 class TestVlfImport(utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance):
-
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
     )
@@ -1969,7 +1959,6 @@ class TestVlfImport(utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance):
 
 @attr(status="on")
 class TestObsLinesImport(utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance):
-
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
     )
@@ -1991,7 +1980,6 @@ class TestObsLinesImport(utils_for_tests.MidvattenTestSpatialiteDbSvImportInstan
 
 @attr(status="on")
 class TestGetForeignKeys(utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance):
-
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
     )
@@ -2007,7 +1995,6 @@ class TestGetForeignKeys(utils_for_tests.MidvattenTestSpatialiteDbSvImportInstan
 class TestDeleteExistingDateTimesFromTemptable(
     utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance
 ):
-
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
     )

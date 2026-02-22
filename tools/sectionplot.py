@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 """
 /***************************************************************************
- This is where a section plot is created 
+ This is where a section plot is created
  NOTE - if using this file, it has to be imported by midvatten_plugin.py
                              -------------------
         begin                : 2013-11-27
@@ -983,8 +983,9 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             self.plot_images()
 
             if self.obsids_x_position:
-                xmax, xmin = float(max(self.obsids_x_position.values())), float(
-                    min(self.obsids_x_position.values())
+                xmax, xmin = (
+                    float(max(self.obsids_x_position.values())),
+                    float(min(self.obsids_x_position.values())),
                 )
                 self.barwidth = (self.ms.settingsdict["secplotbw"] / 100.0) * (
                     xmax - xmin
@@ -2547,8 +2548,9 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                         child.set_x(prev_middle - child.get_width() / 2)
 
         for a in ax.findobj(
-            lambda artist: isinstance(artist, mpl.text.Text)
-            and hasattr(artist, "original_xy")
+            lambda artist: (
+                isinstance(artist, mpl.text.Text) and hasattr(artist, "original_xy")
+            )
         ):
             if self.ms.settingsdict["secplotlayertextalignment"] == "center":
                 x = a.original_xy[0]

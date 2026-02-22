@@ -17,6 +17,7 @@
  *                                                                         *
  ***************************************************************************/
 """
+
 import matplotlib as mpl
 from itertools import chain
 import six
@@ -158,7 +159,9 @@ def replace_matplotlib_backends_backend_qt5agg_NavigationToolbar2QT_set_message_
             self.locLabel.setText(s)
 
     mpltoolbar.set_message = types.MethodType(set_message, mpltoolbar)
-    mpltoolbar.locLabel.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+    mpltoolbar.locLabel.setTextInteractionFlags(
+        Qt.TextInteractionFlag.TextSelectableByMouse
+    )
 
 
 LINESTYLES = {

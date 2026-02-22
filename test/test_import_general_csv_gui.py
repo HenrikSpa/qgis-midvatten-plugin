@@ -2,7 +2,7 @@
 /***************************************************************************
  This part of the Midvatten plugin tests the module that handles importing of
   measurements.
- 
+
  This part is to a big extent based on QSpatialite plugin.
                              -------------------
         begin                : 2016-03-08
@@ -20,7 +20,6 @@
  ***************************************************************************/
 """
 
-
 from nose.plugins.attrib import attr
 
 from midvatten.test import utils_for_tests
@@ -30,7 +29,6 @@ from midvatten.tools.utils import common_utils
 
 @attr(status="on")
 class TestStaticMethods:
-
     def test_translate_and_reorder_file_data(self):
         file_data = [["obsid", "acol", "acol2"], ["rb1", "1", "2"]]
 

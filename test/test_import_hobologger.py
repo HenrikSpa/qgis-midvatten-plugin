@@ -34,7 +34,6 @@ from midvatten.tools.import_hobologger import HobologgerImport, TzConverter
 
 @attr(status="on")
 class TestParseHobologgerFile:
-
     def setUp(self):
         pass
 

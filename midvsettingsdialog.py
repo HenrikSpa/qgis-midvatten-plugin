@@ -2,15 +2,16 @@
 /***************************************************************************
  midvsettingsdialog
  A part of the QGIS plugin Midvatten
- 
+
  This part of the plugin handles the user interaction with midvsettingsdock and
  propagates any changes to midvattensettings
- 
+
                              -------------------
         begin                : 2011-10-18
         copyright            : (C) 2011 by joskal
         email                : groundwatergis [at] gmail.com
  ***************************************************************************/"""
+
 import ast
 import os.path
 
@@ -74,10 +75,14 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
         self.list_of_columns.currentIndexChanged.connect(
             partial(self.changed_list_of_columns)
         )
-        self.check_box_data_points.stateChanged.connect(self.changed_check_box_data_points)
+        self.check_box_data_points.stateChanged.connect(
+            self.changed_check_box_data_points
+        )
         self.check_box_step_plot.stateChanged.connect(self.changed_check_box_step_plot)
         # tab XY
-        self.list_of_tables_2.currentIndexChanged.connect(partial(self.xy_table_updated))
+        self.list_of_tables_2.currentIndexChanged.connect(
+            partial(self.xy_table_updated)
+        )
         self.list_of_columns_2.currentIndexChanged.connect(
             partial(self.changed_list_of_columns2)
         )
@@ -90,7 +95,9 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
         self.list_of_columns_5.currentIndexChanged.connect(
             partial(self.changed_list_of_columns5)
         )
-        self.check_box_data_points_2.stateChanged.connect(self.changed_check_box_data_points2)
+        self.check_box_data_points_2.stateChanged.connect(
+            self.changed_check_box_data_points2
+        )
         # tab wqualreport
         self.list_of_tables_wqual.currentIndexChanged.connect(
             partial(self.wqual_table_updated)
@@ -335,8 +342,9 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
             i = 0
             while notfound == 0:  # Loop until the last selected tstable is found
                 self.list_of_tables.setCurrentIndex(i)
-                if str(self.list_of_tables.currentText()) == str(
-                    self.ms.settingsdict["tstable"]
+                if (
+                    str(self.list_of_tables.currentText())
+                    == str(self.ms.settingsdict["tstable"])
                 ):  # The index count stops when last selected table is found #MacOSX fix1
                     notfound = 1
                     self.ts_table_updated()  # Fill the given combobox with columns from the given table and also perform a sanity check of table
@@ -407,8 +415,9 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
                 notfound == 0
             ):  # looping through ListOfTables_2 looking for last selected xytable
                 self.list_of_tables_2.setCurrentIndex(i)
-                if str(self.list_of_tables_2.currentText()) == str(
-                    self.ms.settingsdict["xytable"]
+                if (
+                    str(self.list_of_tables_2.currentText())
+                    == str(self.ms.settingsdict["xytable"])
                 ):  # when last selected xytable found, it is selected in list and a lot of columns is searced for #MacOSX fix1
                     notfound = 1
                     self.xy_table_updated()  # Fill the given combobox with columns from the given table and performs a test
@@ -635,7 +644,8 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
             text = "<font color=green>{}</font>".format(
                 ru(
                     QCoreApplication.translate(
-                        "midvsettingsdialogdock", "Correct table! obsid column is found."
+                        "midvsettingsdialogdock",
+                        "Correct table! obsid column is found.",
                     )
                 )
             )
@@ -834,9 +844,7 @@ class SpatialiteSettings(gui_utils.RowEntryGrid):
 
     def select_file(self):
         """Open a dialog to locate the sqlite file and some more..."""
-        dbpath, __ = QFileDialog.getOpenFileName(
-            None, "Select database:", "*.sqlite"
-        )
+        dbpath, __ = QFileDialog.getOpenFileName(None, "Select database:", "*.sqlite")
         if dbpath:  # Only get new db name if not cancelling the FileDialog
             self.dbpath = dbpath
 

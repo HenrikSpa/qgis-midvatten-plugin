@@ -1,6 +1,6 @@
 """
 /***************************************************************************
- This part of the Midvatten plugin handles dates. 
+ This part of the Midvatten plugin handles dates.
                              -------------------
         begin                : 2016-03-09
         copyright            : (C) 2016 by HenrikSpa
@@ -16,7 +16,6 @@
  *                                                                         *
  ***************************************************************************/
 """
-
 
 import datetime
 import re

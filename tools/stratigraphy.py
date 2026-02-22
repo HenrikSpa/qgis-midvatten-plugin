@@ -21,7 +21,7 @@
 # Questo programma rientra nel software libero; possibile redistribuirlo e/o modificarlo
 # sotto i termini della licenza GNU General Public License come pubblicato da
 # Free Software Foundation (www.fsf.org); versione 2 o superiore della licenza.
- 
+
  ---------- THE ARPAT PLUGIN IS INCLUDED IN MIDVATTEN PLUGIN AND MODIFIED FOR SQLITE DATA BY:
         begin                : 2012-03-06
         copyright            : (C) 2011 by joskal
@@ -38,7 +38,6 @@
  ***************************************************************************/
 """
 
-
 import unicodedata
 from functools import partial  # only to get combobox signals to work
 
@@ -51,7 +50,6 @@ from midvatten.tools.utils.common_utils import returnunicode as ru
 
 
 class Stratigraphy:
-
     def __init__(self, iface, layer=None, settingsdict={}):
         self.iface = iface
         self.stratitable = (
@@ -94,9 +92,7 @@ class Stratigraphy:
         common_utils.start_waiting_cursor()  # Sets the mouse cursor to wait symbol
         try:  # return from store.getData is stored in data only if no object belonging to DataSanityError class is created
             self.data = self.store.getData(ids, lyr)  # added lyr as an argument!!!
-        except (
-            DataSanityError
-        ) as e:  # if an object 'e' belonging to DataSanityError is created, then do following
+        except DataSanityError as e:  # if an object 'e' belonging to DataSanityError is created, then do following
             print("DataSanityError %s" % str(e))
             common_utils.stop_waiting_cursor()
             common_utils.pop_up_info(
@@ -108,9 +104,7 @@ class Stratigraphy:
                 % (e.sond_id, e.message)
             )
             return
-        except (
-            Exception
-        ) as e:  # if an object 'e' belonging to DataSanityError is created, then do following
+        except Exception as e:  # if an object 'e' belonging to DataSanityError is created, then do following
             print("exception : %s" % str(e))
             common_utils.stop_waiting_cursor()
             common_utils.MessagebarAndLog.critical(
@@ -132,7 +126,6 @@ class Stratigraphy:
 
 
 class SurveyInfo:  # This class is to define the data structure...
-
     def __init__(
         self, obsid="", top_lvl=0, coord=None, strata=None, length=None
     ):  # _CHANGE_ added obsid
@@ -213,9 +206,7 @@ class SurveyStore:
 
     def _getDataStep1(self, feature_ids, vlayer):
         """STEP 1: get data from selected layer"""  # _CHANGE_ Completely revised to TSPLot method
-        provider = (
-            vlayer.dataProvider()
-        )  # _CHANGE_  THIS IS TSPLOT-method, we do not use the db loadeds by ARPAT _init_ surveystore
+        provider = vlayer.dataProvider()  # _CHANGE_  THIS IS TSPLOT-method, we do not use the db loadeds by ARPAT _init_ surveystore
         obsid_col_no = provider.fieldNameIndex(
             "obsid"
         )  # _CHANGE_  THIS IS TSPLOT-method To find the column named 'obsid'
@@ -474,7 +465,6 @@ class SurveyStore:
 
 
 class SurveyWidget(QtWidgets.QFrame):
-
     def __init__(self, parent=None):
         QtWidgets.QFrame.__init__(self, parent)
         self.setFrameShape(QtWidgets.QFrame.StyledPanel)
@@ -631,7 +621,9 @@ class SurveyWidget(QtWidgets.QFrame):
         depth_height = fm.height()
 
         # draw obsid 'name'
-        label_rect = QtCore.QRect(s_rect.left(), s_rect.top(), s_rect.width(), name_height)
+        label_rect = QtCore.QRect(
+            s_rect.left(), s_rect.top(), s_rect.width(), name_height
+        )
         p.drawText(label_rect, QtCore.Qt.AlignVCenter, sond.obsid)
 
         scale = (s_rect.height() - name_height - depth_height * 2) / (
@@ -799,7 +791,6 @@ class SurveyWidget(QtWidgets.QFrame):
 
 
 class SurveyDialog(QtWidgets.QDialog):
-
     def __init__(self, parent=None):
         QtWidgets.QDialog.__init__(self, parent)
 

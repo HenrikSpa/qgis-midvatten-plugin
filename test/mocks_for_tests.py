@@ -19,7 +19,6 @@
  ***************************************************************************/
 """
 
-
 from unittest import mock
 from qgis.PyQt import QtWidgets
 from qgis.core import QgsProject

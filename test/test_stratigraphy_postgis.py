@@ -19,7 +19,6 @@
  ***************************************************************************/
 """
 
-
 from unittest import mock
 from nose.plugins.attrib import attr
 from qgis.core import QgsProject, QgsVectorLayer
@@ -32,7 +31,6 @@ from midvatten.tools.utils import db_utils
 
 @attr(status="on")
 class TestStratigraphy(utils_for_tests.MidvattenTestPostgisDbSv):
-
     def create_and_select_vlayer(self):
         self.midvatten.ms.settingsdict["secplotdrillstop"] = "%berg%"
         dbconnection = db_utils.DbConnectionManager()

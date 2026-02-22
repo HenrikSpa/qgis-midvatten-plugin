@@ -19,7 +19,6 @@
  ***************************************************************************/
 """
 
-
 import io
 
 
@@ -351,7 +350,6 @@ class TestSqlToParametersUnitsTuple:
 
 @attr(status="on")
 class TestGetCurrentLocale:
-
     @mock.patch("midvatten.tools.utils.db_utils.DbConnectionManager")
     @mock.patch("midvatten.tools.utils.midvatten_utils.isinstance")
     @mock.patch("locale.getencoding")

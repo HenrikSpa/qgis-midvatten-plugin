@@ -1,6 +1,6 @@
 """
 /***************************************************************************
- This is the part of the Midvatten plugin that returns a report with water quality data for the selected obs_point. 
+ This is the part of the Midvatten plugin that returns a report with water quality data for the selected obs_point.
                               -------------------
         begin                : 2011-10-18
         copyright            : (C) 2011 by joskal
@@ -16,7 +16,6 @@
  *                                                                         *
  ***************************************************************************/
 """
-
 
 import ast
 import codecs
@@ -444,7 +443,7 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
                 + df["depth"]
                 .astype(str)
                 .apply(
-                    lambda x: (x.replace(".0", "") if int(float(x)) == float(x) else x)
+                    lambda x: x.replace(".0", "") if int(float(x)) == float(x) else x
                 )
                 + " m)",
                 inplace=True,
@@ -710,9 +709,7 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
                 else:
                     rpt = "<tr>"
                     for idx in range(nr_row_header_columns):
-                        rpt += (
-                            f"""<td align=\"left\"><font size=1>{row[idx]}</font></td>"""
-                        )
+                        rpt += f"""<td align=\"left\"><font size=1>{row[idx]}</font></td>"""
                     coltext = """<td align=\"right\"><font size=1>{}</font></td>"""
                     rpt += "".join(
                         [coltext.format(x) for x in row[nr_row_header_columns:]]

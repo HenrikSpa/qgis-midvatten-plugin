@@ -19,7 +19,6 @@
  ***************************************************************************/
 """
 
-
 from collections import OrderedDict
 
 
@@ -35,7 +34,6 @@ from midvatten.tools import calculate_statistics
 
 @attr(status="on")
 class TestCalculateStatistics(utils_for_tests.MidvattenTestPostgisDbSv):
-
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
     @mock.patch(

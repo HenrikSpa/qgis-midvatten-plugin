@@ -20,7 +20,6 @@
  ***************************************************************************/
 """
 
-
 from unittest import mock
 from nose.plugins.attrib import attr
 
@@ -34,7 +33,6 @@ from midvatten.tools import piper
 
 @attr(status="on")
 class TestPiperPlotDb(utils_for_tests.MidvattenTestSpatialiteDbSv):
-
     @mock.patch("matplotlib.pyplot.Figure.show")
     def test_piper_plot_default_settings(self, mock_showplot):
         mock_ms = mock.MagicMock()

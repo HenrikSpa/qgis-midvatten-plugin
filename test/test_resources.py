@@ -7,14 +7,13 @@
 
 """
 
-__author__ = 'midvattenplugin@midvatten.se'
-__date__ = '2026-02-16'
-__copyright__ = 'Copyright 2026, Midvatten'
+__author__ = "midvattenplugin@midvatten.se"
+__date__ = "2026-02-16"
+__copyright__ = "Copyright 2026, Midvatten"
 
 import unittest
 
 from qgis.PyQt.QtGui import QIcon
-
 
 
 class TemplateDialogTest(unittest.TestCase):
@@ -30,14 +29,12 @@ class TemplateDialogTest(unittest.TestCase):
 
     def test_icon_png(self):
         """Test we can click OK."""
-        path = ':/plugins/Template/icon.png'
+        path = ":/plugins/Template/icon.png"
         icon = QIcon(path)
         self.assertFalse(icon.isNull())
+
 
 if __name__ == "__main__":
     suite = unittest.makeSuite(TemplateResourcesTest)
     runner = unittest.TextTestRunner(verbosity=2)
     runner.run(suite)
-
-
-

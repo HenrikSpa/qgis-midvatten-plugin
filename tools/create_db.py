@@ -1,6 +1,6 @@
 """
 /***************************************************************************
- This part of the Midvatten plugin creates a new "midvatten project plugin". 
+ This part of the Midvatten plugin creates a new "midvatten project plugin".
                              -------------------
         begin                : 2011-10-18
         copyright            : (C) 2011 by joskal
@@ -16,7 +16,6 @@
  *                                                                         *
  ***************************************************************************/
 """
-
 
 import datetime
 import locale
@@ -122,14 +121,11 @@ class NewDb:
         )
 
         try:
-            
             dbconnection = db_utils.DbConnectionManager(self.db_settings)
-            # Foreign key constraints are disabled by default (for backwards compatibility), 
+            # Foreign key constraints are disabled by default (for backwards compatibility),
             # so must be enabled separately for each database dbconnection separately.
-            dbconnection.execute(
-                "PRAGMA foreign_keys = ON"
-            )  
-            
+            dbconnection.execute("PRAGMA foreign_keys = ON")
+
         except Exception as e:
             common_utils.MessagebarAndLog.critical(
                 bar_msg=ru(
@@ -142,7 +138,7 @@ class NewDb:
             )
             common_utils.stop_waiting_cursor()
             return ""
-            
+
         # First, find spatialite version
         versionstext = dbconnection.execute_and_fetchall("select spatialite_version()")[
             0
@@ -197,7 +193,9 @@ class NewDb:
             )
         ]
         sql_lines = [
-            f"{stmt.strip()};" for stmt in " ".join(sql_lines).split(";") if stmt.strip()
+            f"{stmt.strip()};"
+            for stmt in " ".join(sql_lines).split(";")
+            if stmt.strip()
         ]
         for line in sql_lines:
             sql = self.replace_words(line, replace_word_replace_with)
@@ -348,7 +346,9 @@ class NewDb:
             )
         ]
         sql_lines = [
-            f"{stmt.strip()};" for stmt in " ".join(sql_lines).split(";") if stmt.strip()
+            f"{stmt.strip()};"
+            for stmt in " ".join(sql_lines).split(";")
+            if stmt.strip()
         ]
         for linenr, line in enumerate(sql_lines):
             sql = self.replace_words(line, replace_word_replace_with)
@@ -554,7 +554,9 @@ class NewDb:
             # Get table and column comments
             if created_tables_sqls is None:
                 ph = dbconnection.placeholder_sign()
-                table_descr_sql = f"SELECT name, sql from sqlite_master WHERE name = {ph};"
+                table_descr_sql = (
+                    f"SELECT name, sql from sqlite_master WHERE name = {ph};"
+                )
                 create_table_sql = dbconnection.execute_and_fetchall(
                     table_descr_sql, (table,)
                 )[0][1]

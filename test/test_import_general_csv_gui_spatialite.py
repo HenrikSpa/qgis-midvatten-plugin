@@ -2,7 +2,7 @@
 /***************************************************************************
  This part of the Midvatten plugin tests the module that handles importing of
   measurements.
- 
+
  This part is to a big extent based on QSpatialite plugin.
                              -------------------
         begin                : 2016-03-08
@@ -19,7 +19,6 @@
  *                                                                         *
  ***************************************************************************/
 """
-
 
 import datetime
 import timeit

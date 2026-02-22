@@ -1,7 +1,7 @@
 """
 /***************************************************************************
- This is the part of the Midvatten plugin that returns a report with general observation point info, 
- "drill report"for the selected obs_point. 
+ This is the part of the Midvatten plugin that returns a report with general observation point info,
+ "drill report"for the selected obs_point.
                               -------------------
         begin                : 2011-10-18
         copyright            : (C) 2011 by joskal
@@ -18,7 +18,6 @@
  ***************************************************************************/
 """
 
-
 import codecs
 import os
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -33,7 +32,6 @@ from midvatten.tools.utils.common_utils import returnunicode as ru
 
 
 class Drillreport:  # general observation point info for the selected object
-
     def __init__(
         self,
         obsids: List[str] = [""],
@@ -921,7 +919,9 @@ class Drillreport:  # general observation point info for the selected object
         rpt += r"""</p>"""
         return rpt
 
-    def get_data(self, obsid: str = "", tablename: str = "", debug: str = "n") -> Union[
+    def get_data(
+        self, obsid: str = "", tablename: str = "", debug: str = "n"
+    ) -> Union[
         Tuple[bool, List[Any]],
         Tuple[
             bool,

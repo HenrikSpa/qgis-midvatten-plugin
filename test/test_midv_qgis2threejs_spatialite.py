@@ -19,7 +19,6 @@
  ***************************************************************************/
 """
 
-
 from unittest import mock
 from unittest.mock import MagicMock
 from nose.plugins.attrib import attr
@@ -83,9 +82,7 @@ class TestPrepareQgis2Threejs(utils_for_tests.MidvattenTestSpatialiteDbSv):
                         t=layer_name,
                     )
                     view_contents.append(
-                        db_utils.sql_load_fr_db(
-                            sql, dbconnection=dbconnection
-                        )[1]
+                        db_utils.sql_load_fr_db(sql, dbconnection=dbconnection)[1]
                     )
             sql = dbconnection.sql_ident(
                 "SELECT rowid, obsid, ST_AsText(geometry) FROM {t}",

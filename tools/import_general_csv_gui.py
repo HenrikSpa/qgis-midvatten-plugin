@@ -20,7 +20,6 @@
  ***************************************************************************/
 """
 
-
 import copy
 import csv
 import os
@@ -267,7 +266,7 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
 
         features = list(active_layer.getSelectedFeatures())
         file_data = self.parse_features_into_file_data(features, active_layer)
-        
+
         geometries = [
             feature.geometry().asWkt() if feature.geometry().asWkt() else None
             for feature in features
@@ -285,8 +284,17 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
 
     def parse_features_into_file_data(self, features, active_layer):
         return [[ru(field.name()) for field in active_layer.fields()]] + [
-            [ru(attr) if all([ru(attr).strip() != "NULL", attr is not None,]) else ""
-             for attr in feature]
+            [
+                ru(attr)
+                if all(
+                    [
+                        ru(attr).strip() != "NULL",
+                        attr is not None,
+                    ]
+                )
+                else ""
+                for attr in feature
+            ]
             for feature in features
         ]
 

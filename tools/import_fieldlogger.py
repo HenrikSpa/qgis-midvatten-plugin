@@ -19,6 +19,7 @@
  *                                                                         *
  ***************************************************************************/
 """
+
 import copy
 import io
 import os
@@ -425,7 +426,6 @@ class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
     def prepare_comments_data(observations):
         file_data_list = [["obsid", "date_time", "comment", "staff"]]
         for observation in observations:
-
             if observation.get("skip_comment_import", False):
                 continue
             obsid = observation["obsid"]
@@ -1118,7 +1118,6 @@ class InputFields(QtWidgets.QWidget):
             % str(stored_settings)
         )
         for import_method_chooser in list(self.parameter_imports.values()):
-
             if not stored_settings:
                 continue
             settings = [

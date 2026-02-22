@@ -16,6 +16,7 @@
  *                                                                         *
  ***************************************************************************/
 """
+
 import copy
 import os
 import traceback
@@ -372,7 +373,9 @@ def apply_obsid_filter_to_layers(layers):
     if selected_obsids:
         # QgsExpression filter string (not DB-API), so we must escape literals ourselves.
         filter_string = "obsid IN ({})".format(
-            ", ".join(["'{}'".format(str(x).replace("'", "''")) for x in selected_obsids])
+            ", ".join(
+                ["'{}'".format(str(x).replace("'", "''")) for x in selected_obsids]
+            )
         )
         for layer in layers:
             req = QgsFeatureRequest(QgsExpression(filter_string))
@@ -540,9 +543,7 @@ def symbology_using_cloning(plot_types, colors, layer, stylename, column):
         else:
             condition = "IN"
         _types = ", ".join([f"'{x}'" for x in types])
-        rule.setFilterExpression(
-            f"""trim(lower("{column}")) {condition} ({_types})"""
-        )
+        rule.setFilterExpression(f"""trim(lower("{column}")) {condition} ({_types})""")
         rule.setLabel(key)
         sl = rule.symbol().symbolLayer(0)
         sl.setColor(color)

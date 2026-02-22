@@ -32,7 +32,6 @@ Calibr_Ui_Dialog = uic.loadUiType(
 
 
 class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
-
     @fn_timer
     def __init__(self, parent, settingsdict1={}, obsid=""):
         qgis.PyQt.QtWidgets.QDialog.__init__(self, parent)
@@ -479,7 +478,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 )
 
         else:
-
             text = ru(
                 QCoreApplication.translate(
                     "Calibrlogger",
@@ -505,7 +503,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         to_epoch = (to_d_t - datetime.datetime(1970, 1, 1)).total_seconds()
         sql = f"UPDATE w_levels_logger SET level_masl = {ph} + level_masl WHERE obsid = {ph} AND level_masl IS NOT NULL AND {date_time_as_epoch} >= {ph} AND {date_time_as_epoch} <= {ph}"
         db_utils.sql_alter_db(
-            sql, dbconnection=dbconnection, all_args=[(newzref, obsid, fr_epoch, to_epoch)]
+            sql,
+            dbconnection=dbconnection,
+            all_args=[(newzref, obsid, fr_epoch, to_epoch)],
         )
         dbconnection.closedb()
         common_utils.stop_waiting_cursor()
@@ -527,7 +527,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         to_epoch = (to_d_t - datetime.datetime(1970, 1, 1)).total_seconds()
         sql = f"UPDATE w_levels_logger SET level_masl = {ph} + head_cm / 100 WHERE obsid = {ph} AND head_cm IS NOT NULL AND {date_time_as_epoch} >= {ph} AND {date_time_as_epoch} <= {ph}"
         db_utils.sql_alter_db(
-            sql, dbconnection=dbconnection, all_args=[(newzref, obsid, fr_epoch, to_epoch)]
+            sql,
+            dbconnection=dbconnection,
+            all_args=[(newzref, obsid, fr_epoch, to_epoch)],
         )
         dbconnection.closedb()
         common_utils.stop_waiting_cursor()
@@ -583,7 +585,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
         # Load manual reading (full time series) for the obsid
         if self.meas_ts.size and self.contains_more_than_nan(self.meas_ts):
-
             a = self.plot_recarray(
                 self.axes,
                 self.meas_ts,
@@ -1110,7 +1111,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         ph = dbconnection.placeholder_sign()
         date_time_as_epoch = db_utils.cast_date_time_as_epoch(dbconnection)
         table_ident = dbconnection.ident(table_name)
-        where_dt_sql = f" AND {date_time_as_epoch} >= {ph} AND {date_time_as_epoch} <= {ph}"
+        where_dt_sql = (
+            f" AND {date_time_as_epoch} >= {ph} AND {date_time_as_epoch} <= {ph}"
+        )
         alter_args = (selected_obsid, fr_d_t, to_d_t)
 
         if set_to_null_instead:
@@ -1143,9 +1146,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         really_delete = common_utils.Askuser("YesNo", msg).result
         if really_delete:
             common_utils.start_waiting_cursor()
-            db_utils.sql_alter_db(
-                sql, dbconnection=dbconnection, all_args=[alter_args]
-            )
+            db_utils.sql_alter_db(sql, dbconnection=dbconnection, all_args=[alter_args])
             dbconnection.closedb()
             common_utils.stop_waiting_cursor()
             self.update_plot()
@@ -1262,9 +1263,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                   * ({date_as_numeric} - {l1_date})
                 )
                 WHERE obsid = '{obsid}' AND date_time >= '{adjust_start_date}' AND date_time <= '{adjust_end_date}'
-            """.format(
-            **data
-        )
+            """.format(**data)
         common_utils.start_waiting_cursor()
         db_utils.sql_alter_db(sql)
         common_utils.stop_waiting_cursor()

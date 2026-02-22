@@ -19,7 +19,6 @@
  ***************************************************************************/
 """
 
-
 from nose.plugins.attrib import attr
 
 from midvatten.test import utils_for_tests
@@ -28,7 +27,6 @@ from midvatten.tools.utils import db_utils
 
 @attr(status="on")
 class TestDbTablesColumnsInfo(utils_for_tests.MidvattenTestPostgisDbSv):
-
     def test_tables_columns_info_all_tables(self):
         """ """
         # Assert that obsid is primary key and not null in obs_points
@@ -64,7 +62,6 @@ class TestDbTablesColumnsInfo(utils_for_tests.MidvattenTestPostgisDbSv):
 
 @attr(status="on")
 class TestTablesColumns(utils_for_tests.MidvattenTestPostgisDbSv):
-
     def test_tables_columns_no_dbconnection_supplied(self):
         """ """
         tables_columns = db_utils.tables_columns()
@@ -89,7 +86,6 @@ class TestTablesColumns(utils_for_tests.MidvattenTestPostgisDbSv):
 
 @attr(status="on")
 class TestGetForeignKeys(utils_for_tests.MidvattenTestPostgisDbSv):
-
     def test_get_foreign_keys(self):
         """ """
         foreign_keys = db_utils.get_foreign_keys("w_levels")
@@ -107,7 +103,6 @@ class TestGetForeignKeys(utils_for_tests.MidvattenTestPostgisDbSv):
 
 @attr(status="on")
 class TestVerifyTableExist(utils_for_tests.MidvattenTestPostgisDbSv):
-
     def test_verify_table_exists(self):
         exists = db_utils.verify_table_exists("obs_points")
         assert exists
@@ -190,7 +185,7 @@ class TestSqlInjectionHardening(utils_for_tests.MidvattenTestPostgisDbSv):
         dbconnection = db_utils.DbConnectionManager()
         try:
             try:
-                dbconnection.ident('obs_points; DROP TABLE obs_points;--')
+                dbconnection.ident("obs_points; DROP TABLE obs_points;--")
             except db_utils.UnsafeIdentifierError:
                 pass
             else:

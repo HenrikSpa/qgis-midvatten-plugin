@@ -19,7 +19,6 @@
  ***************************************************************************/
 """
 
-
 import ast
 import io
 import os
@@ -37,7 +36,6 @@ from midvatten.tools.utils.midvatten_utils import PlotTemplates
 
 @attr(status="on")
 class TestSecplotTemplates(utils_for_tests.MidvattenTestSpatialiteNotCreated):
-
     def setUp(self):
         super(self.__class__, self).setUp()
         self.template_list = qgis.PyQt.QtWidgets.QListWidget()

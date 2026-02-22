@@ -17,7 +17,6 @@
  ***************************************************************************/
 """
 
-
 import os
 
 import qgis.PyQt
@@ -155,7 +154,6 @@ class ValuesFromSelectedFeaturesGui(
             bar_prefix = ""
             msg = ""
             if self.filter_layer_checkbox.isChecked():
-
                 try:
                     activelayer.setSubsetString(filter_string)
                 except Exception as e:

@@ -1,6 +1,6 @@
 """
 /***************************************************************************
- This part of the Midvatten plugin originates from the TimeSeriesPlot plugin. 
+ This part of the Midvatten plugin originates from the TimeSeriesPlot plugin.
                              -------------------
         begin                : 2011-10-18
         copyright            : (C) 2011 by joskal
@@ -17,7 +17,6 @@
  ***************************************************************************/
 """
 
-
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tick
 import numpy as np
@@ -28,7 +27,6 @@ from midvatten.tools.utils.common_utils import returnunicode as ru
 
 
 class XYPlot:
-
     def __init__(
         self, layer=None, settingsdict={}
     ):  # Might need revision of variables and method for loading default variables
@@ -73,11 +71,7 @@ class XYPlot:
                 plabel = [None] * n_f * n_y  # List for label strings
 
                 j = 0
-                for (
-                    feature
-                ) in (
-                    ob
-                ):  # Loop through all selected objects, a plot is added for each one of the observation points (i.e. selected objects)
+                for feature in ob:  # Loop through all selected objects, a plot is added for each one of the observation points (i.e. selected objects)
                     attributes = feature.attributes()
                     obsid = attributes[
                         kolumnindex

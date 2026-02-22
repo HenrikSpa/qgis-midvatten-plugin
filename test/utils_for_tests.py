@@ -1,7 +1,7 @@
 """
 /***************************************************************************
  This part of the Midvatten plugin with utilities used for testing.
- 
+
  This part is to a big extent based on QSpatialite plugin.
                              -------------------
         begin                : 2016-03-08
@@ -18,7 +18,6 @@
  *                                                                         *
  ***************************************************************************/
 """
-
 
 import io
 import os
@@ -422,7 +421,6 @@ def compare_strings(str1, str2):
 
     diff = False
     for idx in range(len(str1)):
-
         str1_t = return20chars(str1, idx, 40)
         str2_t = return20chars(str2, idx, 40)
 
@@ -461,9 +459,7 @@ def create_vectorlayer(
     hide_print=True,
 ):
     """From GroupStats"""
-    vlayer = QgsVectorLayer(
-        f"{geomtype}?crs=epsg:{str(crs)}", "test", "memory"
-    )
+    vlayer = QgsVectorLayer(f"{geomtype}?crs=epsg:{str(crs)}", "test", "memory")
     provider = vlayer.dataProvider()
     # print(str(crs))
     fields = QgsFields()

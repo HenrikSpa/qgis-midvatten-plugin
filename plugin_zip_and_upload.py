@@ -11,7 +11,6 @@ python plugin_zip.py
 
 """
 
-
 import getpass
 import os
 import xmlrpc.client

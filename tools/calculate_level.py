@@ -1,7 +1,7 @@
 """
 /***************************************************************************
  This part of the Midvatten plugin handles importing of water level measurements
- to the database. Also some calculations and calibrations. 
+ to the database. Also some calculations and calibrations.
 
  This part is to a big extent based on QSpatialite plugin.
                              -------------------
@@ -19,7 +19,6 @@
  *                                                                         *
  ***************************************************************************/
 """
-
 
 import os
 from typing import List
@@ -54,7 +53,6 @@ Calc_Ui_Dialog = uic.loadUiType(
 class CalculateLevel(
     qgis.PyQt.QtWidgets.QDialog, Calc_Ui_Dialog
 ):  # An instance of the class Calc_Ui_Dialog is created same time as instance of calclvl is created
-
     @fn_timer
     def __init__(self, parent: QWidget, layerin: int):
         qgis.PyQt.QtWidgets.QDialog.__init__(self)

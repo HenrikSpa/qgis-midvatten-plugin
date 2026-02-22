@@ -18,7 +18,6 @@
  ***************************************************************************/
 """
 
-
 import ast
 import codecs
 import os
@@ -316,7 +315,6 @@ class DrillreportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
 
 
 class Drillreport:  # general observation point info for the selected object
-
     def __init__(
         self,
         obsids,
@@ -446,9 +444,7 @@ class Drillreport:  # general observation point info for the selected object
             cols_sql = ", ".join(
                 [dbconnection.ident(c) for c in strat_sql_columns_list]
             )
-            strat_sql = (
-                f"SELECT obsid, {cols_sql} FROM stratigraphy WHERE obsid IN {clause} ORDER BY obsid, stratid"
-            )
+            strat_sql = f"SELECT obsid, {cols_sql} FROM stratigraphy WHERE obsid IN {clause} ORDER BY obsid, stratid"
             all_stratigrapy_data = ru(
                 db_utils.get_sql_result_as_dict(
                     strat_sql,
@@ -691,7 +687,6 @@ class Drillreport:  # general observation point info for the selected object
             rpt += r"""<TD WIDTH=100% COLSPAN=2>"""
 
             if strat_data:
-
                 rpt += self.write_strat_data(
                     strat_data,
                     strat_columns,
@@ -900,7 +895,6 @@ class Drillreport:  # general observation point info for the selected object
             rpt += r"""</TR>"""
 
             for rownr, row in enumerate(strat_data):
-
                 rpt += r"""<TR VALIGN=TOP>"""
                 for col in strat_columns:
                     if col == "depth":

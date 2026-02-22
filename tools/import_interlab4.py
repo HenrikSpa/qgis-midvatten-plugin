@@ -20,7 +20,6 @@
  ***************************************************************************/
 """
 
-
 import copy
 import csv
 import io
@@ -337,7 +336,9 @@ class Interlab4Import(qgis.PyQt.QtWidgets.QMainWindow, import_fieldlogger_ui_dia
                                     c1=connection_columns[0].replace(" ", "_"),
                                     c2=connection_columns[1],
                                 )
-                                dbconnection.execute_and_commit(sql, all_args=[add_values])
+                                dbconnection.execute_and_commit(
+                                    sql, all_args=[add_values]
+                                )
                             finally:
                                 dbconnection.closedb()
                             handled.add(current)
@@ -603,9 +604,9 @@ class Interlab4Import(qgis.PyQt.QtWidgets.QMainWindow, import_fieldlogger_ui_dia
                                     )
                                 )
 
-                                lab_results[data["lablittera"]][
-                                    data["parameter"]
-                                ] = primary_data
+                                lab_results[data["lablittera"]][data["parameter"]] = (
+                                    primary_data
+                                )
 
                                 dupl_index = 1
                                 duplicate_parname = _duplicate_data["parameter"]
@@ -1187,7 +1188,9 @@ class MetadataFilter(VRowEntry):
         self.label_layout = RowEntry()
         self.label_layout.layout.addWidget(self.label)
 
-        self.button_save = qgis.PyQt.QtWidgets.QPushButton("Save metadata table to file")
+        self.button_save = qgis.PyQt.QtWidgets.QPushButton(
+            "Save metadata table to file"
+        )
         self.button_save.setToolTip(
             ru(
                 QCoreApplication.translate(
@@ -1256,7 +1259,10 @@ class MetadataFilter(VRowEntry):
          for header, pattern in patterns.items()
          if re.search(pattern, self.table.item(rownr, table_header_colnr[header]).text())]"""
 
-        mode = QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows
+        mode = (
+            QItemSelectionModel.SelectionFlag.Select
+            | QItemSelectionModel.SelectionFlag.Rows
+        )
         selected_items = self.table.selectionModel().selection()
 
         def select(selected_items, table, rownr, mode):

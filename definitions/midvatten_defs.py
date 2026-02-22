@@ -1,6 +1,6 @@
 """
 /***************************************************************************
- This file contains dictionaries, lists and variable definitions for the Midvatten plugin. 
+ This file contains dictionaries, lists and variable definitions for the Midvatten plugin.
                               -------------------
         begin                : 2011-10-18
         copyright            : (C) 2011 by joskal
@@ -16,7 +16,6 @@
  *                                                                         *
  ***************************************************************************/
 """
-
 
 import io
 import os
@@ -1311,9 +1310,9 @@ def secplot_default_template():
         "linewidth": 0.5,
     }
     loaded_template["rcParams"] = {"savefig.dpi": 450, "figure.figsize": [6.4, 4.8]}
-    loaded_template["Figure_subplots_adjust"] = (
-        {}
-    )  # {"top": 0.95, "bottom": 0.15, "left": 0.09, "right": 0.97}
+    loaded_template[
+        "Figure_subplots_adjust"
+    ] = {}  # {"top": 0.95, "bottom": 0.15, "left": 0.09, "right": 0.97}
     loaded_template["wlevels_Axes_plot"] = {
         "DEFAULT": {"markersize": 6, "marker": "v", "linestyle": "-", "linewidth": 1}
     }

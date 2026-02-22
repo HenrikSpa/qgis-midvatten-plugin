@@ -20,7 +20,6 @@
  ***************************************************************************/
 """
 
-
 from collections import OrderedDict
 
 from unittest import mock
@@ -112,7 +111,6 @@ class TestWlvllogImportFromLeveloggerFiles(utils_for_tests.MidvattenTestPostgisD
                 with common_utils.tempinput(
                     "\n".join(files[2]), LeveloggerImport.charsetchoosen
                 ) as f3:
-
                     filenames = [f1, f2, f3]
                     utils_askuser_answer_no_obj = MockUsingReturnValue(None)
                     utils_askuser_answer_no_obj.result = 0
@@ -255,7 +253,6 @@ class TestWlvllogImportFromLeveloggerFiles(utils_for_tests.MidvattenTestPostgisD
                 with common_utils.tempinput(
                     "\n".join(files[2]), LeveloggerImport.charsetchoosen
                 ) as f3:
-
                     filenames = [f1, f2, f3]
 
                     @mock.patch(
@@ -384,7 +381,6 @@ class TestWlvllogImportFromLeveloggerFiles(utils_for_tests.MidvattenTestPostgisD
                 with common_utils.tempinput(
                     "\n".join(files[2]), LeveloggerImport.charsetchoosen
                 ) as f3:
-
                     filenames = [f1, f2, f3]
 
                     @mock.patch(
@@ -515,7 +511,6 @@ class TestWlvllogImportFromLeveloggerFiles(utils_for_tests.MidvattenTestPostgisD
                 with common_utils.tempinput(
                     "\n".join(files[2]), LeveloggerImport.charsetchoosen
                 ) as f3:
-
                     filenames = [f1, f2, f3]
 
                     @mock.patch(
@@ -858,7 +853,6 @@ class TestWlvllogImportFromLeveloggerFiles(utils_for_tests.MidvattenTestPostgisD
                 with common_utils.tempinput(
                     "\n".join(files[2]), LeveloggerImport.charsetchoosen
                 ) as f3:
-
                     filenames = [f1, f2, f3]
 
                     @mock.patch(
@@ -993,7 +987,6 @@ class TestWlvllogImportFromLeveloggerFiles(utils_for_tests.MidvattenTestPostgisD
                 with common_utils.tempinput(
                     "\n".join(files[2]), LeveloggerImport.charsetchoosen
                 ) as f3:
-
                     filenames = [f1, f2, f3]
 
                     @mock.patch(
@@ -1122,7 +1115,6 @@ class TestWlvllogImportFromLeveloggerFiles(utils_for_tests.MidvattenTestPostgisD
             with common_utils.tempinput(
                 "\n".join(files[1]), LeveloggerImport.charsetchoosen
             ) as f2:
-
                 filenames = [f1, f2]
 
                 @mock.patch(
@@ -1253,7 +1245,6 @@ class TestWlvllogImportFromLeveloggerFiles(utils_for_tests.MidvattenTestPostgisD
                 with common_utils.tempinput(
                     "\n".join(files[2]), LeveloggerImport.charsetchoosen
                 ) as f3:
-
                     filenames = [f1, f2, f3]
                     utils_askuser_answer_no_obj = MockUsingReturnValue(None)
                     utils_askuser_answer_no_obj.result = 0
@@ -1320,11 +1311,7 @@ class TestWlvllogImportFromLeveloggerFiles(utils_for_tests.MidvattenTestPostgisD
                             importer.import_all_data.checked,
                         )
 
-                        print(
-                            "\n".join(
-                                [str(x) for x in mock_messagebar.mock_calls]
-                            )
-                        )
+                        print("\n".join([str(x) for x in mock_messagebar.mock_calls]))
 
                     _test_wlvllogg_import_from_levelogger_files(self, filenames)
 
@@ -1409,7 +1396,6 @@ class TestWlvllogImportFromLeveloggerFiles(utils_for_tests.MidvattenTestPostgisD
                 with common_utils.tempinput(
                     "\n".join(files[2]), LeveloggerImport.charsetchoosen
                 ) as f3:
-
                     filenames = [f1, f2, f3]
                     utils_askuser_answer_no_obj = MockUsingReturnValue(None)
                     utils_askuser_answer_no_obj.result = 0
@@ -1508,7 +1494,6 @@ class TestWlvllogImportFromLeveloggerFiles(utils_for_tests.MidvattenTestPostgisD
         with common_utils.tempinput(
             "\n".join(files[0]), LeveloggerImport.charsetchoosen
         ) as f1:
-
             filenames = [f1]
             utils_askuser_answer_no_obj = MockUsingReturnValue(None)
             utils_askuser_answer_no_obj.result = 0

@@ -1,6 +1,6 @@
 """
 /***************************************************************************
- This is the part of the Midvatten plugin that returns a report with water quality data for the selected obs_point. 
+ This is the part of the Midvatten plugin that returns a report with water quality data for the selected obs_point.
                               -------------------
         begin                : 2011-10-18
         copyright            : (C) 2011 by joskal
@@ -16,7 +16,6 @@
  *                                                                         *
  ***************************************************************************/
 """
-
 
 import codecs
 import os
@@ -307,7 +306,9 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
                     execute_args.append(u)
 
                 if self.settingsdict["wqual_sortingcolumn"]:
-                    sorting_col = dbconnection.ident(self.settingsdict["wqual_sortingcolumn"])
+                    sorting_col = dbconnection.ident(
+                        self.settingsdict["wqual_sortingcolumn"]
+                    )
                     sql += f" AND {sorting_col} = {ph} "
                     execute_args.append(sorting)
 

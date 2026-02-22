@@ -7,7 +7,7 @@ copyright            : (C) 2017 by Luiz Motta
 email                : motta.luiz@gmail.com
 
  ***************************************************************************/
- 
+
  /***************************************************************************
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -24,6 +24,7 @@ For create file 'qm'
 4) Create 'qm': lrelease PLUGIN_NAME_LOCALE.ts (Ex.: _pt_BR)
 
 """
+
 import glob
 import os
 
@@ -49,7 +50,9 @@ def getTranslate(name_plugin: str, name_dir: None = None):
     system_path = QgsApplication.prefixPath()
     system_plugin_path = os.path.join(system_path, plugin_path)
 
-    pp = user_plugin_path if QFileInfo(user_plugin_path).exists() else system_plugin_path
+    pp = (
+        user_plugin_path if QFileInfo(user_plugin_path).exists() else system_plugin_path
+    )
 
     # If the plugin path didn't work, use relative path to the plugin directory
     if not os.path.exists(os.path.join(pp, "i18n")):
@@ -85,9 +88,7 @@ def getTranslate(name_plugin: str, name_dir: None = None):
             return
     else:
         locale_full_name = QLocale.system().name()
-        qm_path_file = os.path.join(
-            "i18n", f"{name_plugin}_{locale_full_name}.qm"
-        )
+        qm_path_file = os.path.join("i18n", f"{name_plugin}_{locale_full_name}.qm")
         translation_file = os.path.join(pp, qm_path_file)
 
     if QFileInfo(translation_file).exists():

@@ -1,8 +1,8 @@
 """
 /***************************************************************************
- This is the part of the Midvatten plugin that prepares a number of spatial views 
+ This is the part of the Midvatten plugin that prepares a number of spatial views
  in your spatialite midvatten database that are suitable for creating 3D plots with qgis2threejs.
- The spatial views are added into your qgis project group "stratigraphy_layers_for_qgis2threejs" 
+ The spatial views are added into your qgis project group "stratigraphy_layers_for_qgis2threejs"
                               -------------------
         begin                : 20150129
         copyright            : (C) 2011 by joskal
@@ -18,7 +18,6 @@
  *                                                                         *
  ***************************************************************************/
 """
-
 
 import os
 

@@ -162,12 +162,13 @@ class TestGetTimezoneFromDb(utils_for_tests.MidvattenTestPostgisDbSv):
 @attr(status="on")
 class TestSqlInjectionHardening(utils_for_tests.MidvattenTestPostgisDbSv):
     def test_in_clause_does_not_expand_scope(self):
-        ph = db_utils.placeholder()
+        dbconnection = db_utils.DbConnectionManager()
+        ph = dbconnection.placeholder()
         insert_sql = f"INSERT INTO obs_points (obsid) VALUES ({ph})"
         db_utils.sql_alter_db(insert_sql, all_args=[("P1",)])
         db_utils.sql_alter_db(insert_sql, all_args=[("P2",)])
 
-        dbconnection = db_utils.DbConnectionManager()
+
         try:
             clause, args = dbconnection.in_clause(["P1') OR 1=1 --"])
             sql = f"SELECT obsid FROM obs_points WHERE obsid IN {clause} ORDER BY obsid"

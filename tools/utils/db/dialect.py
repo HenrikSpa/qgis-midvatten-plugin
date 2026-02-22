@@ -75,7 +75,7 @@ def in_clause(
     values_list = list(values)
     if not values_list:
         return "(NULL)", []
-    placeholders = backend.placeholder(len(values_list))
+    placeholders = backend.placeholders(len(values_list))
     return f"({placeholders})", values_list
 
 

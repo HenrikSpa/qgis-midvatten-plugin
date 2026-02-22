@@ -244,7 +244,7 @@ def get_timezone_from_db(
 ) -> Optional[str]:
     with use_or_create_connection(dbconnection) as dbconnection:
         about_db_cols = tables_columns("about_db", dbconnection).get("about_db", [])
-        ph = dbconnection.placeholder_sign()
+        ph = dbconnection.placeholder()
         if "tablename" in about_db_cols:
             res = dbconnection.execute_and_fetchall(
                 f"SELECT description FROM about_db WHERE tablename = {ph} AND columnname = 'date_time' LIMIT 1;",
@@ -378,7 +378,7 @@ def calculate_median_value(
     sql = ""
     with use_or_create_connection(dbconnection) as dbconnection:
         if dbconnection.dbtype == "spatialite":
-            ph = dbconnection.placeholder_sign()
+            ph = dbconnection.placeholder()
             col_ident = dbconnection.ident(column)
             table_ident = dbconnection.ident(table)
             sql = (
@@ -394,7 +394,7 @@ def calculate_median_value(
                 sql, dbconnection=dbconnection, execute_args=(obsid, obsid, obsid)
             )
         else:
-            ph = dbconnection.placeholder_sign()
+            ph = dbconnection.placeholder()
             col_ident = dbconnection.ident(column)
             table_ident = dbconnection.ident(table)
             if not sql_load_fr_db(

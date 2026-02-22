@@ -91,7 +91,7 @@ def get_table_info(
                 )
                 return None
         else:
-            ph = dbconnection.placeholder_sign()
+            ph = dbconnection.placeholder()
             columns_sql = (
                 "SELECT ordinal_position, column_name, data_type, CASE WHEN is_nullable = 'NO' THEN 1 ELSE 0 END AS notnull, column_default, 0 AS primary_key FROM information_schema.columns WHERE table_schema = "
                 + ph

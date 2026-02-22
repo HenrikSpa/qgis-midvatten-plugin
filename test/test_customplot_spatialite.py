@@ -62,8 +62,8 @@ def _insert_w_levels_logger_data():
     )
 
 
-def _configure_customplot_tab1_tab2(customplot, tab2=False):
-    """Set table, xcol, ycol, filtercol and filter selection for tab1 and optionally tab2."""
+def _configure_customplot_tab1_tab2(customplot, tab2=False, tab3=False):
+    """Set table, xcol, ycol, filtercol and filter selection for tab1 and optionally tab2, tab3."""
     gui_utils.set_combobox(customplot.tab1_table, "w_levels_logger")
     gui_utils.set_combobox(customplot.tab1_xcol, "date_time")
     gui_utils.set_combobox(customplot.tab1_ycol, "level_masl")
@@ -75,6 +75,12 @@ def _configure_customplot_tab1_tab2(customplot, tab2=False):
         gui_utils.set_combobox(customplot.tab2_ycol, "level_masl")
         gui_utils.set_combobox(customplot.tab2_filtercol1, "obsid")
         customplot.tab2_filter1.item(1).setSelected(True)
+    if tab3:
+        gui_utils.set_combobox(customplot.tab3_table, "w_levels_logger")
+        gui_utils.set_combobox(customplot.tab3_xcol, "date_time")
+        gui_utils.set_combobox(customplot.tab3_ycol, "level_masl")
+        gui_utils.set_combobox(customplot.tab3_filtercol1, "obsid")
+        customplot.tab3_filter1.item(1).setSelected(True)
 
 
 @attr(status="on")
@@ -660,6 +666,50 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert lines[1].get_marker() not in (None, "None", "none")
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_plot_type_combobox_tab3(self, mock_messagebar):
+        _insert_w_levels_logger_data()
+        self.midvatten.plot_sqlite()
+        customplot = self.midvatten.customplot
+        _configure_customplot_tab1_tab2(customplot, tab2=False, tab3=True)
+        gui_utils.set_combobox(customplot.tab3_plot_type, "marker")
+        customplot.draw_plot_all()
+        lines = customplot.axes.get_lines()
+        print(f"{mock_messagebar.mock_calls=}")
+        assert len(lines) >= 2
+        assert lines[1].get_linestyle() in (None, "None", "none", "")
+        assert lines[1].get_marker() not in (None, "None", "none")
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_remove_mean_tab2(self, mock_messagebar):
+        _insert_w_levels_logger_data()
+        self.midvatten.plot_sqlite()
+        customplot = self.midvatten.customplot
+        _configure_customplot_tab1_tab2(customplot, tab2=True)
+        customplot.draw_plot_all()
+        _, ydata_before = customplot.axes.get_lines()[1].get_data()
+        customplot.tab2_remove_mean.setChecked(True)
+        customplot.draw_plot_all()
+        _, ydata_after = customplot.axes.get_lines()[1].get_data()
+        print(f"{mock_messagebar.mock_calls=}")
+        assert abs(float(np.mean(ydata_after))) < 1e-10
+        assert abs(float(np.mean(ydata_before))) > 0.1
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_remove_mean_tab3(self, mock_messagebar):
+        _insert_w_levels_logger_data()
+        self.midvatten.plot_sqlite()
+        customplot = self.midvatten.customplot
+        _configure_customplot_tab1_tab2(customplot, tab2=False, tab3=True)
+        customplot.draw_plot_all()
+        _, ydata_before = customplot.axes.get_lines()[1].get_data()
+        customplot.tab3_remove_mean.setChecked(True)
+        customplot.draw_plot_all()
+        _, ydata_after = customplot.axes.get_lines()[1].get_data()
+        print(f"{mock_messagebar.mock_calls=}")
+        assert abs(float(np.mean(ydata_after))) < 1e-10
+        assert abs(float(np.mean(ydata_before))) > 0.1
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_pandas_resample_rule_how_changes_line_data(self, mock_messagebar):
         _insert_w_levels_logger_data()
         self.midvatten.plot_sqlite()
@@ -811,3 +861,31 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert np.isclose(float(y1[0]), 32.0 / 3.0)
         assert np.isclose(float(y2[0]), 5.75)
         assert np.isclose(float(y2[1]), 7.0)
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_pandas_tab3_resample_changes_third_line(self, mock_messagebar):
+        _insert_w_levels_logger_data()
+        self.midvatten.plot_sqlite()
+        customplot = self.midvatten.customplot
+        _configure_customplot_tab1_tab2(customplot, tab2=True, tab3=True)
+        customplot.tab1_pandas_calc.rule.setText("1d")
+        customplot.tab1_pandas_calc.how.setText("mean")
+        customplot.tab2_pandas_calc.rule.setText("1d")
+        customplot.tab2_pandas_calc.how.setText("mean")
+        customplot.tab3_pandas_calc.rule.setText("1d")
+        customplot.tab3_pandas_calc.how.setText("mean")
+        customplot.draw_plot_all()
+        lines = customplot.axes.get_lines()
+        print(f"{mock_messagebar.mock_calls=}")
+        assert len(lines) >= 3
+        x1, y1 = lines[0].get_data()
+        x2, y2 = lines[1].get_data()
+        x3, y3 = lines[2].get_data()
+        assert len(x1) == 1 and len(y1) == 1
+        assert len(x2) == 2 and len(y2) == 2
+        assert len(x3) == 2 and len(y3) == 2
+        assert np.isclose(float(y1[0]), 32.0 / 3.0)
+        assert np.isclose(float(y2[0]), 5.75)
+        assert np.isclose(float(y2[1]), 7.0)
+        assert np.isclose(float(y3[0]), 5.75)
+        assert np.isclose(float(y3[1]), 7.0)

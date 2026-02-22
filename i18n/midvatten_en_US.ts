@@ -463,47 +463,47 @@ Supported step lengths: %s</source>
 <context>
     <name>DbConnectionManager</name>
     <message>
-        <location filename="../tools/utils/db_utils.py" line="140"/>
+        <location filename="../tools/utils/db_utils/connection.py" line="140"/>
         <source>Database setting was empty. Check DB tab in Midvatten settings.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/utils/db_utils.py" line="145"/>
+        <location filename="../tools/utils/db_utils/connection.py" line="145"/>
         <source>Database could not be set. Check DB tab in Midvatten settings.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/utils/db_utils.py" line="151"/>
+        <location filename="../tools/utils/db_utils/connection.py" line="151"/>
         <source>DbConnectionManager programming error: db_settings must be either a dict like {&apos;spatialite&apos;: {&apos;dbpath&apos;: &apos;x&apos;} or a string representation of it. Was: %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/utils/db_utils.py" line="166"/>
+        <location filename="../tools/utils/db_utils/connection.py" line="166"/>
         <source>Database error! File &quot;%s&quot; not found! Check db tab in Midvatten settings!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/utils/db_utils.py" line="177"/>
+        <location filename="../tools/utils/db_utils/connection.py" line="177"/>
         <source>Connecting to spatialite db %s failed! Check that the file or path exists.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/utils/db_utils.py" line="177"/>
+        <location filename="../tools/utils/db_utils/connection.py" line="177"/>
         <source>msg %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/utils/db_utils.py" line="192"/>
+        <location filename="../tools/utils/db_utils/connection.py" line="192"/>
         <source>No password supplied for postgis connection</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/utils/db_utils.py" line="217"/>
+        <location filename="../tools/utils/db_utils/connection.py" line="217"/>
         <source>DbConnectionManager.execute: sql must be type string or a list/tuple of strings. Was %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/utils/db_utils.py" line="239"/>
+        <location filename="../tools/utils/db_utils/connection.py" line="239"/>
         <source>DbConnectionManager.execute: all_args must be a list/tuple. Was %s</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4960,7 +4960,7 @@ the CRS you want to use in the database:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/utils/db_utils.py" line="502"/>
+        <location filename="../tools/utils/db_utils/connection.py" line="502"/>
         <source>sql failed:
 %s
 error msg:
@@ -6386,12 +6386,12 @@ Must write time resolution also.
 <context>
     <name>backup_db</name>
     <message>
-        <location filename="../tools/utils/db_utils.py" line="924"/>
+        <location filename="../tools/utils/db_utils/connection.py" line="924"/>
         <source>Database backup was written to %s </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/utils/db_utils.py" line="928"/>
+        <location filename="../tools/utils/db_utils/connection.py" line="928"/>
         <source>Backup of PostGIS database not supported yet!</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6414,12 +6414,12 @@ Must write time resolution also.
 <context>
     <name>calculate_median_value</name>
     <message>
-        <location filename="../tools/utils/db_utils.py" line="1116"/>
+        <location filename="../tools/utils/db_utils/connection.py" line="1116"/>
         <source>Median calculation error, see log message panel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/utils/db_utils.py" line="1116"/>
+        <location filename="../tools/utils/db_utils/connection.py" line="1116"/>
         <source>Sql failed: %s</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6427,7 +6427,7 @@ Must write time resolution also.
 <context>
     <name>check_connection_ok</name>
     <message>
-        <location filename="../tools/utils/db_utils.py" line="385"/>
+        <location filename="../tools/utils/db_utils/connection.py" line="385"/>
         <source>Could not connect to db: %s</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6435,12 +6435,12 @@ Must write time resolution also.
 <context>
     <name>create_dict_from_db_2_cols</name>
     <message>
-        <location filename="../tools/utils/db_utils.py" line="1208"/>
+        <location filename="../tools/utils/db_utils/connection.py" line="1208"/>
         <source>Cannot create dictionary from columns %s and %s in table %s!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/utils/db_utils.py" line="1210"/>
+        <location filename="../tools/utils/db_utils/connection.py" line="1210"/>
         <source>Some sql failure, see log for additional info.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6448,7 +6448,7 @@ Must write time resolution also.
 <context>
     <name>create_temporary_table_for_import</name>
     <message>
-        <location filename="../tools/utils/db_utils.py" line="308"/>
+        <location filename="../tools/utils/db_utils/connection.py" line="308"/>
         <source>attaching memory database failed, %s</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6469,7 +6469,7 @@ Must write time resolution also.
 <context>
     <name>db_tables_columns_info</name>
     <message>
-        <location filename="../tools/utils/db_utils.py" line="542"/>
+        <location filename="../tools/utils/db_utils/connection.py" line="542"/>
         <source>Getting columns from table %s failed!</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6477,7 +6477,7 @@ Must write time resolution also.
 <context>
     <name>delete_srids</name>
     <message>
-        <location filename="../tools/utils/db_utils.py" line="1163"/>
+        <location filename="../tools/utils/db_utils/connection.py" line="1163"/>
         <source>Removing srids failed using: %s</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6608,12 +6608,12 @@ Msg2:
 <context>
     <name>get_spatialite_db_path_from_dbsettings_string</name>
     <message>
-        <location filename="../tools/utils/db_utils.py" line="1180"/>
+        <location filename="../tools/utils/db_utils/connection.py" line="1180"/>
         <source>Error message failed! Could not be converted to string!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/utils/db_utils.py" line="1181"/>
+        <location filename="../tools/utils/db_utils/connection.py" line="1181"/>
         <source>%s error msg from db_settings string &quot;%s&quot;: %s</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6645,7 +6645,7 @@ Msg2:
 <context>
     <name>get_table_info</name>
     <message>
-        <location filename="../tools/utils/db_utils.py" line="602"/>
+        <location filename="../tools/utils/db_utils/connection.py" line="602"/>
         <source>Sql failed: %s
 msg:%s</source>
         <translation type="unfinished"></translation>
@@ -7357,7 +7357,7 @@ See pandas pandas.DataFrame.resample documentation for more info.</source>
 <context>
     <name>sql_alter_db</name>
     <message>
-        <location filename="../tools/utils/db_utils.py" line="459"/>
+        <location filename="../tools/utils/db_utils/connection.py" line="459"/>
         <source>DB error!
  SQL causing this error:%s
 Msg:
@@ -7365,7 +7365,7 @@ Msg:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/utils/db_utils.py" line="461"/>
+        <location filename="../tools/utils/db_utils/connection.py" line="461"/>
         <source>Some sql failure, see log for additional info.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7381,7 +7381,7 @@ Msg:
 <context>
     <name>sql_load_fr_db</name>
     <message>
-        <location filename="../tools/utils/db_utils.py" line="430"/>
+        <location filename="../tools/utils/db_utils/connection.py" line="430"/>
         <source>DB error!
  SQL causing this error:%s
 Msg:
@@ -7389,7 +7389,7 @@ Msg:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/utils/db_utils.py" line="233"/>
+        <location filename="../tools/utils/db_utils/connection.py" line="233"/>
         <source>DB error!
  SQL causing this error:%s
 using args %s

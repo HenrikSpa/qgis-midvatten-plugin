@@ -6,8 +6,7 @@ Use this document as the main instructions to continue the database refactor. Fo
 
 ## 1. What’s in place
 
-- **`tools/utils/db/`** – New package with backends (SQLiteBackend, PostgreSQLBackend), factory (`create_backend`), facade (DbConnectionManager), execution, schema, helpers, sqlfile, dialect, settings, errors.
-- **`tools/utils/db_utils.py`** – Re-exports everything from `midvatten.tools.utils.db` so existing imports still work.
+- **`tools/utils/db_utils/`** – Package (single entry point) with backends (SQLiteBackend, PostgreSQLBackend), factory (`create_backend`), facade (DbConnectionManager), execution, schema, helpers, sqlfile, dialect, settings, errors. Existing imports `from midvatten.tools.utils import db_utils` use this package directly.
 - **Option A** is in use: db_settings keys stay `"spatialite"` and `"postgis"`.
 - Execute API: single `sql: str` and optional `args`; `all_args` supported for backward compatibility.
 
@@ -54,7 +53,7 @@ Fix any failing tests; do not change test reference data or expectations unless 
   `ruff check --fix .`  
   then:  
   `ruff format .`  
-- Resolve any remaining issues (e.g. type hints: use `list` / `tuple` instead of `List` / `Tuple` where ruff or project style require it).
+- Resolve any remaining issues (e.g. type hints: use `list` / `tuple` instead of `List` / `Tuple` where ruff or project style require it). Apply to `tools/utils/db_utils/` as needed.
 
 ### 2.4 Optional: i18n and naming
 
@@ -67,7 +66,7 @@ Fix any failing tests; do not change test reference data or expectations unless 
 - **Database schema:** Do not change table/column/view names or SQL schema unless explicitly asked.
 - **Tests:** Follow `.cursor/rules/testing-rules/` (create/run/modify). Use the MessagebarAndLog mock and `--failure-detail --with-doctest --nologcapture --stop` when running nosetests3.
 - **Style:** Follow PEP8 and project rules (e.g. `.cursor/rules/rule-for-coding-style.mdc`); use ruff for check and format.
-- **db_utils compatibility:** Anything that used to be importable from `midvatten.tools.utils.db_utils` must still be importable after your changes. Use grep for `from midvatten.tools.utils.db_utils import` and `db_utils.` to find usages and ensure they still work.
+- **db_utils compatibility:** The package `midvatten.tools.utils.db_utils` is the single entry point; anything importable from it must remain so. Use grep for `from midvatten.tools.utils.db_utils import` and `db_utils.` to find usages and ensure they still work.
 
 ---
 

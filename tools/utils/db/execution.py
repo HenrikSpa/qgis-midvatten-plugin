@@ -93,10 +93,10 @@ def sql_alter_db(
             )
 
 
-def placeholder_sign(dbconnection: Optional[DbConnectionManager] = None) -> str:
+def placeholder(dbconnection: Optional[DbConnectionManager] = None) -> str:
     """Return placeholder for current backend ('?' or '%s')."""
     with use_or_create_connection(dbconnection) as dbconnection:
-        return dbconnection.placeholder_sign()
+        return dbconnection.placeholder()
 
 
 def check_connection_ok(write_error_msg: bool = True) -> bool:

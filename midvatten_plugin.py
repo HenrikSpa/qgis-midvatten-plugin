@@ -1631,7 +1631,7 @@ class Midvatten:
             fail = 0
             dbconnection = db_utils.DbConnectionManager()
             try:
-                ph = dbconnection.placeholder_sign()
+                ph = dbconnection.placeholder()
                 sql = dbconnection.sql_ident(
                     f"SELECT obsid FROM {{t}} WHERE obsid = {ph}",
                     t=self.ms.settingsdict["wqualtable"],

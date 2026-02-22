@@ -329,7 +329,7 @@ class Interlab4Import(qgis.PyQt.QtWidgets.QMainWindow, import_fieldlogger_ui_dia
                             add_values = (current[0], current[1], obsid)
                             dbconnection = db_utils.DbConnectionManager()
                             try:
-                                ph = dbconnection.placeholder_sign()
+                                ph = dbconnection.placeholder()
                                 sql = dbconnection.sql_ident(
                                     f"INSERT INTO {{t}} ({{c1}}, {{c2}}, obsid) VALUES ({ph}, {ph}, {ph})",
                                     t=self.obsid_assignment_table,

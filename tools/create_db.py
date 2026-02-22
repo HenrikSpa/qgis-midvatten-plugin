@@ -553,7 +553,7 @@ class NewDb:
         for table in tables:
             # Get table and column comments
             if created_tables_sqls is None:
-                ph = dbconnection.placeholder_sign()
+                ph = dbconnection.placeholder()
                 table_descr_sql = (
                     f"SELECT name, sql from sqlite_master WHERE name = {ph};"
                 )
@@ -581,7 +581,7 @@ class NewDb:
                 _to = _from_to[0][1]
                 foreign_keys_dict[_from] = (_table, _to)
 
-            ph = dbconnection.placeholder_sign()
+            ph = dbconnection.placeholder()
             placeholders = ", ".join([ph] * 8)
             sql = f"INSERT INTO about_db (tablename, columnname, description, data_type, not_null, default_value, primary_key, foreign_key) VALUES ({placeholders})"
             row_values = (
@@ -609,7 +609,7 @@ class NewDb:
                 column_descr = columns_descr.get(colname, None)
                 if column_descr:
                     column_descr = column_descr.rstrip("\r")
-                ph = dbconnection.placeholder_sign()
+                ph = dbconnection.placeholder()
                 placeholders = ", ".join([ph] * 8)
                 sql = f"INSERT INTO about_db (tablename, columnname, data_type, not_null, default_value, primary_key, foreign_key, description) VALUES ({placeholders})"
                 row_values = (
@@ -630,7 +630,7 @@ class NewDb:
                     except Exception:
                         pass
                     raise
-        ph = dbconnection.placeholder_sign()
+        ph = dbconnection.placeholder()
         for tz, tname in [
             (w_levels_logger_timezone, "w_levels_logger"),
             (w_levels_timezone, "w_levels"),

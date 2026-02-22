@@ -571,7 +571,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             sql = "INSERT INTO {} VALUES ({})".format(
                 dbconnection.ident(temptable_name),
                 ", ".join(
-                    [dbconnection.placeholder_sign() for x in range(len(df.columns))]
+                    [dbconnection.placeholder() for x in range(len(df.columns))]
                 ),
             )
             dbconnection.cursor.executemany(sql, list(df.itertuples(index=False)))
@@ -585,7 +585,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 # This is probably due to the separator exists in the values.
                 data = list(df.itertuples(index=False))
                 placeholders = ", ".join(
-                    [dbconnection.placeholder_sign()] * len(df.columns)
+                    [dbconnection.placeholder()] * len(df.columns)
                 )
                 sql = dbconnection.sql_ident(
                     f"INSERT INTO {{t}} VALUES ({placeholders})",
@@ -798,14 +798,14 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             if skip_obsids:
                 sql = "DELETE FROM %s WHERE obsid IN (%s)" % (
                     self.temptable_name,
-                    ", ".join([dbconnection.placeholder_sign()] * len(skip_obsids)),
+                    ", ".join([dbconnection.placeholder()] * len(skip_obsids)),
                 )
                 print(f" {sql=} {skip_obsids=}")
                 dbconnection.execute(
                     "DELETE FROM %s WHERE obsid IN (%s)"
                     % (
                         self.temptable_name,
-                        ", ".join([dbconnection.placeholder_sign()] * len(skip_obsids)),
+                        ", ".join([dbconnection.placeholder()] * len(skip_obsids)),
                     ),
                     all_args=[tuple(skip_obsids)],
                 )

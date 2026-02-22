@@ -84,10 +84,10 @@ class PiperPlot:
     def big_sql(self):
         # Data must be stored as mg/l in the database since it is converted to meq/l in code here...
         dbconnection = db_utils.DbConnectionManager()
-        obsid_placeholders = dbconnection.placeholder_string(len(self.observations))
+        obsid_placeholders = dbconnection.placeholders(len(self.observations))
         dbconnection.closedb()
 
-        ph = dbconnection.placeholder_sign()
+        ph = dbconnection.placeholder()
 
         def equal_or_like(placeholder, value):
             if value.startswith("%"):

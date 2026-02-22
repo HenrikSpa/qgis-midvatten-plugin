@@ -166,7 +166,7 @@ def get_statistics_for_single_obsid(
 
     # number of values, also decide wehter to use meas or level_masl in report
     dbconnection = db_utils.DbConnectionManager()
-    ph = dbconnection.placeholder_sign()
+    ph = dbconnection.placeholder()
     table_ident = dbconnection.ident(table)
     for column in data_columns:
         col_ident = dbconnection.ident(column)

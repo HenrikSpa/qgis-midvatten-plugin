@@ -75,7 +75,7 @@ class CalculateAveflow(qgis.PyQt.QtWidgets.QDialog, Calc_Ui_Dialog):
         date_to = self.to_date_time.dateTime().toPyDateTime()
 
         dbconnection = db_utils.DbConnectionManager()
-        ph = dbconnection.placeholder_sign()
+        ph = dbconnection.placeholder()
         in_clause, in_args = dbconnection.in_clause(observations)
         sql = (
             "SELECT date_time, reading, obsid, instrumentid, comment "

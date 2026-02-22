@@ -632,7 +632,7 @@ def add_views_to_db(dbconnection, bedrock_geoshort):
     def insert_view(view_name):
         cur.execute(
             f"""INSERT OR IGNORE INTO views_geometry_columns VALUES
-             ({dbconnection.placeholder_sign()}, 
+             ({dbconnection.placeholder()}, 
              'geometry', 'rowid', 'obs_points', 'geometry', 1)""",
             (view_name,),
         )

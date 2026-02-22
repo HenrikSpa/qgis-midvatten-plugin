@@ -190,7 +190,7 @@ class SQLiteBackend(Backend):
         else:
             self._cursor.execute(str(sql), list(args))
 
-    def placeholder_sign(self) -> str:
+    def placeholder(self) -> str:
         return "?"
 
     def internal_tables(self) -> str:

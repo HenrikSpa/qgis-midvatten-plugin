@@ -554,7 +554,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                     dbconnection,
                 )
             )
-            ph = dbconnection.placeholder_sign()
+            ph = dbconnection.placeholder()
 
             while i < len(self.p):
                 # Both filters empty

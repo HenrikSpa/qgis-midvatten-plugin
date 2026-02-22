@@ -183,11 +183,11 @@ class DbConnectionManager:
     ) -> Optional[int]:
         return self._backend.get_srid(table_name, geometry_column)
 
-    def placeholder_sign(self) -> str:
-        return self._backend.placeholder_sign()
+    def placeholder(self) -> str:
+        return self._backend.placeholder()
 
-    def placeholder_string(self, count: int) -> str:
-        return self._backend.placeholder_string(count)
+    def placeholders(self, count: int) -> str:
+        return self._backend.placeholders(count)
 
     def ident(self, name: str, *, allowed: Optional[Any] = None) -> str:
         return self._backend.ident(name, allowed=allowed)

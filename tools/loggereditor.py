@@ -189,7 +189,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     def get_uncalibrated_obsids(self, obsid=None):
         dbconnection = db_utils.DbConnectionManager()
         try:
-            ph = dbconnection.placeholder_sign()
+            ph = dbconnection.placeholder()
             if dbconnection.dbtype == "spatialite":
                 sql = """SELECT obsid FROM (SELECT obsid, MAX(date_time), level_masl, head_cm FROM w_levels_logger {} GROUP BY obsid)
                          WHERE level_masl IS NULL AND head_cm IS NOT NULL ORDER BY obsid""".format(
@@ -295,7 +295,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             return None
 
         dbconnection = db_utils.DbConnectionManager()
-        ph = dbconnection.placeholder_sign()
+        ph = dbconnection.placeholder()
         meas_sql = f"SELECT date_time, level_masl FROM w_levels WHERE obsid = {ph} ORDER BY date_time"
         _ok, meas_list = db_utils.sql_load_fr_db(
             meas_sql, dbconnection=dbconnection, execute_args=(obsid,)
@@ -432,7 +432,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     @fn_timer
     def getlastcalibration(self, obsid):
         dbconnection = db_utils.DbConnectionManager()
-        ph = dbconnection.placeholder_sign()
+        ph = dbconnection.placeholder()
         sql = f"SELECT date_time, (level_masl - (head_cm/100)) AS loggerpos FROM w_levels_logger WHERE date_time = (SELECT max(date_time) AS date_time FROM w_levels_logger WHERE obsid = {ph} AND (CASE WHEN level_masl IS NULL THEN -1000 ELSE level_masl END) > -990 AND level_masl IS NOT NULL AND head_cm IS NOT NULL) AND obsid = {ph}"
         _ok, lastcalibr = db_utils.sql_load_fr_db(
             sql, dbconnection=dbconnection, execute_args=(obsid, obsid)
@@ -497,7 +497,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         """
         common_utils.start_waiting_cursor()
         dbconnection = db_utils.DbConnectionManager()
-        ph = dbconnection.placeholder_sign()
+        ph = dbconnection.placeholder()
         date_time_as_epoch = db_utils.cast_date_time_as_epoch(dbconnection)
         fr_epoch = (fr_d_t - datetime.datetime(1970, 1, 1)).total_seconds()
         to_epoch = (to_d_t - datetime.datetime(1970, 1, 1)).total_seconds()
@@ -521,7 +521,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         """
         common_utils.start_waiting_cursor()
         dbconnection = db_utils.DbConnectionManager()
-        ph = dbconnection.placeholder_sign()
+        ph = dbconnection.placeholder()
         date_time_as_epoch = db_utils.cast_date_time_as_epoch(dbconnection)
         fr_epoch = (fr_d_t - datetime.datetime(1970, 1, 1)).total_seconds()
         to_epoch = (to_d_t - datetime.datetime(1970, 1, 1)).total_seconds()
@@ -1108,7 +1108,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         )
 
         dbconnection = db_utils.DbConnectionManager()
-        ph = dbconnection.placeholder_sign()
+        ph = dbconnection.placeholder()
         date_time_as_epoch = db_utils.cast_date_time_as_epoch(dbconnection)
         table_ident = dbconnection.ident(table_name)
         where_dt_sql = (

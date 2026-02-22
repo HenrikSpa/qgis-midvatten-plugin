@@ -86,15 +86,15 @@ class Backend(ABC):
     # --- Placeholders and identifiers ---
 
     @abstractmethod
-    def placeholder_sign(self) -> str:
+    def placeholder(self) -> str:
         """Return '?' for SQLite, '%s' for PostgreSQL."""
         pass
 
-    def placeholder_string(self, count: int) -> str:
+    def placeholders(self, count: int) -> str:
         """Return placeholders for count parameters, e.g. '?,?,?' or '%s,%s,%s'."""
         if count <= 0:
             return ""
-        return ", ".join([self.placeholder_sign()] * count)
+        return ", ".join([self.placeholder()] * count)
 
     def ident(self, name: str, *, allowed: Optional[Iterable[str]] = None) -> str:
         """Safely quote an identifier."""

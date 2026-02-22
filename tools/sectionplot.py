@@ -496,7 +496,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
 
         obsid = line_feature.attribute("obsid")
         res = self.dbconnection.execute_and_fetchall(
-            f"SELECT DISTINCT inversion_name FROM tem_data WHERE obsid = {self.dbconnection.placeholder_sign()}",
+            f"SELECT DISTINCT inversion_name FROM tem_data WHERE obsid = {self.dbconnection.placeholder()}",
             args=(obsid,),
         )
         if res:
@@ -539,7 +539,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
 
         obsid = line_feature.attribute("obsid")
         res = self.dbconnection.execute_and_fetchall(
-            f"SELECT alias FROM profile_images WHERE obsid = {self.dbconnection.placeholder_sign()}",
+            f"SELECT alias FROM profile_images WHERE obsid = {self.dbconnection.placeholder()}",
             args=(obsid,),
         )
 
@@ -579,7 +579,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                 )
         else:
             res = self.dbconnection.execute_and_fetchall(
-                f"""SELECT obsid, east, north FROM obs_points WHERE obsid IN ({self.dbconnection.placeholder_string(selected_obspoints)})""",
+                f"""SELECT obsid, east, north FROM obs_points WHERE obsid IN ({self.dbconnection.placeholders(len(selected_obspoints))})""",
                 args=tuple(selected_obspoints),
             )
             xs = [float(row[1]) for row in res]
@@ -628,7 +628,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                     sql.format(
                         temptable_name=self.temptable_name,
                         funcname=funcname,
-                        placeholders=self.dbconnection.placeholder_string(obsidtuple),
+                        placeholders=self.dbconnection.placeholders(len(obsidtuple)),
                     ),
                     tuple(obsidtuple),
                 )
@@ -643,7 +643,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                 sql.format(
                     temptable_name=self.temptable_name,
                     funcname=funcname,
-                    placeholders=self.dbconnection.placeholder_string(obsidtuple),
+                    placeholders=self.dbconnection.placeholders(len(obsidtuple)),
                 ),
                 args=tuple(obsidtuple),
             )
@@ -654,7 +654,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
     def get_z_data(self, obsids_x_position):
         z_data = {}
         for obs in obsids_x_position.keys():
-            sql = f"SELECT h_toc, h_gs, length FROM obs_points WHERE obsid = {self.dbconnection.placeholder_sign()}"
+            sql = f"SELECT h_toc, h_gs, length FROM obs_points WHERE obsid = {self.dbconnection.placeholder()}"
             recs = self.dbconnection.execute_and_fetchall(sql, (obs,))
             h_toc, h_gs, length = recs[0]
             if common_utils.isfloat(str(h_gs)) and h_gs > -999:
@@ -724,17 +724,17 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                          ORDER BY stratid"""
                 if self.dbconnection.dbtype == "spatialite":
                     _sql = sql.format(
-                        ph=self.dbconnection.placeholder_sign(),
+                        ph=self.dbconnection.placeholder(),
                         strat_key=strat_key,
                         condition=condition,
-                        subtypes=self.dbconnection.placeholder_string(subtypes),
+                        subtypes=self.dbconnection.placeholders(len(subtypes)),
                     )
                 else:
                     _sql = SQL(sql).format(
-                        ph=SQL(self.dbconnection.placeholder_sign()),
+                        ph=SQL(self.dbconnection.placeholder()),
                         strat_key=Identifier(strat_key),
                         condition=SQL(condition),
-                        subtypes=SQL(self.dbconnection.placeholder_string(subtypes)),
+                        subtypes=SQL(self.dbconnection.placeholders(len(subtypes))),
                     )
                 params = tuple([obs] + list(subtypes))
                 recs = self.dbconnection.execute_and_fetchall(_sql, args=params)
@@ -762,7 +762,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         for obs, x in obsids_x_position.items():
             sql = f"""SELECT depthtop, depthbot, geology, geoshort, capacity, development,
                     comment
-                    FROM stratigraphy WHERE obsid = {self.dbconnection.placeholder_sign()}
+                    FROM stratigraphy WHERE obsid = {self.dbconnection.placeholder()}
                     ORDER BY stratid"""
             recs = self.dbconnection.execute_and_fetchall(sql, args=(obs,))
             if not recs:
@@ -802,7 +802,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
     def get_drillstops(self, obsids_x_position, z_data):
         obs_p_w_drill_stops = []
         if self.ms.settingsdict["secplotdrillstop"] != "":
-            sql = f"""SELECT obsid FROM obs_points WHERE lower(drillstop) LIKE {self.dbconnection.placeholder_sign()}"""
+            sql = f"""SELECT obsid FROM obs_points WHERE lower(drillstop) LIKE {self.dbconnection.placeholder()}"""
             res = self.dbconnection.execute_and_fetchall(
                 sql, (ru(self.ms.settingsdict["secplotdrillstop"]),)
             )
@@ -838,7 +838,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                     self.y2_column,
                     self.y3_column,
                     table,
-                    self.dbconnection.placeholder_sign(),
+                    self.dbconnection.placeholder(),
                 )
             )
             recs = self.dbconnection.execute_and_fetchall(
@@ -1513,7 +1513,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             return
 
         df = pd.read_sql(
-            f"""SELECT length, thickness, resistivity, elevation, doi, data_fit FROM tem_data WHERE inversion_name = {self.dbconnection.placeholder_sign()} AND obsid = {self.dbconnection.placeholder_sign()} ORDER BY length;""",
+            f"""SELECT length, thickness, resistivity, elevation, doi, data_fit FROM tem_data WHERE inversion_name = {self.dbconnection.placeholder()} AND obsid = {self.dbconnection.placeholder()} ORDER BY length;""",
             self.dbconnection.conn,
             params=(
                 self.ms.settingsdict["secplot_tem_model_name"],
@@ -1737,7 +1737,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         labels = []
 
         res = self.dbconnection.execute_and_fetchall(
-            f"SELECT alias, path, clip_left_right_top_bottom, extent_left_right_top_bottom FROM profile_images WHERE obsid = {self.dbconnection.placeholder_sign()}",
+            f"SELECT alias, path, clip_left_right_top_bottom, extent_left_right_top_bottom FROM profile_images WHERE obsid = {self.dbconnection.placeholder()}",
             args=(self.line_feature.attribute("obsid"),),
         )
 
@@ -1927,7 +1927,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                     # TODO UNSAFE SQL WARNING! _date should not be allowed as an sql string!
                     sql = sql.format(
                         self.ms.settingsdict["secplotwlvltab"],
-                        self.dbconnection.placeholder_sign(),
+                        self.dbconnection.placeholder(),
                         _date,
                     )
                     res = self.dbconnection.execute_and_fetchall(sql, (obs,))
@@ -1935,8 +1935,8 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                     sql = (
                         sql.format(
                             self.ms.settingsdict["secplotwlvltab"],
-                            self.dbconnection.placeholder_sign(),
-                            f"""date_time LIKE {self.dbconnection.placeholder_sign()}""",
+                            self.dbconnection.placeholder(),
+                            f"""date_time LIKE {self.dbconnection.placeholder()}""",
                         )
                         + """ ORDER BY date_time ASC"""
                     )
@@ -2019,8 +2019,8 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             self.plot_water_level_interactive()
 
     def plot_water_level_interactive(self):
-        placeholders = self.dbconnection.placeholder_string(
-            list(self.obsids_x_position.keys())
+        placeholders = self.dbconnection.placeholders(
+            len(self.obsids_x_position)
         )
         sql = self.dbconnection.sql_ident(
             f"SELECT date_time, level_masl, obsid FROM {{t}} WHERE obsid IN ({placeholders})",
@@ -2645,7 +2645,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         except TypeError:
             # Adjustment for QGIS > 3.30
             geom_linestring = geom.convertToType(Qgis.GeometryType.Line)
-        ph = self.dbconnection.placeholder_sign()
+        ph = self.dbconnection.placeholder()
         sql = self.dbconnection.sql_ident(
             f"INSERT INTO {{t}} (dummyfield, geometry) VALUES ('0', ST_GeomFromText({ph}, {ph}))",
             t=self.temptable_name,

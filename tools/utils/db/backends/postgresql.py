@@ -217,7 +217,7 @@ class PostgreSQLBackend(Backend):
             else:
                 self._cursor.execute(str(sql), list(args))
 
-    def placeholder_sign(self) -> str:
+    def placeholder(self) -> str:
         return "%s"
 
     def internal_tables(self) -> str:

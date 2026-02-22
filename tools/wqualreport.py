@@ -282,7 +282,7 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
                 parameters, start=self.nr_header_rows
             ):
                 p, u = p_u
-                ph = dbconnection.placeholder_sign()
+                ph = dbconnection.placeholder()
                 value_col = dbconnection.ident(self.settingsdict["wqual_valuecolumn"])
                 wqual_table = dbconnection.ident(self.settingsdict["wqualtable"])
                 sql = f"SELECT {value_col} FROM {wqual_table} WHERE obsid = {ph}"

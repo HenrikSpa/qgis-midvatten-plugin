@@ -115,7 +115,7 @@ class CalculateLevel(
                     return None
 
             in_clause, in_args = dbconnection.in_clause(obsids)
-            ph = dbconnection.placeholder_sign()
+            ph = dbconnection.placeholder()
             where_sql = f"meas IS NOT NULL AND date_time >= {ph} AND date_time <= {ph} AND obsid IN {in_clause}"
             where_sql_args = [fr_d_t, to_d_t] + in_args
             if not self.overwrite_prev.isChecked():

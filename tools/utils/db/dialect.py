@@ -8,7 +8,7 @@ from collections.abc import Iterable, Sequence
 
 
 class HasPlaceholderString(Protocol):
-    def placeholder_string(self, count: int) -> str: ...
+    def placeholder(self, count: int) -> str: ...
 
 
 _IDENT_PART_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -75,7 +75,7 @@ def in_clause(
     values_list = list(values)
     if not values_list:
         return "(NULL)", []
-    placeholders = backend.placeholder_string(len(values_list))
+    placeholders = backend.placeholder(len(values_list))
     return f"({placeholders})", values_list
 
 

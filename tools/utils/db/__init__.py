@@ -28,7 +28,7 @@ from midvatten.tools.utils.db.dialect import (
 from midvatten.tools.utils.db.execution import (
     check_connection_ok,
     if_connection_ok,
-    placeholder_sign,
+    placeholder,
     sql_alter_db,
     sql_load_fr_db,
     use_or_create_connection,
@@ -127,7 +127,7 @@ __all__ = [
     "is_not_distinct_from",
     "nonplot_tables",
     "numeric_datatypes",
-    "placeholder_sign",
+    "placeholder",
     "postgis_internal_tables",
     "postgresql_cast_null_types",
     "postgresql_numeric_data_types",

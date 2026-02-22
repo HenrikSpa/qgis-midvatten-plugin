@@ -658,3 +658,156 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert len(lines) >= 2
         assert lines[1].get_linestyle() in (None, "None", "none", "")
         assert lines[1].get_marker() not in (None, "None", "none")
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_pandas_resample_rule_how_changes_line_data(self, mock_messagebar):
+        _insert_w_levels_logger_data()
+        self.midvatten.plot_sqlite()
+        customplot = self.midvatten.customplot
+        _configure_customplot_tab1_tab2(customplot, tab2=False)
+        customplot.tab1_pandas_calc.rule.setText("1d")
+        customplot.tab1_pandas_calc.how.setText("mean")
+        customplot.draw_plot_all()
+        lines = customplot.axes.get_lines()
+        print(f"{mock_messagebar.mock_calls=}")
+        assert len(lines) >= 1
+        xdata, ydata = lines[0].get_data()
+        assert len(xdata) == 1 and len(ydata) == 1
+        # o1: 5.0, 10.0, 17.0 on 2026-01-01 -> daily mean = 32/3
+        assert np.isclose(float(ydata[0]), 32.0 / 3.0)
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_pandas_resample_how_default_mean(self, mock_messagebar):
+        _insert_w_levels_logger_data()
+        self.midvatten.plot_sqlite()
+        customplot = self.midvatten.customplot
+        _configure_customplot_tab1_tab2(customplot, tab2=False)
+        customplot.tab1_pandas_calc.rule.setText("1d")
+        customplot.tab1_pandas_calc.how.setText("")
+        customplot.draw_plot_all()
+        lines = customplot.axes.get_lines()
+        print(f"{mock_messagebar.mock_calls=}")
+        assert len(lines) >= 1
+        xdata, ydata = lines[0].get_data()
+        assert len(xdata) == 1 and len(ydata) == 1
+        # default how is mean; o1 daily mean = 32/3
+        assert np.isclose(float(ydata[0]), 32.0 / 3.0)
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_pandas_resample_how_sum_different_from_mean(self, mock_messagebar):
+        _insert_w_levels_logger_data()
+        self.midvatten.plot_sqlite()
+        customplot = self.midvatten.customplot
+        _configure_customplot_tab1_tab2(customplot, tab2=False)
+        customplot.tab1_pandas_calc.rule.setText("1d")
+        customplot.tab1_pandas_calc.how.setText("mean")
+        customplot.draw_plot_all()
+        _, ydata_mean = customplot.axes.get_lines()[0].get_data()
+        customplot.tab1_pandas_calc.how.setText("sum")
+        customplot.draw_plot_all()
+        _, ydata_sum = customplot.axes.get_lines()[0].get_data()
+        print(f"{mock_messagebar.mock_calls=}")
+        assert not np.isclose(float(ydata_mean[0]), float(ydata_sum[0]))
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_pandas_rolling_window_smooths_line_data(self, mock_messagebar):
+        _insert_w_levels_logger_data()
+        self.midvatten.plot_sqlite()
+        customplot = self.midvatten.customplot
+        _configure_customplot_tab1_tab2(customplot, tab2=False)
+        customplot.tab1_pandas_calc.rule.setText("")
+        customplot.tab1_pandas_calc.window.setText("2")
+        customplot.draw_plot_all()
+        lines = customplot.axes.get_lines()
+        print(f"{mock_messagebar.mock_calls=}")
+        assert len(lines) >= 1
+        xdata, ydata = lines[0].get_data()
+        assert len(xdata) == 3 and len(ydata) == 3
+        raw = np.array([5.0, 10.0, 17.0])
+        assert not np.allclose(ydata, raw)
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_pandas_rolling_center_checkbox(self, mock_messagebar):
+        _insert_w_levels_logger_data()
+        self.midvatten.plot_sqlite()
+        customplot = self.midvatten.customplot
+        _configure_customplot_tab1_tab2(customplot, tab2=False)
+        customplot.tab1_pandas_calc.window.setText("2")
+        customplot.tab1_pandas_calc.center.setChecked(True)
+        customplot.draw_plot_all()
+        _, ydata_center = customplot.axes.get_lines()[0].get_data()
+        customplot.tab1_pandas_calc.center.setChecked(False)
+        customplot.draw_plot_all()
+        _, ydata_no_center = customplot.axes.get_lines()[0].get_data()
+        print(f"{mock_messagebar.mock_calls=}")
+        assert not np.allclose(ydata_center, ydata_no_center)
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_pandas_no_rule_no_window_uses_raw_data(self, mock_messagebar):
+        _insert_w_levels_logger_data()
+        self.midvatten.plot_sqlite()
+        customplot = self.midvatten.customplot
+        _configure_customplot_tab1_tab2(customplot, tab2=False)
+        customplot.tab1_pandas_calc.rule.setText("")
+        customplot.tab1_pandas_calc.window.setText("")
+        customplot.draw_plot_all()
+        lines = customplot.axes.get_lines()
+        print(f"{mock_messagebar.mock_calls=}")
+        assert len(lines) >= 1
+        xdata, ydata = lines[0].get_data()
+        assert len(xdata) == 3 and len(ydata) == 3
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_pandas_resample_plus_rolling(self, mock_messagebar):
+        _insert_w_levels_logger_data()
+        self.midvatten.plot_sqlite()
+        customplot = self.midvatten.customplot
+        _configure_customplot_tab1_tab2(customplot, tab2=False)
+        customplot.tab1_pandas_calc.rule.setText("1d")
+        customplot.tab1_pandas_calc.how.setText("mean")
+        customplot.tab1_pandas_calc.window.setText("1")
+        customplot.draw_plot_all()
+        lines = customplot.axes.get_lines()
+        print(f"{mock_messagebar.mock_calls=}")
+        assert len(lines) >= 1
+        xdata, ydata = lines[0].get_data()
+        assert len(xdata) == 1 and len(ydata) == 1
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_pandas_invalid_window_critical_message(self, mock_messagebar):
+        _insert_w_levels_logger_data()
+        self.midvatten.plot_sqlite()
+        customplot = self.midvatten.customplot
+        _configure_customplot_tab1_tab2(customplot, tab2=False)
+        customplot.tab1_pandas_calc.rule.setText("")
+        customplot.tab1_pandas_calc.window.setText("x")
+        customplot.draw_plot_all()
+        lines = customplot.axes.get_lines()
+        print(f"{mock_messagebar.mock_calls=}")
+        critical_calls = [c for c in mock_messagebar.mock_calls if c[0] == "critical"]
+        assert len(critical_calls) >= 1
+        assert len(lines) >= 1
+        _, ydata = lines[0].get_data()
+        assert len(ydata) == 3
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_pandas_tab2_widgets_affect_second_line(self, mock_messagebar):
+        _insert_w_levels_logger_data()
+        self.midvatten.plot_sqlite()
+        customplot = self.midvatten.customplot
+        _configure_customplot_tab1_tab2(customplot, tab2=True)
+        customplot.tab1_pandas_calc.rule.setText("1d")
+        customplot.tab1_pandas_calc.how.setText("mean")
+        customplot.tab2_pandas_calc.rule.setText("1d")
+        customplot.tab2_pandas_calc.how.setText("mean")
+        customplot.draw_plot_all()
+        lines = customplot.axes.get_lines()
+        print(f"{mock_messagebar.mock_calls=}")
+        assert len(lines) >= 2
+        x1, y1 = lines[0].get_data()
+        x2, y2 = lines[1].get_data()
+        assert len(x1) == 1 and len(y1) == 1
+        assert len(x2) == 2 and len(y2) == 2
+        assert np.isclose(float(y1[0]), 32.0 / 3.0)
+        assert np.isclose(float(y2[0]), 5.75)
+        assert np.isclose(float(y2[1]), 7.0)

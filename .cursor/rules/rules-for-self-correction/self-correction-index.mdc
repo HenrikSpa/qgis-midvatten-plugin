@@ -1,0 +1,31 @@
+---
+description: Apply when we're fixing a bug the agent caused or when we're reviewing self-correction. Use this file to log and track recurring bug categories and to maintain a log of previously self-corrected issues; update it when creating or proposing a new self-correction rule.
+globs:
+alwaysApply: false
+---
+# Self-Correction Index
+
+Tracks recurring bug categories and reflection logs for self-correction purposes.
+
+---
+
+## Bug Log Format
+
+- Date:
+- File:
+- Root Cause Category:
+- Severity: Low / Medium / High
+- Generated Rule? (Yes/No)
+- Rule Name (if created):
+- Notes:
+
+---
+
+## Recurrence Tracking
+
+Maintain count per root cause category.
+
+If count ≥ 2:
+  Mark as Recurring Pattern.
+
+Recurring patterns increase rule generation confidence.

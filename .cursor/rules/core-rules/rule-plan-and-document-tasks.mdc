@@ -1,0 +1,12 @@
+---
+alwaysApply: true
+---
+
+# When To Trigger
+
+- If a task has the potential to be very long, and the context might be used up.
+
+# Create plan files and task log files
+
+- Make a plan file of what has been done and what remains to be done so that a new agent can continue the remaining tasks.
+- If the context is close to being used up, write the plan file, paus the work and tell the user that it's recommended that a new agent continue with the remaining tasks described in the file.

@@ -372,9 +372,13 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 )
             sql = sql.format(**kwargs)
 
-            recsbefore = dbconnection.execute_and_fetchall(
-                "select count(*) from %s" % (dest_table_with_schema)
-            )[0][0]
+            count_sql = dbconnection.sql_ident(
+                "SELECT count(*) FROM {t}",
+                t=dest_table
+                if dbconnection.dbtype != "postgis"
+                else f"{dbconnection.schema}.{dest_table}",
+            )
+            recsbefore = dbconnection.execute_and_fetchall(count_sql)[0][0]
             try:
                 dbconnection.execute(sql)
             except Exception as e:
@@ -431,9 +435,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                             duration=999,
                         )
 
-            recsafter = dbconnection.execute_and_fetchall(
-                "select count(*) from %s" % (dest_table_with_schema)
-            )[0][0]
+            recsafter = dbconnection.execute_and_fetchall(count_sql)[0][0]
             nr_imported = recsafter - recsbefore
             nr_excluded = recsinfile - nr_imported
 
@@ -624,31 +626,25 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         # TODO: Maybe the length should be checked so that the test is only made for 2016-01-01 00:00 and 2016-01-01 00:00:00?
 
         # Delete records that have the same date_time but with :00 at the end. (2016-01-01 00:00 will not be imported if 2016-01-01 00:00:00 exists
-        pks_and_00 = list(pks)
-        pks_and_00.append("':00'")
+        temp_ident = dbconnection.ident(self.temptable_name)
+        dest_ident = (
+            dbconnection.ident(f"{dbconnection.schema}.{dest_table}")
+            if dbconnection.dbtype.lower() == "postgis"
+            else dbconnection.ident(dest_table)
+        )
+        pks_concat = " || ".join(dbconnection.ident(pk) for pk in pks)
+        pks_concat_00 = pks_concat + " || ':00'"
 
-        if dbconnection.dbtype.lower() == "postgis":
-            dest_table = f'"{dbconnection.schema}"."{dest_table}"'
-
-        sql = """delete from %s where %s in (select %s from %s)""" % (
-            self.temptable_name,
-            " || ".join(pks_and_00),
-            " || ".join(pks),
-            dest_table,
+        sql = (
+            f"DELETE FROM {temp_ident} WHERE {pks_concat_00} IN "
+            f"(SELECT {pks_concat} FROM {dest_ident})"
         )
         dbconnection.execute(sql)
 
         # Delete records from temptable that have date_time yyyy-mm-dd HH:MM:XX when yyyy-mm-dd HH:MM exist.
-        # delete from temptable where SUBSTR("obsid" || "date_time", 1, length("obsid" || "date_time") - 3) in (select "obsid" || "date_time" from goaltable)
         sql = (
-            """delete from %s where SUBSTR(%s, 1, length(%s) - 3) in (select %s from %s)"""
-            % (
-                self.temptable_name,
-                " || ".join(pks),
-                " || ".join(pks),
-                " || ".join(pks),
-                dest_table,
-            )
+            f"DELETE FROM {temp_ident} WHERE SUBSTR({pks_concat}, 1, "
+            f"length({pks_concat}) - 3) IN (SELECT {pks_concat} FROM {dest_ident})"
         )
         dbconnection.execute(sql)
 
@@ -725,10 +721,13 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             ]
         ):
             skip_obsids = []
+            strat_sql = dbconnection.sql_ident(
+                "SELECT obsid, stratid, depthtop, depthbot FROM {t}",
+                t=self.temptable_name,
+            )
             obsid_strat = db_utils.get_sql_result_as_dict(
-                "select obsid, stratid, depthtop, depthbot from %s"
-                % self.temptable_name,
-                dbconnection,
+                strat_sql,
+                dbconnection=dbconnection,
             )[1]
             for obsid, stratid_depthbot_depthtop in obsid_strat.items():
                 # Turn everything to float
@@ -791,19 +790,11 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                         skip_obsids.append(obsid)
                         break
             if skip_obsids:
-                sql = "DELETE FROM %s WHERE obsid IN (%s)" % (
-                    self.temptable_name,
-                    dbconnection.placeholders(len(skip_obsids)),
-                )
+                temp_ident = dbconnection.ident(self.temptable_name)
+                placeholders = dbconnection.placeholders(len(skip_obsids))
+                sql = f"DELETE FROM {temp_ident} WHERE obsid IN ({placeholders})"
                 print(f" {sql=} {skip_obsids=}")
-                dbconnection.execute(
-                    "DELETE FROM %s WHERE obsid IN (%s)"
-                    % (
-                        self.temptable_name,
-                        dbconnection.placeholders(len(skip_obsids)),
-                    ),
-                    all_args=[tuple(skip_obsids)],
-                )
+                dbconnection.execute(sql, all_args=[tuple(skip_obsids)])
 
     def convert_null_unit_to_empty_string(
         self, temptable_name: str, column: str, dbconnection: DbConnectionManager
@@ -850,8 +841,9 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 )
                 continue
 
+            fk_table_ident = dbconnection.ident(fk_table)
             nr_fk_before = dbconnection.execute_and_fetchall(
-                """select count(*) from %s""" % fk_table
+                f"SELECT count(*) FROM {fk_table_ident}"
             )[0][0]
             table_info = db_utils.db_tables_columns_info(
                 table=fk_table, dbconnection=dbconnection
@@ -861,45 +853,38 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             null_replacement_string = (
                 "NULL_NULL_NULL_NULL_NULL_NULL_NULL_NULL_NULL_NULL"
             )
+            temptable_ident = dbconnection.ident(temptablename)
+            to_list_idents = ", ".join(dbconnection.ident(k) for k in to_list)
             concatted_from_string = "||".join(
-                [
-                    "CASE WHEN %s is NULL THEN '%s' ELSE %s END"
-                    % (x, null_replacement_string, x)
-                    for x in from_list
-                ]
+                f"CASE WHEN {dbconnection.ident(x)} IS NULL THEN "
+                f"'{null_replacement_string}' ELSE {dbconnection.ident(x)} END"
+                for x in from_list
             )
             concatted_to_string = "||".join(
-                [
-                    "CASE WHEN %s is NULL THEN '%s' ELSE %s END"
-                    % (x, null_replacement_string, x)
-                    for x in to_list
-                ]
+                f"CASE WHEN {dbconnection.ident(x)} IS NULL THEN "
+                f"'{null_replacement_string}' ELSE {dbconnection.ident(x)} END"
+                for x in to_list
+            )
+            cast_exprs = ", ".join(
+                f'CAST("b".{dbconnection.ident(k)} AS {column_headers_types[to_list[idx]]})'
+                for idx, k in enumerate(from_list)
+            )
+            and_parts = " AND ".join(
+                f'"b".{dbconnection.ident(k)} IS NOT NULL AND '
+                f"\"b\".{dbconnection.ident(k)} != '' "
+                for k in from_list
             )
             sql = (
-                "INSERT INTO %s (%s) SELECT DISTINCT %s FROM %s AS b WHERE %s NOT IN (SELECT %s FROM %s) AND %s"
-                % (
-                    fk_table,
-                    ", ".join([f'"{k}"' for k in to_list]),
-                    ", ".join(
-                        [
-                            """CAST("b"."%s" as "%s")"""
-                            % (k, column_headers_types[to_list[idx]])
-                            for idx, k in enumerate(from_list)
-                        ]
-                    ),
-                    temptablename,
-                    concatted_from_string,
-                    concatted_to_string,
-                    fk_table,
-                    " AND ".join(
-                        [f""" b.{k} IS NOT NULL and b.{k} != '' """ for k in from_list]
-                    ),
-                )
+                f"INSERT INTO {fk_table_ident} ({to_list_idents}) "
+                f"SELECT DISTINCT {cast_exprs} FROM {temptable_ident} AS b "
+                f"WHERE {concatted_from_string} NOT IN "
+                f"(SELECT {concatted_to_string} FROM {fk_table_ident}) "
+                f"AND {and_parts}"
             )
             dbconnection.execute(sql)
 
             nr_fk_after = dbconnection.execute_and_fetchall(
-                """select count(*) from %s""" % fk_table
+                f"SELECT count(*) FROM {fk_table_ident}"
             )[0][0]
             if nr_fk_after > nr_fk_before:
                 common_utils.MessagebarAndLog.info(

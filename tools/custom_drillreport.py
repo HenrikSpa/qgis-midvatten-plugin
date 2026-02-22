@@ -956,32 +956,41 @@ class Drillreport:  # general observation point info for the selected object
         return rpt
 
 
-def GetStatistics(obsid=""):
+def GetStatistics(obsid: str = "") -> tuple:
+    from midvatten.tools.utils.db_utils.execution import use_or_create_connection
+
     statistics_list = [0] * 4
 
     columns = ["meas", "level_masl"]
     # default value
     meas_or_level_masl = "meas"
 
-    # number of values, also decide wehter to use meas or level_masl in report
-    for column in columns:
-        sql = r"""select Count(%s) from w_levels where obsid = '%s'""" % (column, obsid)
-        connection_ok, number_of_values = db_utils.sql_load_fr_db(sql)
-        if (
-            number_of_values and number_of_values[0][0] > statistics_list[2]
-        ):  # this will select meas if meas >= level_masl
-            meas_or_level_masl = column
-            statistics_list[2] = number_of_values[0][0]
+    with use_or_create_connection(None) as dbconnection:
+        ph = dbconnection.placeholder()
+        # number of values, also decide wehter to use meas or level_masl in report
+        for column in columns:
+            col_ident = dbconnection.ident(column)
+            sql = f"SELECT Count({col_ident}) FROM w_levels WHERE obsid = {ph}"
+            connection_ok, number_of_values = db_utils.sql_load_fr_db(
+                sql, dbconnection=dbconnection, execute_args=(obsid,)
+            )
+            if (
+                number_of_values and number_of_values[0][0] > statistics_list[2]
+            ):  # this will select meas if meas >= level_masl
+                meas_or_level_masl = column
+                statistics_list[2] = number_of_values[0][0]
 
-    # min value
-    if meas_or_level_masl == "meas":
-        sql = r"""select min(meas) from w_levels where obsid = '%s'""" % obsid
-    else:
-        sql = r"""select max(level_masl) from w_levels where obsid = '%s'""" % obsid
+        # min value
+        if meas_or_level_masl == "meas":
+            sql = f"SELECT min(meas) FROM w_levels WHERE obsid = {ph}"
+        else:
+            sql = f"SELECT max(level_masl) FROM w_levels WHERE obsid = {ph}"
 
-    connection_ok, min_value = db_utils.sql_load_fr_db(sql)
-    if min_value:
-        statistics_list[0] = min_value[0][0]
+        connection_ok, min_value = db_utils.sql_load_fr_db(
+            sql, dbconnection=dbconnection, execute_args=(obsid,)
+        )
+        if min_value:
+            statistics_list[0] = min_value[0][0]
 
     # median value
     median_value = db_utils.calculate_median_value(
@@ -990,13 +999,17 @@ def GetStatistics(obsid=""):
     if median_value:
         statistics_list[1] = median_value
 
-    # max value
-    if meas_or_level_masl == "meas":
-        sql = r"""select max(meas) from w_levels where obsid = '%s' """ % obsid
-    else:
-        sql = r"""select min(level_masl) from w_levels where obsid = '%s' """ % obsid
-    connection_ok, max_value = db_utils.sql_load_fr_db(sql)
-    if max_value:
-        statistics_list[3] = max_value[0][0]
+    with use_or_create_connection(None) as dbconnection:
+        ph = dbconnection.placeholder()
+        # max value
+        if meas_or_level_masl == "meas":
+            sql = f"SELECT max(meas) FROM w_levels WHERE obsid = {ph}"
+        else:
+            sql = f"SELECT min(level_masl) FROM w_levels WHERE obsid = {ph}"
+        connection_ok, max_value = db_utils.sql_load_fr_db(
+            sql, dbconnection=dbconnection, execute_args=(obsid,)
+        )
+        if max_value:
+            statistics_list[3] = max_value[0][0]
 
     return meas_or_level_masl, statistics_list

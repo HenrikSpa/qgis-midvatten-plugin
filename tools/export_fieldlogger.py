@@ -1219,10 +1219,19 @@ class ParameterBrowser(QtWidgets.QDialog, parameter_browser_dialog):
 
     @staticmethod
     def get_distinct_values(tablename: str, columnname: str) -> List[str]:
+        from midvatten.tools.utils.db_utils.execution import (
+            use_or_create_connection,
+        )
+
         if not tablename or not columnname:
             return []
-        sql = """SELECT distinct %s FROM %s""" % (columnname, tablename)
-        connection_ok, result = db_utils.sql_load_fr_db(sql)
+        with use_or_create_connection(None) as dbconnection:
+            sql = dbconnection.sql_ident(
+                "SELECT DISTINCT {c} FROM {t}", c=columnname, t=tablename
+            )
+            connection_ok, result = db_utils.sql_load_fr_db(
+                sql, dbconnection=dbconnection
+            )
 
         if not connection_ok:
             common_utils.MessagebarAndLog.critical(

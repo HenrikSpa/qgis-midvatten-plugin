@@ -285,18 +285,27 @@ def nonplot_tables(
 
 def create_dict_from_db_2_cols(params: tuple) -> tuple:
     """params are (col1=keys, col2=values, db-table)."""
-    from midvatten.tools.utils.db_utils.execution import sql_load_fr_db
+    from midvatten.tools.utils.db_utils.execution import (
+        sql_load_fr_db,
+        use_or_create_connection,
+    )
     from qgis.PyQt.QtCore import QCoreApplication
 
-    sqlstring = r"""select %s, %s from %s""" % (params)
-    connection_ok, list_of_tuples = sql_load_fr_db(sqlstring)
+    col1, col2, table = params
+    with use_or_create_connection(None) as dbconnection:
+        sqlstring = dbconnection.sql_ident(
+            "SELECT {c1}, {c2} FROM {t}", c1=col1, c2=col2, t=table
+        )
+        connection_ok, list_of_tuples = sql_load_fr_db(
+            sqlstring, dbconnection=dbconnection
+        )
     if not connection_ok:
         textstring = ru(
             QCoreApplication.translate(
                 "create_dict_from_db_2_cols",
                 """Cannot create dictionary from columns %s and %s in table %s!""",
             )
-        ) % (params,)
+        ) % (col1, col2, table)
         MessagebarAndLog.warning(
             bar_msg=QCoreApplication.translate(
                 "create_dict_from_db_2_cols",
@@ -328,10 +337,14 @@ def delete_duplicate_values(
         rowid = "rowid"
     else:
         rowid = "ctid"
-    dbconnection.execute(
-        """DELETE FROM %s WHERE %s NOT IN (SELECT MIN(%s) FROM %s GROUP BY %s);"""
-        % (tablename, rowid, rowid, tablename, ", ".join(primary_keys))
+    table_ident = dbconnection.ident(tablename)
+    rowid_ident = dbconnection.ident(rowid)
+    pk_idents = ", ".join(dbconnection.ident(pk) for pk in primary_keys)
+    sql = (
+        f"DELETE FROM {table_ident} WHERE {rowid_ident} NOT IN "
+        f"(SELECT MIN({rowid_ident}) FROM {table_ident} GROUP BY {pk_idents})"
     )
+    dbconnection.execute(sql)
 
 
 def activate_foreign_keys(
@@ -438,20 +451,21 @@ def delete_srids(
     if isinstance(execute_able_object, DbConnectionManager):
         if execute_able_object.dbtype != "spatialite":
             return None
+    ph = (
+        execute_able_object.placeholder()
+        if hasattr(execute_able_object, "placeholder")
+        else "?"
+    )
     delete_srid_sql_aux = (
-        r"""delete from spatial_ref_sys_aux where srid NOT IN ('%s', '4326');"""
-        % keep_epsg_code
+        f"DELETE FROM spatial_ref_sys_aux WHERE srid NOT IN ({ph}, '4326')"
     )
     try:
-        execute_able_object.execute(delete_srid_sql_aux)
+        execute_able_object.execute(delete_srid_sql_aux, args=(keep_epsg_code,))
     except Exception:
         pass
-    delete_srid_sql = (
-        r"""delete from spatial_ref_sys where srid NOT IN ('%s', '4326');"""
-        % keep_epsg_code
-    )
+    delete_srid_sql = f"DELETE FROM spatial_ref_sys WHERE srid NOT IN ({ph}, '4326')"
     try:
-        execute_able_object.execute(delete_srid_sql)
+        execute_able_object.execute(delete_srid_sql, args=(keep_epsg_code,))
     except Exception:
         MessagebarAndLog.info(
             log_msg=ru(

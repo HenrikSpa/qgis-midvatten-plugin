@@ -53,14 +53,8 @@ from midvatten.tools.utils.common_utils import returnunicode as ru, LEGEND_NCOL_
 from midvatten.definitions import midvatten_defs as defs
 from midvatten.tools.utils.gui_utils import set_groupbox_children_visibility
 
-try:
-    import pandas as pd
-except Exception:
-    pandas_on = False
-else:
-    pandas_on = True
+import pandas as pd
 
-common_utils.MessagebarAndLog.info(log_msg="Python pandas: " + str(pandas_on))
 customplot_ui_class = uic.loadUiType(
     os.path.join(os.path.dirname(__file__), "..", "ui", "customplotdialog.ui")
 )[0]
@@ -244,10 +238,9 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         self.tab1_pandas_calc = None
         self.tab2_pandas_calc = None
         self.tab3_pandas_calc = None
-        if pandas_on:
-            self.tab1_pandas_calc = PandasCalculations(self.grid_layout_16)
-            self.tab2_pandas_calc = PandasCalculations(self.grid_layout_14)
-            self.tab3_pandas_calc = PandasCalculations(self.grid_layout_19)
+        self.tab1_pandas_calc = PandasCalculations(self.grid_layout_16)
+        self.tab2_pandas_calc = PandasCalculations(self.grid_layout_14)
+        self.tab3_pandas_calc = PandasCalculations(self.grid_layout_19)
 
         self.plot_tabwidget.setCurrentIndex(0)
         for group_box in [

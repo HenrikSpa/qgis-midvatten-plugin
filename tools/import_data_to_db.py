@@ -568,10 +568,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         df = df.astype(object).where(pd.notnull(df), None)
 
         if dbconnection.dbtype == "spatialite":
-            sql = "INSERT INTO {} VALUES ({})".format(
-                dbconnection.ident(temptable_name),
-                dbconnection.placeholders(len(df.columns))
-                )
+            sql = f"INSERT INTO {dbconnection.ident(temptable_name)} VALUES ({dbconnection.placeholders(len(df.columns))})"
 
             dbconnection.cursor.executemany(sql, list(df.itertuples(index=False)))
         else:

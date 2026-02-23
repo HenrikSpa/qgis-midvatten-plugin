@@ -382,7 +382,7 @@ class TestGetDelimiter:
 
         with common_utils.tempinput("\n".join(file), "utf-8") as filename:
 
-            @mock.patch("midvatten.tools.utils.common_utils.ask_for_delimiter")
+            @mock.patch("midvatten.tools.utils.file_utils.ask_for_delimiter")
             @mock.patch("qgis.utils.iface", autospec=True)
             def _test(filename, mock_iface, mock_delimiter_question):
                 mock_delimiter_question.return_value = (";", True)
@@ -396,7 +396,7 @@ class TestGetDelimiter:
 
         with common_utils.tempinput("\n".join(file), "utf-8") as filename:
 
-            @mock.patch("midvatten.tools.utils.common_utils.ask_for_delimiter")
+            @mock.patch("midvatten.tools.utils.file_utils.ask_for_delimiter")
             @mock.patch("qgis.utils.iface", autospec=True)
             def _test(filename, mock_iface, mock_delimiter_question):
                 mock_delimiter_question.return_value = (",", True)
@@ -410,7 +410,7 @@ class TestGetDelimiter:
 
         with common_utils.tempinput("\n".join(file), "utf-8") as filename:
 
-            @mock.patch("midvatten.tools.utils.common_utils.ask_for_delimiter")
+            @mock.patch("midvatten.tools.utils.file_utils.ask_for_delimiter")
             @mock.patch("qgis.utils.iface", autospec=True)
             def _test(filename, mock_iface, mock_delimiter_question):
                 mock_delimiter_question.return_value = (";", True)
@@ -424,7 +424,7 @@ class TestGetDelimiter:
 
         with common_utils.tempinput("\n".join(file), "utf-8") as filename:
 
-            @mock.patch("midvatten.tools.utils.common_utils.ask_for_delimiter")
+            @mock.patch("midvatten.tools.utils.file_utils.ask_for_delimiter")
             @mock.patch("qgis.utils.iface", autospec=True)
             def _test(filename, mock_iface, mock_delimiter_question):
                 mock_delimiter_question.return_value = (",", True)

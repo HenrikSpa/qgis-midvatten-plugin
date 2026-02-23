@@ -1763,7 +1763,7 @@ class TestWlvllogImportFromDiverofficeFiles(
                     )
 
                     @mock.patch(
-                        "midvatten.tools.import_diveroffice.common_utils.ask_for_delimiter"
+                        "midvatten.tools.utils.file_utils.ask_for_delimiter"
                     )
                     @mock.patch(
                         "midvatten.tools.import_diveroffice.common_utils.MessagebarAndLog"
@@ -1896,7 +1896,7 @@ class TestWlvllogImportFromDiverofficeFiles(
                     )
 
                     @mock.patch(
-                        "midvatten.tools.import_diveroffice.common_utils.ask_for_delimiter"
+                        "midvatten.tools.utils.file_utils.ask_for_delimiter"
                     )
                     @mock.patch(
                         "midvatten.tools.import_diveroffice.common_utils.MessagebarAndLog"
@@ -1992,7 +1992,7 @@ class TestWlvllogImportFromDiverofficeFiles(
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
 
             @mock.patch(
-                "midvatten.tools.import_diveroffice.common_utils.ask_for_delimiter"
+                "midvatten.tools.utils.file_utils.ask_for_delimiter"
             )
             @mock.patch(
                 "midvatten.tools.import_diveroffice.common_utils.MessagebarAndLog"
@@ -2088,7 +2088,7 @@ class TestWlvllogImportFromDiverofficeFiles(
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
 
             @mock.patch(
-                "midvatten.tools.import_diveroffice.common_utils.ask_for_delimiter"
+                "midvatten.tools.utils.file_utils.ask_for_delimiter"
             )
             @mock.patch(
                 "midvatten.tools.import_diveroffice.common_utils.MessagebarAndLog"

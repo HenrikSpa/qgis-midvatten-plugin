@@ -107,29 +107,19 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
         self, db_path="", obsid="", dbconnection=None
     ):  # get_data method that returns a table with water quality data
         # Load all water quality parameters stored in two result columns: parameter, unit
+        param_col = dbconnection.ident(self.settingsdict["wqual_paramcolumn"])
+        wqual_table = dbconnection.ident(self.settingsdict["wqualtable"])
+        ph = dbconnection.placeholder()
         if not (
             str(self.settingsdict["wqual_unitcolumn"]) == ""
         ):  # If there is a a given column for unit
-            sql = (
-                r"""select distinct """
-                + self.settingsdict["wqual_paramcolumn"]
-                + """, """
-            )
-            sql += self.settingsdict["wqual_unitcolumn"]
-            sql += r""" from """
+            unit_col = dbconnection.ident(self.settingsdict["wqual_unitcolumn"])
+            sql = f"SELECT DISTINCT {param_col}, {unit_col} FROM {wqual_table} WHERE obsid = {ph} ORDER BY {param_col}"
         else:  # IF no specific column exist for unit
-            sql = (
-                r"""select distinct """
-                + self.settingsdict["wqual_paramcolumn"]
-                + """, """
-                + self.settingsdict["wqual_paramcolumn"]
-                + """ from """
-            )  # The twice selection of parameter is a dummy to keep same structure (2 cols) of sql-answer as if a unit column exists
-        sql += self.settingsdict["wqualtable"]
-        sql += r""" where obsid = '"""
-        sql += obsid
-        sql += r"""' ORDER BY """ + self.settingsdict["wqual_paramcolumn"]
-        connection_ok, parameters = db_utils.sql_load_fr_db(sql, dbconnection)
+            sql = f"SELECT DISTINCT {param_col}, {param_col} FROM {wqual_table} WHERE obsid = {ph} ORDER BY {param_col}"
+        connection_ok, parameters = db_utils.sql_load_fr_db(
+            sql, dbconnection, execute_args=(obsid,)
+        )
         if not parameters:
             common_utils.MessagebarAndLog.warning(
                 bar_msg=ru(
@@ -148,44 +138,23 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
         except Exception:
             pass
         # Load all date_times, stored in two result columns: reportnr, date_time
+        dt_len = len(self.settingsdict["wqual_date_time_format"])
         if self.settingsdict[
             "wqual_sortingcolumn"
         ]:  # If there is a a specific sorting column
-            if len(self.settingsdict["wqual_date_time_format"]) > 16:
-                sql = r"""select distinct """
-                sql += self.settingsdict["wqual_sortingcolumn"]
-                sql += r""", date_time from """  # including parameters
+            sort_col = dbconnection.ident(self.settingsdict["wqual_sortingcolumn"])
+            if dt_len > 16:
+                sql = f"SELECT DISTINCT {sort_col}, date_time FROM {wqual_table} WHERE obsid = {ph} ORDER BY date_time"
             else:
-                sql = (
-                    r"""select distinct under16.%s, under16.date_time from (select %s, substr(date_time,1,%s) as date_time from """
-                    % (
-                        self.settingsdict["wqual_sortingcolumn"],
-                        self.settingsdict["wqual_sortingcolumn"],
-                        len(self.settingsdict["wqual_date_time_format"]),
-                    )
-                )
+                sql = f"SELECT DISTINCT under16.{sort_col}, under16.date_time FROM (SELECT {sort_col}, substr(date_time,1,{dt_len}) AS date_time FROM {wqual_table} WHERE obsid = {ph}) AS under16 ORDER BY date_time"
         else:  # IF no specific column exist for sorting
-            if len(self.settingsdict["wqual_date_time_format"]) > 16:
-                sql = r"""select distinct date_time, date_time from """  # The twice selection of date_time is a dummy to keep same structure (2 cols) of sql-answer as if reportnr exists
+            if dt_len > 16:
+                sql = f"SELECT DISTINCT date_time, date_time FROM {wqual_table} WHERE obsid = {ph} ORDER BY date_time"
             else:
-                sql = (
-                    r"""select distinct under16.dummy, under16.date_time from (select substr(date_time,1,%s) as dummy, substr(date_time,1,%s) as date_time from """
-                    % (
-                        len(self.settingsdict["wqual_date_time_format"]),
-                        len(self.settingsdict["wqual_date_time_format"]),
-                    )
-                )  # The twice selection of date_time is a dummy to keep same structure (2 cols) of sql-answer as if reportnr exists
-        sql += self.settingsdict["wqualtable"]
-        sql += """ where obsid = '"""
-        sql += obsid
-        if len(self.settingsdict["wqual_date_time_format"]) > 16:
-            sql += """' ORDER BY date_time"""
-        else:
-            sql += """') AS under16 ORDER BY date_time"""
-        # sql2 = unicode(sql) #To get back to unicode-string
+                sql = f"SELECT DISTINCT under16.dummy, under16.date_time FROM (SELECT substr(date_time,1,{dt_len}) AS dummy, substr(date_time,1,{dt_len}) AS date_time FROM {wqual_table} WHERE obsid = {ph}) AS under16 ORDER BY date_time"
         connection_ok, date_times = db_utils.sql_load_fr_db(
-            sql, dbconnection
-        )  # Send SQL-syntax to cursor,
+            sql, dbconnection, execute_args=(obsid,)
+        )
 
         try:
             print(

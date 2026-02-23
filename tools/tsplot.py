@@ -50,6 +50,10 @@ class TimeSeriesPlot:
         if layer:
             n_f = layer.selectedFeatureCount()
             if n_f > 0:
+                dbconnection = db_utils.DbConnectionManager()
+                ts_col = dbconnection.ident(self.settingsdict["tscolumn"])
+                ts_table = dbconnection.ident(self.settingsdict["tstable"])
+                ph = dbconnection.placeholder()
                 # Load all selected observation points
                 ob = layer.getSelectedFeatures()
 
@@ -68,14 +72,10 @@ class TimeSeriesPlot:
                     attributes = k.attributes()
                     obsid = ru(attributes[kolumnindex])
                     # Load all observations (full time series) for the object [i] (i.e. selected observation point no i)
-                    sql = r"""SELECT date_time, """
-                    sql += str(self.settingsdict["tscolumn"])  # MacOSX fix1
-                    sql += """ FROM """
-                    sql += str(self.settingsdict["tstable"])  # MacOSX fix1
-                    sql += r""" WHERE obsid = '"""
-                    sql += obsid
-                    sql += """' ORDER BY date_time """
-                    connection_ok, recs = db_utils.sql_load_fr_db(sql)
+                    sql = f"SELECT date_time, {ts_col} FROM {ts_table} WHERE obsid = {ph} ORDER BY date_time"
+                    connection_ok, recs = db_utils.sql_load_fr_db(
+                        sql, dbconnection=dbconnection, execute_args=(obsid,)
+                    )
                     """Transform data to a numpy.recarray"""
                     my_format = [
                         ("date_time", datetime.datetime),
@@ -173,6 +173,7 @@ class TimeSeriesPlot:
                 fig.show()
                 # plt.close(fig)
                 # plt.draw()
+                dbconnection.closedb()
             else:
                 common_utils.pop_up_info(
                     ru(

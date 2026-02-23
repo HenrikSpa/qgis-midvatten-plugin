@@ -52,6 +52,10 @@ class XYPlot:
         if layer:
             n_f = layer.selectedFeatureCount()
             if n_f > 0:
+                dbconnection = db_utils.DbConnectionManager()
+                xcol_ident = dbconnection.ident(self.xcol)
+                table_ident = dbconnection.ident(self.table)
+                ph = dbconnection.placeholder()
                 # Load all selected observation points
                 ob = layer.getSelectedFeatures()
 
@@ -77,28 +81,23 @@ class XYPlot:
                         kolumnindex
                     ]  # Copy value in column obsid in the attribute list
                     # Load all observations (full time series) for the object [i] (i.e. selected observation point no i)
-                    sql = r"""SELECT """
-                    sql += str(self.xcol)  # MacOSX fix1
-                    sql += r""" as x"""
+                    select_cols = [f"{xcol_ident} AS x"]
                     if len(self.y1col):
-                        sql += r""", """
-                        sql += str(self.y1col)  # MacOSX fix1
-                        sql += r""" as y1"""
+                        select_cols.append(
+                            f"{dbconnection.ident(self.y1col)} AS y1"
+                        )
                     if len(self.y2col):
-                        sql += r""", """
-                        sql += str(self.y2col)  # MacOSX fix1
-                        sql += r""" as y2"""
+                        select_cols.append(
+                            f"{dbconnection.ident(self.y2col)} AS y2"
+                        )
                     if len(self.y3col):
-                        sql += r""", """
-                        sql += str(self.y3col)  # MacOSX fix1
-                        sql += r""" as y3"""
-                    sql += """ FROM """
-                    sql += str(self.table)  # MacOSX fix1
-                    sql += r""" WHERE obsid = '"""
-                    sql += obsid
-                    sql += """' ORDER BY """
-                    sql += str(self.xcol)  # MacOSX fix1
-                    connection_ok, recs = db_utils.sql_load_fr_db(sql)
+                        select_cols.append(
+                            f"{dbconnection.ident(self.y3col)} AS y3"
+                        )
+                    sql = f"SELECT {', '.join(select_cols)} FROM {table_ident} WHERE obsid = {ph} ORDER BY {xcol_ident}"
+                    connection_ok, recs = db_utils.sql_load_fr_db(
+                        sql, dbconnection=dbconnection, execute_args=(obsid,)
+                    )
                     """Transform data to a numpy.recarray"""
                     if len(self.y1col):
                         my_format = [("x", float), ("y1", float)]
@@ -221,6 +220,7 @@ class XYPlot:
                 for label in ax.yaxis.get_ticklabels():
                     label.set_fontsize(10)
                 fig.show()  # causes conflict with plugins "statist" and "chartmaker"
+                dbconnection.closedb()
             else:
                 common_utils.pop_up_info(
                     ru(

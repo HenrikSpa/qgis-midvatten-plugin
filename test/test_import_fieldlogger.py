@@ -661,7 +661,7 @@ class TestFieldLoggerImporterNoDb:
         with common_utils.tempinput("".join(f)) as filename:
 
             @mock.patch(
-                "midvatten.tools.import_fieldlogger.common_utils.ask_for_delimiter"
+                "midvatten.tools.utils.file_utils.ask_for_delimiter"
             )
             @mock.patch(
                 "midvatten.tools.import_fieldlogger.midvatten_utils.QtWidgets.QFileDialog.getOpenFileNames"

@@ -81,7 +81,8 @@ def dict_to_sorted_list(adict):
 
 
 def create_test_string(anything=None):
-    r"""Turns anything into a string used for testing
+    r"""Turns anything into a string used for testing.
+    Delegates to common_utils.anything_to_string_representation with compact=True.
     :param anything: just about anything
     :return: A unicode string
      >>> create_test_string('123')
@@ -91,35 +92,7 @@ def create_test_string(anything=None):
      >>> create_test_string({3: 'a', 2: 'b', 1: ('c', 'd')})
      '{1: (c, d), 2: b, 3: a}'
     """
-    if isinstance(anything, dict):
-        aunicode = "".join(
-            [
-                "{",
-                ", ".join(
-                    [
-                        ": ".join([create_test_string(k), create_test_string(v)])
-                        for k, v in sorted(anything.items())
-                    ]
-                ),
-                "}",
-            ]
-        )
-    elif isinstance(anything, list):
-        aunicode = "".join(
-            ["[", ", ".join([create_test_string(x) for x in anything]), "]"]
-        )
-    elif isinstance(anything, tuple):
-        aunicode = "".join(
-            ["(", ", ".join([create_test_string(x) for x in anything]), ")"]
-        )
-    elif isinstance(anything, (str, float, int)):
-        aunicode = common_utils.returnunicode(anything)
-    elif isinstance(anything, qgis.PyQt.QtCore.QVariant):
-        print("Was variant")
-        aunicode = common_utils.returnunicode(anything.toString().data())
-    else:
-        aunicode = common_utils.returnunicode(str(anything))
-    return aunicode
+    return common_utils.anything_to_string_representation(anything, compact=True)
 
 
 class ContextualStringIO(io.StringIO):

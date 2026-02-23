@@ -27,6 +27,7 @@ from qgis.PyQt.QtCore import QUrl, QDir
 from qgis.PyQt.QtGui import QDesktopServices
 
 from midvatten.tools.calculate_statistics import get_statistics_for_single_obsid
+from midvatten.tools.drillreport_models import ObsPointsRow, StratigraphyRow
 from midvatten.tools.utils import common_utils, midvatten_utils, db_utils
 from midvatten.tools.utils.common_utils import returnunicode as ru
 
@@ -217,159 +218,95 @@ class Drillreport:  # general observation point info for the selected object
 
     def rpt_upper_left_sv(
         self,
-        general_data: List[
-            Union[
-                Tuple[
-                    str,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    float,
-                    float,
-                    None,
-                    None,
-                    None,
-                    None,
-                    float,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    bytes,
-                ],
-                Tuple[
-                    str,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    float,
-                    float,
-                    None,
-                    None,
-                    None,
-                    None,
-                    float,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    str,
-                ],
-            ]
-        ],
+        general_data: List[ObsPointsRow],
         crs: str = "",
         crs_name: str = "",
     ) -> str:
+        r = general_data[0]
         rpt = r"""<p style="font-family:'arial'; font-size:8pt; font-weight:400; font-style:normal;">"""
-        if (
-            ru(general_data[0][1]) != ""
-            and ru(general_data[0][1]) != "NULL"
-            and ru(general_data[0][1]) != ru(general_data[0][0])
-        ):
+        if ru(r.name) != "" and ru(r.name) != "NULL" and ru(r.name) != ru(r.obsid):
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + "originalbenämning"
                 + r"""</TD><TD WIDTH=67%>"""
-                + ru(general_data[0][1])
+                + ru(r.name)
                 + "</TD></TR>"
             )
-        if ru(general_data[0][3]) != "" and ru(general_data[0][3]) != "NULL":
+        if ru(r.type) != "" and ru(r.type) != "NULL":
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + "obstyp"
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][3])
+                + ru(r.type)
                 + "</TD></TR>"
             )
-        if ru(general_data[0][4]) != "" and ru(general_data[0][4]) != "NULL":
+        if ru(r.length) != "" and ru(r.length) != "NULL":
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + "djup (m fr my t botten)"
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][4])
+                + ru(r.length)
                 + "</TD></TR>"
             )
-        if ru(general_data[0][17]) != "" and ru(general_data[0][17]) != "NULL":
+        if ru(r.h_toc) != "" and ru(r.h_toc) != "NULL":
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + "röröverkant (möh)"
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][17])
+                + ru(r.h_toc)
             )
-            if ru(general_data[0][21]) != "":
-                rpt += " (" + ru(general_data[0][21]) + ")"
+            if ru(r.h_syst) != "":
+                rpt += " (" + ru(r.h_syst) + ")"
             rpt += "</TD></TR>"
         if (
-            ru(general_data[0][18]) != ""
-            and ru(general_data[0][18]) != "NULL"
-            and ru(general_data[0][18]) != "0"
-            and ru(general_data[0][18]) != "0.0"
+            ru(r.h_tocags) != ""
+            and ru(r.h_tocags) != "NULL"
+            and ru(r.h_tocags) != "0"
+            and ru(r.h_tocags) != "0.0"
         ):
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + "rörövermått (m ö my)"
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][18])
+                + ru(r.h_tocags)
                 + "</TD></TR>"
             )
-        if ru(general_data[0][19]) != "" and ru(general_data[0][19]) != "NULL":
+        if ru(r.h_gs) != "" and ru(r.h_gs) != "NULL":
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + "markytans nivå, my (möh)"
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][19])
+                + ru(r.h_gs)
             )
-            if ru(general_data[0][21]) != "":
-                rpt += " (" + ru(general_data[0][21]) + ")"
+            if ru(r.h_syst) != "":
+                rpt += " (" + ru(r.h_syst) + ")"
             rpt += "</TD></TR>"
-        if ru(general_data[0][20]) != "" and ru(general_data[0][20]) != "NULL":
+        if ru(r.h_accur) != "" and ru(r.h_accur) != "NULL":
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + "onoggrannhet i höjd, avser rök (m)"
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][20])
+                + ru(r.h_accur)
                 + "</TD></TR>"
             )
-        if ru(general_data[0][13]) != "" and ru(general_data[0][13]) != "NULL":
+        if ru(r.east) != "" and ru(r.east) != "NULL":
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + "östlig koordinat"
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][13])
+                + ru(r.east)
                 + " ("
                 + "%s" % ("%s, " % crs_name if crs_name else "")
                 + "EPSG:"
                 + crs
                 + ")</TD></TR>"
             )
-        if ru(general_data[0][14]) != "" and ru(general_data[0][14]) != "NULL":
+        if ru(r.north) != "" and ru(r.north) != "NULL":
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + "nordlig koordinat"
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][14])
+                + ru(r.north)
                 + " ("
                 + "%s" % ("%s, " % crs_name if crs_name else "")
                 + "EPSG:"
@@ -377,124 +314,121 @@ class Drillreport:  # general observation point info for the selected object
                 + ")</TD></TR>"
             )
         if (
-            ru(general_data[0][13]) != ""
-            and ru(general_data[0][13]) != "NULL"
-            and ru(general_data[0][14]) != ""
-            and ru(general_data[0][15]) != ""
+            ru(r.east) != ""
+            and ru(r.east) != "NULL"
+            and ru(r.north) != ""
+            and ru(r.ne_accur) != ""
         ):
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + "lägesonoggrannhet"
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][15])
+                + ru(r.ne_accur)
                 + "</TD></TR>"
             )
-        if ru(general_data[0][7]) != "" and ru(general_data[0][7]) != "NULL":
+        if ru(r.material) != "" and ru(r.material) != "NULL":
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + "material"
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][7])
+                + ru(r.material)
                 + "</TD></TR>"
             )
-        if ru(general_data[0][6]) != "" and ru(general_data[0][6]) != "NULL":
+        if ru(r.diam) != "" and ru(r.diam) != "NULL":
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + "innerdiameter (mm)"
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][6])
+                + ru(r.diam)
                 + "</TD></TR>"
             )
-        if ru(general_data[0][5]) != "" and ru(general_data[0][5]) != "NULL":
+        if ru(r.drillstop) != "" and ru(r.drillstop) != "NULL":
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + "borrningens avslut"
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][5])
+                + ru(r.drillstop)
                 + "</TD></TR>"
             )
-        if ru(general_data[0][8]) != "" and ru(general_data[0][8]) != "NULL":
+        if ru(r.screen) != "" and ru(r.screen) != "NULL":
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + "filter/spets"
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][8])
+                + ru(r.screen)
                 + "</TD></TR>"
             )
-        if ru(general_data[0][10]) != "" and ru(general_data[0][10]) != "NULL":
+        if ru(r.drilldate) != "" and ru(r.drilldate) != "NULL":
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + "borrningen avslutades"
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][10])
+                + ru(r.drilldate)
                 + "</TD></TR>"
             )
-        if ru(general_data[0][9]) != "" and ru(general_data[0][9]) != "NULL":
+        if ru(r.capacity) != "" and ru(r.capacity) != "NULL":
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + "kapacitet/vg på spetsnivå"
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][9])
+                + ru(r.capacity)
                 + "</TD></TR>"
             )
-        if ru(general_data[0][2]) != "" and ru(general_data[0][2]) != "NULL":
+        if ru(r.place) != "" and ru(r.place) != "NULL":
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + "fastighet/plats"
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][2])
+                + ru(r.place)
                 + "</TD></TR>"
             )
-        if ru(general_data[0][23]) != "" and ru(general_data[0][23]) != "NULL":
+        if ru(r.source) != "" and ru(r.source) != "NULL":
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + "referens"
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][23])
+                + ru(r.source)
                 + "</TD></TR>"
             )
         rpt += r"""</p>"""
-        if ru(general_data[0][16]) != "" and ru(general_data[0][16]) != "NULL":
+        if ru(r.ne_source) != "" and ru(r.ne_source) != "NULL":
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + "lägesangivelsens ursprung"
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][16])
+                + ru(r.ne_source)
                 + "</TD></TR>"
             )
-        if ru(general_data[0][22]) != "" and ru(general_data[0][22]) != "NULL":
+        if ru(r.h_source) != "" and ru(r.h_source) != "NULL":
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + "höjdangivelsens ursprung"
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][22])
+                + ru(r.h_source)
                 + "</TD></TR>"
             )
         return rpt
 
-    def rpt_upper_left(self, general_data, crs="", crs_name=""):
+    def rpt_upper_left(self, general_data: List[ObsPointsRow], crs="", crs_name=""):
+        r = general_data[0]
         rpt = r"""<p style="font-family:'arial'; font-size:8pt; font-weight:400; font-style:normal;">"""
-        if (
-            ru(general_data[0][1]) != ""
-            and ru(general_data[0][1]) != "NULL"
-            and ru(general_data[0][1]) != ru(general_data[0][0])
-        ):
+        if ru(r.name) != "" and ru(r.name) != "NULL" and ru(r.name) != ru(r.obsid):
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + ru(QCoreApplication.translate("Drillreport", "original name"))
                 + r"""</TD><TD WIDTH=67%>"""
-                + ru(general_data[0][1])
+                + ru(r.name)
                 + "</TD></TR>"
             )
-        if ru(general_data[0][3]) not in ["", "NULL"]:
+        if ru(r.type) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + ru(QCoreApplication.translate("Drillreport", "obs type"))
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][3])
+                + ru(r.type)
                 + "</TD></TR>"
             )
-        if ru(general_data[0][4]) not in ["", "NULL"]:
+        if ru(r.length) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + ru(
@@ -503,10 +437,10 @@ class Drillreport:  # general observation point info for the selected object
                     )
                 )
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][4])
+                + ru(r.length)
                 + "</TD></TR>"
             )
-        if ru(general_data[0][17]) not in ["", "NULL"]:
+        if ru(r.h_toc) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + ru(
@@ -515,15 +449,15 @@ class Drillreport:  # general observation point info for the selected object
                     )
                 )
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][17])
+                + ru(r.h_toc)
             )
-            if ru(general_data[0][21]) != "":
-                rpt += " (" + ru(general_data[0][21]) + ")"
+            if ru(r.h_syst) != "":
+                rpt += " (" + ru(r.h_syst) + ")"
             rpt += "</TD></TR>"
         if (
-            ru(general_data[0][18]) not in ["", "NULL"]
-            and ru(general_data[0][18]) != "0"
-            and ru(general_data[0][18]) != "0.0"
+            ru(r.h_tocags) not in ["", "NULL"]
+            and ru(r.h_tocags) != "0"
+            and ru(r.h_tocags) != "0.0"
         ):
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
@@ -533,10 +467,10 @@ class Drillreport:  # general observation point info for the selected object
                     )
                 )
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][18])
+                + ru(r.h_tocags)
                 + "</TD></TR>"
             )
-        if ru(general_data[0][19]) not in ["", "NULL"]:
+        if ru(r.h_gs) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + ru(
@@ -545,39 +479,39 @@ class Drillreport:  # general observation point info for the selected object
                     )
                 )
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][19])
+                + ru(r.h_gs)
             )
-            if ru(general_data[0][21]) != "":
-                rpt += " (" + ru(general_data[0][21]) + ")"
+            if ru(r.h_syst) != "":
+                rpt += " (" + ru(r.h_syst) + ")"
             rpt += "</TD></TR>"
-        if ru(general_data[0][20]) not in ["", "NULL"]:
+        if ru(r.h_accur) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + ru(
                     QCoreApplication.translate("Drillreport", "elevation accuracy (m)")
                 )
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][20])
+                + ru(r.h_accur)
                 + "</TD></TR>"
             )
-        if ru(general_data[0][13]) not in ["", "NULL"]:
+        if ru(r.east) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + ru(QCoreApplication.translate("Drillreport", "eastern coordinate"))
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][13])
+                + ru(r.east)
                 + " ("
                 + crs_name
                 + ", EPSG:"
                 + crs
                 + ")</TD></TR>"
             )
-        if ru(general_data[0][14]) not in ["", "NULL"]:
+        if ru(r.north) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + ru(QCoreApplication.translate("Drillreport", "northern coordinate"))
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][14])
+                + ru(r.north)
                 + " ("
                 + crs_name
                 + ", EPSG:"
@@ -585,105 +519,103 @@ class Drillreport:  # general observation point info for the selected object
                 + ")</TD></TR>"
             )
         if (
-            ru(general_data[0][13]) not in ["", "NULL"]
-            and ru(general_data[0][14]) != ""
-            and ru(general_data[0][15]) != ""
+            ru(r.east) not in ["", "NULL"]
+            and ru(r.north) != ""
+            and ru(r.ne_accur) != ""
         ):
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + ru(QCoreApplication.translate("Drillreport", "position accuracy"))
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][15])
+                + ru(r.ne_accur)
                 + "</TD></TR>"
             )
-        if ru(general_data[0][7]) not in ["", "NULL"]:
+        if ru(r.material) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + ru(QCoreApplication.translate("Drillreport", "material"))
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][7])
+                + ru(r.material)
                 + "</TD></TR>"
             )
-        if ru(general_data[0][6]) not in ["", "NULL"]:
+        if ru(r.diam) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + ru(QCoreApplication.translate("Drillreport", "inner diameter (mm)"))
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][6])
+                + ru(r.diam)
                 + "</TD></TR>"
             )
-        if ru(general_data[0][5]) not in ["", "NULL"]:
+        if ru(r.drillstop) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + ru(QCoreApplication.translate("Drillreport", "drill stop"))
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][5])
+                + ru(r.drillstop)
                 + "</TD></TR>"
             )
-        if ru(general_data[0][8]) not in ["", "NULL"]:
+        if ru(r.screen) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + ru(QCoreApplication.translate("Drillreport", "screen type"))
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][8])
+                + ru(r.screen)
                 + "</TD></TR>"
             )
-        if ru(general_data[0][10]) not in ["", "NULL"]:
+        if ru(r.drilldate) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + ru(QCoreApplication.translate("Drillreport", "drill date"))
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][10])
+                + ru(r.drilldate)
                 + "</TD></TR>"
             )
-        if ru(general_data[0][9]) not in ["", "NULL"]:
+        if ru(r.capacity) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + ru(QCoreApplication.translate("Drillreport", "capacity"))
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][9])
+                + ru(r.capacity)
                 + "</TD></TR>"
             )
-        if ru(general_data[0][2]) not in ["", "NULL"]:
+        if ru(r.place) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + ru(QCoreApplication.translate("Drillreport", "place"))
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][2])
+                + ru(r.place)
                 + "</TD></TR>"
             )
-        if ru(general_data[0][23]) not in ["", "NULL"]:
+        if ru(r.source) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + ru(QCoreApplication.translate("Drillreport", "reference"))
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][23])
+                + ru(r.source)
                 + "</TD></TR>"
             )
         rpt += r"""</p>"""
-        if ru(general_data[0][16]) not in ["", "NULL"]:
+        if ru(r.ne_source) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + ru(QCoreApplication.translate("Drillreport", "source for position"))
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][16])
+                + ru(r.ne_source)
                 + "</TD></TR>"
             )
-        if ru(general_data[0][22]) not in ["", "NULL"]:
+        if ru(r.h_source) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + ru(QCoreApplication.translate("Drillreport", "source for elevation"))
                 + r"""</TD><TD WIDTH=50%>"""
-                + ru(general_data[0][22])
+                + ru(r.h_source)
                 + "</TD></TR>"
             )
         return rpt
 
     def rpt_upper_right_sv(
         self,
-        strat_data: List[
-            Union[Tuple[str, int, float, float, str, str, str, str, None], Any]
-        ],
+        strat_data: List[StratigraphyRow],
     ) -> str:
         rpt = r"""<p style="font-family:'arial'; font-size:10pt; font-weight:400; font-style:normal;">"""
         if len(strat_data) > 0:
@@ -700,13 +632,13 @@ class Drillreport:  # general observation point info for the selected object
             rpt += r"""<TD WIDTH=9%><P><u>""" + "stänger?" + "</P></u></TD>"
             rpt += r"""<TD WIDTH=27%><P><u>""" + "kommentar" + "</P></u></TD></TR>"
         for row in strat_data:
-            col2 = "" if ru(row[2]) == "NULL" else ru(row[2])
-            col3 = "" if ru(row[3]) == "NULL" else ru(row[3])
-            col4 = "" if ru(row[4]) == "NULL" else ru(row[4])
-            col5 = "" if ru(row[5]) == "NULL" else ru(row[5])
-            col6 = "" if ru(row[6]) == "NULL" else ru(row[6])
-            col7 = "" if ru(row[7]) == "NULL" else ru(row[7])
-            col8 = "" if ru(row[8]) == "NULL" else ru(row[8])
+            col2 = "" if ru(row.depthtop) == "NULL" else ru(row.depthtop)
+            col3 = "" if ru(row.depthbot) == "NULL" else ru(row.depthbot)
+            col4 = "" if ru(row.geology) == "NULL" else ru(row.geology)
+            col5 = "" if ru(row.geoshort) == "NULL" else ru(row.geoshort)
+            col6 = "" if ru(row.capacity) == "NULL" else ru(row.capacity)
+            col7 = "" if ru(row.development) == "NULL" else ru(row.development)
+            col8 = "" if ru(row.comment) == "NULL" else ru(row.comment)
             rpt += r"""<TR VALIGN=TOP><TD WIDTH=17%><P>"""
             rpt += col2 + " - " + col3 + "</P></TD>"
             rpt += r"""<TD WIDTH=27%><P>""" + col4 + "</P></TD>"
@@ -717,7 +649,7 @@ class Drillreport:  # general observation point info for the selected object
         rpt += r"""</p>"""
         return rpt
 
-    def rpt_upper_right(self, strat_data):
+    def rpt_upper_right(self, strat_data: List[StratigraphyRow]) -> str:
         rpt = r"""<p style="font-family:'arial'; font-size:10pt; font-weight:400; font-style:normal;">"""
         if len(strat_data) > 0:
             rpt += (
@@ -770,79 +702,17 @@ class Drillreport:  # general observation point info for the selected object
 
     def rpt_lower_left(
         self,
-        general_data: List[
-            Union[
-                Tuple[
-                    str,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    float,
-                    float,
-                    None,
-                    None,
-                    None,
-                    None,
-                    float,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    bytes,
-                ],
-                Tuple[
-                    str,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    float,
-                    float,
-                    None,
-                    None,
-                    None,
-                    None,
-                    float,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    str,
-                ],
-            ]
-        ],
+        general_data: List[ObsPointsRow],
     ) -> str:
+        r = general_data[0]
         rpt = r"""<p style="font-family:'arial'; font-size:10pt; font-weight:400; font-style:normal;">"""
-        if ru(general_data[0][24]) not in ["", "NULL"] and ru(
-            general_data[0][25]
-        ) not in ["", "NULL"]:
-            rpt += ru(general_data[0][24])
-            rpt += ru(general_data[0][25])
-        elif ru(general_data[0][24]) not in ["", "NULL"]:
-            rpt += ru(general_data[0][24])
-        elif ru(general_data[0][25]) not in ["", "NULL"]:
-            rpt += ru(general_data[0][25])
+        if ru(r.com_onerow) not in ["", "NULL"] and ru(r.com_html) not in ["", "NULL"]:
+            rpt += ru(r.com_onerow)
+            rpt += ru(r.com_html)
+        elif ru(r.com_onerow) not in ["", "NULL"]:
+            rpt += ru(r.com_onerow)
+        elif ru(r.com_html) not in ["", "NULL"]:
+            rpt += ru(r.com_html)
         rpt += r"""</p>"""
         return rpt
 
@@ -920,88 +790,37 @@ class Drillreport:  # general observation point info for the selected object
         return rpt
 
     def get_data(
-        self, obsid: str = "", tablename: str = "", debug: str = "n"
-    ) -> Union[
-        Tuple[bool, List[Any]],
-        Tuple[
-            bool,
-            List[
-                Tuple[
-                    str,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    float,
-                    float,
-                    None,
-                    None,
-                    None,
-                    None,
-                    float,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    bytes,
-                ]
-            ],
-        ],
-        Tuple[
-            bool,
-            List[
-                Tuple[
-                    str,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    float,
-                    float,
-                    None,
-                    None,
-                    None,
-                    None,
-                    float,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    str,
-                ]
-            ],
-        ],
-        Tuple[bool, List[Tuple[str, int, float, float, str, str, str, str, None]]],
-    ]:  # get_data method that returns a table with water quality data
-        # Load all data in obs_points table
-        sql = r"""select * from """
-        sql += tablename
-        sql += r""" where obsid = '"""
-        sql += obsid
-        sql += r"""'"""
+        self,
+        obsid: str = "",
+        tablename: str = "",
+        debug: str = "n",
+    ) -> Tuple[
+        bool,
+        Union[List[ObsPointsRow], List[StratigraphyRow], List[Any]],
+    ]:
+        """Load data from obs_points or stratigraphy. Returns (ok, rows)."""
+        dbconnection = db_utils.DbConnectionManager()
+        table_ident = dbconnection.ident(tablename)
+        obsid_literal = db_utils.sql_literal(obsid)
+        sql = f"SELECT * FROM {table_ident} WHERE obsid = {obsid_literal}"
         if tablename == "stratigraphy":
-            sql += r""" order by stratid"""
+            sql += " ORDER BY stratid"
         if debug == "y":
             common_utils.pop_up_info(sql)
-        connection_ok, data = db_utils.sql_load_fr_db(sql)
-        return connection_ok, data
+        connection_ok, raw_rows = db_utils.sql_load_fr_db(sql, dbconnection)
+        if not connection_ok or not raw_rows:
+            return connection_ok, []
+
+        if tablename in ("obs_points", "stratigraphy"):
+            columns = db_utils.tables_columns(
+                table=tablename, dbconnection=dbconnection
+            )
+            col_list = columns.get(tablename, [])
+            if tablename == "obs_points":
+                return connection_ok, [
+                    ObsPointsRow.from_row(row, col_list) for row in raw_rows
+                ]
+            return connection_ok, [
+                StratigraphyRow.from_row(row, col_list) for row in raw_rows
+            ]
+        return connection_ok, raw_rows

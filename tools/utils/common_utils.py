@@ -1278,10 +1278,12 @@ def anything_to_string_representation(
     dictformatter: str = "{%s}",
     listformatter: str = "[%s]",
     tupleformatter: str = "(%s, )",
+    compact: bool = False,
 ) -> str:
     r"""Turns anything into a string used for testing
     :param anything: just about anything
     :param itemjoiner: The string to join list/tuple/dict items with.
+    :param compact: If True, use simpler output (no quotes around simple types, for tests).
     :return: A unicode string
      >>> anything_to_string_representation({('123'): 4.5, "a": '7'})
      '{"123": 4.5, "a": "7"}'
@@ -1291,68 +1293,119 @@ def anything_to_string_representation(
      '["1", "2", 3]'
      >>> anything_to_string_representation({'123': 4.5, "a": '7'}, ',\n', '    ')
      '{    "123": 4.5,\n    "a": "7"}'
+     >>> anything_to_string_representation({3: 'a', 2: 'b', 1: ('c', 'd')}, compact=True)
+     '{1: (c, d), 2: b, 3: a}'
     """
     if isinstance(anything, dict):
-        aunicode = dictformatter % itemjoiner.join(
-            [
-                pad
-                + ": ".join(
-                    [
-                        anything_to_string_representation(
-                            k,
-                            itemjoiner,
-                            pad + pad,
-                            dictformatter,
-                            listformatter,
-                            tupleformatter,
-                        ),
-                        anything_to_string_representation(
-                            v,
-                            itemjoiner,
-                            pad + pad,
-                            dictformatter,
-                            listformatter,
-                            tupleformatter,
-                        ),
-                    ]
-                )
-                for k, v in sorted(anything.items(), key=lambda k_v: str(k_v[0]))
-            ]
-        )
+        if compact:
+            aunicode = "".join(
+                [
+                    "{",
+                    ", ".join(
+                        [
+                            ": ".join(
+                                [
+                                    anything_to_string_representation(k, compact=True),
+                                    anything_to_string_representation(v, compact=True),
+                                ]
+                            )
+                            for k, v in sorted(anything.items())
+                        ]
+                    ),
+                    "}",
+                ]
+            )
+        else:
+            aunicode = dictformatter % itemjoiner.join(
+                [
+                    pad
+                    + ": ".join(
+                        [
+                            anything_to_string_representation(
+                                k,
+                                itemjoiner,
+                                pad + pad,
+                                dictformatter,
+                                listformatter,
+                                tupleformatter,
+                                compact,
+                            ),
+                            anything_to_string_representation(
+                                v,
+                                itemjoiner,
+                                pad + pad,
+                                dictformatter,
+                                listformatter,
+                                tupleformatter,
+                                compact,
+                            ),
+                        ]
+                    )
+                    for k, v in sorted(anything.items(), key=lambda k_v: str(k_v[0]))
+                ]
+            )
     elif isinstance(anything, list):
-        aunicode = listformatter % itemjoiner.join(
-            [
-                pad
-                + anything_to_string_representation(
-                    x,
-                    itemjoiner,
-                    pad + pad,
-                    dictformatter,
-                    listformatter,
-                    tupleformatter,
-                )
-                for x in anything
-            ]
-        )
+        if compact:
+            aunicode = "".join(
+                [
+                    "[",
+                    ", ".join(
+                        anything_to_string_representation(x, compact=True)
+                        for x in anything
+                    ),
+                    "]",
+                ]
+            )
+        else:
+            aunicode = listformatter % itemjoiner.join(
+                [
+                    pad
+                    + anything_to_string_representation(
+                        x,
+                        itemjoiner,
+                        pad + pad,
+                        dictformatter,
+                        listformatter,
+                        tupleformatter,
+                        compact,
+                    )
+                    for x in anything
+                ]
+            )
     elif isinstance(anything, tuple):
-        aunicode = tupleformatter % itemjoiner.join(
-            [
-                pad
-                + anything_to_string_representation(
-                    x,
-                    itemjoiner,
-                    pad + pad,
-                    dictformatter,
-                    listformatter,
-                    tupleformatter,
-                )
-                for x in anything
-            ]
-        )
+        if compact:
+            aunicode = "".join(
+                [
+                    "(",
+                    ", ".join(
+                        anything_to_string_representation(x, compact=True)
+                        for x in anything
+                    ),
+                    ")",
+                ]
+            )
+        else:
+            aunicode = tupleformatter % itemjoiner.join(
+                [
+                    pad
+                    + anything_to_string_representation(
+                        x,
+                        itemjoiner,
+                        pad + pad,
+                        dictformatter,
+                        listformatter,
+                        tupleformatter,
+                        compact,
+                    )
+                    for x in anything
+                ]
+            )
     elif isinstance(anything, (float, int)):
         aunicode = f"{returnunicode(anything)}"
     elif isinstance(anything, str):
-        if '"' not in anything:
+        if compact:
+            aunicode = returnunicode(anything)
+        elif '"' not in anything:
             aunicode = f'"{anything}"'
         elif "'" not in anything:
             aunicode = f"'{anything}'"

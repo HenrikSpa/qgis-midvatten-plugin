@@ -22,12 +22,16 @@ import os
 import time  # for debugging
 
 from qgis.PyQt.QtCore import QCoreApplication
-from qgis.PyQt.QtCore import QUrl, QDir
-from qgis.PyQt.QtGui import QDesktopServices
 
 # midvatten modules
 from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.common_utils import returnunicode as ru
+from midvatten.tools.wqualreport_core import (
+    report_path,
+    write_html_preamble,
+    write_html_close,
+    open_report_in_browser,
+)
 
 
 class Wqualreport:  # extracts water quality data for selected objects, selected db and given table, results shown in html report
@@ -42,24 +46,9 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
         )  # To find the column named 'obsid'
         observations = layer.getSelectedFeatures()
 
-        reportfolder = os.path.join(QDir.tempPath(), "midvatten_reports")
-        if not os.path.exists(reportfolder):
-            os.makedirs(reportfolder)
-        reportpath = os.path.join(reportfolder, "w_qual_report.html")
-        # f = open(reportpath, "wb" )
+        reportpath = report_path()
         f = codecs.open(reportpath, "wb", "utf-8")
-
-        # write some initiating html
-        rpt = r"""<head><title>%s</title></head>""" % ru(
-            QCoreApplication.translate(
-                "Wqualreport", "water quality report from Midvatten plugin for QGIS"
-            )
-        )
-        rpt += r""" <meta http-equiv="content-type" content="text/html; charset=utf-8" />"""  # NOTE, all report data must be in 'utf-8'
-        rpt += "<html><body>"
-        # rpt += "<table width=\"100%\" border=\"1\">\n"
-        # rpt2 = rpt.encode("utf-8")
-        f.write(rpt)
+        write_html_preamble(f)
 
         dbconnection = db_utils.DbConnectionManager()
 
@@ -94,14 +83,13 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
                 pass
 
         dbconnection.closedb()
-        # write some finishing html and close the file
-        f.write("\n</body></html>")
+        write_html_close(f)
         f.close()
 
         common_utils.stop_waiting_cursor()  # now this long process is done and the cursor is back as normal
 
         if report_data:
-            QDesktopServices.openUrl(QUrl.fromLocalFile(reportpath))
+            open_report_in_browser(reportpath)
 
     def get_data(
         self, db_path="", obsid="", dbconnection=None

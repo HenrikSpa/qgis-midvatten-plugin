@@ -1918,27 +1918,24 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                         continue
 
                 # TODO: There should probably be a setting for using avg(level_masl)
-                sql = """SELECT level_masl FROM {} WHERE obsid = {} AND ({}) AND level_masl IS NOT NULL"""
+                tab = self.ms.settingsdict["secplotwlvltab"]
+                ph_obs = self.dbconnection.placeholder()
                 _d = _date.replace("-", "").replace(" ", "").strip()
                 for _int in range(10):
                     _d = _d.replace(str(_int), "")
                 if _d:
-                    # Assume that the date is an sql string
-                    # TODO UNSAFE SQL WARNING! _date should not be allowed as an sql string!
-                    sql = sql.format(
-                        self.ms.settingsdict["secplotwlvltab"],
-                        self.dbconnection.placeholder(),
-                        _date,
+                    # Treat _date as a value (parameterized), not as raw SQL.
+                    ph_date = self.dbconnection.placeholder()
+                    sql = self.dbconnection.sql_ident(
+                        f"SELECT level_masl FROM {{t}} WHERE obsid = {ph_obs} AND date_time = {ph_date} AND level_masl IS NOT NULL",
+                        t=tab,
                     )
-                    res = self.dbconnection.execute_and_fetchall(sql, (obs,))
+                    res = self.dbconnection.execute_and_fetchall(sql, (obs, _date))
                 else:
-                    sql = (
-                        sql.format(
-                            self.ms.settingsdict["secplotwlvltab"],
-                            self.dbconnection.placeholder(),
-                            f"""date_time LIKE {self.dbconnection.placeholder()}""",
-                        )
-                        + """ ORDER BY date_time ASC"""
+                    ph_like = self.dbconnection.placeholder()
+                    sql = self.dbconnection.sql_ident(
+                        f"SELECT level_masl FROM {{t}} WHERE obsid = {ph_obs} AND date_time LIKE {ph_like} ORDER BY date_time ASC",
+                        t=tab,
                     )
                     res = self.dbconnection.execute_and_fetchall(
                         sql, (obs, f"{_date}%")

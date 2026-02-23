@@ -377,58 +377,74 @@ class TestGetCurrentLocale:
 
 @attr(status="on")
 class TestGetDelimiter:
-    def test_get_delimiter_only_one_column(self):
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_get_delimiter_only_one_column(self, mock_messagebar):
         file = ["obsid", "rb1"]
 
         with common_utils.tempinput("\n".join(file), "utf-8") as filename:
 
-            @mock.patch("midvatten.tools.utils.file_utils.ask_for_delimiter")
+            @mock.patch(
+                "midvatten.tools.utils.file_utils.qgis.PyQt.QtWidgets.QInputDialog.getText"
+            )
             @mock.patch("qgis.utils.iface", autospec=True)
-            def _test(filename, mock_iface, mock_delimiter_question):
-                mock_delimiter_question.return_value = (";", True)
+            def _test(filename, mock_iface, mock_get_text):
+                mock_get_text.return_value = (";", True)
                 delimiter = common_utils.get_delimiter(filename, "utf-8")
+                print(f"{mock_messagebar.mock_calls=}")
                 assert delimiter == ";"
 
             _test(filename)
 
-    def test_get_delimiter_delimiter_not_found(self):
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_get_delimiter_delimiter_not_found(self, mock_messagebar):
         file = ["obsid;acol,acol2", "rb1;1,2"]
 
         with common_utils.tempinput("\n".join(file), "utf-8") as filename:
 
-            @mock.patch("midvatten.tools.utils.file_utils.ask_for_delimiter")
+            @mock.patch(
+                "midvatten.tools.utils.file_utils.qgis.PyQt.QtWidgets.QInputDialog.getText"
+            )
             @mock.patch("qgis.utils.iface", autospec=True)
-            def _test(filename, mock_iface, mock_delimiter_question):
-                mock_delimiter_question.return_value = (",", True)
+            def _test(filename, mock_iface, mock_get_text):
+                mock_get_text.return_value = (",", True)
                 delimiter = common_utils.get_delimiter(filename, "utf-8")
+                print(f"{mock_messagebar.mock_calls=}")
                 assert delimiter == ","
 
             _test(filename)
 
-    def test_get_delimiter_semicolon(self):
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_get_delimiter_semicolon(self, mock_messagebar):
         file = ["obsid;acol;acol2", "rb1;1;2"]
 
         with common_utils.tempinput("\n".join(file), "utf-8") as filename:
 
-            @mock.patch("midvatten.tools.utils.file_utils.ask_for_delimiter")
+            @mock.patch(
+                "midvatten.tools.utils.file_utils.qgis.PyQt.QtWidgets.QInputDialog.getText"
+            )
             @mock.patch("qgis.utils.iface", autospec=True)
-            def _test(filename, mock_iface, mock_delimiter_question):
-                mock_delimiter_question.return_value = (";", True)
+            def _test(filename, mock_iface, mock_get_text):
+                mock_get_text.return_value = (";", True)
                 delimiter = common_utils.get_delimiter(filename, "utf-8")
+                print(f"{mock_messagebar.mock_calls=}")
                 assert delimiter == ";"
 
             _test(filename)
 
-    def test_get_delimiter_comma(self):
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_get_delimiter_comma(self, mock_messagebar):
         file = ["obsid,acol,acol2", "rb1,1,2"]
 
         with common_utils.tempinput("\n".join(file), "utf-8") as filename:
 
-            @mock.patch("midvatten.tools.utils.file_utils.ask_for_delimiter")
+            @mock.patch(
+                "midvatten.tools.utils.file_utils.qgis.PyQt.QtWidgets.QInputDialog.getText"
+            )
             @mock.patch("qgis.utils.iface", autospec=True)
-            def _test(filename, mock_iface, mock_delimiter_question):
-                mock_delimiter_question.return_value = (",", True)
+            def _test(filename, mock_iface, mock_get_text):
+                mock_get_text.return_value = (",", True)
                 delimiter = common_utils.get_delimiter(filename, "utf-8")
+                print(f"{mock_messagebar.mock_calls=}")
                 assert delimiter == ","
 
             _test(filename)

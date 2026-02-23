@@ -65,7 +65,7 @@ def _create_wqual_lab_layer():
 class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
     """Tests for CompactWqualReportUi (compact water quality report)."""
 
-    @mock.patch("midvatten.tools.wqualreport_compact.QDesktopServices.openUrl")
+    @mock.patch("midvatten.tools.wqualreport_compact.open_report_in_browser")
     @mock.patch(
         "midvatten.tools.wqualreport_compact.common_utils.getselectedobjectnames"
     )
@@ -96,7 +96,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert "Calcium" in report
         assert "mg/l" in report
 
-    @mock.patch("midvatten.tools.wqualreport_compact.QDesktopServices.openUrl")
+    @mock.patch("midvatten.tools.wqualreport_compact.open_report_in_browser")
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
     def test_ok_button_generates_html_from_active_layer(
@@ -124,7 +124,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert "Iron" in report
         assert "mg/l" in report
 
-    @mock.patch("midvatten.tools.wqualreport_compact.QDesktopServices.openUrl")
+    @mock.patch("midvatten.tools.wqualreport_compact.open_report_in_browser")
     @mock.patch(
         "midvatten.tools.wqualreport_compact.common_utils.getselectedobjectnames"
     )
@@ -154,7 +154,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert "-42.1" in report_num or "123.45" in report_num
         print(f"{mock_messagebar.mock_calls=}")
 
-    @mock.patch("midvatten.tools.wqualreport_compact.QDesktopServices.openUrl")
+    @mock.patch("midvatten.tools.wqualreport_compact.open_report_in_browser")
     @mock.patch(
         "midvatten.tools.wqualreport_compact.common_utils.getselectedobjectnames"
     )
@@ -180,7 +180,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
             report = f.read()
         assert "empty_row_between_tables" in report
 
-    @mock.patch("midvatten.tools.wqualreport_compact.QDesktopServices.openUrl")
+    @mock.patch("midvatten.tools.wqualreport_compact.open_report_in_browser")
     @mock.patch(
         "midvatten.tools.wqualreport_compact.common_utils.getselectedobjectnames"
     )
@@ -205,7 +205,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
             report = f.read()
         assert "page-break-before" in report
 
-    @mock.patch("midvatten.tools.wqualreport_compact.QDesktopServices.openUrl")
+    @mock.patch("midvatten.tools.wqualreport_compact.open_report_in_browser")
     @mock.patch(
         "midvatten.tools.wqualreport_compact.common_utils.getselectedobjectnames"
     )
@@ -316,7 +316,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert ui2.rowheader_colwidth_percent.text() == "30"
         assert ui2.data_column.currentText() == "reading_num"
 
-    @mock.patch("midvatten.tools.wqualreport_compact.QDesktopServices.openUrl")
+    @mock.patch("midvatten.tools.wqualreport_compact.open_report_in_browser")
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
     def test_from_active_layer_no_layer_shows_error(

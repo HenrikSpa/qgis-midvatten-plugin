@@ -27,13 +27,17 @@ import pandas as pd
 import qgis
 import qgis.PyQt
 from qgis.PyQt.QtCore import QCoreApplication
-from qgis.PyQt.QtCore import QUrl, QDir
-from qgis.PyQt.QtGui import QDesktopServices
 
 from midvatten.tools.utils import common_utils, db_utils, gui_utils
 from midvatten.tools.utils.common_utils import (
     returnunicode as ru,
     general_exception_handler,
+)
+from midvatten.tools.wqualreport_core import (
+    report_path,
+    write_html_preamble,
+    write_html_close,
+    open_report_in_browser,
 )
 
 custom_drillreport_dialog = qgis.PyQt.uic.loadUiType(
@@ -380,21 +384,9 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
     ):
         # show the user this may take a long time...
 
-        reportfolder = os.path.join(QDir.tempPath(), "midvatten_reports")
-        if not os.path.exists(reportfolder):
-            os.makedirs(reportfolder)
-        reportpath = os.path.join(reportfolder, "w_qual_report.html")
+        reportpath = report_path()
         f = codecs.open(reportpath, "wb", "utf-8")
-
-        # write some initiating html
-        rpt = r"""<head><title>%s</title></head>""" % ru(
-            QCoreApplication.translate(
-                "Wqualreport", "water quality report from Midvatten plugin for QGIS"
-            )
-        )
-        rpt += r""" <meta http-equiv="content-type" content="text/html; charset=utf-8" />"""  # NOTE, all report data must be in 'utf-8'
-        rpt += "<html><body>"
-        f.write(rpt)
+        write_html_preamble(f)
 
         if date_time_as_columns:
             data_columns = [
@@ -504,12 +496,11 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
                 nr_row_header_columns=len(rows),
             )
 
-        # write some finishing html and close the file
-        f.write("\n</body></html>")
+        write_html_close(f)
         f.close()
 
         if report_data:
-            QDesktopServices.openUrl(QUrl.fromLocalFile(reportpath))
+            open_report_in_browser(reportpath)
 
     def get_data_from_sql(self, table, obsids, columns):
         """
@@ -534,13 +525,20 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
                 % str(columns)
             )
 
-        sql = """SELECT %s FROM %s""" % (", ".join(columns), table)
+        col_list = ", ".join(dbconnection.ident(c, allowed=fieldnames) for c in columns)
+        table_ident = dbconnection.ident(table)
         if obsids:
-            sql += """ WHERE obsid in (%s)""" % sql_list(obsids)
+            placeholders = dbconnection.placeholders(len(obsids))
+            sql = f"SELECT {col_list} FROM {table_ident} WHERE obsid IN ({placeholders})"
+            params = tuple(obsids)
+        else:
+            sql = f"SELECT {col_list} FROM {table_ident}"
+            params = None
 
         df = pd.read_sql(
             con=dbconnection.conn,
             sql=sql,
+            params=params,
             parse_dates={"date_time": {"format": "mixed"}},
         )
         dbconnection.closedb()

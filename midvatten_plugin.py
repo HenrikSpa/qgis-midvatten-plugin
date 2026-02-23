@@ -32,7 +32,6 @@ from typing import Callable, Optional
 import qgis.PyQt.QtWidgets
 import qgis.utils
 from qgis.PyQt.QtCore import QCoreApplication, QDir, QSettings, QUrl, Qt
-from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QApplication, QFileDialog, QMenu
 from qgis.core import QgsApplication, QgsWkbTypes, QgsVectorLayer
 
@@ -71,6 +70,7 @@ from midvatten.tools.w_flow_calc_aveflow import CalculateAveflow
 from midvatten.tools.wqualreport import Wqualreport
 from midvatten.tools.wqualreport_compact import CompactWqualReportUi
 from midvatten.tools.xyplot import XYPlot
+from midvatten.tool_registry import add_plugin_action
 
 
 class Midvatten:
@@ -116,68 +116,23 @@ class Midvatten:
     ) -> QAction:
         """Add a toolbar icon to the toolbar.
 
-        :param icon_path: Path to the icon for this action. Can be a resource
-            path (e.g. ':/plugins/foo/bar.png') or a normal file system path.
-        :type icon_path: str
-
-        :param text: Text that should be shown in menu items for this action.
-        :type text: str
-
-        :param callback: Function to be called when the action is triggered.
-        :type callback: function
-
-        :param enabled_flag: A flag indicating if the action should be enabled
-            by default. Defaults to True.
-        :type enabled_flag: bool
-
-        :param add_to_menu: Flag indicating whether the action should also
-            be added to the menu. Defaults to True.
-        :type add_to_menu: bool
-
-        :param add_to_toolbar: Flag indicating whether the action should also
-            be added to the toolbar. Defaults to True.
-        :type add_to_toolbar: bool
-
-        :param status_tip: Optional text to show in a popup when mouse pointer
-            hovers over the action.
-        :type status_tip: str
-
-        :param parent: Parent widget for the new action. Defaults None.
-        :type parent: QWidget
-
-        :param whats_this: Optional text to show in the status bar when the
-            mouse pointer hovers over the action.
-
-        :returns: The action that was created. Note that the action is also
-            added to self.actions list.
-        :rtype: QAction
+        Delegates to tool_registry.add_plugin_action for the actual registration.
         """
-        icon_path = Path(os.path.dirname(__file__)) / "icons" / icon_path
-
-        icon = QIcon(str(icon_path))
-        action = QAction(icon, text, parent)
-        action.triggered.connect(callback)
-        action.setEnabled(enabled_flag)
-
-        if parent is None:
-            parent = self.iface.mainWindow()
-
-        if status_tip is not None:
-            action.setStatusTip(status_tip)
-
-        if whats_this is not None:
-            action.setWhatsThis(whats_this)
-
-        if add_to_toolbar:
-            # Adds plugin icon to Plugins toolbar
-            self.iface.addToolBarIcon(action)
-
-        if add_to_menu:
-            self.iface.addPluginToMenu(self.menu, action)
-
-        self.actions.append(action)
-
-        return action
+        return add_plugin_action(
+            self.iface,
+            self.menu,
+            self.plugin_dir,
+            self.actions,
+            icon_path,
+            text,
+            callback,
+            enabled_flag,
+            add_to_menu,
+            add_to_toolbar,
+            status_tip,
+            whats_this,
+            parent,
+        )
 
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""

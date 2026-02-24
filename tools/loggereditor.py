@@ -580,6 +580,27 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
         p = [None] * 2  # List for plot objects
 
+        handles, labels = self._draw_series()
+
+        self.plot_or_update_selected_line()
+
+        self._finish_plot(handles, labels)
+
+        if last_used_obsid == self.obsid:
+            self.mpltoolbar.forward()
+        else:
+            # Clear choices
+            self.reset_settings()
+            self.mpltoolbar.update()
+
+        common_utils.stop_waiting_cursor()
+
+        self.toggle_move_nodes(self.move_nodes_button.button().isChecked())
+        self.toggle_select_nodes(self.select_nodes_button.button().isChecked())
+
+    def _draw_series(self):
+        """Draw measurement and logger time series onto self.axes. Return (handles, labels)."""
+        obsid = self.obsid
         handles = []
         labels = []
 
@@ -713,9 +734,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 handles.append(a)
                 labels.append(label)
 
-        self.plot_or_update_selected_line()
+        return handles, labels
 
-        """ Finish plot """
+    def _finish_plot(self, handles, labels):
+        """Configure axes, draw legend and refresh canvas."""
         self.axes.grid(True)
         self.axes.yaxis.set_major_formatter(
             tick.ScalarFormatter(useOffset=False, useMathText=False)
@@ -725,7 +747,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             ru(QCoreApplication.translate("Calibrlogger", "Level (masl)"))
         )  # This is the method that accepts even national characters ('åäö') in matplotlib axes labels
         self.axes.set_title(
-            ru(QCoreApplication.translate("Calibrlogger", "Plot for ")) + str(obsid)
+            ru(QCoreApplication.translate("Calibrlogger", "Plot for ")) + str(self.obsid)
         )  # This is the method that accepts even national characters ('åäö') in matplotlib axes labels
         for label in self.axes.xaxis.get_ticklabels():
             label.set_fontsize(8)
@@ -740,18 +762,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self.canvas.draw()
         # plt.close(self.calibrplotfigure)#this closes reference to self.calibrplotfigure
         self.statusbar.clearMessage()
-
-        if last_used_obsid == self.obsid:
-            self.mpltoolbar.forward()
-        else:
-            # Clear choices
-            self.reset_settings()
-            self.mpltoolbar.update()
-
-        common_utils.stop_waiting_cursor()
-
-        self.toggle_move_nodes(self.move_nodes_button.button().isChecked())
-        self.toggle_select_nodes(self.select_nodes_button.button().isChecked())
 
     @fn_timer
     def plot_recarray(self, axes, a_recarray, label, time_list=None, style=None):
@@ -1228,17 +1238,24 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             "date_as_numeric": db_utils.cast_date_time_as_epoch(),
         }
 
-        sql = """SELECT level_masl FROM w_levels_logger WHERE level_masl IS NOT NULL AND obsid = '{obsid}'
-                                                              AND date_time >= '{adjust_start_date}'
-                                                              AND date_time <= '{adjust_end_date}'""".format(
-            **{
-                "obsid": data["obsid"],
-                "adjust_start_date": data["adjust_start_date"],
-                "adjust_end_date": data["adjust_end_date"],
-            }
+        dbconnection = db_utils.DbConnectionManager()
+        ph = dbconnection.placeholder()
+
+        # User-controlled strings are passed as parameters, never interpolated into SQL.
+        # Trusted code-generated SQL expressions (epoch casts) and safe float literals
+        # are embedded directly.
+        select_sql = (
+            f"SELECT level_masl FROM w_levels_logger"
+            f" WHERE level_masl IS NOT NULL"
+            f" AND obsid = {ph} AND date_time >= {ph} AND date_time <= {ph}"
         )
-        res = db_utils.sql_load_fr_db(sql)[1]
+        res = db_utils.sql_load_fr_db(
+            select_sql,
+            dbconnection=dbconnection,
+            execute_args=(data["obsid"], data["adjust_start_date"], data["adjust_end_date"]),
+        )[1]
         if not res:
+            dbconnection.closedb()
             common_utils.pop_up_info(
                 ru(
                     QCoreApplication.translate(
@@ -1255,17 +1272,23 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             )
             % (str(data))
         )
-        sql = """
+        # Epoch SQL expressions and float literals are safe to embed; user strings go as params.
+        update_sql = f"""
                 UPDATE w_levels_logger SET level_masl = level_masl -
                 (
-                 ((({l1_level} - {l2_level}) / ({l1_date} - {L2_date}))
-                 - (({M1_level} - {M2_level}) / ({M1_date} - {M2_date})))
-                  * ({date_as_numeric} - {l1_date})
+                 ((({data["l1_level"]} - {data["l2_level"]}) / ({data["l1_date"]} - {data["L2_date"]}))
+                 - (({data["M1_level"]} - {data["M2_level"]}) / ({data["M1_date"]} - {data["M2_date"]})))
+                  * ({data["date_as_numeric"]} - {data["l1_date"]})
                 )
-                WHERE obsid = '{obsid}' AND date_time >= '{adjust_start_date}' AND date_time <= '{adjust_end_date}'
-            """.format(**data)
+                WHERE obsid = {ph} AND date_time >= {ph} AND date_time <= {ph}
+            """
         common_utils.start_waiting_cursor()
-        db_utils.sql_alter_db(sql)
+        db_utils.sql_alter_db(
+            update_sql,
+            dbconnection=dbconnection,
+            all_args=[(data["obsid"], data["adjust_start_date"], data["adjust_end_date"])],
+        )
+        dbconnection.closedb()
         common_utils.stop_waiting_cursor()
         self.update_plot()
 

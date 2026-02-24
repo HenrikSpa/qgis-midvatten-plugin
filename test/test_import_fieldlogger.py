@@ -21,7 +21,7 @@ from midvatten.tools.utils.date_utils import datestring_to_date
 class TestFieldLoggerImporterNoDb:
     @mock.patch("midvatten.tools.import_fieldlogger.common_utils.NotFoundQuestion")
     @mock.patch(
-        "midvatten.tools.import_fieldlogger.midvatten_utils.get_last_used_flow_instruments"
+        "midvatten.tools.import_fieldlogger.db_utils.get_last_used_flow_instruments"
     )
     def test_prepare_w_flow_data(
         self, mock_flow_instruments, mock_instrument_not_found
@@ -141,7 +141,7 @@ class TestFieldLoggerImporterNoDb:
 
     @mock.patch("midvatten.tools.import_fieldlogger.common_utils.NotFoundQuestion")
     @mock.patch(
-        "midvatten.tools.import_fieldlogger.midvatten_utils.get_last_used_flow_instruments"
+        "midvatten.tools.import_fieldlogger.db_utils.get_last_used_flow_instruments"
     )
     def test_prepare_w_flow_data_assert_only_ask_instrument_once(
         self, mock_flow_instruments, mock_instrument_not_found
@@ -182,7 +182,7 @@ class TestFieldLoggerImporterNoDb:
 
     @mock.patch("midvatten.tools.import_fieldlogger.common_utils.NotFoundQuestion")
     @mock.patch(
-        "midvatten.tools.import_fieldlogger.midvatten_utils.get_last_used_flow_instruments"
+        "midvatten.tools.import_fieldlogger.db_utils.get_last_used_flow_instruments"
     )
     def test_prepare_w_flow_data_assert_only_ask_instrument_twice(
         self, mock_flow_instruments, mock_instrument_not_found

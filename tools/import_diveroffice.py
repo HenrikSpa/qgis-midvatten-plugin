@@ -484,7 +484,7 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
 
         if not import_all_data:
             file_to_import_to_db = self.filter_dates_from_filedata(
-                file_to_import_to_db, midvatten_utils.get_last_logger_dates()
+                file_to_import_to_db, db_utils.get_last_logger_dates()
             )
         if len(file_to_import_to_db) < 2:
             common_utils.MessagebarAndLog.info(

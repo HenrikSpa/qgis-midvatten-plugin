@@ -897,87 +897,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         try:
             common_utils.start_waiting_cursor()  # show the user this may take a long time...
             # load user settings from the ui
-            self.ms.settingsdict["secplotwlvltab"] = str(self.wlvltable.currentText())
-            temporarystring = ru(self.datetime.toPlainText())  # this needs some cleanup
-            try:
-                self.ms.settingsdict["secplotdates"] = [
-                    x
-                    for x in temporarystring.replace("\r", "").split("\n")
-                    if x.strip()
-                ]
-            except TypeError as e:
-                self.ms.settingsdict["secplotdates"] = ""
-            self.ms.settingsdict["secplottext"] = self.textcol_combo_box.currentText()
-            self.ms.settingsdict["secplotbw"] = self.barwidthdouble_spin_box.value()
-            self.ms.settingsdict["secplotdrillstop"] = self.drillstop.text()
-            self.ms.settingsdict["stratigraphyplotted"] = (
-                self.plot_stratigraphy.isChecked()
-            )
-            self.ms.settingsdict["secplothydrologyplotted"] = (
-                self.hydrology_radio_button.isChecked()
-            )
-            self.ms.settingsdict["secplotlabelsplotted"] = (
-                self.labels_check_box.isChecked()
-            )
-            self.ms.settingsdict["secplotlegendplotted"] = (
-                self.create_legend.isChecked()
-            )
-            self.get_dem_selection()
-            self.ms.settingsdict["secplotselectedDEMs"] = self.rasterselection
-            self.ms.settingsdict["secplotdem_sampling_distance"] = (
-                self.dem_sampling_distance.value()
-            )
-
-            self.ms.settingsdict["secplot_apply_graded_dems"] = (
-                self.secplot_apply_graded_dems.isChecked()
-            )
-            self.ms.settingsdict["secplot_grading_depth"] = (
-                self.secplot_grading_depth.value()
-            )
-            self.ms.settingsdict["secplot_grading_num_layers"] = (
-                self.secplot_grading_num_layers.value()
-            )
-            self.ms.settingsdict["secplot_grading_max_opacity"] = (
-                self.secplot_grading_max_opacity.value()
-            )
-            self.ms.settingsdict["secplot_grading_min_opacity"] = (
-                self.secplot_grading_min_opacity.value()
-            )
-
-            self.ms.settingsdict["secplot_tem_model_name"] = (
-                self.tem_model_name.currentText()
-            )
-            self.ms.settingsdict["secplot_tem_colormap"] = (
-                self.tem_colormap.currentText()
-            )
-            self.ms.settingsdict["secplot_tem_norm"] = self.tem_norm.currentText()
-            self.ms.settingsdict["secplot_tem_shading"] = self.tem_shading.currentText()
-            self.ms.settingsdict["secplot_tem_vmin"] = self.tem_vmin.text()
-            self.ms.settingsdict["secplot_tem_vmax"] = self.tem_vmax.text()
-            self.ms.settingsdict["secplot_tem_snap"] = self.tem_snap.isChecked()
-            self.ms.settingsdict["secplot_tem_data_fit"] = self.tem_data_fit.isChecked()
-            self.ms.settingsdict["secplot_tem_rasterized"] = (
-                self.tem_rasterized.isChecked()
-            )
-            self.ms.settingsdict["secplot_tem_edgecolors"] = self.tem_edgecolors.text()
-            self.ms.settingsdict["secplot_tem_alpha_above_doi"] = (
-                self.tem_alpha_above_doi.value()
-            )
-            self.ms.settingsdict["secplot_tem_alpha_below_doi"] = (
-                self.tem_alpha_below_doi.value()
-            )
-
-            self.ms.settingsdict["secplot_images_images"] = str(
-                list([item.text() for item in self.images_images.selectedItems()])
-            )
-            self.ms.settingsdict["secplot_images_alpha"] = self.images_alpha.text()
-            self.ms.settingsdict["secplot_images_zorder"] = self.images_zorder.text()
-            self.ms.settingsdict["secplot_images_clip"] = self.images_clip.isChecked()
-
-            if self.text_align_center.isChecked():
-                self.ms.settingsdict["secplotlayertextalignment"] = "center"
-            else:
-                self.ms.settingsdict["secplotlayertextalignment"] = "edge"
+            self._load_ui_settings()
 
             self.plot_tem()
             self.plot_images()
@@ -1045,41 +965,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             if len(self.ms.settingsdict["secplotselectedDEMs"]) > 0:
                 self.plot_dems()
 
-            """
-            if there is no stratigraphy data and no borehole lenght for first or last observations,
-            then autscaling will fail silently since it does not consider axes.annotate (which is used for printing obsid)
-            hence this special treatment to check if xlim are less than expected from lengthalong
-            """
-            xmin_xmax = self.secplot_templates.loaded_template["Axes_set_xlim"]
-            if xmin_xmax is not None:
-                xmin, xmax = xmin_xmax
-            else:
-                if self.obsids_x_position:
-                    _xmin, _xmax = self.figure._midv_ax_main.get_xlim()
-                    xmin = min(
-                        float(min(self.obsids_x_position.values())) - self.barwidth,
-                        _xmin,
-                    )
-                    xmax = max(
-                        float(max(self.obsids_x_position.values())) + self.barwidth,
-                        _xmax,
-                    )
-                else:
-                    xticks = self.figure._midv_ax_main.get_xticks()
-                    # shift half a step left and right
-                    xmin = (3 * xticks[0] - xticks[1]) / 2.0
-                    xmax = (3 * xticks[-1] - xticks[-2]) / 2.0
-            self.figure._midv_ax_main.set_xlim(xmin, xmax)
-
-            ymin_ymax = self.secplot_templates.loaded_template["Axes_set_ylim"]
-            if ymin_ymax is not None:
-                ymin, ymax = ymin_ymax
-            else:
-                yticks = self.figure._midv_ax_main.get_yticks()
-                # shift half a step up and down
-                ymin = (3 * yticks[0] - yticks[1]) / 2.0
-                ymax = (3 * yticks[-1] - yticks[-2]) / 2.0
-            self.figure._midv_ax_main.set_ylim(ymin, ymax)
+            self._configure_axes()
 
             # labels, grid, legend etc.
             self.finish_plot()
@@ -1118,6 +1004,125 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             raise
         else:
             common_utils.stop_waiting_cursor()  # now this long process is done and the cursor is back as normal
+
+    def _load_ui_settings(self):
+        """Read all UI widget values into self.ms.settingsdict."""
+        self.ms.settingsdict["secplotwlvltab"] = str(self.wlvltable.currentText())
+        temporarystring = ru(self.datetime.toPlainText())  # this needs some cleanup
+        try:
+            self.ms.settingsdict["secplotdates"] = [
+                x
+                for x in temporarystring.replace("\r", "").split("\n")
+                if x.strip()
+            ]
+        except TypeError as e:
+            self.ms.settingsdict["secplotdates"] = ""
+        self.ms.settingsdict["secplottext"] = self.textcol_combo_box.currentText()
+        self.ms.settingsdict["secplotbw"] = self.barwidthdouble_spin_box.value()
+        self.ms.settingsdict["secplotdrillstop"] = self.drillstop.text()
+        self.ms.settingsdict["stratigraphyplotted"] = (
+            self.plot_stratigraphy.isChecked()
+        )
+        self.ms.settingsdict["secplothydrologyplotted"] = (
+            self.hydrology_radio_button.isChecked()
+        )
+        self.ms.settingsdict["secplotlabelsplotted"] = (
+            self.labels_check_box.isChecked()
+        )
+        self.ms.settingsdict["secplotlegendplotted"] = (
+            self.create_legend.isChecked()
+        )
+        self.get_dem_selection()
+        self.ms.settingsdict["secplotselectedDEMs"] = self.rasterselection
+        self.ms.settingsdict["secplotdem_sampling_distance"] = (
+            self.dem_sampling_distance.value()
+        )
+        self.ms.settingsdict["secplot_apply_graded_dems"] = (
+            self.secplot_apply_graded_dems.isChecked()
+        )
+        self.ms.settingsdict["secplot_grading_depth"] = (
+            self.secplot_grading_depth.value()
+        )
+        self.ms.settingsdict["secplot_grading_num_layers"] = (
+            self.secplot_grading_num_layers.value()
+        )
+        self.ms.settingsdict["secplot_grading_max_opacity"] = (
+            self.secplot_grading_max_opacity.value()
+        )
+        self.ms.settingsdict["secplot_grading_min_opacity"] = (
+            self.secplot_grading_min_opacity.value()
+        )
+        self.ms.settingsdict["secplot_tem_model_name"] = (
+            self.tem_model_name.currentText()
+        )
+        self.ms.settingsdict["secplot_tem_colormap"] = (
+            self.tem_colormap.currentText()
+        )
+        self.ms.settingsdict["secplot_tem_norm"] = self.tem_norm.currentText()
+        self.ms.settingsdict["secplot_tem_shading"] = self.tem_shading.currentText()
+        self.ms.settingsdict["secplot_tem_vmin"] = self.tem_vmin.text()
+        self.ms.settingsdict["secplot_tem_vmax"] = self.tem_vmax.text()
+        self.ms.settingsdict["secplot_tem_snap"] = self.tem_snap.isChecked()
+        self.ms.settingsdict["secplot_tem_data_fit"] = self.tem_data_fit.isChecked()
+        self.ms.settingsdict["secplot_tem_rasterized"] = (
+            self.tem_rasterized.isChecked()
+        )
+        self.ms.settingsdict["secplot_tem_edgecolors"] = self.tem_edgecolors.text()
+        self.ms.settingsdict["secplot_tem_alpha_above_doi"] = (
+            self.tem_alpha_above_doi.value()
+        )
+        self.ms.settingsdict["secplot_tem_alpha_below_doi"] = (
+            self.tem_alpha_below_doi.value()
+        )
+        self.ms.settingsdict["secplot_images_images"] = str(
+            list([item.text() for item in self.images_images.selectedItems()])
+        )
+        self.ms.settingsdict["secplot_images_alpha"] = self.images_alpha.text()
+        self.ms.settingsdict["secplot_images_zorder"] = self.images_zorder.text()
+        self.ms.settingsdict["secplot_images_clip"] = self.images_clip.isChecked()
+        if self.text_align_center.isChecked():
+            self.ms.settingsdict["secplotlayertextalignment"] = "center"
+        else:
+            self.ms.settingsdict["secplotlayertextalignment"] = "edge"
+
+    def _configure_axes(self):
+        """Set xlim and ylim on the main axes from template or auto-calculated values.
+
+        If there is no stratigraphy data and no borehole length for first or last
+        observations, autoscaling will fail silently since it does not consider
+        axes.annotate (which is used for printing obsid). This special treatment
+        checks if xlim are less than expected from lengthalong.
+        """
+        xmin_xmax = self.secplot_templates.loaded_template["Axes_set_xlim"]
+        if xmin_xmax is not None:
+            xmin, xmax = xmin_xmax
+        else:
+            if self.obsids_x_position:
+                _xmin, _xmax = self.figure._midv_ax_main.get_xlim()
+                xmin = min(
+                    float(min(self.obsids_x_position.values())) - self.barwidth,
+                    _xmin,
+                )
+                xmax = max(
+                    float(max(self.obsids_x_position.values())) + self.barwidth,
+                    _xmax,
+                )
+            else:
+                xticks = self.figure._midv_ax_main.get_xticks()
+                # shift half a step left and right
+                xmin = (3 * xticks[0] - xticks[1]) / 2.0
+                xmax = (3 * xticks[-1] - xticks[-2]) / 2.0
+        self.figure._midv_ax_main.set_xlim(xmin, xmax)
+
+        ymin_ymax = self.secplot_templates.loaded_template["Axes_set_ylim"]
+        if ymin_ymax is not None:
+            ymin, ymax = ymin_ymax
+        else:
+            yticks = self.figure._midv_ax_main.get_yticks()
+            # shift half a step up and down
+            ymin = (3 * yticks[0] - yticks[1]) / 2.0
+            ymax = (3 * yticks[-1] - yticks[-2]) / 2.0
+        self.figure._midv_ax_main.set_ylim(ymin, ymax)
 
     def save_settings(
         self,

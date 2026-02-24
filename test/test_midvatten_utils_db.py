@@ -48,7 +48,7 @@ class TestGetFunctionsMixin:
             """INSERT INTO w_levels_logger (obsid, date_time) VALUES ('rb2', '2016-01-01 00:00')"""
         )
 
-        test_string = create_test_string(midvatten_utils.get_last_logger_dates())
+        test_string = create_test_string(db_utils.get_last_logger_dates())
         reference_string = (
             """{rb1: [(2015-01-01 00:00:00)], rb2: [(2016-01-01 00:00)]}"""
         )
@@ -56,14 +56,14 @@ class TestGetFunctionsMixin:
 
 
 class TestCalculateDbTableRowsMixin:
-    @mock.patch("midvatten.tools.utils.midvatten_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.db_utils.helpers.MessagebarAndLog")
     def test_get_db_statistics(self, mock_messagebar):
         """
         Test that calculate_db_table_rows can be run without major error
         :param mock_iface:
         :return:
         """
-        midvatten_utils.calculate_db_table_rows()
+        db_utils.calculate_db_table_rows()
 
         assert len(str(mock_messagebar.mock_calls[0])) > 1500 and "about_db" in str(
             mock_messagebar.mock_calls[0]

@@ -13,7 +13,11 @@ import psycopg2
 import qgis.core
 from qgis.PyQt.QtCore import QCoreApplication
 
-from midvatten.tools.utils.common_utils import MessagebarAndLog, returnunicode as ru
+from midvatten.tools.utils.common_utils import (
+    MessagebarAndLog,
+    returnunicode as ru,
+    sql_failed_msg,
+)
 from midvatten.tools.utils.db_utils.connection import DbConnectionManager
 from midvatten.tools.utils.db_utils.execution import (
     sql_load_fr_db,
@@ -490,3 +494,115 @@ def export_bytea_as_bytes(dbconnection: DbConnectionManager) -> None:
         psycopg2.BINARY.values, "BYTEA2BYTES", bytea2bytes
     )
     psycopg2.extensions.register_type(bytea2bytes_type, dbconnection.conn)
+
+
+# ---------------------------------------------------------------------------
+# Domain-level DB query helpers (moved from midvatten_utils.py)
+# ---------------------------------------------------------------------------
+
+
+def get_last_used_flow_instruments() -> tuple:
+    """Return dict-like {obsid: (flowtype, instrumentid, last_date)} from w_flow."""
+    return get_sql_result_as_dict(
+        "SELECT obsid, flowtype, instrumentid, max(date_time) FROM w_flow GROUP BY obsid, flowtype, instrumentid"
+    )
+
+
+def get_last_logger_dates() -> Any:
+    """Return dict {obsid: last_imported_date} from w_levels_logger."""
+    ok_or_not, obsid_last_imported_dates = get_sql_result_as_dict(
+        "select obsid, max(date_time) from w_levels_logger group by obsid"
+    )
+    return ru(obsid_last_imported_dates, True)
+
+
+def get_quality_instruments() -> tuple:
+    """Return (True, tuple_of_instrument_ids) from w_qual_field, or (False, ())."""
+    sql = "SELECT distinct instrument from w_qual_field"
+    connection_ok, result_list = sql_load_fr_db(sql)
+    if not connection_ok:
+        MessagebarAndLog.critical(
+            bar_msg=sql_failed_msg(),
+            log_msg=ru(
+                QCoreApplication.translate(
+                    "get_quality_instruments",
+                    "Failed to get quality instruments from sql\n%s",
+                )
+            )
+            % sql,
+        )
+        return False, tuple()
+    return True, ru([x[0] for x in result_list], True)
+
+
+def calculate_db_table_rows() -> None:
+    """Log a table of row counts for all user tables in the database."""
+    results = {}
+    tablenames = list(tables_columns().keys())
+    sql_failed = []
+    dbconnection = DbConnectionManager()
+    try:
+        for tablename in sorted(tablenames):
+            sql = dbconnection.sql_ident("SELECT count(*) FROM {t}", t=tablename)
+            connection_ok, nr_of_rows = sql_load_fr_db(sql, dbconnection=dbconnection)
+            if not connection_ok:
+                sql_failed.append(sql)
+                continue
+            results[tablename] = str(nr_of_rows[0][0])
+    finally:
+        dbconnection.closedb()
+
+    if sql_failed:
+        MessagebarAndLog.warning(
+            bar_msg=sql_failed_msg(),
+            log_msg=ru(
+                QCoreApplication.translate(
+                    "calculate_db_table_rows", "Sql failed:\n%s\n"
+                )
+            )
+            % "\n".join(sql_failed),
+        )
+
+    if results:
+        printable_msg = "{0:40}{1:15}".format("Tablename", "Nr of rows\n")
+        printable_msg += "\n".join(
+            [
+                f"{table_name:40}{_nr_of_rows:15}"
+                for table_name, _nr_of_rows in sorted(results.items())
+            ]
+        )
+        MessagebarAndLog.info(
+            bar_msg=QCoreApplication.translate(
+                "calculate_db_table_rows", "Calculation done, see log for results."
+            ),
+            log_msg=printable_msg,
+        )
+
+
+def sql_to_parameters_units_tuple(sql: str) -> tuple:
+    """Execute sql and return a sorted tuple of (parameter, (unit, ...)) pairs."""
+    parameters_from_table = ru(sql_load_fr_db(sql)[1], True)
+    parameters_dict: dict = {}
+    for parameter, unit in parameters_from_table:
+        parameters_dict.setdefault(parameter, []).append(unit)
+    return tuple([(k, tuple(v)) for k, v in sorted(parameters_dict.items())])
+
+
+def list_of_lists_from_table(tablename: str) -> list:
+    """Return table contents as list-of-lists (first row = column names)."""
+    table_info = get_table_info(tablename)
+    table_info = ru(table_info, keep_containers=True)
+    column_names = [x[1] for x in table_info]
+    result = [column_names]
+    dbconnection = DbConnectionManager()
+    try:
+        sql = dbconnection.sql_ident("SELECT * FROM {t}", t=tablename)
+        table_contents = sql_load_fr_db(sql, dbconnection=dbconnection)[1]
+    finally:
+        try:
+            dbconnection.closedb()
+        except Exception:
+            pass
+    table_contents = ru(table_contents, keep_containers=True)
+    result.extend(table_contents)
+    return result

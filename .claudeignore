@@ -11,4 +11,3 @@ qgis-auth.db
 ./test/:
 .venv
 .swp
-.claude

@@ -456,7 +456,7 @@ class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
                 "comment",
             ]
         ]
-        instrumentids = midvatten_utils.get_last_used_flow_instruments()[1]
+        instrumentids = db_utils.get_last_used_flow_instruments()[1]
         already_asked_instruments = {}
 
         for observation in observations:

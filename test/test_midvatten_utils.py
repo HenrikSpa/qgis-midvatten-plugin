@@ -31,7 +31,7 @@ from nose.plugins.attrib import attr
 
 from midvatten.test.mocks_for_tests import MockUsingReturnValue
 from midvatten.test.utils_for_tests import create_test_string
-from midvatten.tools.utils import common_utils, midvatten_utils
+from midvatten.tools.utils import common_utils, db_utils, midvatten_utils
 from midvatten.tools.utils.common_utils import dict_to_tuple
 from midvatten.tools.utils.matplotlib_replacements import perform_all_replacements
 from midvatten.tools.utils.midvatten_utils import (
@@ -337,12 +337,12 @@ class TestAskUser:
 
 @attr(status="on")
 class TestSqlToParametersUnitsTuple:
-    @mock.patch("midvatten.tools.utils.db_utils.sql_load_fr_db", autospec=True)
+    @mock.patch("midvatten.tools.utils.db_utils.helpers.sql_load_fr_db", autospec=True)
     def test_sql_to_parameters_units_tuple(self, mock_sqlload):
         mock_sqlload.return_value = (True, [("par1", "un1"), ("par2", "un2")])
 
         test_string = create_test_string(
-            midvatten_utils.sql_to_parameters_units_tuple("sql")
+            db_utils.sql_to_parameters_units_tuple("sql")
         )
         reference_string = """((par1, (un1)), (par2, (un2)))"""
         assert test_string == reference_string

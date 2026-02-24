@@ -86,129 +86,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         self.tab3_table.clear()
         for i in range(1, 3):
             self.clearthings(i)
-        # function partial due to problems with currentindexChanged and Combobox
-        # self.tab1_table, QtCore.SIGNAL("currentIndexChanged(int)"), partial(self.table1_changed))#currentIndexChanged caused unnecessary signals when scrolling in combobox
-        self.tab1_table.currentIndexChanged.connect(partial(self.table1_changed))
-        self.tab1_filtercol1.currentIndexChanged.connect(
-            partial(self.tab1_filter1_changed)
-        )
-        # self.tab1_filtercol1.currentIndexChanged.connect( partial(self.FilterChanged(1,1)))
-        self.tab1_filtercol2.currentIndexChanged.connect(
-            partial(self.tab1_filter2_changed)
-        )
-        self.tab2_table.currentIndexChanged.connect(partial(self.table2_changed))
-        self.tab2_filtercol1.currentIndexChanged.connect(
-            partial(self.tab2_filter1_changed)
-        )
-        self.tab2_filtercol2.currentIndexChanged.connect(
-            partial(self.tab2_filter2_changed)
-        )
-        self.tab3_table.currentIndexChanged.connect(partial(self.table3_changed))
-        self.tab3_filtercol1.currentIndexChanged.connect(
-            partial(self.tab3_filter1_changed)
-        )
-        self.tab3_filtercol2.currentIndexChanged.connect(
-            partial(self.tab3_filter2_changed)
-        )
-        self.tab1_plotsettings.clicked.connect(
-            partial(set_groupbox_children_visibility, self.tab1_plotsettings)
-        )
-        self.tab2_plotsettings.clicked.connect(
-            partial(set_groupbox_children_visibility, self.tab2_plotsettings)
-        )
-        self.tab3_plotsettings.clicked.connect(
-            partial(set_groupbox_children_visibility, self.tab3_plotsettings)
-        )
-        self.chart_settings.clicked.connect(
-            partial(set_groupbox_children_visibility, self.chart_settings)
-        )
-        self.styles_settings.clicked.connect(
-            partial(set_groupbox_children_visibility, self.styles_settings)
-        )
-        self.plot_tabwidget.currentChanged.connect(self.uncheck_settings)
-        self.plot_tabwidget.currentChanged.connect(
-            lambda: self.tabwidget_resize(self.plot_tabwidget)
-        )
-        self.tab_widget.currentChanged.connect(
-            lambda: self.tabwidget_resize(self.tab_widget)
-        )
-
-        self.select_button_t1f1.clicked.connect(
-            partial(
-                self.select_in_filterlist_from_selection,
-                self.tab1_filter1,
-                self.tab1_filtercol1,
-            )
-        )
-        self.select_button_t1f2.clicked.connect(
-            partial(
-                self.select_in_filterlist_from_selection,
-                self.tab1_filter2,
-                self.tab1_filtercol2,
-            )
-        )
-        self.select_button_t2f1.clicked.connect(
-            partial(
-                self.select_in_filterlist_from_selection,
-                self.tab2_filter1,
-                self.tab2_filtercol1,
-            )
-        )
-        self.select_button_t2f2.clicked.connect(
-            partial(
-                self.select_in_filterlist_from_selection,
-                self.tab2_filter2,
-                self.tab2_filtercol2,
-            )
-        )
-        self.select_button_t3f1.clicked.connect(
-            partial(
-                self.select_in_filterlist_from_selection,
-                self.tab3_filter1,
-                self.tab3_filtercol1,
-            )
-        )
-        self.select_button_t3f2.clicked.connect(
-            partial(
-                self.select_in_filterlist_from_selection,
-                self.tab3_filter2,
-                self.tab3_filtercol2,
-            )
-        )
-
-        self.tab1_listfilter1.editingFinished.connect(
-            partial(self.filter_filterlist, self.tab1_filter1, self.tab1_listfilter1)
-        )
-        self.tab1_listfilter2.editingFinished.connect(
-            partial(self.filter_filterlist, self.tab1_filter2, self.tab1_listfilter2)
-        )
-        self.tab2_listfilter1.editingFinished.connect(
-            partial(self.filter_filterlist, self.tab2_filter1, self.tab2_listfilter1)
-        )
-        self.tab2_listfilter2.editingFinished.connect(
-            partial(self.filter_filterlist, self.tab2_filter2, self.tab2_listfilter2)
-        )
-        self.tab3_listfilter1.editingFinished.connect(
-            partial(self.filter_filterlist, self.tab3_filter1, self.tab3_listfilter1)
-        )
-        self.tab3_listfilter2.editingFinished.connect(
-            partial(self.filter_filterlist, self.tab3_filter2, self.tab3_listfilter2)
-        )
-        self.filtersettings1.clicked.connect(
-            partial(set_groupbox_children_visibility, self.filtersettings1)
-        )
-        self.filtersettings2.clicked.connect(
-            partial(set_groupbox_children_visibility, self.filtersettings2)
-        )
-        self.filtersettings3.clicked.connect(
-            partial(set_groupbox_children_visibility, self.filtersettings3)
-        )
-
-        self.plot_chart_q_push_button.clicked.connect(
-            lambda x: self.draw_plot_with_styles()
-        )
-        self.save_as_csv_button.clicked.connect(lambda: self.start_csv_dialog())
-        self.redraw_push_button.clicked.connect(lambda x: self.redraw())
+        self._connect_signals()
 
         self.custplot_last_used_style_settingskey = "custplot_last_used_template"
         self.styles = midvatten_utils.MatplotlibStyles(
@@ -265,6 +143,129 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         self.tabwidget_resize(self.tab_widget)
         self.tabwidget_resize(self.plot_tabwidget)
         self.show()
+
+    def _connect_signals(self):
+        """Wire all UI widget signals to their handlers."""
+        # function partial due to problems with currentindexChanged and Combobox
+        # self.tab1_table, QtCore.SIGNAL("currentIndexChanged(int)"), partial(self.table1_changed))#currentIndexChanged caused unnecessary signals when scrolling in combobox
+        self.tab1_table.currentIndexChanged.connect(partial(self.table1_changed))
+        self.tab1_filtercol1.currentIndexChanged.connect(
+            partial(self.tab1_filter1_changed)
+        )
+        # self.tab1_filtercol1.currentIndexChanged.connect( partial(self.FilterChanged(1,1)))
+        self.tab1_filtercol2.currentIndexChanged.connect(
+            partial(self.tab1_filter2_changed)
+        )
+        self.tab2_table.currentIndexChanged.connect(partial(self.table2_changed))
+        self.tab2_filtercol1.currentIndexChanged.connect(
+            partial(self.tab2_filter1_changed)
+        )
+        self.tab2_filtercol2.currentIndexChanged.connect(
+            partial(self.tab2_filter2_changed)
+        )
+        self.tab3_table.currentIndexChanged.connect(partial(self.table3_changed))
+        self.tab3_filtercol1.currentIndexChanged.connect(
+            partial(self.tab3_filter1_changed)
+        )
+        self.tab3_filtercol2.currentIndexChanged.connect(
+            partial(self.tab3_filter2_changed)
+        )
+        self.tab1_plotsettings.clicked.connect(
+            partial(set_groupbox_children_visibility, self.tab1_plotsettings)
+        )
+        self.tab2_plotsettings.clicked.connect(
+            partial(set_groupbox_children_visibility, self.tab2_plotsettings)
+        )
+        self.tab3_plotsettings.clicked.connect(
+            partial(set_groupbox_children_visibility, self.tab3_plotsettings)
+        )
+        self.chart_settings.clicked.connect(
+            partial(set_groupbox_children_visibility, self.chart_settings)
+        )
+        self.styles_settings.clicked.connect(
+            partial(set_groupbox_children_visibility, self.styles_settings)
+        )
+        self.plot_tabwidget.currentChanged.connect(self.uncheck_settings)
+        self.plot_tabwidget.currentChanged.connect(
+            lambda: self.tabwidget_resize(self.plot_tabwidget)
+        )
+        self.tab_widget.currentChanged.connect(
+            lambda: self.tabwidget_resize(self.tab_widget)
+        )
+        self.select_button_t1f1.clicked.connect(
+            partial(
+                self.select_in_filterlist_from_selection,
+                self.tab1_filter1,
+                self.tab1_filtercol1,
+            )
+        )
+        self.select_button_t1f2.clicked.connect(
+            partial(
+                self.select_in_filterlist_from_selection,
+                self.tab1_filter2,
+                self.tab1_filtercol2,
+            )
+        )
+        self.select_button_t2f1.clicked.connect(
+            partial(
+                self.select_in_filterlist_from_selection,
+                self.tab2_filter1,
+                self.tab2_filtercol1,
+            )
+        )
+        self.select_button_t2f2.clicked.connect(
+            partial(
+                self.select_in_filterlist_from_selection,
+                self.tab2_filter2,
+                self.tab2_filtercol2,
+            )
+        )
+        self.select_button_t3f1.clicked.connect(
+            partial(
+                self.select_in_filterlist_from_selection,
+                self.tab3_filter1,
+                self.tab3_filtercol1,
+            )
+        )
+        self.select_button_t3f2.clicked.connect(
+            partial(
+                self.select_in_filterlist_from_selection,
+                self.tab3_filter2,
+                self.tab3_filtercol2,
+            )
+        )
+        self.tab1_listfilter1.editingFinished.connect(
+            partial(self.filter_filterlist, self.tab1_filter1, self.tab1_listfilter1)
+        )
+        self.tab1_listfilter2.editingFinished.connect(
+            partial(self.filter_filterlist, self.tab1_filter2, self.tab1_listfilter2)
+        )
+        self.tab2_listfilter1.editingFinished.connect(
+            partial(self.filter_filterlist, self.tab2_filter1, self.tab2_listfilter1)
+        )
+        self.tab2_listfilter2.editingFinished.connect(
+            partial(self.filter_filterlist, self.tab2_filter2, self.tab2_listfilter2)
+        )
+        self.tab3_listfilter1.editingFinished.connect(
+            partial(self.filter_filterlist, self.tab3_filter1, self.tab3_listfilter1)
+        )
+        self.tab3_listfilter2.editingFinished.connect(
+            partial(self.filter_filterlist, self.tab3_filter2, self.tab3_listfilter2)
+        )
+        self.filtersettings1.clicked.connect(
+            partial(set_groupbox_children_visibility, self.filtersettings1)
+        )
+        self.filtersettings2.clicked.connect(
+            partial(set_groupbox_children_visibility, self.filtersettings2)
+        )
+        self.filtersettings3.clicked.connect(
+            partial(set_groupbox_children_visibility, self.filtersettings3)
+        )
+        self.plot_chart_q_push_button.clicked.connect(
+            lambda x: self.draw_plot_with_styles()
+        )
+        self.save_as_csv_button.clicked.connect(lambda: self.start_csv_dialog())
+        self.redraw_push_button.clicked.connect(lambda x: self.redraw())
 
     def init_figure(self):
         try:
@@ -323,42 +324,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         self.data = []
         common_utils.start_waiting_cursor()  # show the user this may take a long time...
         if not only_get_data:
-            continous_color = True
-            if continous_color:
-                self.used_style_color_combo = set()
-                color_cycler = mpl.rcParams["axes.prop_cycle"]
-                color_cycle_len = len(color_cycler)
-                color_cycle = color_cycler()
-                self.line_cycler = common_utils.ContinuousColorCycle(
-                    color_cycle,
-                    color_cycle_len,
-                    mpl.rcParams["axes.midv_line_cycle"],
-                    self.used_style_color_combo,
-                )
-                self.marker_cycler = common_utils.ContinuousColorCycle(
-                    color_cycle,
-                    color_cycle_len,
-                    mpl.rcParams["axes.midv_marker_cycle"],
-                    self.used_style_color_combo,
-                )
-                self.line_and_marker_cycler = common_utils.ContinuousColorCycle(
-                    color_cycle,
-                    color_cycle_len,
-                    mpl.rcParams["axes.midv_marker_cycle"]
-                    * mpl.rcParams["axes.midv_line_cycle"],
-                    self.used_style_color_combo,
-                )
-            else:
-                ccycler = mpl.rcParams["axes.prop_cycle"]
-                self.line_cycler = (mpl.rcParams["axes.midv_line_cycle"] * ccycler)()
-                self.marker_cycler = (
-                    mpl.rcParams["axes.midv_marker_cycle"] * ccycler
-                )()
-                self.line_and_marker_cycler = (
-                    mpl.rcParams["axes.midv_marker_cycle"]
-                    * mpl.rcParams["axes.midv_line_cycle"]
-                    * ccycler
-                )()
+            self._setup_color_cyclers()
 
             self.init_figure()
 
@@ -481,6 +447,45 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
 
             self.refreshPlot()
             common_utils.stop_waiting_cursor()
+
+    def _setup_color_cyclers(self):
+        """Initialize self.line_cycler, self.marker_cycler, self.line_and_marker_cycler."""
+        continous_color = True
+        if continous_color:
+            self.used_style_color_combo = set()
+            color_cycler = mpl.rcParams["axes.prop_cycle"]
+            color_cycle_len = len(color_cycler)
+            color_cycle = color_cycler()
+            self.line_cycler = common_utils.ContinuousColorCycle(
+                color_cycle,
+                color_cycle_len,
+                mpl.rcParams["axes.midv_line_cycle"],
+                self.used_style_color_combo,
+            )
+            self.marker_cycler = common_utils.ContinuousColorCycle(
+                color_cycle,
+                color_cycle_len,
+                mpl.rcParams["axes.midv_marker_cycle"],
+                self.used_style_color_combo,
+            )
+            self.line_and_marker_cycler = common_utils.ContinuousColorCycle(
+                color_cycle,
+                color_cycle_len,
+                mpl.rcParams["axes.midv_marker_cycle"]
+                * mpl.rcParams["axes.midv_line_cycle"],
+                self.used_style_color_combo,
+            )
+        else:
+            ccycler = mpl.rcParams["axes.prop_cycle"]
+            self.line_cycler = (mpl.rcParams["axes.midv_line_cycle"] * ccycler)()
+            self.marker_cycler = (
+                mpl.rcParams["axes.midv_marker_cycle"] * ccycler
+            )()
+            self.line_and_marker_cycler = (
+                mpl.rcParams["axes.midv_marker_cycle"]
+                * mpl.rcParams["axes.midv_line_cycle"]
+                * ccycler
+            )()
 
     def draw_plot(
         self,

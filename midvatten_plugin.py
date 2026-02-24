@@ -1672,7 +1672,7 @@ class Midvatten:
     def calculate_db_table_rows(self):
         """Counts the number of rows for all tables in the database"""
         QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
-        midvatten_utils.calculate_db_table_rows()
+        db_utils.calculate_db_table_rows()
         common_utils.stop_waiting_cursor()
 
     @common_utils.general_exception_handler

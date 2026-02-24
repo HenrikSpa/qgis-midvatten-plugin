@@ -5,7 +5,7 @@ PostgreSQL (PostGIS) backend. Connection via psycopg2; connector logic merged in
 import os
 import traceback
 from collections.abc import Sequence
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import psycopg2
 import psycopg2.extensions
@@ -200,22 +200,6 @@ class PostgreSQLBackend(Backend):
 
     def closedb(self) -> None:
         self._conn.close()
-
-    def execute_safe(
-        self,
-        sql: Union[str, psycopg2.sql.Composable],
-        args: Optional[Sequence[Any]] = None,
-    ) -> None:
-        if isinstance(sql, psycopg2.sql.Composable):
-            if args is None:
-                self._cursor.execute(sql)
-            else:
-                self._cursor.execute(sql, list(args))
-        else:
-            if args is None:
-                self._cursor.execute(str(sql))
-            else:
-                self._cursor.execute(str(sql), list(args))
 
     def placeholder(self) -> str:
         return "%s"

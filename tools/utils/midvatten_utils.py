@@ -149,45 +149,12 @@ def verify_msettings_loaded_and_layer_edit_mode(
     return errorsignal
 
 
-def get_last_used_flow_instruments():
-    """Returns flow instrumentids
-    :return: A dict like {obsid: (flowtype, instrumentid, last date used for obsid)
-    """
-    return db_utils.get_sql_result_as_dict(
-        "SELECT obsid, flowtype, instrumentid, max(date_time) FROM w_flow GROUP BY obsid, flowtype, instrumentid"
-    )
-
-
-def get_last_logger_dates():
-    ok_or_not, obsid_last_imported_dates = db_utils.get_sql_result_as_dict(
-        "select obsid, max(date_time) from w_levels_logger group by obsid"
-    )
-    return ru(obsid_last_imported_dates, True)
-
-
-def get_quality_instruments():
-    """
-    Returns quality instrumentids
-    :return: A tuple with instrument ids from w_qual_field
-    """
-    sql = "SELECT distinct instrument from w_qual_field"
-    sql_result = db_utils.sql_load_fr_db(sql)
-    connection_ok, result_list = sql_result
-
-    if not connection_ok:
-        MessagebarAndLog.critical(
-            bar_msg=sql_failed_msg(),
-            log_msg=ru(
-                QCoreApplication.translate(
-                    "get_quality_instruments",
-                    "Failed to get quality instruments from sql\n%s",
-                )
-            )
-            % sql,
-        )
-        return False, tuple()
-
-    return True, ru([x[0] for x in result_list], True)
+# These DB query helpers now live in db_utils; re-exported here for backward compatibility.
+from midvatten.tools.utils.db_utils.helpers import (
+    get_last_used_flow_instruments,
+    get_last_logger_dates,
+    get_quality_instruments,
+)
 
 
 def ask_for_charset(default_charset=None, msg=None):
@@ -296,13 +263,7 @@ def add_triggers_to_obs_points(filename: str):
     )
 
 
-def sql_to_parameters_units_tuple(sql):
-    parameters_from_table = ru(db_utils.sql_load_fr_db(sql)[1], True)
-    parameters_dict = {}
-    for parameter, unit in parameters_from_table:
-        parameters_dict.setdefault(parameter, []).append(unit)
-    parameters = tuple([(k, tuple(v)) for k, v in sorted(parameters_dict.items())])
-    return parameters
+from midvatten.tools.utils.db_utils.helpers import sql_to_parameters_units_tuple  # noqa: E402
 
 
 def getcurrentlocale(
@@ -380,69 +341,10 @@ def get_locale_from_db(
         return None
 
 
-def calculate_db_table_rows():
-    results = {}
-
-    tablenames = list(db_utils.tables_columns().keys())
-
-    sql_failed = []
-    for tablename in sorted(tablenames):
-        sql = """SELECT count(*) FROM "%s" """ % (tablename)
-
-        sql_result = db_utils.sql_load_fr_db(sql)
-        connection_ok, nr_of_rows = sql_result
-
-        if not connection_ok:
-            sql_failed.append(sql)
-            continue
-
-        results[tablename] = str(nr_of_rows[0][0])
-
-    if sql_failed:
-        MessagebarAndLog.warning(
-            bar_msg=sql_failed_msg(),
-            log_msg=ru(
-                QCoreApplication.translate(
-                    "calculate_db_table_rows", "Sql failed:\n%s\n"
-                )
-            )
-            % "\n".join(sql_failed),
-        )
-
-    if results:
-        printable_msg = "{0:40}{1:15}".format("Tablename", "Nr of rows\n")
-        printable_msg += "\n".join(
-            [
-                f"{table_name:40}{_nr_of_rows:15}"
-                for table_name, _nr_of_rows in sorted(results.items())
-            ]
-        )
-        MessagebarAndLog.info(
-            bar_msg=QCoreApplication.translate(
-                "calculate_db_table_rows", "Calculation done, see log for results."
-            ),
-            log_msg=printable_msg,
-        )
-
-
-def list_of_lists_from_table(tablename):
-    list_of_lists = []
-    table_info = db_utils.get_table_info(tablename)
-    table_info = ru(table_info, keep_containers=True)
-    column_names = [x[1] for x in table_info]
-    list_of_lists.append(column_names)
-    dbconnection = db_utils.DbConnectionManager()
-    try:
-        sql = dbconnection.sql_ident("SELECT * FROM {t}", t=tablename)
-        table_contents = db_utils.sql_load_fr_db(sql, dbconnection=dbconnection)[1]
-    finally:
-        try:
-            dbconnection.closedb()
-        except Exception:
-            pass
-    table_contents = ru(table_contents, keep_containers=True)
-    list_of_lists.extend(table_contents)
-    return list_of_lists
+from midvatten.tools.utils.db_utils.helpers import (  # noqa: E402
+    calculate_db_table_rows,
+    list_of_lists_from_table,
+)
 
 
 def create_layer(

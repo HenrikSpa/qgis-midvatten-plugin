@@ -180,16 +180,6 @@ class SQLiteBackend(Backend):
     def closedb(self) -> None:
         self._conn.close()
 
-    def execute_safe(
-        self,
-        sql: Any,
-        args: Optional[Sequence[Any]] = None,
-    ) -> None:
-        if args is None:
-            self._cursor.execute(str(sql))
-        else:
-            self._cursor.execute(str(sql), list(args))
-
     def placeholder(self) -> str:
         return "?"
 
@@ -232,19 +222,16 @@ class SQLiteBackend(Backend):
                     )
                 except Exception:
                     pass
+        quoted_name = self.ident(temptable_name)
         if geometry_colname_type_srid is not None:
             fieldnames_types.append("geometry %s" % geometry_colname_type_srid[0])
-            sql = (
-                """CREATE table %s (id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, %s)"""
-                % (temptable_name, ", ".join(fieldnames_types))
-            )
+            cols = ", ".join(fieldnames_types)
+            sql = f"CREATE table {quoted_name} (id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, {cols})"
             self.execute(sql)
             self._conn.commit()
         else:
-            sql = """CREATE table %s (%s)""" % (
-                temptable_name,
-                ", ".join(fieldnames_types),
-            )
+            cols = ", ".join(fieldnames_types)
+            sql = f"CREATE table {quoted_name} ({cols})"
             self.execute(sql)
         return temptable_name
 

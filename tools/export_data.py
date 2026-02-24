@@ -342,28 +342,25 @@ class ExportData:
         )
         columns = [x[0] for x in dbconnection.cursor.description]
 
-        if file_data_srid:
-            astext = "ST_AsBinary(ST_Transform({}, %s))" % str(file_data_srid)
-        else:
-            astext = "ST_AsBinary({})"
-
         geom_columns = list(
             db_utils.get_geometry_types(tname, dbconnection=dbconnection).keys()
         )
         # Transform to 4326 just to be sure that both the source and dest database has support for the srid.
-        select_columns = [
-            (
-                astext.format(col)
-                if (col.lower() in geom_columns and dbconnection.get_srid(tname, col))
-                else col
-            )
-            for col in columns
-        ]
+        # All column identifiers are quoted; geometry columns are wrapped in ST_AsBinary.
+        select_columns = []
+        for col in columns:
+            if col.lower() in geom_columns and dbconnection.get_srid(tname, col):
+                quoted_col = dbconnection.ident(col)
+                if file_data_srid:
+                    select_columns.append(
+                        f"ST_AsBinary(ST_Transform({quoted_col}, {file_data_srid}))"
+                    )
+                else:
+                    select_columns.append(f"ST_AsBinary({quoted_col})")
+            else:
+                select_columns.append(dbconnection.ident(col))
 
-        sql = "SELECT {} FROM {}".format(
-            ", ".join(select_columns),
-            dbconnection.ident(tname),
-        )
+        sql = f"SELECT {', '.join(select_columns)} FROM {dbconnection.ident(tname)}"
         args = None
         if obsids:
             clause, args = dbconnection.in_clause(obsids)

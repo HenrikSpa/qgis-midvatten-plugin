@@ -9,7 +9,7 @@ alwaysApply: false
 Ensure the agent improves itself by generating new rules when it creates recurring or structural bugs.
 
 ## When To Trigger
-**Defer to the controller.** This workflow activates only when the conditions in `.cursor/rules/rules-for-self-correction/self-correction-controller.mdc` are all satisfied (agent caused the bug, structural issue, confidence ≥ 70%, and Recurring Bug Detector allows rule creation). Do not create a rule on first occurrence unless the controller’s recurrence/severity conditions are met.
+**Defer to the controller.** This workflow activates only when the conditions in `.cursor/rules/rules-for-self-correction/self-correction-controller.mdc` are all satisfied (agent caused the bug, structural issue, confidence ≥ 50%, and Recurring Bug Detector allows rule creation). Do not create a rule on first occurrence unless the controller’s recurrence/severity conditions are met.
 
 Do NOT trigger when:
 - The bug is purely a typo.

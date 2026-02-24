@@ -29,7 +29,7 @@ from midvatten.tools.utils import common_utils
 from midvatten.tools.utils import db_utils
 
 
-class TestStratigraphyMixin:
+class StratigraphyMixin:
     def create_and_select_vlayer(self):
         self.midvatten.ms.settingsdict["secplotdrillstop"] = "%berg%"
         dbconnection = db_utils.DbConnectionManager()
@@ -387,10 +387,10 @@ class TestStratigraphyMixin:
 
 
 @attr(status="on")
-class TestStratigraphyPostgis(TestStratigraphyMixin, utils_for_tests.MidvattenTestPostgisDbSv):
+class TestStratigraphyPostgis(StratigraphyMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
 @attr(status="on")
-class TestStratigraphySpatialite(TestStratigraphyMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
+class TestStratigraphySpatialite(StratigraphyMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass

@@ -27,7 +27,7 @@ from midvatten.test import utils_for_tests
 from midvatten.definitions import midvatten_defs
 
 
-class TestDefsFunctionsMixin:
+class DefsFunctionsMixin:
     def test_tables_columns(self):
         res = db_utils.db_tables_columns_info()
         assert res
@@ -41,16 +41,16 @@ class TestDefsFunctionsMixin:
 
 
 @attr(status="on")
-class TestDefsFunctionsPostgis(TestDefsFunctionsMixin, utils_for_tests.MidvattenTestPostgisDbSv):
+class TestDefsFunctionsPostgis(DefsFunctionsMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
 @attr(status="on")
-class TestDefsFunctionsSpatialite(TestDefsFunctionsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
+class TestDefsFunctionsSpatialite(DefsFunctionsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass
 
 
-class TestGeocolorsymbolsMixin:
+class GeocolorsymbolsMixin:
     def test_only_moran(self):
         db_utils.sql_alter_db("DELETE FROM zz_strat")
         db_utils.sql_alter_db("DELETE FROM zz_stratigraphy_plots")
@@ -89,10 +89,10 @@ class TestGeocolorsymbolsMixin:
 
 
 @attr(status="on")
-class TestGeocolorsymbolsPostgis(TestGeocolorsymbolsMixin, utils_for_tests.MidvattenTestPostgisDbSv):
+class TestGeocolorsymbolsPostgis(GeocolorsymbolsMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
 @attr(status="on")
-class TestGeocolorsymbolsSpatialite(TestGeocolorsymbolsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
+class TestGeocolorsymbolsSpatialite(GeocolorsymbolsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass

@@ -27,7 +27,7 @@ from midvatten.test import utils_for_tests
 from midvatten.tools.utils import db_utils
 
 
-class TestDbTablesColumnsInfoMixin:
+class DbTablesColumnsInfoMixin:
     def test_tables_columns_info_all_tables(self):
         """ """
         # Assert that obsid is primary key and not null in obs_points
@@ -67,7 +67,7 @@ class TestDbTablesColumnsInfoMixin:
         assert int(col_obsid[5]) == 1
 
 
-class TestTablesColumnsMixin:
+class TablesColumnsMixin:
     def test_tables_columns_no_dbconnection_supplied(self):
         """ """
         tables_columns = db_utils.tables_columns()
@@ -90,7 +90,7 @@ class TestTablesColumnsMixin:
             assert tablename not in tables_columns
 
 
-class TestGetForeignKeysMixin:
+class GetForeignKeysMixin:
     def test_get_foreign_keys(self):
         """ """
         foreign_keys = db_utils.get_foreign_keys("w_levels")
@@ -106,13 +106,13 @@ class TestGetForeignKeysMixin:
         assert test_string == reference
 
 
-class TestVerifyTableExistMixin:
+class VerifyTableExistMixin:
     def test_verify_table_exists(self):
         exists = db_utils.verify_table_exists("obs_points")
         assert exists
 
 
-class TestNonplotTablesMixin:
+class NonplotTablesMixin:
     def test_as_tuple(self):
         tables = db_utils.nonplot_tables(as_tuple=True)
 
@@ -142,7 +142,7 @@ class TestNonplotTablesMixin:
         )
 
 
-class TestGetTimezoneFromDbMixin:
+class GetTimezoneFromDbMixin:
     def test_get_timezone_from_db(self):
         db_utils.sql_alter_db(
             """UPDATE about_db SET description = description || ' (UTC+1)'
@@ -161,7 +161,7 @@ class TestGetTimezoneFromDbMixin:
         assert tz == "Europe/Stockholm"
 
 
-class TestSqlInjectionHardeningMixin:
+class SqlInjectionHardeningMixin:
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_in_clause_does_not_expand_scope(self, mock_messagebar):
         dbconnection = db_utils.DbConnectionManager()
@@ -202,93 +202,93 @@ class TestSqlInjectionHardeningMixin:
 
 @attr(status="on")
 class TestDbTablesColumnsInfoPostgis(
-    TestDbTablesColumnsInfoMixin, utils_for_tests.MidvattenTestPostgisDbSv
+    DbTablesColumnsInfoMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
 @attr(status="on")
 class TestDbTablesColumnsInfoSpatialite(
-    TestDbTablesColumnsInfoMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
+    DbTablesColumnsInfoMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass
 
 
 @attr(status="on")
 class TestTablesColumnsPostgis(
-    TestTablesColumnsMixin, utils_for_tests.MidvattenTestPostgisDbSv
+    TablesColumnsMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
 @attr(status="on")
 class TestTablesColumnsSpatialite(
-    TestTablesColumnsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
+    TablesColumnsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass
 
 
 @attr(status="on")
 class TestGetForeignKeysPostgis(
-    TestGetForeignKeysMixin, utils_for_tests.MidvattenTestPostgisDbSv
+    GetForeignKeysMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
 @attr(status="on")
 class TestGetForeignKeysSpatialite(
-    TestGetForeignKeysMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
+    GetForeignKeysMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass
 
 
 @attr(status="on")
 class TestVerifyTableExistPostgis(
-    TestVerifyTableExistMixin, utils_for_tests.MidvattenTestPostgisDbSv
+    VerifyTableExistMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
 @attr(status="on")
 class TestVerifyTableExistSpatialite(
-    TestVerifyTableExistMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
+    VerifyTableExistMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass
 
 
 @attr(status="on")
-class TestNonplotTablesPostgis(TestNonplotTablesMixin):
+class TestNonplotTablesPostgis(NonplotTablesMixin):
     pass
 
 
 @attr(status="on")
-class TestNonplotTablesSpatialite(TestNonplotTablesMixin):
+class TestNonplotTablesSpatialite(NonplotTablesMixin):
     pass
 
 
 @attr(status="on")
 class TestGetTimezoneFromDbPostgis(
-    TestGetTimezoneFromDbMixin, utils_for_tests.MidvattenTestPostgisDbSv
+    GetTimezoneFromDbMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
 @attr(status="on")
 class TestGetTimezoneFromDbSpatialite(
-    TestGetTimezoneFromDbMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
+    GetTimezoneFromDbMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass
 
 
 @attr(status="on")
 class TestSqlInjectionHardeningPostgis(
-    TestSqlInjectionHardeningMixin, utils_for_tests.MidvattenTestPostgisDbSv
+    SqlInjectionHardeningMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
 @attr(status="on")
 class TestSqlInjectionHardeningSpatialite(
-    TestSqlInjectionHardeningMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
+    SqlInjectionHardeningMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass

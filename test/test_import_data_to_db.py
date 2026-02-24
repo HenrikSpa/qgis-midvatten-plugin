@@ -32,7 +32,7 @@ from midvatten.tools.import_data_to_db import MidvDataImporterError
 from midvatten.tools.utils import db_utils, common_utils
 
 
-class TestGeneralImportMixin:
+class GeneralImportMixin:
     """Test to make sure wlvllogg_import goes all the way to the end without errors"""
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
@@ -295,7 +295,7 @@ class TestGeneralImportMixin:
         assert test_string == reference_string
 
 
-class TestImportObsPointsObsLinesMixin:
+class ImportObsPointsObsLinesMixin:
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
@@ -838,7 +838,7 @@ class TestImportObsPointsObsLinesMixin:
         assert test_string == reference_string
 
 
-class TestWquallabImportMixin:
+class WquallabImportMixin:
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
     )
@@ -973,7 +973,7 @@ class TestWquallabImportMixin:
         assert test_string == reference_string
 
 
-class TestWflowImportMixin:
+class WflowImportMixin:
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
     )
@@ -1082,7 +1082,7 @@ class TestWflowImportMixin:
         assert test_string == reference_string
 
 
-class TestWqualfieldImportMixin:
+class WqualfieldImportMixin:
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
     )
@@ -1469,7 +1469,7 @@ class TestWqualfieldImportMixin:
         assert test_string == reference_string
 
 
-class TestWlevelsImportMixin:
+class WlevelsImportMixin:
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
     )
@@ -1508,7 +1508,7 @@ class TestWlevelsImportMixin:
         assert test_string == reference_string
 
 
-class TestWlevelsImportOldWlevelsMixin:
+class WlevelsImportOldWlevelsMixin:
     """
     This test is for an older version of w_levels where level_masl was not null
     but had a default value of -999
@@ -1560,7 +1560,7 @@ class TestWlevelsImportOldWlevelsMixin:
         assert test_string == reference_string
 
 
-class TestSeismicImportMixin:
+class SeismicImportMixin:
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
     )
@@ -1580,7 +1580,7 @@ class TestSeismicImportMixin:
         assert test_string == reference_string
 
 
-class TestCommentsImportMixin:
+class CommentsImportMixin:
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
     )
@@ -1604,7 +1604,7 @@ class TestCommentsImportMixin:
         assert test_string == reference_string
 
 
-class TestStratImportMixin:
+class StratImportMixin:
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
     )
@@ -1793,7 +1793,7 @@ class TestStratImportMixin:
         assert test_string == reference_string
 
 
-class TestMeteoImportMixin:
+class MeteoImportMixin:
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
     )
@@ -1831,7 +1831,7 @@ class TestMeteoImportMixin:
         assert test_string == reference_string
 
 
-class TestVlfImportMixin:
+class VlfImportMixin:
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
     )
@@ -1872,7 +1872,7 @@ class TestVlfImportMixin:
         assert test_string == reference_string
 
 
-class TestObsLinesImportMixin:
+class ObsLinesImportMixin:
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
     )
@@ -1892,7 +1892,7 @@ class TestObsLinesImportMixin:
         assert test_string == reference_string
 
 
-class TestGetForeignKeysMixin:
+class GetForeignKeysMixin:
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
     )
@@ -1904,7 +1904,7 @@ class TestGetForeignKeysMixin:
             assert isinstance(v, (list, tuple))
 
 
-class TestDeleteExistingDateTimesFromTemptableMixin:
+class DeleteExistingDateTimesFromTemptableMixin:
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
     )
@@ -1958,7 +1958,7 @@ class TestDeleteExistingDateTimesFromTemptableMixin:
 
 @attr(status="on")
 class TestGeneralImportPostgis(
-    TestGeneralImportMixin,
+    GeneralImportMixin,
     utils_for_tests.MidvattenTestPostgisDbSvImportInstance,
 ):
     pass
@@ -1966,7 +1966,7 @@ class TestGeneralImportPostgis(
 
 @attr(status="on")
 class TestGeneralImportSpatialite(
-    TestGeneralImportMixin,
+    GeneralImportMixin,
     utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance,
 ):
     pass
@@ -1974,7 +1974,7 @@ class TestGeneralImportSpatialite(
 
 @attr(status="on")
 class TestImportObsPointsObsLinesPostgis(
-    TestImportObsPointsObsLinesMixin,
+    ImportObsPointsObsLinesMixin,
     utils_for_tests.MidvattenTestPostgisDbSvImportInstance,
 ):
     pass
@@ -1982,7 +1982,7 @@ class TestImportObsPointsObsLinesPostgis(
 
 @attr(status="on")
 class TestImportObsPointsObsLinesSpatialite(
-    TestImportObsPointsObsLinesMixin,
+    ImportObsPointsObsLinesMixin,
     utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance,
 ):
     pass
@@ -1990,7 +1990,7 @@ class TestImportObsPointsObsLinesSpatialite(
 
 @attr(status="on")
 class TestWquallabImportPostgis(
-    TestWquallabImportMixin,
+    WquallabImportMixin,
     utils_for_tests.MidvattenTestPostgisDbSvImportInstance,
 ):
     pass
@@ -1998,7 +1998,7 @@ class TestWquallabImportPostgis(
 
 @attr(status="on")
 class TestWquallabImportSpatialite(
-    TestWquallabImportMixin,
+    WquallabImportMixin,
     utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance,
 ):
     pass
@@ -2006,7 +2006,7 @@ class TestWquallabImportSpatialite(
 
 @attr(status="on")
 class TestWflowImportPostgis(
-    TestWflowImportMixin,
+    WflowImportMixin,
     utils_for_tests.MidvattenTestPostgisDbSvImportInstance,
 ):
     pass
@@ -2014,7 +2014,7 @@ class TestWflowImportPostgis(
 
 @attr(status="on")
 class TestWflowImportSpatialite(
-    TestWflowImportMixin,
+    WflowImportMixin,
     utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance,
 ):
     pass
@@ -2022,7 +2022,7 @@ class TestWflowImportSpatialite(
 
 @attr(status="on")
 class TestWqualfieldImportPostgis(
-    TestWqualfieldImportMixin,
+    WqualfieldImportMixin,
     utils_for_tests.MidvattenTestPostgisDbSvImportInstance,
 ):
     pass
@@ -2030,7 +2030,7 @@ class TestWqualfieldImportPostgis(
 
 @attr(status="on")
 class TestWqualfieldImportSpatialite(
-    TestWqualfieldImportMixin,
+    WqualfieldImportMixin,
     utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance,
 ):
     pass
@@ -2038,7 +2038,7 @@ class TestWqualfieldImportSpatialite(
 
 @attr(status="on")
 class TestWlevelsImportPostgis(
-    TestWlevelsImportMixin,
+    WlevelsImportMixin,
     utils_for_tests.MidvattenTestPostgisDbSvImportInstance,
 ):
     pass
@@ -2046,7 +2046,7 @@ class TestWlevelsImportPostgis(
 
 @attr(status="on")
 class TestWlevelsImportSpatialite(
-    TestWlevelsImportMixin,
+    WlevelsImportMixin,
     utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance,
 ):
     pass
@@ -2054,7 +2054,7 @@ class TestWlevelsImportSpatialite(
 
 @attr(status="on")
 class TestWlevelsImportOldWlevelsPostgis(
-    TestWlevelsImportOldWlevelsMixin,
+    WlevelsImportOldWlevelsMixin,
     utils_for_tests.MidvattenTestPostgisDbSvImportInstance,
 ):
     pass
@@ -2062,7 +2062,7 @@ class TestWlevelsImportOldWlevelsPostgis(
 
 @attr(status="on")
 class TestWlevelsImportOldWlevelsSpatialite(
-    TestWlevelsImportOldWlevelsMixin,
+    WlevelsImportOldWlevelsMixin,
     utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance,
 ):
     pass
@@ -2070,7 +2070,7 @@ class TestWlevelsImportOldWlevelsSpatialite(
 
 @attr(status="on")
 class TestSeismicImportPostgis(
-    TestSeismicImportMixin,
+    SeismicImportMixin,
     utils_for_tests.MidvattenTestPostgisDbSvImportInstance,
 ):
     pass
@@ -2078,7 +2078,7 @@ class TestSeismicImportPostgis(
 
 @attr(status="on")
 class TestSeismicImportSpatialite(
-    TestSeismicImportMixin,
+    SeismicImportMixin,
     utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance,
 ):
     pass
@@ -2086,7 +2086,7 @@ class TestSeismicImportSpatialite(
 
 @attr(status="on")
 class TestCommentsImportPostgis(
-    TestCommentsImportMixin,
+    CommentsImportMixin,
     utils_for_tests.MidvattenTestPostgisDbSvImportInstance,
 ):
     pass
@@ -2094,7 +2094,7 @@ class TestCommentsImportPostgis(
 
 @attr(status="on")
 class TestCommentsImportSpatialite(
-    TestCommentsImportMixin,
+    CommentsImportMixin,
     utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance,
 ):
     pass
@@ -2102,7 +2102,7 @@ class TestCommentsImportSpatialite(
 
 @attr(status="on")
 class TestStratImportPostgis(
-    TestStratImportMixin,
+    StratImportMixin,
     utils_for_tests.MidvattenTestPostgisDbSvImportInstance,
 ):
     pass
@@ -2110,7 +2110,7 @@ class TestStratImportPostgis(
 
 @attr(status="on")
 class TestStratImportSpatialite(
-    TestStratImportMixin,
+    StratImportMixin,
     utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance,
 ):
     pass
@@ -2118,7 +2118,7 @@ class TestStratImportSpatialite(
 
 @attr(status="on")
 class TestMeteoImportPostgis(
-    TestMeteoImportMixin,
+    MeteoImportMixin,
     utils_for_tests.MidvattenTestPostgisDbSvImportInstance,
 ):
     pass
@@ -2126,7 +2126,7 @@ class TestMeteoImportPostgis(
 
 @attr(status="on")
 class TestMeteoImportSpatialite(
-    TestMeteoImportMixin,
+    MeteoImportMixin,
     utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance,
 ):
     pass
@@ -2134,7 +2134,7 @@ class TestMeteoImportSpatialite(
 
 @attr(status="on")
 class TestVlfImportPostgis(
-    TestVlfImportMixin,
+    VlfImportMixin,
     utils_for_tests.MidvattenTestPostgisDbSvImportInstance,
 ):
     pass
@@ -2142,7 +2142,7 @@ class TestVlfImportPostgis(
 
 @attr(status="on")
 class TestVlfImportSpatialite(
-    TestVlfImportMixin,
+    VlfImportMixin,
     utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance,
 ):
     pass
@@ -2150,7 +2150,7 @@ class TestVlfImportSpatialite(
 
 @attr(status="on")
 class TestObsLinesImportPostgis(
-    TestObsLinesImportMixin,
+    ObsLinesImportMixin,
     utils_for_tests.MidvattenTestPostgisDbSvImportInstance,
 ):
     pass
@@ -2158,7 +2158,7 @@ class TestObsLinesImportPostgis(
 
 @attr(status="on")
 class TestObsLinesImportSpatialite(
-    TestObsLinesImportMixin,
+    ObsLinesImportMixin,
     utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance,
 ):
     pass
@@ -2166,7 +2166,7 @@ class TestObsLinesImportSpatialite(
 
 @attr(status="on")
 class TestGetForeignKeysPostgis(
-    TestGetForeignKeysMixin,
+    GetForeignKeysMixin,
     utils_for_tests.MidvattenTestPostgisDbSvImportInstance,
 ):
     pass
@@ -2174,7 +2174,7 @@ class TestGetForeignKeysPostgis(
 
 @attr(status="on")
 class TestGetForeignKeysSpatialite(
-    TestGetForeignKeysMixin,
+    GetForeignKeysMixin,
     utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance,
 ):
     pass
@@ -2182,7 +2182,7 @@ class TestGetForeignKeysSpatialite(
 
 @attr(status="on")
 class TestDeleteExistingDateTimesFromTemptablePostgis(
-    TestDeleteExistingDateTimesFromTemptableMixin,
+    DeleteExistingDateTimesFromTemptableMixin,
     utils_for_tests.MidvattenTestPostgisDbSvImportInstance,
 ):
     pass
@@ -2190,7 +2190,7 @@ class TestDeleteExistingDateTimesFromTemptablePostgis(
 
 @attr(status="on")
 class TestDeleteExistingDateTimesFromTemptableSpatialite(
-    TestDeleteExistingDateTimesFromTemptableMixin,
+    DeleteExistingDateTimesFromTemptableMixin,
     utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance,
 ):
     pass

@@ -46,7 +46,7 @@ def write_html_preamble(
     """Write HTML head, meta and open body tag to the report file."""
     if title is None:
         title = default_report_title()
-    rpt = "<head><title>{}</title></head>".format(ru(title))
+    rpt = f"<head><title>{ru(title)}</title></head>"
     rpt += r""" <meta http-equiv="content-type" content="text/html; charset=utf-8" />"""
     rpt += "<html><body>"
     f.write(rpt)

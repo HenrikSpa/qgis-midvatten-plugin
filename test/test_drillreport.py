@@ -30,7 +30,7 @@ from midvatten.tools.drillreport import Drillreport
 from midvatten.tools.utils import db_utils
 
 
-class TestDrillreportMixin:
+class DrillreportMixin:
     @mock.patch("midvatten.tools.drillreport.QDesktopServices.openUrl")
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.stratigraphy.common_utils.pop_up_info", autospec=True)
@@ -99,10 +99,10 @@ class TestDrillreportMixin:
 
 
 @attr(status="on")
-class TestDrillreportPostgis(TestDrillreportMixin, utils_for_tests.MidvattenTestPostgisDbSv):
+class TestDrillreportPostgis(DrillreportMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
 @attr(status="on")
-class TestDrillreportSpatialite(TestDrillreportMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
+class TestDrillreportSpatialite(DrillreportMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass

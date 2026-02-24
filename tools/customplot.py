@@ -71,8 +71,6 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         self.tables_columns = db_utils.tables_columns()
         self.load_tables_from_db(self.tables_columns)
         self.last_selections()  # fill comboboxes etc with last selected values
-        # on close:
-        # del self.axes.collections[:]#this should delete all plot objects related to axes and hence not intefere with following tsplots
         self.drawn = False
         self.used_format = None
         self.matplotlib_style_sheet_reference.setText(

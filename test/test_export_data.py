@@ -34,7 +34,7 @@ TEMP_DIR = "/tmp/"
 from nose.plugins.attrib import attr
 
 
-class TestExportMixin:
+class ExportMixin:
     answer_yes_obj = MockUsingReturnValue()
     answer_yes_obj.result = 1
     answer_no_obj = MockUsingReturnValue()
@@ -1116,10 +1116,10 @@ class TestExportMixin:
 
 
 @attr(status="on")
-class TestExportPostgis(TestExportMixin, utils_for_tests.MidvattenTestPostgisDbEn):
+class TestExportPostgis(ExportMixin, utils_for_tests.MidvattenTestPostgisDbEn):
     pass
 
 
 @attr(status="on")
-class TestExportSpatialite(TestExportMixin, utils_for_tests.MidvattenTestSpatialiteDbEn):
+class TestExportSpatialite(ExportMixin, utils_for_tests.MidvattenTestSpatialiteDbEn):
     pass

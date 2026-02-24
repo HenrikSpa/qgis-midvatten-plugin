@@ -34,7 +34,7 @@ from midvatten.tools.import_interlab4 import Interlab4Import
 #
 
 
-class TestInterlab4ImporterDBMixin:
+class Interlab4ImporterDBMixin:
     def setUp(self):
         super().setUp()
         self.importinstance = Interlab4Import(
@@ -793,13 +793,13 @@ class TestInterlab4ImporterDBMixin:
 
 @attr(status="on")
 class TestInterlab4ImporterDBPostgis(
-    TestInterlab4ImporterDBMixin, utils_for_tests.MidvattenTestPostgisDbSv
+    Interlab4ImporterDBMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
 @attr(status="on")
 class TestInterlab4ImporterDBSpatialite(
-    TestInterlab4ImporterDBMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
+    Interlab4ImporterDBMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass

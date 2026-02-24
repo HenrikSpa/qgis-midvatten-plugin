@@ -7,7 +7,7 @@ from midvatten.tools.utils import common_utils
 from midvatten.tools.utils import db_utils
 
 
-class TestStratSymbologyMixin:
+class StratSymbologyMixin:
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_strat_symbology(self, mock_messagebar):
         db_utils.sql_alter_db(
@@ -50,10 +50,10 @@ class TestStratSymbologyMixin:
 
 
 @attr(status="on")
-class TestStratSymbologyPostgis(TestStratSymbologyMixin, utils_for_tests.MidvattenTestPostgisDbSv):
+class TestStratSymbologyPostgis(StratSymbologyMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
 @attr(status="on")
-class TestStratSymbologySpatialite(TestStratSymbologyMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
+class TestStratSymbologySpatialite(StratSymbologyMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass

@@ -19,7 +19,7 @@ from midvatten.tools.import_fieldlogger import FieldloggerImport, DateTimeFilter
 from midvatten.tools import import_fieldlogger
 
 
-class TestFieldLoggerImporterDbMixin:
+class FieldLoggerImporterDbMixin:
     answer_yes = mock_answer("yes")
     answer_no = mock_answer("no")
     mocked_iface = MockQgisUtilsIface()  # Used for not getting messageBar errors
@@ -1977,13 +1977,13 @@ class TestFieldLoggerImporterDbMixin:
 
 @attr(status="on")
 class TestFieldLoggerImporterDbPostgis(
-    TestFieldLoggerImporterDbMixin, utils_for_tests.MidvattenTestPostgisDbSv
+    FieldLoggerImporterDbMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
 @attr(status="on")
 class TestFieldLoggerImporterDbSpatialite(
-    TestFieldLoggerImporterDbMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
+    FieldLoggerImporterDbMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass

@@ -32,7 +32,7 @@ from midvatten.test import utils_for_tests
 from midvatten.tools import calculate_statistics
 
 
-class TestCalculateStatisticsMixin:
+class CalculateStatisticsMixin:
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
     @mock.patch(
@@ -88,10 +88,10 @@ class TestCalculateStatisticsMixin:
 
 
 @attr(status="on")
-class TestCalculateStatisticsPostgis(TestCalculateStatisticsMixin, utils_for_tests.MidvattenTestPostgisDbSv):
+class TestCalculateStatisticsPostgis(CalculateStatisticsMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
 @attr(status="on")
-class TestCalculateStatisticsSpatialite(TestCalculateStatisticsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
+class TestCalculateStatisticsSpatialite(CalculateStatisticsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass

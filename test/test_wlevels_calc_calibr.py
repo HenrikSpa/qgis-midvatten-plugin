@@ -30,7 +30,7 @@ from midvatten.tools.utils import db_utils, date_utils, gui_utils
 from midvatten.test import utils_for_tests
 
 
-class TestCalibrloggerMixin:
+class CalibrloggerMixin:
     """Test to make sure wlvllogg_import goes all the way to the end without errors"""
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
@@ -516,7 +516,7 @@ class TestCalibrloggerMixin:
         assert test == ref
 
 
-class TestCalibrloggerPostgisMixin(TestCalibrloggerMixin):
+class CalibrloggerPostgisMixin(CalibrloggerMixin):
     """Postgis-specific tests for calibrlogger."""
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
@@ -751,7 +751,7 @@ class TestCalibrloggerPostgisMixin(TestCalibrloggerMixin):
         )
 
 
-class TestCalibrloggerSpatialiteMixin(TestCalibrloggerMixin):
+class CalibrloggerSpatialiteMixin(CalibrloggerMixin):
     """Spatialite-specific tests for calibrlogger."""
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
@@ -988,10 +988,10 @@ class TestCalibrloggerSpatialiteMixin(TestCalibrloggerMixin):
 
 
 @attr(status="on")
-class TestCalibrloggerPostgis(TestCalibrloggerPostgisMixin, utils_for_tests.MidvattenTestPostgisDbSv):
+class TestCalibrloggerPostgis(CalibrloggerPostgisMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
 @attr(status="on")
-class TestCalibrloggerSpatialite(TestCalibrloggerSpatialiteMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
+class TestCalibrloggerSpatialite(CalibrloggerSpatialiteMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass

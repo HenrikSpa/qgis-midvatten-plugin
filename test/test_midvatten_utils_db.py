@@ -28,7 +28,7 @@ from midvatten.test.utils_for_tests import create_test_string
 from midvatten.tools.utils import db_utils, midvatten_utils
 
 
-class TestGetFunctionsMixin:
+class GetFunctionsMixin:
     def test_get_last_logger_dates(self):
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb1')""")
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb2')""")
@@ -55,7 +55,7 @@ class TestGetFunctionsMixin:
         assert test_string == reference_string
 
 
-class TestCalculateDbTableRowsMixin:
+class CalculateDbTableRowsMixin:
     @mock.patch("midvatten.tools.utils.db_utils.helpers.MessagebarAndLog")
     def test_get_db_statistics(self, mock_messagebar):
         """
@@ -70,7 +70,7 @@ class TestCalculateDbTableRowsMixin:
         )
 
 
-class TestWarnAboutOldDatabaseMixin:
+class WarnAboutOldDatabaseMixin:
     @mock.patch("midvatten.tools.utils.midvatten_utils.latest_database_version")
     @mock.patch("midvatten.tools.utils.midvatten_utils.MessagebarAndLog")
     def test_warn_about_old_database(self, mock_messagebar, mock_latest_version):
@@ -114,7 +114,7 @@ class TestWarnAboutOldDatabaseMixin:
         assert not mock_messagebar.mock_calls
 
 
-class TestAddViewObsPointsObsLinesMixin:
+class AddViewObsPointsObsLinesMixin:
     @mock.patch("midvatten.tools.utils.midvatten_utils.MessagebarAndLog")
     def test_add_view_obs_points_obs_lines(self, mock_messagebar):
         midvatten_utils.add_view_obs_points_obs_lines()
@@ -126,55 +126,55 @@ class TestAddViewObsPointsObsLinesMixin:
 
 @attr(status="on")
 class TestGetFunctionsPostgis(
-    TestGetFunctionsMixin, utils_for_tests.MidvattenTestPostgisDbSv
+    GetFunctionsMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
 @attr(status="on")
 class TestGetFunctionsSpatialite(
-    TestGetFunctionsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
+    GetFunctionsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass
 
 
 @attr(status="on")
 class TestCalculateDbTableRowsPostgis(
-    TestCalculateDbTableRowsMixin, utils_for_tests.MidvattenTestPostgisDbSv
+    CalculateDbTableRowsMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
 @attr(status="on")
 class TestCalculateDbTableRowsSpatialite(
-    TestCalculateDbTableRowsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
+    CalculateDbTableRowsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass
 
 
 @attr(status="on")
 class TestWarnAboutOldDatabasePostgis(
-    TestWarnAboutOldDatabaseMixin, utils_for_tests.MidvattenTestPostgisDbSv
+    WarnAboutOldDatabaseMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
 @attr(status="on")
 class TestWarnAboutOldDatabaseSpatialite(
-    TestWarnAboutOldDatabaseMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
+    WarnAboutOldDatabaseMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass
 
 
 @attr(status="on")
 class TestAddViewObsPointsObsLinesPostgis(
-    TestAddViewObsPointsObsLinesMixin, utils_for_tests.MidvattenTestPostgisDbSv
+    AddViewObsPointsObsLinesMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
 @attr(status="on")
 class TestAddViewObsPointsObsLinesSpatialite(
-    TestAddViewObsPointsObsLinesMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
+    AddViewObsPointsObsLinesMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass

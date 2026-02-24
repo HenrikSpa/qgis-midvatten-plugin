@@ -31,7 +31,7 @@ from midvatten.tools import piper
 #
 
 
-class TestPiperPlotDbMixin:
+class PiperPlotDbMixin:
     """The test doesn't go through the whole section plot unfortunately"""
 
     @mock.patch("matplotlib.pyplot.Figure.show")
@@ -236,10 +236,10 @@ class TestPiperPlotDbMixin:
 
 
 @attr(status="on")
-class TestPiperPlotDbPostgis(TestPiperPlotDbMixin, utils_for_tests.MidvattenTestPostgisDbSv):
+class TestPiperPlotDbPostgis(PiperPlotDbMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
 @attr(status="on")
-class TestPiperPlotDbSpatialite(TestPiperPlotDbMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
+class TestPiperPlotDbSpatialite(PiperPlotDbMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass

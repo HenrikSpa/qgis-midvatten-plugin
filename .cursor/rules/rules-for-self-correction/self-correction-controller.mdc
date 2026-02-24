@@ -29,7 +29,7 @@ This workflow is triggered when all of the following are true:
 2. The issue is **structural** (not a typo, format error, or style issue).
 3. The bug indicates a **reasoning failure**, an **incorrect assumption**, a **missing constraint**, or an **architectural mistake**.
 4. The fix required **non-trivial reasoning** (i.e., the fix cannot be trivial or based on user-side interventions).
-5. Confidence that a reusable rule could have prevented the bug recurrence is **≥ 70%**.
+5. Confidence that a reusable rule could have prevented the bug recurrence is **≥ 50%**.
 
 If **any** condition fails, **do not generate a rule**.
 

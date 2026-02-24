@@ -32,7 +32,7 @@ from midvatten.tools.utils import db_utils, gui_utils
 from midvatten.tools.utils.common_utils import anything_to_string_representation
 
 
-class TestSectionPlotMixin:
+class SectionPlotMixin:
     """The test doesn't go through the whole section plot unfortunately"""
 
     def setUp(self):
@@ -945,10 +945,10 @@ class TestSectionPlotMixin:
 
 
 @attr(status="on")
-class TestSectionPlotPostgis(TestSectionPlotMixin, utils_for_tests.MidvattenTestPostgisDbSv):
+class TestSectionPlotPostgis(SectionPlotMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
 @attr(status="on")
-class TestSectionPlotSpatialite(TestSectionPlotMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
+class TestSectionPlotSpatialite(SectionPlotMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass

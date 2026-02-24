@@ -44,7 +44,7 @@ from midvatten.tools.utils import db_utils
 from midvatten.tools.utils.date_utils import datestring_to_date
 
 
-class TestGeneralCsvGuiMixin:
+class GeneralCsvGuiMixin:
     """Test to make sure wlvllogg_import goes all the way to the end without errors"""
 
     def test_import_w_levels(self):
@@ -1450,7 +1450,7 @@ class TestGeneralCsvGuiMixin:
             assert test_string == reference_string
 
 
-class TestGeneralCsvGuiFromLayerMixin:
+class GeneralCsvGuiFromLayerMixin:
     """Test to make sure wlvllogg_import goes all the way to the end without errors"""
 
     def create_and_select_vlayer(self):
@@ -1656,27 +1656,27 @@ class TestGeneralCsvGuiFromLayerMixin:
 
 @attr(status="on")
 class TestGeneralCsvGuiPostgis(
-    TestGeneralCsvGuiMixin, utils_for_tests.MidvattenTestPostgisDbSv
+    GeneralCsvGuiMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
 @attr(status="on")
 class TestGeneralCsvGuiSpatialite(
-    TestGeneralCsvGuiMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
+    GeneralCsvGuiMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass
 
 
 @attr(status="on")
 class TestGeneralCsvGuiFromLayerPostgis(
-    TestGeneralCsvGuiFromLayerMixin, utils_for_tests.MidvattenTestPostgisDbSv
+    GeneralCsvGuiFromLayerMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
 @attr(status="on")
 class TestGeneralCsvGuiFromLayerSpatialite(
-    TestGeneralCsvGuiFromLayerMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
+    GeneralCsvGuiFromLayerMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass

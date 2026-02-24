@@ -32,7 +32,7 @@ from midvatten.tools.utils import db_utils
 #
 
 
-class TestPrepareQgis2ThreejsMixin:
+class PrepareQgis2ThreejsMixin:
     """This test has conflicts with sectionplot, so its off!"""
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
@@ -105,10 +105,10 @@ class TestPrepareQgis2ThreejsMixin:
 
 
 @attr(status="on")
-class TestPrepareQgis2ThreejsPostgis(TestPrepareQgis2ThreejsMixin, utils_for_tests.MidvattenTestPostgisDbSv):
+class TestPrepareQgis2ThreejsPostgis(PrepareQgis2ThreejsMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
 @attr(status="on")
-class TestPrepareQgis2ThreejsSpatialite(TestPrepareQgis2ThreejsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
+class TestPrepareQgis2ThreejsSpatialite(PrepareQgis2ThreejsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass

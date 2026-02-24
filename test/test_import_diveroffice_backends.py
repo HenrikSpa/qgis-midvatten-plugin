@@ -36,7 +36,7 @@ from midvatten.tools.utils import db_utils
 from midvatten.tools.utils import gui_utils
 
 
-class TestWlvllogImportFromDiverofficeFilesMixin:
+class WlvllogImportFromDiverofficeFilesMixin:
     """Test to make sure wlvllogg_import goes all the way to the end without errors"""
 
     def test_wlvllogg_import_from_diveroffice_files(self):
@@ -2531,13 +2531,13 @@ class TestWlvllogImportFromDiverofficeFilesMixin:
 
 @attr(status="on")
 class TestWlvllogImportFromDiverofficeFilesPostgis(
-    TestWlvllogImportFromDiverofficeFilesMixin, utils_for_tests.MidvattenTestPostgisDbSv
+    WlvllogImportFromDiverofficeFilesMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
 @attr(status="on")
 class TestWlvllogImportFromDiverofficeFilesSpatialite(
-    TestWlvllogImportFromDiverofficeFilesMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
+    WlvllogImportFromDiverofficeFilesMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass

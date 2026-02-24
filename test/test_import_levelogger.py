@@ -37,7 +37,7 @@ from midvatten.tools.utils import db_utils
 #
 
 
-class TestWlvllogImportFromLeveloggerFilesMixin:
+class WlvllogImportFromLeveloggerFilesMixin:
     """Test to make sure levelogger goes all the way to the end without errors"""
 
     def test_wlvllogg_import_from_levelogger_files(self):
@@ -1561,10 +1561,10 @@ class TestWlvllogImportFromLeveloggerFilesMixin:
 
 
 @attr(status="on")
-class TestWlvllogImportFromLeveloggerFilesPostgis(TestWlvllogImportFromLeveloggerFilesMixin, utils_for_tests.MidvattenTestPostgisDbSv):
+class TestWlvllogImportFromLeveloggerFilesPostgis(WlvllogImportFromLeveloggerFilesMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
 @attr(status="on")
-class TestWlvllogImportFromLeveloggerFilesSpatialite(TestWlvllogImportFromLeveloggerFilesMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
+class TestWlvllogImportFromLeveloggerFilesSpatialite(WlvllogImportFromLeveloggerFilesMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass

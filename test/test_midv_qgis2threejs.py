@@ -104,11 +104,11 @@ class PrepareQgis2ThreejsMixin:
         assert not mock_messagebar.mock_calls
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestPrepareQgis2ThreejsPostgis(PrepareQgis2ThreejsMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestPrepareQgis2ThreejsSpatialite(PrepareQgis2ThreejsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass

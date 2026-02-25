@@ -263,11 +263,11 @@ class CalclvlMixin:
         super().tearDown()
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestCalclvlPostgis(CalclvlMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestCalclvlSpatialite(CalclvlMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass

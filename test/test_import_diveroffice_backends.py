@@ -2529,14 +2529,14 @@ class WlvllogImportFromDiverofficeFilesMixin:
                     assert test_string == reference_string
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestWlvllogImportFromDiverofficeFilesPostgis(
     WlvllogImportFromDiverofficeFilesMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestWlvllogImportFromDiverofficeFilesSpatialite(
     WlvllogImportFromDiverofficeFilesMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):

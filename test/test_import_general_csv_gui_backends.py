@@ -1654,28 +1654,28 @@ class GeneralCsvGuiFromLayerMixin:
         super().tearDown()
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestGeneralCsvGuiPostgis(
     GeneralCsvGuiMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestGeneralCsvGuiSpatialite(
     GeneralCsvGuiMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestGeneralCsvGuiFromLayerPostgis(
     GeneralCsvGuiFromLayerMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestGeneralCsvGuiFromLayerSpatialite(
     GeneralCsvGuiFromLayerMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):

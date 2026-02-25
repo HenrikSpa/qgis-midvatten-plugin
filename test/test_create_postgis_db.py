@@ -28,7 +28,7 @@ from midvatten.tools.utils import common_utils, midvatten_utils
 from midvatten.tools.utils import db_utils
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestFillDb(utils_for_tests.MidvattenTestPostgisNotCreated):
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface")
@@ -221,7 +221,7 @@ class TestFillDb(utils_for_tests.MidvattenTestPostgisNotCreated):
             assert ref_string in test_string
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestObsPointsTriggers(utils_for_tests.MidvattenTestPostgisDbSv):
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def setUp(self, mock_messagebar):
@@ -691,7 +691,7 @@ class TestObsPointsTriggers(utils_for_tests.MidvattenTestPostgisDbSv):
         assert test_string == reference_string
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestSqls(utils_for_tests.MidvattenTestPostgisDbSvImportInstance):
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_import_null_as_double(self, mock_messagebar):

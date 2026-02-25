@@ -61,7 +61,7 @@ def _create_wqual_lab_layer():
     return vlayer
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
     """Tests for CompactWqualReportUi (compact water quality report)."""
 

@@ -235,11 +235,11 @@ class PiperPlotDbMixin:
         )
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestPiperPlotDbPostgis(PiperPlotDbMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestPiperPlotDbSpatialite(PiperPlotDbMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass

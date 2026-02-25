@@ -1115,11 +1115,11 @@ class ExportMixin:
         super().tearDown()
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestExportPostgis(ExportMixin, utils_for_tests.MidvattenTestPostgisDbEn):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestExportSpatialite(ExportMixin, utils_for_tests.MidvattenTestSpatialiteDbEn):
     pass

@@ -1560,11 +1560,11 @@ class WlvllogImportFromLeveloggerFilesMixin:
             assert test_string == reference_string
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestWlvllogImportFromLeveloggerFilesPostgis(WlvllogImportFromLeveloggerFilesMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestWlvllogImportFromLeveloggerFilesSpatialite(WlvllogImportFromLeveloggerFilesMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass

@@ -200,94 +200,94 @@ class SqlInjectionHardeningMixin:
             dbconnection.closedb()
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestDbTablesColumnsInfoPostgis(
     DbTablesColumnsInfoMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestDbTablesColumnsInfoSpatialite(
     DbTablesColumnsInfoMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestTablesColumnsPostgis(
     TablesColumnsMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestTablesColumnsSpatialite(
     TablesColumnsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestGetForeignKeysPostgis(
     GetForeignKeysMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestGetForeignKeysSpatialite(
     GetForeignKeysMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestVerifyTableExistPostgis(
     VerifyTableExistMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestVerifyTableExistSpatialite(
     VerifyTableExistMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestNonplotTablesPostgis(NonplotTablesMixin):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestNonplotTablesSpatialite(NonplotTablesMixin):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestGetTimezoneFromDbPostgis(
     GetTimezoneFromDbMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestGetTimezoneFromDbSpatialite(
     GetTimezoneFromDbMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestSqlInjectionHardeningPostgis(
     SqlInjectionHardeningMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestSqlInjectionHardeningSpatialite(
     SqlInjectionHardeningMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):

@@ -1956,7 +1956,7 @@ class DeleteExistingDateTimesFromTemptableMixin:
         assert test_string == reference_string
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestGeneralImportPostgis(
     GeneralImportMixin,
     utils_for_tests.MidvattenTestPostgisDbSvImportInstance,
@@ -1964,7 +1964,7 @@ class TestGeneralImportPostgis(
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestGeneralImportSpatialite(
     GeneralImportMixin,
     utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance,
@@ -1972,7 +1972,7 @@ class TestGeneralImportSpatialite(
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestImportObsPointsObsLinesPostgis(
     ImportObsPointsObsLinesMixin,
     utils_for_tests.MidvattenTestPostgisDbSvImportInstance,
@@ -1980,7 +1980,7 @@ class TestImportObsPointsObsLinesPostgis(
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestImportObsPointsObsLinesSpatialite(
     ImportObsPointsObsLinesMixin,
     utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance,
@@ -1988,7 +1988,7 @@ class TestImportObsPointsObsLinesSpatialite(
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestWquallabImportPostgis(
     WquallabImportMixin,
     utils_for_tests.MidvattenTestPostgisDbSvImportInstance,
@@ -1996,7 +1996,7 @@ class TestWquallabImportPostgis(
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestWquallabImportSpatialite(
     WquallabImportMixin,
     utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance,
@@ -2004,7 +2004,7 @@ class TestWquallabImportSpatialite(
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestWflowImportPostgis(
     WflowImportMixin,
     utils_for_tests.MidvattenTestPostgisDbSvImportInstance,
@@ -2012,7 +2012,7 @@ class TestWflowImportPostgis(
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestWflowImportSpatialite(
     WflowImportMixin,
     utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance,
@@ -2020,7 +2020,7 @@ class TestWflowImportSpatialite(
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestWqualfieldImportPostgis(
     WqualfieldImportMixin,
     utils_for_tests.MidvattenTestPostgisDbSvImportInstance,
@@ -2028,7 +2028,7 @@ class TestWqualfieldImportPostgis(
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestWqualfieldImportSpatialite(
     WqualfieldImportMixin,
     utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance,
@@ -2036,7 +2036,7 @@ class TestWqualfieldImportSpatialite(
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestWlevelsImportPostgis(
     WlevelsImportMixin,
     utils_for_tests.MidvattenTestPostgisDbSvImportInstance,
@@ -2044,7 +2044,7 @@ class TestWlevelsImportPostgis(
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestWlevelsImportSpatialite(
     WlevelsImportMixin,
     utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance,
@@ -2052,7 +2052,7 @@ class TestWlevelsImportSpatialite(
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestWlevelsImportOldWlevelsPostgis(
     WlevelsImportOldWlevelsMixin,
     utils_for_tests.MidvattenTestPostgisDbSvImportInstance,
@@ -2060,7 +2060,7 @@ class TestWlevelsImportOldWlevelsPostgis(
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestWlevelsImportOldWlevelsSpatialite(
     WlevelsImportOldWlevelsMixin,
     utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance,
@@ -2068,7 +2068,7 @@ class TestWlevelsImportOldWlevelsSpatialite(
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestSeismicImportPostgis(
     SeismicImportMixin,
     utils_for_tests.MidvattenTestPostgisDbSvImportInstance,
@@ -2076,7 +2076,7 @@ class TestSeismicImportPostgis(
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestSeismicImportSpatialite(
     SeismicImportMixin,
     utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance,
@@ -2084,7 +2084,7 @@ class TestSeismicImportSpatialite(
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestCommentsImportPostgis(
     CommentsImportMixin,
     utils_for_tests.MidvattenTestPostgisDbSvImportInstance,
@@ -2092,7 +2092,7 @@ class TestCommentsImportPostgis(
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestCommentsImportSpatialite(
     CommentsImportMixin,
     utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance,
@@ -2100,7 +2100,7 @@ class TestCommentsImportSpatialite(
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestStratImportPostgis(
     StratImportMixin,
     utils_for_tests.MidvattenTestPostgisDbSvImportInstance,
@@ -2108,7 +2108,7 @@ class TestStratImportPostgis(
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestStratImportSpatialite(
     StratImportMixin,
     utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance,
@@ -2116,7 +2116,7 @@ class TestStratImportSpatialite(
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestMeteoImportPostgis(
     MeteoImportMixin,
     utils_for_tests.MidvattenTestPostgisDbSvImportInstance,
@@ -2124,7 +2124,7 @@ class TestMeteoImportPostgis(
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestMeteoImportSpatialite(
     MeteoImportMixin,
     utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance,
@@ -2132,7 +2132,7 @@ class TestMeteoImportSpatialite(
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestVlfImportPostgis(
     VlfImportMixin,
     utils_for_tests.MidvattenTestPostgisDbSvImportInstance,
@@ -2140,7 +2140,7 @@ class TestVlfImportPostgis(
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestVlfImportSpatialite(
     VlfImportMixin,
     utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance,
@@ -2148,7 +2148,7 @@ class TestVlfImportSpatialite(
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestObsLinesImportPostgis(
     ObsLinesImportMixin,
     utils_for_tests.MidvattenTestPostgisDbSvImportInstance,
@@ -2156,7 +2156,7 @@ class TestObsLinesImportPostgis(
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestObsLinesImportSpatialite(
     ObsLinesImportMixin,
     utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance,
@@ -2164,7 +2164,7 @@ class TestObsLinesImportSpatialite(
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestGetForeignKeysPostgis(
     GetForeignKeysMixin,
     utils_for_tests.MidvattenTestPostgisDbSvImportInstance,
@@ -2172,7 +2172,7 @@ class TestGetForeignKeysPostgis(
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestGetForeignKeysSpatialite(
     GetForeignKeysMixin,
     utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance,
@@ -2180,7 +2180,7 @@ class TestGetForeignKeysSpatialite(
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestDeleteExistingDateTimesFromTemptablePostgis(
     DeleteExistingDateTimesFromTemptableMixin,
     utils_for_tests.MidvattenTestPostgisDbSvImportInstance,
@@ -2188,7 +2188,7 @@ class TestDeleteExistingDateTimesFromTemptablePostgis(
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestDeleteExistingDateTimesFromTemptableSpatialite(
     DeleteExistingDateTimesFromTemptableMixin,
     utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance,

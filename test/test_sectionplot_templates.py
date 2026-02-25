@@ -34,7 +34,7 @@ from midvatten.tools.utils import common_utils
 from midvatten.tools.utils.midvatten_utils import PlotTemplates
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestSecplotTemplates(utils_for_tests.MidvattenTestSpatialiteNotCreated):
     def setUp(self):
         super(self.__class__, self).setUp()

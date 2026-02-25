@@ -791,14 +791,14 @@ class Interlab4ImporterDBMixin:
         assert test_string == reference_string
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestInterlab4ImporterDBPostgis(
     Interlab4ImporterDBMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestInterlab4ImporterDBSpatialite(
     Interlab4ImporterDBMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):

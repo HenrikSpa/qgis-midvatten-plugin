@@ -40,12 +40,12 @@ class DefsFunctionsMixin:
                 assert x
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestDefsFunctionsPostgis(DefsFunctionsMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestDefsFunctionsSpatialite(DefsFunctionsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass
 
@@ -88,11 +88,11 @@ class GeocolorsymbolsMixin:
         assert test_string == reference_string
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestGeocolorsymbolsPostgis(GeocolorsymbolsMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestGeocolorsymbolsSpatialite(GeocolorsymbolsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass

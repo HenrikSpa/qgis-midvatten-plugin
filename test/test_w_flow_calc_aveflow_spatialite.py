@@ -27,7 +27,7 @@ from midvatten.tools import w_flow_calc_aveflow
 from midvatten.tools.utils import common_utils, date_utils, db_utils
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
     @mock.patch("midvatten.tools.utils.common_utils.Askuser", mock.MagicMock())
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")

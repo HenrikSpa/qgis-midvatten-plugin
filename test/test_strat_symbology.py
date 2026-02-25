@@ -49,11 +49,11 @@ class StratSymbologyMixin:
         assert mock_messagebar.mock_calls == []
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestStratSymbologyPostgis(StratSymbologyMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestStratSymbologySpatialite(StratSymbologyMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass

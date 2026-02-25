@@ -28,7 +28,7 @@ from midvatten.tools.utils import common_utils, midvatten_utils
 from midvatten.tools.utils import db_utils
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestCreateMemoryDb(utils_for_tests.MidvattenTestSpatialiteNotCreated):
     @mock.patch("qgis.utils.iface")
     @mock.patch("midvatten.tools.create_db.common_utils.NotFoundQuestion")
@@ -63,7 +63,7 @@ class TestCreateMemoryDb(utils_for_tests.MidvattenTestSpatialiteNotCreated):
         self.midvatten.new_db()
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestCreateDb(utils_for_tests.MidvattenTestSpatialiteNotCreated):
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface")
@@ -329,7 +329,7 @@ class TestCreateDb(utils_for_tests.MidvattenTestSpatialiteNotCreated):
             assert ref_string in test_string
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestObsPointsTriggers(utils_for_tests.MidvattenTestSpatialiteDbSv):
     def setUp(self):
         super().setUp()
@@ -747,7 +747,7 @@ class TestObsPointsTriggers(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert test_string == reference_string
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestSqls(utils_for_tests.MidvattenTestSpatialiteDbSv):
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_import_null_as_double(self, mock_messagebar):

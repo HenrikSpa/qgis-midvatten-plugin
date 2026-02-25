@@ -29,7 +29,7 @@ from midvatten.tools.import_interlab4 import Interlab4Import
 from midvatten.tools.utils import common_utils
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
     def setUp(self):
         super(self.__class__, self).setUp()

@@ -124,56 +124,56 @@ class AddViewObsPointsObsLinesMixin:
         ]
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestGetFunctionsPostgis(
     GetFunctionsMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestGetFunctionsSpatialite(
     GetFunctionsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestCalculateDbTableRowsPostgis(
     CalculateDbTableRowsMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestCalculateDbTableRowsSpatialite(
     CalculateDbTableRowsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestWarnAboutOldDatabasePostgis(
     WarnAboutOldDatabaseMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestWarnAboutOldDatabaseSpatialite(
     WarnAboutOldDatabaseMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestAddViewObsPointsObsLinesPostgis(
     AddViewObsPointsObsLinesMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestAddViewObsPointsObsLinesSpatialite(
     AddViewObsPointsObsLinesMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):

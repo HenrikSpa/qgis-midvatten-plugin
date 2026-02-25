@@ -386,11 +386,11 @@ class StratigraphyMixin:
         )
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestStratigraphyPostgis(StratigraphyMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestStratigraphySpatialite(StratigraphyMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass

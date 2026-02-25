@@ -987,11 +987,11 @@ class CalibrloggerSpatialiteMixin(CalibrloggerMixin):
         )
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestCalibrloggerPostgis(CalibrloggerPostgisMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestCalibrloggerSpatialite(CalibrloggerSpatialiteMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass

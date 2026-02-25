@@ -944,11 +944,11 @@ class SectionPlotMixin:
         assert changed_markersize == changed_markersize
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestSectionPlotPostgis(SectionPlotMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestSectionPlotSpatialite(SectionPlotMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass

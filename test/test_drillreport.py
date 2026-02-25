@@ -98,11 +98,11 @@ class DrillreportMixin:
         assert report == ref
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestDrillreportPostgis(DrillreportMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestDrillreportSpatialite(DrillreportMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass

@@ -54,7 +54,7 @@ def _normalize_report_html(html):
     return html
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestDrillreportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
     """Tests for DrillreportUi (custom drill report)."""
 

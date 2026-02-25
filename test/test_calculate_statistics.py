@@ -87,11 +87,11 @@ class CalculateStatisticsMixin:
         assert ref in mock_messagebar.mock_calls
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestCalculateStatisticsPostgis(CalculateStatisticsMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestCalculateStatisticsSpatialite(CalculateStatisticsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass

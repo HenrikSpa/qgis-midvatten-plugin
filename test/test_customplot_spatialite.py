@@ -83,7 +83,7 @@ def _configure_customplot_tab1_tab2(customplot, tab2=False, tab3=False):
         customplot.tab3_filter1.item(1).setSelected(True)
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
     """ """
 

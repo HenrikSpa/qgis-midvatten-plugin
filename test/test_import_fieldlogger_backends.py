@@ -1975,14 +1975,14 @@ class FieldLoggerImporterDbMixin:
             assert test_string == reference_string
 
 
-@attr(status="on")
+@attr(status="on")  # Postgis
 class TestFieldLoggerImporterDbPostgis(
     FieldLoggerImporterDbMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
-@attr(status="on")
+@attr(status="on")  # Spatialite
 class TestFieldLoggerImporterDbSpatialite(
     FieldLoggerImporterDbMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):

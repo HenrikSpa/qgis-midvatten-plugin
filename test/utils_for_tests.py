@@ -111,8 +111,6 @@ class MidvattenTestBase:
         self.stop_show()
 
     def setUp(self):
-        # QgsProject.instance().layerTreeRoot().removeAllChildren()
-        # QgsProject.instance().removeAllMapLayers()
         QgsProject.instance().clear()
         self.dummy_iface = DummyInterface2()
         self.iface = self.dummy_iface.mock
@@ -135,8 +133,6 @@ class MidvattenTestBase:
 
     def tearDown(self):
         plt.close("all")
-        # QgsProject.instance().layerTreeRoot().removeAllChildren()
-        # QgsProject.instance().removeAllMapLayers()
         QgsProject.instance().clear()
 
 

@@ -886,27 +886,8 @@ class ExportMixin:
         dbconnection.execute(
             """UPDATE zz_capacity SET explanation = 'anexpl' WHERE capacity = '0' """
         )
-
-        print(
-            str(
-                dbconnection.execute_and_fetchall(
-                    """SELECT * FROM zz_capacity_plots
-        WHERE capacity = '0';"""
-                )
-            )
-        )
-
         dbconnection.execute(
             """UPDATE zz_capacity_plots SET color_qt = 'whiteFIX' WHERE capacity = '0' """
-        )
-
-        print(
-            str(
-                dbconnection.execute_and_fetchall(
-                    """SELECT * FROM zz_capacity_plots
-        WHERE capacity = '0';"""
-                )
-            )
         )
 
         # print(str(dbconnection.execute_and_fetchall('select * from zz_strat')))
@@ -916,8 +897,6 @@ class ExportMixin:
             """SELECT capacity, explanation FROM zz_capacity WHERE capacity IN ('0', '1')""",
             """SELECT capacity, color_qt FROM zz_capacity_plots WHERE capacity IN ('0', '1') """,
         ]
-
-        print("Before export")
         test_list = []
         curs = dbconnection.cursor
         for sql in sql_list:
@@ -926,7 +905,6 @@ class ExportMixin:
             test_list.append(curs.fetchall())
 
         dbconnection.closedb()
-        print("After")
 
         # dbconnection.commit_and_closedb()
         mock_locale.return_value.answer = "ok"

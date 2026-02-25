@@ -698,10 +698,10 @@ class Midvatten:
             obsid_p = common_utils.get_selected_features_as_tuple("obs_points")
             obsid_l = common_utils.get_selected_features_as_tuple("obs_lines")
             try:
-                print(str(obsid_p))
-                print(str(obsid_l))
-            except Exception:
-                pass
+                print(f"Selected obs_points to export:{obsid_p}")
+                print(f"Selected obs_lines to export:{obsid_l}")
+            except Exception as e:
+                print(f"Error printing selected features: {e}")
             common_utils.stop_waiting_cursor()
 
             selected_all = (

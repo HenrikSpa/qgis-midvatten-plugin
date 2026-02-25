@@ -1519,9 +1519,10 @@ class WlevelsImportOldWlevelsMixin:
     )
     def setUp(self):
         super().setUp()
+        db_utils.sql_alter_db("drop view if exists w_levels_geom")
         db_utils.sql_alter_db("drop table w_levels")
         db_utils.sql_alter_db(
-            "CREATE TABLE w_levels (obsid text not null, date_time text not null, meas double, h_toc double, level_masl double not null default -999, comment text, primary key (obsid, date_time), foreign key(obsid) references obs_points(obsid))"
+            "CREATE TABLE w_levels (obsid text not null, date_time text not null, meas double precision, h_toc double precision, level_masl double precision not null default -999, comment text, primary key (obsid, date_time), foreign key(obsid) references obs_points(obsid))"
         )
 
     @mock.patch(

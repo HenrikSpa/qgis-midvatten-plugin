@@ -127,7 +127,7 @@ class ExportMixin:
 
         self.midvatten.export_csv()
         file_contents = []
-        for filename in TestExport.exported_csv_files_no_zz:
+        for filename in ExportMixin.exported_csv_files_no_zz:
             with open(filename, encoding="utf-8") as f:
                 file_contents.append(os.path.basename(filename) + "\n")
                 if os.path.basename(filename) == "obs_points.csv":
@@ -226,7 +226,7 @@ class ExportMixin:
 
         self.midvatten.export_csv()
         file_contents = []
-        for filename in TestExport.exported_csv_files_no_zz:
+        for filename in ExportMixin.exported_csv_files_no_zz:
             with open(filename, encoding="utf-8") as f:
                 file_contents.append(os.path.basename(filename) + "\n")
                 if os.path.basename(filename) == "obs_points.csv":
@@ -847,8 +847,8 @@ class ExportMixin:
             """INSERT INTO obs_points (obsid, geometry) VALUES ('P1', ST_GeomFromText('POINT(633466 711659)', 3006))""",
             dbconnection=dbconnection,
         )
-        # dbconnection.execute('''PRAGMA foreign_keys='off' ''')
-        dbconnection.execute("""PRAGMA foreign_keys='off'  """)
+        if dbconnection.dbtype == "spatialite":
+            dbconnection.execute("""PRAGMA foreign_keys='off'  """)
         dbconnection.execute(
             """UPDATE zz_strat SET strata = 'filling' WHERE geoshort = 'land fill' """
         )
@@ -1106,7 +1106,7 @@ class ExportMixin:
         except OSError:
             pass
 
-        for filename in TestExport.exported_csv_files:
+        for filename in ExportMixin.exported_csv_files:
             try:
                 os.remove(filename)
             except OSError:

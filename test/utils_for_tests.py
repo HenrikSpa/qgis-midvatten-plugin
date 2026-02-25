@@ -174,10 +174,18 @@ class MidvattenTestSpatialiteDbSv(MidvattenTestSpatialiteNotCreated):
                 mock_result.value = ""
             return mock_result
 
-        with mock.patch("qgis.PyQt.QtWidgets.QFileDialog.getSaveFileName") as mock_savefilename, \
-             mock.patch("midvatten.tools.create_db.qgis.PyQt.QtWidgets.QInputDialog.getInt") as mock_crs_question, \
-             mock.patch("midvatten.tools.utils.common_utils.Askuser") as mock_answer_yes, \
-             mock.patch("midvatten.tools.create_db.common_utils.NotFoundQuestion") as mock_not_found:
+        with (
+            mock.patch(
+                "qgis.PyQt.QtWidgets.QFileDialog.getSaveFileName"
+            ) as mock_savefilename,
+            mock.patch(
+                "midvatten.tools.create_db.qgis.PyQt.QtWidgets.QInputDialog.getInt"
+            ) as mock_crs_question,
+            mock.patch("midvatten.tools.utils.common_utils.Askuser") as mock_answer_yes,
+            mock.patch(
+                "midvatten.tools.create_db.common_utils.NotFoundQuestion"
+            ) as mock_not_found,
+        ):
             mock_not_found.side_effect = side_effect
             mock_answer_yes.return_value.result = 1
             mock_crs_question.return_value.__getitem__.return_value = 3006
@@ -199,10 +207,18 @@ class MidvattenTestSpatialiteDbEn(MidvattenTestSpatialiteNotCreated):
                 mock_result.value = ""
             return mock_result
 
-        with mock.patch("qgis.PyQt.QtWidgets.QFileDialog.getSaveFileName") as mock_savefilename, \
-             mock.patch("midvatten.tools.create_db.qgis.PyQt.QtWidgets.QInputDialog.getInt") as mock_crs_question, \
-             mock.patch("midvatten.tools.utils.common_utils.Askuser") as mock_answer_yes, \
-             mock.patch("midvatten.tools.create_db.common_utils.NotFoundQuestion") as mock_not_found:
+        with (
+            mock.patch(
+                "qgis.PyQt.QtWidgets.QFileDialog.getSaveFileName"
+            ) as mock_savefilename,
+            mock.patch(
+                "midvatten.tools.create_db.qgis.PyQt.QtWidgets.QInputDialog.getInt"
+            ) as mock_crs_question,
+            mock.patch("midvatten.tools.utils.common_utils.Askuser") as mock_answer_yes,
+            mock.patch(
+                "midvatten.tools.create_db.common_utils.NotFoundQuestion"
+            ) as mock_not_found,
+        ):
             mock_not_found.side_effect = side_effect
             mock_answer_yes.return_value.result = 1
             mock_crs_question.return_value.__getitem__.return_value = 3006
@@ -293,7 +309,9 @@ class MidvattenTestPostgisNotCreated(MidvattenTestBase):
 
     def teardown_method(self):
         # Clear the database
-        with mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog") as mock_messagebar:
+        with mock.patch(
+            "midvatten.tools.utils.common_utils.MessagebarAndLog"
+        ) as mock_messagebar:
             try:
                 db_utils.sql_alter_db("DROP SCHEMA public CASCADE;")
                 db_utils.sql_alter_db("CREATE SCHEMA public;")
@@ -320,9 +338,15 @@ class MidvattenTestPostgisDbSv(MidvattenTestPostgisNotCreated):
                 mock_result.value = ""
             return mock_result
 
-        with mock.patch("midvatten.tools.create_db.qgis.PyQt.QtWidgets.QInputDialog.getInt") as mock_crs_question, \
-             mock.patch("midvatten.tools.utils.common_utils.Askuser") as mock_answer_yes, \
-             mock.patch("midvatten.tools.create_db.common_utils.NotFoundQuestion") as mock_not_found:
+        with (
+            mock.patch(
+                "midvatten.tools.create_db.qgis.PyQt.QtWidgets.QInputDialog.getInt"
+            ) as mock_crs_question,
+            mock.patch("midvatten.tools.utils.common_utils.Askuser") as mock_answer_yes,
+            mock.patch(
+                "midvatten.tools.create_db.common_utils.NotFoundQuestion"
+            ) as mock_not_found,
+        ):
             mock_not_found.side_effect = side_effect
             mock_answer_yes.return_value.result = 1
             mock_crs_question.return_value.__getitem__.return_value = 3006
@@ -343,9 +367,15 @@ class MidvattenTestPostgisDbEn(MidvattenTestPostgisNotCreated):
                 mock_result.value = ""
             return mock_result
 
-        with mock.patch("midvatten.tools.create_db.qgis.PyQt.QtWidgets.QInputDialog.getInt") as mock_crs_question, \
-             mock.patch("midvatten.tools.utils.common_utils.Askuser") as mock_answer_yes, \
-             mock.patch("midvatten.tools.create_db.common_utils.NotFoundQuestion") as mock_not_found:
+        with (
+            mock.patch(
+                "midvatten.tools.create_db.qgis.PyQt.QtWidgets.QInputDialog.getInt"
+            ) as mock_crs_question,
+            mock.patch("midvatten.tools.utils.common_utils.Askuser") as mock_answer_yes,
+            mock.patch(
+                "midvatten.tools.create_db.common_utils.NotFoundQuestion"
+            ) as mock_not_found,
+        ):
             mock_not_found.side_effect = side_effect
             mock_answer_yes.return_value.result = 1
             mock_crs_question.return_value.__getitem__.return_value = 3006

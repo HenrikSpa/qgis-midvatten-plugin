@@ -99,10 +99,14 @@ class DrillreportMixin:
 
 
 @pytest.mark.postgis
-class TestDrillreportPostgis(DrillreportMixin, utils_for_tests.MidvattenTestPostgisDbSv):
+class TestDrillreportPostgis(
+    DrillreportMixin, utils_for_tests.MidvattenTestPostgisDbSv
+):
     pass
 
 
 @pytest.mark.spatialite
-class TestDrillreportSpatialite(DrillreportMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
+class TestDrillreportSpatialite(
+    DrillreportMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
+):
     pass

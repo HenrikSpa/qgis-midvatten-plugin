@@ -224,7 +224,9 @@ class TestFillDb(utils_for_tests.MidvattenTestPostgisNotCreated):
 @pytest.mark.postgis
 class TestObsPointsTriggers(utils_for_tests.MidvattenTestPostgisDbSv):
     def setup_method(self):
-        with mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog") as mock_messagebar:
+        with mock.patch(
+            "midvatten.tools.utils.common_utils.MessagebarAndLog"
+        ) as mock_messagebar:
             super().setup_method()
             db_utils.sql_alter_db(
                 """DROP TRIGGER IF EXISTS trigger_after_insert_obs_points_geom_fr_coords ON obs_points;"""

@@ -387,10 +387,14 @@ class StratigraphyMixin:
 
 
 @pytest.mark.postgis
-class TestStratigraphyPostgis(StratigraphyMixin, utils_for_tests.MidvattenTestPostgisDbSv):
+class TestStratigraphyPostgis(
+    StratigraphyMixin, utils_for_tests.MidvattenTestPostgisDbSv
+):
     pass
 
 
 @pytest.mark.spatialite
-class TestStratigraphySpatialite(StratigraphyMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
+class TestStratigraphySpatialite(
+    StratigraphyMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
+):
     pass

@@ -85,7 +85,9 @@ class TestVectorlayer(utils_for_tests.MidvattenTestSpatialiteDbSv):
         :return:
         """
         dbconnection = db_utils.DbConnectionManager()
-        insert_sql = f"INSERT INTO obs_points (obsid) VALUES ({dbconnection.placeholder()})"
+        insert_sql = (
+            f"INSERT INTO obs_points (obsid) VALUES ({dbconnection.placeholder()})"
+        )
         for obsid in [1, 2, 3]:
             db_utils.sql_alter_db(insert_sql, all_args=[(obsid,)])
 
@@ -121,7 +123,9 @@ class TestVectorlayer(utils_for_tests.MidvattenTestSpatialiteDbSv):
         :return:
         """
         dbconnection = db_utils.DbConnectionManager()
-        insert_sql = f"INSERT INTO obs_points (obsid) VALUES ({dbconnection.placeholder()})"
+        insert_sql = (
+            f"INSERT INTO obs_points (obsid) VALUES ({dbconnection.placeholder()})"
+        )
         for obsid in [4, 5, 6]:
             db_utils.sql_alter_db(insert_sql, all_args=[(obsid,)])
 
@@ -157,7 +161,9 @@ class TestVectorlayer(utils_for_tests.MidvattenTestSpatialiteDbSv):
         :return:
         """
         dbconnection = db_utils.DbConnectionManager()
-        insert_sql = f"INSERT INTO obs_points (obsid) VALUES ({dbconnection.placeholder()})"
+        insert_sql = (
+            f"INSERT INTO obs_points (obsid) VALUES ({dbconnection.placeholder()})"
+        )
         for obsid in ["A", "b", "c1"]:
             db_utils.sql_alter_db(insert_sql, all_args=[(obsid,)])
 

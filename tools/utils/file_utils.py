@@ -126,10 +126,10 @@ def get_delimiter_from_file_rows(
 
 
 def ask_for_delimiter(
-    header=tr("ask_for_delimiter", "Give delimiter"),
-    question="",
-    default=";",
-):
+    header: str = tr("ask_for_delimiter", "Give delimiter"),
+    question: str = "",
+    default: str = ";",
+) -> str:
     _delimiter = qgis.PyQt.QtWidgets.QInputDialog.getText(
         None,
         tr("ask_for_delimiter", "Give delimiter"),

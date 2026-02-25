@@ -88,10 +88,14 @@ class CalculateStatisticsMixin:
 
 
 @pytest.mark.postgis
-class TestCalculateStatisticsPostgis(CalculateStatisticsMixin, utils_for_tests.MidvattenTestPostgisDbSv):
+class TestCalculateStatisticsPostgis(
+    CalculateStatisticsMixin, utils_for_tests.MidvattenTestPostgisDbSv
+):
     pass
 
 
 @pytest.mark.spatialite
-class TestCalculateStatisticsSpatialite(CalculateStatisticsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
+class TestCalculateStatisticsSpatialite(
+    CalculateStatisticsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
+):
     pass

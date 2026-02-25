@@ -106,7 +106,7 @@ def find_date_format(datestring: str, suppress_error_msg: bool = False) -> str:
     return found_format
 
 
-def dateshift(adate, n, step_lenght):
+def dateshift(adate: datetime.datetime, n: int, step_lenght: str) -> datetime.datetime:
     """
     Shifts a date n step_lenghts and returns a new date object
     :param adate: A string representing a date or a datetime object.
@@ -187,7 +187,7 @@ def datestring_to_date(
     return adate
 
 
-def long_dateformat(astring: str, dateformat=None) -> str:
+def long_dateformat(astring: str, dateformat: None = None) -> str:
     return datetime.datetime.strftime(
         datestring_to_date(astring, df=dateformat), "%Y-%m-%d %H:%M:%S"
     )
@@ -259,7 +259,7 @@ def find_time_format(datestring: str):
     return found_format
 
 
-def parse_timezone_to_timedelta(tz_string):
+def parse_timezone_to_timedelta(tz_string: str) -> datetime.timedelta:
     """
 
     :param tz_string:

@@ -6,7 +6,10 @@ Factory: create_backend(db_settings) -> backend.
 Facade: DbConnectionManager(db_settings) holds a backend and delegates.
 """
 
-from midvatten.tools.utils.db_utils.connection import DbConnectionManager, create_backend
+from midvatten.tools.utils.db_utils.connection import (
+    DbConnectionManager,
+    create_backend,
+)
 from midvatten.tools.utils.db_utils.settings import get_postgis_connections
 from midvatten.tools.utils.db_utils.backends.base import Backend
 from midvatten.tools.utils.db_utils.backends.sqlite import (
@@ -80,7 +83,9 @@ from midvatten.tools.utils.db_utils.sqlfile import (
 
 # Re-export for code that expects DatabaseLockedError, connect_with_spatialite_connect, etc.
 from midvatten.tools.utils.db_utils.errors import DatabaseLockedError
-from midvatten.tools.utils.db_utils.backends.sqlite import connect_with_spatialite_connect
+from midvatten.tools.utils.db_utils.backends.sqlite import (
+    connect_with_spatialite_connect,
+)
 from midvatten.tools.utils.db_utils.helpers import (
     export_bytea_as_bytes,
     get_all_obsids,

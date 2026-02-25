@@ -339,9 +339,7 @@ class TestSqlToParametersUnitsTuple:
     def test_sql_to_parameters_units_tuple(self, mock_sqlload):
         mock_sqlload.return_value = (True, [("par1", "un1"), ("par2", "un2")])
 
-        test_string = create_test_string(
-            db_utils.sql_to_parameters_units_tuple("sql")
-        )
+        test_string = create_test_string(db_utils.sql_to_parameters_units_tuple("sql"))
         reference_string = """((par1, (un1)), (par2, (un2)))"""
         assert test_string == reference_string
 

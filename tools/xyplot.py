@@ -83,17 +83,11 @@ class XYPlot:
                     # Load all observations (full time series) for the object [i] (i.e. selected observation point no i)
                     select_cols = [f"{xcol_ident} AS x"]
                     if len(self.y1col):
-                        select_cols.append(
-                            f"{dbconnection.ident(self.y1col)} AS y1"
-                        )
+                        select_cols.append(f"{dbconnection.ident(self.y1col)} AS y1")
                     if len(self.y2col):
-                        select_cols.append(
-                            f"{dbconnection.ident(self.y2col)} AS y2"
-                        )
+                        select_cols.append(f"{dbconnection.ident(self.y2col)} AS y2")
                     if len(self.y3col):
-                        select_cols.append(
-                            f"{dbconnection.ident(self.y3col)} AS y3"
-                        )
+                        select_cols.append(f"{dbconnection.ident(self.y3col)} AS y3")
                     sql = f"SELECT {', '.join(select_cols)} FROM {table_ident} WHERE obsid = {ph} ORDER BY {xcol_ident}"
                     connection_ok, recs = db_utils.sql_load_fr_db(
                         sql, dbconnection=dbconnection, execute_args=(obsid,)

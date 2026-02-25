@@ -1724,9 +1724,7 @@ class WlvllogImportFromDiverofficeFilesMixin:
             utils_askuser_answer_no_obj.result = 0
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
 
-            @mock.patch(
-                "midvatten.tools.utils.file_utils.ask_for_delimiter"
-            )
+            @mock.patch("midvatten.tools.utils.file_utils.ask_for_delimiter")
             @mock.patch(
                 "midvatten.tools.import_diveroffice.common_utils.MessagebarAndLog"
             )
@@ -1820,9 +1818,7 @@ class WlvllogImportFromDiverofficeFilesMixin:
             utils_askuser_answer_no_obj.result = 0
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
 
-            @mock.patch(
-                "midvatten.tools.utils.file_utils.ask_for_delimiter"
-            )
+            @mock.patch("midvatten.tools.utils.file_utils.ask_for_delimiter")
             @mock.patch(
                 "midvatten.tools.import_diveroffice.common_utils.MessagebarAndLog"
             )
@@ -1979,6 +1975,7 @@ class WlvllogImportFromDiverofficeFilesMixin:
                     )
                     reference_string = r"""(True, [(rb1, 2016-03-15 10:30:00, 1.0, 10.0, None, None, None, Testsource), (rb1, 2016-03-15 11:00:00, 11.0, 101.0, None, None, None, Testsource), (rb1, 2016-04-15 10:30:00, 2.0, 20.0, None, None, None, Testsource), (rb1, 2016-04-15 11:00:00, 21.0, 201.0, None, None, None, Testsource), (rb1, 2016-05-15 10:30:00, 3.0, 30.0, 5.0, None, None, Testsource), (rb1, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None, Testsource)])"""
                     assert test_string == reference_string
+
     def test_wlvllogg_import_from_diveroffice_mon_files(self):
         files = [
             (
@@ -2043,9 +2040,7 @@ class WlvllogImportFromDiverofficeFilesMixin:
                         utils_askuser_answer_no_obj
                     )
 
-                    @mock.patch(
-                        "midvatten.tools.utils.file_utils.ask_for_delimiter"
-                    )
+                    @mock.patch("midvatten.tools.utils.file_utils.ask_for_delimiter")
                     @mock.patch(
                         "midvatten.tools.import_diveroffice.common_utils.MessagebarAndLog"
                     )
@@ -2176,9 +2171,7 @@ class WlvllogImportFromDiverofficeFilesMixin:
                         utils_askuser_answer_no_obj
                     )
 
-                    @mock.patch(
-                        "midvatten.tools.utils.file_utils.ask_for_delimiter"
-                    )
+                    @mock.patch("midvatten.tools.utils.file_utils.ask_for_delimiter")
                     @mock.patch(
                         "midvatten.tools.import_diveroffice.common_utils.MessagebarAndLog"
                     )
@@ -2272,9 +2265,7 @@ class WlvllogImportFromDiverofficeFilesMixin:
             utils_askuser_answer_no_obj.result = 0
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
 
-            @mock.patch(
-                "midvatten.tools.utils.file_utils.ask_for_delimiter"
-            )
+            @mock.patch("midvatten.tools.utils.file_utils.ask_for_delimiter")
             @mock.patch(
                 "midvatten.tools.import_diveroffice.common_utils.MessagebarAndLog"
             )
@@ -2368,9 +2359,7 @@ class WlvllogImportFromDiverofficeFilesMixin:
             utils_askuser_answer_no_obj.result = 0
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
 
-            @mock.patch(
-                "midvatten.tools.utils.file_utils.ask_for_delimiter"
-            )
+            @mock.patch("midvatten.tools.utils.file_utils.ask_for_delimiter")
             @mock.patch(
                 "midvatten.tools.import_diveroffice.common_utils.MessagebarAndLog"
             )

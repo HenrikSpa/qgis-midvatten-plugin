@@ -533,7 +533,9 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
         table_ident = dbconnection.ident(table)
         if obsids:
             placeholders = dbconnection.placeholders(len(obsids))
-            sql = f"SELECT {col_list} FROM {table_ident} WHERE obsid IN ({placeholders})"
+            sql = (
+                f"SELECT {col_list} FROM {table_ident} WHERE obsid IN ({placeholders})"
+            )
             params = tuple(obsids)
         else:
             sql = f"SELECT {col_list} FROM {table_ident}"

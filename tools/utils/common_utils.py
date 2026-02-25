@@ -27,7 +27,7 @@ import time
 import traceback
 from contextlib import contextmanager
 from functools import wraps
-from typing import Any, Callable, Optional
+from typing import Dict, List, Set, Union, Any, Callable, Optional
 
 import matplotlib as mpl
 import numpy as np
@@ -80,6 +80,9 @@ from midvatten.tools.utils.string_utils import (
     tr,
     unicode_2_utf8,
 )
+from cycler import Cycler
+from itertools import cycle
+from numpy import ndarray
 
 LEGEND_NCOL_KEY = "ncol" if mpl.__version__ < "3.6.0" else "ncols"
 
@@ -184,7 +187,7 @@ def calc_mean_diff(coupled_vals):
     )
 
 
-def find_similar(word, wordlist, hits=5):
+def find_similar(word: Optional[str], wordlist: List[str], hits: int = 5) -> List[str]:
     r"""
 
     :param word: the word to find similar words for
@@ -658,7 +661,7 @@ def get_stored_settings(ms, settingskey, default=None, skip_ast=False):
     return stored_settings
 
 
-def to_float_or_none(anything):
+def to_float_or_none(anything: str) -> float:
     if isinstance(anything, float):
         return anything
     elif isinstance(anything, int):
@@ -703,7 +706,11 @@ def dict_to_tuple(adict: dict) -> tuple[tuple[Any, Any], ...]:
 
 class ContinuousColorCycle:
     def __init__(
-        self, color_cycle, color_cycle_len, style_cycler, used_style_color_combo
+        self,
+        color_cycle: cycle,
+        color_cycle_len: int,
+        style_cycler: Cycler,
+        used_style_color_combo: Set[Any],
     ):
         self.color_cycle = color_cycle
         self.color_cycle_len = color_cycle_len
@@ -713,7 +720,7 @@ class ContinuousColorCycle:
         next(self.style_cycle)
         self.used_style_color_combo = used_style_color_combo
 
-    def __next__(self):
+    def __next__(self) -> Dict[str, Union[str, ndarray]]:
         # Go one lap around the cycle
         [next(self.style_cycle) for _ in range(self.style_cycler_len - 1)]
 

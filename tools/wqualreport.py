@@ -63,10 +63,7 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
                 self.settingsdict["database"], obsid, dbconnection
             )  # one observation at a time
             print(
-                "done with getting data for "
-                + obsid
-                + ", at time: "
-                + str(time.time())
+                "done with getting data for " + obsid + ", at time: " + str(time.time())
             )  # debug
             if report_data:
                 self.write_html_report(report_data, f)

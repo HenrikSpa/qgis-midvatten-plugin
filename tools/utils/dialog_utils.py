@@ -20,11 +20,11 @@ not_found_dialog = uic.loadUiType(
 class Askuser(QtWidgets.QDialog):
     def __init__(
         self,
-        question="YesNo",
-        msg="",
-        dialogtitle=tr("askuser", "User input needed"),
-        parent=None,
-        include_cancel_button=False,
+        question: str = "YesNo",
+        msg: str = "",
+        dialogtitle: str = tr("askuser", "User input needed"),
+        parent: None = None,
+        include_cancel_button: bool = False,
     ):
         self.result = ""
         if question == "YesNo":  #  Yes/No dialog

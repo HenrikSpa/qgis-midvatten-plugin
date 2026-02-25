@@ -20,6 +20,7 @@
 import io
 import os
 
+import cycler as _cycler_mod
 from cycler import cycler
 from qgis.PyQt.QtCore import QCoreApplication
 
@@ -37,6 +38,7 @@ from midvatten.tools.utils.db_utils import (
     get_table_info,
 )
 from midvatten.tools.utils.midvatten_utils import getcurrentlocale
+from typing import Any, Dict
 
 
 def settingsdict():  # These are the default settings, they shall not be changed!!!
@@ -1235,7 +1237,7 @@ def db_setup_as_string():
     return anything_to_string_representation(res)
 
 
-def secplot_default_template():
+def secplot_default_template() -> Dict[str, Any]:
     loaded_template = {}
     loaded_template["ticklabels_Text_set_fontsize"] = {"fontsize": 10}
     loaded_template["Axes_set_xlabel"] = {
@@ -1440,9 +1442,9 @@ def pandas_how_tooltip():
     )
 
 
-def midv_line_cycle():
+def midv_line_cycle() -> _cycler_mod.Cycler:
     return cycler("linestyle", ["-", "--", "-.", ":", (0, (3, 2, 1, 1, 1, 1))])
 
 
-def midv_marker_cycle():
+def midv_marker_cycle() -> _cycler_mod.Cycler:
     return cycler("marker", ["o", "+", "s", "x", "1", "2", "3", "4"])

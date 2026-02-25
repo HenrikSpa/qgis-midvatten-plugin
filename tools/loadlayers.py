@@ -121,7 +121,9 @@ class LoadLayers:
                     try:
                         layer.loadNamedStyle(stylefile)
                     except Exception:
-                        common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
+                        common_utils.MessagebarAndLog.info(
+                            log_msg=traceback.format_exc()
+                        )
             else:
                 try:
                     layer.loadNamedStyle(stylefile)
@@ -190,7 +192,9 @@ class LoadLayers:
                     try:  # python bindings for setEditorLayout were introduced in qgis-master commit 9183adce9f257a097fc54e5a8a700e4d494b2962 november 2012
                         layer.setEditorLayout(2)
                     except Exception:
-                        common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
+                        common_utils.MessagebarAndLog.info(
+                            log_msg=traceback.format_exc()
+                        )
                     uifile = os.path.join(
                         os.sep, os.path.dirname(__file__), "..", "ui", filename
                     )
@@ -229,7 +233,9 @@ class LoadLayers:
                     try:  # python bindings for setEditorLayout were introduced in qgis-master commit 9183adce9f257a097fc54e5a8a700e4d494b2962 november 2012
                         layer.setEditorLayout(2)
                     except Exception:
-                        common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
+                        common_utils.MessagebarAndLog.info(
+                            log_msg=traceback.format_exc()
+                        )
                     layer.setEditForm(uifile)
                     if tablename in ("obs_points", "obs_lines"):
                         formlogic = "form_logics." + tablename + "_form_open"

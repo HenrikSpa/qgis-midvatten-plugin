@@ -744,7 +744,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             ru(QCoreApplication.translate("Calibrlogger", "Level (masl)"))
         )  # This is the method that accepts even national characters ('åäö') in matplotlib axes labels
         self.axes.set_title(
-            ru(QCoreApplication.translate("Calibrlogger", "Plot for ")) + str(self.obsid)
+            ru(QCoreApplication.translate("Calibrlogger", "Plot for "))
+            + str(self.obsid)
         )  # This is the method that accepts even national characters ('åäö') in matplotlib axes labels
         for label in self.axes.xaxis.get_ticklabels():
             label.set_fontsize(8)
@@ -1249,7 +1250,11 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         res = db_utils.sql_load_fr_db(
             select_sql,
             dbconnection=dbconnection,
-            execute_args=(data["obsid"], data["adjust_start_date"], data["adjust_end_date"]),
+            execute_args=(
+                data["obsid"],
+                data["adjust_start_date"],
+                data["adjust_end_date"],
+            ),
         )[1]
         if not res:
             dbconnection.closedb()
@@ -1283,7 +1288,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         db_utils.sql_alter_db(
             update_sql,
             dbconnection=dbconnection,
-            all_args=[(data["obsid"], data["adjust_start_date"], data["adjust_end_date"])],
+            all_args=[
+                (data["obsid"], data["adjust_start_date"], data["adjust_end_date"])
+            ],
         )
         dbconnection.closedb()
         common_utils.stop_waiting_cursor()

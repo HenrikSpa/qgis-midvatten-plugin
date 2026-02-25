@@ -660,9 +660,7 @@ class TestFieldLoggerImporterNoDb:
 
         with common_utils.tempinput("".join(f)) as filename:
 
-            @mock.patch(
-                "midvatten.tools.utils.file_utils.ask_for_delimiter"
-            )
+            @mock.patch("midvatten.tools.utils.file_utils.ask_for_delimiter")
             @mock.patch(
                 "midvatten.tools.import_fieldlogger.midvatten_utils.QtWidgets.QFileDialog.getOpenFileNames"
             )
@@ -1086,7 +1084,9 @@ class TestCommentsImportFields:
 @pytest.mark.active
 class TestStaffQuestion:
     def setup_method(self):
-        with mock.patch("midvatten.tools.import_fieldlogger.defs.staff_list") as mock_stafflist:
+        with mock.patch(
+            "midvatten.tools.import_fieldlogger.defs.staff_list"
+        ) as mock_stafflist:
             mock_stafflist.return_value = (True, ["staff1", "staff2"])
             self.staff_question = import_fieldlogger.StaffQuestion()
 

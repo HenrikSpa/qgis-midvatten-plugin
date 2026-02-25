@@ -1561,10 +1561,14 @@ class WlvllogImportFromLeveloggerFilesMixin:
 
 
 @pytest.mark.postgis
-class TestWlvllogImportFromLeveloggerFilesPostgis(WlvllogImportFromLeveloggerFilesMixin, utils_for_tests.MidvattenTestPostgisDbSv):
+class TestWlvllogImportFromLeveloggerFilesPostgis(
+    WlvllogImportFromLeveloggerFilesMixin, utils_for_tests.MidvattenTestPostgisDbSv
+):
     pass
 
 
 @pytest.mark.spatialite
-class TestWlvllogImportFromLeveloggerFilesSpatialite(WlvllogImportFromLeveloggerFilesMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
+class TestWlvllogImportFromLeveloggerFilesSpatialite(
+    WlvllogImportFromLeveloggerFilesMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
+):
     pass

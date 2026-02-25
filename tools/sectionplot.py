@@ -1015,27 +1015,19 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         temporarystring = ru(self.datetime.toPlainText())  # this needs some cleanup
         try:
             self.ms.settingsdict["secplotdates"] = [
-                x
-                for x in temporarystring.replace("\r", "").split("\n")
-                if x.strip()
+                x for x in temporarystring.replace("\r", "").split("\n") if x.strip()
             ]
         except TypeError as e:
             self.ms.settingsdict["secplotdates"] = ""
         self.ms.settingsdict["secplottext"] = self.textcol_combo_box.currentText()
         self.ms.settingsdict["secplotbw"] = self.barwidthdouble_spin_box.value()
         self.ms.settingsdict["secplotdrillstop"] = self.drillstop.text()
-        self.ms.settingsdict["stratigraphyplotted"] = (
-            self.plot_stratigraphy.isChecked()
-        )
+        self.ms.settingsdict["stratigraphyplotted"] = self.plot_stratigraphy.isChecked()
         self.ms.settingsdict["secplothydrologyplotted"] = (
             self.hydrology_radio_button.isChecked()
         )
-        self.ms.settingsdict["secplotlabelsplotted"] = (
-            self.labels_check_box.isChecked()
-        )
-        self.ms.settingsdict["secplotlegendplotted"] = (
-            self.create_legend.isChecked()
-        )
+        self.ms.settingsdict["secplotlabelsplotted"] = self.labels_check_box.isChecked()
+        self.ms.settingsdict["secplotlegendplotted"] = self.create_legend.isChecked()
         self.get_dem_selection()
         self.ms.settingsdict["secplotselectedDEMs"] = self.rasterselection
         self.ms.settingsdict["secplotdem_sampling_distance"] = (
@@ -1059,18 +1051,14 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         self.ms.settingsdict["secplot_tem_model_name"] = (
             self.tem_model_name.currentText()
         )
-        self.ms.settingsdict["secplot_tem_colormap"] = (
-            self.tem_colormap.currentText()
-        )
+        self.ms.settingsdict["secplot_tem_colormap"] = self.tem_colormap.currentText()
         self.ms.settingsdict["secplot_tem_norm"] = self.tem_norm.currentText()
         self.ms.settingsdict["secplot_tem_shading"] = self.tem_shading.currentText()
         self.ms.settingsdict["secplot_tem_vmin"] = self.tem_vmin.text()
         self.ms.settingsdict["secplot_tem_vmax"] = self.tem_vmax.text()
         self.ms.settingsdict["secplot_tem_snap"] = self.tem_snap.isChecked()
         self.ms.settingsdict["secplot_tem_data_fit"] = self.tem_data_fit.isChecked()
-        self.ms.settingsdict["secplot_tem_rasterized"] = (
-            self.tem_rasterized.isChecked()
-        )
+        self.ms.settingsdict["secplot_tem_rasterized"] = self.tem_rasterized.isChecked()
         self.ms.settingsdict["secplot_tem_edgecolors"] = self.tem_edgecolors.text()
         self.ms.settingsdict["secplot_tem_alpha_above_doi"] = (
             self.tem_alpha_above_doi.value()
@@ -2028,9 +2016,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             self.plot_water_level_interactive()
 
     def plot_water_level_interactive(self):
-        placeholders = self.dbconnection.placeholders(
-            len(self.obsids_x_position)
-        )
+        placeholders = self.dbconnection.placeholders(len(self.obsids_x_position))
         sql = self.dbconnection.sql_ident(
             f"SELECT date_time, level_masl, obsid FROM {{t}} WHERE obsid IN ({placeholders})",
             t=self.ms.settingsdict["secplotwlvltab"],

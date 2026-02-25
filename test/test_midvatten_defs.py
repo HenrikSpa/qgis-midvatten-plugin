@@ -41,12 +41,16 @@ class DefsFunctionsMixin:
 
 
 @pytest.mark.postgis
-class TestDefsFunctionsPostgis(DefsFunctionsMixin, utils_for_tests.MidvattenTestPostgisDbSv):
+class TestDefsFunctionsPostgis(
+    DefsFunctionsMixin, utils_for_tests.MidvattenTestPostgisDbSv
+):
     pass
 
 
 @pytest.mark.spatialite
-class TestDefsFunctionsSpatialite(DefsFunctionsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
+class TestDefsFunctionsSpatialite(
+    DefsFunctionsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
+):
     pass
 
 
@@ -89,10 +93,14 @@ class GeocolorsymbolsMixin:
 
 
 @pytest.mark.postgis
-class TestGeocolorsymbolsPostgis(GeocolorsymbolsMixin, utils_for_tests.MidvattenTestPostgisDbSv):
+class TestGeocolorsymbolsPostgis(
+    GeocolorsymbolsMixin, utils_for_tests.MidvattenTestPostgisDbSv
+):
     pass
 
 
 @pytest.mark.spatialite
-class TestGeocolorsymbolsSpatialite(GeocolorsymbolsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
+class TestGeocolorsymbolsSpatialite(
+    GeocolorsymbolsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
+):
     pass

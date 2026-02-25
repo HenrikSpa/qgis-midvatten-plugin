@@ -50,10 +50,14 @@ class StratSymbologyMixin:
 
 
 @pytest.mark.postgis
-class TestStratSymbologyPostgis(StratSymbologyMixin, utils_for_tests.MidvattenTestPostgisDbSv):
+class TestStratSymbologyPostgis(
+    StratSymbologyMixin, utils_for_tests.MidvattenTestPostgisDbSv
+):
     pass
 
 
 @pytest.mark.spatialite
-class TestStratSymbologySpatialite(StratSymbologyMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
+class TestStratSymbologySpatialite(
+    StratSymbologyMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
+):
     pass

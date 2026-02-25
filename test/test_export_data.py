@@ -672,7 +672,10 @@ class ExportMixin:
         mock_messagebar,
     ):
         mock_find_layer.return_value.crs.return_value.authid.return_value = "EPSG:3006"
-        mock_createdb_crs_question.return_value = [3010, True]  # spatialite uses ["3010", True]
+        mock_createdb_crs_question.return_value = [
+            3010,
+            True,
+        ]  # spatialite uses ["3010", True]
 
         mock_newdbpath.return_value = (EXPORT_DB_PATH, "")
         mock_verify.return_value = 0

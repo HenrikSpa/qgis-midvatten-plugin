@@ -646,7 +646,9 @@ def add_non_essential_tables(dbconnection=None):
         dbconnection.closedb()
 
 
-def select_files(only_one_file=True, extension="csv (*.csv)"):
+def select_files(
+    only_one_file: bool = True, extension: str = "csv (*.csv)"
+) -> List[str]:
     """Asks users to select file(s)"""
     try:
         dir = os.path.dirname(

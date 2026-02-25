@@ -148,6 +148,7 @@ def unicode_2_utf8(anything):  # takes an unicode and tries to return it as utf8
             text = anything.encode("utf-8")
     except Exception:
         from midvatten.tools.utils.message_utils import MessagebarAndLog
+
         MessagebarAndLog.info(log_msg=traceback.format_exc())
 
     if text is None:

@@ -5,7 +5,7 @@ Execute functions take a single sql: str and optional args (no batch).
 
 import traceback
 from contextlib import contextmanager
-from typing import Any, Optional
+from typing import Callable, Any, Optional
 
 from qgis.PyQt.QtCore import QCoreApplication
 
@@ -115,7 +115,7 @@ def check_connection_ok(write_error_msg: bool = True) -> bool:
     return connection_ok
 
 
-def if_connection_ok(func):
+def if_connection_ok(func: Callable) -> Callable:
     """Decorator: run func only if check_connection_ok() is True."""
 
     def func_wrapper(*args, **kwargs):

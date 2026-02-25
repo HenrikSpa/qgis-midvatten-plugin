@@ -236,10 +236,14 @@ class PiperPlotDbMixin:
 
 
 @pytest.mark.postgis
-class TestPiperPlotDbPostgis(PiperPlotDbMixin, utils_for_tests.MidvattenTestPostgisDbSv):
+class TestPiperPlotDbPostgis(
+    PiperPlotDbMixin, utils_for_tests.MidvattenTestPostgisDbSv
+):
     pass
 
 
 @pytest.mark.spatialite
-class TestPiperPlotDbSpatialite(PiperPlotDbMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
+class TestPiperPlotDbSpatialite(
+    PiperPlotDbMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
+):
     pass

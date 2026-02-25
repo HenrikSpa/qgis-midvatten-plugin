@@ -904,7 +904,9 @@ class SectionPlotMixin:
         old_toolbar = fig.canvas.toolbar
         for callback, qaction in secplot.figure.canvas.toolbar._actions.items():
             print(f"{'DetachFigureButton' in str(callback)=} {callback=}")
-            if "SectionPlot.detach_figure" in str(callback) or "DetachFigureButton" in str(callback):
+            if "SectionPlot.detach_figure" in str(
+                callback
+            ) or "DetachFigureButton" in str(callback):
                 # Detach the figure
                 # continue
                 callback()
@@ -945,10 +947,14 @@ class SectionPlotMixin:
 
 
 @pytest.mark.postgis
-class TestSectionPlotPostgis(SectionPlotMixin, utils_for_tests.MidvattenTestPostgisDbSv):
+class TestSectionPlotPostgis(
+    SectionPlotMixin, utils_for_tests.MidvattenTestPostgisDbSv
+):
     pass
 
 
 @pytest.mark.spatialite
-class TestSectionPlotSpatialite(SectionPlotMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
+class TestSectionPlotSpatialite(
+    SectionPlotMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
+):
     pass

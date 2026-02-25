@@ -39,6 +39,8 @@ from midvatten.tools.utils.common_utils import (
 )
 from midvatten.tools.utils.date_utils import datestring_to_date
 from midvatten.tools.utils.db_utils import DbConnectionManager, sql_load_fr_db
+import PyQt5.QtWidgets
+from datetime import datetime
 
 
 class SplitterWithHandel(qgis.PyQt.QtWidgets.QSplitter):
@@ -126,7 +128,7 @@ def get_line():
 
 
 class DateTimeFilter(qgis.PyQt.QtWidgets.QWidget):
-    def __init__(self, calendar=False, parent=None):
+    def __init__(self, calendar: bool = False, parent: None = None):
         super().__init__(parent)
         self.setLayout(qgis.PyQt.QtWidgets.QHBoxLayout())
         self.layout().setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
@@ -161,7 +163,7 @@ class DateTimeFilter(qgis.PyQt.QtWidgets.QWidget):
         ]:
             self.layout().addWidget(widget)
 
-    def alter_data(self, observation):
+    def alter_data(self, observation: Dict[str, datetime]) -> Dict[str, datetime]:
         observation = copy.deepcopy(observation)
         _from = self.from_datetimeedit.dateTime().toPyDateTime()
         _to = self.to_datetimeedit.dateTime().toPyDateTime()

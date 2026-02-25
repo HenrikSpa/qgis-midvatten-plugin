@@ -105,10 +105,14 @@ class PrepareQgis2ThreejsMixin:
 
 
 @pytest.mark.postgis
-class TestPrepareQgis2ThreejsPostgis(PrepareQgis2ThreejsMixin, utils_for_tests.MidvattenTestPostgisDbSv):
+class TestPrepareQgis2ThreejsPostgis(
+    PrepareQgis2ThreejsMixin, utils_for_tests.MidvattenTestPostgisDbSv
+):
     pass
 
 
 @pytest.mark.spatialite
-class TestPrepareQgis2ThreejsSpatialite(PrepareQgis2ThreejsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
+class TestPrepareQgis2ThreejsSpatialite(
+    PrepareQgis2ThreejsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
+):
     pass

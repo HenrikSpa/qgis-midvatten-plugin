@@ -477,9 +477,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         else:
             ccycler = mpl.rcParams["axes.prop_cycle"]
             self.line_cycler = (mpl.rcParams["axes.midv_line_cycle"] * ccycler)()
-            self.marker_cycler = (
-                mpl.rcParams["axes.midv_marker_cycle"] * ccycler
-            )()
+            self.marker_cycler = (mpl.rcParams["axes.midv_marker_cycle"] * ccycler)()
             self.line_and_marker_cycler = (
                 mpl.rcParams["axes.midv_marker_cycle"]
                 * mpl.rcParams["axes.midv_line_cycle"]

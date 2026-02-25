@@ -49,6 +49,7 @@ from midvatten.tools.utils.gui_utils import (
     RowEntry,
     set_combobox,
 )
+from typing import Dict, List, Optional, Tuple, Union
 
 try:
     import pandas as pd
@@ -535,8 +536,12 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
 
     @staticmethod
     def parse_diveroffice_file(
-        path, charset, skip_rows_without_water_level=False, begindate=None, enddate=None
-    ):
+        path: str,
+        charset: str,
+        skip_rows_without_water_level: bool = False,
+        begindate: None = None,
+        enddate: None = None,
+    ) -> Tuple[List[List[Optional[Union[str, float, int]]]], str, str, str]:
         if not pandas_on:
             raise common_utils.UsageError(
                 ru(
@@ -712,8 +717,16 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
 
     @staticmethod
     def parse_diveroffice_file_old(
-        path, charset, skip_rows_without_water_level=False, begindate=None, enddate=None
-    ):
+        path: str,
+        charset: str,
+        skip_rows_without_water_level: bool = False,
+        begindate: None = None,
+        enddate: None = None,
+    ) -> Union[
+        Tuple[List[List[str]], str, str, str],
+        str,
+        Tuple[List[List[str]], str, str, None],
+    ]:
         """Parses a diveroffice csv file into a string
 
         :param path: The file name
@@ -952,11 +965,11 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
 
     @staticmethod
     def filter_dates_from_filedata(
-        file_data,
-        obsid_last_imported_dates,
-        obsid_header_name="obsid",
-        date_time_header_name="date_time",
-    ):
+        file_data: List[List[str]],
+        obsid_last_imported_dates: Dict[str, List[Tuple[datetime]]],
+        obsid_header_name: str = "obsid",
+        date_time_header_name: str = "date_time",
+    ) -> List[List[str]]:
         """
         :param file_data: a list of lists like [['obsid', 'date_time', ...], [obsid1, date_time1, ...]]
         :param obsid_last_imported_dates: a dict like {'obsid1': last_date_in_db, ...}

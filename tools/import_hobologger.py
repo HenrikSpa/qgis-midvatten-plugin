@@ -21,6 +21,8 @@
  ***************************************************************************/
 """
 
+from __future__ import annotations
+
 import csv
 import datetime
 import os
@@ -33,6 +35,7 @@ from qgis.PyQt.QtCore import QCoreApplication
 from midvatten.tools import import_diveroffice
 from midvatten.tools.utils import common_utils, date_utils, gui_utils
 from midvatten.tools.utils.common_utils import returnunicode as ru
+from typing import List, Optional, Tuple
 
 
 class HobologgerImport(import_diveroffice.DiverofficeImport):
@@ -55,13 +58,13 @@ class HobologgerImport(import_diveroffice.DiverofficeImport):
 
     @staticmethod
     def parse_hobologger_file(
-        path,
-        charset,
-        skip_rows_without_water_level=False,
-        begindate=None,
-        enddate=None,
-        tz_converter=None,
-    ):
+        path: str,
+        charset: str,
+        skip_rows_without_water_level: bool = False,
+        begindate: None = None,
+        enddate: None = None,
+        tz_converter: Optional[TzConverter] = None,
+    ) -> Tuple[List[List[str]], str, str]:
         """Parses a HOBO temperature logger csv file into a string
 
         :param path: The file name
@@ -221,7 +224,9 @@ class HobologgerImport(import_diveroffice.DiverofficeImport):
         return filedata, filename, location
 
 
-def fix_date(date_time, filename, tz_converter=None):
+def fix_date(
+    date_time: str, filename: str, tz_converter: Optional[TzConverter] = None
+) -> datetime.datetime:
     try:
         dt = datetime.datetime.strptime(date_time[:-2].rstrip(), "%m/%d/%y %I:%M:%S")
     except ValueError:
@@ -247,7 +252,7 @@ def fix_date(date_time, filename, tz_converter=None):
     return dt
 
 
-def get_tz_string(date_time_tz):
+def get_tz_string(date_time_tz: str) -> str:
     """
 
     :param date_time_tz:
@@ -289,7 +294,7 @@ class TzConverter(gui_utils.RowEntry):
 
         self.layout.addStretch()
 
-    def convert_datetime(self, date_time):
+    def convert_datetime(self, date_time: datetime.datetime) -> datetime.datetime:
         if self.source_tz is None:
             return date_time
 

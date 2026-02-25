@@ -988,10 +988,14 @@ class CalibrloggerSpatialiteMixin(CalibrloggerMixin):
 
 
 @pytest.mark.postgis
-class TestCalibrloggerPostgis(CalibrloggerPostgisMixin, utils_for_tests.MidvattenTestPostgisDbSv):
+class TestCalibrloggerPostgis(
+    CalibrloggerPostgisMixin, utils_for_tests.MidvattenTestPostgisDbSv
+):
     pass
 
 
 @pytest.mark.spatialite
-class TestCalibrloggerSpatialite(CalibrloggerSpatialiteMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
+class TestCalibrloggerSpatialite(
+    CalibrloggerSpatialiteMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
+):
     pass

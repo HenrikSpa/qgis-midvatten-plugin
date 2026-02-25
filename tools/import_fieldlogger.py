@@ -47,6 +47,9 @@ from midvatten.tools.utils.gui_utils import (
     DateTimeFilter,
     set_combobox,
 )
+from PyQt5.QtWidgets import QComboBox
+from typing import Dict, List, Union
+from unittest.mock import MagicMock
 
 
 import_fieldlogger_ui_dialog = uic.loadUiType(
@@ -257,7 +260,9 @@ class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
         return observations
 
     @staticmethod
-    def parse_rows(f, delimiter=";"):
+    def parse_rows(
+        f: List[str], delimiter: str = ";"
+    ) -> List[Dict[str, Union[str, datetime]]]:
         """
         Parses rows from fieldlogger format into a dict
         :param f: File_data, often an open file or a list of rows without header
@@ -400,7 +405,9 @@ class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
         )
 
     @staticmethod
-    def prepare_w_levels_data(observations):
+    def prepare_w_levels_data(
+        observations: List[Dict[str, Union[str, datetime]]],
+    ) -> List[List[str]]:
         """
         Produces a filestring with columns "obsid, date_time, meas, comment" and imports it
         :param obsdict: a dict like {obsid: {date_time: {parameter: value}}}
@@ -438,7 +445,9 @@ class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
         return file_data_list
 
     @staticmethod
-    def prepare_w_flow_data(observations):
+    def prepare_w_flow_data(
+        observations: List[Dict[str, Union[str, datetime]]],
+    ) -> List[List[str]]:
         """
         Produces a filestring with columns "obsid, instrumentid, flowtype, date_time, reading, unit, comment" and imports it
         :param obsdict:  a dict like {obsid: {date_time: {parameter: value}}}
@@ -530,7 +539,9 @@ class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
         return file_data_list
 
     @staticmethod
-    def prepare_w_qual_field_data(observations):
+    def prepare_w_qual_field_data(
+        observations: List[Dict[str, Union[str, datetime]]],
+    ) -> List[List[str]]:
         """
         Produces a filestring with columns "obsid, staff, date_time, instrument, parameter, reading_num, reading_txt, unit, depth, comment" and imports it
         :param obsdict:  a dict like {obsid: {date_time: {parameter: value}}}
@@ -698,7 +709,7 @@ class ObsidFilter:
         self.obsid_rename_dict = {}
         pass
 
-    def alter_data(self, observations):
+    def alter_data(self, observations: List[Dict[str, str]]) -> List[Dict[str, str]]:
         observations = copy.deepcopy(observations)
         existing_obsids = db_utils.get_all_obsids()
 
@@ -768,7 +779,7 @@ class ObsidFilter:
 
 
 class StaffQuestion(QtWidgets.QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent: None = None):
         super().__init__(parent)
         self.setLayout(qgis.PyQt.QtWidgets.QHBoxLayout())
         self.layout().setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
@@ -794,7 +805,7 @@ class StaffQuestion(QtWidgets.QWidget):
     def staff(self, value):
         self.existing_staff_combobox.setEditText(value)
 
-    def alter_data(self, observation):
+    def alter_data(self, observation: Dict[str, str]) -> Dict[str, str]:
         observation = copy.deepcopy(observation)
         if self.staff is None or not self.staff:
             raise common_utils.UsageError(
@@ -1316,7 +1327,9 @@ class ImportMethodChooser(QtWidgets.QWidget):
 class CommentsImportFields(QtWidgets.QWidget):
     """ """
 
-    def __init__(self, import_method_chooser, staff=None, parent=None):
+    def __init__(
+        self, import_method_chooser: MagicMock, staff: None = None, parent: None = None
+    ):
         """ """
         super().__init__(parent)
         self.setLayout(qgis.PyQt.QtWidgets.QHBoxLayout())
@@ -1324,7 +1337,9 @@ class CommentsImportFields(QtWidgets.QWidget):
         self.layout().setContentsMargins(0, 0, 0, 0)
         self.import_method_chooser = import_method_chooser
 
-    def alter_data(self, observations):
+    def alter_data(
+        self, observations: List[Dict[str, Union[str, datetime]]]
+    ) -> List[Dict[str, Union[str, datetime, bool]]]:
         observations = copy.deepcopy(observations)
         parameter_name = self.import_method_chooser.parameter_name
         comment_obsdict = {}
@@ -1872,7 +1887,7 @@ class WQualFieldDepthImportFields(QtWidgets.QWidget):
         pass
 
 
-def default_combobox(editable=True):
+def default_combobox(editable: bool = True) -> QComboBox:
     combo_box = QtWidgets.QComboBox()
     combo_box.setEditable(editable)
     combo_box.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)

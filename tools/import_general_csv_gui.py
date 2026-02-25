@@ -40,6 +40,7 @@ from midvatten.tools.utils.gui_utils import (
     RowEntryGrid,
     DistinctValuesBrowser,
 )
+from typing import Dict, List, Tuple
 
 import_ui_dialog = qgis.PyQt.uic.loadUiType(
     os.path.join(os.path.dirname(__file__), "..", "ui", "import_fieldlogger.ui")
@@ -415,7 +416,9 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
             self.close()
 
     @staticmethod
-    def translate_and_reorder_file_data(file_data, translation_dict):
+    def translate_and_reorder_file_data(
+        file_data: List[List[str]], translation_dict: Dict[str, List[str]]
+    ) -> List[List[str]]:
         new_file_header = [
             db_column
             for file_column, db_columns in sorted(translation_dict.items())
@@ -460,7 +463,12 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
             layout.addWidget(line)
 
     @staticmethod
-    def convert_comma_to_points_for_double_columns(file_data, table_column):
+    def convert_comma_to_points_for_double_columns(
+        file_data: List[List[str]],
+        table_column: Tuple[
+            Tuple[int, str, str, int, None, int], Tuple[int, str, str, int, None, int]
+        ],
+    ) -> List[List[str]]:
         """
         Converts comma to point for columns with column types real or double
         :param file_data: a list of lists like [['obsid', 'date_time', 'reading'], ['obs1', '2017-04-12 11:03', '123,456']]

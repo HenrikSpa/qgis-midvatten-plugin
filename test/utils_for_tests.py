@@ -107,10 +107,8 @@ class ContextualStringIO(io.StringIO):
 
 
 class MidvattenTestBase:
-    def __init__(self):
-        self.stop_show()
-
     def setup_method(self):
+        self.stop_show()
         QgsProject.instance().clear()
         self.dummy_iface = DummyInterface2()
         self.iface = self.dummy_iface.mock
@@ -137,11 +135,8 @@ class MidvattenTestBase:
 
 
 class MidvattenTestSpatialiteNotCreated(MidvattenTestBase):
-    def __init__(self):
-        super().__init__()
-        self.TEMP_DBPATH = "/tmp/tmp_midvatten_temp_db.sqlite"
-
     def setup_method(self):
+        self.TEMP_DBPATH = "/tmp/tmp_midvatten_temp_db.sqlite"
         if self.TEMP_DBPATH and os.path.exists(self.TEMP_DBPATH):
             print(f"Error, the db did already exist: {self.TEMP_DBPATH}")
         self.remove_db()
@@ -255,9 +250,6 @@ class MidvattenTestPostgisNotCreated(MidvattenTestBase):
         }
     }
     TEMP_DB_SETTINGS = {"postgis": {"connection": "nosetests/127.0.0.1:5432/nosetests"}}
-
-    def __init__(self):
-        super().__init__()
 
     def setup_method(self):
         super().setup_method()

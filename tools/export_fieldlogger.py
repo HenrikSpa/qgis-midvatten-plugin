@@ -752,7 +752,10 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
 
     def update_settings(self, new_string_text, settingskey):
         try:
-            stored_settings = ast.literal_eval(new_string_text)
+            try:
+                stored_settings = json.loads(new_string_text)
+            except (json.JSONDecodeError, ValueError):
+                stored_settings = ast.literal_eval(new_string_text)
         except SyntaxError as e:
             stored_settings = []
             common_utils.MessagebarAndLog.warning(
@@ -1195,7 +1198,7 @@ class ParameterBrowser(QtWidgets.QDialog, parameter_browser_dialog):
                 QCoreApplication.translate(
                     "ParameterBrowser",
                     "(optional)\nThe options between which the user can choose when type=choice or type=multichoice.\n"
-                    "Specify as a comma separated list, ex: 'OptionB', 'OptionB', 'OptionC'",
+                    'Specify as a comma-separated JSON list, ex: "OptionA", "OptionB", "OptionC"',
                 )
             )
         )
@@ -1323,7 +1326,7 @@ class ParameterBrowser(QtWidgets.QDialog, parameter_browser_dialog):
             if hint:
                 input_field["hint"] = hint
             if options and input_type in ("choice", "multichoice"):
-                input_field["options"] = ast.literal_eval(f"({options})")
+                input_field["options"] = json.loads(f"[{options}]")
             if default and type == "choice":
                 input_field["default_value"] = default
             self._input_field_list.paste_data(

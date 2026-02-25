@@ -35,8 +35,8 @@ from midvatten.tools.import_interlab4 import Interlab4Import
 
 
 class Interlab4ImporterDBMixin:
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
         self.importinstance = Interlab4Import(
             self.iface.mainWindow(), self.midvatten.ms
         )

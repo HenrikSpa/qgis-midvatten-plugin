@@ -6,6 +6,7 @@ import ast
 import datetime
 import os
 import re
+import traceback
 import zipfile
 from typing import Any, Optional
 
@@ -466,7 +467,7 @@ def delete_srids(
     try:
         execute_able_object.execute(delete_srid_sql_aux, args=(keep_epsg_code,))
     except Exception:
-        pass
+        MessagebarAndLog.info(log_msg=traceback.format_exc())
     delete_srid_sql = f"DELETE FROM spatial_ref_sys WHERE srid NOT IN ({ph}, '4326')"
     try:
         execute_able_object.execute(delete_srid_sql, args=(keep_epsg_code,))
@@ -602,7 +603,7 @@ def list_of_lists_from_table(tablename: str) -> list:
         try:
             dbconnection.closedb()
         except Exception:
-            pass
+            MessagebarAndLog.info(log_msg=traceback.format_exc())
     table_contents = ru(table_contents, keep_containers=True)
     result.extend(table_contents)
     return result

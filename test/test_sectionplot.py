@@ -35,8 +35,8 @@ from midvatten.tools.utils.common_utils import anything_to_string_representation
 class SectionPlotMixin:
     """The test doesn't go through the whole section plot unfortunately"""
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
         self.midvatten.ms.settingsdict["secplot_loaded_template"] = ""
         self.midvatten.ms.settingsdict["secplot_templates"] = ""
         self.midvatten.ms.settingsdict["secplotlocation"] = 0

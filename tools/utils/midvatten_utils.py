@@ -20,11 +20,13 @@
 
 import ast
 import copy
+import json
 import io
 import locale
 import os
 import re
 import shutil
+import traceback
 import string
 from typing import List, Optional, Tuple, TYPE_CHECKING
 
@@ -448,7 +450,7 @@ def warn_about_old_database():
         try:
             dbconnection.closedb()
         except Exception:
-            pass
+            MessagebarAndLog.info(log_msg=traceback.format_exc())
         # Probably empty project
         return
 
@@ -1049,7 +1051,10 @@ class PlotTemplates:
         if not the_string:
             return ""
         try:
-            as_dict = ast.literal_eval(the_string)
+            try:
+                as_dict = json.loads(the_string)
+            except (json.JSONDecodeError, ValueError):
+                as_dict = ast.literal_eval(the_string)
         except Exception as e:
             MessagebarAndLog.warning(
                 bar_msg=returnunicode(

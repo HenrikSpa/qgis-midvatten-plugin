@@ -24,7 +24,7 @@ from qgis.PyQt.QtCore import QCoreApplication, QVariant
 from qgis.PyQt.QtWidgets import QApplication
 from qgis.core import QgsVectorLayer
 
-from midvatten.tools.utils import common_utils, gui_utils
+from midvatten.tools.utils import common_utils, db_utils, gui_utils
 from midvatten.tools.utils.common_utils import returnunicode as ru
 
 selected_features_dialog = qgis.PyQt.uic.loadUiType(
@@ -133,22 +133,11 @@ class ValuesFromSelectedFeaturesGui(
                 no_nulls = sorted(set(no_nulls))
             nr = len(no_nulls)
 
-            filter_string = '"{}" IN ({})'.format(
-                self.selected_column,
-                ", ".join(
-                    [
-                        (
-                            "'{}'".format(value.replace("'", "''"))
-                            if isinstance(value, str)
-                            else str(value)
-                        )
-                        for value in no_nulls
-                    ]
-                ),
-            )
+            col_ident = db_utils.ident(self.selected_column)
+            filter_string = f"{col_ident} IN ({db_utils.sql_literal_list(no_nulls)})"
 
             if nulls:
-                filter_string += f' or "{self.selected_column}" IS NULL'
+                filter_string += f" or {col_ident} IS NULL"
 
             # filter_layer_checkbox
             bar_prefix = ""

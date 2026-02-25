@@ -36,8 +36,8 @@ from midvatten.tools.utils.midvatten_utils import PlotTemplates
 
 @pytest.mark.spatialite
 class TestSecplotTemplates(utils_for_tests.MidvattenTestSpatialiteNotCreated):
-    def setUp(self):
-        super(self.__class__, self).setUp()
+    def setup_method(self):
+        super().setup_method()
         self.template_list = qgis.PyQt.QtWidgets.QListWidget()
 
         self.edit_button = qgis.PyQt.QtWidgets.QPushButton()

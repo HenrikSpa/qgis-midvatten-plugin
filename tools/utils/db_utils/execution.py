@@ -3,6 +3,7 @@ Unified execution API and connection context manager.
 Execute functions take a single sql: str and optional args (no batch).
 """
 
+import traceback
 from contextlib import contextmanager
 from typing import Any, Optional
 
@@ -71,7 +72,7 @@ def sql_alter_db(
             try:
                 dbconnection.execute("PRAGMA foreign_keys = ON")
             except Exception:
-                pass
+                MessagebarAndLog.info(log_msg=traceback.format_exc())
         try:
             dbconnection.execute_and_commit(sql, args=args)
         except Exception as e:

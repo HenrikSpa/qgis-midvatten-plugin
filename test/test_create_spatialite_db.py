@@ -331,8 +331,8 @@ class TestCreateDb(utils_for_tests.MidvattenTestSpatialiteNotCreated):
 
 @pytest.mark.spatialite
 class TestObsPointsTriggers(utils_for_tests.MidvattenTestSpatialiteDbSv):
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
         db_utils.sql_alter_db(
             """DROP TRIGGER IF EXISTS after_insert_obs_points_geom_fr_coords"""
         )

@@ -23,6 +23,7 @@
 import copy
 import csv
 import os
+import traceback
 from operator import itemgetter
 
 import qgis.PyQt
@@ -671,7 +672,7 @@ class ImportTableChooser(VRowEntry):
             self.layout.removeWidget(self.grid.widget)
             self.grid.widget.close()
         except Exception:
-            pass
+            common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
 
         self.columns = []
 

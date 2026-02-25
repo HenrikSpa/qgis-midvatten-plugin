@@ -1099,7 +1099,7 @@ class ExportMixin:
         print(str(test_string))
         assert test_string == reference_string
 
-    def tearDown(self):
+    def teardown_method(self):
         # Delete database
         try:
             os.remove(EXPORT_DB_PATH)
@@ -1112,7 +1112,7 @@ class ExportMixin:
             except OSError:
                 pass
 
-        super().tearDown()
+        super().teardown_method()
 
 
 @pytest.mark.postgis

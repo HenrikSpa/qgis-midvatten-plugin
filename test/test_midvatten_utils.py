@@ -508,7 +508,7 @@ class TestGeneralExceptionHandler:
 
 @pytest.mark.active
 class TestContinuousColorCycle:
-    def setUp(self):
+    def setup_method(self):
         perform_all_replacements()
 
     def test_continous_color_cycle_combo(self):

@@ -34,7 +34,7 @@ from midvatten.tools.import_hobologger import HobologgerImport, TzConverter
 
 @pytest.mark.active
 class TestParseHobologgerFile:
-    def setUp(self):
+    def setup_method(self):
         pass
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")

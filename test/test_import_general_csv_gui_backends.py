@@ -1648,10 +1648,10 @@ class GeneralCsvGuiFromLayerMixin:
         print(str(reference_string))
         assert test_string == reference_string
 
-    def tearDown(self):
+    def teardown_method(self):
         QgsProject.instance().addMapLayer(self.vlayer)
         QgsProject.instance().removeMapLayer(self.vlayer.id())
-        super().tearDown()
+        super().teardown_method()
 
 
 @pytest.mark.postgis

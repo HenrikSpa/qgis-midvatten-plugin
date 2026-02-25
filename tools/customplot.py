@@ -22,6 +22,7 @@ The PlotSQLite application version 0.2.6 was merged into Midvatten plugin at 201
 """
 
 import os
+import traceback
 from functools import partial  # only to get combobox signals to work
 
 import matplotlib as mpl
@@ -270,7 +271,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             self.title = self.axes.get_title()
             self.xaxis_label = self.axes.get_xlabel()
             self.yaxis_label = self.axes.get_ylabel()
-        except Exception:
+        except AttributeError:
             pass
 
         if hasattr(self, "mpltoolbar"):
@@ -1285,7 +1286,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             try:
                 dbconnection.closedb()
             except Exception:
-                pass
+                common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
 
         for post in list_data:
             item = QtWidgets.QListWidgetItem(str(post[0]))
@@ -1636,7 +1637,7 @@ class PandasCalculations:
                 col1.setMaximumHeight(27)
                 col2.setMaximumHeight(27)
             except Exception:
-                pass
+                common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
 
             gridlayout.addWidget(col1, current_row, 0)
             gridlayout.addWidget(col2, current_row, 1)

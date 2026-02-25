@@ -22,6 +22,7 @@ __modified_date__ = "Nov 2013"
 import datetime
 import itertools
 import math
+import traceback
 from operator import sub
 
 import matplotlib as mpl
@@ -61,23 +62,17 @@ class PiperPlot:
             self.create_markers()
         self.get_piper_data()
         # here is a simple printout (to python console) to let the user see the piper plt.plot data
-        try:
-            print(
-                """obsid, date_time, type, Cl_meqPl, HCO3_meqPl, SO4_meqPl, Na+K_meqPl, Ca_meqPl, Mg_meqPl"""
-            )
-        except Exception:
-            pass
+        print(
+            """obsid, date_time, type, Cl_meqPl, HCO3_meqPl, SO4_meqPl, Na+K_meqPl, Ca_meqPl, Mg_meqPl"""
+        )
         for row in self.obsrecarray:
             # print ','.join([unicode(col).encode('utf-8') for col in row])
             try:
                 # fix_print_with_import
                 print(",".join([ru(col) for col in row]))
             except Exception:
-                try:
-                    # fix_print_with_import
-                    print("failed printing piper data...")
-                except Exception:
-                    pass
+                # fix_print_with_import
+                print("failed printing piper data...")
 
         self.plot_function()
 
@@ -284,7 +279,7 @@ class PiperPlot:
             try:
                 dbconnection.closedb()
             except Exception:
-                pass
+                common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
         self.typedict = dict(types)  # make it a dictionary
         dbconnection = db_utils.DbConnectionManager()
         try:
@@ -297,7 +292,7 @@ class PiperPlot:
             try:
                 dbconnection.closedb()
             except Exception:
-                pass
+                common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
 
     def get_piper_data(self):
         # These observations are supposed to be in mg/l and must be stored in a Midvatten database, table w_qual_lab
@@ -1039,13 +1034,13 @@ class PiperPlot:
                 self.l1.remove()
                 self.l1 = None
             except Exception:
-                pass
+                common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
         if isinstance(self.l2, mpl.lines.Line2D):
             try:
                 self.l2.remove()
                 self.l2 = None
             except Exception:
-                pass
+                common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
 
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()

@@ -38,6 +38,7 @@
  ***************************************************************************/
 """
 
+import traceback
 import unicodedata
 from functools import partial  # only to get combobox signals to work
 
@@ -66,11 +67,8 @@ class Stratigraphy:
         except (
             DataError
         ) as e:  # if an object 'e' belonging to DataError is created, then do following
-            try:
-                # fix_print_with_import
-                print("Load failed due: " + e.problem)
-            except Exception:
-                pass
+            # fix_print_with_import
+            print("Load failed due: " + e.problem)
             self.store = None
 
     def showSurvey(self):
@@ -410,10 +408,7 @@ class SurveyStore:
             # check whether there's at least one strata information
             if len(survey.strata) == 0:
                 # raise DataSanityError(str(obsid), "No strata information")
-                try:
-                    print(str(obsid) + " has no strata information")
-                except Exception:
-                    pass
+                print(str(obsid) + " has no strata information")
                 continue
                 # del surveys[obsid]#simply remove the item without strata info
             else:
@@ -593,7 +588,7 @@ class SurveyWidget(QtWidgets.QFrame):
                 if d_bed < depth_bot:
                     depth_bot = d_bed
             except Exception:
-                pass
+                common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
 
         # draw surveys
         for survey in self.order:
@@ -609,7 +604,7 @@ class SurveyWidget(QtWidgets.QFrame):
             try:
                 self.drawSurvey(painter, sond, r, column_width, (depth_bot, depth_top))
             except Exception:
-                pass
+                common_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
     def drawSurvey(self, p, sond, s_rect, column_width, interval):
         """draws one survey to rectangle in widget specified by s_rect"""

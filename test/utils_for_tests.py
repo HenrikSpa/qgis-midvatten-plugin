@@ -110,7 +110,7 @@ class MidvattenTestBase:
     def __init__(self):
         self.stop_show()
 
-    def setUp(self):
+    def setup_method(self):
         QgsProject.instance().clear()
         self.dummy_iface = DummyInterface2()
         self.iface = self.dummy_iface.mock
@@ -131,7 +131,7 @@ class MidvattenTestBase:
         QWidget.show = show
         QDialog.exec_ = show
 
-    def tearDown(self):
+    def teardown_method(self):
         plt.close("all")
         QgsProject.instance().clear()
 
@@ -141,16 +141,16 @@ class MidvattenTestSpatialiteNotCreated(MidvattenTestBase):
         super().__init__()
         self.TEMP_DBPATH = "/tmp/tmp_midvatten_temp_db.sqlite"
 
-    def setUp(self):
+    def setup_method(self):
         if self.TEMP_DBPATH and os.path.exists(self.TEMP_DBPATH):
             print(f"Error, the db did already exist: {self.TEMP_DBPATH}")
         self.remove_db()
-        super().setUp()
+        super().setup_method()
 
-    def tearDown(self):
+    def teardown_method(self):
         # Delete database
         self.remove_db()
-        super().tearDown()
+        super().teardown_method()
 
     def remove_db(self):
         for ending in ["", "-journal", "-wal", "-shm"]:
@@ -161,14 +161,8 @@ class MidvattenTestSpatialiteNotCreated(MidvattenTestBase):
 
 
 class MidvattenTestSpatialiteDbSv(MidvattenTestSpatialiteNotCreated):
-    @mock.patch("midvatten.tools.create_db.common_utils.NotFoundQuestion")
-    @mock.patch("midvatten.tools.utils.common_utils.Askuser")
-    @mock.patch("midvatten.tools.create_db.qgis.PyQt.QtWidgets.QInputDialog.getInt")
-    @mock.patch("qgis.PyQt.QtWidgets.QFileDialog.getSaveFileName")
-    def setUp(
-        self, mock_savefilename, mock_crs_question, mock_answer_yes, mock_not_found
-    ):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
 
         def side_effect(*args, **kwargs):
             mock_result = mock.MagicMock()
@@ -180,23 +174,20 @@ class MidvattenTestSpatialiteDbSv(MidvattenTestSpatialiteNotCreated):
                 mock_result.value = ""
             return mock_result
 
-        mock_not_found.side_effect = side_effect
-
-        mock_answer_yes.return_value.result = 1
-        mock_crs_question.return_value.__getitem__.return_value = 3006
-        mock_savefilename.return_value = (self.TEMP_DBPATH, "Spatialite (*.sqlite)")
-        self.midvatten.new_db()
+        with mock.patch("qgis.PyQt.QtWidgets.QFileDialog.getSaveFileName") as mock_savefilename, \
+             mock.patch("midvatten.tools.create_db.qgis.PyQt.QtWidgets.QInputDialog.getInt") as mock_crs_question, \
+             mock.patch("midvatten.tools.utils.common_utils.Askuser") as mock_answer_yes, \
+             mock.patch("midvatten.tools.create_db.common_utils.NotFoundQuestion") as mock_not_found:
+            mock_not_found.side_effect = side_effect
+            mock_answer_yes.return_value.result = 1
+            mock_crs_question.return_value.__getitem__.return_value = 3006
+            mock_savefilename.return_value = (self.TEMP_DBPATH, "Spatialite (*.sqlite)")
+            self.midvatten.new_db()
 
 
 class MidvattenTestSpatialiteDbEn(MidvattenTestSpatialiteNotCreated):
-    @mock.patch("midvatten.tools.create_db.common_utils.NotFoundQuestion")
-    @mock.patch("midvatten.tools.utils.common_utils.Askuser")
-    @mock.patch("midvatten.tools.create_db.qgis.PyQt.QtWidgets.QInputDialog.getInt")
-    @mock.patch("qgis.PyQt.QtWidgets.QFileDialog.getSaveFileName")
-    def setUp(
-        self, mock_savefilename, mock_crs_question, mock_answer_yes, mock_not_found
-    ):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
 
         def side_effect(*args, **kwargs):
             mock_result = mock.MagicMock()
@@ -208,22 +199,25 @@ class MidvattenTestSpatialiteDbEn(MidvattenTestSpatialiteNotCreated):
                 mock_result.value = ""
             return mock_result
 
-        mock_not_found.side_effect = side_effect
-
-        mock_answer_yes.return_value.result = 1
-        mock_crs_question.return_value.__getitem__.return_value = 3006
-        mock_savefilename.return_value = (self.TEMP_DBPATH, "Spatialite (*.sqlite)")
-        self.midvatten.new_db()
+        with mock.patch("qgis.PyQt.QtWidgets.QFileDialog.getSaveFileName") as mock_savefilename, \
+             mock.patch("midvatten.tools.create_db.qgis.PyQt.QtWidgets.QInputDialog.getInt") as mock_crs_question, \
+             mock.patch("midvatten.tools.utils.common_utils.Askuser") as mock_answer_yes, \
+             mock.patch("midvatten.tools.create_db.common_utils.NotFoundQuestion") as mock_not_found:
+            mock_not_found.side_effect = side_effect
+            mock_answer_yes.return_value.result = 1
+            mock_crs_question.return_value.__getitem__.return_value = 3006
+            mock_savefilename.return_value = (self.TEMP_DBPATH, "Spatialite (*.sqlite)")
+            self.midvatten.new_db()
 
 
 class MidvattenTestSpatialiteDbSvImportInstance(MidvattenTestSpatialiteDbSv):
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
         self.importinstance = MidvDataImporter()
 
-    def tearDown(self):
+    def teardown_method(self):
         self.importinstance = None
-        super().tearDown()
+        super().teardown_method()
 
 
 class MidvattenTestPostgisNotCreated(MidvattenTestBase):
@@ -249,8 +243,8 @@ class MidvattenTestPostgisNotCreated(MidvattenTestBase):
     def __init__(self):
         super().__init__()
 
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
         QgsProject.instance().writeEntry(
             "Midvatten",
             "database",
@@ -297,27 +291,24 @@ class MidvattenTestPostgisNotCreated(MidvattenTestBase):
             ):
                 raise unittest.SkipTest("PostGIS extension not available: %s" % e)
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    def tearDown(self, mock_messagebar):
+    def teardown_method(self):
         # Clear the database
-        try:
-            db_utils.sql_alter_db("DROP SCHEMA public CASCADE;")
-            db_utils.sql_alter_db("CREATE SCHEMA public;")
-        except Exception as e:
-            print("Failure resetting db: " + str(e))
-            print(
-                "MidvattenTestPostgisNotCreated tearDownproblem: "
-                + str(mock_messagebar.mock_calls)
-            )
-        super().tearDown()
+        with mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog") as mock_messagebar:
+            try:
+                db_utils.sql_alter_db("DROP SCHEMA public CASCADE;")
+                db_utils.sql_alter_db("CREATE SCHEMA public;")
+            except Exception as e:
+                print("Failure resetting db: " + str(e))
+                print(
+                    "MidvattenTestPostgisNotCreated teardown_method problem: "
+                    + str(mock_messagebar.mock_calls)
+                )
+        super().teardown_method()
 
 
 class MidvattenTestPostgisDbSv(MidvattenTestPostgisNotCreated):
-    @mock.patch("midvatten.tools.create_db.common_utils.NotFoundQuestion")
-    @mock.patch("midvatten.tools.utils.common_utils.Askuser")
-    @mock.patch("midvatten.tools.create_db.qgis.PyQt.QtWidgets.QInputDialog.getInt")
-    def setUp(self, mock_crs_question, mock_answer_yes, mock_not_found):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
 
         def side_effect(*args, **kwargs):
             mock_result = mock.MagicMock()
@@ -329,19 +320,18 @@ class MidvattenTestPostgisDbSv(MidvattenTestPostgisNotCreated):
                 mock_result.value = ""
             return mock_result
 
-        mock_not_found.side_effect = side_effect
-
-        mock_answer_yes.return_value.result = 1
-        mock_crs_question.return_value.__getitem__.return_value = 3006
-        self.midvatten.new_postgis_db()
+        with mock.patch("midvatten.tools.create_db.qgis.PyQt.QtWidgets.QInputDialog.getInt") as mock_crs_question, \
+             mock.patch("midvatten.tools.utils.common_utils.Askuser") as mock_answer_yes, \
+             mock.patch("midvatten.tools.create_db.common_utils.NotFoundQuestion") as mock_not_found:
+            mock_not_found.side_effect = side_effect
+            mock_answer_yes.return_value.result = 1
+            mock_crs_question.return_value.__getitem__.return_value = 3006
+            self.midvatten.new_postgis_db()
 
 
 class MidvattenTestPostgisDbEn(MidvattenTestPostgisNotCreated):
-    @mock.patch("midvatten.tools.create_db.common_utils.NotFoundQuestion")
-    @mock.patch("midvatten.tools.utils.common_utils.Askuser")
-    @mock.patch("midvatten.tools.create_db.qgis.PyQt.QtWidgets.QInputDialog.getInt")
-    def setUp(self, mock_crs_question, mock_answer_yes, mock_not_found):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
 
         def side_effect(*args, **kwargs):
             mock_result = mock.MagicMock()
@@ -353,21 +343,23 @@ class MidvattenTestPostgisDbEn(MidvattenTestPostgisNotCreated):
                 mock_result.value = ""
             return mock_result
 
-        mock_not_found.side_effect = side_effect
-
-        mock_answer_yes.return_value.result = 1
-        mock_crs_question.return_value.__getitem__.return_value = 3006
-        self.midvatten.new_postgis_db()
+        with mock.patch("midvatten.tools.create_db.qgis.PyQt.QtWidgets.QInputDialog.getInt") as mock_crs_question, \
+             mock.patch("midvatten.tools.utils.common_utils.Askuser") as mock_answer_yes, \
+             mock.patch("midvatten.tools.create_db.common_utils.NotFoundQuestion") as mock_not_found:
+            mock_not_found.side_effect = side_effect
+            mock_answer_yes.return_value.result = 1
+            mock_crs_question.return_value.__getitem__.return_value = 3006
+            self.midvatten.new_postgis_db()
 
 
 class MidvattenTestPostgisDbSvImportInstance(MidvattenTestPostgisDbSv):
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
         self.importinstance = MidvDataImporter()
 
-    def tearDown(self):
+    def teardown_method(self):
         self.importinstance = None
-        super().tearDown()
+        super().teardown_method()
 
 
 def foreign_key_test_from_exception(e, dbtype):

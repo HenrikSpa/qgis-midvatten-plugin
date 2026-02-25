@@ -21,6 +21,7 @@ import datetime
 import locale
 import os
 import re
+import traceback
 from typing import Dict, List, Optional, Tuple
 
 import qgis.PyQt
@@ -202,10 +203,7 @@ class NewDb:
             try:
                 dbconnection.execute(sql)
             except Exception:
-                try:
-                    print(str(sql))
-                except Exception:
-                    pass
+                print(str(sql))
                 raise
 
         if delete_srids:
@@ -355,15 +353,12 @@ class NewDb:
             try:
                 dbconnection.execute(sql)
             except Exception:
-                try:
-                    print(str(sql))
-                    print("numlines: " + str(len(sql_lines)))
-                    print(f"Error on line nr {str(linenr)}")
-                    print("before " + sql_lines[linenr - 1])
-                    if linenr + 1 < len(sql_lines):
-                        print("after " + sql_lines[linenr + 1])
-                except Exception:
-                    pass
+                print(str(sql))
+                print("numlines: " + str(len(sql_lines)))
+                print(f"Error on line nr {str(linenr)}")
+                print("before " + sql_lines[linenr - 1])
+                if linenr + 1 < len(sql_lines):
+                    print("after " + sql_lines[linenr + 1])
                 raise
             else:
                 _sql = sql.lstrip("\r").lstrip("\n").lstrip()
@@ -625,10 +620,7 @@ class NewDb:
                 try:
                     dbconnection.execute(sql, all_args=[row_values])
                 except Exception:
-                    try:
-                        print(sql)
-                    except Exception:
-                        pass
+                    print(sql)
                     raise
         ph = dbconnection.placeholder()
         for tz, tname in [
@@ -657,7 +649,7 @@ class AddLayerStyles:
                 "PRAGMA foreign_keys = ON"
             )  # Foreign key constraints are disabled by default (for backwards compatibility), so must be enabled separately for each database dbconnection separately.
         except Exception:
-            pass
+            common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
 
         # add layer styles
         self.add_layer_styles_2_db(dbconnection)
@@ -685,7 +677,7 @@ class AddLayerStyles:
         try:
             dbconnection.execute("PRAGMA foreign_keys = OFF")
         except Exception:
-            pass
+            common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
         dbconnection.commit_and_closedb()
 
     def add_layer_styles_2_db(self, dbconnection):

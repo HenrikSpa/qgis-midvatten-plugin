@@ -1512,11 +1512,11 @@ class WlevelsImportOldWlevelsMixin:
     but had a default value of -999
     """
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        with mock.patch(
+            "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
+        ):
+            super().setup_method()
         db_utils.sql_alter_db("drop view if exists w_levels_geom")
         db_utils.sql_alter_db("drop table w_levels")
         db_utils.sql_alter_db(

@@ -270,7 +270,7 @@ class DistinctValuesBrowser(VRowEntry):
             try:
                 dbconnection.closedb()
             except Exception:
-                pass
+                MessagebarAndLog.info(log_msg=traceback.format_exc())
 
         if not connection_ok:
             MessagebarAndLog.critical(

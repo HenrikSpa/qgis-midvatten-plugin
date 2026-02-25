@@ -19,10 +19,12 @@
 
 import ast
 import copy
+import json
 import datetime
 import difflib
 import math
 import time
+import traceback
 from contextlib import contextmanager
 from functools import wraps
 from typing import Any, Callable, Optional
@@ -525,16 +527,31 @@ def general_exception_handler(func: Callable) -> Callable:
     return new_func
 
 
+def _to_json_serializable(obj: Any) -> Any:
+    """Recursively convert tuples to lists so the value can be JSON-serialised."""
+    if isinstance(obj, tuple):
+        return [_to_json_serializable(v) for v in obj]
+    if isinstance(obj, list):
+        return [_to_json_serializable(v) for v in obj]
+    if isinstance(obj, dict):
+        return {str(k): _to_json_serializable(v) for k, v in obj.items()}
+    return obj
+
+
 def save_stored_settings(ms, stored_settings, settingskey, skip_ast=False):
     """
     Saves the current parameter settings into midvatten settings
 
     :param ms: midvattensettings
     :param stored_settings: a tuple like ((objname', ((attr1, value1), (attr2, value2))), (objname2, ((attr3, value3), ...)
-    :return: stores a string like objname;attr1:value1;attr2:value2/objname2;attr3:value3... in midvatten settings
+    :return: stores a JSON string in midvatten settings (falls back to Python repr for types
+             that cannot be serialised)
     """
     if not skip_ast:
-        settings_string = anything_to_string_representation(stored_settings)
+        try:
+            settings_string = json.dumps(_to_json_serializable(stored_settings))
+        except (TypeError, ValueError):
+            settings_string = anything_to_string_representation(stored_settings)
     else:
         settings_string = stored_settings
     ms.settingsdict[settingskey] = settings_string
@@ -588,11 +605,17 @@ def get_stored_settings(ms, settingskey, default=None, skip_ast=False):
             % (settingskey, settings_string_raw)
         )
     except Exception:
-        pass
+        MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
     if skip_ast:
         stored_settings = settings_string_raw
     else:
+        try:
+            stored_settings = json.loads(settings_string_raw)
+        except (json.JSONDecodeError, ValueError):
+            pass
+        else:
+            return stored_settings
         try:
             stored_settings = ast.literal_eval(settings_string_raw)
         except SyntaxError as e:

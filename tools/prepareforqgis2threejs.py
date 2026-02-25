@@ -20,6 +20,7 @@
 """
 
 import os
+import traceback
 
 import matplotlib as mpl
 import psycopg2.errors
@@ -121,10 +122,7 @@ class PrepareForQgis2Threejs:
             layer_list
         ):  # now loop over all the layers, add them to canvas and set colors
             if not layer.isValid():
-                try:
-                    print(layer.name() + " is not valid layer")
-                except Exception:
-                    pass
+                print(layer.name() + " is not valid layer")
                 pass
             else:
                 # TODO: Made this a comment, but there might be some hidden feature that's still needed!
@@ -141,10 +139,7 @@ class PrepareForQgis2Threejs:
                 try:
                     layer.loadNamedStyle(stylefile)
                 except Exception:
-                    try:
-                        print("Loading stylefile %s failed." % stylefile)
-                    except Exception:
-                        pass
+                    print("Loading stylefile %s failed." % stylefile)
 
                 color = colors[idx]
                 if color:
@@ -218,11 +213,19 @@ class PrepareForQgis2Threejs:
                         params = self.strat_layers_dict[key]
                         condition = "IN"
 
-                    # TODO UNSAFE SQL WARNING. The params has to be added using
-                    #  string concatenation for views.
-                    sqliteline = line.replace("CHANGETOVIEWNAME", key).replace(
-                        "CHANGETOPLOTTYPESDICTVALUE",
-                        f"{condition} ({db_utils.sql_literal_list(params)})",
+                    # View names cannot be bound via DB-API parameters; they are validated
+                    # and quoted with ident(). The INSERT line template wraps the name in
+                    # single quotes already, so that occurrence is replaced first (keeping
+                    # the outer quotes intact). Any remaining unquoted occurrence (the
+                    # CREATE VIEW line) is replaced with the double-quoted identifier.
+                    view_ident = db_utils.ident(key)
+                    sqliteline = (
+                        line.replace("'CHANGETOVIEWNAME'", f"'{key}'")
+                        .replace("CHANGETOVIEWNAME", view_ident)
+                        .replace(
+                            "CHANGETOPLOTTYPESDICTVALUE",
+                            f"{condition} ({db_utils.sql_literal_list(params)})",
+                        )
                     )
 
                     try:

@@ -12,6 +12,7 @@
 
 import ast
 import copy
+import json
 import os
 import traceback
 import types
@@ -548,7 +549,10 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
 
         selected_images = self.ms.settingsdict.get("secplot_images_images", "[]")
         if selected_images.strip():
-            selected_images = ast.literal_eval(selected_images.strip())
+            try:
+                selected_images = json.loads(selected_images.strip())
+            except (json.JSONDecodeError, ValueError):
+                selected_images = ast.literal_eval(selected_images.strip())
             for idx in range(self.images_images.count()):
                 item = self.images_images.item(idx)
                 if item.text() in selected_images:
@@ -633,7 +637,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                     tuple(obsidtuple),
                 )
             except Exception:
-                pass
+                common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
             else:
                 res = cur.fetchall()
                 break
@@ -888,7 +892,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                 % self.secplot_templates.readable_output()
             )
         except Exception:
-            pass
+            common_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
         if not isinstance(self.dbconnection, db_utils.DbConnectionManager):
             self.dbconnection = db_utils.DbConnectionManager()
 
@@ -1074,8 +1078,8 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         self.ms.settingsdict["secplot_tem_alpha_below_doi"] = (
             self.tem_alpha_below_doi.value()
         )
-        self.ms.settingsdict["secplot_images_images"] = str(
-            list([item.text() for item in self.images_images.selectedItems()])
+        self.ms.settingsdict["secplot_images_images"] = json.dumps(
+            [item.text() for item in self.images_images.selectedItems()]
         )
         self.ms.settingsdict["secplot_images_alpha"] = self.images_alpha.text()
         self.ms.settingsdict["secplot_images_zorder"] = self.images_zorder.text()
@@ -1341,7 +1345,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             try:
                 QgsProject.instance().removeMapLayer(temp_memorylayer.id())
             except Exception:
-                pass
+                common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
 
     def plot_graded_dems(
         self,
@@ -1768,7 +1772,10 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
 
         selected_images = self.ms.settingsdict.get("secplot_images_images", "[]")
         if selected_images.strip():
-            selected_images = ast.literal_eval(selected_images.strip())
+            try:
+                selected_images = json.loads(selected_images.strip())
+            except (json.JSONDecodeError, ValueError):
+                selected_images = ast.literal_eval(selected_images.strip())
         else:
             return
 

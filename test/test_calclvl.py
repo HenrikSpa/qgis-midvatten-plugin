@@ -30,8 +30,8 @@ from midvatten.tools.utils.date_utils import datestring_to_date
 
 
 class CalclvlMixin:
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
         widget = QtWidgets.QWidget()
         self.calclvl = CalculateLevel(widget, 1)
 
@@ -254,13 +254,13 @@ class CalclvlMixin:
         print(f"{mock_messagebar.mock_calls=}")
         assert test_string == reference_string
 
-    def tearDown(self):
+    def teardown_method(self):
         if hasattr(self.calclvl, "updated_h_tocs") and hasattr(
             self.calclvl, "updated_level_masl"
         ):
             # Must be equal for all tests
             assert self.calclvl.updated_h_tocs == self.calclvl.updated_level_masl
-        super().tearDown()
+        super().teardown_method()
 
 
 @pytest.mark.postgis

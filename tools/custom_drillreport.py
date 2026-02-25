@@ -20,7 +20,9 @@
 
 import ast
 import codecs
+import json
 import os
+import traceback
 
 from collections import OrderedDict
 
@@ -127,7 +129,7 @@ class DrillreportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
             for attr, val in stored_settings.items():
                 try:
                     selfattr = getattr(self, attr)
-                except Exception:
+                except AttributeError:
                     pass
                 else:
                     if isinstance(selfattr, qgis.PyQt.QtWidgets.QPlainTextEdit):
@@ -298,7 +300,10 @@ class DrillreportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
             return {}
 
         try:
-            as_dict = ast.literal_eval(new_string_text)
+            try:
+                as_dict = json.loads(new_string_text)
+            except (json.JSONDecodeError, ValueError):
+                as_dict = ast.literal_eval(new_string_text)
         except Exception as e:
             common_utils.MessagebarAndLog.warning(
                 bar_msg=ru(
@@ -779,24 +784,21 @@ class Drillreport:  # general observation point info for the selected object
             try:
                 rpt += rf"""<TR VALIGN=TOP><TD WIDTH=33%><P><font size=1>{header}</font></P></TD><TD WIDTH=50%><P><font size=1>{value}</font></P></TD></TR>"""
             except UnicodeEncodeError:
-                try:
-                    common_utils.MessagebarAndLog.critical(
-                        bar_msg=ru(
-                            QCoreApplication.translate(
-                                "custom_drillreport",
-                                "Writing drillreport failed, see log message panel",
-                            )
-                        ),
-                        log_msg=ru(
-                            QCoreApplication.translate(
-                                "custom_drillreport",
-                                "Writing header %s and value %s failed",
-                            )
+                common_utils.MessagebarAndLog.critical(
+                    bar_msg=ru(
+                        QCoreApplication.translate(
+                            "custom_drillreport",
+                            "Writing drillreport failed, see log message panel",
                         )
-                        % (header, value),
+                    ),
+                    log_msg=ru(
+                        QCoreApplication.translate(
+                            "custom_drillreport",
+                            "Writing header %s and value %s failed",
+                        )
                     )
-                except Exception:
-                    pass
+                    % (header, value),
+                )
                 raise
         rpt += r"""</p>"""
         rpt += r"""</TABLE>"""

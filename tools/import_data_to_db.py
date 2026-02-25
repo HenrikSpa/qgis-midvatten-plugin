@@ -20,6 +20,7 @@
 """
 
 import io
+import traceback
 from operator import itemgetter
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
@@ -456,7 +457,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 try:
                     dbconnection.closedb()
                 except Exception:
-                    pass
+                    common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
             else:
                 if self.temptable_name is not None:
                     # try:
@@ -472,7 +473,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 try:
                     dbconnection.closedb()
                 except Exception:
-                    pass
+                    common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
             else:
                 if self.temptable_name is not None:
                     # try:

@@ -31,7 +31,7 @@ class MidvSettings:
             self.load_settings()
 
         except Exception:
-            pass
+            MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
     def createsettingsdict(
         self,
@@ -100,9 +100,6 @@ class MidvSettings:
                 try:
                     save_func("Midvatten", key, value)
                 except Exception:
-                    try:
-                        print(
-                            f"debug info; midvsettings.save_settings failed, key: '{key}', value '{str(value)}', value type: '{str(type(value))}', msg:\n{traceback.format_exc()}"
-                        )
-                    except Exception:
-                        pass
+                    print(
+                        f"debug info; midvsettings.save_settings failed, key: '{key}', value '{str(value)}', value type: '{str(type(value))}', msg:\n{traceback.format_exc()}"
+                    )

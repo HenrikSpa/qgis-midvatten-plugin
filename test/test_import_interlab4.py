@@ -31,8 +31,8 @@ from midvatten.tools.utils import common_utils
 
 @pytest.mark.spatialite
 class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
-    def setUp(self):
-        super(self.__class__, self).setUp()
+    def setup_method(self):
+        super().setup_method()
         self.importinstance = Interlab4Import(
             self.iface.mainWindow(), self.midvatten.ms
         )

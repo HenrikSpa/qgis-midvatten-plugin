@@ -210,18 +210,15 @@ class SQLiteBackend(Backend):
             self._cursor.execute("""ATTACH DATABASE ':memory:' AS mem""")
         except Exception as e:
             if "database mem is already in use" not in str(e):
-                try:
-                    MessagebarAndLog.info(
-                        log_msg=ru(
-                            QCoreApplication.translate(
-                                "create_temporary_table_for_import",
-                                "attaching memory database failed, %s",
-                            )
+                MessagebarAndLog.info(
+                    log_msg=ru(
+                        QCoreApplication.translate(
+                            "create_temporary_table_for_import",
+                            "attaching memory database failed, %s",
                         )
-                        % traceback.format_exc()
                     )
-                except Exception:
-                    pass
+                    % traceback.format_exc()
+                )
         quoted_name = self.ident(temptable_name)
         if geometry_colname_type_srid is not None:
             fieldnames_types.append("geometry %s" % geometry_colname_type_srid[0])

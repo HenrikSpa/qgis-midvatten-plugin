@@ -3,6 +3,7 @@ String conversion and validation utilities for the Midvatten plugin.
 """
 
 import time
+import traceback
 from collections import OrderedDict
 from typing import Any
 
@@ -146,7 +147,8 @@ def unicode_2_utf8(anything):  # takes an unicode and tries to return it as utf8
         elif isinstance(anything, bool):
             text = anything.encode("utf-8")
     except Exception:
-        pass
+        from midvatten.tools.utils.message_utils import MessagebarAndLog
+        MessagebarAndLog.info(log_msg=traceback.format_exc())
 
     if text is None:
         text = returnunicode(

@@ -46,7 +46,7 @@ class TestParseDiverofficeFile:
         0,
     )
 
-    def setUp(self):
+    def setup_method(self):
         pass
 
     def test_parse_diveroffice_file_utf8(self):

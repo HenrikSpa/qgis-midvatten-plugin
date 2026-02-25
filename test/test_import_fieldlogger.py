@@ -1001,7 +1001,7 @@ class TestFieldLoggerImporterNoDb:
 
 @pytest.mark.active
 class TestCommentsImportFields:
-    def setUp(self):
+    def setup_method(self):
         mock_import_method_chooser = MagicMock()
         mock_import_method_chooser.parameter_name = "comment"
         self.comments_import = import_fieldlogger.CommentsImportFields(
@@ -1085,10 +1085,10 @@ class TestCommentsImportFields:
 
 @pytest.mark.active
 class TestStaffQuestion:
-    @mock.patch("midvatten.tools.import_fieldlogger.defs.staff_list")
-    def setUp(self, mock_stafflist):
-        mock_stafflist.return_value = (True, ["staff1", "staff2"])
-        self.staff_question = import_fieldlogger.StaffQuestion()
+    def setup_method(self):
+        with mock.patch("midvatten.tools.import_fieldlogger.defs.staff_list") as mock_stafflist:
+            mock_stafflist.return_value = (True, ["staff1", "staff2"])
+            self.staff_question = import_fieldlogger.StaffQuestion()
 
     def test_alter_data(self):
         observation = {"sublocation": "1"}
@@ -1103,7 +1103,7 @@ class TestStaffQuestion:
 
 @pytest.mark.active
 class TestObsidFilter:
-    def setUp(self):
+    def setup_method(self):
         self.obsid_filter = import_fieldlogger.ObsidFilter()
 
     @mock.patch("midvatten.tools.import_fieldlogger.db_utils.get_all_obsids")

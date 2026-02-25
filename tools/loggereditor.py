@@ -1,7 +1,7 @@
 import datetime
 import math
-
 import os
+import traceback
 
 import numpy as np
 import qgis.PyQt
@@ -286,10 +286,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         common_utils.start_waiting_cursor()
         obsid = self.selected_obsid
         if not obsid:
-            try:
-                print("error obsid " + str(obsid))
-            except Exception:
-                pass
+            print("error obsid " + str(obsid))
             # utils.pop_up_info(ru(QCoreApplication.translate('Calibrlogger', "ERROR: no obsid is chosen")))
             common_utils.stop_waiting_cursor()
             return None

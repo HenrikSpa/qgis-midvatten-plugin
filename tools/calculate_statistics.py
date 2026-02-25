@@ -18,6 +18,7 @@
 """
 
 import os
+import traceback
 from typing import Any, Dict, List, Optional, Tuple, Union, TYPE_CHECKING
 
 import qgis.PyQt
@@ -205,6 +206,6 @@ def get_statistics_for_single_obsid(
     try:
         dbconnection.closedb()
     except Exception:
-        pass
+        common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
 
     return data_column, statistics_list

@@ -19,6 +19,7 @@
 
 import ast
 import codecs
+import json
 import os
 import traceback
 
@@ -243,7 +244,7 @@ class CompactWqualReportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_d
             for attr, val in stored_settings.items():
                 try:
                     selfattr = getattr(self, attr)
-                except Exception:
+                except AttributeError:
                     pass
                 else:
                     if isinstance(selfattr, qgis.PyQt.QtWidgets.QPlainTextEdit):
@@ -347,7 +348,10 @@ class CompactWqualReportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_d
             return {}
 
         try:
-            as_dict = ast.literal_eval(new_string_text)
+            try:
+                as_dict = json.loads(new_string_text)
+            except (json.JSONDecodeError, ValueError):
+                as_dict = ast.literal_eval(new_string_text)
         except Exception as e:
             common_utils.MessagebarAndLog.warning(
                 bar_msg=ru(
@@ -714,10 +718,7 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
                     )
                     rpt += "</tr>\n"
             except Exception:
-                try:
-                    print("here was an error: %s" % row)
-                except Exception:
-                    pass
+                print("here was an error: %s" % row)
             f.write(rpt)
 
         f.write("\n</table><p></p><p></p>")

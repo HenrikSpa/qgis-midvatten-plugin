@@ -21,6 +21,7 @@
 """
 
 import os
+import traceback
 from typing import List
 
 import matplotlib as mpl
@@ -155,7 +156,7 @@ class CalculateLevel(
             try:
                 dbconnection.closedb()
             except Exception:
-                pass
+                common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
 
     @fn_timer
     def calcall(self):

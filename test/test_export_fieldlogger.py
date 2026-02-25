@@ -43,13 +43,11 @@ from midvatten.tools import export_fieldlogger
 
 @pytest.mark.active
 class TestExportFieldloggerNoDb(MidvattenTestBase):
-    def setUp(self):
-        super().__init__()
-        # self.ExportToFieldLogger = ExportToFieldLogger
-        pass
+    def setup_method(self):
+        super().setup_method()
 
-    def tearDown(self):
-        super().tearDown()
+    def teardown_method(self):
+        super().teardown_method()
 
     @staticmethod
     def test_get_stored_settings():

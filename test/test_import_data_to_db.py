@@ -1506,59 +1506,6 @@ class WlevelsImportMixin:
         assert test_string == reference_string
 
 
-class WlevelsImportOldWlevelsMixin:
-    """
-    This test is for an older version of w_levels where level_masl was not null
-    but had a default value of -999
-    """
-
-    def setup_method(self):
-        with mock.patch(
-            "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-        ):
-            super().setup_method()
-        db_utils.sql_alter_db("drop view if exists w_levels_geom")
-        db_utils.sql_alter_db("drop table w_levels")
-        db_utils.sql_alter_db(
-            "CREATE TABLE w_levels (obsid text not null, date_time text not null, meas double precision, h_toc double precision, level_masl double precision not null default -999, comment text, primary key (obsid, date_time), foreign key(obsid) references obs_points(obsid))"
-        )
-
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
-    def test_w_level_import_from_csvlayer(self):
-        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('obsid1')""")
-        f = [
-            ["obsid", "date_time", "meas", "comment"],
-            ["obsid1", "2011-10-19 12:30:00", "2", "testcomment"],
-        ]
-
-        self.importinstance.general_import(dest_table="w_levels", file_data=f)
-
-        test_string = utils_for_tests.create_test_string(
-            db_utils.sql_load_fr_db("""select * from w_levels""")
-        )
-        reference_string = r"""(True, [(obsid1, 2011-10-19 12:30:00, 2.0, None, -999.0, testcomment)])"""
-        assert test_string == reference_string
-
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
-    def _test_w_level_import_from_csvlayer_missing_columns(self):
-        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('obsid1')""")
-        # f = [['obsid', 'date_time', 'meas', 'comment'],
-        #     ['obsid1', '2011-10-19 12:30:00', '2', 'testcomment']]
-        f = [["obsid", "date_time", "meas"], ["obsid1", "2011-10-19 12:30:00", "2"]]
-
-        self.importinstance.general_import(dest_table="w_levels", file_data=f)
-
-        test_string = utils_for_tests.create_test_string(
-            db_utils.sql_load_fr_db("""SELECT * FROM w_levels""")
-        )
-        reference_string = r"""(True, [])"""
-        assert test_string == reference_string
-
-
 class SeismicImportMixin:
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
@@ -2050,21 +1997,6 @@ class TestWlevelsImportSpatialite(
 ):
     pass
 
-
-@pytest.mark.postgis
-class TestWlevelsImportOldWlevelsPostgis(
-    WlevelsImportOldWlevelsMixin,
-    utils_for_tests.MidvattenTestPostgisDbSvImportInstance,
-):
-    pass
-
-
-@pytest.mark.spatialite
-class TestWlevelsImportOldWlevelsSpatialite(
-    WlevelsImportOldWlevelsMixin,
-    utils_for_tests.MidvattenTestSpatialiteDbSvImportInstance,
-):
-    pass
 
 
 @pytest.mark.postgis

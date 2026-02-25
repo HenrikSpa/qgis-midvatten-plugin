@@ -21,6 +21,7 @@
 
 import io
 import os
+import sqlite3 as _sqlite3
 import tempfile
 import unittest
 
@@ -39,12 +40,49 @@ from qgis.PyQt.QtCore import QSettings
 from qgis.PyQt.QtWidgets import QWidget, QDialog
 from qgis.core import QgsApplication
 from qgis.core import QgsProject, QgsVectorLayer, QgsFeature, QgsFields
+from qgis.utils import spatialite_connect
 
 from midvatten.midvatten_plugin import Midvatten
 from midvatten.test.mocks_for_tests import DummyInterface2
 from midvatten.tools.import_data_to_db import MidvDataImporter
 from midvatten.tools.utils import common_utils
 from midvatten.tools.utils import db_utils
+
+
+# Tables that hold user data (populated during tests, not by new_db()/new_postgis_db()).
+_DATA_TABLES = (
+    "obs_points",
+    "obs_lines",
+    "w_levels",
+    "w_levels_logger",
+    "stratigraphy",
+    "w_qual_field",
+    "w_qual_lab",
+    "w_flow",
+    "meteo",
+    "seismic_data",
+    "vlf_data",
+    "tem_data",
+    "profile_images",
+    "comments",
+    "s_qual_lab",
+    "w_qual_logger",
+    "spatial_history",
+)
+
+# Reference tables populated by new_db()/new_postgis_db() that tests may also modify.
+# These must also be reset between tests for the PostGIS class-level approach.
+_REFERENCE_TABLES = (
+    "about_db",
+    "zz_capacity",
+    "zz_capacity_plots",
+    "zz_flowtype",
+    "zz_interlab4_obsid_assignment",
+    "zz_meteoparam",
+    "zz_staff",
+    "zz_strat",
+    "zz_stratigraphy_plots",
+)
 
 
 class TestQapplicationIsRunning:
@@ -162,8 +200,38 @@ class MidvattenTestSpatialiteNotCreated(MidvattenTestBase):
 
 
 class MidvattenTestSpatialiteDbSv(MidvattenTestSpatialiteNotCreated):
-    def setup_method(self):
-        super().setup_method()
+    """
+    Base class for Spatialite tests using the Swedish locale.
+
+    The database is created once per test class (in setup_class) and snapshotted
+    into an in-memory SQLite connection via sqlite3.Connection.backup().  Each
+    test restores the file from that snapshot (a fast page-level copy) instead of
+    running the full new_db() schema creation for every test.
+    """
+
+    _class_dbpath: str = ""
+    _class_snapshot: "_sqlite3.Connection" = None
+    _class_db_settings: str = ""
+
+    @classmethod
+    def setup_class(cls):
+        """Create the DB once and take an in-memory snapshot."""
+        cls._class_dbpath = os.path.join(
+            tempfile.gettempdir(),
+            f"tmp_midvatten_cls_{os.getpid()}_{id(cls)}.sqlite",
+        )
+        # Remove any leftover from an interrupted previous run.
+        for ending in ("", "-journal", "-wal", "-shm"):
+            try:
+                os.remove(cls._class_dbpath + ending)
+            except OSError:
+                pass
+
+        QgsProject.instance().clear()
+        dummy = DummyInterface2()
+        mv = Midvatten(dummy.mock)
+        mv.initGui()
+        mv.setup()
 
         def side_effect(*args, **kwargs):
             mock_result = mock.MagicMock()
@@ -190,13 +258,95 @@ class MidvattenTestSpatialiteDbSv(MidvattenTestSpatialiteNotCreated):
             mock_not_found.side_effect = side_effect
             mock_answer_yes.return_value.result = 1
             mock_crs_question.return_value.__getitem__.return_value = 3006
-            mock_savefilename.return_value = (self.TEMP_DBPATH, "Spatialite (*.sqlite)")
-            self.midvatten.new_db()
+            mock_savefilename.return_value = (cls._class_dbpath, "Spatialite (*.sqlite)")
+            mv.new_db()
+
+        cls._class_db_settings = mv.ms.settingsdict["database"]
+
+        # Snapshot the freshly-created DB into memory via a page-level backup.
+        src = spatialite_connect(
+            cls._class_dbpath,
+            detect_types=_sqlite3.PARSE_DECLTYPES | _sqlite3.PARSE_COLNAMES,
+        )
+        cls._class_snapshot = _sqlite3.connect(":memory:")
+        src.backup(cls._class_snapshot)
+        src.close()
+
+        QgsProject.instance().clear()
+
+    @classmethod
+    def teardown_class(cls):
+        """Release the in-memory snapshot and delete the DB file."""
+        if cls._class_snapshot is not None:
+            cls._class_snapshot.close()
+            cls._class_snapshot = None
+        for ending in ("", "-journal", "-wal", "-shm"):
+            try:
+                os.remove(cls._class_dbpath + ending)
+            except OSError:
+                pass
+
+    def setup_method(self):
+        """Restore the DB from the class-level snapshot, then reinitialise the plugin."""
+        # Restore the on-disk file from the in-memory snapshot (fast page-level copy).
+        restore_conn = spatialite_connect(
+            self._class_dbpath,
+            detect_types=_sqlite3.PARSE_DECLTYPES | _sqlite3.PARSE_COLNAMES,
+        )
+        self.__class__._class_snapshot.backup(restore_conn)
+        restore_conn.close()
+
+        # Preserve the TEMP_DBPATH interface used by test helpers.
+        self.TEMP_DBPATH = self._class_dbpath
+
+        # Reinitialise the QGIS plugin (cheap — no DB creation).
+        MidvattenTestBase.setup_method(self)
+
+        # Restore DB path in QgsProject (wiped by QgsProject.instance().clear() above).
+        QgsProject.instance().writeEntry(
+            "Midvatten", "database", self._class_db_settings
+        )
+        self.midvatten.ms.load_settings()
+
+    def teardown_method(self):
+        """Close plots and clear project. Do NOT delete the class-level DB file."""
+        plt.close("all")
+        QgsProject.instance().clear()
+
+    def remove_db(self):
+        """No-op: the class-level DB file is managed by setup_class/teardown_class."""
+        pass
 
 
 class MidvattenTestSpatialiteDbEn(MidvattenTestSpatialiteNotCreated):
-    def setup_method(self):
-        super().setup_method()
+    """
+    Base class for Spatialite tests using the English locale.
+
+    Same class-level snapshot strategy as MidvattenTestSpatialiteDbSv.
+    """
+
+    _class_dbpath: str = ""
+    _class_snapshot: "_sqlite3.Connection" = None
+    _class_db_settings: str = ""
+
+    @classmethod
+    def setup_class(cls):
+        """Create the DB once and take an in-memory snapshot."""
+        cls._class_dbpath = os.path.join(
+            tempfile.gettempdir(),
+            f"tmp_midvatten_cls_{os.getpid()}_{id(cls)}.sqlite",
+        )
+        for ending in ("", "-journal", "-wal", "-shm"):
+            try:
+                os.remove(cls._class_dbpath + ending)
+            except OSError:
+                pass
+
+        QgsProject.instance().clear()
+        dummy = DummyInterface2()
+        mv = Midvatten(dummy.mock)
+        mv.initGui()
+        mv.setup()
 
         def side_effect(*args, **kwargs):
             mock_result = mock.MagicMock()
@@ -223,8 +373,58 @@ class MidvattenTestSpatialiteDbEn(MidvattenTestSpatialiteNotCreated):
             mock_not_found.side_effect = side_effect
             mock_answer_yes.return_value.result = 1
             mock_crs_question.return_value.__getitem__.return_value = 3006
-            mock_savefilename.return_value = (self.TEMP_DBPATH, "Spatialite (*.sqlite)")
-            self.midvatten.new_db()
+            mock_savefilename.return_value = (cls._class_dbpath, "Spatialite (*.sqlite)")
+            mv.new_db()
+
+        cls._class_db_settings = mv.ms.settingsdict["database"]
+
+        src = spatialite_connect(
+            cls._class_dbpath,
+            detect_types=_sqlite3.PARSE_DECLTYPES | _sqlite3.PARSE_COLNAMES,
+        )
+        cls._class_snapshot = _sqlite3.connect(":memory:")
+        src.backup(cls._class_snapshot)
+        src.close()
+
+        QgsProject.instance().clear()
+
+    @classmethod
+    def teardown_class(cls):
+        """Release the in-memory snapshot and delete the DB file."""
+        if cls._class_snapshot is not None:
+            cls._class_snapshot.close()
+            cls._class_snapshot = None
+        for ending in ("", "-journal", "-wal", "-shm"):
+            try:
+                os.remove(cls._class_dbpath + ending)
+            except OSError:
+                pass
+
+    def setup_method(self):
+        """Restore the DB from the class-level snapshot, then reinitialise the plugin."""
+        restore_conn = spatialite_connect(
+            self._class_dbpath,
+            detect_types=_sqlite3.PARSE_DECLTYPES | _sqlite3.PARSE_COLNAMES,
+        )
+        self.__class__._class_snapshot.backup(restore_conn)
+        restore_conn.close()
+
+        self.TEMP_DBPATH = self._class_dbpath
+
+        MidvattenTestBase.setup_method(self)
+
+        QgsProject.instance().writeEntry(
+            "Midvatten", "database", self._class_db_settings
+        )
+        self.midvatten.ms.load_settings()
+
+    def teardown_method(self):
+        plt.close("all")
+        QgsProject.instance().clear()
+
+    def remove_db(self):
+        """No-op: the class-level DB file is managed by setup_class/teardown_class."""
+        pass
 
 
 class MidvattenTestSpatialiteDbSvImportInstance(MidvattenTestSpatialiteDbSv):
@@ -323,8 +523,72 @@ class MidvattenTestPostgisNotCreated(MidvattenTestBase):
 
 
 class MidvattenTestPostgisDbSv(MidvattenTestPostgisNotCreated):
-    def setup_method(self):
-        super().setup_method()
+    """
+    Base class for PostGIS tests using the Swedish locale.
+
+    The schema is created once per test class (in setup_class).  Between tests,
+    all tables are truncated and reference data is restored from an in-memory
+    Python snapshot — much faster than DROP/CREATE SCHEMA per test.
+    """
+
+    _class_db_settings: str = ""
+    # {table_name: (column_names_tuple, list_of_row_tuples)}
+    _reference_snapshot: dict = {}
+
+    @classmethod
+    def setup_class(cls):
+        """Create the PostGIS schema once and snapshot all reference-table data."""
+        qs = QSettings()
+        for k, v in MidvattenTestPostgisNotCreated.ALL_POSTGIS_SETTINGS[
+            "nosetests"
+        ].items():
+            qs.setValue("PostgreSQL/connections/{}/{}".format("nosetests", k), v)
+
+        QgsProject.instance().clear()
+        QgsProject.instance().writeEntry(
+            "Midvatten",
+            "database",
+            common_utils.anything_to_string_representation(
+                MidvattenTestPostgisNotCreated.TEMP_DB_SETTINGS
+            ),
+        )
+
+        try:
+            db_utils.sql_alter_db("DROP SCHEMA public CASCADE;")
+            db_utils.sql_alter_db("CREATE SCHEMA public;")
+        except common_utils.UserInterruptError as e:
+            raise unittest.SkipTest("PostGIS not available (no password): %s" % e)
+        except Exception as e:
+            if (
+                "password" in str(e).lower()
+                or "connect" in str(e).lower()
+                or "could not connect" in str(e).lower()
+            ):
+                raise unittest.SkipTest("PostGIS not available: %s" % e)
+            print("Failure resetting db: " + str(e))
+
+        try:
+            dbconnection = db_utils.DbConnectionManager()
+            dbconnection.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
+            dbconnection.commit()
+            dbconnection.closedb()
+        except common_utils.UserInterruptError:
+            raise
+        except Exception as e:
+            err = str(e).lower()
+            if (
+                "privilege" in err
+                or "superuser" in err
+                or "extension" in err
+                or "rättighet" in err
+                or "saknas" in err
+            ):
+                raise unittest.SkipTest("PostGIS extension not available: %s" % e)
+
+        dummy = DummyInterface2()
+        mv = Midvatten(dummy.mock)
+        mv.initGui()
+        mv.setup()
 
         def side_effect(*args, **kwargs):
             mock_result = mock.MagicMock()
@@ -348,12 +612,168 @@ class MidvattenTestPostgisDbSv(MidvattenTestPostgisNotCreated):
             mock_not_found.side_effect = side_effect
             mock_answer_yes.return_value.result = 1
             mock_crs_question.return_value.__getitem__.return_value = 3006
-            self.midvatten.new_postgis_db()
+            mv.new_postgis_db()
+
+        cls._class_db_settings = mv.ms.settingsdict["database"]
+
+        # Snapshot all reference tables so they can be restored cheaply per test.
+        cls._reference_snapshot = {}
+        dbconn = db_utils.DbConnectionManager()
+        for table in _REFERENCE_TABLES:
+            try:
+                rows = dbconn.execute_and_fetchall(f"SELECT * FROM {table}")
+                cols = tuple(desc[0] for desc in dbconn.cursor.description)
+                cls._reference_snapshot[table] = (cols, list(rows))
+            except Exception as e:
+                print(f"Warning: could not snapshot reference table {table}: {e}")
+        dbconn.closedb()
+
+        QgsProject.instance().clear()
+
+    @classmethod
+    def teardown_class(cls):
+        """Drop the public schema once after all tests in the class finish."""
+        cls._reference_snapshot = {}
+        # teardown_method clears QgsProject; restore DB settings before connecting.
+        qs = QSettings()
+        for k, v in MidvattenTestPostgisNotCreated.ALL_POSTGIS_SETTINGS[
+            "nosetests"
+        ].items():
+            qs.setValue("PostgreSQL/connections/{}/{}".format("nosetests", k), v)
+        QgsProject.instance().writeEntry(
+            "Midvatten",
+            "database",
+            common_utils.anything_to_string_representation(
+                MidvattenTestPostgisNotCreated.TEMP_DB_SETTINGS
+            ),
+        )
+        with mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog"):
+            try:
+                db_utils.sql_alter_db("DROP SCHEMA public CASCADE;")
+                db_utils.sql_alter_db("CREATE SCHEMA public;")
+            except Exception as e:
+                print("MidvattenTestPostgisDbSv teardown_class failure: " + str(e))
+
+    def setup_method(self):
+        """Truncate all tables and restore reference data, then reinitialise the plugin."""
+        # Ensure the persistent QgsSettings for the connection are present.
+        qs = QSettings()
+        for k, v in MidvattenTestPostgisNotCreated.ALL_POSTGIS_SETTINGS[
+            "nosetests"
+        ].items():
+            qs.setValue("PostgreSQL/connections/{}/{}".format("nosetests", k), v)
+
+        # Point QgsProject at the DB so db_utils can open a connection.
+        QgsProject.instance().writeEntry(
+            "Midvatten",
+            "database",
+            common_utils.anything_to_string_representation(
+                MidvattenTestPostgisNotCreated.TEMP_DB_SETTINGS
+            ),
+        )
+
+        # Truncate all tables (data + reference) in one shot; CASCADE handles FKs.
+        all_tables = _DATA_TABLES + _REFERENCE_TABLES
+        truncate_sql = "TRUNCATE TABLE {} CASCADE;".format(", ".join(all_tables))
+        try:
+            dbconn = db_utils.DbConnectionManager()
+            dbconn.execute(truncate_sql)
+            # Re-insert reference data using a single multi-row INSERT per table
+            # (one round-trip per table instead of one per row).
+            for table, (cols, rows) in self.__class__._reference_snapshot.items():
+                if rows:
+                    ph = dbconn.placeholder()
+                    col_names = ", ".join(cols)
+                    row_placeholders = "({})".format(", ".join([ph] * len(cols)))
+                    all_row_placeholders = ", ".join([row_placeholders] * len(rows))
+                    insert_sql = (
+                        f"INSERT INTO {table} ({col_names}) VALUES {all_row_placeholders}"
+                    )
+                    flat_args = [val for row in rows for val in row]
+                    dbconn.execute(insert_sql, flat_args)
+            dbconn.closedb()
+        except Exception as e:
+            print("setup_method reset failed: " + str(e))
+
+        # Reinitialise the QGIS plugin (QgsProject.clear() happens inside here).
+        MidvattenTestBase.setup_method(self)
+
+        # Restore DB path (wiped by QgsProject.instance().clear() above).
+        QgsProject.instance().writeEntry(
+            "Midvatten", "database", self._class_db_settings
+        )
+        self.midvatten.ms.load_settings()
+
+    def teardown_method(self):
+        """Close plots and clear project. Schema cleanup is in teardown_class."""
+        plt.close("all")
+        QgsProject.instance().clear()
 
 
 class MidvattenTestPostgisDbEn(MidvattenTestPostgisNotCreated):
-    def setup_method(self):
-        super().setup_method()
+    """
+    Base class for PostGIS tests using the English locale.
+
+    Same class-level snapshot strategy as MidvattenTestPostgisDbSv.
+    """
+
+    _class_db_settings: str = ""
+    _reference_snapshot: dict = {}
+
+    @classmethod
+    def setup_class(cls):
+        """Create the PostGIS schema once and snapshot all reference-table data."""
+        qs = QSettings()
+        for k, v in MidvattenTestPostgisNotCreated.ALL_POSTGIS_SETTINGS[
+            "nosetests"
+        ].items():
+            qs.setValue("PostgreSQL/connections/{}/{}".format("nosetests", k), v)
+
+        QgsProject.instance().clear()
+        QgsProject.instance().writeEntry(
+            "Midvatten",
+            "database",
+            common_utils.anything_to_string_representation(
+                MidvattenTestPostgisNotCreated.TEMP_DB_SETTINGS
+            ),
+        )
+
+        try:
+            db_utils.sql_alter_db("DROP SCHEMA public CASCADE;")
+            db_utils.sql_alter_db("CREATE SCHEMA public;")
+        except common_utils.UserInterruptError as e:
+            raise unittest.SkipTest("PostGIS not available (no password): %s" % e)
+        except Exception as e:
+            if (
+                "password" in str(e).lower()
+                or "connect" in str(e).lower()
+                or "could not connect" in str(e).lower()
+            ):
+                raise unittest.SkipTest("PostGIS not available: %s" % e)
+            print("Failure resetting db: " + str(e))
+
+        try:
+            dbconnection = db_utils.DbConnectionManager()
+            dbconnection.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
+            dbconnection.commit()
+            dbconnection.closedb()
+        except common_utils.UserInterruptError:
+            raise
+        except Exception as e:
+            err = str(e).lower()
+            if (
+                "privilege" in err
+                or "superuser" in err
+                or "extension" in err
+                or "rättighet" in err
+                or "saknas" in err
+            ):
+                raise unittest.SkipTest("PostGIS extension not available: %s" % e)
+
+        dummy = DummyInterface2()
+        mv = Midvatten(dummy.mock)
+        mv.initGui()
+        mv.setup()
 
         def side_effect(*args, **kwargs):
             mock_result = mock.MagicMock()
@@ -377,7 +797,93 @@ class MidvattenTestPostgisDbEn(MidvattenTestPostgisNotCreated):
             mock_not_found.side_effect = side_effect
             mock_answer_yes.return_value.result = 1
             mock_crs_question.return_value.__getitem__.return_value = 3006
-            self.midvatten.new_postgis_db()
+            mv.new_postgis_db()
+
+        cls._class_db_settings = mv.ms.settingsdict["database"]
+
+        cls._reference_snapshot = {}
+        dbconn = db_utils.DbConnectionManager()
+        for table in _REFERENCE_TABLES:
+            try:
+                rows = dbconn.execute_and_fetchall(f"SELECT * FROM {table}")
+                cols = tuple(desc[0] for desc in dbconn.cursor.description)
+                cls._reference_snapshot[table] = (cols, list(rows))
+            except Exception as e:
+                print(f"Warning: could not snapshot reference table {table}: {e}")
+        dbconn.closedb()
+
+        QgsProject.instance().clear()
+
+    @classmethod
+    def teardown_class(cls):
+        """Drop the public schema once after all tests in the class finish."""
+        cls._reference_snapshot = {}
+        # teardown_method clears QgsProject; restore DB settings before connecting.
+        qs = QSettings()
+        for k, v in MidvattenTestPostgisNotCreated.ALL_POSTGIS_SETTINGS[
+            "nosetests"
+        ].items():
+            qs.setValue("PostgreSQL/connections/{}/{}".format("nosetests", k), v)
+        QgsProject.instance().writeEntry(
+            "Midvatten",
+            "database",
+            common_utils.anything_to_string_representation(
+                MidvattenTestPostgisNotCreated.TEMP_DB_SETTINGS
+            ),
+        )
+        with mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog"):
+            try:
+                db_utils.sql_alter_db("DROP SCHEMA public CASCADE;")
+                db_utils.sql_alter_db("CREATE SCHEMA public;")
+            except Exception as e:
+                print("MidvattenTestPostgisDbEn teardown_class failure: " + str(e))
+
+    def setup_method(self):
+        """Truncate all tables and restore reference data, then reinitialise the plugin."""
+        qs = QSettings()
+        for k, v in MidvattenTestPostgisNotCreated.ALL_POSTGIS_SETTINGS[
+            "nosetests"
+        ].items():
+            qs.setValue("PostgreSQL/connections/{}/{}".format("nosetests", k), v)
+
+        QgsProject.instance().writeEntry(
+            "Midvatten",
+            "database",
+            common_utils.anything_to_string_representation(
+                MidvattenTestPostgisNotCreated.TEMP_DB_SETTINGS
+            ),
+        )
+
+        all_tables = _DATA_TABLES + _REFERENCE_TABLES
+        truncate_sql = "TRUNCATE TABLE {} CASCADE;".format(", ".join(all_tables))
+        try:
+            dbconn = db_utils.DbConnectionManager()
+            dbconn.execute(truncate_sql)
+            for table, (cols, rows) in self.__class__._reference_snapshot.items():
+                if rows:
+                    ph = dbconn.placeholder()
+                    col_names = ", ".join(cols)
+                    row_placeholders = "({})".format(", ".join([ph] * len(cols)))
+                    all_row_placeholders = ", ".join([row_placeholders] * len(rows))
+                    insert_sql = (
+                        f"INSERT INTO {table} ({col_names}) VALUES {all_row_placeholders}"
+                    )
+                    flat_args = [val for row in rows for val in row]
+                    dbconn.execute(insert_sql, flat_args)
+            dbconn.closedb()
+        except Exception as e:
+            print("setup_method reset failed: " + str(e))
+
+        MidvattenTestBase.setup_method(self)
+
+        QgsProject.instance().writeEntry(
+            "Midvatten", "database", self._class_db_settings
+        )
+        self.midvatten.ms.load_settings()
+
+    def teardown_method(self):
+        plt.close("all")
+        QgsProject.instance().clear()
 
 
 class MidvattenTestPostgisDbSvImportInstance(MidvattenTestPostgisDbSv):

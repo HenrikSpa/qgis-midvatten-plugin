@@ -266,6 +266,7 @@ class NewDb:
                 "Database type postgis not selected, check Midvatten settings!"
             )
 
+        dbconnection.execute("SET search_path = public;")
         dbconnection.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
 
         result = dbconnection.execute_and_fetchall(

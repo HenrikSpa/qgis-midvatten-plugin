@@ -96,8 +96,37 @@ def sql_alter_db(
 
 def check_connection_ok(write_error_msg: bool = True) -> bool:
     """Return True if a default DbConnectionManager can connect and close."""
+    from qgis.core import QgsProject
+
+    # Prefer project setting; fall back to MidvSettings if empty
     try:
-        dbconnection = DbConnectionManager()
+        db_settings = QgsProject.instance().readEntry("Midvatten", "database")[0]
+    except Exception:
+        db_settings = ""
+    if not db_settings:
+        try:
+            from midvatten.tools.midvsettings import MidvSettings
+
+            msettings = MidvSettings()
+            db_settings = msettings.settingsdict.get("database", "")
+        except Exception:
+            db_settings = ""
+
+    if not db_settings:
+        if write_error_msg:
+            MessagebarAndLog.critical(
+                bar_msg=ru(
+                    QCoreApplication.translate(
+                        "DbConnectionManager",
+                        "Database setting was empty. Check DB tab in Midvatten settings.",
+                    )
+                ),
+                duration=30,
+            )
+        return False
+
+    try:
+        dbconnection = DbConnectionManager(db_settings)
         connection_ok = dbconnection.connect2db()
         dbconnection.closedb()
     except Exception as e:

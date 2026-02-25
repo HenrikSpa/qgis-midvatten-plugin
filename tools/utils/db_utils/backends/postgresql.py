@@ -153,6 +153,11 @@ class PostgreSQLBackend(Backend):
             raise last_error
         self._conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
         self._cursor = self._conn.cursor()
+        self._cursor.execute(
+            psycopg2.sql.SQL("SET search_path = {}").format(
+                psycopg2.sql.Identifier(self.schema)
+            )
+        )
 
     @property
     def conn(self):

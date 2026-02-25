@@ -21,7 +21,7 @@
 
 from unittest import mock
 from unittest.mock import MagicMock
-from nose.plugins.attrib import attr
+import pytest
 
 from midvatten.test import utils_for_tests
 from midvatten.tools.utils import common_utils
@@ -104,11 +104,11 @@ class PrepareQgis2ThreejsMixin:
         assert not mock_messagebar.mock_calls
 
 
-@attr(status="on")  # Postgis
+@pytest.mark.postgis
 class TestPrepareQgis2ThreejsPostgis(PrepareQgis2ThreejsMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestPrepareQgis2ThreejsSpatialite(PrepareQgis2ThreejsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass

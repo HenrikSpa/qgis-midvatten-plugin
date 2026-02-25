@@ -23,7 +23,7 @@ from decimal import Decimal
 
 from unittest import mock
 import numpy as np
-from nose.plugins.attrib import attr
+import pytest
 
 from midvatten.tools.loggereditor import LoggerEditor
 from midvatten.tools.utils import db_utils, date_utils, gui_utils
@@ -987,11 +987,11 @@ class CalibrloggerSpatialiteMixin(CalibrloggerMixin):
         )
 
 
-@attr(status="on")  # Postgis
+@pytest.mark.postgis
 class TestCalibrloggerPostgis(CalibrloggerPostgisMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestCalibrloggerSpatialite(CalibrloggerSpatialiteMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass

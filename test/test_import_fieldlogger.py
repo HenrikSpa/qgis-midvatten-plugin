@@ -3,7 +3,7 @@ from operator import itemgetter
 
 from unittest import mock
 from unittest.mock import MagicMock, call
-from nose.plugins.attrib import attr
+import pytest
 
 from midvatten.test import utils_for_tests
 from midvatten.test.utils_for_tests import create_test_string
@@ -17,7 +17,7 @@ from midvatten.tools.utils import common_utils
 from midvatten.tools.utils.date_utils import datestring_to_date
 
 
-@attr(status="on")
+@pytest.mark.active
 class TestFieldLoggerImporterNoDb:
     @mock.patch("midvatten.tools.import_fieldlogger.common_utils.NotFoundQuestion")
     @mock.patch(
@@ -999,7 +999,7 @@ class TestFieldLoggerImporterNoDb:
             assert test_string == reference
 
 
-@attr(status="on")
+@pytest.mark.active
 class TestCommentsImportFields:
     def setUp(self):
         mock_import_method_chooser = MagicMock()
@@ -1083,7 +1083,7 @@ class TestCommentsImportFields:
         assert test_string == reference_string
 
 
-@attr(status="on")
+@pytest.mark.active
 class TestStaffQuestion:
     @mock.patch("midvatten.tools.import_fieldlogger.defs.staff_list")
     def setUp(self, mock_stafflist):
@@ -1101,7 +1101,7 @@ class TestStaffQuestion:
         assert test_string == reference_string
 
 
-@attr(status="on")
+@pytest.mark.active
 class TestObsidFilter:
     def setUp(self):
         self.obsid_filter = import_fieldlogger.ObsidFilter()
@@ -1124,7 +1124,7 @@ class TestObsidFilter:
         assert test_string == reference_string
 
 
-@attr(status="on")
+@pytest.mark.active
 @mock.patch("midvatten.tools.import_fieldlogger.common_utils.MessagebarAndLog")
 @mock.patch("midvatten.tools.import_fieldlogger.defs.w_qual_field_parameter_units")
 def _test_set_parameters_using_stored_settings(
@@ -1181,7 +1181,7 @@ def _test_set_parameters_using_stored_settings(
     assert test_string == reference_string
 
 
-@attr(status="on")
+@pytest.mark.active
 def _test_SublocationFilter():
     sublocation_filter = import_fieldlogger.SublocationFilter(["a.1", "a.2"])
 
@@ -1204,7 +1204,7 @@ def _test_SublocationFilter():
     )
 
 
-@attr(status="on")
+@pytest.mark.active
 class TestDateTimeFilter:
     def test_date_time_filter_observation_should_be_none(self):
         datetimefilter = DateTimeFilter()

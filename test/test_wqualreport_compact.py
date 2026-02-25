@@ -5,7 +5,7 @@ Tests for CompactWqualReportUi (compact water quality report dialog) using SQLit
 import os
 from unittest import mock
 
-from nose.plugins.attrib import attr
+import pytest
 from qgis.core import QgsProject, QgsVectorLayer
 from qgis.PyQt import QtCore
 
@@ -61,7 +61,7 @@ def _create_wqual_lab_layer():
     return vlayer
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
     """Tests for CompactWqualReportUi (compact water quality report)."""
 

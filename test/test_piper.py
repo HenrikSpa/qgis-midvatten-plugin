@@ -21,7 +21,7 @@
 """
 
 from unittest import mock
-from nose.plugins.attrib import attr
+import pytest
 
 from midvatten.tools.utils import common_utils
 from midvatten.tools.utils import db_utils
@@ -235,11 +235,11 @@ class PiperPlotDbMixin:
         )
 
 
-@attr(status="on")  # Postgis
+@pytest.mark.postgis
 class TestPiperPlotDbPostgis(PiperPlotDbMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestPiperPlotDbSpatialite(PiperPlotDbMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass

@@ -23,7 +23,7 @@
 import os
 
 from unittest import mock
-from nose.plugins.attrib import attr
+import pytest
 
 from midvatten.test import utils_for_tests
 from midvatten.test.mocks_for_tests import MockReturnUsingDictIn
@@ -35,7 +35,7 @@ from midvatten.tools.utils.date_utils import datestring_to_date
 #
 
 
-@attr(status="on")
+@pytest.mark.active
 class TestParseDiverofficeFile:
     utils_ask_user_about_stopping = MockReturnUsingDictIn(
         {
@@ -301,7 +301,7 @@ class TestParseDiverofficeFile:
         assert file_data[2] == "rb1"
 
 
-@attr(status="on")
+@pytest.mark.active
 class TestFilterDatesFromFiledata:
     def test_filter_dates_from_filedata(self):
 

@@ -23,7 +23,7 @@ import re
 
 from unittest import mock
 from unittest.mock import call
-from nose.plugins.attrib import attr
+import pytest
 from qgis.core import QgsProject, QgsVectorLayer
 
 from midvatten.test import utils_for_tests
@@ -944,11 +944,11 @@ class SectionPlotMixin:
         assert changed_markersize == changed_markersize
 
 
-@attr(status="on")  # Postgis
+@pytest.mark.postgis
 class TestSectionPlotPostgis(SectionPlotMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestSectionPlotSpatialite(SectionPlotMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass

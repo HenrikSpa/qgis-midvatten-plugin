@@ -22,7 +22,7 @@
 import re
 
 from unittest import mock
-from nose.plugins.attrib import attr
+import pytest
 from qgis.PyQt import QtCore
 
 from midvatten.test import utils_for_tests
@@ -98,11 +98,11 @@ class DrillreportMixin:
         assert report == ref
 
 
-@attr(status="on")  # Postgis
+@pytest.mark.postgis
 class TestDrillreportPostgis(DrillreportMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestDrillreportSpatialite(DrillreportMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass

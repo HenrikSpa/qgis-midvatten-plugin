@@ -22,14 +22,14 @@
 
 from unittest import mock
 from unittest.mock import call
-from nose.plugins.attrib import attr
+import pytest
 
 from midvatten.test import utils_for_tests
 from midvatten.tools.import_interlab4 import Interlab4Import
 from midvatten.tools.utils import common_utils
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
     def setUp(self):
         super(self.__class__, self).setUp()

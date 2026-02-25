@@ -25,14 +25,14 @@ import os
 
 from unittest import mock
 
-from nose.plugins.attrib import attr
+import pytest
 
 from midvatten.tools.utils import common_utils
 from midvatten.test import utils_for_tests
 from midvatten.tools.import_hobologger import HobologgerImport, TzConverter
 
 
-@attr(status="on")
+@pytest.mark.active
 class TestParseHobologgerFile:
     def setUp(self):
         pass

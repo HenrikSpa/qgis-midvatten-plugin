@@ -26,7 +26,7 @@ import os
 from unittest import mock
 import qgis.PyQt
 from unittest.mock import call
-from nose.plugins.attrib import attr
+import pytest
 
 from midvatten.definitions import midvatten_defs as defs
 from midvatten.test import utils_for_tests
@@ -34,7 +34,7 @@ from midvatten.tools.utils import common_utils
 from midvatten.tools.utils.midvatten_utils import PlotTemplates
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestSecplotTemplates(utils_for_tests.MidvattenTestSpatialiteNotCreated):
     def setUp(self):
         super(self.__class__, self).setUp()
@@ -325,7 +325,7 @@ class TestSecplotTemplates(utils_for_tests.MidvattenTestSpatialiteNotCreated):
         assert test == reference
 
 
-@attr(status="on")
+@pytest.mark.active
 class TestDefaultHardcodedTemplate:
     def test_secplot_default_template(self):
         adict = defs.secplot_default_template()

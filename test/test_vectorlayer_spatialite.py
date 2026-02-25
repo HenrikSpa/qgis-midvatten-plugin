@@ -20,14 +20,14 @@
 import string
 
 from unittest import mock
-from nose.plugins.attrib import attr
+import pytest
 from qgis.core import QgsProject, QgsVectorLayer
 
 from midvatten.test import utils_for_tests
 from midvatten.tools.utils import db_utils
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestVectorlayer(utils_for_tests.MidvattenTestSpatialiteDbSv):
     def create_vlayer(self, no_print=False):
         dbconnection = db_utils.DbConnectionManager()

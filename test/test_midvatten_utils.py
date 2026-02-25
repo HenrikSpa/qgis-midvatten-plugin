@@ -23,11 +23,10 @@ import io
 
 
 from unittest import mock
-import nose
 import numpy as np
 from cycler import cycler
 from unittest.mock import call
-from nose.plugins.attrib import attr
+import pytest
 
 from midvatten.test.mocks_for_tests import MockUsingReturnValue
 from midvatten.test.utils_for_tests import create_test_string
@@ -40,7 +39,7 @@ from midvatten.tools.utils.midvatten_utils import (
 )
 
 
-@attr(status="on")
+@pytest.mark.active
 class TestFilterNonexistingObsidsAndAsk:
     @mock.patch("qgis.utils.iface", autospec=True)
     @mock.patch("midvatten.tools.utils.common_utils.NotFoundQuestion", autospec=True)
@@ -98,13 +97,12 @@ class TestFilterNonexistingObsidsAndAsk:
             ["21", "h"],
         ]
         existing_obsids = ["2", "3", "10", "1_g", "1 a"]
-        nose.tools.assert_raises(
-            common_utils.UserInterruptError,
-            common_utils.filter_nonexisting_values_and_ask,
-            file_data,
-            "obsid",
-            existing_obsids,
-        )
+        with pytest.raises(common_utils.UserInterruptError):
+            common_utils.filter_nonexisting_values_and_ask(
+                file_data,
+                "obsid",
+                existing_obsids,
+            )
 
     @mock.patch("qgis.utils.iface", autospec=True)
     @mock.patch("midvatten.tools.utils.common_utils.NotFoundQuestion", autospec=True)
@@ -305,7 +303,7 @@ class TestFilterNonexistingObsidsAndAsk:
         assert len(mock_notfound.mock_calls) == 2
 
 
-@attr(status="on")
+@pytest.mark.active
 class TestTempinput:
     def test_tempinput(self):
         rows = "543\n21"
@@ -316,7 +314,7 @@ class TestTempinput:
         assert res == reference_list
 
 
-@attr(status="on")
+@pytest.mark.active
 class TestAskUser:
     qgis_PyQt_QtGui_QInputDialog_getText = MockUsingReturnValue(["-1 hours"])
     cancel = MockUsingReturnValue([""])
@@ -335,7 +333,7 @@ class TestAskUser:
         assert question.result == "cancel"
 
 
-@attr(status="on")
+@pytest.mark.active
 class TestSqlToParametersUnitsTuple:
     @mock.patch("midvatten.tools.utils.db_utils.helpers.sql_load_fr_db", autospec=True)
     def test_sql_to_parameters_units_tuple(self, mock_sqlload):
@@ -348,7 +346,7 @@ class TestSqlToParametersUnitsTuple:
         assert test_string == reference_string
 
 
-@attr(status="on")
+@pytest.mark.active
 class TestGetCurrentLocale:
     @mock.patch("midvatten.tools.utils.db_utils.DbConnectionManager")
     @mock.patch("midvatten.tools.utils.midvatten_utils.isinstance")
@@ -375,7 +373,7 @@ class TestGetCurrentLocale:
         assert test_string == reference_string
 
 
-@attr(status="on")
+@pytest.mark.active
 class TestGetDelimiter:
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_get_delimiter_only_one_column(self, mock_messagebar):
@@ -450,7 +448,7 @@ class TestGetDelimiter:
             _test(filename)
 
 
-@attr(status="on")
+@pytest.mark.active
 class TestGeneralExceptionHandler:
     def test_no_args_no_kwargs(self):
         @common_utils.general_exception_handler
@@ -508,7 +506,7 @@ class TestGeneralExceptionHandler:
         assert len(one_arg_args_kwargs("a")[2]) == 0
 
 
-@attr(status="on")
+@pytest.mark.active
 class TestContinuousColorCycle:
     def setUp(self):
         perform_all_replacements()
@@ -635,7 +633,7 @@ class TestContinuousColorCycle:
         ]
 
 
-@attr(status="on")
+@pytest.mark.active
 class TestVersionComparisonLists:
     def test_compare_verson_lists_same_not_old(self):
         is_old = compare_verson_lists(

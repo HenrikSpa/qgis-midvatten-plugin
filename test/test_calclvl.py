@@ -20,7 +20,7 @@
 """
 
 from unittest import mock
-from nose.plugins.attrib import attr
+import pytest
 from qgis.PyQt import QtWidgets
 
 from midvatten.test import utils_for_tests
@@ -263,11 +263,11 @@ class CalclvlMixin:
         super().tearDown()
 
 
-@attr(status="on")  # Postgis
+@pytest.mark.postgis
 class TestCalclvlPostgis(CalclvlMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestCalclvlSpatialite(CalclvlMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass

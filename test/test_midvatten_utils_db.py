@@ -21,7 +21,7 @@
 
 from unittest import mock
 from unittest.mock import call
-from nose.plugins.attrib import attr
+import pytest
 
 from midvatten.test import utils_for_tests
 from midvatten.test.utils_for_tests import create_test_string
@@ -124,56 +124,56 @@ class AddViewObsPointsObsLinesMixin:
         ]
 
 
-@attr(status="on")  # Postgis
+@pytest.mark.postgis
 class TestGetFunctionsPostgis(
     GetFunctionsMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestGetFunctionsSpatialite(
     GetFunctionsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass
 
 
-@attr(status="on")  # Postgis
+@pytest.mark.postgis
 class TestCalculateDbTableRowsPostgis(
     CalculateDbTableRowsMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestCalculateDbTableRowsSpatialite(
     CalculateDbTableRowsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass
 
 
-@attr(status="on")  # Postgis
+@pytest.mark.postgis
 class TestWarnAboutOldDatabasePostgis(
     WarnAboutOldDatabaseMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestWarnAboutOldDatabaseSpatialite(
     WarnAboutOldDatabaseMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass
 
 
-@attr(status="on")  # Postgis
+@pytest.mark.postgis
 class TestAddViewObsPointsObsLinesPostgis(
     AddViewObsPointsObsLinesMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestAddViewObsPointsObsLinesSpatialite(
     AddViewObsPointsObsLinesMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):

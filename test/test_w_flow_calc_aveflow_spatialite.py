@@ -19,7 +19,7 @@
 """
 
 from unittest import mock
-from nose.plugins.attrib import attr
+import pytest
 from qgis.PyQt import QtWidgets
 
 from midvatten.test import utils_for_tests
@@ -27,7 +27,7 @@ from midvatten.tools import w_flow_calc_aveflow
 from midvatten.tools.utils import common_utils, date_utils, db_utils
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
     @mock.patch("midvatten.tools.utils.common_utils.Askuser", mock.MagicMock())
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")

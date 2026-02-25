@@ -6,7 +6,7 @@ import os
 import re
 from unittest import mock
 
-from nose.plugins.attrib import attr
+import pytest
 from qgis.PyQt import QtCore
 
 from midvatten.test import utils_for_tests
@@ -54,7 +54,7 @@ def _normalize_report_html(html):
     return html
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestDrillreportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
     """Tests for DrillreportUi (custom drill report)."""
 

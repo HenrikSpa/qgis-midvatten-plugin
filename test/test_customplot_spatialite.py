@@ -23,7 +23,7 @@ import tempfile
 from unittest import mock
 
 import numpy as np
-from nose.plugins.attrib import attr
+import pytest
 
 from midvatten.test import utils_for_tests
 from midvatten.tools.utils import db_utils, gui_utils
@@ -83,7 +83,7 @@ def _configure_customplot_tab1_tab2(customplot, tab2=False, tab3=False):
         customplot.tab3_filter1.item(1).setSelected(True)
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
     """ """
 

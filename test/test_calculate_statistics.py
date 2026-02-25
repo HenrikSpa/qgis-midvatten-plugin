@@ -25,7 +25,7 @@ from collections import OrderedDict
 from unittest import mock
 from unittest.mock import MagicMock
 from unittest.mock import call
-from nose.plugins.attrib import attr
+import pytest
 
 from midvatten.tools.utils import db_utils
 from midvatten.test import utils_for_tests
@@ -87,11 +87,11 @@ class CalculateStatisticsMixin:
         assert ref in mock_messagebar.mock_calls
 
 
-@attr(status="on")  # Postgis
+@pytest.mark.postgis
 class TestCalculateStatisticsPostgis(CalculateStatisticsMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestCalculateStatisticsSpatialite(CalculateStatisticsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass

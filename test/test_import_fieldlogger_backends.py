@@ -3,7 +3,7 @@ from collections import OrderedDict
 
 from unittest import mock
 from unittest.mock import MagicMock
-from nose.plugins.attrib import attr
+import pytest
 
 from midvatten.tools.utils import db_utils
 from midvatten.test.mocks_for_tests import (
@@ -1975,14 +1975,14 @@ class FieldLoggerImporterDbMixin:
             assert test_string == reference_string
 
 
-@attr(status="on")  # Postgis
+@pytest.mark.postgis
 class TestFieldLoggerImporterDbPostgis(
     FieldLoggerImporterDbMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestFieldLoggerImporterDbSpatialite(
     FieldLoggerImporterDbMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):

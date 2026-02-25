@@ -25,7 +25,7 @@ from collections import OrderedDict
 
 from unittest import mock
 from unittest.mock import MagicMock
-from nose.plugins.attrib import attr
+import pytest
 from qgis.PyQt import QtWidgets
 
 from midvatten.test import utils_for_tests
@@ -2529,14 +2529,14 @@ class WlvllogImportFromDiverofficeFilesMixin:
                     assert test_string == reference_string
 
 
-@attr(status="on")  # Postgis
+@pytest.mark.postgis
 class TestWlvllogImportFromDiverofficeFilesPostgis(
     WlvllogImportFromDiverofficeFilesMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestWlvllogImportFromDiverofficeFilesSpatialite(
     WlvllogImportFromDiverofficeFilesMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):

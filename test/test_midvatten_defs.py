@@ -19,7 +19,7 @@
  ***************************************************************************/
 """
 
-from nose.plugins.attrib import attr
+import pytest
 
 from midvatten.tools.utils import common_utils
 from midvatten.tools.utils import db_utils
@@ -40,12 +40,12 @@ class DefsFunctionsMixin:
                 assert x
 
 
-@attr(status="on")  # Postgis
+@pytest.mark.postgis
 class TestDefsFunctionsPostgis(DefsFunctionsMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestDefsFunctionsSpatialite(DefsFunctionsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass
 
@@ -88,11 +88,11 @@ class GeocolorsymbolsMixin:
         assert test_string == reference_string
 
 
-@attr(status="on")  # Postgis
+@pytest.mark.postgis
 class TestGeocolorsymbolsPostgis(GeocolorsymbolsMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestGeocolorsymbolsSpatialite(GeocolorsymbolsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass

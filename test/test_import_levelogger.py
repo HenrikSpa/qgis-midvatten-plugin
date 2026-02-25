@@ -25,7 +25,7 @@ from collections import OrderedDict
 
 from unittest import mock
 from unittest.mock import MagicMock
-from nose.plugins.attrib import attr
+import pytest
 
 from midvatten.test import utils_for_tests
 from midvatten.test.mocks_for_tests import MockUsingReturnValue
@@ -1560,11 +1560,11 @@ class WlvllogImportFromLeveloggerFilesMixin:
             assert test_string == reference_string
 
 
-@attr(status="on")  # Postgis
+@pytest.mark.postgis
 class TestWlvllogImportFromLeveloggerFilesPostgis(WlvllogImportFromLeveloggerFilesMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestWlvllogImportFromLeveloggerFilesSpatialite(WlvllogImportFromLeveloggerFilesMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass

@@ -24,7 +24,7 @@ import uuid
 
 from unittest import mock
 
-from nose.plugins.attrib import attr
+import pytest
 
 from midvatten.tools.utils import common_utils, gui_utils, db_utils
 from midvatten.test import mocks_for_tests, utils_for_tests
@@ -791,14 +791,14 @@ class Interlab4ImporterDBMixin:
         assert test_string == reference_string
 
 
-@attr(status="on")  # Postgis
+@pytest.mark.postgis
 class TestInterlab4ImporterDBPostgis(
     Interlab4ImporterDBMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestInterlab4ImporterDBSpatialite(
     Interlab4ImporterDBMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):

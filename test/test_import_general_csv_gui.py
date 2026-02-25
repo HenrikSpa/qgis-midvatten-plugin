@@ -20,14 +20,14 @@
  ***************************************************************************/
 """
 
-from nose.plugins.attrib import attr
+import pytest
 
 from midvatten.test import utils_for_tests
 from midvatten.tools.import_general_csv_gui import GeneralCsvImportGui
 from midvatten.tools.utils import common_utils
 
 
-@attr(status="on")
+@pytest.mark.active
 class TestStaticMethods:
     def test_translate_and_reorder_file_data(self):
         file_data = [["obsid", "acol", "acol2"], ["rb1", "1", "2"]]

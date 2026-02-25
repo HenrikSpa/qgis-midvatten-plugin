@@ -1,5 +1,5 @@
 from unittest import mock
-from nose.plugins.attrib import attr
+import pytest
 from qgis.core import QgsProject
 
 from midvatten.test import utils_for_tests
@@ -49,11 +49,11 @@ class StratSymbologyMixin:
         assert mock_messagebar.mock_calls == []
 
 
-@attr(status="on")  # Postgis
+@pytest.mark.postgis
 class TestStratSymbologyPostgis(StratSymbologyMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestStratSymbologySpatialite(StratSymbologyMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass

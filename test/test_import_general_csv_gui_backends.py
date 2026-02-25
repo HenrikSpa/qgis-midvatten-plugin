@@ -27,7 +27,7 @@ from collections import OrderedDict
 from unittest import mock
 import qgis.PyQt
 from unittest.mock import MagicMock
-from nose.plugins.attrib import attr
+import pytest
 from qgis.PyQt.QtCore import QMetaType
 from qgis.core import (
     QgsProject,
@@ -1654,28 +1654,28 @@ class GeneralCsvGuiFromLayerMixin:
         super().tearDown()
 
 
-@attr(status="on")  # Postgis
+@pytest.mark.postgis
 class TestGeneralCsvGuiPostgis(
     GeneralCsvGuiMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestGeneralCsvGuiSpatialite(
     GeneralCsvGuiMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass
 
 
-@attr(status="on")  # Postgis
+@pytest.mark.postgis
 class TestGeneralCsvGuiFromLayerPostgis(
     GeneralCsvGuiFromLayerMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestGeneralCsvGuiFromLayerSpatialite(
     GeneralCsvGuiFromLayerMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):

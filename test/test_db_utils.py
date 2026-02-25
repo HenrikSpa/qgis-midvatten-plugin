@@ -21,7 +21,7 @@
 
 from unittest import mock
 
-from nose.plugins.attrib import attr
+import pytest
 
 from midvatten.test import utils_for_tests
 from midvatten.tools.utils import db_utils
@@ -200,94 +200,94 @@ class SqlInjectionHardeningMixin:
             dbconnection.closedb()
 
 
-@attr(status="on")  # Postgis
+@pytest.mark.postgis
 class TestDbTablesColumnsInfoPostgis(
     DbTablesColumnsInfoMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestDbTablesColumnsInfoSpatialite(
     DbTablesColumnsInfoMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass
 
 
-@attr(status="on")  # Postgis
+@pytest.mark.postgis
 class TestTablesColumnsPostgis(
     TablesColumnsMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestTablesColumnsSpatialite(
     TablesColumnsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass
 
 
-@attr(status="on")  # Postgis
+@pytest.mark.postgis
 class TestGetForeignKeysPostgis(
     GetForeignKeysMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestGetForeignKeysSpatialite(
     GetForeignKeysMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass
 
 
-@attr(status="on")  # Postgis
+@pytest.mark.postgis
 class TestVerifyTableExistPostgis(
     VerifyTableExistMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestVerifyTableExistSpatialite(
     VerifyTableExistMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass
 
 
-@attr(status="on")  # Postgis
+@pytest.mark.postgis
 class TestNonplotTablesPostgis(NonplotTablesMixin):
     pass
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestNonplotTablesSpatialite(NonplotTablesMixin):
     pass
 
 
-@attr(status="on")  # Postgis
+@pytest.mark.postgis
 class TestGetTimezoneFromDbPostgis(
     GetTimezoneFromDbMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestGetTimezoneFromDbSpatialite(
     GetTimezoneFromDbMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass
 
 
-@attr(status="on")  # Postgis
+@pytest.mark.postgis
 class TestSqlInjectionHardeningPostgis(
     SqlInjectionHardeningMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     pass
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestSqlInjectionHardeningSpatialite(
     SqlInjectionHardeningMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):

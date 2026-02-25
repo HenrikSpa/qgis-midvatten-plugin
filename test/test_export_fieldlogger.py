@@ -25,7 +25,7 @@ from collections import OrderedDict
 from unittest import mock
 
 from unittest.mock import MagicMock
-from nose.plugins.attrib import attr
+import pytest
 from qgis.PyQt.QtWidgets import QWidget
 from qgis.PyQt.QtCore import QMetaType
 from qgis.core import QgsField, QgsGeometry
@@ -41,7 +41,7 @@ from midvatten.tools.export_fieldlogger import ExportToFieldLogger
 from midvatten.tools import export_fieldlogger
 
 
-@attr(status="on")
+@pytest.mark.active
 class TestExportFieldloggerNoDb(MidvattenTestBase):
     def setUp(self):
         super().__init__()

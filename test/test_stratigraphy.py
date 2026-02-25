@@ -20,7 +20,7 @@
 """
 
 from unittest import mock
-from nose.plugins.attrib import attr
+import pytest
 from qgis.core import QgsProject, QgsVectorLayer
 
 from midvatten.test import utils_for_tests
@@ -386,11 +386,11 @@ class StratigraphyMixin:
         )
 
 
-@attr(status="on")  # Postgis
+@pytest.mark.postgis
 class TestStratigraphyPostgis(StratigraphyMixin, utils_for_tests.MidvattenTestPostgisDbSv):
     pass
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestStratigraphySpatialite(StratigraphyMixin, utils_for_tests.MidvattenTestSpatialiteDbSv):
     pass

@@ -31,7 +31,7 @@ from midvatten.definitions import db_defs
 
 EXPORT_DB_PATH = "/tmp/tmp_midvatten_export_db.sqlite"
 TEMP_DIR = "/tmp/"
-from nose.plugins.attrib import attr
+import pytest
 
 
 class ExportMixin:
@@ -1115,11 +1115,11 @@ class ExportMixin:
         super().tearDown()
 
 
-@attr(status="on")  # Postgis
+@pytest.mark.postgis
 class TestExportPostgis(ExportMixin, utils_for_tests.MidvattenTestPostgisDbEn):
     pass
 
 
-@attr(status="on")  # Spatialite
+@pytest.mark.spatialite
 class TestExportSpatialite(ExportMixin, utils_for_tests.MidvattenTestSpatialiteDbEn):
     pass

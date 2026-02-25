@@ -215,7 +215,7 @@ class TestFillDb(utils_for_tests.MidvattenTestPostgisNotCreated):
         ref_strings = [
             "running QGIS version",
             "on top of PostGIS version PostgreSQL",
-            "POSTGIS=",
+            "USE_GEOS=",
         ]
         for ref_string in ref_strings:
             assert ref_string in test_string

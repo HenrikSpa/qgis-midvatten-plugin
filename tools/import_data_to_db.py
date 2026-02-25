@@ -380,61 +380,45 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 else f"{dbconnection.schema}.{dest_table}",
             )
             recsbefore = dbconnection.execute_and_fetchall(count_sql)[0][0]
+            # Update 2026-02-25: Use INSERT OR IGNORE for SQLite and ON CONFLICT DO NOTHING for PostgreSQL.
+            sql = db_utils.add_insert_or_ignore_to_sql(sql, dbconnection)
             try:
                 dbconnection.execute(sql)
             except Exception as e:
-                # print(f"{ru(traceback.format_exc())}")
-                # print(sql)
-                # print("Source " + str(source_srid))
-
-                common_utils.MessagebarAndLog.info(
-                    log_msg=ru(
-                        QCoreApplication.translate(
-                            "MidvDataImporter",
-                            "INSERT failed while importing to %s. Using INSERT OR IGNORE instead. Msg:\n",
-                        )
-                    )
-                    % dest_table_with_schema
-                    + ru(str(e))
-                )
-                sql = db_utils.add_insert_or_ignore_to_sql(sql, dbconnection)
                 try:
-                    dbconnection.execute(sql)
-                except Exception as e:
-                    try:
-                        str(e)
-                    except UnicodeDecodeError:
-                        common_utils.MessagebarAndLog.critical(
-                            bar_msg=ru(
-                                QCoreApplication.translate(
-                                    "MidvDataImporter",
-                                    "Import failed, see log message panel",
-                                )
-                            ),
-                            log_msg=ru(
-                                QCoreApplication.translate(
-                                    "MidvDataImporter", "Sql\n%s  failed."
-                                )
+                    str(e)
+                except UnicodeDecodeError:
+                    common_utils.MessagebarAndLog.critical(
+                        bar_msg=ru(
+                            QCoreApplication.translate(
+                                "MidvDataImporter",
+                                "Import failed, see log message panel",
                             )
-                            % (sql),
-                            duration=999,
-                        )
-                    else:
-                        common_utils.MessagebarAndLog.critical(
-                            bar_msg=ru(
-                                QCoreApplication.translate(
-                                    "MidvDataImporter",
-                                    "Import failed, see log message panel",
-                                )
-                            ),
-                            log_msg=ru(
-                                QCoreApplication.translate(
-                                    "MidvDataImporter", "Sql\n%s  failed.\nMsg:\n%s"
-                                )
+                        ),
+                        log_msg=ru(
+                            QCoreApplication.translate(
+                                "MidvDataImporter", "Sql\n%s  failed."
                             )
-                            % (sql, ru(str(e))),
-                            duration=999,
                         )
+                        % (sql),
+                        duration=999,
+                    )
+                else:
+                    common_utils.MessagebarAndLog.critical(
+                        bar_msg=ru(
+                            QCoreApplication.translate(
+                                "MidvDataImporter",
+                                "Import failed, see log message panel",
+                            )
+                        ),
+                        log_msg=ru(
+                            QCoreApplication.translate(
+                                "MidvDataImporter", "Sql\n%s  failed.\nMsg:\n%s"
+                            )
+                        )
+                        % (sql, ru(str(e))),
+                        duration=999,
+                    )
 
             recsafter = dbconnection.execute_and_fetchall(count_sql)[0][0]
             nr_imported = recsafter - recsbefore

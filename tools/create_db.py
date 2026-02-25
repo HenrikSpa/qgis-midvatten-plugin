@@ -269,11 +269,20 @@ class NewDb:
         dbconnection.execute("SET search_path = public;")
         dbconnection.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
 
-        result = dbconnection.execute_and_fetchall(
-            "select version(), PostGIS_full_version();"
-        )
+        # Prefer PostGIS_Version(); PostGIS_Full_Version() can fail when it calls
+        # internal helpers (postgis_proj_version, postgis_geos_version) that may
+        # be missing or in another schema in some PostGIS setups.
+        try:
+            result = dbconnection.execute_and_fetchall(
+                "SELECT version() || ' ' || PostGIS_Version();"
+            )
+            versionstext = result[0][0] if result else ""
+        except Exception:
+            result = dbconnection.execute_and_fetchall("SELECT version();")
+            versionstext = result[0][0] if result else "PostGIS (version unknown)"
 
-        versionstext = ", ".join(result[0])
+        if not versionstext:
+            versionstext = "PostGIS (version unknown)"
 
         common_utils.stop_waiting_cursor()
         supplied_locale = self.ask_for_locale()
@@ -349,6 +358,7 @@ class NewDb:
             for stmt in " ".join(sql_lines).split(";")
             if stmt.strip()
         ]
+        dbconnection.execute("SET search_path = public;")
         for linenr, line in enumerate(sql_lines):
             sql = self.replace_words(line, replace_word_replace_with)
             try:

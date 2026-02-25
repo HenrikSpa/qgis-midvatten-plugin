@@ -124,7 +124,7 @@ class ExportData:
         )
         self.dest_dbconnection.commit()
 
-        db_utils.delete_srids(self.dest_dbconnection.cursor, dest_srid)
+        db_utils.delete_srids(self.dest_dbconnection, dest_srid)
         self.dest_dbconnection.commit()
 
         # Statistics
@@ -286,6 +286,7 @@ class ExportData:
             )
             return
 
+        dest_data = None
         if replace:
             self.dest_dbconnection.execute("""PRAGMA foreign_keys = OFF;""")
             dest_data = self.get_table_data(
@@ -295,6 +296,7 @@ class ExportData:
                 self.dest_dbconnection.execute_safe(
                     self.dest_dbconnection.sql_ident("DELETE FROM {t}", t=tname)
                 )
+                self.dest_dbconnection.commit()
 
         if tname == "obs_points":
             geom_column = list(
@@ -319,15 +321,9 @@ class ExportData:
             skip_confirmation=True,
             binary_geometry=True,
         )
+        self.dest_dbconnection.commit()
 
-        if replace and dest_data is not None:
-            self.midv_data_importer.general_import(
-                tname,
-                dest_data,
-                _dbconnection=self.dest_dbconnection,
-                source_srid=file_data_srid,
-                skip_confirmation=True,
-            )
+        if replace:
             self.dest_dbconnection.execute("""PRAGMA foreign_keys = ON;""")
 
     def get_table_data(

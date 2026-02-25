@@ -21,6 +21,7 @@
 
 import io
 import os
+import tempfile
 import unittest
 
 
@@ -136,7 +137,12 @@ class MidvattenTestBase:
 
 class MidvattenTestSpatialiteNotCreated(MidvattenTestBase):
     def setup_method(self):
-        self.TEMP_DBPATH = "/tmp/tmp_midvatten_temp_db.sqlite"
+        # Use a unique path per test to avoid cross-test interference (disk I/O errors,
+        # file-not-found when one test's teardown removes another test's DB).
+        self.TEMP_DBPATH = os.path.join(
+            tempfile.gettempdir(),
+            f"tmp_midvatten_{os.getpid()}_{id(self)}.sqlite",
+        )
         if self.TEMP_DBPATH and os.path.exists(self.TEMP_DBPATH):
             print(f"Error, the db did already exist: {self.TEMP_DBPATH}")
         self.remove_db()

@@ -21,7 +21,7 @@
 
 import io
 import os
-
+import tempfile
 from unittest import mock
 
 from midvatten.tools.utils import db_utils, common_utils
@@ -30,6 +30,17 @@ from midvatten.test.mocks_for_tests import MockUsingReturnValue, MockReturnUsing
 from midvatten.definitions import db_defs
 
 EXPORT_DB_PATH = "/tmp/tmp_midvatten_export_db.sqlite"
+
+
+# Unique path per test run to avoid cross-test pollution (shared path caused
+# test_export_spatialite_zz_tables to see wrong data when other tests left a file).
+def _unique_export_path(test_self):
+    return os.path.join(
+        tempfile.gettempdir(),
+        f"tmp_midvatten_export_{os.getpid()}_{id(test_self)}.sqlite",
+    )
+
+
 TEMP_DIR = "/tmp/"
 import pytest
 
@@ -313,7 +324,8 @@ class ExportMixin:
         mock_find_layer.return_value.crs.return_value.authid.return_value = "EPSG:3006"
         mock_createdb_crs_question.return_value = [3006, True]
         dbconnection = db_utils.DbConnectionManager()
-        mock_newdbpath.return_value = (EXPORT_DB_PATH, "")
+        export_path = _unique_export_path(self)
+        mock_newdbpath.return_value = (export_path, "")
         mock_verify.return_value = 0
 
         db_utils.sql_alter_db(
@@ -365,6 +377,7 @@ class ExportMixin:
         mock_locale.return_value.value = "sv_SE"
         self.midvatten.export_spatialite()
 
+        conn = db_utils.connect_with_spatialite_connect(export_path)
         sql_list = [
             """select obsid, ST_AsText(geometry) from obs_points""",
             """select staff from zz_staff""",
@@ -379,9 +392,7 @@ class ExportMixin:
             """select obsid, instrumentid, parameter, date_time from meteo""",
         ]
 
-        conn = db_utils.connect_with_spatialite_connect(EXPORT_DB_PATH)
         curs = conn.cursor()
-
         test_list = []
         for sql in sql_list:
             test_list.append("\n" + sql + "\n")
@@ -817,6 +828,9 @@ class ExportMixin:
         "midvatten.tools.utils.midvatten_utils.verify_msettings_loaded_and_layer_edit_mode",
         autospec=True,
     )
+    @mock.patch(
+        "midvatten.tools.create_db.common_utils.get_save_file_name_no_extension"
+    )
     @mock.patch("qgis.PyQt.QtWidgets.QFileDialog.getSaveFileName")
     @mock.patch("midvatten.tools.utils.midvatten_utils.find_layer", autospec=True)
     @mock.patch("qgis.utils.iface", autospec=True)
@@ -827,6 +841,7 @@ class ExportMixin:
         mock_iface,
         mock_find_layer,
         mock_newdbpath,
+        mock_get_save_path,
         mock_verify,
         mock_locale,
         mock_createdb_crs_question,
@@ -835,7 +850,14 @@ class ExportMixin:
         mock_find_layer.return_value.crs.return_value.authid.return_value = "EPSG:3006"
         mock_createdb_crs_question.return_value = [3006, True]
         dbconnection = db_utils.DbConnectionManager()
-        mock_newdbpath.return_value = (EXPORT_DB_PATH, "")
+        export_path = _unique_export_path(self)
+        for suffix in ["", "-journal", "-wal", "-shm"]:
+            try:
+                os.remove(export_path + suffix)
+            except OSError:
+                pass
+        mock_newdbpath.return_value = (export_path, "")
+        mock_get_save_path.return_value = export_path
         mock_verify.return_value = 0
 
         """
@@ -897,9 +919,11 @@ class ExportMixin:
 
         print("Before export")
         test_list = []
+        curs = dbconnection.cursor
         for sql in sql_list:
             test_list.append("\n" + sql + "\n")
-            test_list.append(dbconnection.cursor.execute(sql).fetchall())
+            curs.execute(sql)
+            test_list.append(curs.fetchall())
 
         dbconnection.closedb()
         print("After")
@@ -910,7 +934,7 @@ class ExportMixin:
 
         self.midvatten.export_spatialite()
 
-        conn = db_utils.connect_with_spatialite_connect(EXPORT_DB_PATH)
+        conn = db_utils.connect_with_spatialite_connect(export_path)
         curs = conn.cursor()
 
         test_list = []

@@ -9,4 +9,4 @@ alwaysApply: true
 
 ## What to do
 
-- Follow the **run-nosetests** skill (`.cursor/skills/run-nosetests/SKILL.md`) for the recommended order of tests and how to run nosetests3 with the right flags.
+- Follow the **run-pytest** skill (`.cursor/skills/run-pytest/SKILL.md`) for the recommended order of tests and how to run pytest with the right flags.

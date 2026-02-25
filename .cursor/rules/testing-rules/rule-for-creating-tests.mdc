@@ -33,7 +33,7 @@ Class Test1:
 
 ## Do not print the asserted values to stdout
 
-- Do not print the data included in an assert-comparison (This is instead automatically printed using nosetests3 argument "--failure-detail")
+- Do not print the data included in an assert-comparison (pytest prints assertion details automatically when a test fails)
 - This rule does not have priority over the previous rule about mock for MessagebarAndLog.
 
 NOT DO, example 1:

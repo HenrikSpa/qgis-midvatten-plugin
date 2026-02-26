@@ -80,7 +80,7 @@ class TestExportFieldloggerNoDb(MidvattenTestBase):
         common_utils.save_stored_settings(mock_ms, stored_settings, testkey)
 
         teststring = mock_ms.settingsdict[testkey]
-        reference_string = '[(0, (("input_field_group_list", ["p1.u1;it1:h1", "p2.u2;it2:h2"], ), ("key0_2", "value0_2", ), ), ), (1, (("location_suffix", "value1_1", ), ("key1_2", "value1_2", ), ), )]'
+        reference_string = '[[0, [["input_field_group_list", ["p1.u1;it1:h1", "p2.u2;it2:h2"]], ["key0_2", "value0_2"]]], [1, [["location_suffix", "value1_1"], ["key1_2", "value1_2"]]]]'
         assert teststring == reference_string
 
     @staticmethod
@@ -314,7 +314,7 @@ class TestExportFieldloggerNoDb(MidvattenTestBase):
         common_utils.save_stored_settings(mock_ms, stored_settings, testkey)
 
         teststring = create_test_string(mock_ms.settingsdict[testkey])
-        reference_string = '[(0, (("input_field_group_list", ["Aveflow.m3/s;numberDecimal|numberSigned;measure flow", "Accflow.m3;numberDecimal|numberSigned;measure flow"], ), ("key0_2", "value0_2", ), ), ), (1, (("location_suffix", "value1_1", ), ("key1_2", "value1_2", ), ), )]'
+        reference_string = '[[0, [["input_field_group_list", ["Aveflow.m3/s;numberDecimal|numberSigned;measure flow", "Accflow.m3;numberDecimal|numberSigned;measure flow"]], ["key0_2", "value0_2"]]], [1, [["location_suffix", "value1_1"], ["key1_2", "value1_2"]]]]'
         assert teststring == reference_string
 
     @staticmethod
@@ -742,11 +742,11 @@ class TestExportFieldloggerNoDb(MidvattenTestBase):
 
         assert (
             mock_ms.settingsdict["fieldlogger_export_pbrowser"]
-            == '[[0, (("input_field_list", ["DO.mg/l;numberDecimal|numberSigned; ", "comment;text;Obsid related comment"], ), )]]'
+            == '[[0, [["input_field_list", ["DO.mg/l;numberDecimal|numberSigned; ", "comment;text;Obsid related comment"]]]]]'
         )
         assert (
             mock_ms.settingsdict["fieldlogger_export_pgroups"]
-            == '[[0, (("input_field_group_list", ["DO.mg/l;numberDecimal|numberSigned; ", "comment;text;Obsid related comment"], ), ("location_suffix", "2766", ), ("sublocation_suffix", "level", ), )], [1, (("input_field_group_list", ["comment;text;Obsid related comment"], ), ("location_suffix", "1234", ), ("sublocation_suffix", "comment", ), )]]'
+            == '[[0, [["input_field_group_list", ["DO.mg/l;numberDecimal|numberSigned; ", "comment;text;Obsid related comment"]], ["location_suffix", "2766"], ["sublocation_suffix", "level"]]], [1, [["input_field_group_list", ["comment;text;Obsid related comment"]], ["location_suffix", "1234"], ["sublocation_suffix", "comment"]]]]'
         )
 
     @staticmethod

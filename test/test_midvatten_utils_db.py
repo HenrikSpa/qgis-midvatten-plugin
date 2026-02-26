@@ -115,12 +115,14 @@ class WarnAboutOldDatabaseMixin:
 
 
 class AddViewObsPointsObsLinesMixin:
+    expected_views_message = "Views not added for PostGIS databases (not needed)!"
+
     @mock.patch("midvatten.tools.utils.midvatten_utils.MessagebarAndLog")
     def test_add_view_obs_points_obs_lines(self, mock_messagebar):
         midvatten_utils.add_view_obs_points_obs_lines()
         print(f"{mock_messagebar.mock_calls=}")
         assert mock_messagebar.mock_calls == [
-            call.info(bar_msg="Views not added for PostGIS databases (not needed)!")
+            call.info(bar_msg=self.expected_views_message)
         ]
 
 
@@ -177,4 +179,6 @@ class TestAddViewObsPointsObsLinesPostgis(
 class TestAddViewObsPointsObsLinesSpatialite(
     AddViewObsPointsObsLinesMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
-    pass
+    expected_views_message = (
+        'Views added. Please reload layers (Midvatten>Load default db-layers to qgis or "F7").'
+    )

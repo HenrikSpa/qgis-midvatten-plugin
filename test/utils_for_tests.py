@@ -19,6 +19,7 @@
  ***************************************************************************/
 """
 
+import gc
 import io
 import os
 import sqlite3 as _sqlite3
@@ -171,6 +172,7 @@ class MidvattenTestBase:
     def teardown_method(self):
         plt.close("all")
         QgsProject.instance().clear()
+        gc.collect()
 
 
 class MidvattenTestSpatialiteNotCreated(MidvattenTestBase):
@@ -312,6 +314,7 @@ class MidvattenTestSpatialiteDbSv(MidvattenTestSpatialiteNotCreated):
         """Close plots and clear project. Do NOT delete the class-level DB file."""
         plt.close("all")
         QgsProject.instance().clear()
+        gc.collect()
 
     def remove_db(self):
         """No-op: the class-level DB file is managed by setup_class/teardown_class."""
@@ -421,6 +424,7 @@ class MidvattenTestSpatialiteDbEn(MidvattenTestSpatialiteNotCreated):
     def teardown_method(self):
         plt.close("all")
         QgsProject.instance().clear()
+        gc.collect()
 
     def remove_db(self):
         """No-op: the class-level DB file is managed by setup_class/teardown_class."""
@@ -708,6 +712,7 @@ class MidvattenTestPostgisDbSv(MidvattenTestPostgisNotCreated):
         """Close plots and clear project. Schema cleanup is in teardown_class."""
         plt.close("all")
         QgsProject.instance().clear()
+        gc.collect()
 
 
 class MidvattenTestPostgisDbEn(MidvattenTestPostgisNotCreated):
@@ -884,6 +889,7 @@ class MidvattenTestPostgisDbEn(MidvattenTestPostgisNotCreated):
     def teardown_method(self):
         plt.close("all")
         QgsProject.instance().clear()
+        gc.collect()
 
 
 class MidvattenTestPostgisDbSvImportInstance(MidvattenTestPostgisDbSv):

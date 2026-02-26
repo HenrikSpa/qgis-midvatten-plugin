@@ -904,9 +904,8 @@ class ExportMixin:
             curs.execute(sql)
             test_list.append(curs.fetchall())
 
-        dbconnection.closedb()
+        dbconnection.commit_and_closedb()
 
-        # dbconnection.commit_and_closedb()
         mock_locale.return_value.answer = "ok"
         mock_locale.return_value.value = "en_US"
 

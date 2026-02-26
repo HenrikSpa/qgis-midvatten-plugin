@@ -323,6 +323,17 @@ class ExportData:
         )
         self.dest_dbconnection.commit()
 
+        if replace and dest_data is not None:
+            self.midv_data_importer.general_import(
+                tname,
+                dest_data,
+                _dbconnection=self.dest_dbconnection,
+                source_srid=file_data_srid,
+                skip_confirmation=True,
+                binary_geometry=True,
+            )
+            self.dest_dbconnection.commit()
+
         if replace:
             self.dest_dbconnection.execute("""PRAGMA foreign_keys = ON;""")
 

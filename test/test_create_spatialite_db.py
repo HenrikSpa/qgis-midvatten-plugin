@@ -59,7 +59,8 @@ class TestCreateMemoryDb(utils_for_tests.MidvattenTestSpatialiteNotCreated):
 
         mock_answer_yes.return_value.result = 1
         mock_crs_question.return_value.__getitem__.return_value = 3006
-        mock_savefilename.return_value = ":memory:"
+        # QFileDialog.getSaveFileName returns (filename, selected_filter)
+        mock_savefilename.return_value = (":memory:", "")
         self.midvatten.new_db()
 
 

@@ -7,8 +7,10 @@ tools/wlevels_calc_calibr - Kopia.py
 .idea
 tests/qgis-auth.db
 qgis-auth.db
-.:
+./:
 ./test/:
 .venv
 .swp
-.claude
+.pytest_cache
+__pycache__
+monkeytype.sqlite3

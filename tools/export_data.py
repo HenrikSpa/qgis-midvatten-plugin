@@ -253,9 +253,12 @@ class ExportData:
     ):
         """
         Write to new sql database
-        :param tname: The destination database
-        :param tname_with_prefix: The source database
-        :param obsids:
+
+
+        :param tname: The destination table
+        :param obsids: Only collect data for the given obsids.
+        :param replace: Primary keys (or unique constraints) in the source table will have priority over the destination table.
+                        Primary keys (or unique constraints) in the destination table that does not exist in the source table will be kept.
         :return:
         """
 
@@ -287,6 +290,13 @@ class ExportData:
             return
 
         dest_data = None
+
+        # replace: Making sure that source data has priority
+        # 1. Read and cache rows from destination table.
+        # 2. Delete all rows in destination table.
+        # 3. Import data from source table to destination table.
+        # 4. Import the cached destination rows using "insert or ignore"-logic. Only rows that didn't exist
+        # in the source table will be inserted to destination table.
         if replace:
             self.dest_dbconnection.execute("""PRAGMA foreign_keys = OFF;""")
             dest_data = self.get_table_data(

@@ -128,6 +128,8 @@ class NotFoundQuestion(QtWidgets.QDialog, not_found_dialog):
     ):
         QtWidgets.QDialog.__init__(self, parent)
         self.answer = None
+        # PyQt uic-generated setupUi expects self.dialog to exist (root widget name in .ui)
+        self.dialog = self
         self.setupUi(self)
         self.setWindowTitle(dialogtitle)
         self.label.setText(msg)

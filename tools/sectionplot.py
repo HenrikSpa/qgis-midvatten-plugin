@@ -1529,7 +1529,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
 
         def create_array(shape):
             a = np.empty(shape=shape)
-            a[:] = np.NaN
+            a[:] = np.nan
             return a
 
         shape = (number_of_layers, len(df["length"]))
@@ -1579,8 +1579,8 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                         else max(vmax, max(resistivity_above_doi))
                     )
 
-                resistivity[~mask_above_doi] = np.NaN
-                resistivity_below_doi[mask_above_doi] = np.NaN
+                resistivity[~mask_above_doi] = np.nan
+                resistivity_below_doi[mask_above_doi] = np.nan
 
             x_arr[:, idx] = length
             y_arr[: len(resistivity), idx] = layers_middle

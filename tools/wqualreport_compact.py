@@ -427,7 +427,7 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
 
         if "depth" in df.columns:
             try:
-                df.loc[df["depth"] == "", "depth"] = np.NaN
+                df.loc[df["depth"] == "", "depth"] = np.nan
             except Exception:
                 print(f"Something went wrong: {traceback.format_exc()}")
 

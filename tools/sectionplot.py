@@ -1599,8 +1599,8 @@ class SectionPlot(
                 resistivity_below_doi
             )
 
-        # if shading == "nearest":
-        #    fill_empty_columns(new_idx_map, min_column_width, X, Y)
+        if shading == "nearest":
+            fill_empty_columns(new_idx_map, min_column_width, X, Y)
 
         maximum_depth = max(Y[-1, :])
         Y[-1, :] = np.where(np.isnan(Y[-1, :]), maximum_depth, Y[-1, :])

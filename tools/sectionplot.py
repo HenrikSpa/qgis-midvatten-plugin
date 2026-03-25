@@ -1532,7 +1532,14 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             a[:] = np.nan
             return a
 
-        shape = (number_of_layers, len(df["length"]))
+        shading = self.ms.settingsdict["secplot_tem_shading"]
+
+        if shading == "nearest":
+            new_idx_map, min_column_width = get_length_map(df["length"])
+        else:
+            new_idx_map = {idx: idx for idx in range(len(df["length"]))}
+
+        shape = (number_of_layers, max(list(new_idx_map.values())) + 1)
         x_arr = create_array(shape)
         y_arr = create_array(shape)
         z_arr = create_array(shape)
@@ -1582,13 +1589,19 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                 resistivity[~mask_above_doi] = np.nan
                 resistivity_below_doi[mask_above_doi] = np.nan
 
-            x_arr[:, idx] = length
-            y_arr[: len(resistivity), idx] = layers_middle
-            z_arr[: len(resistivity), idx] = resistivity
+            adjusted_idx = new_idx_map[idx]
+            x_arr[:, adjusted_idx] = length
+            y_arr[: len(resistivity), adjusted_idx] = layers_middle
+            z_arr[: len(resistivity), adjusted_idx] = resistivity
             # if len(resistivity) < number_of_layers:
             #    # X and Y can't have NaN-values. Fill up with faked layers.
             #    Y[len(resistivity):, idx] = [layers[-1]-(idx*0.001) for idx in range(1, number_of_layers-len(resistivity)+1)]
-            z_below_doi[: len(resistivity_below_doi), idx] = resistivity_below_doi
+            z_below_doi[: len(resistivity_below_doi), adjusted_idx] = (
+                resistivity_below_doi
+            )
+
+        if shading == "nearest":
+            fill_empty_columns(new_idx_map, min_column_width, X, Y)
 
         maximum_depth = max(y_arr[-1, :])
         y_arr[-1, :] = np.where(np.isnan(y_arr[-1, :]), maximum_depth, y_arr[-1, :])
@@ -2893,3 +2906,45 @@ def get_legend_items_labels(plot_items):
     legend_items = [p for p in plot_items if not getattr(p, "skip_legend", False)]
     labels = [p.get_label() for p in legend_items]
     return legend_items, labels
+
+
+def get_length_map(length_series: pd.Series):
+    """
+    Fix to add two empty columns (TEM measurement column) if the length along section
+    diff of two locations are greater than 1,5 times the column width.
+    """
+
+    df = length_series.sort_values().to_frame()
+    df["diff"] = df["length"].diff()
+    min_column_width = df["diff"].dropna().min()
+    new_idx_map = {}
+    new_idx = 0
+    allowed_interpolation_diff_factor = 1.5
+    for idx, (length, diff) in enumerate(df.itertuples(index=False)):
+        if not pd.isna(diff):
+            if diff > (min_column_width * allowed_interpolation_diff_factor):
+                # Fix that adds two columns, but no mapping for the real column.
+                new_idx += 2
+                new_idx_map[idx] = new_idx
+                new_idx += 1
+                continue
+
+        new_idx_map[idx] = new_idx
+        new_idx += 1
+    return new_idx_map, min_column_width
+
+
+def fill_empty_columns(new_idx_map, min_column_width, X, Y):
+    """
+    Fills the two new empty columns with the values of the previous non-empty
+    column and the next non-empty column. Uses the same layer config
+    as the two surrounding columns.
+    """
+    prev_idx = 0
+    for current_idx in sorted(new_idx_map.values()):
+        if current_idx > prev_idx + 1:
+            X[:, prev_idx + 1] = X[:, prev_idx] + min_column_width
+            X[:, current_idx - 1] = X[:, current_idx] - min_column_width
+            Y[:, prev_idx + 1] = Y[:, prev_idx]
+            Y[:, current_idx - 1] = Y[:, current_idx]
+        prev_idx = current_idx

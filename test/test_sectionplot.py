@@ -921,7 +921,7 @@ class SectionPlotMixin:
         leg = fig._midv_ax_main.get_legend()
 
         def markersize(leg):
-            handles = getattr(leg, 'legend_handles', None) or leg.legendHandles
+            handles = getattr(leg, "legend_handles", None) or leg.legendHandles
             return handles[0].get_markersize()
 
         start_markersize = markersize(leg)

@@ -260,7 +260,10 @@ class MidvattenTestSpatialiteDbSv(MidvattenTestSpatialiteNotCreated):
             mock_not_found.side_effect = side_effect
             mock_answer_yes.return_value.result = 1
             mock_crs_question.return_value.__getitem__.return_value = 3006
-            mock_savefilename.return_value = (cls._class_dbpath, "Spatialite (*.sqlite)")
+            mock_savefilename.return_value = (
+                cls._class_dbpath,
+                "Spatialite (*.sqlite)",
+            )
             mv.new_db()
 
         cls._class_db_settings = mv.ms.settingsdict["database"]
@@ -376,7 +379,10 @@ class MidvattenTestSpatialiteDbEn(MidvattenTestSpatialiteNotCreated):
             mock_not_found.side_effect = side_effect
             mock_answer_yes.return_value.result = 1
             mock_crs_question.return_value.__getitem__.return_value = 3006
-            mock_savefilename.return_value = (cls._class_dbpath, "Spatialite (*.sqlite)")
+            mock_savefilename.return_value = (
+                cls._class_dbpath,
+                "Spatialite (*.sqlite)",
+            )
             mv.new_db()
 
         cls._class_db_settings = mv.ms.settingsdict["database"]
@@ -690,9 +696,7 @@ class MidvattenTestPostgisDbSv(MidvattenTestPostgisNotCreated):
                     col_names = ", ".join(cols)
                     row_placeholders = "({})".format(", ".join([ph] * len(cols)))
                     all_row_placeholders = ", ".join([row_placeholders] * len(rows))
-                    insert_sql = (
-                        f"INSERT INTO {table} ({col_names}) VALUES {all_row_placeholders}"
-                    )
+                    insert_sql = f"INSERT INTO {table} ({col_names}) VALUES {all_row_placeholders}"
                     flat_args = [val for row in rows for val in row]
                     dbconn.execute(insert_sql, flat_args)
             dbconn.closedb()
@@ -870,9 +874,7 @@ class MidvattenTestPostgisDbEn(MidvattenTestPostgisNotCreated):
                     col_names = ", ".join(cols)
                     row_placeholders = "({})".format(", ".join([ph] * len(cols)))
                     all_row_placeholders = ", ".join([row_placeholders] * len(rows))
-                    insert_sql = (
-                        f"INSERT INTO {table} ({col_names}) VALUES {all_row_placeholders}"
-                    )
+                    insert_sql = f"INSERT INTO {table} ({col_names}) VALUES {all_row_placeholders}"
                     flat_args = [val for row in rows for val in row]
                     dbconn.execute(insert_sql, flat_args)
             dbconn.closedb()

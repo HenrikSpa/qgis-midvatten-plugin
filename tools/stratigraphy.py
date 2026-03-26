@@ -91,7 +91,7 @@ class Stratigraphy:
         try:  # return from store.getData is stored in data only if no object belonging to DataSanityError class is created
             self.data = self.store.getData(ids, lyr)  # added lyr as an argument!!!
         except DataSanityError as e:  # if an object 'e' belonging to DataSanityError is created, then do following
-            log.debug("DataSanityError %s" % str(e))
+            log.warning("DataSanityError %s" % str(e))
             common_utils.stop_waiting_cursor()
             common_utils.pop_up_info(
                 ru(
@@ -103,7 +103,7 @@ class Stratigraphy:
             )
             return
         except Exception as e:  # if an object 'e' belonging to DataSanityError is created, then do following
-            log.debug("exception : %s" % str(e))
+            log.error("exception : %s" % str(e))
             common_utils.stop_waiting_cursor()
             common_utils.MessagebarAndLog.critical(
                 bar_msg=ru(

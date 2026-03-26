@@ -78,14 +78,14 @@ import midvatten.definitions.midvatten_defs as defs
 from midvatten.tools.utils import matplotlib_replacements
 from midvatten.tools.utils.sampledem import qchain, sampling
 
+log = logging.getLogger(__name__)
+
 try:
     import pandas as pd
 except Exception:
     pandas_on = False
 else:
     pandas_on = True
-
-log = logging.getLogger(__name__)
 
 
 class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):

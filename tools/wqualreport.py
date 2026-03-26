@@ -297,6 +297,6 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
                     )
                     rpt += "  </td></tr>\n"
             except Exception:
-                log.debug("here was an error: %s" % sublist)
+                log.warning("here was an error: %s" % sublist)
             f.write(rpt)
         f.write("\n</table><p></p><p></p>")

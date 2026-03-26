@@ -9,8 +9,8 @@ passing and a commit.
 - [x] **Task 1**: Delete dead code (16 dead methods, unused imports, legacy comments)
 - [x] **Task 2**: Replace debug `print()` with `logging.debug()` (30+ calls)
 - [x] **Task 3**: Simplify `returnunicode`/`ru` and remove no-op calls (183 occurrences)
-- [ ] **Task 4**: Move `dbtype` branches to backend methods (19 string checks)
-- [ ] **Task 5**: Rename camelCase methods to snake_case (21 methods)
+- [x] **Task 4**: Move `dbtype` branches to backend methods (19 string checks)
+- [x] **Task 5**: Rename camelCase methods to snake_case (21 methods)
 - [ ] **Task 6**: Fix QMainWindow/QDialog init mismatch (9 classes)
 - [ ] **Task 7**: Decompose `general_import()` (421-line monolith)
 - [ ] **Task 8**: Migrate callers off `common_utils` re-exports

@@ -54,7 +54,7 @@ class Interlab4Import(qgis.PyQt.QtWidgets.QMainWindow, import_fieldlogger_ui_dia
         self.iface = parent
         self.ms = msettings
         self.ms.load_settings()
-        qgis.PyQt.QtWidgets.QDialog.__init__(self, parent)
+        qgis.PyQt.QtWidgets.QMainWindow.__init__(self, parent)
         self.setAttribute(WA_DeleteOnClose)
         self.setWindowTitle(
             QCoreApplication.translate(

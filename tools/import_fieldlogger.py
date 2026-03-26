@@ -62,7 +62,7 @@ class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
         self.iface = parent
         self.ms = msettings
         self.ms.load_settings()
-        QtWidgets.QDialog.__init__(self, parent)
+        QtWidgets.QMainWindow.__init__(self, parent)
         self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt
         self.status = True

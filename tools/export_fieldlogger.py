@@ -213,7 +213,7 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         self.iface = parent
 
         self.ms = midv_settings
-        QtWidgets.QDialog.__init__(self, parent)
+        QtWidgets.QMainWindow.__init__(self, parent)
         self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt
         self.setWindowTitle(

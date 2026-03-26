@@ -36,7 +36,7 @@ Calibr_Ui_Dialog = uic.loadUiType(
 class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     @fn_timer
     def __init__(self, parent, settingsdict1={}, obsid=""):
-        qgis.PyQt.QtWidgets.QDialog.__init__(self, parent)
+        qgis.PyQt.QtWidgets.QMainWindow.__init__(self, parent)
         self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt4 to initialize the UI
         self.setWindowTitle(

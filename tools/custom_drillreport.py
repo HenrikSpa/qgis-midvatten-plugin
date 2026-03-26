@@ -46,7 +46,7 @@ class DrillreportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
         self.iface = parent
 
         self.ms = midv_settings
-        qgis.PyQt.QtWidgets.QDialog.__init__(self, parent)
+        qgis.PyQt.QtWidgets.QMainWindow.__init__(self, parent)
         self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt
 

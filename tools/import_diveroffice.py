@@ -71,7 +71,7 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         self.iface = parent
         self.ms = msettings
         self.ms.load_settings()
-        qgis.PyQt.QtWidgets.QDialog.__init__(self, parent)
+        qgis.PyQt.QtWidgets.QMainWindow.__init__(self, parent)
         self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt
         self.setWindowTitle(

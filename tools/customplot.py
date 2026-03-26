@@ -68,7 +68,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
     def __init__(self, parent, msettings):
         self.ms = msettings
         self.ms.load_settings()
-        QtWidgets.QDialog.__init__(self, parent)
+        QtWidgets.QMainWindow.__init__(self, parent)
         self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # due to initialisation of Ui_MainWindow instance
         self.init_ui()

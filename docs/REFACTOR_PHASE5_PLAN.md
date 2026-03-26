@@ -7,16 +7,15 @@ passing and a commit.
 ## Task Index
 
 - [ ] **Task 1**: Delete dead code (16 dead methods, unused imports, legacy comments)
-- [ ] **Task 2**: Add `waiting_cursor` context manager (replace 100+ manual pairs)
-- [ ] **Task 3**: Replace debug `print()` with `logging.debug()` (30+ calls)
-- [ ] **Task 4**: Simplify `returnunicode`/`ru` and remove no-op calls (183 occurrences)
-- [ ] **Task 5**: Move `dbtype` branches to backend methods (19 string checks)
-- [ ] **Task 6**: Rename camelCase methods to snake_case (21 methods)
-- [ ] **Task 7**: Fix QMainWindow/QDialog init mismatch (9 classes)
-- [ ] **Task 8**: Decompose `general_import()` (421-line monolith)
-- [ ] **Task 9**: Migrate callers off `common_utils` re-exports
-- [ ] **Task 10**: Fix remaining style issues (mutable defaults, `== None`, etc.)
-- [ ] **Task 11**: Decompose `initGui()` in `midvatten_plugin.py` (381 lines)
+- [ ] **Task 2**: Replace debug `print()` with `logging.debug()` (30+ calls)
+- [ ] **Task 3**: Simplify `returnunicode`/`ru` and remove no-op calls (183 occurrences)
+- [ ] **Task 4**: Move `dbtype` branches to backend methods (19 string checks)
+- [ ] **Task 5**: Rename camelCase methods to snake_case (21 methods)
+- [ ] **Task 6**: Fix QMainWindow/QDialog init mismatch (9 classes)
+- [ ] **Task 7**: Decompose `general_import()` (421-line monolith)
+- [ ] **Task 8**: Migrate callers off `common_utils` re-exports
+- [ ] **Task 9**: Fix remaining style issues (mutable defaults, `== None`, etc.)
+- [ ] **Task 10**: Decompose `initGui()` in `midvatten_plugin.py` (381 lines)
 
 ## Prerequisites
 
@@ -62,34 +61,7 @@ Also remove:
 
 ---
 
-## Task 2: Add `waiting_cursor` context manager
-
-Create a context manager in `tools/utils/common_utils.py`:
-
-```python
-from contextlib import contextmanager
-
-@contextmanager
-def waiting_cursor():
-    start_waiting_cursor()
-    try:
-        yield
-    finally:
-        stop_waiting_cursor()
-```
-
-Then replace manually paired `start/stop_waiting_cursor()` calls in all files.
-Keep `start_waiting_cursor()` and `stop_waiting_cursor()` available for the
-rare cases where a context manager doesn't fit (e.g., across signal handlers).
-
-Known mismatched files (starts vs stops):
-- `create_db.py`: 9 vs 14
-- `import_diveroffice.py`: 3 vs 7
-- `sectionplot.py`: 4 vs 7
-
----
-
-## Task 3: Replace debug `print()` with `logging`
+## Task 2: Replace debug `print()` with `logging`
 
 Add a module-level logger to files that contain debug prints:
 
@@ -114,7 +86,7 @@ Do NOT convert `print()` calls that are inside test files.
 
 ---
 
-## Task 4: Simplify `returnunicode` and remove no-op calls
+## Task 3: Simplify `returnunicode` and remove no-op calls
 
 ### Background: what `ru()` actually does in Python 3
 
@@ -185,7 +157,7 @@ After cleanup, `ru()` will mainly serve as "safe stringify" for external data
 
 ---
 
-## Task 5: Move `dbtype` branches to backend methods
+## Task 4: Move `dbtype` branches to backend methods
 
 `tools/utils/db_utils/helpers.py` has 19 `dbconnection.dbtype` string checks.
 Each should become a polymorphic backend method.
@@ -213,7 +185,7 @@ Also:
 
 ---
 
-## Task 6: Rename camelCase methods to snake_case
+## Task 5: Rename camelCase methods to snake_case
 
 Only rename methods that are OUR code (not Qt/QGIS API overrides).
 Library methods like `setupUi()`, `closeEvent()`, `showEvent()`, `eventFilter()`
@@ -252,7 +224,7 @@ tests too.
 
 ---
 
-## Task 7: Fix QMainWindow/QDialog init mismatch
+## Task 6: Fix QMainWindow/QDialog init mismatch
 
 9 classes declare `QMainWindow` as parent but call `QDialog.__init__()`:
 - `customplot.py:64,68`
@@ -272,7 +244,7 @@ Test carefully — this could affect window flags or close behavior.
 
 ---
 
-## Task 8: Decompose `general_import()`
+## Task 7: Decompose `general_import()`
 
 `tools/import_data_to_db.py:48-468` (421 lines, 10 responsibilities).
 
@@ -290,7 +262,7 @@ else block lines 453-467) into a `_cleanup()` method or use a `finally` block.
 
 ---
 
-## Task 9: Migrate callers off `common_utils` re-exports
+## Task 8: Migrate callers off `common_utils` re-exports
 
 Update import statements across the codebase to import from the specific
 modules instead of `common_utils`:
@@ -315,7 +287,7 @@ Also move remaining misplaced functions out of `common_utils.py`:
 
 ---
 
-## Task 10: Fix remaining style issues
+## Task 9: Fix remaining style issues
 
 A collection of smaller fixes that can be done together:
 
@@ -329,7 +301,7 @@ A collection of smaller fixes that can be done together:
 
 ---
 
-## Task 11: Decompose `initGui()` in `midvatten_plugin.py`
+## Task 10: Decompose `initGui()` in `midvatten_plugin.py`
 
 381 lines of action registration. Split by category:
 

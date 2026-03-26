@@ -94,10 +94,8 @@ def execute_sqlfile(
             except Exception as e:
                 MessagebarAndLog.critical(
                     bar_msg=sql_failed_msg(),
-                    log_msg=ru(
-                        QCoreApplication.translate(
-                            "NewDb", "sql failed:\n%s\nerror msg:\n%s\n"
-                        )
+                    log_msg=QCoreApplication.translate(
+                        "NewDb", "sql failed:\n%s\nerror msg:\n%s\n"
                     )
                     % (ru(line), str(e)),
                 )

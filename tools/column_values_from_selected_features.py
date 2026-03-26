@@ -26,7 +26,6 @@ from qgis.core import QgsVectorLayer
 
 from midvatten.tools.utils import common_utils, db_utils, gui_utils
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
-from midvatten.tools.utils.common_utils import returnunicode as ru
 
 selected_features_dialog = qgis.PyQt.uic.loadUiType(
     os.path.join(os.path.dirname(__file__), "..", "ui", "selected_features.ui")
@@ -60,10 +59,8 @@ class ValuesFromSelectedFeaturesGui(
         self.activelayer = common_utils.get_active_layer()
         if not isinstance(self.activelayer, QgsVectorLayer):
             common_utils.MessagebarAndLog.warning(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "ValuesFromSelectedFeaturesGui", "Must select a vector layer!"
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "ValuesFromSelectedFeaturesGui", "Must select a vector layer!"
                 )
             )
             return None
@@ -86,11 +83,9 @@ class ValuesFromSelectedFeaturesGui(
         if activelayer is not self.activelayer:
             self.reload_combobox()
             common_utils.MessagebarAndLog.warning(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "ValuesFromSelectedFeaturesGui",
-                        "Column list reloaded. Select column and press Ok.",
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "ValuesFromSelectedFeaturesGui",
+                    "Column list reloaded. Select column and press Ok.",
                 )
             )
             return None
@@ -110,10 +105,8 @@ class ValuesFromSelectedFeaturesGui(
 
         if not selected_values:
             common_utils.MessagebarAndLog.info(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "ValuesFromSelectedFeaturesGui", "No features selected!"
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "ValuesFromSelectedFeaturesGui", "No features selected!"
                 )
             )
         else:
@@ -156,11 +149,9 @@ class ValuesFromSelectedFeaturesGui(
             activelayer.selectByIds(selected_feature_ids)
 
             common_utils.MessagebarAndLog.info(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "ValuesFromSelectedFeaturesGui",
-                        bar_prefix + "List of %s selected %s written to log",
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "ValuesFromSelectedFeaturesGui",
+                    bar_prefix + "List of %s selected %s written to log",
                 )
                 % (str(nr), self.selected_column),
                 log_msg=filter_string + "\n" + msg,

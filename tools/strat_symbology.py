@@ -501,10 +501,8 @@ def apply_style(layer, stylename):
         except Exception:
             if not os.path.isfile(stylefile):
                 raise StyleNotFoundError(
-                    ru(
-                        QCoreApplication.translate(
-                            "strat_symbology", """'Missing stylefile %s"""
-                        )
+                    QCoreApplication.translate(
+                        "strat_symbology", """'Missing stylefile %s"""
                     )
                     % ru(stylefile)
                 )
@@ -514,10 +512,8 @@ def apply_style(layer, stylename):
     else:
         if not os.path.isfile(stylefile):
             raise StyleNotFoundError(
-                ru(
-                    QCoreApplication.translate(
-                        "strat_symbology", """'Missing stylefile %s"""
-                    )
+                QCoreApplication.translate(
+                    "strat_symbology", """'Missing stylefile %s"""
                 )
                 % ru(stylefile)
             )
@@ -672,11 +668,9 @@ def add_views_to_db(dbconnection, bedrock_geoshort):
 
     if view_name not in list(db_utils.tables_columns(dbconnection=dbconnection).keys()):
         raise NotFoundError(
-            ru(
-                QCoreApplication.translate(
-                    "strat_symbology",
-                    "Stratsymbology failed. The view %s could not be found. See log for info.",
-                )
+            QCoreApplication.translate(
+                "strat_symbology",
+                "Stratsymbology failed. The view %s could not be found. See log for info.",
             )
             % view_name
         )
@@ -725,11 +719,9 @@ def add_views_to_db(dbconnection, bedrock_geoshort):
             view_found = True
     if not view_found:
         raise NotFoundError(
-            ru(
-                QCoreApplication.translate(
-                    "strat_symbology",
-                    "Stratsymbology failed. The view %s could not be found. See log for info.",
-                )
+            QCoreApplication.translate(
+                "strat_symbology",
+                "Stratsymbology failed. The view %s could not be found. See log for info.",
             )
             % view_name
         )
@@ -804,11 +796,9 @@ def add_views_to_db(dbconnection, bedrock_geoshort):
 
     if view_name not in list(db_utils.tables_columns(dbconnection=dbconnection).keys()):
         midvatten_utils.MessagebarAndLog.critical(
-            bar_msg=ru(
-                QCoreApplication.translate(
-                    "strat_symbology",
-                    "Stratsymbology failed. The view %s could not be found. See log for info.",
-                )
+            bar_msg=QCoreApplication.translate(
+                "strat_symbology",
+                "Stratsymbology failed. The view %s could not be found. See log for info.",
             )
             % view_name
         )

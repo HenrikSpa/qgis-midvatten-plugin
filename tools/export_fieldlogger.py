@@ -76,54 +76,46 @@ class ParameterGroup:
         self._input_field_group_list = ExtendedQPlainTextEdit(keep_sorted=False)
         self._obsid_list = ExtendedQPlainTextEdit(keep_sorted=True)
         self.paste_from_selection_button = QtWidgets.QPushButton(
-            ru(QCoreApplication.translate("ParameterGroup", "Paste selected ids"))
+            QCoreApplication.translate("ParameterGroup", "Paste selected ids")
         )
         # ------------------------------------------------------------------------
         self._location_suffix.setToolTip(
-            ru(
-                QCoreApplication.translate(
-                    "ParameterGroup",
-                    """(optional)\n"""
-                    """The Fieldlogger location in the Fieldlogger map will be "obsid.LOCATION SUFFIX".\n\n"""
-                    """Location suffix is useful for separating locations with identical obsids.\n"""
-                    """ex: Location suffix 1234 --> obsid.1234""",
-                )
+            QCoreApplication.translate(
+                "ParameterGroup",
+                """(optional)\n"""
+                """The Fieldlogger location in the Fieldlogger map will be "obsid.LOCATION SUFFIX".\n\n"""
+                """Location suffix is useful for separating locations with identical obsids.\n"""
+                """ex: Location suffix 1234 --> obsid.1234""",
             )
         )
         self._sublocation_suffix.setToolTip(
-            ru(
-                QCoreApplication.translate(
-                    "ParameterGroup",
-                    """(optional)\n"""
-                    """Fieldlogger sub-location will be obsid.Location suffix.Sub-location suffix\n\n"""
-                    """Parameters sharing the same sub-location will be shown together.\n"""
-                    """Sub-location suffix is used to separate input fields into groups for the Fieldlogger user.\n"""
-                    """ex: level, quality, sample, comment, flow.""",
-                )
+            QCoreApplication.translate(
+                "ParameterGroup",
+                """(optional)\n"""
+                """Fieldlogger sub-location will be obsid.Location suffix.Sub-location suffix\n\n"""
+                """Parameters sharing the same sub-location will be shown together.\n"""
+                """Sub-location suffix is used to separate input fields into groups for the Fieldlogger user.\n"""
+                """ex: level, quality, sample, comment, flow.""",
             )
         )
         self._input_field_group_list.setToolTip(
-            ru(
-                QCoreApplication.translate(
-                    "ParameterGroup",
-                    """Copy and paste input fields from "Create Input Fields" to this box\n"""
-                    """or from/to other input field boxes.\n"""
-                    """The input fields in Fieldlogger will appear in the same order as in\n"""
-                    """this list.\n"""
-                    """The topmost input field will be the first selected input field when\n"""
-                    """the user enters the input fields in Fieldlogger. (!!! If the input\n"""
-                    """field already exists in a previous group it will end up on top!!!)""",
-                )
-            )
-        )
-        locations_box_tooltip = ru(
             QCoreApplication.translate(
                 "ParameterGroup",
-                """Add locations to Locations box by selecting rows in the chosen layer (see "Locations from"\n"""
-                """in the left column) using it's attribute table or selection from map.\n"""
-                """Then click the button "Paste selected ids."\n"""
-                """Copy and paste obsids between Locations boxes.""",
+                """Copy and paste input fields from "Create Input Fields" to this box\n"""
+                """or from/to other input field boxes.\n"""
+                """The input fields in Fieldlogger will appear in the same order as in\n"""
+                """this list.\n"""
+                """The topmost input field will be the first selected input field when\n"""
+                """the user enters the input fields in Fieldlogger. (!!! If the input\n"""
+                """field already exists in a previous group it will end up on top!!!)""",
             )
+        )
+        locations_box_tooltip = QCoreApplication.translate(
+            "ParameterGroup",
+            """Add locations to Locations box by selecting rows in the chosen layer (see "Locations from"\n"""
+            """in the left column) using it's attribute table or selection from map.\n"""
+            """Then click the button "Paste selected ids."\n"""
+            """Copy and paste obsids between Locations boxes.""",
         )
 
         self._obsid_list.setToolTip(locations_box_tooltip)
@@ -225,10 +217,8 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt
         self.setWindowTitle(
-            ru(
-                QCoreApplication.translate(
-                    "ExportToFieldLogger", "Export to Fieldlogger dialog"
-                )
+            QCoreApplication.translate(
+                "ExportToFieldLogger", "Export to Fieldlogger dialog"
             )
         )
 
@@ -253,10 +243,8 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         ]:
             if settingskey not in self.ms.settingsdict:
                 common_utils.MessagebarAndLog.warning(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "ExportToFieldLogger", "%s did not exist in settingsdict"
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "ExportToFieldLogger", "%s did not exist in settingsdict"
                     )
                     % settingskey
                 )
@@ -320,10 +308,8 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
 
         self.main_vertical_layout.addWidget(
             QtWidgets.QLabel(
-                ru(
-                    QCoreApplication.translate(
-                        "ExportToFieldLogger", "Fieldlogger input fields and locations:"
-                    )
+                QCoreApplication.translate(
+                    "ExportToFieldLogger", "Fieldlogger input fields and locations:"
                 )
             )
         )
@@ -346,7 +332,7 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
             use_fieldlogger=self.export_as_fieldlogger.isChecked(),
         )
         self.parameter_browser_button = QtWidgets.QPushButton(
-            ru(QCoreApplication.translate("ExportToFieldLogger", "Create Input Fields"))
+            QCoreApplication.translate("ExportToFieldLogger", "Create Input Fields")
         )
         self.grid_layout_buttons.addWidget(
             self.parameter_browser_button, self.grid_layout_buttons.rowCount(), 0
@@ -363,18 +349,14 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         )
 
         self.add_parameter_group = QtWidgets.QPushButton(
-            ru(
-                QCoreApplication.translate(
-                    "ExportToFieldLogger", "More Fields and Locations"
-                )
+            QCoreApplication.translate(
+                "ExportToFieldLogger", "More Fields and Locations"
             )
         )
         self.add_parameter_group.setToolTip(
-            ru(
-                QCoreApplication.translate(
-                    "ExportToFieldLogger",
-                    "Creates an additional empty input field group.",
-                )
+            QCoreApplication.translate(
+                "ExportToFieldLogger",
+                "Creates an additional empty input field group.",
             )
         )
         self.grid_layout_buttons.addWidget(
@@ -412,13 +394,11 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
 
         # Buttons
         self.save_settings_button = QtWidgets.QPushButton(
-            ru(QCoreApplication.translate("ExportToFieldLogger", "Save settings"))
+            QCoreApplication.translate("ExportToFieldLogger", "Save settings")
         )
         self.save_settings_button.setToolTip(
-            ru(
-                QCoreApplication.translate(
-                    "ExportToFieldLogger", "Saves the current input fields settings."
-                )
+            QCoreApplication.translate(
+                "ExportToFieldLogger", "Saves the current input fields settings."
             )
         )
         self.grid_layout_buttons.addWidget(
@@ -427,13 +407,11 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         self.save_settings_button.clicked.connect(self.save_stored_settings)
 
         self.clear_settings_button = QtWidgets.QPushButton(
-            ru(QCoreApplication.translate("ExportToFieldLogger", "Clear settings"))
+            QCoreApplication.translate("ExportToFieldLogger", "Clear settings")
         )
         self.clear_settings_button.setToolTip(
-            ru(
-                QCoreApplication.translate(
-                    "ExportToFieldLogger", "Clear all input fields settings."
-                )
+            QCoreApplication.translate(
+                "ExportToFieldLogger", "Clear all input fields settings."
             )
         )
         self.grid_layout_buttons.addWidget(
@@ -442,14 +420,12 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         self.clear_settings_button.clicked.connect(self.clear_settings)
 
         self.settings_strings_button = QtWidgets.QPushButton(
-            ru(QCoreApplication.translate("ExportToFieldLogger", "Settings strings"))
+            QCoreApplication.translate("ExportToFieldLogger", "Settings strings")
         )
         self.settings_strings_button.setToolTip(
-            ru(
-                QCoreApplication.translate(
-                    "ExportToFieldLogger",
-                    'Access the settings strings ("Create input fields" and input fields) to copy and paste all settings between different qgis projects.\n Usage: Select string and copy to a text editor or directly into Settings strings dialog of another qgis project.',
-                )
+            QCoreApplication.translate(
+                "ExportToFieldLogger",
+                'Access the settings strings ("Create input fields" and input fields) to copy and paste all settings between different qgis projects.\n Usage: Select string and copy to a text editor or directly into Settings strings dialog of another qgis project.',
             )
         )
         self.grid_layout_buttons.addWidget(
@@ -460,14 +436,12 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         )
 
         self.default_settings_button = QtWidgets.QPushButton(
-            ru(QCoreApplication.translate("ExportToFieldLogger", "Default settings"))
+            QCoreApplication.translate("ExportToFieldLogger", "Default settings")
         )
         self.default_settings_button.setToolTip(
-            ru(
-                QCoreApplication.translate(
-                    "ExportToFieldLogger",
-                    'Updates "Create input fields" and input fields to default settings.',
-                )
+            QCoreApplication.translate(
+                "ExportToFieldLogger",
+                'Updates "Create input fields" and input fields to default settings.',
             )
         )
         self.grid_layout_buttons.addWidget(
@@ -482,14 +456,12 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         )
 
         self.preview_button = QtWidgets.QPushButton(
-            ru(QCoreApplication.translate("ExportToFieldLogger", "Preview"))
+            QCoreApplication.translate("ExportToFieldLogger", "Preview")
         )
         self.preview_button.setToolTip(
-            ru(
-                QCoreApplication.translate(
-                    "ExportToFieldLogger",
-                    "View a preview of the Fieldlogger location file as pop-up info.",
-                )
+            QCoreApplication.translate(
+                "ExportToFieldLogger",
+                "View a preview of the Fieldlogger location file as pop-up info.",
             )
         )
         self.grid_layout_buttons.addWidget(
@@ -499,14 +471,12 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         self.preview_button.clicked.connect(lambda x: self.preview())
 
         self.export_button = QtWidgets.QPushButton(
-            ru(QCoreApplication.translate("ExportToFieldLogger", "Export"))
+            QCoreApplication.translate("ExportToFieldLogger", "Export")
         )
         self.export_button.setToolTip(
-            ru(
-                QCoreApplication.translate(
-                    "ExportToFieldLogger",
-                    "Exports the current combination of locations and input fields to a Fieldlogger location file.",
-                )
+            QCoreApplication.translate(
+                "ExportToFieldLogger",
+                "Exports the current combination of locations and input fields to a Fieldlogger location file.",
             )
         )
         self.grid_layout_buttons.addWidget(
@@ -536,19 +506,13 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
             widgets_layouts[0][1],
             [
                 QtWidgets.QLabel(
-                    ru(
-                        QCoreApplication.translate(
-                            "ExportToFieldLogger", "Sub-location suffix"
-                        )
+                    QCoreApplication.translate(
+                        "ExportToFieldLogger", "Sub-location suffix"
                     )
                 ),
                 parameter_group._sublocation_suffix,
                 QtWidgets.QLabel(
-                    ru(
-                        QCoreApplication.translate(
-                            "ExportToFieldLogger", "Input fields"
-                        )
-                    )
+                    QCoreApplication.translate("ExportToFieldLogger", "Input fields")
                 ),
                 parameter_group._input_field_group_list,
             ],
@@ -558,16 +522,14 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
             widgets_layouts[1][1],
             [
                 QtWidgets.QLabel(
-                    ru(QCoreApplication.translate("ExportToFieldLogger", "Locations"))
+                    QCoreApplication.translate("ExportToFieldLogger", "Locations")
                 ),
                 parameter_group.paste_from_selection_button,
                 parameter_group._obsid_list,
                 QtWidgets.QLabel(
-                    ru(
-                        QCoreApplication.translate(
-                            "ExportToFieldLogger",
-                            "Location suffix\n(ex. project number)",
-                        )
+                    QCoreApplication.translate(
+                        "ExportToFieldLogger",
+                        "Location suffix\n(ex. project number)",
                     )
                 ),
                 parameter_group._location_suffix,
@@ -613,11 +575,9 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
                     attrs_set = True
                 else:
                     common_utils.MessagebarAndLog.warning(
-                        log_msg=ru(
-                            QCoreApplication.translate(
-                                "ExportToFieldLogger",
-                                "Tried to load input field groups but the variable %s did not exist.",
-                            )
+                        log_msg=QCoreApplication.translate(
+                            "ExportToFieldLogger",
+                            "Tried to load input field groups but the variable %s did not exist.",
                         )
                         % attr[0]
                     )
@@ -644,21 +604,17 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
                         )
                     else:
                         common_utils.MessagebarAndLog.warning(
-                            log_msg=ru(
-                                QCoreApplication.translate(
-                                    "ExportToFieldLogger",
-                                    "Tried to load input field fields browser but the variable %s did not exist.",
-                                )
+                            log_msg=QCoreApplication.translate(
+                                "ExportToFieldLogger",
+                                "Tried to load input field fields browser but the variable %s did not exist.",
                             )
                             % attr[0]
                         )
                 except UnicodeEncodeError:
                     common_utils.MessagebarAndLog.warning(
-                        log_msg=ru(
-                            QCoreApplication.translate(
-                                "ExportToFieldLogger",
-                                "Tried to load input field fields browser but the string %s could not be handled.",
-                            )
+                        log_msg=QCoreApplication.translate(
+                            "ExportToFieldLogger",
+                            "Tried to load input field fields browser but the string %s could not be handled.",
                         )
                         % ru(attr[1])
                     )
@@ -687,41 +643,35 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         )
 
         common_utils.pop_up_info(
-            ru(
-                QCoreApplication.translate(
-                    "ExportToFieldLogger",
-                    'Input fields and "Create Input Fields" updated to default.\nRestart Export to Fieldlogger dialog to complete,\nor press "Save settings" to save current input fields settings again.',
-                )
+            QCoreApplication.translate(
+                "ExportToFieldLogger",
+                'Input fields and "Create Input Fields" updated to default.\nRestart Export to Fieldlogger dialog to complete,\nor press "Save settings" to save current input fields settings again.',
             )
         )
 
     def settings_strings_dialogs(self):
 
-        msg = ru(
-            QCoreApplication.translate(
-                "ExportToFieldLogger",
-                "Edit the settings string for input fields browser and restart export fieldlogger dialog\nto load the change.",
-            )
+        msg = QCoreApplication.translate(
+            "ExportToFieldLogger",
+            "Edit the settings string for input fields browser and restart export fieldlogger dialog\nto load the change.",
         )
+
         browser_updated = self.ask_and_update_settings(
             [self.parameter_browser], self.stored_settingskey_parameterbrowser, msg
         )
-        msg = ru(
-            QCoreApplication.translate(
-                "ExportToFieldLogger",
-                "Edit the settings string for input fields groups and restart export fieldlogger dialog\nto load the change.",
-            )
+        msg = QCoreApplication.translate(
+            "ExportToFieldLogger",
+            "Edit the settings string for input fields groups and restart export fieldlogger dialog\nto load the change.",
         )
+
         groups_updated = self.ask_and_update_settings(
             self.parameter_groups, self.stored_settingskey, msg
         )
         if browser_updated or groups_updated:
             common_utils.pop_up_info(
-                ru(
-                    QCoreApplication.translate(
-                        "ExportToFieldLogger",
-                        'Settings updated. Restart Export to Fieldlogger dialog\nor press "Save settings" to undo.',
-                    )
+                QCoreApplication.translate(
+                    "ExportToFieldLogger",
+                    'Settings updated. Restart Export to Fieldlogger dialog\nor press "Save settings" to undo.',
                 )
             )
 
@@ -733,11 +683,7 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
 
         new_string = QtWidgets.QInputDialog.getText(
             None,
-            ru(
-                QCoreApplication.translate(
-                    "ExportToFieldLogger", "Edit settings string"
-                )
-            ),
+            QCoreApplication.translate("ExportToFieldLogger", "Edit settings string"),
             msg,
             QtWidgets.QLineEdit.Normal,
             old_string,
@@ -758,17 +704,13 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         except SyntaxError as e:
             stored_settings = []
             common_utils.MessagebarAndLog.warning(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "ExportToFieldLogger",
-                        "Parsing settings failed, see log message panel",
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "ExportToFieldLogger",
+                    "Parsing settings failed, see log message panel",
                 ),
-                log_msg=ru(
-                    QCoreApplication.translate(
-                        "ExportToFieldLogger",
-                        "Parsing settings failed using string\n%s\n%s",
-                    )
+                log_msg=QCoreApplication.translate(
+                    "ExportToFieldLogger",
+                    "Parsing settings failed using string\n%s\n%s",
                 )
                 % (new_string_text, str(e)),
             )
@@ -848,11 +790,9 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
             _parameters_inputtypes_hints = parameter_group.input_field_group_list
             if not _parameters_inputtypes_hints:
                 common_utils.MessagebarAndLog.warning(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "ExportToFieldLogger",
-                            "Warning: Empty input fields list for group nr %s",
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "ExportToFieldLogger",
+                        "Warning: Empty input fields list for group nr %s",
                     )
                     % str(index + 1)
                 )
@@ -869,11 +809,9 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
                     lat, lon = latlons.get(obsid, [None, None])
                     if not lat or not lon:
                         common_utils.MessagebarAndLog.critical(
-                            bar_msg=ru(
-                                QCoreApplication.translate(
-                                    "ExportToFieldLogger",
-                                    "Critical: Obsid %s did not have lat-lon coordinates. Check obs_points table",
-                                )
+                            bar_msg=QCoreApplication.translate(
+                                "ExportToFieldLogger",
+                                "Critical: Obsid %s did not have lat-lon coordinates. Check obs_points table",
                             )
                             % obsid
                         )
@@ -887,17 +825,13 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
                     if existed_p_i_h is not None:
                         if existed_p_i_h != _parameter_inputtype_hint:
                             common_utils.MessagebarAndLog.warning(
-                                bar_msg=ru(
-                                    QCoreApplication.translate(
-                                        "ExportToFieldLogger",
-                                        "Warning, parameter error, see log message panel",
-                                    )
+                                bar_msg=QCoreApplication.translate(
+                                    "ExportToFieldLogger",
+                                    "Warning, parameter error, see log message panel",
                                 ),
-                                log_msg=ru(
-                                    QCoreApplication.translate(
-                                        "ExportToFieldLogger",
-                                        "The parameter %s exists more than once and the last one will overwrite the previous.",
-                                    )
+                                log_msg=QCoreApplication.translate(
+                                    "ExportToFieldLogger",
+                                    "The parameter %s exists more than once and the last one will overwrite the previous.",
                                 )
                                 % _parameter,
                             )
@@ -969,8 +903,8 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         stop_waiting_cursor()
         filename = common_utils.get_save_file_name_no_extension(
             parent=None,
-            caption=ru(
-                QCoreApplication.translate("ExportToFieldLogger", "Choose a file name")
+            caption=QCoreApplication.translate(
+                "ExportToFieldLogger", "Choose a file name"
             ),
             directory="",
             filter=filter,
@@ -983,20 +917,14 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
                 f.write(out_string)
         except OSError as e:
             common_utils.pop_up_info(
-                ru(
-                    QCoreApplication.translate(
-                        "ExportToFieldLogger", "Writing of file failed!: %s "
-                    )
+                QCoreApplication.translate(
+                    "ExportToFieldLogger", "Writing of file failed!: %s "
                 )
                 % str(e)
             )
         except UnicodeDecodeError as e:
             common_utils.pop_up_info(
-                ru(
-                    QCoreApplication.translate(
-                        "ExportToFieldLogger", "Error writing %s"
-                    )
-                )
+                QCoreApplication.translate("ExportToFieldLogger", "Error writing %s")
                 % str(out_string)
             )
 
@@ -1065,11 +993,9 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
             self.ms, "FieldLogger", self.stored_settingskey_format, skip_ast=True
         )
         common_utils.pop_up_info(
-            ru(
-                QCoreApplication.translate(
-                    "ExportToFieldLogger",
-                    'Settings cleared. Restart Export to Fieldlogger dialog to complete,\nor press "Save settings" to save current input fields settings again.',
-                )
+            QCoreApplication.translate(
+                "ExportToFieldLogger",
+                'Settings cleared. Restart Export to Fieldlogger dialog to complete,\nor press "Save settings" to save current input fields settings again.',
             )
         )
 
@@ -1145,44 +1071,37 @@ class ParameterBrowser(QtWidgets.QDialog, parameter_browser_dialog):
         )
 
         # ------------------------------------------------------------------------------------
-        par_unit_tooltip = ru(
-            QCoreApplication.translate(
-                "ParameterBrowser",
-                (
-                    "(optional)\n"
-                    "When both parameter and unit is given, they will be combined to create the input field name."
-                ),
-            )
+        par_unit_tooltip = QCoreApplication.translate(
+            "ParameterBrowser",
+            (
+                "(optional)\n"
+                "When both parameter and unit is given, they will be combined to create the input field name."
+            ),
         )
+
         self._distinct_parameter.setToolTip(par_unit_tooltip)
         self._distinct_unit.setToolTip(par_unit_tooltip)
         self._combined_name.setToolTip(
-            ru(
-                QCoreApplication.translate(
-                    "ExportToFieldLogger",
-                    "(mandatory)\n"
-                    "Either supply a chosen name directly or use parameter\n"
-                    "and unit boxes to create a name.\n"
-                    "ex: parameter.unit",
-                )
+            QCoreApplication.translate(
+                "ExportToFieldLogger",
+                "(mandatory)\n"
+                "Either supply a chosen name directly or use parameter\n"
+                "and unit boxes to create a name.\n"
+                "ex: parameter.unit",
             )
         )
 
         self._hint.setToolTip(
-            ru(
-                QCoreApplication.translate(
-                    "ParameterBrowser",
-                    '(optional)\nHint given to the Fieldlogger/FieldForm user for the parameter. Ex: "depth to water"',
-                )
+            QCoreApplication.translate(
+                "ParameterBrowser",
+                '(optional)\nHint given to the Fieldlogger/FieldForm user for the parameter. Ex: "depth to water"',
             )
         )
         # ------------------------------------------------------------------------------------
         self._input_field_list.setToolTip(
-            ru(
-                QCoreApplication.translate(
-                    "ParameterBrowser",
-                    'Copy input fields to the "Input Fields" boxes using ctrl+c, ctrl+v.',
-                )
+            QCoreApplication.translate(
+                "ParameterBrowser",
+                'Copy input fields to the "Input Fields" boxes using ctrl+c, ctrl+v.',
             )
         )
         self._input_field_list.sizePolicy().setHorizontalPolicy(
@@ -1193,20 +1112,16 @@ class ParameterBrowser(QtWidgets.QDialog, parameter_browser_dialog):
         self.horizontal_layout.addWidget(self._input_field_list)
 
         self._options.setToolTip(
-            ru(
-                QCoreApplication.translate(
-                    "ParameterBrowser",
-                    "(optional)\nThe options between which the user can choose when type=choice or type=multichoice.\n"
-                    'Specify as a comma-separated JSON list, ex: "OptionA", "OptionB", "OptionC"',
-                )
+            QCoreApplication.translate(
+                "ParameterBrowser",
+                "(optional)\nThe options between which the user can choose when type=choice or type=multichoice.\n"
+                'Specify as a comma-separated JSON list, ex: "OptionA", "OptionB", "OptionC"',
             )
         )
         self._default_value.setToolTip(
-            ru(
-                QCoreApplication.translate(
-                    "ParameterBrowser",
-                    "(optional)\nThe default value for an inputfield, only supported for type=choice",
-                )
+            QCoreApplication.translate(
+                "ParameterBrowser",
+                "(optional)\nThe default value for an inputfield, only supported for type=choice",
             )
         )
 
@@ -1234,15 +1149,11 @@ class ParameterBrowser(QtWidgets.QDialog, parameter_browser_dialog):
 
         if not connection_ok:
             common_utils.MessagebarAndLog.critical(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "ParameterBrowser", "Error, sql failed, see log message panel"
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "ParameterBrowser", "Error, sql failed, see log message panel"
                 ),
-                log_msg=ru(
-                    QCoreApplication.translate(
-                        "ParameterBrowser", """Cannot get data from sql %s"""
-                    )
+                log_msg=QCoreApplication.translate(
+                    "ParameterBrowser", """Cannot get data from sql %s"""
                 )
                 % ru(sql),
             )
@@ -1274,40 +1185,32 @@ class ParameterBrowser(QtWidgets.QDialog, parameter_browser_dialog):
             ]
             if not combined_name:
                 common_utils.MessagebarAndLog.critical(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "ParameterBrowser", "Error, input name not set"
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "ParameterBrowser", "Error, input name not set"
                     )
                 )
                 return
             elif not input_type:
                 common_utils.MessagebarAndLog.critical(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "ParameterBrowser", "Error, input type not set"
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "ParameterBrowser", "Error, input type not set"
                     )
                 )
                 return
             elif combined_name in unique_names:
                 common_utils.MessagebarAndLog.critical(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "ParameterBrowser",
-                            "Error, input name already existing. No duplicates allowed",
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "ParameterBrowser",
+                        "Error, input name already existing. No duplicates allowed",
                     )
                 )
                 return
 
             if not hint:
                 common_utils.MessagebarAndLog.warning(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "ParameterBrowser",
-                            'Warning, hint not given and will be set to a space (" ") as it must exist',
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "ParameterBrowser",
+                        'Warning, hint not given and will be set to a space (" ") as it must exist',
                     )
                 )
                 hint = hint + " "
@@ -1434,14 +1337,12 @@ class ParameterBrowser(QtWidgets.QDialog, parameter_browser_dialog):
         self._input_type.addItem("")
         self._input_type.addItems(["numberDecimal|numberSigned", "text"])
         self._input_type.setToolTip(
-            ru(
-                QCoreApplication.translate(
-                    "ExportToFieldLogger",
-                    "(mandatory)\n"
-                    "Decides the keyboard layout in the Fieldlogger app.\n"
-                    'numberDecimal|numberSigned: Decimals with allowed "-" sign for FieldLogger app\n'
-                    "text: Text\n",
-                )
+            QCoreApplication.translate(
+                "ExportToFieldLogger",
+                "(mandatory)\n"
+                "Decides the keyboard layout in the Fieldlogger app.\n"
+                'numberDecimal|numberSigned: Decimals with allowed "-" sign for FieldLogger app\n'
+                "text: Text\n",
             )
         )
         self._options.setEnabled(False)

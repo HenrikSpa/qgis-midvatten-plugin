@@ -42,7 +42,6 @@ from matplotlib import rcsetup
 from qgis.PyQt.QtCore import QCoreApplication, Qt, pyqtSignal, QObject
 import types
 
-from midvatten.tools.utils.common_utils import returnunicode as ru
 import midvatten.definitions.midvatten_defs as defs
 
 
@@ -139,11 +138,9 @@ def replace_matplotlib_backends_backend_qt5agg_NavigationToolbar2QT_set_message_
         ax = self.canvas.figure.get_axes()[0]
         xlim = (round(ax.get_xlim()[0], 3), round(ax.get_xlim()[1], 3))
         ylim = (round(ax.get_ylim()[0], 3), round(ax.get_ylim()[1], 3))
-        msg = ru(
-            QCoreApplication.translate(
-                "replace_matplotlib_backends_backend_qt5agg_NavigationToolbar2QT_set_message_xylimits",
-                "xlim %s ylim %s",
-            )
+        msg = QCoreApplication.translate(
+            "replace_matplotlib_backends_backend_qt5agg_NavigationToolbar2QT_set_message_xylimits",
+            "xlim %s ylim %s",
         ) % (str(xlim), str(ylim))
 
         if not s:

@@ -104,16 +104,12 @@ class PrepareForQgis2Threejs:
                         color = [x * 255 for x in color]
                     except Exception as e:
                         common_utils.MessagebarAndLog.warning(
-                            bar_msg=ru(
-                                QCoreApplication.translate(
-                                    "PrepareForQgis2Threejs",
-                                    "Setting color from dict failed",
-                                )
+                            bar_msg=QCoreApplication.translate(
+                                "PrepareForQgis2Threejs",
+                                "Setting color from dict failed",
                             ),
-                            log_msg=ru(
-                                QCoreApplication.translate(
-                                    "PrepareForQgis2Threejs", "Error msg %s"
-                                )
+                            log_msg=QCoreApplication.translate(
+                                "PrepareForQgis2Threejs", "Error msg %s"
                             )
                             % str(e),
                         )
@@ -185,11 +181,9 @@ class PrepareForQgis2Threejs:
                 )
             except psycopg2.errors.DuplicateTable:
                 common_utils.MessagebarAndLog.info(
-                    log_msg=ru(
-                        QCoreApplication.translate(
-                            "PrepareForQgis2Threejs",
-                            "Table strat_obs_p_for_qgsi2threejs already existed and is not recreated.",
-                        )
+                    log_msg=QCoreApplication.translate(
+                        "PrepareForQgis2Threejs",
+                        "Table strat_obs_p_for_qgsi2threejs already existed and is not recreated.",
                     )
                 )
 
@@ -235,11 +229,9 @@ class PrepareForQgis2Threejs:
                         self.dbconnection.execute(sqliteline)
                     except psycopg2.errors.DuplicateTable:
                         common_utils.MessagebarAndLog.info(
-                            log_msg=ru(
-                                QCoreApplication.translate(
-                                    "PrepareForQgis2Threejs",
-                                    "Table %s already existed and is not recreated.",
-                                )
+                            log_msg=QCoreApplication.translate(
+                                "PrepareForQgis2Threejs",
+                                "Table %s already existed and is not recreated.",
                             )
                             % ru(key)
                         )

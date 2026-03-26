@@ -89,11 +89,9 @@ class SQLiteBackend(Backend):
         self._dbpath = ru(dbpath)
         if not os.path.isfile(self._dbpath):
             raise UsageError(
-                ru(
-                    QCoreApplication.translate(
-                        "DbConnectionManager",
-                        'Database error! File "%s" not found! Check db tab in Midvatten settings!',
-                    )
+                QCoreApplication.translate(
+                    "DbConnectionManager",
+                    'Database error! File "%s" not found! Check db tab in Midvatten settings!',
                 )
                 % self._dbpath
             )
@@ -108,16 +106,12 @@ class SQLiteBackend(Backend):
                 )
             except Exception as e:
                 MessagebarAndLog.critical(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "DbConnectionManager",
-                            "Connecting to spatialite db %s failed! Check that the file or path exists.",
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "DbConnectionManager",
+                        "Connecting to spatialite db %s failed! Check that the file or path exists.",
                     )
                     % self._dbpath,
-                    log_msg=ru(
-                        QCoreApplication.translate("DbConnectionManager", "msg %s")
-                    )
+                    log_msg=QCoreApplication.translate("DbConnectionManager", "msg %s")
                     % str(e),
                 )
                 raise
@@ -164,12 +158,10 @@ class SQLiteBackend(Backend):
             else:
                 self._cursor.execute(sql)
         except (sqlite.OperationalError, Exception) as e:
-            textstring = ru(
-                QCoreApplication.translate(
-                    "sql_load_fr_db",
-                    """DB error!\n SQL causing this error:%s\nMsg:\n%s""",
-                )
-            ) % (ru(sql), ru(str(e)))
+            textstring = QCoreApplication.translate(
+                "sql_load_fr_db",
+                """DB error!\n SQL causing this error:%s\nMsg:\n%s""",
+            ) % (ru(sql), str(e))
             MessagebarAndLog.warning(bar_msg=sql_failed_msg(), log_msg=textstring)
             raise
         return self._cursor.fetchall()
@@ -211,11 +203,9 @@ class SQLiteBackend(Backend):
         except Exception as e:
             if "database mem is already in use" not in str(e):
                 MessagebarAndLog.info(
-                    log_msg=ru(
-                        QCoreApplication.translate(
-                            "create_temporary_table_for_import",
-                            "attaching memory database failed, %s",
-                        )
+                    log_msg=QCoreApplication.translate(
+                        "create_temporary_table_for_import",
+                        "attaching memory database failed, %s",
                     )
                     % traceback.format_exc()
                 )
@@ -248,11 +238,9 @@ class SQLiteBackend(Backend):
     def check_db_is_locked(self) -> None:
         for ext in ("journal", "wal"):
             msg = (
-                ru(
-                    QCoreApplication.translate(
-                        "DbConnectionManager",
-                        "Error, The database is already in use (a %s-file was found)",
-                    )
+                QCoreApplication.translate(
+                    "DbConnectionManager",
+                    "Error, The database is already in use (a %s-file was found)",
                 )
                 % ext
             )
@@ -278,17 +266,13 @@ class SQLiteBackend(Backend):
 
 def _log_execute_error(sql: str, args: Any, e: Exception) -> None:
     if args is None:
-        textstring = ru(
-            QCoreApplication.translate(
-                "sql_load_fr_db",
-                """DB error!\n SQL causing this error:%s\nMsg:\n%s""",
-            )
-        ) % (ru(sql), ru(str(e)))
+        textstring = QCoreApplication.translate(
+            "sql_load_fr_db",
+            """DB error!\n SQL causing this error:%s\nMsg:\n%s""",
+        ) % (ru(sql), str(e))
     else:
-        textstring = ru(
-            QCoreApplication.translate(
-                "sql_load_fr_db",
-                """DB error!\n SQL causing this error:%s\nusing args %s\nMsg:\n%s""",
-            )
-        ) % (ru(sql), ru(args), ru(str(e)))
+        textstring = QCoreApplication.translate(
+            "sql_load_fr_db",
+            """DB error!\n SQL causing this error:%s\nusing args %s\nMsg:\n%s""",
+        ) % (ru(sql), ru(args), str(e))
     MessagebarAndLog.warning(bar_msg=sql_failed_msg(), log_msg=textstring)

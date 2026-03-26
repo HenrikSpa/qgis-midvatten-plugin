@@ -97,11 +97,9 @@ def find_date_format(datestring: str, suppress_error_msg: bool = False) -> str:
                 bar_msg=QCoreApplication.translate(
                     "find_date_format", "Date parsing failed, see log message panel"
                 ),
-                log_msg=ru(
-                    QCoreApplication.translate(
-                        "find_date_format",
-                        'Could not find the date format for string "%s"\nSupported date formats:\n%s',
-                    )
+                log_msg=QCoreApplication.translate(
+                    "find_date_format",
+                    'Could not find the date format for string "%s"\nSupported date formats:\n%s',
                 )
                 % (ru(datestring), "\n".join(date_formats_to_try)),
             )
@@ -314,11 +312,9 @@ def parse_timezone_to_timedelta(tz_string: str) -> datetime.timedelta:
             res = ("", "", "", "")
         else:
             raise ValueError(
-                ru(
-                    QCoreApplication.translate(
-                        "parse_timezone_to_timedelta",
-                        "Timezone string %s could not be parsed!",
-                    )
+                QCoreApplication.translate(
+                    "parse_timezone_to_timedelta",
+                    "Timezone string %s could not be parsed!",
                 )
                 % tz_string
             )

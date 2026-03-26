@@ -97,10 +97,8 @@ class HobologgerImport(import_diveroffice.DiverofficeImport):
             ][0]
         except IndexError:
             common_utils.MessagebarAndLog.warning(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "Hobologger import", """File %s could not be parsed."""
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "Hobologger import", """File %s could not be parsed."""
                 )
                 % filename
             )
@@ -109,10 +107,8 @@ class HobologgerImport(import_diveroffice.DiverofficeImport):
         date_colnr = [idx for idx, col in enumerate(rows[1]) if "Date Time" in col]
         if not date_colnr:
             raise Exception(
-                ru(
-                    QCoreApplication.translate(
-                        "Hobologger import", "Date Time column not found!"
-                    )
+                QCoreApplication.translate(
+                    "Hobologger import", "Date Time column not found!"
                 )
             )
         else:
@@ -122,10 +118,8 @@ class HobologgerImport(import_diveroffice.DiverofficeImport):
             tz_string = get_tz_string(rows[1][date_colnr])
             if tz_string is None:
                 common_utils.MessagebarAndLog.warning(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "Hobologger import", "Timezone not found in %s"
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "Hobologger import", "Timezone not found in %s"
                     )
                     % filename
                 )
@@ -134,10 +128,8 @@ class HobologgerImport(import_diveroffice.DiverofficeImport):
         temp_colnr = [idx for idx, col in enumerate(rows[1]) if "Temp, °C" in col]
         if not temp_colnr:
             raise Exception(
-                ru(
-                    QCoreApplication.translate(
-                        "Hobologger import", "Temperature column not found!"
-                    )
+                QCoreApplication.translate(
+                    "Hobologger import", "Temperature column not found!"
                 )
             )
         else:
@@ -156,10 +148,8 @@ class HobologgerImport(import_diveroffice.DiverofficeImport):
             first_data_row = rows[data_header_idx + 1]
         except IndexError:
             common_utils.MessagebarAndLog.warning(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "HobologgerImport", """No data in file %s."""
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "HobologgerImport", """No data in file %s."""
                 )
                 % filename
             )
@@ -172,11 +162,9 @@ class HobologgerImport(import_diveroffice.DiverofficeImport):
                 date_format = date_utils.find_date_format(dt)
                 if date_format is None:
                     common_utils.MessagebarAndLog.warning(
-                        bar_msg=ru(
-                            QCoreApplication.translate(
-                                "HobologgerImport",
-                                """Dateformat in file %s could not be parsed.""",
-                            )
+                        bar_msg=QCoreApplication.translate(
+                            "HobologgerImport",
+                            """Dateformat in file %s could not be parsed.""",
                         )
                         % filename
                     )
@@ -233,11 +221,9 @@ def fix_date(
         dt = date_utils.datestring_to_date(date_time)
         if dt is None:
             raise FileError(
-                ru(
-                    QCoreApplication.translate(
-                        "HobologgerImport",
-                        """Dateformat in file %s could not be parsed.""",
-                    )
+                QCoreApplication.translate(
+                    "HobologgerImport",
+                    """Dateformat in file %s could not be parsed.""",
                 )
                 % filename
             )
@@ -280,7 +266,7 @@ class TzConverter(gui_utils.RowEntry):
         super().__init__()
         self.source_tz = None
         self.label = QtWidgets.QLabel(
-            ru(QCoreApplication.translate("TzSelector", "Select target timezone: "))
+            QCoreApplication.translate("TzSelector", "Select target timezone: ")
         )
         timezones = [f"GMT{x:+d}" for x in range(-11, 15)]
 

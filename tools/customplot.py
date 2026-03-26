@@ -415,8 +415,8 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         else:
             if not self.p:
                 common_utils.MessagebarAndLog.warning(
-                    bar_msg=ru(
-                        QCoreApplication.translate("CustomPlot", "Plot not updated.")
+                    bar_msg=QCoreApplication.translate(
+                        "CustomPlot", "Plot not updated."
                     )
                 )
                 return None
@@ -435,10 +435,8 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                 ]  # Fix to not have the date ticks overlap at month end/start
             except Exception as e:
                 common_utils.MessagebarAndLog.warning(
-                    log_msg=ru(
-                        QCoreApplication.translate(
-                            "Customplot", "Setting intervald failed! msg:\n%s "
-                        )
+                    log_msg=QCoreApplication.translate(
+                        "Customplot", "Setting intervald failed! msg:\n%s "
                     )
                     % str(e)
                 )
@@ -595,10 +593,8 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                             label = str(item1.text()) + """, """ + str(item2.text())
                             if not recs:
                                 common_utils.MessagebarAndLog.info(
-                                    log_msg=ru(
-                                        QCoreApplication.translate(
-                                            "CustomPlot", "No plottable data for %s."
-                                        )
+                                    log_msg=QCoreApplication.translate(
+                                        "CustomPlot", "No plottable data for %s."
                                     )
                                     % label
                                 )
@@ -638,11 +634,9 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                                 label = str(item.text())
                                 if not recs:
                                     common_utils.MessagebarAndLog.warning(
-                                        log_msg=ru(
-                                            QCoreApplication.translate(
-                                                "CustomPlot",
-                                                "No plottable data for %s.",
-                                            )
+                                        log_msg=QCoreApplication.translate(
+                                            "CustomPlot",
+                                            "No plottable data for %s.",
                                         )
                                         % label
                                     )
@@ -689,21 +683,17 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             )  # conv list of strings to numpy.ndarray of floats
         except Exception as e:
             common_utils.MessagebarAndLog.warning(
-                log_msg=ru(
-                    QCoreApplication.translate(
-                        "plotsqlitewindow", "Plotting date_time failed, msg: %s"
-                    )
+                log_msg=QCoreApplication.translate(
+                    "plotsqlitewindow", "Plotting date_time failed, msg: %s"
                 )
                 % str(e)
             )
             common_utils.MessagebarAndLog.info(
-                log_msg=ru(
-                    QCoreApplication.translate(
-                        "plotsqlitewindow",
-                        "Customplot, transforming to recarray with date_time as x-axis failed, msg: %s",
-                    )
+                log_msg=QCoreApplication.translate(
+                    "plotsqlitewindow",
+                    "Customplot, transforming to recarray with date_time as x-axis failed, msg: %s",
                 )
-                % ru(str(e))
+                % str(e)
             )
             my_format = [("numx", float), ("values", float)]
             table = np.array(
@@ -722,11 +712,9 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         else:
             if self.used_format != flag_time_xy:
                 raise common_utils.UsageError(
-                    ru(
-                        QCoreApplication.translate(
-                            "CustomPlot",
-                            "Plotting both xy and time plot at the same time doesn't work! Check the x-y axix settings in all tabs!",
-                        )
+                    QCoreApplication.translate(
+                        "CustomPlot",
+                        "Plotting both xy and time plot at the same time doesn't work! Check the x-y axix settings in all tabs!",
                     )
                 )
 
@@ -761,11 +749,9 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         if flag_time_xy == "time" and plottype == "frequency":
             if len(table2) < 2:
                 common_utils.MessagebarAndLog.warning(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "plotsqlitewindow",
-                            "Frequency plot failed for %s. The timeseries must be longer than 1 value!",
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "plotsqlitewindow",
+                        "Frequency plot failed for %s. The timeseries must be longer than 1 value!",
                     )
                     % ru(self.plabels[i]),
                     duration=30,
@@ -812,10 +798,8 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                     numtime = table2.date_time
                 else:
                     common_utils.MessagebarAndLog.info(
-                        bar_msg=ru(
-                            QCoreApplication.translate(
-                                "plotsqlitewindow", "Pandas calculate failed."
-                            )
+                        bar_msg=QCoreApplication.translate(
+                            "plotsqlitewindow", "Pandas calculate failed."
                         )
                     )
 
@@ -1295,7 +1279,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
     def refreshPlot(self):
         # If the user has not pressed "draw" before, do nothing
         common_utils.MessagebarAndLog.info(
-            log_msg=ru(QCoreApplication.translate("Customplot", "Loaded style:\n%s "))
+            log_msg=QCoreApplication.translate("Customplot", "Loaded style:\n%s ")
             % (self.styles.rcparams())
         )
 
@@ -1331,11 +1315,9 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                     self.xaxis_formatters[1].__dict__["interval_multiples"] = True
             except Exception as e:
                 common_utils.MessagebarAndLog.warning(
-                    log_msg=ru(
-                        QCoreApplication.translate(
-                            "Customplot",
-                            "Setting regular xaxis interval failed! msg:\n%s ",
-                        )
+                    log_msg=QCoreApplication.translate(
+                        "Customplot",
+                        "Setting regular xaxis interval failed! msg:\n%s ",
                     )
                     % str(e)
                 )
@@ -1558,26 +1540,22 @@ class PandasCalculations:
         self.center.setChecked(True)
         for wid in [self.window_label, self.window]:
             wid.setToolTip(
-                ru(
-                    QCoreApplication.translate(
-                        "PandasCalculations",
-                        "The number of timesteps in each moving average (rolling mean) mean\n"
-                        "The result is stored at the center timestep of each mean.\n"
-                        "See Pandas pandas.DataFrame.rolling documentation for more info.\n"
-                        "No rolling mean if field is empty.",
-                    )
+                QCoreApplication.translate(
+                    "PandasCalculations",
+                    "The number of timesteps in each moving average (rolling mean) mean\n"
+                    "The result is stored at the center timestep of each mean.\n"
+                    "See Pandas pandas.DataFrame.rolling documentation for more info.\n"
+                    "No rolling mean if field is empty.",
                 )
             )
 
         for wid in [self.center_label, self.center]:
             wid.setToolTip(
-                ru(
-                    QCoreApplication.translate(
-                        "PandasCalculations",
-                        "Check (default) to store the rolling mean at the center timestep.\n"
-                        "Uncheck to store the rolling mean at the last timestep.\n"
-                        "See Pandas pandas.rolling_mean documentation for more info.",
-                    )
+                QCoreApplication.translate(
+                    "PandasCalculations",
+                    "Check (default) to store the rolling mean at the center timestep.\n"
+                    "Uncheck to store the rolling mean at the last timestep.\n"
+                    "See Pandas pandas.rolling_mean documentation for more info.",
                 )
             )
 
@@ -1650,10 +1628,8 @@ class PandasCalculations:
                 base = int(base)
             except ValueError:
                 common_utils.MessagebarAndLog.critical(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "PandasCalculations", "Resample base must be an integer"
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "PandasCalculations", "Resample base must be an integer"
                     )
                 )
                 # Rule is set to None to skip resampling
@@ -1679,11 +1655,9 @@ class PandasCalculations:
                 window = int(window)
             except ValueError:
                 common_utils.MessagebarAndLog.critical(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "PandasCalculations",
-                            "Rolling mean window must be an integer",
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "PandasCalculations",
+                        "Rolling mean window must be an integer",
                     )
                 )
             else:

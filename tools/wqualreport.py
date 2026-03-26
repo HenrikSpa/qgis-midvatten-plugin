@@ -102,11 +102,9 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
         )
         if not parameters:
             common_utils.MessagebarAndLog.warning(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "Wqualreport",
-                        "Debug, something is wrong, no parameters are found in table w_qual_lab for %s",
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "Wqualreport",
+                    "Debug, something is wrong, no parameters are found in table w_qual_lab for %s",
                 )
                 % obsid
             )
@@ -139,11 +137,9 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
         )
         if not date_times:
             common_utils.MessagebarAndLog.warning(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "Wqualreport",
-                        "Debug, Something is wrong, no parameters are found in table w_qual_lab for %s",
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "Wqualreport",
+                    "Debug, Something is wrong, no parameters are found in table w_qual_lab for %s",
                 )
                 % obsid
             )
@@ -151,11 +147,9 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
         else:
             if any([x[1] is None for x in date_times]):
                 common_utils.MessagebarAndLog.warning(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "Wqualreport",
-                            "Warning: Found rows with datetime = NULL. Column without date_time might be aggregated from multiple reports!",
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "Wqualreport",
+                        "Warning: Found rows with datetime = NULL. Column without date_time might be aggregated from multiple reports!",
                     )
                 )
 
@@ -257,11 +251,9 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
                     except Exception:
                         report_table[parametercounter][datecounter] = ""
                         common_utils.MessagebarAndLog.warning(
-                            bar_msg=ru(
-                                QCoreApplication.translate(
-                                    "Wqualreport",
-                                    "Note!, the value for %s [%s] at %s, %s was not readable. Check your data!",
-                                )
+                            bar_msg=QCoreApplication.translate(
+                                "Wqualreport",
+                                "Note!, the value for %s [%s] at %s, %s was not readable. Check your data!",
                             )
                             % (p, u, sorting, date_time)
                         )

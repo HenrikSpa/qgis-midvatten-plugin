@@ -77,12 +77,8 @@ class Stratigraphy:
         ids = lyr.selectedFeatureIds()
         if len(ids) == 0:
             common_utils.pop_up_info(
-                ru(QCoreApplication.translate(" Stratigraphy", "No selection")),
-                ru(
-                    QCoreApplication.translate(
-                        " Stratigraphy", "No features are selected"
-                    )
-                ),
+                QCoreApplication.translate(" Stratigraphy", "No selection"),
+                QCoreApplication.translate(" Stratigraphy", "No features are selected"),
             )
             return
         # initiate the datastore if not yet done
@@ -94,10 +90,8 @@ class Stratigraphy:
             log.warning("DataSanityError %s" % str(e))
             common_utils.stop_waiting_cursor()
             common_utils.pop_up_info(
-                ru(
-                    QCoreApplication.translate(
-                        " Stratigraphy", "Data sanity problem, obsid: %s\n%s"
-                    )
+                QCoreApplication.translate(
+                    " Stratigraphy", "Data sanity problem, obsid: %s\n%s"
                 )
                 % (e.sond_id, e.message)
             )
@@ -106,11 +100,9 @@ class Stratigraphy:
             log.error("exception : %s" % str(e))
             common_utils.stop_waiting_cursor()
             common_utils.MessagebarAndLog.critical(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        " Stratigraphy",
-                        "The stratigraphy plot failed, check Midvatten plugin settings and your data!",
-                    )
+                bar_msg=QCoreApplication.translate(
+                    " Stratigraphy",
+                    "The stratigraphy plot failed, check Midvatten plugin settings and your data!",
                 )
             )
             return
@@ -236,11 +228,10 @@ class SurveyStore:
                         try:
                             level_val = float(h_gs)
                         except ValueError:
-                            error_msg = ru(
-                                QCoreApplication.translate(
-                                    "Stratigraphy", "Converting to float failed."
-                                )
+                            error_msg = QCoreApplication.translate(
+                                "Stratigraphy", "Converting to float failed."
                             )
+
                         except Exception as e:
                             error_msg = e
                     if level_val is None:
@@ -254,25 +245,21 @@ class SurveyStore:
                             using = "h_toc"
 
                         common_utils.MessagebarAndLog.warning(
-                            bar_msg=ru(
-                                QCoreApplication.translate(
-                                    "Stratigraphy",
-                                    "Obsid %s: using h_gs '%s' failed, using '%s' instead.",
-                                )
+                            bar_msg=QCoreApplication.translate(
+                                "Stratigraphy",
+                                "Obsid %s: using h_gs '%s' failed, using '%s' instead.",
                             )
                             % (obsid, h_gs, using),
-                            log_msg=ru(QCoreApplication.translate("Stratigraphy", "%s"))
+                            log_msg=QCoreApplication.translate("Stratigraphy", "%s")
                             % error_msg,
                             duration=90,
                         )
 
                         if self.warning_popup:
                             common_utils.pop_up_info(
-                                ru(
-                                    QCoreApplication.translate(
-                                        "Stratigraphy",
-                                        "Warning, h_gs is missing. See messagebar.",
-                                    )
+                                QCoreApplication.translate(
+                                    "Stratigraphy",
+                                    "Warning, h_gs is missing. See messagebar.",
                                 )
                             )
                             self.warning_popup = False
@@ -293,7 +280,7 @@ class SurveyStore:
                     )
         else:
             common_utils.pop_up_info(
-                ru(QCoreApplication.translate("Stratigraphy", "getDataStep1 failed"))
+                QCoreApplication.translate("Stratigraphy", "getDataStep1 failed")
             )
         return surveys
 
@@ -326,11 +313,9 @@ class SurveyStore:
                 else:
                     raise DataSanityError(
                         str(obsid),
-                        ru(
-                            QCoreApplication.translate(
-                                "SurveyStore",
-                                "Something bad with stratid, depthtop or depthbot!",
-                            )
+                        QCoreApplication.translate(
+                            "SurveyStore",
+                            "Something bad with stratid, depthtop or depthbot!",
                         ),
                     )
                     stratigaphy_id = (
@@ -412,11 +397,9 @@ class SurveyStore:
                     if top1 > strato.depth_top:
                         raise DataSanityError(
                             str(obsid),
-                            ru(
-                                QCoreApplication.translate(
-                                    "SurveyStore",
-                                    "Top depth is incorrect (%.2f > %.2f)",
-                                )
+                            QCoreApplication.translate(
+                                "SurveyStore",
+                                "Top depth is incorrect (%.2f > %.2f)",
                             )
                             % (top1, strato.depth_top),
                         )
@@ -424,11 +407,9 @@ class SurveyStore:
                     if bed1 > strato.depth_bot:
                         raise DataSanityError(
                             str(obsid),
-                            ru(
-                                QCoreApplication.translate(
-                                    "SurveyStore",
-                                    "Bed depth is incorrect (%.2f > %.2f)",
-                                )
+                            QCoreApplication.translate(
+                                "SurveyStore",
+                                "Bed depth is incorrect (%.2f > %.2f)",
                             )
                             % (bed1, strato.depth_bot),
                         )
@@ -436,11 +417,9 @@ class SurveyStore:
                     if bed1 != strato.depth_top:
                         raise DataSanityError(
                             str(obsid),
-                            ru(
-                                QCoreApplication.translate(
-                                    "SurveyStore",
-                                    "Top and bed depth don't match (%.2f != %.2f)",
-                                )
+                            QCoreApplication.translate(
+                                "SurveyStore",
+                                "Top and bed depth don't match (%.2f != %.2f)",
                             )
                             % (bed1, strato.depth_top),
                         )
@@ -547,7 +526,7 @@ class SurveyWidget(QtWidgets.QFrame):
             p.drawText(
                 self.rect(),
                 QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter,
-                ru(QCoreApplication.translate("SurveyWidget", "No data to display")),
+                QCoreApplication.translate("SurveyWidget", "No data to display"),
             )
             return
 
@@ -788,7 +767,7 @@ class SurveyDialog(QtWidgets.QDialog):
         )
 
         self.setWindowTitle(
-            ru(QCoreApplication.translate("SurveyDialog", "Identify Results"))
+            QCoreApplication.translate("SurveyDialog", "Identify Results")
         )
 
         self.layout = QtWidgets.QVBoxLayout(self)
@@ -809,7 +788,7 @@ class SurveyDialog(QtWidgets.QDialog):
         self.layout2.addItem(spacer_item)
 
         self.chk_show_desc = QtWidgets.QCheckBox(
-            ru(QCoreApplication.translate("SurveyDialog", "Show text"))
+            QCoreApplication.translate("SurveyDialog", "Show text")
         )
         self.chk_show_desc.setChecked(True)
         self.layout2.addWidget(self.chk_show_desc)
@@ -824,12 +803,12 @@ class SurveyDialog(QtWidgets.QDialog):
         self.layout2.addWidget(self.geology_or_comment_cbox)
 
         self.btn_print = QtWidgets.QPushButton(
-            ru(QCoreApplication.translate("SurveyDialog", "Print"))
+            QCoreApplication.translate("SurveyDialog", "Print")
         )
         self.layout2.addWidget(self.btn_print)
 
         self.btn_close = QtWidgets.QPushButton(
-            ru(QCoreApplication.translate("SurveyDialog", "Close"))
+            QCoreApplication.translate("SurveyDialog", "Close")
         )
         self.layout2.addWidget(self.btn_close)
 

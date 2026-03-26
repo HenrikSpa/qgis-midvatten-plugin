@@ -28,7 +28,6 @@ from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools import import_data_to_db
 from midvatten.tools.utils import common_utils, db_utils
-from midvatten.tools.utils.common_utils import returnunicode as ru
 
 Calc_Ui_Dialog = uic.loadUiType(
     os.path.join(os.path.dirname(__file__), "..", "ui", "calc_aveflow_dialog.ui")
@@ -40,7 +39,7 @@ class CalculateAveflow(qgis.PyQt.QtWidgets.QDialog, Calc_Ui_Dialog):
         qgis.PyQt.QtWidgets.QDialog.__init__(self)
         self.setupUi(self)  # Required by Qt
         self.setWindowTitle(
-            ru(QCoreApplication.translate("Calcave", "Calculate average flow"))
+            QCoreApplication.translate("Calcave", "Calculate average flow")
         )
         self.push_button_all.clicked.connect(lambda x: self.calcall())
         self.push_button_selected.clicked.connect(lambda x: self.calcselected())
@@ -52,11 +51,9 @@ class CalculateAveflow(qgis.PyQt.QtWidgets.QDialog, Calc_Ui_Dialog):
         )
         if not obsar:
             common_utils.MessagebarAndLog.critical(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "Calcave",
-                        "No observations with Accvol found, nothing calculated!",
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "Calcave",
+                    "No observations with Accvol found, nothing calculated!",
                 )
             )
             return
@@ -104,10 +101,8 @@ class CalculateAveflow(qgis.PyQt.QtWidgets.QDialog, Calc_Ui_Dialog):
 
         if (df["aveflow"] < 0).any():
             common_utils.MessagebarAndLog.info(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "Calcave", "Please notice that negative flow was encountered."
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "Calcave", "Please notice that negative flow was encountered."
                 )
             )
 

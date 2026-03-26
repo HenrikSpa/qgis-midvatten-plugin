@@ -31,11 +31,9 @@ def report_path() -> str:
 
 def default_report_title() -> str:
     """Return the default title for the water quality report."""
-    return ru(
-        QCoreApplication.translate(
-            "Wqualreport",
-            "water quality report from Midvatten plugin for QGIS",
-        )
+    return QCoreApplication.translate(
+        "Wqualreport",
+        "water quality report from Midvatten plugin for QGIS",
     )
 
 

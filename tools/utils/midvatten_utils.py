@@ -98,11 +98,9 @@ def verify_msettings_loaded_and_layer_edit_mode(
             if not only_error_if_editing_enabled:
                 errorsignal += 1
                 MessagebarAndLog.warning(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "verify_msettings_loaded_and_layer_edit_mode",
-                            "Error layer %s is required but missing!",
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "verify_msettings_loaded_and_layer_edit_mode",
+                        "Error layer %s is required but missing!",
                     )
                     % str(layername)
                 )
@@ -111,11 +109,9 @@ def verify_msettings_loaded_and_layer_edit_mode(
             if layerexists:
                 if layerexists.isEditable():
                     MessagebarAndLog.warning(
-                        bar_msg=ru(
-                            QCoreApplication.translate(
-                                "verify_msettings_loaded_and_layer_edit_mode",
-                                "Error %s is currently in editing mode.\nPlease exit this mode before proceeding with this operation.",
-                            )
+                        bar_msg=QCoreApplication.translate(
+                            "verify_msettings_loaded_and_layer_edit_mode",
+                            "Error %s is currently in editing mode.\nPlease exit this mode before proceeding with this operation.",
                         )
                         % str(layerexists.name())
                     )
@@ -168,11 +164,9 @@ def ask_for_charset(default_charset=None, msg=None):
         if default_charset is None:
             if msg is None:
                 msg = (
-                    ru(
-                        QCoreApplication.translate(
-                            "ask_for_charset",
-                            "Give charset used in the file, normally\niso-8859-1, utf-8, cp1250 or cp1252.\n\nOn your computer %s is default.",
-                        )
+                    QCoreApplication.translate(
+                        "ask_for_charset",
+                        "Give charset used in the file, normally\niso-8859-1, utf-8, cp1250 or cp1252.\n\nOn your computer %s is default.",
                     )
                     % localencoding
                 )
@@ -336,11 +330,9 @@ def get_locale_from_db(
             return locale_setting
     else:
         MessagebarAndLog.info(
-            log_msg=ru(
-                QCoreApplication.translate(
-                    "get_locale_from_db",
-                    "Connection to db failed when getting locale from db.",
-                )
+            log_msg=QCoreApplication.translate(
+                "get_locale_from_db",
+                "Connection to db failed when getting locale from db.",
             )
         )
         return None
@@ -462,13 +454,11 @@ def warn_about_old_database():
         rows = dbconnection.cursor.fetchall()
     except Exception as e:
         MessagebarAndLog.warning(
-            bar_msg=ru(
-                QCoreApplication.translate(
-                    "warn_about_old_database",
-                    "Database might not be a valid Midvatten database!",
-                )
+            bar_msg=QCoreApplication.translate(
+                "warn_about_old_database",
+                "Database might not be a valid Midvatten database!",
             ),
-            log_msg=ru(QCoreApplication.translate("warn_about_old_database", "msg: %s"))
+            log_msg=QCoreApplication.translate("warn_about_old_database", "msg: %s")
             % str(e),
         )
         return
@@ -477,11 +467,9 @@ def warn_about_old_database():
         row = rows[0][0]
     except Exception:
         MessagebarAndLog.info(
-            log_msg=ru(
-                QCoreApplication.translate(
-                    "warn_about_old_database",
-                    "No row returned from about_db when searching for version.",
-                )
+            log_msg=QCoreApplication.translate(
+                "warn_about_old_database",
+                "No row returned from about_db when searching for version.",
             )
         )
         return
@@ -507,11 +495,9 @@ def warn_about_old_database():
 
             if is_old:
                 MessagebarAndLog.info(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "warn_about_old_database",
-                            """The database version appears to be older than %s. An upgrade is suggested! See %s""",
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "warn_about_old_database",
+                        """The database version appears to be older than %s. An upgrade is suggested! See %s""",
                     )
                     % (latest_database_version(), wikipage),
                     duration=4,
@@ -542,11 +528,9 @@ def version_comparison_list(version_string: str) -> List[int]:
                         except ValueError:
                             """Programming error. Version string was 1.5.7b."""
                             MessagebarAndLog.info(
-                                bar_msg=ru(
-                                    QCoreApplication.translate(
-                                        "version_comparison_list",
-                                        """Programming error. Version string was %s.""",
-                                    )
+                                bar_msg=QCoreApplication.translate(
+                                    "version_comparison_list",
+                                    """Programming error. Version string was %s.""",
                                 )
                                 % version_string,
                                 duration=5,

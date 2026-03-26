@@ -58,9 +58,7 @@ class CalculateLevel(
     def __init__(self, parent: QWidget, layerin: int):
         qgis.PyQt.QtWidgets.QDialog.__init__(self)
         self.setupUi(self)  # Required by Qt
-        self.setWindowTitle(
-            ru(QCoreApplication.translate("Calclvl", "Calculate levels"))
-        )
+        self.setWindowTitle(QCoreApplication.translate("Calclvl", "Calculate levels"))
         self.push_button_all.clicked.connect(lambda x: self.calcall())
         self.push_button_selected.clicked.connect(lambda x: self.calcselected())
         self.push_button_cancel.clicked.connect(lambda x: self.close())
@@ -88,13 +86,11 @@ class CalculateLevel(
                     ]
                     if any_nulls:
                         common_utils.pop_up_info(
-                            ru(
-                                QCoreApplication.translate(
-                                    "Calclvl",
-                                    "Adjustment aborted! There seems to be NULL values in your table obs_points, column h_toc.",
-                                )
+                            QCoreApplication.translate(
+                                "Calclvl",
+                                "Adjustment aborted! There seems to be NULL values in your table obs_points, column h_toc.",
                             ),
-                            ru(QCoreApplication.translate("Calclvl", "Error")),
+                            QCoreApplication.translate("Calclvl", "Error"),
                         )
                         return None
 
@@ -105,12 +101,10 @@ class CalculateLevel(
 
                 if not obsids:
                     common_utils.pop_up_info(
-                        ru(
-                            QCoreApplication.translate(
-                                "Calclvl", "Adjustment aborted! All h_tocs were NULL."
-                            )
+                        QCoreApplication.translate(
+                            "Calclvl", "Adjustment aborted! All h_tocs were NULL."
                         ),
-                        ru(QCoreApplication.translate("Calclvl", "Error")),
+                        QCoreApplication.translate("Calclvl", "Error"),
                     )
                     return None
 
@@ -137,16 +131,12 @@ class CalculateLevel(
             db_utils.sql_alter_db(sql2, all_args=[where_sql_args])
 
             common_utils.MessagebarAndLog.info(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "Calclvl", "Calculation done, see log message panel"
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "Calclvl", "Calculation done, see log message panel"
                 ),
-                log_msg=ru(
-                    QCoreApplication.translate(
-                        "Calclvl",
-                        "H_toc added and level_masl calculated for\nobsid;min date;max date;calculated number of measurements: \n%s",
-                    )
+                log_msg=QCoreApplication.translate(
+                    "Calclvl",
+                    "H_toc added and level_masl calculated for\nobsid;min date;max date;calculated number of measurements: \n%s",
                 )
                 % (self.updated_level_masl),
             )
@@ -165,12 +155,10 @@ class CalculateLevel(
             self.calc(obsids)
         else:
             common_utils.pop_up_info(
-                ru(
-                    QCoreApplication.translate(
-                        "Calclvl", "Adjustment aborted! No obsids in w_levels."
-                    )
+                QCoreApplication.translate(
+                    "Calclvl", "Adjustment aborted! No obsids in w_levels."
                 ),
-                ru(QCoreApplication.translate("Calclvl", "Error")),
+                QCoreApplication.translate("Calclvl", "Error"),
             )
 
     @fn_timer
@@ -180,12 +168,10 @@ class CalculateLevel(
         )
         if not obsids:
             common_utils.pop_up_info(
-                ru(
-                    QCoreApplication.translate(
-                        "Calclvl", "Adjustment aborted! No obsids selected."
-                    )
+                QCoreApplication.translate(
+                    "Calclvl", "Adjustment aborted! No obsids selected."
                 ),
-                ru(QCoreApplication.translate("Calclvl", "Error")),
+                QCoreApplication.translate("Calclvl", "Error"),
             )
         else:
             self.calc(obsids)

@@ -144,7 +144,7 @@ class DateTimeFilter(qgis.PyQt.QtWidgets.QWidget):
         self.layout().setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
 
         self.label = qgis.PyQt.QtWidgets.QLabel(
-            ru(QCoreApplication.translate("DateTimeFilter", "Import data from: "))
+            QCoreApplication.translate("DateTimeFilter", "Import data from: ")
         )
         self.from_datetimeedit = qgis.PyQt.QtWidgets.QDateTimeEdit(
             datestring_to_date("1901-01-01 00:00:00")
@@ -153,7 +153,7 @@ class DateTimeFilter(qgis.PyQt.QtWidgets.QWidget):
         self.from_datetimeedit.setMinimumWidth(180)
 
         self.label_to = qgis.PyQt.QtWidgets.QLabel(
-            ru(QCoreApplication.translate("DateTimeFilter", "to: "))
+            QCoreApplication.translate("DateTimeFilter", "to: ")
         )
         self.to_datetimeedit = qgis.PyQt.QtWidgets.QDateTimeEdit(
             datestring_to_date("2099-12-31 23:59:59")
@@ -222,18 +222,18 @@ class DistinctValuesBrowser(VRowEntry):
         super().__init__()
 
         self.browser_label = qgis.PyQt.QtWidgets.QLabel(
-            ru(QCoreApplication.translate("DistinctValuesBrowser", "DB browser:"))
+            QCoreApplication.translate("DistinctValuesBrowser", "DB browser:")
         )
         self.table_label = qgis.PyQt.QtWidgets.QLabel(
-            ru(QCoreApplication.translate("DistinctValuesBrowser", "Table"))
+            QCoreApplication.translate("DistinctValuesBrowser", "Table")
         )
         self._table_list = qgis.PyQt.QtWidgets.QComboBox()
         self.column_label = qgis.PyQt.QtWidgets.QLabel(
-            ru(QCoreApplication.translate("DistinctValuesBrowser", "Column"))
+            QCoreApplication.translate("DistinctValuesBrowser", "Column")
         )
         self._column_list = qgis.PyQt.QtWidgets.QComboBox()
         self.distinct_value_label = qgis.PyQt.QtWidgets.QLabel(
-            ru(QCoreApplication.translate("DistinctValuesBrowser", "Distinct values"))
+            QCoreApplication.translate("DistinctValuesBrowser", "Distinct values")
         )
         self._distinct_value = qgis.PyQt.QtWidgets.QComboBox()
         self._distinct_value.setEditable(True)
@@ -286,10 +286,8 @@ class DistinctValuesBrowser(VRowEntry):
         if not connection_ok:
             MessagebarAndLog.critical(
                 bar_msg=sql_failed_msg(),
-                log_msg=ru(
-                    QCoreApplication.translate(
-                        "DistinctValuesBrowser", """Cannot get data from sql %s"""
-                    )
+                log_msg=QCoreApplication.translate(
+                    "DistinctValuesBrowser", """Cannot get data from sql %s"""
                 )
                 % ru(sql),
             )

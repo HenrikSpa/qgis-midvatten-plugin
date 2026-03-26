@@ -60,19 +60,15 @@ def _clear_ssl_temp_certs_if_any(connection_info: str) -> None:
 
 def _log_execute_error(sql: str, args: Any, e: Exception) -> None:
     if args is None:
-        textstring = ru(
-            QCoreApplication.translate(
-                "sql_load_fr_db",
-                """DB error!\n SQL causing this error:%s\nMsg:\n%s""",
-            )
-        ) % (ru(sql), ru(str(e)))
+        textstring = QCoreApplication.translate(
+            "sql_load_fr_db",
+            """DB error!\n SQL causing this error:%s\nMsg:\n%s""",
+        ) % (ru(sql), str(e))
     else:
-        textstring = ru(
-            QCoreApplication.translate(
-                "sql_load_fr_db",
-                """DB error!\n SQL causing this error:%s\nusing args %s\nMsg:\n%s""",
-            )
-        ) % (ru(sql), ru(args), ru(str(e)))
+        textstring = QCoreApplication.translate(
+            "sql_load_fr_db",
+            """DB error!\n SQL causing this error:%s\nusing args %s\nMsg:\n%s""",
+        ) % (ru(sql), ru(args), str(e))
     MessagebarAndLog.warning(bar_msg=sql_failed_msg(), log_msg=textstring)
 
 
@@ -142,11 +138,9 @@ class PostgreSQLBackend(Backend):
         if last_error:
             if "no password supplied" in str(last_error):
                 MessagebarAndLog.warning(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "DbConnectionManager",
-                            "No password supplied for postgis connection",
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "DbConnectionManager",
+                        "No password supplied for postgis connection",
                     )
                 )
                 raise UserInterruptError()
@@ -190,12 +184,10 @@ class PostgreSQLBackend(Backend):
             else:
                 self._cursor.execute(sql)
         except Exception as e:
-            textstring = ru(
-                QCoreApplication.translate(
-                    "sql_load_fr_db",
-                    """DB error!\n SQL causing this error:%s\nMsg:\n%s""",
-                )
-            ) % (ru(sql), ru(str(e)))
+            textstring = QCoreApplication.translate(
+                "sql_load_fr_db",
+                """DB error!\n SQL causing this error:%s\nMsg:\n%s""",
+            ) % (ru(sql), str(e))
             MessagebarAndLog.warning(bar_msg=sql_failed_msg(), log_msg=textstring)
             raise
         return self._cursor.fetchall()

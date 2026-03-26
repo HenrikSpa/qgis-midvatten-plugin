@@ -28,7 +28,6 @@ from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools import import_diveroffice
 from midvatten.tools.utils import common_utils, date_utils
-from midvatten.tools.utils.common_utils import returnunicode as ru
 
 
 class LeveloggerImport(import_diveroffice.DiverofficeImport):
@@ -88,10 +87,8 @@ class LeveloggerImport(import_diveroffice.DiverofficeImport):
             ][0]
         except IndexError:
             common_utils.MessagebarAndLog.warning(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "LeveloggerImport", """File %s could not be parsed."""
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "LeveloggerImport", """File %s could not be parsed."""
                 )
                 % filename
             )
@@ -139,11 +136,9 @@ class LeveloggerImport(import_diveroffice.DiverofficeImport):
                 else:
                     level_unit_factor_to_cm = 100
                     common_utils.MessagebarAndLog.warning(
-                        bar_msg=ru(
-                            QCoreApplication.translate(
-                                "LeveloggerImport",
-                                """The unit for level wasn't m or cm, a factor of %s was used. Check the imported data.""",
-                            )
+                        bar_msg=QCoreApplication.translate(
+                            "LeveloggerImport",
+                            """The unit for level wasn't m or cm, a factor of %s was used. Check the imported data.""",
                         )
                         % str(level_unit_factor_to_cm)
                     )
@@ -179,10 +174,8 @@ class LeveloggerImport(import_diveroffice.DiverofficeImport):
             first_data_row = rows[data_header_idx + 1]
         except IndexError:
             common_utils.MessagebarAndLog.warning(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "LeveloggerImport", """No data in file %s."""
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "LeveloggerImport", """No data in file %s."""
                 )
                 % filename
             )
@@ -194,11 +187,9 @@ class LeveloggerImport(import_diveroffice.DiverofficeImport):
             date_format = date_utils.datestring_to_date(date_str)
             if date_format is None:
                 common_utils.MessagebarAndLog.warning(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "LeveloggerImport",
-                            """Dateformat in file %s could not be parsed.""",
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "LeveloggerImport",
+                        """Dateformat in file %s could not be parsed.""",
                     )
                     % filename
                 )

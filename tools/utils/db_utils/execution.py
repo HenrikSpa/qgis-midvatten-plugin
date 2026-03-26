@@ -44,12 +44,10 @@ def sql_load_fr_db(
         try:
             result = dbconnection.execute_and_fetchall(sql, args=execute_args)
         except Exception as e:
-            textstring = ru(
-                QCoreApplication.translate(
-                    "sql_load_fr_db",
-                    """DB error!\n SQL causing this error:%s\nMsg:\n%s""",
-                )
-            ) % (ru(sql), ru(str(e)))
+            textstring = QCoreApplication.translate(
+                "sql_load_fr_db",
+                """DB error!\n SQL causing this error:%s\nMsg:\n%s""",
+            ) % (ru(sql), str(e))
             if print_error_message_in_bar:
                 MessagebarAndLog.warning(bar_msg=sql_failed_msg(), duration=4)
             MessagebarAndLog.warning(log_msg=textstring)
@@ -76,18 +74,14 @@ def sql_alter_db(
         try:
             dbconnection.execute_and_commit(sql, args=args)
         except Exception as e:
-            textstring = ru(
-                QCoreApplication.translate(
-                    "sql_alter_db",
-                    """DB error!\n SQL causing this error:%s\nMsg:\n%s""",
-                )
-            ) % (ru(sql), ru(str(e)))
+            textstring = QCoreApplication.translate(
+                "sql_alter_db",
+                """DB error!\n SQL causing this error:%s\nMsg:\n%s""",
+            ) % (ru(sql), str(e))
             MessagebarAndLog.warning(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "sql_alter_db",
-                        "Some sql failure, see log for additional info.",
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "sql_alter_db",
+                    "Some sql failure, see log for additional info.",
                 ),
                 log_msg=textstring,
                 duration=4,
@@ -115,11 +109,9 @@ def check_connection_ok(write_error_msg: bool = True) -> bool:
     if not db_settings:
         if write_error_msg:
             MessagebarAndLog.critical(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "DbConnectionManager",
-                        "Database setting was empty. Check DB tab in Midvatten settings.",
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "DbConnectionManager",
+                    "Database setting was empty. Check DB tab in Midvatten settings.",
                 ),
                 duration=30,
             )
@@ -132,10 +124,8 @@ def check_connection_ok(write_error_msg: bool = True) -> bool:
     except Exception as e:
         if write_error_msg:
             MessagebarAndLog.critical(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "check_connection_ok", "Could not connect to db: %s"
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "check_connection_ok", "Could not connect to db: %s"
                 )
                 % str(e),
                 duration=30,

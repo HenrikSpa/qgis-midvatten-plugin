@@ -54,21 +54,17 @@ def backup_db(dbconnection: Optional[DbConnectionManager] = None) -> None:
             zf.close()
             dbconnection.conn.rollback()
             MessagebarAndLog.info(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "backup_db", "Database backup was written to %s "
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "backup_db", "Database backup was written to %s "
                 )
                 % bkupname,
                 duration=15,
             )
         else:
             MessagebarAndLog.info(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "backup_db",
-                        "Backup of PostGIS database not supported yet!",
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "backup_db",
+                    "Backup of PostGIS database not supported yet!",
                 ),
                 duration=15,
             )
@@ -129,18 +125,15 @@ def get_spatialite_db_path_from_dbsettings_string(db_settings: str) -> str:
             try:
                 msg = str(e)
             except Exception:
-                msg = ru(
-                    QCoreApplication.translate(
-                        "get_spatialite_db_path_from_dbsettings_string",
-                        "Error message failed! Could not be converted to string!",
-                    )
+                msg = QCoreApplication.translate(
+                    "get_spatialite_db_path_from_dbsettings_string",
+                    "Error message failed! Could not be converted to string!",
                 )
+
             MessagebarAndLog.info(
-                log_msg=ru(
-                    QCoreApplication.translate(
-                        "get_spatialite_db_path_from_dbsettings_string",
-                        '%s error msg from db_settings string "%s": %s',
-                    )
+                log_msg=QCoreApplication.translate(
+                    "get_spatialite_db_path_from_dbsettings_string",
+                    '%s error msg from db_settings string "%s": %s',
                 )
                 % (
                     "get_spatialite_db_path_from_dbsettings_string",
@@ -305,11 +298,9 @@ def create_dict_from_db_2_cols(params: tuple) -> tuple:
             sqlstring, dbconnection=dbconnection
         )
     if not connection_ok:
-        textstring = ru(
-            QCoreApplication.translate(
-                "create_dict_from_db_2_cols",
-                """Cannot create dictionary from columns %s and %s in table %s!""",
-            )
+        textstring = QCoreApplication.translate(
+            "create_dict_from_db_2_cols",
+            """Cannot create dictionary from columns %s and %s in table %s!""",
         ) % (col1, col2, table)
         MessagebarAndLog.warning(
             bar_msg=QCoreApplication.translate(
@@ -431,16 +422,12 @@ def calculate_median_value(
             return median_value[0][0] if median_value else None
         except (IndexError, TypeError):
             MessagebarAndLog.warning(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "calculate_median_value",
-                        "Median calculation error, see log message panel",
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "calculate_median_value",
+                    "Median calculation error, see log message panel",
                 ),
-                log_msg=ru(
-                    QCoreApplication.translate(
-                        "calculate_median_value", "Sql failed: %s"
-                    )
+                log_msg=QCoreApplication.translate(
+                    "calculate_median_value", "Sql failed: %s"
                 )
                 % sql,
             )
@@ -473,10 +460,8 @@ def delete_srids(
         execute_able_object.execute(delete_srid_sql, args=(keep_epsg_code,))
     except Exception:
         MessagebarAndLog.info(
-            log_msg=ru(
-                QCoreApplication.translate(
-                    "delete_srids", "Removing srids failed using: %s"
-                )
+            log_msg=QCoreApplication.translate(
+                "delete_srids", "Removing srids failed using: %s"
             )
             % str(delete_srid_sql)
         )
@@ -524,11 +509,9 @@ def get_quality_instruments() -> tuple:
     if not connection_ok:
         MessagebarAndLog.critical(
             bar_msg=sql_failed_msg(),
-            log_msg=ru(
-                QCoreApplication.translate(
-                    "get_quality_instruments",
-                    "Failed to get quality instruments from sql\n%s",
-                )
+            log_msg=QCoreApplication.translate(
+                "get_quality_instruments",
+                "Failed to get quality instruments from sql\n%s",
             )
             % sql,
         )
@@ -556,10 +539,8 @@ def calculate_db_table_rows() -> None:
     if sql_failed:
         MessagebarAndLog.warning(
             bar_msg=sql_failed_msg(),
-            log_msg=ru(
-                QCoreApplication.translate(
-                    "calculate_db_table_rows", "Sql failed:\n%s\n"
-                )
+            log_msg=QCoreApplication.translate(
+                "calculate_db_table_rows", "Sql failed:\n%s\n"
             )
             % "\n".join(sql_failed),
         )

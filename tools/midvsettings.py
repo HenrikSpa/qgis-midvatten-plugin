@@ -17,7 +17,6 @@ from qgis.core import QgsProject
 
 from midvatten.definitions import midvatten_defs
 from midvatten.tools.utils.common_utils import MessagebarAndLog
-from midvatten.tools.utils.common_utils import returnunicode as ru
 
 log = logging.getLogger(__name__)
 
@@ -68,11 +67,9 @@ class MidvSettings:
                 self.settingsdict[key] = output[key][0]
             except KeyError:
                 MessagebarAndLog.warning(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "midvsettings",
-                            "Settings key %s does not exist in project file. Maybe this file was last used with old Midvatten plugin?",
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "midvsettings",
+                        "Settings key %s does not exist in project file. Maybe this file was last used with old Midvatten plugin?",
                     )
                     % (str(key))
                 )

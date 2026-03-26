@@ -34,31 +34,25 @@ def _parse_db_settings(db_settings: Optional[str]) -> tuple:
         else:
             if not db_settings:
                 raise UsageError(
-                    ru(
-                        QCoreApplication.translate(
-                            "DbConnectionManager",
-                            "Database setting was empty. Check DB tab in Midvatten settings.",
-                        )
+                    QCoreApplication.translate(
+                        "DbConnectionManager",
+                        "Database setting was empty. Check DB tab in Midvatten settings.",
                     )
                 )
             try:
                 db_settings = ast.literal_eval(db_settings)
             except Exception:
                 raise UsageError(
-                    ru(
-                        QCoreApplication.translate(
-                            "DbConnectionManager",
-                            "Database could not be set. Check DB tab in Midvatten settings.",
-                        )
+                    QCoreApplication.translate(
+                        "DbConnectionManager",
+                        "Database could not be set. Check DB tab in Midvatten settings.",
                     )
                 )
     elif not isinstance(db_settings, dict):
         raise Exception(
-            ru(
-                QCoreApplication.translate(
-                    "DbConnectionManager",
-                    "DbConnectionManager programming error: db_settings must be either a dict like {'spatialite': {'dbpath': 'x'} or a string representation of it. Was: %s",
-                )
+            QCoreApplication.translate(
+                "DbConnectionManager",
+                "DbConnectionManager programming error: db_settings must be either a dict like {'spatialite': {'dbpath': 'x'} or a string representation of it. Was: %s",
             )
             % ru(db_settings)
         )
@@ -78,11 +72,9 @@ def create_backend(db_settings: Optional[str] = None) -> Backend:
             connection_name=connection_settings["connection"].split("/")[0],
         )
     raise UsageError(
-        ru(
-            QCoreApplication.translate(
-                "DbConnectionManager",
-                "Unsupported database type: %s",
-            )
+        QCoreApplication.translate(
+            "DbConnectionManager",
+            "Unsupported database type: %s",
         )
         % dbtype
     )

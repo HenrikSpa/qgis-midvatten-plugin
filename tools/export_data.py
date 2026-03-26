@@ -133,15 +133,11 @@ class ExportData:
         self.dest_dbconnection.cursor.execute("vacuum")
 
         common_utils.MessagebarAndLog.info(
-            bar_msg=ru(
-                QCoreApplication.translate(
-                    "ExportData", "Export done, see differences in log message panel"
-                )
+            bar_msg=QCoreApplication.translate(
+                "ExportData", "Export done, see differences in log message panel"
             ),
-            log_msg=ru(
-                QCoreApplication.translate(
-                    "ExportData", "Tables with different number of rows:\n%s"
-                )
+            log_msg=QCoreApplication.translate(
+                "ExportData", "Tables with different number of rows:\n%s"
             )
             % statistics,
         )
@@ -172,10 +168,8 @@ class ExportData:
                 tname, dbconnection=self.source_dbconnection
             ):
                 common_utils.MessagebarAndLog.info(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "ExportData", "Table %s didn't exist. Skipping it."
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "ExportData", "Table %s didn't exist. Skipping it."
                     )
                     % tname
                 )
@@ -188,11 +182,9 @@ class ExportData:
                         sqlfile = db_defs.extra_datatables_sqlfile()
                         if not os.path.isfile(sqlfile):
                             common_utils.MessagebarAndLog.info(
-                                bar_msg=ru(
-                                    QCoreApplication.translate(
-                                        "ExportData",
-                                        "Programming error, file path not existing: %s. Skipping table %s",
-                                    )
+                                bar_msg=QCoreApplication.translate(
+                                    "ExportData",
+                                    "Programming error, file path not existing: %s. Skipping table %s",
                                 )
                                 % (sqlfile, tname)
                             )
@@ -204,11 +196,9 @@ class ExportData:
                             self.dest_dbconnection.commit()
                     else:
                         common_utils.MessagebarAndLog.info(
-                            bar_msg=ru(
-                                QCoreApplication.translate(
-                                    "ExportData",
-                                    "Programming error, table missing in new database: %s.",
-                                )
+                            bar_msg=QCoreApplication.translate(
+                                "ExportData",
+                                "Programming error, table missing in new database: %s.",
                             )
                             % tname
                         )
@@ -278,11 +268,9 @@ class ExportData:
             )
         except Exception:
             common_utils.MessagebarAndLog.info(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "ExportData",
-                        "Error! Export of table %s failed, see log message panel",
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "ExportData",
+                    "Error! Export of table %s failed, see log message panel",
                 )
                 % tname,
                 log_msg=ru(traceback.format_exc()),
@@ -412,11 +400,9 @@ class ExportData:
                     nr_of_rows = dbconnection.execute_and_fetchall(sql)[0][0]
                 except Exception:
                     common_utils.MessagebarAndLog.warning(
-                        log_msg=ru(
-                            QCoreApplication.translate(
-                                "ExportData",
-                                "Sql failed while getting table row differences: %s",
-                            )
+                        log_msg=QCoreApplication.translate(
+                            "ExportData",
+                            "Sql failed while getting table row differences: %s",
                         )
                         % sql
                     )

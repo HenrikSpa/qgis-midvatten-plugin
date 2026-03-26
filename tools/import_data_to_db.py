@@ -30,7 +30,7 @@ import psycopg2.extras
 from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools.utils import common_utils, db_utils
-from midvatten.tools.utils.common_utils import returnunicode as ru, UserInterruptError
+from midvatten.tools.utils.common_utils import UserInterruptError
 from midvatten.tools.utils.db_utils import DbConnectionManager
 
 
@@ -87,11 +87,9 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             if file_data is None or not file_data:
                 return
             common_utils.MessagebarAndLog.info(
-                log_msg=ru(
-                    QCoreApplication.translate(
-                        "midv_data_importer",
-                        "\nImport to %s starting\n--------------------",
-                    )
+                log_msg=QCoreApplication.translate(
+                    "midv_data_importer",
+                    "\nImport to %s starting\n--------------------",
                 )
                 % dest_table
             )
@@ -114,11 +112,9 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             )
             if not table_info:
                 raise MidvDataImporterError(
-                    ru(
-                        QCoreApplication.translate(
-                            "midv_data_importer",
-                            "The table %s did not exist. Update the database to latest version.",
-                        )
+                    QCoreApplication.translate(
+                        "midv_data_importer",
+                        "The table %s did not exist. Update the database to latest version.",
                     )
                     % dest_table
                 )
@@ -147,11 +143,9 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
 
             if missing_columns:
                 raise MidvDataImporterError(
-                    ru(
-                        QCoreApplication.translate(
-                            "midv_data_importer",
-                            "Required columns %s are missing for table %s",
-                        )
+                    QCoreApplication.translate(
+                        "midv_data_importer",
+                        "Required columns %s are missing for table %s",
                     )
                     % (", ".join(missing_columns), dest_table)
                 )
@@ -192,11 +186,9 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 )
                 if not remaining_rownumbers:
                     common_utils.MessagebarAndLog.warning(
-                        bar_msg=ru(
-                            QCoreApplication.translate(
-                                "midv_data_importer",
-                                "Nothing imported to %s after deleting duplicate date_times",
-                            )
+                        bar_msg=QCoreApplication.translate(
+                            "midv_data_importer",
+                            "Nothing imported to %s after deleting duplicate date_times",
                         )
                         % dest_table
                     )
@@ -208,20 +200,16 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 if removed_rownumbers:
                     removed_rows = get_row_subset(removed_rownumbers)
                     common_utils.MessagebarAndLog.info(
-                        log_msg=ru(
-                            QCoreApplication.translate(
-                                "midv_data_importer",
-                                "Skipped %s rows with duplicate date_time but of different date format (yyyy-mm-dd hh:mm or yyyy-mm-dd hh:mm:ss). Subset of skipped rows:\n%s",
-                            )
+                        log_msg=QCoreApplication.translate(
+                            "midv_data_importer",
+                            "Skipped %s rows with duplicate date_time but of different date format (yyyy-mm-dd hh:mm or yyyy-mm-dd hh:mm:ss). Subset of skipped rows:\n%s",
                         )
                         % (str(len(removed_rownumbers)), "\n".join(removed_rows))
                     )
                     import_messages.append(
-                        ru(
-                            QCoreApplication.translate(
-                                "midv_data_importer",
-                                "Skipped %s rows with duplicate date_time.",
-                            )
+                        QCoreApplication.translate(
+                            "midv_data_importer",
+                            "Skipped %s rows with duplicate date_time.",
                         )
                         % str(len(removed_rownumbers))
                     )
@@ -234,11 +222,9 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 remaining_rownumbers_after_stratigraphy = get_remaining_rownumbers()
                 if not remaining_rownumbers_after_stratigraphy:
                     common_utils.MessagebarAndLog.warning(
-                        bar_msg=ru(
-                            QCoreApplication.translate(
-                                "midv_data_importer",
-                                "Nothing imported to %s after deleting stratigraphy rows with errors.",
-                            )
+                        bar_msg=QCoreApplication.translate(
+                            "midv_data_importer",
+                            "Nothing imported to %s after deleting stratigraphy rows with errors.",
                         )
                         % dest_table
                     )
@@ -250,20 +236,16 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 if removed_rownumbers:
                     removed_rows = get_row_subset(removed_rownumbers)
                     common_utils.MessagebarAndLog.info(
-                        log_msg=ru(
-                            QCoreApplication.translate(
-                                "midv_data_importer",
-                                "Skipped %s rows due to problems with stratigraphy. Subset of skipped rows:\n%s",
-                            )
+                        log_msg=QCoreApplication.translate(
+                            "midv_data_importer",
+                            "Skipped %s rows due to problems with stratigraphy. Subset of skipped rows:\n%s",
                         )
                         % (str(len(removed_rownumbers)), "\n".join(removed_rows))
                     )
                     import_messages.append(
-                        ru(
-                            QCoreApplication.translate(
-                                "midv_data_importer",
-                                "Skipped %s rows due to problems with stratigraphy.",
-                            )
+                        QCoreApplication.translate(
+                            "midv_data_importer",
+                            "Skipped %s rows due to problems with stratigraphy.",
                         )
                         % str(len(removed_rownumbers))
                     )
@@ -293,11 +275,9 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                     self.foreign_keys_import_question = 1
             else:
                 import_messages.append(
-                    ru(
-                        QCoreApplication.translate(
-                            "midv_data_importer",
-                            """There are %s out of %s number of rows to import (see log for more info about removed rows).\n\nProceed with import?""",
-                        )
+                    QCoreApplication.translate(
+                        "midv_data_importer",
+                        """There are %s out of %s number of rows to import (see log for more info about removed rows).\n\nProceed with import?""",
                     )
                     % (str(len(remaining_rownumbers)), str(len(all_rownumbers)))
                 )
@@ -307,7 +287,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 stop_question = common_utils.Askuser(
                     "YesNo",
                     "\n".join(import_messages),
-                    ru(QCoreApplication.translate("midv_data_importer", "Info")),
+                    QCoreApplication.translate("midv_data_importer", "Info"),
                 )
                 if stop_question.result == 0:  # if the user wants to abort
                     raise UserInterruptError()
@@ -393,34 +373,26 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                     str(e)
                 except UnicodeDecodeError:
                     common_utils.MessagebarAndLog.critical(
-                        bar_msg=ru(
-                            QCoreApplication.translate(
-                                "midv_data_importer",
-                                "Import failed, see log message panel",
-                            )
+                        bar_msg=QCoreApplication.translate(
+                            "midv_data_importer",
+                            "Import failed, see log message panel",
                         ),
-                        log_msg=ru(
-                            QCoreApplication.translate(
-                                "midv_data_importer", "Sql\n%s  failed."
-                            )
+                        log_msg=QCoreApplication.translate(
+                            "midv_data_importer", "Sql\n%s  failed."
                         )
                         % (sql),
                         duration=999,
                     )
                 else:
                     common_utils.MessagebarAndLog.critical(
-                        bar_msg=ru(
-                            QCoreApplication.translate(
-                                "midv_data_importer",
-                                "Import failed, see log message panel",
-                            )
+                        bar_msg=QCoreApplication.translate(
+                            "midv_data_importer",
+                            "Import failed, see log message panel",
                         ),
-                        log_msg=ru(
-                            QCoreApplication.translate(
-                                "midv_data_importer", "Sql\n%s  failed.\nMsg:\n%s"
-                            )
+                        log_msg=QCoreApplication.translate(
+                            "midv_data_importer", "Sql\n%s  failed.\nMsg:\n%s"
                         )
-                        % (sql, ru(str(e))),
+                        % (sql, str(e)),
                         duration=999,
                     )
 
@@ -429,11 +401,9 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             nr_excluded = recsinfile - nr_imported
 
             common_utils.MessagebarAndLog.info(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "midv_data_importer",
-                        "%s rows imported and %s excluded for table %s. See log message panel for details",
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "midv_data_importer",
+                    "%s rows imported and %s excluded for table %s. See log message panel for details",
                 )
                 % (nr_imported, nr_excluded, dest_table),
                 log_msg="--------------------",
@@ -503,16 +473,12 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
 
         if numskipped:
             common_utils.MessagebarAndLog.warning(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "midv_data_importer", "Import warning, duplicates skipped"
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "midv_data_importer", "Import warning, duplicates skipped"
                 ),
-                log_msg=ru(
-                    QCoreApplication.translate(
-                        "midv_data_importer",
-                        "%s nr of duplicate rows in file was skipped while importing.",
-                    )
+                log_msg=QCoreApplication.translate(
+                    "midv_data_importer",
+                    "%s nr of duplicate rows in file was skipped while importing.",
                 )
                 % str(numskipped),
             )
@@ -665,11 +631,9 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 int(_source_srid)
             except (ValueError, TypeError) as e:
                 raise MidvDataImporterError(
-                    ru(
-                        QCoreApplication.translate(
-                            "midv_data_importer",
-                            'Source srid "%s" was not a valid EPSG srid. Check coordinate reference system of the source.',
-                        )
+                    QCoreApplication.translate(
+                        "midv_data_importer",
+                        'Source srid "%s" was not a valid EPSG srid. Check coordinate reference system of the source.',
                     )
                     % str(_source_srid)
                 ) from e
@@ -678,11 +642,9 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             int(dest_srid)
         except (ValueError, TypeError) as e:
             raise MidvDataImporterError(
-                ru(
-                    QCoreApplication.translate(
-                        "midv_data_importer",
-                        'Database srid "%s" was not a valid EPSG srid. Check coordinate reference system of the databases',
-                    )
+                QCoreApplication.translate(
+                    "midv_data_importer",
+                    'Database srid "%s" was not a valid EPSG srid. Check coordinate reference system of the databases',
                 )
                 % str(dest_srid)
             ) from e
@@ -719,11 +681,9 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                     strats = [[float(x) for x in y] for y in stratid_depthbot_depthtop]
                 except (ValueError, TypeError) as e:
                     raise MidvDataImporterError(
-                        ru(
-                            QCoreApplication.translate(
-                                "midv_data_importer",
-                                'ValueError: %s. Obsid "%s", stratid: "%s", depthbot: "%s", depthtop: "%s"',
-                            )
+                        QCoreApplication.translate(
+                            "midv_data_importer",
+                            'ValueError: %s. Obsid "%s", stratid: "%s", depthbot: "%s", depthtop: "%s"',
                         )
                         % (
                             str(e),
@@ -747,11 +707,9 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                         != 1
                     ):
                         common_utils.MessagebarAndLog.info(
-                            ru(
-                                QCoreApplication.translate(
-                                    "midv_data_importer",
-                                    "The obsid %s will not be imported due to gaps in stratid",
-                                )
+                            QCoreApplication.translate(
+                                "midv_data_importer",
+                                "The obsid %s will not be imported due to gaps in stratid",
                             )
                             % obsid
                         )
@@ -763,11 +721,9 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                         != sorted_strats[index - 1][depthbot_idx]
                     ):
                         common_utils.MessagebarAndLog.info(
-                            ru(
-                                QCoreApplication.translate(
-                                    "midv_data_importer",
-                                    "The obsid %s will not be imported due to gaps in depthtop/depthbot",
-                                )
+                            QCoreApplication.translate(
+                                "midv_data_importer",
+                                "The obsid %s will not be imported due to gaps in depthtop/depthbot",
                             )
                             % obsid
                         )
@@ -809,17 +765,13 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             to_list = [x[1] for x in from_to_fields]
             if not all([_from in existing_columns_in_temptable for _from in from_list]):
                 common_utils.MessagebarAndLog.warning(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "midv_data_importer",
-                            "Import of foreign keys failed, see log message panel",
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "midv_data_importer",
+                        "Import of foreign keys failed, see log message panel",
                     ),
-                    log_msg=ru(
-                        QCoreApplication.translate(
-                            "midv_data_importer",
-                            "There were keys missing for importing to fk_table %s, so no import was done.",
-                        )
+                    log_msg=QCoreApplication.translate(
+                        "midv_data_importer",
+                        "There were keys missing for importing to fk_table %s, so no import was done.",
                     )
                     % fk_table,
                 )
@@ -872,11 +824,9 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             )[0][0]
             if nr_fk_after > nr_fk_before:
                 common_utils.MessagebarAndLog.info(
-                    log_msg=ru(
-                        QCoreApplication.translate(
-                            "midv_data_importer",
-                            "In total %s rows were imported to foreign key table %s while importing to %s.",
-                        )
+                    log_msg=QCoreApplication.translate(
+                        "midv_data_importer",
+                        "In total %s rows were imported to foreign key table %s while importing to %s.",
                     )
                     % (str(nr_fk_after - nr_fk_before), fk_table, dest_table)
                 )
@@ -893,10 +843,8 @@ def import_exception_handler(func: Callable) -> Callable:
         except MidvDataImporterError as e:
             common_utils.stop_waiting_cursor()
             common_utils.MessagebarAndLog.critical(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "midv_data_importer", "Import error, see log message panel"
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "midv_data_importer", "Import error, see log message panel"
                 ),
                 log_msg=str(e),
             )

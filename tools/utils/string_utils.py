@@ -49,9 +49,16 @@ def returnunicode(
     """
     if isinstance(anything, str):
         return anything
-    elif anything is None:
-        decoded = ""
-    elif isinstance(anything, (list, tuple, dict, OrderedDict)):
+    if anything is None:
+        return ""
+    if isinstance(anything, bytes):
+        for charset in ["utf-8", "cp1252", "iso-8859-1", "ascii"]:
+            try:
+                return anything.decode(charset)
+            except (UnicodeDecodeError, UnicodeEncodeError):
+                continue
+        return str(anything)  # fallback to repr
+    if isinstance(anything, (list, tuple, dict, OrderedDict)):
         if isinstance(anything, list):
             decoded = [returnunicode(x, keep_containers) for x in anything]
         elif isinstance(anything, tuple):
@@ -66,7 +73,7 @@ def returnunicode(
                     for k, v in anything.items()
                 ]
             )
-        elif isinstance(anything, OrderedDict):
+        else:  # OrderedDict
             decoded = OrderedDict(
                 [
                     (
@@ -78,46 +85,8 @@ def returnunicode(
             )
         if not keep_containers:
             decoded = str(decoded)
-    # This is not optimal, but needed for tests where nosetests stand alone PyQt4 instead of QGis PyQt4.
-    elif str(type(anything)) in (
-        "<class 'PyQt4.QtCore.QVariant'>",
-        "<class 'PyQt5.QtCore.QVariant'>",
-    ):
-        if anything.isNull():
-            decoded = ""
-        else:
-            decoded = returnunicode(anything.toString())
-    # This is not optimal, but needed for tests where nosetests stand alone PyQt4 instead of QGis PyQt4.
-    elif str(type(anything)) in (
-        "<class 'PyQt4.QtCore.QString'>",
-        "<class 'PyQt5.QtCore.QString'>",
-    ):
-        decoded = returnunicode(str(anything.toUtf8(), "utf-8"))
-    # This is not optimal, but needed for tests where nosetests stand alone PyQt4 instead of QGis PyQt4.
-    elif str(type(anything)) in (
-        "<class 'PyQt4.QtCore.QPyNullVariant'>",
-        "<class 'PyQt5.QtCore.QPyNullVariant'>",
-    ):
-        decoded = ""
-    elif str(type(anything)) in ("<class 'PyQt5.QtCore.QDateTime'>",):
-        decoded = returnunicode(anything.toString())
-    else:
-        decoded = str(anything)
-
-    if isinstance(decoded, bytes):
-        for charset in ["ascii", "utf-8", "utf-16", "cp1252", "iso-8859-1", "ascii"]:
-            try:
-                decoded = anything.decode(charset)
-            except UnicodeEncodeError:
-                continue
-            except UnicodeDecodeError:
-                continue
-            else:
-                break
-        else:
-            decoded = str(tr("returnunicode", "data type unknown, check database"))
-
-    return decoded
+        return decoded
+    return str(anything)
 
 
 def unicode_2_utf8(anything):  # takes an unicode and tries to return it as utf8

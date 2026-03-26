@@ -40,10 +40,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt4 to initialize the UI
         self.setWindowTitle(
-            ru(
-                QCoreApplication.translate(
-                    "Calibrlogger", "Edit water level logger (w_levels_logger) data"
-                )
+            QCoreApplication.translate(
+                "Calibrlogger", "Edit water level logger (w_levels_logger) data"
             )
         )  # Set the title for the dialog
         common_utils.start_waiting_cursor()  # show the user this may take a long time...
@@ -59,12 +57,11 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
         self.settingsdict = settingsdict1
 
-        text = ru(
-            QCoreApplication.translate(
-                "Calibrlogger",
-                "Select the observation point with logger data to be adjusted.",
-            )
+        text = QCoreApplication.translate(
+            "Calibrlogger",
+            "Select the observation point with logger data to be adjusted.",
         )
+
         self.statusbar.showMessage(text, 0)
         self.log_calc_manual.setText(
             '<a href="https://github.com/jkall/qgis-midvatten-plugin/wiki/4.-Edit-data">Midvatten manual</a>'
@@ -289,7 +286,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         obsid = self.selected_obsid
         if not obsid:
             log.debug("error obsid " + str(obsid))
-            # utils.pop_up_info(ru(QCoreApplication.translate('Calibrlogger', "ERROR: no obsid is chosen")))
+            # utils.pop_up_info(QCoreApplication.translate('Calibrlogger', "ERROR: no obsid is chosen"))
             common_utils.stop_waiting_cursor()
             return None
 
@@ -359,20 +356,16 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                         )
                     else:
                         common_utils.MessagebarAndLog.warning(
-                            bar_msg=ru(
-                                QCoreApplication.translate(
-                                    "Calibrlogger",
-                                    "No calibrated level_masl values to normalize against.",
-                                )
+                            bar_msg=QCoreApplication.translate(
+                                "Calibrlogger",
+                                "No calibrated level_masl values to normalize against.",
                             )
                         )
                         self.head_ts_for_plot = self.head_ts
                 else:
                     common_utils.MessagebarAndLog.warning(
-                        bar_msg=ru(
-                            QCoreApplication.translate(
-                                "Calibrlogger", "No head values to normalize against."
-                            )
+                        bar_msg=QCoreApplication.translate(
+                            "Calibrlogger", "No head values to normalize against."
                         )
                     )
                     self.head_ts_for_plot = self.head_ts
@@ -399,11 +392,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         if not obsid == "":
             self.lastcalibr = self.getlastcalibration(obsid)
             text = (
-                ru(
-                    QCoreApplication.translate(
-                        "Calibrlogger",
-                        """There is no earlier known position for the logger in %s""",
-                    )
+                QCoreApplication.translate(
+                    "Calibrlogger",
+                    """There is no earlier known position for the logger in %s""",
                 )
                 % self.selected_obsid
             )
@@ -415,11 +406,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                         self.lastcalibr[0][1] != "",
                     ]
                 ):
-                    text = ru(
-                        QCoreApplication.translate(
-                            "Calibrlogger",
-                            "Last pos. for logger in %s was %s masl at %s",
-                        )
+                    text = QCoreApplication.translate(
+                        "Calibrlogger",
+                        "Last pos. for logger in %s was %s masl at %s",
                     ) % (
                         obsid,
                         f"{self.lastcalibr[0][1]:.3f}",
@@ -477,12 +466,11 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 )
 
         else:
-            text = ru(
-                QCoreApplication.translate(
-                    "Calibrlogger",
-                    "Select the observation point with logger data to be adjusted.",
-                )
+            text = QCoreApplication.translate(
+                "Calibrlogger",
+                "Select the observation point with logger data to be adjusted.",
             )
+
             self.statusbar.showMessage(text, 0)
 
     @fn_timer
@@ -560,7 +548,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         """Plots self.level_masl_ts, self.meas_ts and maybe self.head_ts"""
         self.reset_plot_selects_and_calib_help()
         self.statusbar.showMessage(
-            ru(QCoreApplication.translate("Calibrlogger", "Updating plot...")), 0
+            QCoreApplication.translate("Calibrlogger", "Updating plot..."), 0
         )
         last_used_obsid = self.obsid
         obsid = self.load_obsid_and_init()
@@ -602,7 +590,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             a = self.plot_recarray(
                 self.axes,
                 self.meas_ts,
-                obsid + ru(QCoreApplication.translate("Calibrlogger", " measurements")),
+                obsid + QCoreApplication.translate("Calibrlogger", " measurements"),
                 style=dict(
                     linestyle="-",
                     marker="o",
@@ -645,10 +633,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 self.axes,
                 self.level_masl_ts,
                 obsid
-                + ru(
-                    QCoreApplication.translate(
-                        "Calibrlogger", " logger water level for editing"
-                    )
+                + QCoreApplication.translate(
+                    "Calibrlogger", " logger water level for editing"
                 ),
                 time_list=logger_time_list,
                 style=dict(
@@ -659,9 +645,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             for idx, source in enumerate(
                 np.unique(self.level_masl_ts.source, equal_nan=True)
             ):
-                label = obsid + ru(
-                    QCoreApplication.translate("Calibrlogger", " logger water level")
+                label = obsid + QCoreApplication.translate(
+                    "Calibrlogger", " logger water level"
                 )
+
                 if source is None or not str(source).strip():
                     pass
                 else:
@@ -707,9 +694,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 except IndexError:
                     color = np.random.rand(3, 1).ravel()
 
-                label = obsid + ru(
-                    QCoreApplication.translate("Calibrlogger", " logger head")
+                label = obsid + QCoreApplication.translate(
+                    "Calibrlogger", " logger head"
                 )
+
                 if source is None or not str(source).strip():
                     pass
                 else:
@@ -737,11 +725,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         )
         self.calibrplotfigure.autofmt_xdate()
         self.axes.set_ylabel(
-            ru(QCoreApplication.translate("Calibrlogger", "Level (masl)"))
+            QCoreApplication.translate("Calibrlogger", "Level (masl)")
         )  # This is the method that accepts even national characters ('åäö') in matplotlib axes labels
         self.axes.set_title(
-            ru(QCoreApplication.translate("Calibrlogger", "Plot for "))
-            + str(self.obsid)
+            QCoreApplication.translate("Calibrlogger", "Plot for ") + str(self.obsid)
         )  # This is the method that accepts even national characters ('åäö') in matplotlib axes labels
         for label in self.axes.xaxis.get_ticklabels():
             label.set_fontsize(8)
@@ -802,10 +789,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         """Used to set the self.from_date_time by clicking on a line node in the plot self.canvas"""
         self.set_date_from_x(
             self.from_date_time,
-            ru(
-                QCoreApplication.translate(
-                    "Calibrlogger", 'Select a date to use as "from"'
-                )
+            QCoreApplication.translate(
+                "Calibrlogger", 'Select a date to use as "from"'
             ),
             from_node=False,
         )
@@ -815,11 +800,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         """Used to set the self.to_date_time by clicking on a line node in the plot self.canvas"""
         self.set_date_from_x(
             self.to_date_time,
-            ru(
-                QCoreApplication.translate(
-                    "Calibrlogger", 'Select a date to use as "to"'
-                )
-            ),
+            QCoreApplication.translate("Calibrlogger", 'Select a date to use as "to"'),
             from_node=False,
         )
 
@@ -865,11 +846,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 )
         except Exception as e:
             common_utils.MessagebarAndLog.info(
-                log_msg=ru(
-                    QCoreApplication.translate(
-                        "Calibrlogger",
-                        "Getting last calibration failed for obsid %s, msg: %s",
-                    )
+                log_msg=QCoreApplication.translate(
+                    "Calibrlogger",
+                    "Getting last calibration failed for obsid %s, msg: %s",
                 )
                 % (self.obsid, str(e))
             )
@@ -922,30 +901,24 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         coupled_vals = self.match_ts_values(self.meas_ts, logger_ts, search_radius)
         if not coupled_vals:
             common_utils.pop_up_info(
-                ru(
-                    QCoreApplication.translate(
-                        "Calibrlogger",
-                        "There was no match found between measurements and logger values inside the chosen period.\n Try to increase the search radius or adjust the period!",
-                    )
+                QCoreApplication.translate(
+                    "Calibrlogger",
+                    "There was no match found between measurements and logger values inside the chosen period.\n Try to increase the search radius or adjust the period!",
                 )
             )
         else:
             calculated_diff = str(common_utils.calc_mean_diff(coupled_vals))
             if not calculated_diff or calculated_diff.lower() == "nan":
                 common_utils.pop_up_info(
-                    ru(
-                        QCoreApplication.translate(
-                            "Calibrlogger",
-                            "There was no matched measurements or logger values inside the chosen period.\n Try to increase the search radius!",
-                        )
+                    QCoreApplication.translate(
+                        "Calibrlogger",
+                        "There was no matched measurements or logger values inside the chosen period.\n Try to increase the search radius!",
                     )
                 )
                 common_utils.MessagebarAndLog.info(
-                    log_msg=ru(
-                        QCoreApplication.translate(
-                            "Calibrlogger",
-                            "Calculated water level from logger: midvatten_utils.calc_mean_diff(coupled_vals) didn't return a useable value.",
-                        )
+                    log_msg=QCoreApplication.translate(
+                        "Calibrlogger",
+                        "Calculated water level from logger: midvatten_utils.calc_mean_diff(coupled_vals) didn't return a useable value.",
                     )
                 )
             else:
@@ -1045,10 +1018,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         search_radius_splitted = ru(search_radius).split()
         if len(search_radius_splitted) != 2:
             common_utils.pop_up_info(
-                ru(
-                    QCoreApplication.translate(
-                        "Calibrlogger", "Must write time resolution also, ex. %s"
-                    )
+                QCoreApplication.translate(
+                    "Calibrlogger", "Must write time resolution also, ex. %s"
                 )
                 % "60 minutes"
             )
@@ -1076,22 +1047,18 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         selected_obsid = self.load_obsid_and_init()
         if current_loaded_obsid != selected_obsid:
             common_utils.pop_up_info(
-                ru(
-                    QCoreApplication.translate(
-                        "Calibrlogger",
-                        "Error!\n The obsid selection has been changed but the plot has not been updated. No deletion done.\nUpdating plot.",
-                    )
+                QCoreApplication.translate(
+                    "Calibrlogger",
+                    "Error!\n The obsid selection has been changed but the plot has not been updated. No deletion done.\nUpdating plot.",
                 )
             )
             self.update_plot()
             return
         elif selected_obsid is None:
             common_utils.pop_up_info(
-                ru(
-                    QCoreApplication.translate(
-                        "Calibrlogger",
-                        "Error!\n No obsid was selected. No deletion done.\nUpdating plot.",
-                    )
+                QCoreApplication.translate(
+                    "Calibrlogger",
+                    "Error!\n No obsid was selected. No deletion done.\nUpdating plot.",
                 )
             )
             self.update_plot()
@@ -1121,11 +1088,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
         if set_to_null_instead:
             sql = f"UPDATE {table_ident} SET level_masl = NULL WHERE obsid = {ph}{where_dt_sql}"
-            msg = ru(
-                QCoreApplication.translate(
-                    "Calibrlogger",
-                    "Do you want to set level_masl to NULL for the period %s to %s for obsid %s in table %s?",
-                )
+            msg = QCoreApplication.translate(
+                "Calibrlogger",
+                "Do you want to set level_masl to NULL for the period %s to %s for obsid %s in table %s?",
             ) % (
                 str(self.from_date_time.dateTime().toPyDateTime()),
                 str(self.to_date_time.dateTime().toPyDateTime()),
@@ -1134,11 +1099,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             )
         else:
             sql = f"DELETE FROM {table_ident} WHERE obsid = {ph}{where_dt_sql}"
-            msg = ru(
-                QCoreApplication.translate(
-                    "Calibrlogger",
-                    "Do you want to delete the period %s to %s for obsid %s from table %s?",
-                )
+            msg = QCoreApplication.translate(
+                "Calibrlogger",
+                "Do you want to delete the period %s to %s for obsid %s from table %s?",
             ) % (
                 str(self.from_date_time.dateTime().toPyDateTime()),
                 str(self.to_date_time.dateTime().toPyDateTime()),
@@ -1254,18 +1217,16 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         if not res:
             dbconnection.closedb()
             common_utils.pop_up_info(
-                ru(
-                    QCoreApplication.translate(
-                        "Calibrlogger",
-                        """Warning!\n No data found within the chosen period. No trend adjustment done!\nTry changing "from" and "to".""",
-                    )
+                QCoreApplication.translate(
+                    "Calibrlogger",
+                    """Warning!\n No data found within the chosen period. No trend adjustment done!\nTry changing "from" and "to".""",
                 )
             )
             return
 
         common_utils.MessagebarAndLog.info(
-            log_msg=ru(
-                QCoreApplication.translate("Calibrlogger", "Trend adjusted using: \n%s")
+            log_msg=QCoreApplication.translate(
+                "Calibrlogger", "Trend adjusted using: \n%s"
             )
             % (str(data))
         )
@@ -1313,7 +1274,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 markeredgewidth=1,
                 markersize=4,
                 zorder=30,
-                label=ru(QCoreApplication.translate("Calibrlogger", "Selected nodes")),
+                label=QCoreApplication.translate("Calibrlogger", "Selected nodes"),
             )[0]
         else:
             self.selected_line.set_ydata(ydata)

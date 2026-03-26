@@ -68,11 +68,9 @@ class CalculateStatisticsGui(
 
         if not all([table, column, obsids]):
             common_utils.MessagebarAndLog.critical(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "CalculateStatisticsGui",
-                        """Calculation failed, make sure you've selected a table, a column and features with a column obsid.""",
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "CalculateStatisticsGui",
+                    """Calculation failed, make sure you've selected a table, a column and features with a column obsid.""",
                 )
             )
             return None
@@ -83,10 +81,8 @@ class CalculateStatisticsGui(
         )
         printlist = []
         printlist.append(
-            ru(
-                QCoreApplication.translate(
-                    "Midvatten", "Obsid;Min;Median;Average;Max;Nr of values"
-                )
+            QCoreApplication.translate(
+                "Midvatten", "Obsid;Min;Median;Average;Max;Nr of values"
             )
         )
         printlist.extend(
@@ -96,11 +92,9 @@ class CalculateStatisticsGui(
             ]
         )
         common_utils.MessagebarAndLog.info(
-            bar_msg=ru(
-                QCoreApplication.translate(
-                    "Midvatten",
-                    "Statistics for table %s column %s done, see log for results.",
-                )
+            bar_msg=QCoreApplication.translate(
+                "Midvatten",
+                "Statistics for table %s column %s done, see log for results.",
             )
             % (table, column),
             log_msg="\n".join(printlist),

@@ -176,19 +176,15 @@ class TimeSeriesPlot:
                 dbconnection.closedb()
             else:
                 common_utils.pop_up_info(
-                    ru(
-                        QCoreApplication.translate(
-                            "TimeSeriesPlot",
-                            "Please select at least one point with time series data",
-                        )
+                    QCoreApplication.translate(
+                        "TimeSeriesPlot",
+                        "Please select at least one point with time series data",
                     )
                 )
         else:
             common_utils.pop_up_info(
-                ru(
-                    QCoreApplication.translate(
-                        "TimeSeriesPlot",
-                        "Please select a layer with time series observation points",
-                    )
+                QCoreApplication.translate(
+                    "TimeSeriesPlot",
+                    "Please select a layer with time series observation points",
                 )
             )

@@ -4,6 +4,20 @@ Each task is independent and can be done by a clean agent in a single session.
 Tasks are ordered by impact. Each task should end with `python3 -m pytest test/ -x`
 passing and a commit.
 
+## Task Index
+
+- [ ] **Task 1**: Delete dead code (16 dead methods, unused imports, legacy comments)
+- [ ] **Task 2**: Add `waiting_cursor` context manager (replace 100+ manual pairs)
+- [ ] **Task 3**: Replace debug `print()` with `logging.debug()` (30+ calls)
+- [ ] **Task 4**: Simplify `returnunicode`/`ru` and remove no-op calls (183 occurrences)
+- [ ] **Task 5**: Move `dbtype` branches to backend methods (19 string checks)
+- [ ] **Task 6**: Rename camelCase methods to snake_case (21 methods)
+- [ ] **Task 7**: Fix QMainWindow/QDialog init mismatch (9 classes)
+- [ ] **Task 8**: Decompose `general_import()` (421-line monolith)
+- [ ] **Task 9**: Migrate callers off `common_utils` re-exports
+- [ ] **Task 10**: Fix remaining style issues (mutable defaults, `== None`, etc.)
+- [ ] **Task 11**: Decompose `initGui()` in `midvatten_plugin.py` (381 lines)
+
 ## Prerequisites
 
 - Branch: `ai_test`

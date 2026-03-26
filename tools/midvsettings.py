@@ -9,6 +9,7 @@
         email                : groundwatergis [at] gmail.com
  ***************************************************************************/"""
 
+import logging
 import traceback
 
 from qgis.PyQt.QtCore import QCoreApplication
@@ -17,6 +18,8 @@ from qgis.core import QgsProject
 from midvatten.definitions import midvatten_defs
 from midvatten.tools.utils.common_utils import MessagebarAndLog
 from midvatten.tools.utils.common_utils import returnunicode as ru
+
+log = logging.getLogger(__name__)
 
 
 class MidvSettings:
@@ -100,6 +103,6 @@ class MidvSettings:
                 try:
                     save_func("Midvatten", key, value)
                 except Exception:
-                    print(
+                    log.debug(
                         f"debug info; midvsettings.save_settings failed, key: '{key}', value '{str(value)}', value type: '{str(type(value))}', msg:\n{traceback.format_exc()}"
                     )

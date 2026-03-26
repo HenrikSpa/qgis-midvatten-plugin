@@ -18,6 +18,7 @@
 """
 
 import datetime
+import logging
 import re
 from typing import List
 
@@ -25,6 +26,8 @@ import pytz
 from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools.utils.common_utils import returnunicode as ru, MessagebarAndLog
+
+log = logging.getLogger(__name__)
 
 
 def find_date_format(datestring: str, suppress_error_msg: bool = False) -> str:
@@ -244,7 +247,7 @@ def find_time_format(datestring: str):
 
     format_list = time_formats_to_try.get(length, None)
     if format_list is None:
-        print("Timeformat not supported for %s" % datestring)
+        log.debug("Timeformat not supported for %s" % datestring)
         return None
 
     for timeformat in format_list:

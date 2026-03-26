@@ -20,6 +20,7 @@
 import ast
 import copy
 import json
+import logging
 import os.path
 from typing import Any, Dict, List, Tuple, Union
 
@@ -51,6 +52,8 @@ from midvatten.tools.utils.gui_utils import (
     set_combobox,
     VRowEntry,
 )
+
+log = logging.getLogger(__name__)
 
 export_fieldlogger_ui_dialog = qgis.PyQt.uic.loadUiType(
     os.path.join(os.path.dirname(__file__), "..", "ui", "import_fieldlogger.ui")
@@ -1011,7 +1014,7 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
             parameter,
             _parameters_inputtypes_hints,
         ) in parameters_inputtypes_hints.items():
-            print(f"_parameters_inputtypes_hints {_parameters_inputtypes_hints}")
+            log.debug(f"_parameters_inputtypes_hints {_parameters_inputtypes_hints}")
             json_output.setdefault("inputfields", {}).update(
                 json.loads(_parameters_inputtypes_hints)
             )
@@ -1033,7 +1036,7 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
                     "inputfields": inputfields
                 }
             json_output.setdefault("locations", {})[location] = loc_dict
-        print(f"Got output {json_output}")
+        log.debug(f"Got output {json_output}")
         return json_output
 
     def save_stored_settings(self):

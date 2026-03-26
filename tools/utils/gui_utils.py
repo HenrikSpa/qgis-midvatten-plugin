@@ -20,8 +20,10 @@
 """
 
 import copy
+import logging
 import os
 import traceback
+from datetime import datetime
 from functools import partial
 from typing import Any, Dict, List, Union
 
@@ -40,8 +42,6 @@ from midvatten.tools.utils.common_utils import (
 from midvatten.tools.utils.date_utils import datestring_to_date
 from midvatten.tools.utils.db_utils import DbConnectionManager, sql_load_fr_db
 
-from datetime import datetime
-
 # Qt6 uses scoped enums (Qt.WidgetAttribute.WA_DeleteOnClose),
 # Qt5 uses flat enums (Qt.WA_DeleteOnClose). Prefer Qt6; fall back to Qt5.
 try:
@@ -49,6 +49,8 @@ try:
 except AttributeError:
     # Qt5 fallback — remove when Qt5 support is dropped
     WA_DeleteOnClose = QtCore.Qt.WA_DeleteOnClose
+
+log = logging.getLogger(__name__)
 
 
 class SplitterWithHandel(qgis.PyQt.QtWidgets.QSplitter):
@@ -414,5 +416,5 @@ class DetachFigureButton(NavigationButton):
                 try:
                     self.fig.canvas.set_window_title(title)
                 except AttributeError:
-                    print(f"Error, {e}, followup:\n{traceback.format_exc()}")
+                    log.debug(f"Error, {e}, followup:\n{traceback.format_exc()}")
         self.fig.show()

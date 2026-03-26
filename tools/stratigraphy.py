@@ -38,6 +38,7 @@
  ***************************************************************************/
 """
 
+import logging
 import traceback
 import unicodedata
 from functools import partial  # only to get combobox signals to work
@@ -48,6 +49,8 @@ from qgis.PyQt.QtCore import QCoreApplication
 from midvatten.definitions import midvatten_defs as defs
 from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.common_utils import returnunicode as ru
+
+log = logging.getLogger(__name__)
 
 
 class Stratigraphy:
@@ -66,7 +69,7 @@ class Stratigraphy:
         except (
             DataError
         ) as e:  # if an object 'e' belonging to DataError is created, then do following
-            print("Load failed due: " + e.problem)
+            log.debug("Load failed due: " + e.problem)
             self.store = None
 
     def showSurvey(self):
@@ -88,7 +91,7 @@ class Stratigraphy:
         try:  # return from store.getData is stored in data only if no object belonging to DataSanityError class is created
             self.data = self.store.getData(ids, lyr)  # added lyr as an argument!!!
         except DataSanityError as e:  # if an object 'e' belonging to DataSanityError is created, then do following
-            print("DataSanityError %s" % str(e))
+            log.debug("DataSanityError %s" % str(e))
             common_utils.stop_waiting_cursor()
             common_utils.pop_up_info(
                 ru(
@@ -100,7 +103,7 @@ class Stratigraphy:
             )
             return
         except Exception as e:  # if an object 'e' belonging to DataSanityError is created, then do following
-            print("exception : %s" % str(e))
+            log.debug("exception : %s" % str(e))
             common_utils.stop_waiting_cursor()
             common_utils.MessagebarAndLog.critical(
                 bar_msg=ru(
@@ -397,7 +400,7 @@ class SurveyStore:
             # check whether there's at least one strata information
             if len(survey.strata) == 0:
                 # raise DataSanityError(str(obsid), "No strata information")
-                print(str(obsid) + " has no strata information")
+                log.debug(str(obsid) + " has no strata information")
                 continue
                 # del surveys[obsid]#simply remove the item without strata info
             else:

@@ -22,6 +22,7 @@ import copy
 import json
 import datetime
 import difflib
+import logging
 import math
 import time
 import traceback
@@ -83,6 +84,8 @@ from midvatten.tools.utils.string_utils import (
 from cycler import Cycler
 from itertools import cycle
 from numpy import ndarray
+
+log = logging.getLogger(__name__)
 
 LEGEND_NCOL_KEY = "ncol" if mpl.__version__ < "3.6.0" else "ncols"
 
@@ -482,7 +485,7 @@ def fn_timer(function: Callable) -> Callable:
         result = function(*args, **kwargs)
         t1 = time.time()
         try:
-            print(
+            log.debug(
                 "Total time running %s: %s seconds" % (function.__name__, str(t1 - t0))
             )
         except OSError:

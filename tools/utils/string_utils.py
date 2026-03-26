@@ -2,12 +2,15 @@
 String conversion and validation utilities for the Midvatten plugin.
 """
 
+import logging
 import time
 import traceback
 from collections import OrderedDict
 from typing import Any
 
 from qgis.PyQt.QtCore import QCoreApplication
+
+log = logging.getLogger(__name__)
 
 
 def tr(context: str, msg: str) -> str:
@@ -175,7 +178,7 @@ def lists_to_string(alist_of_lists, quote=False):
                         try:
                             innerlist.append('"{}"'.format(innerword))
                         except UnicodeDecodeError:
-                            print(str(innerword))
+                            log.debug(str(innerword))
                             raise Exception
                     else:
                         innerlist.append(returnunicode(col))

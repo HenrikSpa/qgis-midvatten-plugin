@@ -18,6 +18,7 @@
 """
 
 import codecs
+import logging
 import os
 import time  # for debugging
 import traceback
@@ -33,6 +34,8 @@ from midvatten.tools.wqualreport_core import (
     write_html_close,
     open_report_in_browser,
 )
+
+log = logging.getLogger(__name__)
 
 
 class Wqualreport:  # extracts water quality data for selected objects, selected db and given table, results shown in html report
@@ -56,20 +59,20 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
         for feature in observations:
             attributes = feature.attributes()
             obsid = attributes[kolumnindex]
-            print(
+            log.debug(
                 "about to get data for " + obsid + ", at time: " + str(time.time())
-            )  # debug
+            )
             report_data = self.get_data(
                 self.settingsdict["database"], obsid, dbconnection
             )  # one observation at a time
-            print(
+            log.debug(
                 "done with getting data for " + obsid + ", at time: " + str(time.time())
-            )  # debug
+            )
             if report_data:
                 self.write_html_report(report_data, f)
-            print(
+            log.debug(
                 "wrote html report for " + obsid + ", at time: " + str(time.time())
-            )  # debug
+            )
 
         dbconnection.closedb()
         write_html_close(f)
@@ -108,9 +111,7 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
                 % obsid
             )
             return False
-        print(
-            "parameters for " + obsid + " is loaded at time: " + str(time.time())
-        )  # debug
+        log.debug("parameters for " + obsid + " is loaded at time: " + str(time.time()))
         # Load all date_times, stored in two result columns: reportnr, date_time
         dt_len = len(self.settingsdict["wqual_date_time_format"])
         if self.settingsdict[
@@ -130,12 +131,12 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
             sql, dbconnection, execute_args=(obsid,)
         )
 
-        print(
+        log.debug(
             "loaded distinct date_time for the parameters for "
             + obsid
             + " at time: "
             + str(time.time())
-        )  # debug
+        )
         if not date_times:
             common_utils.MessagebarAndLog.warning(
                 bar_msg=ru(
@@ -185,9 +186,9 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
                 # report_table[parametercounter][0] = p.encode(utils.getcurrentlocale()[1])
                 report_table[parametercounter][0] = p
 
-        print(
+        log.debug(
             "Prepare report_table for " + obsid + ", at time: " + str(time.time())
-        )  # debug
+        )
         report_table[0][0] = "obsid"
         report_table[1][0] = "date_time"
         for datecounter, r_d in enumerate(
@@ -200,12 +201,12 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
                 report_table[2][0] = self.settingsdict["wqual_sortingcolumn"]
                 report_table[2][datecounter] = r
 
-        print(
+        log.debug(
             "now go for each parameter value for "
             + obsid
             + ", at time: "
             + str(time.time())
-        )  # debug
+        )
         for datecounter, sorting_date_time in enumerate(
             date_times, start=1
         ):  # Loop through all report
@@ -296,6 +297,6 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
                     )
                     rpt += "  </td></tr>\n"
             except Exception:
-                print("here was an error: %s" % sublist)
+                log.debug("here was an error: %s" % sublist)
             f.write(rpt)
         f.write("\n</table><p></p><p></p>")

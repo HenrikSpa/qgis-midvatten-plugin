@@ -19,6 +19,7 @@
  ***************************************************************************/
 """
 
+import logging
 import os
 import traceback
 
@@ -31,6 +32,8 @@ from qgis.core import QgsProject
 from midvatten.definitions import midvatten_defs as defs
 from midvatten.tools.utils import common_utils, db_utils, midvatten_utils
 from midvatten.tools.utils.common_utils import returnunicode as ru
+
+log = logging.getLogger(__name__)
 
 
 class PrepareForQgis2Threejs:
@@ -122,7 +125,7 @@ class PrepareForQgis2Threejs:
             layer_list
         ):  # now loop over all the layers, add them to canvas and set colors
             if not layer.isValid():
-                print(layer.name() + " is not valid layer")
+                log.debug(layer.name() + " is not valid layer")
                 pass
             else:
                 # TODO: Made this a comment, but there might be some hidden feature that's still needed!
@@ -139,7 +142,7 @@ class PrepareForQgis2Threejs:
                 try:
                     layer.loadNamedStyle(stylefile)
                 except Exception:
-                    print("Loading stylefile %s failed." % stylefile)
+                    log.debug("Loading stylefile %s failed." % stylefile)
 
                 color = colors[idx]
                 if color:

@@ -13,6 +13,7 @@
 import ast
 import copy
 import json
+import logging
 import os
 import traceback
 import types
@@ -83,6 +84,8 @@ except Exception:
     pandas_on = False
 else:
     pandas_on = True
+
+log = logging.getLogger(__name__)
 
 
 class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
@@ -1373,10 +1376,10 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             isinstance(color_layer, QgsVectorLayer)
             or color_layer.type() == QgsMapLayer.LayerType.VectorLayer
         ):
-            print(f"Sampling as polygon")
+            log.debug("Sampling as polygon")
             labels_colors = sample_polygon(color_layer, sectionlinelayer, xarray)
         else:
-            print(f"Sampling as raster")
+            log.debug("Sampling as raster")
             labels_colors_dict = {}
             colors = sampling(
                 temp_memorylayer, color_layer, extract_type="value", bands=(1, 2, 3)
@@ -2268,7 +2271,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
 
     # ----- Methods used by the gui -----
     def detach_figure(self, button):
-        print(f"Detach pressed")
+        log.debug("Detach pressed")
         self.layoutplot.removeWidget(self.figure.canvas.toolbar)
         self.layoutplot.removeWidget(self.figure.canvas)
 
@@ -2302,7 +2305,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                     try:
                         fig.canvas.setWindowTitle(window_title)
                     except Exception:
-                        print(f"Error, {e}, followup:\n{traceback.format_exc()}")
+                        log.debug(f"Error, {e}, followup:\n{traceback.format_exc()}")
 
     def resize_widget(self, parent):
         """

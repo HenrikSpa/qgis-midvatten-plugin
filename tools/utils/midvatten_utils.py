@@ -23,6 +23,7 @@ import copy
 import json
 import io
 import locale
+import logging
 import os
 import re
 import shutil
@@ -72,6 +73,8 @@ from midvatten.tools.utils.common_utils import (
 from midvatten.definitions.db_defs import latest_database_version
 
 from midvatten.tools.utils import db_utils
+
+log = logging.getLogger(__name__)
 
 
 def verify_msettings_loaded_and_layer_edit_mode(
@@ -403,7 +406,7 @@ def add_layers_to_list(
         orig_tablename = tablename
 
         if tablename not in existing_tables:
-            print(f"Tablename {tablename} not found among {existing_tables}")
+            log.debug(f"Tablename {tablename} not found among {existing_tables}")
             continue
 
         layername = layernames[idx] if layernames is not None else None

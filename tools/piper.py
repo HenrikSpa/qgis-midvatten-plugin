@@ -21,6 +21,7 @@ __modified_date__ = "Nov 2013"
 
 import datetime
 import itertools
+import logging
 import math
 import traceback
 from operator import sub
@@ -32,6 +33,8 @@ import numpy as np
 from midvatten.definitions.midvatten_defs import piperplot2_style
 from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.common_utils import returnunicode as ru, LEGEND_NCOL_KEY
+
+log = logging.getLogger(__name__)
 
 
 class PiperPlot:
@@ -62,15 +65,15 @@ class PiperPlot:
             self.create_markers()
         self.get_piper_data()
         # here is a simple printout (to python console) to let the user see the piper plt.plot data
-        print(
+        log.debug(
             """obsid, date_time, type, Cl_meqPl, HCO3_meqPl, SO4_meqPl, Na+K_meqPl, Ca_meqPl, Mg_meqPl"""
         )
         for row in self.obsrecarray:
             # print ','.join([unicode(col).encode('utf-8') for col in row])
             try:
-                print(",".join([ru(col) for col in row]))
+                log.debug(",".join([ru(col) for col in row]))
             except Exception:
-                print("failed printing piper data...")
+                log.debug("failed printing piper data...")
 
         self.plot_function()
 

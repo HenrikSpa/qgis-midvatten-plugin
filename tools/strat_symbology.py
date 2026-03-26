@@ -18,6 +18,7 @@
 """
 
 import copy
+import logging
 import os
 import traceback
 
@@ -41,6 +42,8 @@ from midvatten.tools.utils import common_utils, db_utils, midvatten_utils
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
 from midvatten.tools.utils.common_utils import returnunicode as ru
 from midvatten.tools.utils.midvatten_utils import add_layers_to_list
+
+log = logging.getLogger(__name__)
 
 strat_symbology_dialog = uic.loadUiType(
     os.path.join(os.path.dirname(__file__), "..", "ui", "strat_symbology_dialog.ui")
@@ -529,7 +532,7 @@ def symbology_using_cloning(plot_types, colors, layer, stylename, column):
     try:
         root = renderer.rootRule()
     except Exception:
-        print(str(stylename))
+        log.debug(str(stylename))
         raise
     for_cloning = root.children()[-1]
 

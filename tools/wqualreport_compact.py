@@ -20,6 +20,7 @@
 import ast
 import codecs
 import json
+import logging
 import os
 import traceback
 
@@ -41,6 +42,8 @@ from midvatten.tools.wqualreport_core import (
     write_html_close,
     open_report_in_browser,
 )
+
+log = logging.getLogger(__name__)
 
 custom_drillreport_dialog = qgis.PyQt.uic.loadUiType(
     os.path.join(os.path.dirname(__file__), "..", "ui", "compact_w_qual_report.ui")
@@ -430,7 +433,7 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
             try:
                 df.loc[df["depth"] == "", "depth"] = np.nan
             except Exception:
-                print(f"Something went wrong: {traceback.format_exc()}")
+                log.debug(f"Something went wrong: {traceback.format_exc()}")
 
             df["depth"] = df["depth"].fillna(0)
             df.loc[:, "obsid"].where(
@@ -721,7 +724,7 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
                     )
                     rpt += "</tr>\n"
             except Exception:
-                print("here was an error: %s" % row)
+                log.debug("here was an error: %s" % row)
             f.write(rpt)
 
         f.write("\n</table><p></p><p></p>")

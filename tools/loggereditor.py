@@ -1,4 +1,5 @@
 import datetime
+import logging
 import math
 import os
 
@@ -22,6 +23,8 @@ from midvatten.tools.utils.date_utils import (
     long_dateformat,
 )
 from midvatten.tools.utils.gui_utils import NavigationButton, WA_DeleteOnClose
+
+log = logging.getLogger(__name__)
 
 Calibr_Ui_Dialog = uic.loadUiType(
     os.path.join(
@@ -285,7 +288,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         common_utils.start_waiting_cursor()
         obsid = self.selected_obsid
         if not obsid:
-            print("error obsid " + str(obsid))
+            log.debug("error obsid " + str(obsid))
             # utils.pop_up_info(ru(QCoreApplication.translate('Calibrlogger', "ERROR: no obsid is chosen")))
             common_utils.stop_waiting_cursor()
             return None
@@ -779,7 +782,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 list(filter(lambda v: v == v, a_recarray))
             )
         except TypeError:
-            print("Error in contains_more_than_nan, recarray: " + str(a_recarray))
+            log.debug("Error in contains_more_than_nan, recarray: " + str(a_recarray))
             raise
         if not_nan.size:
             return True

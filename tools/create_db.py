@@ -19,6 +19,7 @@
 
 import datetime
 import locale
+import logging
 import os
 import re
 import traceback
@@ -36,6 +37,8 @@ from midvatten.tools.utils.common_utils import (
 )
 from midvatten.tools.utils.date_utils import get_pytz_timezones
 from midvatten.tools.utils.db_utils import DbConnectionManager, execute_sqlfile
+
+log = logging.getLogger(__name__)
 
 
 class NewDb:
@@ -203,7 +206,7 @@ class NewDb:
             try:
                 dbconnection.execute(sql)
             except Exception:
-                print(str(sql))
+                log.debug(str(sql))
                 raise
 
         if delete_srids:
@@ -364,12 +367,12 @@ class NewDb:
             try:
                 dbconnection.execute(sql)
             except Exception:
-                print(str(sql))
-                print("numlines: " + str(len(sql_lines)))
-                print(f"Error on line nr {str(linenr)}")
-                print("before " + sql_lines[linenr - 1])
+                log.debug(str(sql))
+                log.debug("numlines: " + str(len(sql_lines)))
+                log.debug(f"Error on line nr {str(linenr)}")
+                log.debug("before " + sql_lines[linenr - 1])
                 if linenr + 1 < len(sql_lines):
-                    print("after " + sql_lines[linenr + 1])
+                    log.debug("after " + sql_lines[linenr + 1])
                 raise
             else:
                 _sql = sql.lstrip("\r").lstrip("\n").lstrip()
@@ -631,7 +634,7 @@ class NewDb:
                 try:
                     dbconnection.execute(sql, all_args=[row_values])
                 except Exception:
-                    print(sql)
+                    log.debug(sql)
                     raise
         ph = dbconnection.placeholder()
         for tz, tname in [

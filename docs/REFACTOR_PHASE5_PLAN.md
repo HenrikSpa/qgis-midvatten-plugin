@@ -102,24 +102,53 @@ Do NOT convert `print()` calls that are inside test files.
 
 ## Task 4: Simplify `returnunicode` and remove no-op calls
 
-### Strategy
+### Background: what `ru()` actually does in Python 3
 
-`returnunicode` (`ru`) was added to prevent crashes when non-UTF8 text from
-external sources (DB values, file content) appeared in error messages. In Python 3,
-its real value is:
-1. `None -> ""` conversion
-2. `bytes -> str` with multi-encoding fallback
-3. Recursive container stringification
+Tested empirically (see `/tmp/test_ru_difference.py`):
 
-For most call sites it's a pure no-op (input is already `str`).
+| Input type | Without `ru()` via `%s` | With `ru()` via `%s` |
+|------------|------------------------|---------------------|
+| `str` | works | identical (no-op) |
+| `int`/`float` | works | identical (no-op) |
+| `None` | prints `"None"` | prints `""` |
+| `bytes` | prints `"b'\\xe4'"` repr | **also** prints repr (bytes decoding is dead code!) |
+
+The bytes decoding branch (lines 104-115 in `string_utils.py`) is dead code:
+`str(bytes_val)` on line 102 produces the repr string before the `isinstance(decoded, bytes)`
+check on line 104 ever fires.
+
+**In Python 3, `ru()` only changes behavior for `None` (converts to `""`).**
+
+`ru()` around `translate()` is NOT needed: `translate()` returns `str` in Python 3,
+and `%s` formatting handles any value type natively.
 
 ### Step 1: Simplify `returnunicode` itself
 
 In `tools/utils/string_utils.py`, remove dead branches:
 - PyQt4 `QVariant`, `QString`, `QPyNullVariant` checks (PyQt4 is dead)
 - PyQt5 `QString` check (doesn't exist in Python 3 PyQt5)
-- The function should handle: `str` (return as-is), `None` (return `""`),
-  `bytes` (decode with fallback), containers (recursive), everything else (`str()`)
+- The bytes decoding loop (lines 104-115) — dead code in Python 3
+- Add actual bytes handling BEFORE the `str()` fallback (the current code
+  converts bytes to repr-string before the decode loop runs)
+
+The simplified function should be:
+```python
+def returnunicode(anything, keep_containers=False):
+    if isinstance(anything, str):
+        return anything
+    if anything is None:
+        return ""
+    if isinstance(anything, bytes):
+        for charset in ["utf-8", "cp1252", "iso-8859-1", "ascii"]:
+            try:
+                return anything.decode(charset)
+            except (UnicodeDecodeError, UnicodeEncodeError):
+                continue
+        return str(anything)  # fallback to repr
+    if isinstance(anything, (list, tuple, dict, OrderedDict)):
+        # ... existing recursive logic ...
+    return str(anything)
+```
 
 ### Step 2: Remove `ru()` from guaranteed-str call sites
 
@@ -128,18 +157,17 @@ These are no-ops and can be removed mechanically:
 - `ru("string literal")` — input is already `str`
 - `ru(f"...")` — f-strings are already `str`
 
-### Step 3: Keep `ru()` at system boundaries
+### Step 3: Evaluate remaining `ru()` call sites
 
-Keep `ru()` where input may be `None`, `bytes`, or unknown type:
-- DB query results (may be `None`)
-- File content reads (may be `bytes` with unknown encoding)
-- QGIS layer attribute values (may be `QVariant` or `None`)
-- User input from dialogs
+For `% ru(value)` patterns (~14 occurrences): decide case by case whether
+`None -> ""` conversion is intentional or just cargo-culted. If the code
+should display "None" for missing values, remove `ru()`. If empty string
+is correct, keep it or replace with `(value or "")`.
 
 ### Step 4: Consider renaming
 
-After cleanup, `ru()` will mainly serve as "safe stringify" for external data.
-Consider renaming to `safe_str()` or `to_str()` to clarify its purpose.
+After cleanup, `ru()` will mainly serve as "safe stringify" for external data
+(`None -> ""`, bytes decoding). Consider renaming to `safe_str()` to clarify.
 
 ---
 

@@ -279,13 +279,13 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
                 if counter < self.nr_header_rows:
                     rpt = "  <tr><th>"
                     rpt += '    </th><th width ="75">'.join(
-                        [ru(x) if x is not None else "" for x in sublist]
+                        [ru(x) for x in sublist]
                     )
                     rpt += "  </th></tr>\n"
                 else:
                     rpt = "  <tr><td>"
                     rpt += '    </td><td align="right">'.join(
-                        [ru(x) if x is not None else "" for x in sublist]
+                        [ru(x) for x in sublist]
                     )
                     rpt += "  </td></tr>\n"
             except Exception:

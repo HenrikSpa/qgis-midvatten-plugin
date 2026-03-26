@@ -829,7 +829,7 @@ class Midvatten:
 
                 sanity = common_utils.Askuser(
                     "YesNo",
-                    ru(longmessage),
+                    longmessage,
                     QCoreApplication.translate("Midvatten", "Are you sure?"),
                 )
                 if sanity.result == 1:
@@ -951,7 +951,7 @@ class Midvatten:
 
                 sanity = common_utils.Askuser(
                     "YesNo",
-                    ru(longmessage),
+                    longmessage,
                     QCoreApplication.translate("Midvatten", "Are you sure?"),
                 )
                 if sanity.result == 1:
@@ -992,7 +992,7 @@ class Midvatten:
 
                 sanity = common_utils.Askuser(
                     "YesNo",
-                    ru(longmessage),
+                    longmessage,
                     QCoreApplication.translate("Midvatten", "Are you sure?"),
                 )
                 if sanity.result == 1:
@@ -1043,7 +1043,7 @@ class Midvatten:
 
                 sanity = common_utils.Askuser(
                     "YesNo",
-                    ru(longmessage),
+                    longmessage,
                     QCoreApplication.translate("Midvatten", "Are you sure?"),
                 )
                 if sanity.result == 1:

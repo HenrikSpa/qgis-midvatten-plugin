@@ -3,6 +3,7 @@ PostgreSQL (PostGIS) backend. Connection via psycopg2; connector logic merged in
 """
 
 import os
+import re
 import traceback
 from collections.abc import Sequence
 from typing import Any, Optional
@@ -281,8 +282,6 @@ class PostgreSQLBackend(Backend):
         return "NULL::" + data_type
 
     def get_srid_name(self, srid: int) -> str:
-        import re
-
         srtext = self.execute_and_fetchall(
             "SELECT srtext FROM spatial_ref_sys WHERE srid = %s",
             (srid,),
@@ -298,15 +297,11 @@ class PostgreSQLBackend(Backend):
         return "ctid"
 
     def numeric_test_sql(self, col_ident: str) -> str:
-        from midvatten.tools.utils.db_utils.helpers import postgresql_numeric_data_types
-
-        type_list = ", ".join("'" + dt + "'" for dt in postgresql_numeric_data_types())
+        type_list = ", ".join("'" + dt + "'" for dt in self.numeric_datatypes())
         return f"pg_typeof({col_ident}) in ({type_list})"
 
     def not_null_sql(self, col_ident: str, data_type: Optional[str] = None) -> str:
-        from midvatten.tools.utils.db_utils.helpers import postgresql_numeric_data_types
-
-        if data_type is not None and data_type in postgresql_numeric_data_types():
+        if data_type is not None and data_type in self.numeric_datatypes():
             return f"{col_ident} IS NOT NULL"
         return f"{col_ident} IS NOT NULL AND {col_ident} !='' "
 

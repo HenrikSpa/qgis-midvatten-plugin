@@ -263,7 +263,7 @@ class Midvatten:
         self.action_piper2 = self.add_action(
             "Piper.png",
             text=self.tr("Piper diagram"),
-            callback=lambda x: self.plot_piper2(),
+            callback=lambda x: self.plot_piper(),
             whats_this=self.tr("Plot a Piper diagram for selected objects"),
         )
 
@@ -366,7 +366,7 @@ class Midvatten:
         self.action_export_csv = self.add_action(
             "export_csv.png",
             text=self.tr("Export to a set of csv files"),
-            callback=lambda x: self.export_csv,
+            callback=lambda x: self.export_csv(),
             whats_this=self.tr(
                 "All data for the selected objects (obs_points and obs_lines) will be "
                 "exported to a set of csv files"
@@ -411,7 +411,7 @@ class Midvatten:
         )
 
         self.action_non_essential_tables = self.add_action(
-            "create_new.png",
+            "create_new.xmp",
             text=self.tr("Add non-essential data tables"),
             callback=lambda x: self.add_non_essential_tables(),
             whats_this=self.tr(
@@ -527,6 +527,24 @@ class Midvatten:
             self.menu.removeAction(self.action_about)
         except Exception:
             pass
+
+        # Remove sub-menus
+        for submenu_attr in (
+            "import_data_menu",
+            "export_data_menu",
+            "edit_data_menu",
+            "plot_data_menu",
+            "report_menu",
+            "db_manage_menu",
+            "utils",
+        ):
+            try:
+                submenu = getattr(self.menu, submenu_attr, None)
+                if submenu is not None:
+                    self.menu.removeAction(submenu.menuAction())
+                    submenu.deleteLater()
+            except Exception:
+                pass
 
         if self.owns_midv_menu:
             self.menu.parentWidget().removeAction(self.menu.menuAction())
@@ -1227,24 +1245,6 @@ class Midvatten:
         )  # verify the selected layer has attribute "obsid" and that some features are selected
         if err_flag == 0:
             self.piperplot = PiperPlot(self.ms, qgis.utils.iface.activeLayer())
-            self.piperplot.get_data_and_make_plot()
-
-    @common_utils.general_exception_handler
-    def plot_piper2(self):
-        allcritical_layers = (
-            "w_qual_lab",
-            "w_qual_field",
-        )  # none of these layers must be in editing mode
-        err_flag = midvatten_utils.verify_msettings_loaded_and_layer_edit_mode(
-            self.iface, self.ms, allcritical_layers
-        )  # verify midv settings are loaded and the critical layers are not in editing mode
-        err_flag = common_utils.verify_layer_selection(
-            err_flag, 0
-        )  # verify the selected layer has attribute "obsid" and that some features are selected
-        if err_flag == 0:
-            self.piperplot = PiperPlot(
-                self.ms, qgis.utils.iface.activeLayer(), version=2
-            )
             self.piperplot.get_data_and_make_plot()
 
     @common_utils.general_exception_handler

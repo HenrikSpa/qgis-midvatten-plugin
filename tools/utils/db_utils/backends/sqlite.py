@@ -246,7 +246,7 @@ class SQLiteBackend(Backend):
             MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
     def check_db_is_locked(self) -> None:
-        for ext in ("journal", "wal", "shm"):
+        for ext in ("journal", "wal"):
             msg = (
                 ru(
                     QCoreApplication.translate(

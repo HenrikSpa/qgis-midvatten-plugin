@@ -48,8 +48,8 @@ class NewDb:
         user_select_crs: str = "y",
         epsg_code: str = "4326",
         delete_srids: bool = True,
-        w_levels_logger_timezone: None = None,
-        w_levels_timezone: None = None,
+        w_levels_logger_timezone: str = None,
+        w_levels_timezone: str = None,
     ):  # CreateNewDB(self, verno):
         """Open a new DataBase (create an empty one if file doesn't exists) and set as default DB"""
 
@@ -249,8 +249,8 @@ class NewDb:
         verno: str,
         user_select_crs: str = "y",
         epsg_code: str = "4326",
-        w_levels_logger_timezone: None = None,
-        w_levels_timezone: None = None,
+        w_levels_logger_timezone: str = None,
+        w_levels_timezone: str = None,
     ):
 
         dbconnection = db_utils.DbConnectionManager()
@@ -523,7 +523,7 @@ class NewDb:
 
     def insert_datadomains(
         self,
-        set_locale: str = False,
+        set_locale: str = "",
         dbconnection: Optional[DbConnectionManager] = None,
     ):
         filenamestring = "insert_datadomain"

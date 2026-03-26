@@ -269,7 +269,7 @@ from midvatten.tools.utils.db_utils.helpers import sql_to_parameters_units_tuple
 
 
 def getcurrentlocale(
-    print_error_message_in_bar: bool = True, dbconnection: None = None
+    print_error_message_in_bar: bool = True, dbconnection=None
 ) -> List[str]:
     if not isinstance(dbconnection, db_utils.DbConnectionManager):
         try:

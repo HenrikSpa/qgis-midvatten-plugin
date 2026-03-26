@@ -249,7 +249,6 @@ class PiperPlot:
                     self.parameters[piper_setting] = [specified_name]
                 else:
                     self.parameters[piper_setting] = parameters
-                    self.parameters.append(parameters)
             else:
                 self.parameters[piper_setting] = [
                     f"%{backup_name}%" for backup_name in backup_names

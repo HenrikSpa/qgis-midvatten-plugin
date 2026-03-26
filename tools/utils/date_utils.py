@@ -148,7 +148,7 @@ def dateshift(adate: datetime.datetime, n: int, step_lenght: str) -> datetime.da
 
 
 def datestring_to_date(
-    astring: str, now: datetime.datetime = datetime.datetime.now(), df: None = None
+    astring: str, now: datetime.datetime = datetime.datetime.now(), df: str = None
 ) -> datetime.datetime:
     """
     Takes a string representing a date and converts it to datetime
@@ -187,7 +187,7 @@ def datestring_to_date(
     return adate
 
 
-def long_dateformat(astring: str, dateformat: None = None) -> str:
+def long_dateformat(astring: str, dateformat: str = None) -> str:
     return datetime.datetime.strftime(
         datestring_to_date(astring, df=dateformat), "%Y-%m-%d %H:%M:%S"
     )

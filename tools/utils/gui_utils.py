@@ -39,7 +39,7 @@ from midvatten.tools.utils.common_utils import (
 )
 from midvatten.tools.utils.date_utils import datestring_to_date
 from midvatten.tools.utils.db_utils import DbConnectionManager, sql_load_fr_db
-import PyQt5.QtWidgets
+
 from datetime import datetime
 
 
@@ -374,7 +374,7 @@ class NavigationButton(QtWidgets.QWidget):
 class DetachFigureButton(NavigationButton):
     """ """
 
-    def __init__(self, fig, parent=None, callback=lambda x: None):
+    def __init__(self, fig, parent=None, callback=None):
         super().__init__(parent, fig)
         if callback is None:
             callback = self._detach_button

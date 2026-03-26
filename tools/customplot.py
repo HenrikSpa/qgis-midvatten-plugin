@@ -1056,7 +1056,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         searchindex = filter_combobox.findText(self.ms.settingsdict[custplot_filter])
         if searchindex >= 0:
             filter_combobox.setCurrentIndex(searchindex)
-            self.FilterChanged(filterno1, filterno2)
+            self.filter_changed(filterno1, filterno2)
 
     def filter_selections(self, filter_qlistwidget, custplot_filter_selection):
         # filtre1_1_selection

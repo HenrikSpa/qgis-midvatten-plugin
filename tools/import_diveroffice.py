@@ -511,7 +511,7 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
                     "w_levels_logger", file_to_import_to_db
                 )
             except Exception:
-                print(f"Got error {traceback.format_exc()}")
+                common_utils.MessagebarAndLog.warning(log_msg=f"Got error {traceback.format_exc()}")
                 raise
         if export_csv:
             path = qgis.PyQt.QtWidgets.QFileDialog.getSaveFileName(

@@ -45,7 +45,7 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
         self.ms = msettings
         self.ms.load_settings()
         QDockWidget.__init__(self, self.parent)
-        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+        self.setAttribute(Qt.WA_DeleteOnClose)
         self.setupUi(self)
         self.init_ui()
 

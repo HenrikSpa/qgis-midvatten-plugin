@@ -712,12 +712,13 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             common_utils.stop_waiting_cursor()
             return bars
 
-        for typ, subtypes in typ_subtypes.items():
+        for typ, _subtypes in typ_subtypes.items():
+            subtypes = _subtypes
             for obs, x in obsids_x_position.items():
                 if subtypes is None:
                     condition = "NOT IN"
                     subtypes = [
-                        x for k, v in typ_subtypes.items() for x in v if k != typ
+                        st for k, v in typ_subtypes.items() for st in v if k != typ
                     ]
                 else:
                     condition = "IN"

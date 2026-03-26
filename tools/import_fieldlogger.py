@@ -47,9 +47,8 @@ from midvatten.tools.utils.gui_utils import (
     DateTimeFilter,
     set_combobox,
 )
-from PyQt5.QtWidgets import QComboBox
+from qgis.PyQt.QtWidgets import QComboBox
 from typing import Dict, List, Union
-from unittest.mock import MagicMock
 
 
 import_fieldlogger_ui_dialog = uic.loadUiType(
@@ -1328,7 +1327,7 @@ class CommentsImportFields(QtWidgets.QWidget):
     """ """
 
     def __init__(
-        self, import_method_chooser: MagicMock, staff: None = None, parent: None = None
+        self, import_method_chooser: "ImportMethodChooser", staff=None, parent=None
     ):
         """ """
         super().__init__(parent)

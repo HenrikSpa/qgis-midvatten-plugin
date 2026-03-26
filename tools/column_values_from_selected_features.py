@@ -25,6 +25,7 @@ from qgis.PyQt.QtWidgets import QApplication
 from qgis.core import QgsVectorLayer
 
 from midvatten.tools.utils import common_utils, db_utils, gui_utils
+from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
 from midvatten.tools.utils.common_utils import returnunicode as ru
 
 selected_features_dialog = qgis.PyQt.uic.loadUiType(
@@ -39,7 +40,7 @@ class ValuesFromSelectedFeaturesGui(
         self.iface = parent
 
         qgis.PyQt.QtWidgets.QDialog.__init__(self, parent)
-        self.setAttribute(qgis.PyQt.QtCore.Qt.WA_DeleteOnClose)
+        self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt
 
         self.pushbutton_ok.clicked.connect(lambda: self.print_selected_features())

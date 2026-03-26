@@ -45,6 +45,7 @@ from midvatten.tools.utils.gui_utils import (
     RowEntryGrid,
     VRowEntry,
     DateTimeFilter,
+    WA_DeleteOnClose,
     set_combobox,
 )
 from qgis.PyQt.QtWidgets import QComboBox
@@ -63,7 +64,7 @@ class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
         self.ms = msettings
         self.ms.load_settings()
         QtWidgets.QDialog.__init__(self, parent)
-        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+        self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt
         self.status = True
         self.main_vertical_layout.setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)

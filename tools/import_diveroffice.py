@@ -44,6 +44,7 @@ from midvatten.tools.utils.date_utils import (
 )
 from midvatten.tools.utils.gui_utils import (
     VRowEntry,
+    WA_DeleteOnClose,
     get_line,
     DateTimeFilter,
     RowEntry,
@@ -72,7 +73,7 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         self.ms = msettings
         self.ms.load_settings()
         qgis.PyQt.QtWidgets.QDialog.__init__(self, parent)
-        self.setAttribute(qgis.PyQt.QtCore.Qt.WA_DeleteOnClose)
+        self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt
         self.setWindowTitle(
             QCoreApplication.translate("DiverofficeImport", "Diveroffice import")

@@ -30,6 +30,7 @@ import qgis.PyQt
 from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools.utils import common_utils, db_utils, gui_utils
+from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
 from midvatten.tools.utils.common_utils import (
     returnunicode as ru,
     general_exception_handler,
@@ -54,7 +55,7 @@ class CompactWqualReportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_d
 
         self.ms = midv_settings
         qgis.PyQt.QtWidgets.QDialog.__init__(self, parent)
-        self.setAttribute(qgis.PyQt.QtCore.Qt.WA_DeleteOnClose)
+        self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt
         self.setWindowTitle(
             ru(

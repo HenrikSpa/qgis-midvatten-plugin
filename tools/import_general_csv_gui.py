@@ -36,6 +36,7 @@ from midvatten.tools.utils.common_utils import returnunicode as ru
 from midvatten.tools.utils.gui_utils import (
     RowEntry,
     VRowEntry,
+    WA_DeleteOnClose,
     get_line,
     RowEntryGrid,
     DistinctValuesBrowser,
@@ -54,7 +55,7 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         if self.ms is not None:
             self.ms.load_settings()
         qgis.PyQt.QtWidgets.QDialog.__init__(self, parent)
-        self.setAttribute(qgis.PyQt.QtCore.Qt.WA_DeleteOnClose)
+        self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt
         self.setWindowTitle(
             ru(QCoreApplication.translate("GeneralCsvImportGui", "Csv import"))

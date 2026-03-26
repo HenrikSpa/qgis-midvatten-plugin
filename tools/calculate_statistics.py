@@ -26,6 +26,7 @@ from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtWidgets import QMainWindow
 
 from midvatten.tools.utils import common_utils, gui_utils, db_utils
+from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
 from midvatten.tools.utils.common_utils import returnunicode as ru
 
 calculate_statistics_dialog = qgis.PyQt.uic.loadUiType(
@@ -44,7 +45,7 @@ class CalculateStatisticsGui(
 
         self.ms = midv_settings
         qgis.PyQt.QtWidgets.QDialog.__init__(self, parent)
-        self.setAttribute(qgis.PyQt.QtCore.Qt.WA_DeleteOnClose)
+        self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt
 
         tables_columns = db_utils.tables_columns()

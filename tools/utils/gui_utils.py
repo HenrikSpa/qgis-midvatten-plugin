@@ -42,6 +42,14 @@ from midvatten.tools.utils.db_utils import DbConnectionManager, sql_load_fr_db
 
 from datetime import datetime
 
+# Qt6 uses scoped enums (Qt.WidgetAttribute.WA_DeleteOnClose),
+# Qt5 uses flat enums (Qt.WA_DeleteOnClose). Prefer Qt6; fall back to Qt5.
+try:
+    WA_DeleteOnClose = QtCore.Qt.WidgetAttribute.WA_DeleteOnClose
+except AttributeError:
+    # Qt5 fallback — remove when Qt5 support is dropped
+    WA_DeleteOnClose = QtCore.Qt.WA_DeleteOnClose
+
 
 class SplitterWithHandel(qgis.PyQt.QtWidgets.QSplitter):
     """

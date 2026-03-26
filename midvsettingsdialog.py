@@ -26,6 +26,7 @@ from qgis.PyQt.QtWidgets import QGridLayout, QMainWindow
 
 from midvatten.tools.midvsettings import MidvSettings
 from midvatten.tools.utils import common_utils, gui_utils, db_utils
+from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
 from midvatten.tools.utils.common_utils import returnunicode as ru
 from midvatten.tools.utils.midvatten_utils import warn_about_old_database
 
@@ -45,7 +46,7 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
         self.ms = msettings
         self.ms.load_settings()
         QDockWidget.__init__(self, self.parent)
-        self.setAttribute(Qt.WA_DeleteOnClose)
+        self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)
         self.init_ui()
 

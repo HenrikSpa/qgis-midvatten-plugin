@@ -22,7 +22,7 @@ from midvatten.tools.utils.date_utils import (
     dateshift,
     long_dateformat,
 )
-from midvatten.tools.utils.gui_utils import NavigationButton
+from midvatten.tools.utils.gui_utils import NavigationButton, WA_DeleteOnClose
 
 Calibr_Ui_Dialog = uic.loadUiType(
     os.path.join(
@@ -35,7 +35,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     @fn_timer
     def __init__(self, parent, settingsdict1={}, obsid=""):
         qgis.PyQt.QtWidgets.QDialog.__init__(self, parent)
-        self.setAttribute(qgis.PyQt.QtCore.Qt.WA_DeleteOnClose)
+        self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt4 to initialize the UI
         self.setWindowTitle(
             ru(

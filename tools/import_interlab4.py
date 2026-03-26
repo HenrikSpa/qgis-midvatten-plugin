@@ -40,6 +40,7 @@ from midvatten.tools.utils.gui_utils import (
     RowEntry,
     VRowEntry,
     ExtendedQPlainTextEdit,
+    WA_DeleteOnClose,
     get_line,
 )
 
@@ -55,7 +56,7 @@ class Interlab4Import(qgis.PyQt.QtWidgets.QMainWindow, import_fieldlogger_ui_dia
         self.ms = msettings
         self.ms.load_settings()
         qgis.PyQt.QtWidgets.QDialog.__init__(self, parent)
-        self.setAttribute(qgis.PyQt.QtCore.Qt.WA_DeleteOnClose)
+        self.setAttribute(WA_DeleteOnClose)
         self.setWindowTitle(
             ru(
                 QCoreApplication.translate(

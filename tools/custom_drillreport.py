@@ -33,6 +33,7 @@ from qgis.PyQt.QtCore import QUrl, QDir
 from qgis.PyQt.QtGui import QDesktopServices
 
 from midvatten.tools.utils import common_utils, db_utils
+from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
 from midvatten.tools.utils.common_utils import returnunicode as ru
 
 custom_drillreport_dialog = qgis.PyQt.uic.loadUiType(
@@ -46,7 +47,7 @@ class DrillreportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
 
         self.ms = midv_settings
         qgis.PyQt.QtWidgets.QDialog.__init__(self, parent)
-        self.setAttribute(qgis.PyQt.QtCore.Qt.WA_DeleteOnClose)
+        self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt
 
         self.stored_settings_key = "customdrillreportstoredsettings"

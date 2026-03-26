@@ -52,7 +52,7 @@ from qgis.PyQt.QtWidgets import QApplication
 from midvatten.tools.utils import common_utils, midvatten_utils, db_utils
 from midvatten.tools.utils.common_utils import returnunicode as ru, LEGEND_NCOL_KEY
 from midvatten.definitions import midvatten_defs as defs
-from midvatten.tools.utils.gui_utils import set_groupbox_children_visibility
+from midvatten.tools.utils.gui_utils import set_groupbox_children_visibility, WA_DeleteOnClose
 
 import pandas as pd
 
@@ -66,7 +66,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         self.ms = msettings
         self.ms.load_settings()
         QtWidgets.QDialog.__init__(self, parent)
-        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+        self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # due to initialisation of Ui_MainWindow instance
         self.init_ui()
         self.tables_columns = db_utils.tables_columns()
@@ -1716,7 +1716,7 @@ def horizontal_line():
 class SaveToCsvDialog(QtWidgets.QDialog):
     def __init__(self, parent, data):
         super().__init__(parent)
-        self.setAttribute(qgis.PyQt.QtCore.Qt.WA_DeleteOnClose)
+        self.setAttribute(WA_DeleteOnClose)
         self.setWindowTitle(
             QCoreApplication.translate("SaveToCsvDialog", "Save as csv")
         )

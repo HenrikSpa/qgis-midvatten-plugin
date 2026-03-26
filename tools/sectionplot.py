@@ -112,13 +112,13 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             )  # not really implemented yet
 
         self.setupUi(self)
-        self.initUI()
+        self.init_ui()
         self.template_plot_label.setText(
             '<a href="https://github.com/jkall/qgis-midvatten-plugin/wiki/5.-Plots-and-reports#create-section-plot">Templates manual</a>'
         )
         self.template_plot_label.setOpenExternalLinks(True)
 
-    def initUI(self):
+    def init_ui(self):
         # connect signal
         self.push_button.clicked.connect(lambda x: self.draw_plot())
         self.topLevelChanged.connect(lambda x: self.add_titlebar(self))

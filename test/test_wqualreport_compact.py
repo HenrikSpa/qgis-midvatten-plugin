@@ -67,7 +67,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
     @mock.patch("midvatten.tools.wqualreport_compact.open_report_in_browser")
     @mock.patch(
-        "midvatten.tools.wqualreport_compact.common_utils.getselectedobjectnames"
+        "midvatten.tools.wqualreport_compact.common_utils.get_selected_object_names"
     )
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
@@ -126,7 +126,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
     @mock.patch("midvatten.tools.wqualreport_compact.open_report_in_browser")
     @mock.patch(
-        "midvatten.tools.wqualreport_compact.common_utils.getselectedobjectnames"
+        "midvatten.tools.wqualreport_compact.common_utils.get_selected_object_names"
     )
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
@@ -156,7 +156,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
     @mock.patch("midvatten.tools.wqualreport_compact.open_report_in_browser")
     @mock.patch(
-        "midvatten.tools.wqualreport_compact.common_utils.getselectedobjectnames"
+        "midvatten.tools.wqualreport_compact.common_utils.get_selected_object_names"
     )
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
@@ -182,7 +182,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
     @mock.patch("midvatten.tools.wqualreport_compact.open_report_in_browser")
     @mock.patch(
-        "midvatten.tools.wqualreport_compact.common_utils.getselectedobjectnames"
+        "midvatten.tools.wqualreport_compact.common_utils.get_selected_object_names"
     )
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
@@ -207,7 +207,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
     @mock.patch("midvatten.tools.wqualreport_compact.open_report_in_browser")
     @mock.patch(
-        "midvatten.tools.wqualreport_compact.common_utils.getselectedobjectnames"
+        "midvatten.tools.wqualreport_compact.common_utils.get_selected_object_names"
     )
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
@@ -252,7 +252,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert "parameter" in data_col_items
 
     @mock.patch(
-        "midvatten.tools.wqualreport_compact.common_utils.getselectedobjectnames"
+        "midvatten.tools.wqualreport_compact.common_utils.get_selected_object_names"
     )
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)

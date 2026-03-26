@@ -65,7 +65,7 @@ from midvatten.tools.tsplot import TimeSeriesPlot
 from midvatten.tools.utils import common_utils, db_utils, midvatten_utils
 from midvatten.tools.utils import matplotlib_replacements
 from midvatten.tools.utils.common_utils import returnunicode as ru
-from midvatten.tools.utils.util_translate import getTranslate
+from midvatten.tools.utils.util_translate import get_translate
 from midvatten.tools.w_flow_calc_aveflow import CalculateAveflow
 from midvatten.tools.wqualreport import Wqualreport
 from midvatten.tools.wqualreport_compact import CompactWqualReportUi
@@ -81,7 +81,7 @@ class Midvatten:
         self.plugin_dir = Path(os.path.dirname(__file__))
 
         self.ms = MidvSettings()
-        self.translator = getTranslate("midvatten")
+        self.translator = get_translate("midvatten")
         self.actions = []
 
         # Check if plugin was started the first time in current QGIS session
@@ -562,7 +562,7 @@ class Midvatten:
         self.iface.unregisterMainWindowAction(self.action_midvatten_settings)
 
     def about(self):
-        getTranslate("midvatten")
+        get_translate("midvatten")
         filename = self.plugin_dir / "metadata.txt"
         metadata = QSettings(str(filename), QSettings.Format.IniFormat)
         verno = metadata.value("version")
@@ -630,7 +630,7 @@ class Midvatten:
             err_flag, 0
         )  # verify the selected layer has attribute "obsid" and that exactly one feature is selected
         if err_flag == 0:
-            obsids = common_utils.getselectedobjectnames(
+            obsids = common_utils.get_selected_object_names(
                 qgis.utils.iface.activeLayer()
             )  # selected obs_point is now found in obsid[0]
             Drillreport(obsids, self.ms.settingsdict)
@@ -1260,7 +1260,7 @@ class Midvatten:
             dlg = Stratigraphy(
                 self.iface, qgis.utils.iface.activeLayer(), self.ms.settingsdict
             )
-            dlg.showSurvey()
+            dlg.show_survey()
             self.dlg = dlg  # only to prevent the Qdialog from closing.
 
     @common_utils.general_exception_handler
@@ -1341,7 +1341,7 @@ class Midvatten:
                             )
                             break
                         else:
-                            selected_obspoints = common_utils.getselectedobjectnames(
+                            selected_obspoints = common_utils.get_selected_object_names(
                                 obs_points_layer
                             )
             else:
@@ -1350,7 +1350,7 @@ class Midvatten:
                 # Then verify that at least two feature is selected in obs_points layer,
                 # and get a list (selected_obspoints) of selected obs_points
                 selected_obspoints = (
-                    common_utils.getselectedobjectnames()
+                    common_utils.get_selected_object_names()
                 )  # Finding obsid from currently selected layer
                 if not selected_obspoints:
                     common_utils.MessagebarAndLog.warning(
@@ -1379,7 +1379,7 @@ class Midvatten:
                             )
                             break
                         else:
-                            selected_obspoints = common_utils.getselectedobjectnames(
+                            selected_obspoints = common_utils.get_selected_object_names(
                                 obs_points_layer
                             )
 
@@ -1563,7 +1563,7 @@ class Midvatten:
                     f"SELECT obsid FROM {{t}} WHERE obsid = {ph}",
                     t=self.ms.settingsdict["wqualtable"],
                 )
-                for k in common_utils.getselectedobjectnames(
+                for k in common_utils.get_selected_object_names(
                     qgis.utils.iface.activeLayer()
                 ):  # all selected objects
                     if not db_utils.sql_load_fr_db(

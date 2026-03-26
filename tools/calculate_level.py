@@ -164,7 +164,7 @@ class CalculateLevel(
     @fn_timer
     def calcselected(self):
         obsids = ru(
-            common_utils.getselectedobjectnames(self.layer), keep_containers=True
+            common_utils.get_selected_object_names(self.layer), keep_containers=True
         )
         if not obsids:
             common_utils.pop_up_info(

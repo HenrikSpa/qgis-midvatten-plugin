@@ -373,7 +373,7 @@ def add_group(parent_group, name, checked=False):
 
 
 def apply_obsid_filter_to_layers(layers):
-    selected_obsids = common_utils.getselectedobjectnames(column_name="obsid")
+    selected_obsids = common_utils.get_selected_object_names(column_name="obsid")
     if selected_obsids:
         # QgsExpression filter string (not DB-API), so we must escape literals ourselves.
         filter_string = "obsid IN ({})".format(

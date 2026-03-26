@@ -77,7 +77,7 @@ class DrillreportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
         skip_empty = self.skip_empty.isChecked()
         include_comments = self.include_comments.isChecked()
         obsids = sorted(
-            common_utils.getselectedobjectnames(qgis.utils.iface.activeLayer())
+            common_utils.get_selected_object_names(qgis.utils.iface.activeLayer())
         )  # selected obs_point is now found in obsid[0]
         general_metadata_header = self.general_metadata_header.text()
         geo_metadata_header = self.geo_metadata_header.text()

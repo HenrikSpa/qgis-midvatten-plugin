@@ -63,7 +63,7 @@ class Stratigraphy:
         self.store = None
         self.w = None
 
-    def initStore(self):
+    def init_store(self):
         try:  # return from SurveyStore is stored in self.store only if no object belonging to DataError class is created
             self.store = SurveyStore(self.stratitable)
         except (
@@ -72,7 +72,7 @@ class Stratigraphy:
             log.debug("Load failed due: " + e.problem)
             self.store = None
 
-    def showSurvey(self):
+    def show_survey(self):
         lyr = self.layer
         ids = lyr.selectedFeatureIds()
         if len(ids) == 0:
@@ -82,10 +82,10 @@ class Stratigraphy:
             )
             return
         # initiate the datastore if not yet done
-        self.initStore()
+        self.init_store()
         common_utils.start_waiting_cursor()  # Sets the mouse cursor to wait symbol
-        try:  # return from store.getData is stored in data only if no object belonging to DataSanityError class is created
-            self.data = self.store.getData(ids, lyr)  # added lyr as an argument!!!
+        try:  # return from store.get_data is stored in data only if no object belonging to DataSanityError class is created
+            self.data = self.store.get_data(ids, lyr)  # added lyr as an argument!!!
         except DataSanityError as e:  # if an object 'e' belonging to DataSanityError is created, then do following
             log.warning("DataSanityError %s" % str(e))
             common_utils.stop_waiting_cursor()
@@ -109,8 +109,8 @@ class Stratigraphy:
         common_utils.stop_waiting_cursor()  # Restores the mouse cursor to normal symbol
         # show widget
         w = SurveyDialog()
-        # w.widget.setData2_nosorting(data)  #THIS IS IF DATA IS NOT TO BE SORTED!!
-        w.widget.setData(self.data)  # THIS IS ONLY TO SORT DATA!!
+        # w.widget.set_data2_nosorting(data)  #THIS IS IF DATA IS NOT TO BE SORTED!!
+        w.widget.set_data(self.data)  # THIS IS ONLY TO SORT DATA!!
         w.show()
         self.w = w  # save reference so it doesn't get deleted immediately        This has to be done both here and also in midvatten instance
 
@@ -172,27 +172,27 @@ class SurveyStore:
         self.stratitable = stratitable
         self.warning_popup = True
 
-    def getData(
+    def get_data(
         self, feature_ids, vectorlayer
-    ):  # THIS FUNCTION IS ONLY CALLED FROM ARPATPLUGIN/SHOWSURVEY
+    ):  # THIS FUNCTION IS ONLY CALLED FROM ARPATPLUGIN/SHOW_SURVEY
         """get data from databases for array of features specified by their IDs"""
-        surveys = self._getDataStep1(feature_ids, vectorlayer)
+        surveys = self._get_data_step1(feature_ids, vectorlayer)
         if not surveys:
             raise DataSanityError(
                 "feature ids {}".format(", ".join([str(x) for x in feature_ids])),
                 "Could not get data from layer!",
             )
         try:
-            data_loading_status, surveys = self._getDataStep2(surveys)
+            data_loading_status, surveys = self._get_data_step2(surveys)
         except Exception:
             data_loading_status = False
         if data_loading_status == True:
-            surveys = self.sanityCheck(surveys)
+            surveys = self.sanity_check(surveys)
             return surveys
         else:
             raise DataSanityError("Unknown obsid", "Dataloading failed!")
 
-    def _getDataStep1(self, feature_ids, vlayer):
+    def _get_data_step1(self, feature_ids, vlayer):
         """STEP 1: get data from selected layer"""
         provider = vlayer.dataProvider()
         obsid_col_no = provider.fieldNameIndex("obsid")
@@ -284,7 +284,7 @@ class SurveyStore:
             )
         return surveys
 
-    def _getDataStep2(self, surveys):
+    def _get_data_step2(self, surveys):
         """STEP 2: get strata information for every point"""
         dbconnection = db_utils.DbConnectionManager()
         for obsid, survey in surveys.items():
@@ -378,7 +378,7 @@ class SurveyStore:
         dbconnection.closedb()
         return data_loading_status, surveys
 
-    def sanityCheck(self, _surveys):
+    def sanity_check(self, _surveys):
         """does a sanity check on retreived data"""
         surveys = {}
         for obsid, survey in _surveys.items():
@@ -458,7 +458,7 @@ class SurveyWidget(QtWidgets.QFrame):
             Qt.transparent    a transparent black value (i.e., PySide.QtGui.QColor (0, 0, 0, 0))
         """
         # ------------------Please note!---------------------
-        # Due to unicode normalize in getData function below, swedish national characters will be
+        # Due to unicode normalize in get_data function below, swedish national characters will be
         # transformed to a, a, and o when read from the stratigraphy table
         self.geo_color_symbols = defs.geocolorsymbols()
         # print(self.geo_color_symbols)#debug
@@ -468,7 +468,7 @@ class SurveyWidget(QtWidgets.QFrame):
         self.geo_or_comment = "geology"  # Default is that text =  geology description
         self.show_desc = True  # Default is to show text
 
-    def setData(self, sondaggio):
+    def set_data(self, sondaggio):
         self.sondaggio = sondaggio
         # find out whether the overall distance is bigger on x or y axis
         # so columns will be sorted by their x or y coordinate
@@ -496,22 +496,22 @@ class SurveyWidget(QtWidgets.QFrame):
         order = sorted(self.sondaggio.values(), key=cc)
         self.order = order  # THIS SHOULD BE REPLACED BY 2L BELOW
 
-    def setData2_nosorting(self, sondaggio):  # Without sorting
+    def set_data2_nosorting(self, sondaggio):  # Without sorting
         self.order = []
         for s in sondaggio.values():
             self.order.append(s)
 
-    def setType(self, switch_geo_hydro):
+    def set_type(self, switch_geo_hydro):
         """sets whether fill columns with Geo colors (0) or Hydro colors (1)"""
         self.switch_geo_hydro = switch_geo_hydro
         self.update()
 
-    def setGeoOrComment(self, geo_or_comment):
+    def set_geo_or_comment(self, geo_or_comment):
         """sets whether to print geology ("geology") or Comment ("comment")"""
         self.geo_or_comment = geo_or_comment
         self.update()
 
-    def setShowDesc(self, show):
+    def set_show_desc(self, show):
         self.show_desc = show
         self.update()
 
@@ -532,9 +532,9 @@ class SurveyWidget(QtWidgets.QFrame):
 
         painter = QtGui.QPainter(self)
 
-        self.drawSurveys(self.rect(), painter)
+        self.draw_surveys(self.rect(), painter)
 
-    def drawSurveys(self, rect, painter):
+    def draw_surveys(self, rect, painter):
         """draw surveys to specified rect with specified painter"""
         surveys = len(self.sondaggio)
         survey_width = rect.width() / surveys
@@ -571,11 +571,11 @@ class SurveyWidget(QtWidgets.QFrame):
             sond = self.sondaggio[survey.obsid]
             # draw the survey
             try:
-                self.drawSurvey(painter, sond, r, column_width, (depth_bot, depth_top))
+                self.draw_survey(painter, sond, r, column_width, (depth_bot, depth_top))
             except Exception:
                 common_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
-    def drawSurvey(self, p, sond, s_rect, column_width, interval):
+    def draw_survey(self, p, sond, s_rect, column_width, interval):
         """draws one survey to rectangle in widget specified by s_rect"""
         depth_top = sond.top_lvl
         depth_bot = depth_top - sond.strata[-1].depth_bot
@@ -634,14 +634,14 @@ class SurveyWidget(QtWidgets.QFrame):
                 QtCore.QPoint(s_rect.right(), int(y + y2)),
             )
 
-            b_type = self.geoToSymbol(
+            b_type = self.geo_to_symbol(
                 layer.geo_short
             )  # select brush pattern depending on the geo_short
             # select brush pattern depending on usage of geo or hydro
             if self.switch_geo_hydro == 0:
-                color = self.textToColor(layer.geo_short, "geo")
+                color = self.text_to_color(layer.geo_short, "geo")
             else:
-                color = self.textToColor(layer.hydro, "hydro")
+                color = self.text_to_color(layer.hydro, "hydro")
             # draw column with background color
             p.setBrush(color)
             p.drawRect(c_rect)
@@ -692,7 +692,7 @@ class SurveyWidget(QtWidgets.QFrame):
 
             y += y2
 
-    def textToColor(
+    def text_to_color(
         self, id="", type=""
     ):  # _ DEFINE (in the class method) AND USE (in this function) A DICTIONARY INSTEAD
         """returns QColor from the specified text"""
@@ -716,7 +716,7 @@ class SurveyWidget(QtWidgets.QFrame):
             else:
                 return QtCore.Qt.white
 
-    def geoToSymbol(
+    def geo_to_symbol(
         self, id=""
     ):  # A function to return fill type for the box representing the stratigraphy layer
         """returns Symbol from the specified text"""
@@ -728,7 +728,7 @@ class SurveyWidget(QtWidgets.QFrame):
         else:
             return QtCore.Qt.NoBrush
 
-    def printDiagram(self):
+    def print_diagram(self):
         """outputs the diagram to the printer (or PDF)"""
         printer = QtPrintSupport.QPrinter(QtPrintSupport.QPrinter.HighResolution)
 
@@ -749,7 +749,7 @@ class SurveyWidget(QtWidgets.QFrame):
         rect = printer.pageRect()
         # print "rect: ", rect.left(), rect.top(), rect.width(), rect.height()
 
-        self.drawSurveys(rect, p)
+        self.draw_surveys(rect, p)
 
         p.end()
 
@@ -815,10 +815,10 @@ class SurveyDialog(QtWidgets.QDialog):
         self.layout.addLayout(self.layout2)
 
         self.btn_close.clicked.connect(lambda x: self.close())
-        self.btn_print.clicked.connect(self.widget.printDiagram)
-        self.rad_geo.toggled.connect(self.typeToggled)
-        self.rad_hydro.toggled.connect(self.typeToggled)
-        self.chk_show_desc.toggled.connect(self.widget.setShowDesc)
+        self.btn_print.clicked.connect(self.widget.print_diagram)
+        self.rad_geo.toggled.connect(self.type_toggled)
+        self.rad_hydro.toggled.connect(self.type_toggled)
+        self.chk_show_desc.toggled.connect(self.widget.set_show_desc)
         self.geology_or_comment_cbox.currentIndexChanged.connect(
             partial(self.combo_box_updated)
         )
@@ -827,15 +827,15 @@ class SurveyDialog(QtWidgets.QDialog):
     def close(self):
         self.accept()
 
-    def typeToggled(self):
+    def type_toggled(self):
         if self.rad_geo.isChecked():
-            self.widget.setType(0)
+            self.widget.set_type(0)
         else:
-            self.widget.setType(1)
+            self.widget.set_type(1)
 
     def combo_box_updated(self):
         text = self.geology_or_comment_cbox.currentText()
-        self.widget.setGeoOrComment(text)
+        self.widget.set_geo_or_comment(text)
 
 
 class DataSanityError(

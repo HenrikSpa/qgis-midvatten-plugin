@@ -55,10 +55,10 @@ from midvatten.tools.utils.file_utils import (
 )
 from midvatten.tools.utils.layer_utils import (
     find_layer,
-    getQgisVectorLayers,
+    get_qgis_vector_layers,
     get_active_layer,
     get_selected_features_as_tuple,
-    getselectedobjectnames,
+    get_selected_object_names,
     selection_check,
     strat_selection_check,
     verify_layer_selection,

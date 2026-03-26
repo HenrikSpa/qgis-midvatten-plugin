@@ -443,7 +443,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
 
             self.drawn = True
 
-            self.refreshPlot()
+            self.refresh_plot()
             common_utils.stop_waiting_cursor()
 
     def _setup_color_cyclers(self):
@@ -1273,10 +1273,10 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
 
     @common_utils.general_exception_handler
     def redraw(self):
-        self.styles.load(self.refreshPlot, (self, "mpltoolbar"))
+        self.styles.load(self.refresh_plot, (self, "mpltoolbar"))
 
     @common_utils.general_exception_handler
-    def refreshPlot(self):
+    def refresh_plot(self):
         # If the user has not pressed "draw" before, do nothing
         common_utils.MessagebarAndLog.info(
             log_msg=QCoreApplication.translate("Customplot", "Loaded style:\n%s ")
@@ -1470,7 +1470,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         current_column = ru(filter_combobox.currentText())
         if not current_column:
             return
-        selected_values = common_utils.getselectedobjectnames(
+        selected_values = common_utils.get_selected_object_names(
             column_name=current_column
         )
         [

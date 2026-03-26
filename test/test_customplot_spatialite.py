@@ -614,13 +614,13 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         _configure_customplot_tab1_tab2(customplot, tab2=False)
         customplot.draw_plot_all()
         customplot.grid.setChecked(True)
-        customplot.refreshPlot()
+        customplot.refresh_plot()
         gridlines = customplot.axes.xaxis.get_gridlines()
         print(f"{mock_messagebar.mock_calls=}")
         assert len(gridlines) > 0
         assert gridlines[0].get_visible()
         customplot.grid.setChecked(False)
-        customplot.refreshPlot()
+        customplot.refresh_plot()
         assert not customplot.axes.xaxis.get_gridlines()[0].get_visible()
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
@@ -634,7 +634,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         print(f"{mock_messagebar.mock_calls=}")
         assert customplot.axes.legend_ is not None
         customplot.create_legend.setChecked(False)
-        customplot.refreshPlot()
+        customplot.refresh_plot()
         assert customplot.axes.legend_ is None
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
@@ -646,7 +646,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         customplot.draw_plot_all()
         assert customplot.drawn
         customplot.grid.setChecked(True)
-        customplot.refreshPlot()
+        customplot.refresh_plot()
         gridlines = customplot.axes.xaxis.get_gridlines()
         print(f"{mock_messagebar.mock_calls=}")
         assert len(gridlines) > 0 and gridlines[0].get_visible()

@@ -100,7 +100,7 @@ class StratigraphyMixin:
         dlg = Stratigraphy(self.iface, self.vlayer, self.midvatten.ms.settingsdict)
         # print(f"{mock_messagebar.mock_calls=}")
         # print(str(mock_skippopup.mock_calls))
-        dlg.showSurvey()
+        dlg.show_survey()
         print(str(mock_skippopup.mock_calls))
         test = common_utils.anything_to_string_representation(dlg.data)
         test_survey = common_utils.anything_to_string_representation(
@@ -158,7 +158,7 @@ class StratigraphyMixin:
 
         dlg = Stratigraphy(self.iface, self.vlayer, self.midvatten.ms.settingsdict)
 
-        dlg.showSurvey()
+        dlg.show_survey()
         print(str(mock_skippopup.mock_calls))
         test = common_utils.anything_to_string_representation(dlg.data)
         test_survey = common_utils.anything_to_string_representation(
@@ -217,7 +217,7 @@ class StratigraphyMixin:
         dlg = Stratigraphy(self.iface, self.vlayer, self.midvatten.ms.settingsdict)
         print(f"{mock_messagebar.mock_calls=}")
         print(str(mock_skippopup.mock_calls))
-        dlg.showSurvey()
+        dlg.show_survey()
         test = common_utils.anything_to_string_representation(dlg.data)
         print(str(dlg.data))
         test_survey = common_utils.anything_to_string_representation(
@@ -276,7 +276,7 @@ class StratigraphyMixin:
         dlg = Stratigraphy(self.iface, self.vlayer, self.midvatten.ms.settingsdict)
         print(f"{mock_messagebar.mock_calls=}")
         print(str(mock_skippopup.mock_calls))
-        dlg.showSurvey()
+        dlg.show_survey()
         test = common_utils.anything_to_string_representation(dlg.data)
         test_survey = common_utils.anything_to_string_representation(
             repr(dlg.data["1"])
@@ -341,7 +341,7 @@ class StratigraphyMixin:
 
         dlg = Stratigraphy(self.iface, self.vlayer, self.midvatten.ms.settingsdict)
 
-        dlg.showSurvey()
+        dlg.show_survey()
         test = common_utils.anything_to_string_representation(dlg.data)
         test_survey = common_utils.anything_to_string_representation(
             repr(dlg.data["1"])

@@ -44,7 +44,7 @@ def find_layer(layer_name: str):
         return found_layers[0]
 
 
-def getselectedobjectnames(layer="default", column_name="obsid"):
+def get_selected_object_names(layer="default", column_name="obsid"):
     """Returns a list of obsid as unicode
 
     layer is an optional argument, if not given then activelayer is used
@@ -67,7 +67,7 @@ def getselectedobjectnames(layer="default", column_name="obsid"):
     return observations
 
 
-def getQgisVectorLayers():
+def get_qgis_vector_layers():
     """Return list of all valid QgsVectorLayer in QgsProject"""
     layermap = QgsProject.instance().mapLayers()
     layerlist = []
@@ -155,16 +155,16 @@ def get_selected_features_as_tuple(layer_name=None, column_name=None):
         if obs_points_layer is None:
             return tuple()
         if column_name is not None:
-            selected_obs_points = getselectedobjectnames(
+            selected_obs_points = get_selected_object_names(
                 layer=obs_points_layer, column_name=column_name
             )
         else:
-            selected_obs_points = getselectedobjectnames(layer=obs_points_layer)
+            selected_obs_points = get_selected_object_names(layer=obs_points_layer)
     else:
         if column_name is not None:
-            selected_obs_points = getselectedobjectnames(column_name=column_name)
+            selected_obs_points = get_selected_object_names(column_name=column_name)
         else:
-            selected_obs_points = getselectedobjectnames()
+            selected_obs_points = get_selected_object_names()
     # module midv_exporting depends on obsid being a tuple
     # we cannot send unicode as string to sql because it would include the u' so str() is used
     obsidtuple = tuple([returnunicode(id) for id in selected_obs_points])

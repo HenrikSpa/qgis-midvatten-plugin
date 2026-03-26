@@ -76,7 +76,7 @@ class SectionPlotMixin:
 
         @mock.patch("midvatten.tools.sectionplot.common_utils.find_layer")
         @mock.patch(
-            "midvatten.tools.sectionplot.common_utils.getselectedobjectnames",
+            "midvatten.tools.sectionplot.common_utils.get_selected_object_names",
             autospec=True,
         )
         @mock.patch("qgis.utils.iface", autospec=True)
@@ -123,7 +123,7 @@ class SectionPlotMixin:
 
         @mock.patch("midvatten.tools.sectionplot.SectionPlot.create_new_plot")
         @mock.patch(
-            "midvatten.tools.sectionplot.common_utils.getselectedobjectnames",
+            "midvatten.tools.sectionplot.common_utils.get_selected_object_names",
             autospec=True,
         )
         @mock.patch("qgis.utils.iface", autospec=True)
@@ -170,7 +170,7 @@ class SectionPlotMixin:
 
         @mock.patch("midvatten.tools.sectionplot.common_utils.find_layer")
         @mock.patch(
-            "midvatten.tools.sectionplot.common_utils.getselectedobjectnames",
+            "midvatten.tools.sectionplot.common_utils.get_selected_object_names",
             autospec=True,
         )
         @mock.patch("qgis.utils.iface", autospec=True)
@@ -220,7 +220,7 @@ class SectionPlotMixin:
         @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
         @mock.patch("midvatten.tools.sectionplot.common_utils.find_layer")
         @mock.patch(
-            "midvatten.tools.sectionplot.common_utils.getselectedobjectnames",
+            "midvatten.tools.sectionplot.common_utils.get_selected_object_names",
             autospec=True,
         )
         @mock.patch("qgis.utils.iface", autospec=True)
@@ -271,7 +271,7 @@ class SectionPlotMixin:
 
         @mock.patch("midvatten.tools.sectionplot.common_utils.find_layer")
         @mock.patch(
-            "midvatten.tools.sectionplot.common_utils.getselectedobjectnames",
+            "midvatten.tools.sectionplot.common_utils.get_selected_object_names",
             autospec=True,
         )
         @mock.patch("qgis.utils.iface", autospec=True)
@@ -318,7 +318,7 @@ class SectionPlotMixin:
 
         @mock.patch("midvatten.tools.sectionplot.common_utils.find_layer")
         @mock.patch(
-            "midvatten.tools.sectionplot.common_utils.getselectedobjectnames",
+            "midvatten.tools.sectionplot.common_utils.get_selected_object_names",
             autospec=True,
         )
         @mock.patch("qgis.utils.iface", autospec=True)
@@ -400,7 +400,7 @@ class SectionPlotMixin:
 
         @mock.patch("midvatten.tools.sectionplot.common_utils.find_layer")
         @mock.patch(
-            "midvatten.tools.sectionplot.common_utils.getselectedobjectnames",
+            "midvatten.tools.sectionplot.common_utils.get_selected_object_names",
             autospec=True,
         )
         @mock.patch("qgis.utils.iface", autospec=True)
@@ -451,7 +451,7 @@ class SectionPlotMixin:
 
         @mock.patch("midvatten.tools.sectionplot.common_utils.find_layer")
         @mock.patch(
-            "midvatten.tools.sectionplot.common_utils.getselectedobjectnames",
+            "midvatten.tools.sectionplot.common_utils.get_selected_object_names",
             autospec=True,
         )
         @mock.patch("qgis.utils.iface", autospec=True)
@@ -510,7 +510,7 @@ class SectionPlotMixin:
 
         @mock.patch("midvatten.tools.sectionplot.common_utils.find_layer")
         @mock.patch(
-            "midvatten.tools.sectionplot.common_utils.getselectedobjectnames",
+            "midvatten.tools.sectionplot.common_utils.get_selected_object_names",
             autospec=True,
         )
         @mock.patch("qgis.utils.iface", autospec=True)
@@ -566,7 +566,7 @@ class SectionPlotMixin:
 
         @mock.patch("midvatten.tools.sectionplot.common_utils.find_layer")
         @mock.patch(
-            "midvatten.tools.sectionplot.common_utils.getselectedobjectnames",
+            "midvatten.tools.sectionplot.common_utils.get_selected_object_names",
             autospec=True,
         )
         @mock.patch("qgis.utils.iface", autospec=True)
@@ -627,7 +627,7 @@ class SectionPlotMixin:
 
         @mock.patch("midvatten.tools.sectionplot.common_utils.find_layer")
         @mock.patch(
-            "midvatten.tools.sectionplot.common_utils.getselectedobjectnames",
+            "midvatten.tools.sectionplot.common_utils.get_selected_object_names",
             autospec=True,
         )
         @mock.patch("qgis.utils.iface", autospec=True)
@@ -709,7 +709,7 @@ class SectionPlotMixin:
 
         @mock.patch("midvatten.tools.sectionplot.common_utils.find_layer")
         @mock.patch(
-            "midvatten.tools.sectionplot.common_utils.getselectedobjectnames",
+            "midvatten.tools.sectionplot.common_utils.get_selected_object_names",
             autospec=True,
         )
         @mock.patch("qgis.utils.iface", autospec=True)
@@ -767,7 +767,7 @@ class SectionPlotMixin:
 
         @mock.patch("midvatten.tools.sectionplot.common_utils.find_layer")
         @mock.patch(
-            "midvatten.tools.sectionplot.common_utils.getselectedobjectnames",
+            "midvatten.tools.sectionplot.common_utils.get_selected_object_names",
             autospec=True,
         )
         @mock.patch("qgis.utils.iface", autospec=True)
@@ -819,7 +819,7 @@ class SectionPlotMixin:
 
         @mock.patch("midvatten.tools.sectionplot.common_utils.find_layer")
         @mock.patch(
-            "midvatten.tools.sectionplot.common_utils.getselectedobjectnames",
+            "midvatten.tools.sectionplot.common_utils.get_selected_object_names",
             autospec=True,
         )
         @mock.patch("qgis.utils.iface", autospec=True)
@@ -879,7 +879,7 @@ class SectionPlotMixin:
 
         @mock.patch("midvatten.tools.sectionplot.common_utils.find_layer")
         @mock.patch(
-            "midvatten.tools.sectionplot.common_utils.getselectedobjectnames",
+            "midvatten.tools.sectionplot.common_utils.get_selected_object_names",
             autospec=True,
         )
         @mock.patch("qgis.utils.iface", autospec=True)

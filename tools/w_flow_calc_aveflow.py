@@ -61,7 +61,7 @@ class CalculateAveflow(qgis.PyQt.QtWidgets.QDialog, Calc_Ui_Dialog):
         self.calc_aveflow(observations)
 
     def calcselected(self):
-        observations = common_utils.getselectedobjectnames(
+        observations = common_utils.get_selected_object_names(
             qgis.utils.iface.activeLayer()
         )
         self.calc_aveflow(observations)

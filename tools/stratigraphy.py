@@ -58,7 +58,6 @@ class Stratigraphy:
         )  # no longer an option to select other tables than 'stratigraphy'
         self.layer = layer
         self.store = None
-        # self.showSurvey()
         self.w = None
 
     def initStore(self):
@@ -67,12 +66,10 @@ class Stratigraphy:
         except (
             DataError
         ) as e:  # if an object 'e' belonging to DataError is created, then do following
-            # fix_print_with_import
             print("Load failed due: " + e.problem)
             self.store = None
 
     def showSurvey(self):
-        # lyr = self.iface.activeLayer() # THIS IS TSPLOT-method, GETS THE SELECTED LAYER
         lyr = self.layer
         ids = lyr.selectedFeatureIds()
         if len(ids) == 0:
@@ -124,10 +121,8 @@ class Stratigraphy:
 
 
 class SurveyInfo:  # This class is to define the data structure...
-    def __init__(
-        self, obsid="", top_lvl=0, coord=None, strata=None, length=None
-    ):  # _CHANGE_ added obsid
-        self.obsid = obsid  # _CHANGE_
+    def __init__(self, obsid="", top_lvl=0, coord=None, strata=None, length=None):
+        self.obsid = obsid
         self.top_lvl = top_lvl
         self.coord = coord
         self.length = length
@@ -142,7 +137,7 @@ class SurveyInfo:  # This class is to define the data structure...
             str(self.obsid),
             self.top_lvl,
             self.coord,
-        )  # _CHANGE_
+        )
 
 
 class StrataInfo:
@@ -203,19 +198,13 @@ class SurveyStore:
             raise DataSanityError("Unknown obsid", "Dataloading failed!")
 
     def _getDataStep1(self, feature_ids, vlayer):
-        """STEP 1: get data from selected layer"""  # _CHANGE_ Completely revised to TSPLot method
-        provider = vlayer.dataProvider()  # _CHANGE_  THIS IS TSPLOT-method, we do not use the db loadeds by ARPAT _init_ surveystore
-        obsid_col_no = provider.fieldNameIndex(
-            "obsid"
-        )  # _CHANGE_  THIS IS TSPLOT-method To find the column named 'obsid'
+        """STEP 1: get data from selected layer"""
+        provider = vlayer.dataProvider()
+        obsid_col_no = provider.fieldNameIndex("obsid")
         if obsid_col_no == -1:
             obsid_col_no = provider.fieldNameIndex("OBSID")  # backwards compatibility
-        h_gs_col_no = provider.fieldNameIndex(
-            "h_gs"
-        )  # _CHANGE_  THIS IS TSPLOT-method To find the column named 'h_gs'
-        h_toc_col_no = provider.fieldNameIndex(
-            "h_toc"
-        )  # _CHANGE_  THIS IS TSPLOT-method To find the column named 'h_toc'
+        h_gs_col_no = provider.fieldNameIndex("h_gs")
+        h_toc_col_no = provider.fieldNameIndex("h_toc")
         if h_gs_col_no == -1 and h_toc_col_no == -1:
             h_gs_col_no = provider.fieldNameIndex("SURF_LVL")  # backwards compatibility
         length_col_no = provider.fieldNameIndex("length")
@@ -302,7 +291,7 @@ class SurveyStore:
         else:
             common_utils.pop_up_info(
                 ru(QCoreApplication.translate("Stratigraphy", "getDataStep1 failed"))
-            )  # _CHANGE_ for debugging
+            )
         return surveys
 
     def _getDataStep2(self, surveys):
@@ -524,8 +513,6 @@ class SurveyWidget(QtWidgets.QFrame):
             # cc = lambda a,b: cmp(a.coord.y(), b.coord.y())
         order = sorted(self.sondaggio.values(), key=cc)
         self.order = order  # THIS SHOULD BE REPLACED BY 2L BELOW
-        # for o in order:
-        #    self.order.append(o.obsid)   # _CHANGE_  Should be fixed
 
     def setData2_nosorting(self, sondaggio):  # Without sorting
         self.order = []
@@ -813,7 +800,6 @@ class SurveyDialog(QtWidgets.QDialog):
         self.rad_geo.setChecked(True)  # Default is to show colors as per geo
         self.layout2.addWidget(self.rad_geo)
         self.rad_hydro = QtWidgets.QRadioButton("Hydro")
-        # self.rad_hydro.setChecked(False)  #Default is NOT to show colors as per hydro
         self.layout2.addWidget(self.rad_hydro)
 
         spacer_item = QtWidgets.QSpacerItem(100, 0)

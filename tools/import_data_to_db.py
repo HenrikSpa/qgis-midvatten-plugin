@@ -187,7 +187,9 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                     primary_keys, dest_table, dbconnection
                 )
                 remaining_rownumbers = get_remaining_rownumbers()
-                common_utils.MessagebarAndLog.info(log_msg=f"remaining_rownumbers {remaining_rownumbers=}")
+                common_utils.MessagebarAndLog.info(
+                    log_msg=f"remaining_rownumbers {remaining_rownumbers=}"
+                )
                 if not remaining_rownumbers:
                     common_utils.MessagebarAndLog.warning(
                         bar_msg=ru(
@@ -275,7 +277,9 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             if dump_temptable:
                 dbconnection.dump_table_2_csv(self.temptable_name)
 
-            common_utils.MessagebarAndLog.info(log_msg=f"{remaining_rownumbers=} {all_rownumbers=}")
+            common_utils.MessagebarAndLog.info(
+                log_msg=f"{remaining_rownumbers=} {all_rownumbers=}"
+            )
             if len(remaining_rownumbers) == len(all_rownumbers):
                 if self.foreign_keys_import_question:
                     import_messages = []
@@ -579,11 +583,6 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
 
         return numskipped
 
-    def sanitize(self, value):
-        if isinstance(value, str):
-            value = value.strip() if value.strip() else None
-        return value
-
     def delete_existing_date_times_from_temptable(
         self,
         primary_keys: List[str],
@@ -881,13 +880,6 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                     )
                     % (str(nr_fk_after - nr_fk_before), fk_table, dest_table)
                 )
-
-    def import_error_msg(self):
-        return ru(
-            QCoreApplication.translate(
-                "midv_data_importer", "Import error, see log message panel"
-            )
-        )
 
 
 class MidvDataImporterError(Exception):

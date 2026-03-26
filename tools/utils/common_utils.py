@@ -844,12 +844,6 @@ class Timer:
             % (self.name, str(t - self.t0))
         )
 
-    def current_time(self, info=""):
-        MessagebarAndLog.info(
-            log_msg=tr("Timer", "Current time running %s%s: %s seconds")
-            % (self.name, info, str(time.time() - self.t0))
-        )
-
     def diff(self, info=""):
         t = time.time()
         diff = time.time() - self.t1

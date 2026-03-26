@@ -1,7 +1,6 @@
 import datetime
 import math
 import os
-import traceback
 
 import numpy as np
 import qgis.PyQt
@@ -532,12 +531,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         common_utils.stop_waiting_cursor()
 
     @fn_timer
-    def sql_into_recarray(self, sql):
-        """Converts and runs an sql-string and turns the answer into an np.recarray and returns it"""
-        list_of_lists = db_utils.sql_load_fr_db(sql)[1]
-        return self.list_of_list_to_recarray(list_of_lists)
-
-    @fn_timer
     def list_of_list_to_recarray(self, list_of_lists):
         my_format = [
             ("date_time", datetime.datetime),
@@ -853,7 +846,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self.to_date_time.setDateTime(datestring_to_date("2099-12-31 23:59:59"))
         self.offset.setText("")
         self.best_fit_search_radius.setText("60 minutes")
-        # self.mpltoolbar.home()
 
         last_calibration = self.getlastcalibration(self.obsid)
         try:

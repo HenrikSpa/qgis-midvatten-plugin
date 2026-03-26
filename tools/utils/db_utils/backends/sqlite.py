@@ -275,12 +275,6 @@ class SQLiteBackend(Backend):
     def cast_null(self, data_type: str) -> str:
         return "NULL"
 
-    def is_distinct_from_sql(self) -> str:
-        return "IS NOT"
-
-    def is_not_distinct_from_sql(self) -> str:
-        return "IS"
-
 
 def _log_execute_error(sql: str, args: Any, e: Exception) -> None:
     if args is None:

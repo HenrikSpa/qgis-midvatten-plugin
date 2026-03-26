@@ -301,9 +301,3 @@ class PostgreSQLBackend(Backend):
                 f"cast_null: data_type {data_type!r} not in allowed list"
             )
         return "NULL::" + data_type
-
-    def is_distinct_from_sql(self) -> str:
-        return "IS DISTINCT FROM"
-
-    def is_not_distinct_from_sql(self) -> str:
-        return "IS NOT DISTINCT FROM"

@@ -58,7 +58,6 @@ class CalculateLevel(
     def __init__(self, parent: QWidget, layerin: int):
         qgis.PyQt.QtWidgets.QDialog.__init__(self)
         self.setupUi(self)  # Required by Qt
-        # self.obsid = midvatten_utils.getselectedobjectnames()
         self.setWindowTitle(
             ru(QCoreApplication.translate("Calclvl", "Calculate levels"))
         )

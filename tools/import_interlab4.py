@@ -22,7 +22,6 @@
 
 import copy
 import csv
-import io
 import os
 import re
 from datetime import datetime
@@ -34,7 +33,7 @@ from midvatten.tools import import_data_to_db
 from midvatten.tools.utils import common_utils, midvatten_utils, db_utils
 from midvatten.tools.utils.common_utils import returnunicode as ru, Cancel
 from midvatten.tools.utils.date_utils import datestring_to_date
-from midvatten.tools.utils.db_utils import tables_columns, sql_load_fr_db, sql_alter_db
+from midvatten.tools.utils.db_utils import tables_columns, sql_load_fr_db
 from midvatten.tools.utils.gui_utils import (
     SplitterWithHandel,
     RowEntry,

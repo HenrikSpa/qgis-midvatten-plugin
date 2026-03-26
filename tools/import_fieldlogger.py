@@ -21,7 +21,6 @@
 """
 
 import copy
-import io
 import os
 from queue import Queue
 from collections import OrderedDict
@@ -110,7 +109,6 @@ class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
         for setting in self.settings:
             if isinstance(setting, QtWidgets.QWidget):
                 settings_layout.addWidget(setting)
-        # self.add_line(settings_layout)
 
         # Settings with own loop gets self.observations to work on.
         self.settings_with_own_loop = [ObsidFilter()]
@@ -120,8 +118,6 @@ class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
         self.sublocation_filter = SublocationFilter(sublocations)
         self.settings.append(self.sublocation_filter)
         splitter.addWidget(self.sublocation_filter)
-        # sublocations_layout.addWidget(self.sublocation_filter.widget)
-        # self.add_line(sublocations_layout)
 
         self.stored_settingskey = "fieldlogger_import_parameter_settings"
         self.stored_settings = common_utils.get_stored_settings(
@@ -347,25 +343,6 @@ class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
             self.add_row(line)
         else:
             layout.addWidget(line)
-
-    @staticmethod
-    def sublocation_to_groups(sublocations, delimiter="."):
-        """
-        This method splits sublocation using a splitter, default to u'.'. Each list position is grouped to lists
-         containing all distinct values. It's finally stored in a dict with the lenght of the splitted group as key.
-        :param: sublocations: A list of sublocations, ex: ['c', 'a.1', 'a.2', 'b.1.1']
-        :return: a dict like {1: [set(distinct values)], 2: [set(distinct values)}, set(), set()], ...)
-        """
-        sublocation_groups = {}
-        for sublocation in sublocations:
-            splitted = sublocation.split(delimiter)
-            length = len(splitted)
-            for index in range(length):
-                # a dict like {1: [set()], 2: [set(), set()], ...}
-                sublocation_groups.setdefault(length, [set() for i in range(length)])[
-                    index
-                ].add(splitted[index])
-        return sublocation_groups
 
     def update_sublocations_and_inputfields_on_date_change(self):
         sleep(0.2)
@@ -1041,8 +1018,6 @@ class InputFields(QtWidgets.QWidget):
                 break
             imp_obj.deleteLater()
             imp_obj = None
-            # self.layout.removeWidget(imp_obj.widget)
-            # imp_obj.close()
 
         observations = copy.deepcopy(observations)
         parameter_names = list(
@@ -1232,8 +1207,6 @@ class InputFields(QtWidgets.QWidget):
     def clear_widgets(self):
         for name, param_import_obj in self.parameter_imports.items():
             param_import_obj.deleteLater()
-            # self.layout.removeWidget(param_import_obj.widget)
-            # param_import_obj.widget.close()
         self.parameter_imports = OrderedDict()
 
 
@@ -1290,7 +1263,6 @@ class ImportMethodChooser(QtWidgets.QWidget):
         if self.parameter_widget is not None:
             try:
                 self.parameter_widget.deleteLater()
-                # self.layout.removeWidget(self.parameter_widget)
             except Exception as e:
                 self.parameter_widget = None
             else:
@@ -1882,9 +1854,6 @@ class WQualFieldDepthImportFields(QtWidgets.QWidget):
 
     def get_settings(self):
         return tuple()
-
-    def set_settings(self):
-        pass
 
 
 def default_combobox(editable: bool = True) -> QComboBox:

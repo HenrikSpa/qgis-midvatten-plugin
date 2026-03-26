@@ -1190,9 +1190,6 @@ class MatplotlibStyles:
         if selected:
             return selected[0].text()
 
-    def style_from_filename(self, filename):
-        return os.path.splitext(os.path.basename(filename))
-
     def filename_from_style(self, style):
         filename = os.path.join(self.style_folder, style + self.style_extension)
         return filename

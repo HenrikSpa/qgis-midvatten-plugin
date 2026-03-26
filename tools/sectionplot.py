@@ -2108,9 +2108,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         self.figure._midv_ax_wlvl.legend()
 
         self.figure._midv_ax_wlvl.set_xlabel("")
-        # axes_set_ylabel = dict([(k, v) for k, v in self.secplot_templates.loaded_template.get('axes_set_ylabel', {}).items() if k != 'ylabel'])
-        # ylabel = self.secplot_templates.loaded_template.get('axes_set_ylabel', {}).get('ylabel', defs.secplot_default_template()['axes_set_ylabel']['ylabel'])
-        # self.figure._midv_ax_wlvl.set_ylabel(ylabel, **axes_set_ylabel)  #Allows international characters ('åäö') as ylabel
         self.figure._midv_ax_wlvl.set_ylabel("")
 
         for label in self.figure._midv_ax_wlvl.yaxis.get_ticklabels():
@@ -2274,10 +2271,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         print(f"Detach pressed")
         self.layoutplot.removeWidget(self.figure.canvas.toolbar)
         self.layoutplot.removeWidget(self.figure.canvas)
-
-        # self.previous_title = self.figure._midv_ax_main.get_title()
-        # self.previous_xaxis_label = self.figure._midv_ax_main.get_xlabel()
-        # self.previous_yaxis_label = self.figure._midv_ax_main.get_ylabel()
 
         self.figure.canvas.toolbar.close()
         self.figure.canvas.close()
@@ -2456,7 +2449,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                 longdateformat(df_idx_as_datetime(fig._midv_df, current_idx))
             )
             fig.canvas.draw_idle()
-            # self.update_legend(from_navbar=True, fig=fig)
 
     def update_slider(self, event):
         fig = event.canvas.figure

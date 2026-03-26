@@ -162,7 +162,6 @@ class DateTimeFilter(qgis.PyQt.QtWidgets.QWidget):
         if calendar:
             self.from_datetimeedit.setCalendarPopup(True)
             self.to_datetimeedit.setCalendarPopup(True)
-        # self.import_after_last_date = PyQt4.QtWidgets.QCheckBox("Import after latest date in database for each obsid")
         for widget in [
             self.label,
             self.from_datetimeedit,

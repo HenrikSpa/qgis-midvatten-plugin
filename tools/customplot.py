@@ -52,7 +52,10 @@ from qgis.PyQt.QtWidgets import QApplication
 from midvatten.tools.utils import common_utils, midvatten_utils, db_utils
 from midvatten.tools.utils.common_utils import returnunicode as ru, LEGEND_NCOL_KEY
 from midvatten.definitions import midvatten_defs as defs
-from midvatten.tools.utils.gui_utils import set_groupbox_children_visibility, WA_DeleteOnClose
+from midvatten.tools.utils.gui_utils import (
+    set_groupbox_children_visibility,
+    WA_DeleteOnClose,
+)
 
 import pandas as pd
 
@@ -146,12 +149,10 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
     def _connect_signals(self):
         """Wire all UI widget signals to their handlers."""
         # function partial due to problems with currentindexChanged and Combobox
-        # self.tab1_table, QtCore.SIGNAL("currentIndexChanged(int)"), partial(self.table1_changed))#currentIndexChanged caused unnecessary signals when scrolling in combobox
         self.tab1_table.currentIndexChanged.connect(partial(self.table1_changed))
         self.tab1_filtercol1.currentIndexChanged.connect(
             partial(self.tab1_filter1_changed)
         )
-        # self.tab1_filtercol1.currentIndexChanged.connect( partial(self.FilterChanged(1,1)))
         self.tab1_filtercol2.currentIndexChanged.connect(
             partial(self.tab1_filter2_changed)
         )
@@ -518,7 +519,6 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             filter2_col = str(filter2_col.currentText())
             filter2list = filter2.selectedItems()
             nop = max(len(filter1list), 1) * max(len(filter2list), 1)
-            # self.p= [None]*nop#list for plot objects
             self.p.extend([None] * nop)  # list for plot objects
             self.plabels.extend([None] * nop)  # List for plot labels
             try:
@@ -1128,7 +1128,6 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
     def table1_changed(self):  # This method is called whenever table1 is changed
         # First, update combobox with columns
         self.clearthings(1)
-        # self.ms.settingsdict['custplot_table1'] = self.tab1_table.currentText()
         self.populate_combo_box(
             "tab1_xcol", self.tab1_table.currentText()
         )  # GeneralNote: For some reason it is not possible to send currentText with the SIGNAL-trigger
@@ -1145,7 +1144,6 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
     def table2_changed(self):  # This method is called whenever table2 is changed
         # First, update combobox with columns
         self.clearthings(2)
-        # self.ms.settingsdict['custplot_table2'] = self.tab2_table.currentText()
         self.populate_combo_box(
             "tab2_xcol", self.tab2_table.currentText()
         )  # GeneralNote: For some reason it is not possible to send currentText with the SIGNAL-trigger
@@ -1162,7 +1160,6 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
     def table3_changed(self):  # This method is called whenever table3 is changed
         # First, update combobox with columns
         self.clearthings(3)
-        # self.ms.settingsdict['custplot_table2'] = self.tab3_table.currentText()
         self.populate_combo_box(
             "tab3_xcol", self.tab3_table.currentText()
         )  # GeneralNote: For some reason it is not possible to send currentText with the SIGNAL-trigger
@@ -1396,7 +1393,6 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             self.widget_plot.setMaximumWidth(16777215)
             self.widget_plot.setMinimumHeight(10)
             self.widget_plot.setMaximumHeight(16777215)
-            # self.widget_plot.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         else:
             width_inches, height_inches = mpl.rcParams["figure.figsize"]
             screen_dpi = QApplication.screens()[0].logicalDotsPerInch()
@@ -1480,9 +1476,6 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         self.ms.settingsdict["custplot_maxtstep"] = self.spn_max_tstep.value()
         self.ms.settingsdict["custplot_legend"] = self.create_legend.isChecked()
         self.ms.settingsdict["custplot_grid"] = self.grid.isChecked()
-        # self.ms.settingsdict['custplot_title'] = unicode(self.axes.get_title())
-        # self.ms.settingsdict['custplot_xtitle'] = unicode(self.axes.get_xlabel())
-        # self.ms.settingsdict['custplot_ytitle'] = unicode(self.axes.get_ylabel())
         self.ms.settingsdict["custplot_tabwidget"] = self.tab_widget.currentIndex()
         self.ms.settingsdict["custplot_regular_xaxis_interval"] = (
             self.regular_xaxis_interval.isChecked()

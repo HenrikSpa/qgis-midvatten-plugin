@@ -328,11 +328,6 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         self.splitter = SplitterWithHandel(qgis.PyQt.QtCore.Qt.Vertical)
         self.main_vertical_layout.addWidget(self.splitter)
 
-        # This is about adding a messagebar to the fieldlogger window. But for some reason qgis crashes or closes
-        # when the timer ends for the regular messagebar
-        # self.lbl = MessageBar(self.splitter)
-        # qgis.utils.iface.optional_bar = self.lbl
-
         self.widgets_layouts = self.init_splitters_layouts(self.splitter)
 
         if self.parameter_groups:
@@ -1218,9 +1213,6 @@ class ParameterBrowser(QtWidgets.QDialog, parameter_browser_dialog):
         else:
             self.use_fieldform()
 
-        # self.horizontalLayoutWidget.setTabOrder(self._add_button, self._input_field_list)
-        # self.horizontalLayoutWidget.setTabOrder(self._input_field_list, self._parameter_table)
-
     @staticmethod
     def get_distinct_values(tablename: str, columnname: str) -> List[str]:
         from midvatten.tools.utils.db_utils.execution import (
@@ -1547,11 +1539,6 @@ class ObsLayer(gui_utils.VRowEntry):
             fieldnames = [field.name() for field in fields]
             self.column_list.addItems(fieldnames)
             gui_utils.set_combobox(self.column_list, select_column)
-
-    def get_selected(self):
-        return common_utils.getselectedobjectnames(
-            thelayer=self.current_layer(), column_name=self.current_column()
-        )
 
     def current_layer(self):
         return self.vectorlayer_list.currentLayer()

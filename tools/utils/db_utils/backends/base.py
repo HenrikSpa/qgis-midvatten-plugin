@@ -174,14 +174,6 @@ class Backend(ABC):
         """Return SQL for NULL cast to data_type (e.g. NULL::text for PG)."""
         raise NotImplementedError
 
-    def is_distinct_from_sql(self) -> str:
-        """Return 'IS NOT' (SQLite) or 'IS DISTINCT FROM' (PG)."""
-        raise NotImplementedError
-
-    def is_not_distinct_from_sql(self) -> str:
-        """Return 'IS' (SQLite) or 'IS NOT DISTINCT FROM' (PG)."""
-        raise NotImplementedError
-
     def connect2db(self) -> bool:
         """Check connection is ok (e.g. not locked). Return True if ok."""
         self.check_db_is_locked()

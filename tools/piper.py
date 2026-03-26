@@ -68,10 +68,8 @@ class PiperPlot:
         for row in self.obsrecarray:
             # print ','.join([unicode(col).encode('utf-8') for col in row])
             try:
-                # fix_print_with_import
                 print(",".join([ru(col) for col in row]))
             except Exception:
-                # fix_print_with_import
                 print("failed printing piper data...")
 
         self.plot_function()
@@ -464,15 +462,6 @@ class PiperPlot:
             "rotation_mode": "anchor",
             "fontsize": mpl.rcParams["ytick.labelsize"],
         }
-        # 50%
-        # ax.text(*tri1.transform(50, 50), '50%', ha='right', va='bottom', **shared_ticklabels_params)
-        # self.labels_positive_rotation.append(ax.text(*tri1.transform(-2, 50), '50%', ha='left', va='bottom', **shared_ticklabels_params))
-        # self.labels_negative_rotation.append(ax.text(*tri1.transform(50, 0), '50%', ha='left', va='top', **shared_ticklabels_params))
-
-        # self.labels_negative_rotation.append(ax.text(*tri2.transform(-2, 50), '50%', ha='right', va='bottom', **shared_ticklabels_params))
-        # ax.text(*tri2.transform(50, 50), '50%', ha='left', va='bottom', **shared_ticklabels_params)
-        # self.labels_positive_rotation.append(ax.text(*tri2.transform(50, -2), '50%', ha='right', va='bottom', **shared_ticklabels_params))
-
         # Tri1 left side
         ax.text(
             *tri1.transform(90, 10),
@@ -1070,33 +1059,6 @@ class TriangleGraph:
             (x + (y / 2) - self.xlim[0]) / (self.xlim[1] - self.xlim[0])
         )
         return transformed_x, transformed_y
-
-    def to_piper_coords(self, transformed_x, transformed_y):
-        y = self.ylim[1](
-            (((transformed_y - self.ymin) / math.sin(math.radians(60))) + self.ylim[0])
-            / self.side_length
-        )
-        x = (
-            ((transformed_x - self.xmin) / self.side_length)
-            * (self.xlim[1] - self.xlim[0])
-            - y / 2
-            + self.xlim[0]
-        )
-
-    def get_triangle_nodes(self, step):
-        x_s = []
-        y_s = []
-        for xidx, x in enumerate(range(min(self.xlim), max(self.xlim) + step, step)):
-            for yidx, y in enumerate(
-                range(min(self.ylim), max(self.ylim) + step, step)
-            ):
-                if x + y < self.ylim[1] + self.ylim[1] * 0.5 - x / 2:
-                    x_t, y_t = self.transform(x, y)
-                    x_s.append(x_t)
-                    y_s.append(y_t)
-        x = np.asarray(x_s)
-        y = np.asarray(y_s)
-        return x, y
 
 
 class RhomboidGraph:

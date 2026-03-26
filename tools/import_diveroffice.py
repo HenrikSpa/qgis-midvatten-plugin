@@ -20,7 +20,6 @@
  ***************************************************************************/
 """
 
-import io
 import os
 import re
 import traceback
@@ -512,7 +511,9 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
                     "w_levels_logger", file_to_import_to_db
                 )
             except Exception:
-                common_utils.MessagebarAndLog.warning(log_msg=f"Got error {traceback.format_exc()}")
+                common_utils.MessagebarAndLog.warning(
+                    log_msg=f"Got error {traceback.format_exc()}"
+                )
                 raise
         if export_csv:
             path = qgis.PyQt.QtWidgets.QFileDialog.getSaveFileName(
@@ -1018,8 +1019,6 @@ class CheckboxAndExplanation(VRowEntry):
         if explanation:
             self.label.setText(explanation)
             self.layout.addWidget(self.label)
-
-        # self.layout.addStretch()
 
     @property
     def checked(self):

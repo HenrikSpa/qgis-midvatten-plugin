@@ -83,6 +83,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         if skip_confirmation:
             self.foreign_keys_import_question = 1
 
+        dbconnection: Optional[DbConnectionManager] = None
         try:
             if file_data is None or not file_data:
                 return
@@ -96,63 +97,20 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
 
             common_utils.start_waiting_cursor()
 
-            if not isinstance(_dbconnection, db_utils.DbConnectionManager):
-                dbconnection = db_utils.DbConnectionManager()
-            else:
-                dbconnection = _dbconnection
-
-            db_utils.activate_foreign_keys(activated=True, dbconnection=dbconnection)
+            (
+                dbconnection,
+                table_info,
+                column_headers_types,
+                primary_keys,
+                not_null_columns,
+                existing_columns_in_dest_table,
+                existing_columns_in_temptable,
+                primary_keys_for_concat,
+            ) = self._validate_and_connect(dest_table, file_data, _dbconnection)
 
             recsinfile = len(file_data[1:])
             all_rownumbers = tuple(range(recsinfile))
             remaining_rownumbers = tuple(all_rownumbers)
-
-            table_info = db_utils.db_tables_columns_info(
-                table=dest_table, dbconnection=dbconnection
-            )
-            if not table_info:
-                raise MidvDataImporterError(
-                    QCoreApplication.translate(
-                        "midv_data_importer",
-                        "The table %s did not exist. Update the database to latest version.",
-                    )
-                    % dest_table
-                )
-            else:
-                table_info = table_info[dest_table]
-            # POINT and LINESTRING must be cast as BLOB. So change the type to BLOB.
-            column_headers_types = db_utils.change_cast_type_for_geometry_columns(
-                dbconnection, table_info, dest_table
-            )
-            primary_keys = [
-                row[1] for row in table_info if int(row[5])
-            ]  # Not null columns are allowed if they have a default value.
-            not_null_columns = [
-                row[1] for row in table_info if int(row[3]) and row[4] is None
-            ]
-            # Only use the columns that exists in the goal table.
-            existing_columns_in_dest_table = [
-                col for col in file_data[0] if col in column_headers_types
-            ]
-            existing_columns_in_temptable = file_data[0]
-            missing_columns = [
-                column
-                for column in not_null_columns
-                if column not in existing_columns_in_dest_table
-            ]
-
-            if missing_columns:
-                raise MidvDataImporterError(
-                    QCoreApplication.translate(
-                        "midv_data_importer",
-                        "Required columns %s are missing for table %s",
-                    )
-                    % (", ".join(missing_columns), dest_table)
-                )
-
-            primary_keys_for_concat = [
-                pk for pk in primary_keys if pk in existing_columns_in_temptable
-            ]
 
             self.list_to_table(
                 dbconnection, dest_table, file_data, primary_keys_for_concat
@@ -175,231 +133,61 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             ]
 
             # Delete records from self.temptable where yyyy-mm-dd hh:mm or yyyy-mm-dd hh:mm:ss already exist for the same date.
-
-            if "date_time" in primary_keys:
-                self.delete_existing_date_times_from_temptable(
-                    primary_keys, dest_table, dbconnection
-                )
-                remaining_rownumbers = get_remaining_rownumbers()
-                common_utils.MessagebarAndLog.info(
-                    log_msg=f"remaining_rownumbers {remaining_rownumbers=}"
-                )
-                if not remaining_rownumbers:
-                    common_utils.MessagebarAndLog.warning(
-                        bar_msg=QCoreApplication.translate(
-                            "midv_data_importer",
-                            "Nothing imported to %s after deleting duplicate date_times",
-                        )
-                        % dest_table
-                    )
-                    return
-
-                removed_rownumbers = get_removed_rownumbers(
-                    all_rownumbers, remaining_rownumbers
-                )
-                if removed_rownumbers:
-                    removed_rows = get_row_subset(removed_rownumbers)
-                    common_utils.MessagebarAndLog.info(
-                        log_msg=QCoreApplication.translate(
-                            "midv_data_importer",
-                            "Skipped %s rows with duplicate date_time but of different date format (yyyy-mm-dd hh:mm or yyyy-mm-dd hh:mm:ss). Subset of skipped rows:\n%s",
-                        )
-                        % (str(len(removed_rownumbers)), "\n".join(removed_rows))
-                    )
-                    import_messages.append(
-                        QCoreApplication.translate(
-                            "midv_data_importer",
-                            "Skipped %s rows with duplicate date_time.",
-                        )
-                        % str(len(removed_rownumbers))
-                    )
+            remaining_rownumbers, import_messages = self._remove_duplicate_datetimes(
+                dbconnection,
+                dest_table,
+                primary_keys,
+                all_rownumbers,
+                remaining_rownumbers,
+                get_remaining_rownumbers,
+                get_removed_rownumbers,
+                get_row_subset,
+                import_messages,
+            )
+            if remaining_rownumbers is None:
+                return
 
             # Special cases for some tables
-            if dest_table == "stratigraphy":
-                self.check_and_delete_stratigraphy(
-                    existing_columns_in_dest_table, dbconnection
-                )
-                remaining_rownumbers_after_stratigraphy = get_remaining_rownumbers()
-                if not remaining_rownumbers_after_stratigraphy:
-                    common_utils.MessagebarAndLog.warning(
-                        bar_msg=QCoreApplication.translate(
-                            "midv_data_importer",
-                            "Nothing imported to %s after deleting stratigraphy rows with errors.",
-                        )
-                        % dest_table
-                    )
-                    return
-
-                removed_rownumbers = get_removed_rownumbers(
-                    remaining_rownumbers, remaining_rownumbers_after_stratigraphy
-                )
-                if removed_rownumbers:
-                    removed_rows = get_row_subset(removed_rownumbers)
-                    common_utils.MessagebarAndLog.info(
-                        log_msg=QCoreApplication.translate(
-                            "midv_data_importer",
-                            "Skipped %s rows due to problems with stratigraphy. Subset of skipped rows:\n%s",
-                        )
-                        % (str(len(removed_rownumbers)), "\n".join(removed_rows))
-                    )
-                    import_messages.append(
-                        QCoreApplication.translate(
-                            "midv_data_importer",
-                            "Skipped %s rows due to problems with stratigraphy.",
-                        )
-                        % str(len(removed_rownumbers))
-                    )
-                remaining_rownumbers = remaining_rownumbers_after_stratigraphy
-            elif dest_table == "w_qual_field":
-                self.convert_null_unit_to_empty_string(
-                    self.temptable_name, "unit", dbconnection
-                )
+            remaining_rownumbers, import_messages = self._handle_special_table_cases(
+                dbconnection,
+                dest_table,
+                existing_columns_in_dest_table,
+                remaining_rownumbers,
+                get_remaining_rownumbers,
+                get_removed_rownumbers,
+                get_row_subset,
+                import_messages,
+            )
+            if remaining_rownumbers is None:
+                return
 
             # Dump temptable to csv for debugging
             if dump_temptable:
                 dbconnection.dump_table_2_csv(self.temptable_name)
 
-            common_utils.MessagebarAndLog.info(
-                log_msg=f"{remaining_rownumbers=} {all_rownumbers=}"
+            self._ask_user_to_proceed(
+                remaining_rownumbers, all_rownumbers, import_messages
             )
-            if len(remaining_rownumbers) == len(all_rownumbers):
-                if self.foreign_keys_import_question:
-                    import_messages = []
-                else:
-                    import_messages.append(
-                        QCoreApplication.translate(
-                            "midv_data_importer", "Proceed with import?"
-                        )
-                    )
-                    # Only skip recurring queries for imports without errors.
-                    self.foreign_keys_import_question = 1
-            else:
-                import_messages.append(
-                    QCoreApplication.translate(
-                        "midv_data_importer",
-                        """There are %s out of %s number of rows to import (see log for more info about removed rows).\n\nProceed with import?""",
-                    )
-                    % (str(len(remaining_rownumbers)), str(len(all_rownumbers)))
-                )
 
-            if import_messages:
-                # print('\n'.join(import_messages))
-                stop_question = common_utils.Askuser(
-                    "YesNo",
-                    "\n".join(import_messages),
-                    QCoreApplication.translate("midv_data_importer", "Info"),
-                )
-                if stop_question.result == 0:  # if the user wants to abort
-                    raise UserInterruptError()
-
-            # Import foreign keys in some special cases
-            foreign_keys = db_utils.get_foreign_keys(
-                dest_table, dbconnection=dbconnection
+            self._handle_foreign_keys(
+                dbconnection,
+                dest_table,
+                existing_columns_in_temptable,
+                allow_obs_fk_import,
             )
-            if foreign_keys:
-                if not allow_obs_fk_import:
-                    for table in ["obs_points", "obs_lines"]:
-                        if table in foreign_keys:
-                            del foreign_keys[table]
-                if foreign_keys:
-                    self.import_foreign_keys(
-                        dbconnection,
-                        dest_table,
-                        self.temptable_name,
-                        foreign_keys,
-                        existing_columns_in_temptable,
-                    )
 
-            # Check if current table has geometry:
-            geom_columns = db_utils.get_geometry_types(
-                dest_table, dbconnection=dbconnection
+            nr_imported = self._build_and_execute_insert(
+                dbconnection,
+                dest_table,
+                existing_columns_in_dest_table,
+                existing_columns_in_temptable,
+                column_headers_types,
+                not_null_columns,
+                source_srid,
+                binary_geometry,
             )
-            sourcecols = []
-            for colname in sorted(existing_columns_in_dest_table):
-                null_replacement = db_utils.cast_null(
-                    column_headers_types[colname], dbconnection
-                )
-                if colname in geom_columns and colname in existing_columns_in_temptable:
-                    sourcecols.append(
-                        self.create_geometry_sql(
-                            colname,
-                            dest_table,
-                            dbconnection,
-                            source_srid,
-                            null_replacement,
-                            binary_geometry,
-                        )
-                    )
-                else:
-                    sourcecols.append(
-                        f"""(CASE WHEN {colname} IS NOT NULL\n    THEN CAST({colname} AS {column_headers_types[colname]}) ELSE {null_replacement} END)"""
-                    )
 
-            if dbconnection.dbtype.lower() == "postgis":
-                dest_table_with_schema = f'"{dbconnection.schema}"."{dest_table}"'
-            else:
-                dest_table_with_schema = dest_table
-
-            sql = """INSERT INTO {dest_table} ({dest_columns})\nSELECT {source_columns}\nFROM {source_table}\n"""
-            kwargs = {
-                "dest_table": dest_table_with_schema,
-                "dest_columns": ", ".join(sorted(existing_columns_in_dest_table)),
-                "source_table": self.temptable_name,
-                "source_columns": ",\n    ".join(sourcecols),
-            }
-            if not_null_columns:
-                sql += """WHERE {notnullcheck}"""
-                kwargs["notnullcheck"] = " AND ".join(
-                    [
-                        "%s IS NOT NULL" % notnullcol
-                        for notnullcol in sorted(not_null_columns)
-                    ]
-                )
-            sql = sql.format(**kwargs)
-
-            count_sql = dbconnection.sql_ident(
-                "SELECT count(*) FROM {t}",
-                t=dest_table
-                if dbconnection.dbtype != "postgis"
-                else f"{dbconnection.schema}.{dest_table}",
-            )
-            recsbefore = dbconnection.execute_and_fetchall(count_sql)[0][0]
-            # Update 2026-02-25: Use INSERT OR IGNORE for SQLite and ON CONFLICT DO NOTHING for PostgreSQL.
-            sql = db_utils.add_insert_or_ignore_to_sql(sql, dbconnection)
-            try:
-                dbconnection.execute(sql)
-            except Exception as e:
-                try:
-                    str(e)
-                except UnicodeDecodeError:
-                    common_utils.MessagebarAndLog.critical(
-                        bar_msg=QCoreApplication.translate(
-                            "midv_data_importer",
-                            "Import failed, see log message panel",
-                        ),
-                        log_msg=QCoreApplication.translate(
-                            "midv_data_importer", "Sql\n%s  failed."
-                        )
-                        % (sql),
-                        duration=999,
-                    )
-                else:
-                    common_utils.MessagebarAndLog.critical(
-                        bar_msg=QCoreApplication.translate(
-                            "midv_data_importer",
-                            "Import failed, see log message panel",
-                        ),
-                        log_msg=QCoreApplication.translate(
-                            "midv_data_importer", "Sql\n%s  failed.\nMsg:\n%s"
-                        )
-                        % (sql, str(e)),
-                        duration=999,
-                    )
-
-            recsafter = dbconnection.execute_and_fetchall(count_sql)[0][0]
-            nr_imported = recsafter - recsbefore
             nr_excluded = recsinfile - nr_imported
-
             common_utils.MessagebarAndLog.info(
                 bar_msg=QCoreApplication.translate(
                     "midv_data_importer",
@@ -410,35 +198,399 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             )
 
         except Exception:
-            # If an external dbconnection is supplied, do not close it.
-            if _dbconnection is None:
-                try:
-                    dbconnection.closedb()
-                except Exception:
-                    common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
-            else:
-                if self.temptable_name is not None:
-                    # try:
-                    dbconnection.drop_temporary_table(self.temptable_name)
-                    # except Exception:
-                    #    pass
-            common_utils.stop_waiting_cursor()
+            self._cleanup(dbconnection, _dbconnection, commit=False)
             raise
         else:
-            dbconnection.commit()
-            # If an external dbconnection is supplied, do not close it.
-            if _dbconnection is None:
-                try:
-                    dbconnection.closedb()
-                except Exception:
-                    common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
+            self._cleanup(dbconnection, _dbconnection, commit=True)
+
+    def _validate_and_connect(
+        self,
+        dest_table: str,
+        file_data: Any,
+        _dbconnection: Optional[DbConnectionManager],
+    ) -> Tuple:
+        """Set up DB connection, activate foreign keys, introspect schema, validate columns.
+
+        Returns (dbconnection, table_info, column_headers_types, primary_keys,
+                 not_null_columns, existing_columns_in_dest_table,
+                 existing_columns_in_temptable, primary_keys_for_concat).
+        """
+        if not isinstance(_dbconnection, db_utils.DbConnectionManager):
+            dbconnection = db_utils.DbConnectionManager()
+        else:
+            dbconnection = _dbconnection
+
+        db_utils.activate_foreign_keys(activated=True, dbconnection=dbconnection)
+
+        table_info = db_utils.db_tables_columns_info(
+            table=dest_table, dbconnection=dbconnection
+        )
+        if not table_info:
+            raise MidvDataImporterError(
+                QCoreApplication.translate(
+                    "midv_data_importer",
+                    "The table %s did not exist. Update the database to latest version.",
+                )
+                % dest_table
+            )
+        else:
+            table_info = table_info[dest_table]
+
+        # POINT and LINESTRING must be cast as BLOB. So change the type to BLOB.
+        column_headers_types = db_utils.change_cast_type_for_geometry_columns(
+            dbconnection, table_info, dest_table
+        )
+        primary_keys = [
+            row[1] for row in table_info if int(row[5])
+        ]  # Not null columns are allowed if they have a default value.
+        not_null_columns = [
+            row[1] for row in table_info if int(row[3]) and row[4] is None
+        ]
+        # Only use the columns that exist in the goal table.
+        existing_columns_in_dest_table = [
+            col for col in file_data[0] if col in column_headers_types
+        ]
+        existing_columns_in_temptable = file_data[0]
+        missing_columns = [
+            column
+            for column in not_null_columns
+            if column not in existing_columns_in_dest_table
+        ]
+
+        if missing_columns:
+            raise MidvDataImporterError(
+                QCoreApplication.translate(
+                    "midv_data_importer",
+                    "Required columns %s are missing for table %s",
+                )
+                % (", ".join(missing_columns), dest_table)
+            )
+
+        primary_keys_for_concat = [
+            pk for pk in primary_keys if pk in existing_columns_in_temptable
+        ]
+
+        return (
+            dbconnection,
+            table_info,
+            column_headers_types,
+            primary_keys,
+            not_null_columns,
+            existing_columns_in_dest_table,
+            existing_columns_in_temptable,
+            primary_keys_for_concat,
+        )
+
+    def _remove_duplicate_datetimes(
+        self,
+        dbconnection: DbConnectionManager,
+        dest_table: str,
+        primary_keys: List[str],
+        all_rownumbers: Tuple,
+        remaining_rownumbers: Tuple,
+        get_remaining_rownumbers: Callable,
+        get_removed_rownumbers: Callable,
+        get_row_subset: Callable,
+        import_messages: List[str],
+    ) -> Tuple:
+        """Delete rows from the temp table that have duplicate date_times.
+
+        Returns (remaining_rownumbers, import_messages), where remaining_rownumbers
+        is None if all rows were removed (caller should abort).
+        """
+        if "date_time" not in primary_keys:
+            return remaining_rownumbers, import_messages
+
+        self.delete_existing_date_times_from_temptable(
+            primary_keys, dest_table, dbconnection
+        )
+        remaining_rownumbers = get_remaining_rownumbers()
+        common_utils.MessagebarAndLog.info(
+            log_msg=f"remaining_rownumbers {remaining_rownumbers=}"
+        )
+        if not remaining_rownumbers:
+            common_utils.MessagebarAndLog.warning(
+                bar_msg=QCoreApplication.translate(
+                    "midv_data_importer",
+                    "Nothing imported to %s after deleting duplicate date_times",
+                )
+                % dest_table
+            )
+            return None, import_messages
+
+        removed_rownumbers = get_removed_rownumbers(
+            all_rownumbers, remaining_rownumbers
+        )
+        if removed_rownumbers:
+            removed_rows = get_row_subset(removed_rownumbers)
+            common_utils.MessagebarAndLog.info(
+                log_msg=QCoreApplication.translate(
+                    "midv_data_importer",
+                    "Skipped %s rows with duplicate date_time but of different date format (yyyy-mm-dd hh:mm or yyyy-mm-dd hh:mm:ss). Subset of skipped rows:\n%s",
+                )
+                % (str(len(removed_rownumbers)), "\n".join(removed_rows))
+            )
+            import_messages.append(
+                QCoreApplication.translate(
+                    "midv_data_importer",
+                    "Skipped %s rows with duplicate date_time.",
+                )
+                % str(len(removed_rownumbers))
+            )
+
+        return remaining_rownumbers, import_messages
+
+    def _handle_special_table_cases(
+        self,
+        dbconnection: DbConnectionManager,
+        dest_table: str,
+        existing_columns_in_dest_table: List[str],
+        remaining_rownumbers: Tuple,
+        get_remaining_rownumbers: Callable,
+        get_removed_rownumbers: Callable,
+        get_row_subset: Callable,
+        import_messages: List[str],
+    ) -> Tuple:
+        """Apply table-specific pre-import transformations.
+
+        Handles stratigraphy validation and w_qual_field unit normalization.
+        Returns (remaining_rownumbers, import_messages), where remaining_rownumbers
+        is None if all rows were removed (caller should abort).
+        """
+        if dest_table == "stratigraphy":
+            self.check_and_delete_stratigraphy(
+                existing_columns_in_dest_table, dbconnection
+            )
+            remaining_rownumbers_after_stratigraphy = get_remaining_rownumbers()
+            if not remaining_rownumbers_after_stratigraphy:
+                common_utils.MessagebarAndLog.warning(
+                    bar_msg=QCoreApplication.translate(
+                        "midv_data_importer",
+                        "Nothing imported to %s after deleting stratigraphy rows with errors.",
+                    )
+                    % dest_table
+                )
+                return None, import_messages
+
+            removed_rownumbers = get_removed_rownumbers(
+                remaining_rownumbers, remaining_rownumbers_after_stratigraphy
+            )
+            if removed_rownumbers:
+                removed_rows = get_row_subset(removed_rownumbers)
+                common_utils.MessagebarAndLog.info(
+                    log_msg=QCoreApplication.translate(
+                        "midv_data_importer",
+                        "Skipped %s rows due to problems with stratigraphy. Subset of skipped rows:\n%s",
+                    )
+                    % (str(len(removed_rownumbers)), "\n".join(removed_rows))
+                )
+                import_messages.append(
+                    QCoreApplication.translate(
+                        "midv_data_importer",
+                        "Skipped %s rows due to problems with stratigraphy.",
+                    )
+                    % str(len(removed_rownumbers))
+                )
+            remaining_rownumbers = remaining_rownumbers_after_stratigraphy
+
+        elif dest_table == "w_qual_field":
+            self.convert_null_unit_to_empty_string(
+                self.temptable_name, "unit", dbconnection
+            )
+
+        return remaining_rownumbers, import_messages
+
+    def _ask_user_to_proceed(
+        self,
+        remaining_rownumbers: Tuple,
+        all_rownumbers: Tuple,
+        import_messages: List[str],
+    ):
+        """Assemble the confirmation message and ask the user whether to proceed.
+
+        Raises UserInterruptError if the user chooses not to import.
+        """
+        common_utils.MessagebarAndLog.info(
+            log_msg=f"{remaining_rownumbers=} {all_rownumbers=}"
+        )
+        if len(remaining_rownumbers) == len(all_rownumbers):
+            if self.foreign_keys_import_question:
+                import_messages = []
             else:
-                if self.temptable_name is not None:
-                    # try:
-                    dbconnection.drop_temporary_table(self.temptable_name)
-                    # except Exception:
-                    #    pass
+                import_messages.append(
+                    QCoreApplication.translate(
+                        "midv_data_importer", "Proceed with import?"
+                    )
+                )
+                # Only skip recurring queries for imports without errors.
+                self.foreign_keys_import_question = 1
+        else:
+            import_messages.append(
+                QCoreApplication.translate(
+                    "midv_data_importer",
+                    """There are %s out of %s number of rows to import (see log for more info about removed rows).\n\nProceed with import?""",
+                )
+                % (str(len(remaining_rownumbers)), str(len(all_rownumbers)))
+            )
+
+        if import_messages:
+            stop_question = common_utils.Askuser(
+                "YesNo",
+                "\n".join(import_messages),
+                QCoreApplication.translate("midv_data_importer", "Info"),
+            )
+            if stop_question.result == 0:  # if the user wants to abort
+                raise UserInterruptError()
+
+    def _handle_foreign_keys(
+        self,
+        dbconnection: DbConnectionManager,
+        dest_table: str,
+        existing_columns_in_temptable: List[str],
+        allow_obs_fk_import: bool,
+    ):
+        """Detect and import foreign key rows for the destination table."""
+        foreign_keys = db_utils.get_foreign_keys(dest_table, dbconnection=dbconnection)
+        if foreign_keys:
+            if not allow_obs_fk_import:
+                for table in ["obs_points", "obs_lines"]:
+                    if table in foreign_keys:
+                        del foreign_keys[table]
+            if foreign_keys:
+                self.import_foreign_keys(
+                    dbconnection,
+                    dest_table,
+                    self.temptable_name,
+                    foreign_keys,
+                    existing_columns_in_temptable,
+                )
+
+    def _build_and_execute_insert(
+        self,
+        dbconnection: DbConnectionManager,
+        dest_table: str,
+        existing_columns_in_dest_table: List[str],
+        existing_columns_in_temptable: List[str],
+        column_headers_types: Dict[str, str],
+        not_null_columns: List[str],
+        source_srid: Optional[int],
+        binary_geometry: bool,
+    ) -> int:
+        """Build and execute the INSERT … SELECT from the temp table to the destination.
+
+        Returns the number of rows actually inserted.
+        """
+        # Check if current table has geometry:
+        geom_columns = db_utils.get_geometry_types(
+            dest_table, dbconnection=dbconnection
+        )
+        sourcecols = []
+        for colname in sorted(existing_columns_in_dest_table):
+            null_replacement = db_utils.cast_null(
+                column_headers_types[colname], dbconnection
+            )
+            if colname in geom_columns and colname in existing_columns_in_temptable:
+                sourcecols.append(
+                    self.create_geometry_sql(
+                        colname,
+                        dest_table,
+                        dbconnection,
+                        source_srid,
+                        null_replacement,
+                        binary_geometry,
+                    )
+                )
+            else:
+                sourcecols.append(
+                    f"""(CASE WHEN {colname} IS NOT NULL\n    THEN CAST({colname} AS {column_headers_types[colname]}) ELSE {null_replacement} END)"""
+                )
+
+        if dbconnection.dbtype.lower() == "postgis":
+            dest_table_with_schema = f'"{dbconnection.schema}"."{dest_table}"'
+        else:
+            dest_table_with_schema = dest_table
+
+        sql = """INSERT INTO {dest_table} ({dest_columns})\nSELECT {source_columns}\nFROM {source_table}\n"""
+        kwargs = {
+            "dest_table": dest_table_with_schema,
+            "dest_columns": ", ".join(sorted(existing_columns_in_dest_table)),
+            "source_table": self.temptable_name,
+            "source_columns": ",\n    ".join(sourcecols),
+        }
+        if not_null_columns:
+            sql += """WHERE {notnullcheck}"""
+            kwargs["notnullcheck"] = " AND ".join(
+                [
+                    "%s IS NOT NULL" % notnullcol
+                    for notnullcol in sorted(not_null_columns)
+                ]
+            )
+        sql = sql.format(**kwargs)
+
+        count_sql = dbconnection.sql_ident(
+            "SELECT count(*) FROM {t}",
+            t=dest_table
+            if dbconnection.dbtype != "postgis"
+            else f"{dbconnection.schema}.{dest_table}",
+        )
+        recsbefore = dbconnection.execute_and_fetchall(count_sql)[0][0]
+        # Update 2026-02-25: Use INSERT OR IGNORE for SQLite and ON CONFLICT DO NOTHING for PostgreSQL.
+        sql = db_utils.add_insert_or_ignore_to_sql(sql, dbconnection)
+        try:
+            dbconnection.execute(sql)
+        except Exception as e:
+            try:
+                str(e)
+            except UnicodeDecodeError:
+                common_utils.MessagebarAndLog.critical(
+                    bar_msg=QCoreApplication.translate(
+                        "midv_data_importer",
+                        "Import failed, see log message panel",
+                    ),
+                    log_msg=QCoreApplication.translate(
+                        "midv_data_importer", "Sql\n%s  failed."
+                    )
+                    % (sql),
+                    duration=999,
+                )
+            else:
+                common_utils.MessagebarAndLog.critical(
+                    bar_msg=QCoreApplication.translate(
+                        "midv_data_importer",
+                        "Import failed, see log message panel",
+                    ),
+                    log_msg=QCoreApplication.translate(
+                        "midv_data_importer", "Sql\n%s  failed.\nMsg:\n%s"
+                    )
+                    % (sql, str(e)),
+                    duration=999,
+                )
+
+        recsafter = dbconnection.execute_and_fetchall(count_sql)[0][0]
+        return recsafter - recsbefore
+
+    def _cleanup(
+        self,
+        dbconnection: Optional[DbConnectionManager],
+        _dbconnection: Optional[DbConnectionManager],
+        commit: bool,
+    ):
+        """Commit or roll back and release resources after import succeeds or fails."""
+        if dbconnection is None:
             common_utils.stop_waiting_cursor()
+            return
+        if commit:
+            dbconnection.commit()
+        # If an external dbconnection is supplied, do not close it.
+        if _dbconnection is None:
+            try:
+                dbconnection.closedb()
+            except Exception:
+                common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
+        else:
+            if self.temptable_name is not None:
+                dbconnection.drop_temporary_table(self.temptable_name)
+        common_utils.stop_waiting_cursor()
 
     def list_to_table(
         self,

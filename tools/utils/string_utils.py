@@ -51,6 +51,9 @@ def returnunicode(
         return anything
     if anything is None:
         return ""
+    # Handle QGIS NULL (PyQt5.QtCore.QVariant null instance, not Python None)
+    if hasattr(anything, "isNull") and anything.isNull():
+        return ""
     if isinstance(anything, bytes):
         for charset in ["utf-8", "cp1252", "iso-8859-1", "ascii"]:
             try:
@@ -63,8 +66,8 @@ def returnunicode(
             decoded = [returnunicode(x, keep_containers) for x in anything]
         elif isinstance(anything, tuple):
             decoded = tuple([returnunicode(x, keep_containers) for x in anything])
-        elif isinstance(anything, dict):
-            decoded = dict(
+        elif isinstance(anything, OrderedDict):
+            decoded = OrderedDict(
                 [
                     (
                         returnunicode(k, keep_containers),
@@ -73,8 +76,8 @@ def returnunicode(
                     for k, v in anything.items()
                 ]
             )
-        else:  # OrderedDict
-            decoded = OrderedDict(
+        elif isinstance(anything, dict):
+            decoded = dict(
                 [
                     (
                         returnunicode(k, keep_containers),

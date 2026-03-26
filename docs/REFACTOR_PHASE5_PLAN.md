@@ -7,8 +7,8 @@ passing and a commit.
 ## Task Index
 
 - [x] **Task 1**: Delete dead code (16 dead methods, unused imports, legacy comments)
-- [ ] **Task 2**: Replace debug `print()` with `logging.debug()` (30+ calls)
-- [ ] **Task 3**: Simplify `returnunicode`/`ru` and remove no-op calls (183 occurrences)
+- [x] **Task 2**: Replace debug `print()` with `logging.debug()` (30+ calls)
+- [x] **Task 3**: Simplify `returnunicode`/`ru` and remove no-op calls (183 occurrences)
 - [ ] **Task 4**: Move `dbtype` branches to backend methods (19 string checks)
 - [ ] **Task 5**: Rename camelCase methods to snake_case (21 methods)
 - [ ] **Task 6**: Fix QMainWindow/QDialog init mismatch (9 classes)

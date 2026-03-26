@@ -140,13 +140,13 @@ class SQLiteBackend(Backend):
             try:
                 self._cursor.execute(sql)
             except Exception as e:
-                _log_execute_error(sql, None, e)
+                Backend.log_execute_error(sql, None, e)
                 raise
         else:
             try:
                 self._cursor.execute(sql, list(args))
             except Exception as e:
-                _log_execute_error(sql, args, e)
+                Backend.log_execute_error(sql, args, e)
                 raise
 
     def execute_and_fetchall(
@@ -263,16 +263,74 @@ class SQLiteBackend(Backend):
     def cast_null(self, data_type: str) -> str:
         return "NULL"
 
+    def get_srid_name(self, srid: int) -> str:
+        return self.execute_and_fetchall(
+            "SELECT ref_sys_name FROM spatial_ref_sys WHERE srid = ?",
+            (srid,),
+        )[0][0]
 
-def _log_execute_error(sql: str, args: Any, e: Exception) -> None:
-    if args is None:
-        textstring = QCoreApplication.translate(
-            "sql_load_fr_db",
-            """DB error!\n SQL causing this error:%s\nMsg:\n%s""",
-        ) % (ru(sql), str(e))
-    else:
-        textstring = QCoreApplication.translate(
-            "sql_load_fr_db",
-            """DB error!\n SQL causing this error:%s\nusing args %s\nMsg:\n%s""",
-        ) % (ru(sql), ru(args), str(e))
-    MessagebarAndLog.warning(bar_msg=sql_failed_msg(), log_msg=textstring)
+    def latlon_sql(self) -> str:
+        return "SELECT obsid, Y(Transform(geometry, 4326)) as lat, X(Transform(geometry, 4326)) as lon from obs_points"
+
+    def rowid_string(self) -> str:
+        return "ROWID"
+
+    def numeric_test_sql(self, col_ident: str) -> str:
+        return f"(typeof({col_ident})=typeof(0.01) OR typeof({col_ident})=typeof(1))"
+
+    def not_null_sql(self, col_ident: str, data_type: Optional[str] = None) -> str:
+        return f"{col_ident} IS NOT NULL AND {col_ident} !='' "
+
+    def is_distinct_from(self) -> str:
+        return "IS NOT"
+
+    def is_not_distinct_from(self) -> str:
+        return "IS"
+
+    def numeric_datatypes(self) -> list:
+        return ["integer", "double"]
+
+    def activate_foreign_keys(self, activated: bool) -> None:
+        if activated:
+            self.execute("PRAGMA foreign_keys = ON")
+        else:
+            self.execute("PRAGMA foreign_keys = OFF")
+
+    def median_sql(self, col_ident: str, table_ident: str, ph: str) -> tuple:
+        sql = (
+            f"SELECT AVG({col_ident}) "
+            f"FROM (SELECT {col_ident} "
+            f"      FROM {table_ident} "
+            f"      WHERE obsid = {ph} "
+            f"      ORDER BY {col_ident} "
+            f"      LIMIT 2 - (SELECT COUNT(*) FROM {table_ident} WHERE obsid = {ph}) % 2 "
+            f"      OFFSET (SELECT (COUNT(*) - 1) / 2 FROM {table_ident} WHERE obsid = {ph}))"
+        )
+        return sql, 3
+
+    def backup(self, dbconnection: Any) -> None:
+        import datetime
+        import zipfile
+
+        from midvatten.tools.utils.common_utils import MessagebarAndLog
+        from qgis.PyQt.QtCore import QCoreApplication
+
+        try:
+            compression = zipfile.ZIP_DEFLATED
+        except Exception:
+            compression = zipfile.ZIP_STORED
+        self._cursor.execute("begin immediate")
+        bkupname = (
+            self._dbpath + datetime.datetime.now().strftime("%Y%m%dT%H%M") + ".zip"
+        )
+        zf = zipfile.ZipFile(bkupname, mode="w")
+        zf.write(self._dbpath, compress_type=compression)
+        zf.close()
+        self._conn.rollback()
+        MessagebarAndLog.info(
+            bar_msg=QCoreApplication.translate(
+                "backup_db", "Database backup was written to %s "
+            )
+            % bkupname,
+            duration=15,
+        )

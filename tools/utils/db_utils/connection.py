@@ -195,3 +195,51 @@ class DbConnectionManager:
 
     def drop_view(self, view_name: str) -> None:
         self._backend.drop_view(view_name)
+
+    def add_insert_or_ignore_to_sql(self, sql: str) -> str:
+        return self._backend.add_insert_or_ignore_to_sql(sql)
+
+    def cast_date_time_as_epoch(self, date_time: Optional[str] = None) -> str:
+        return self._backend.cast_date_time_as_epoch(date_time)
+
+    def cast_null(self, data_type: str) -> str:
+        return self._backend.cast_null(data_type)
+
+    def get_srid_name(self, srid: int) -> str:
+        return self._backend.get_srid_name(srid)
+
+    def latlon_sql(self) -> str:
+        return self._backend.latlon_sql()
+
+    def rowid_string(self) -> str:
+        return self._backend.rowid_string()
+
+    def numeric_test_sql(self, col_ident: str) -> str:
+        return self._backend.numeric_test_sql(col_ident)
+
+    def not_null_sql(self, col_ident: str, data_type: Optional[str] = None) -> str:
+        return self._backend.not_null_sql(col_ident, data_type)
+
+    def is_distinct_from(self) -> str:
+        return self._backend.is_distinct_from()
+
+    def is_not_distinct_from(self) -> str:
+        return self._backend.is_not_distinct_from()
+
+    def is_postgresql(self) -> bool:
+        """Return True if the backend is PostgreSQL (PostGIS)."""
+        from midvatten.tools.utils.db_utils.backends.postgresql import PostgreSQLBackend
+
+        return isinstance(self._backend, PostgreSQLBackend)
+
+    def numeric_datatypes(self) -> list:
+        return self._backend.numeric_datatypes()
+
+    def activate_foreign_keys(self, activated: bool) -> None:
+        self._backend.activate_foreign_keys(activated)
+
+    def median_sql(self, col_ident: str, table_ident: str, ph: str) -> tuple:
+        return self._backend.median_sql(col_ident, table_ident, ph)
+
+    def backup(self) -> None:
+        self._backend.backup(self)

@@ -58,20 +58,6 @@ def _clear_ssl_temp_certs_if_any(connection_info: str) -> None:
             remove_cert(path)
 
 
-def _log_execute_error(sql: str, args: Any, e: Exception) -> None:
-    if args is None:
-        textstring = QCoreApplication.translate(
-            "sql_load_fr_db",
-            """DB error!\n SQL causing this error:%s\nMsg:\n%s""",
-        ) % (ru(sql), str(e))
-    else:
-        textstring = QCoreApplication.translate(
-            "sql_load_fr_db",
-            """DB error!\n SQL causing this error:%s\nusing args %s\nMsg:\n%s""",
-        ) % (ru(sql), ru(args), str(e))
-    MessagebarAndLog.warning(bar_msg=sql_failed_msg(), log_msg=textstring)
-
-
 class PostgreSQLBackend(Backend):
     """
     PostgreSQL (PostGIS) backend. dbtype is 'postgis' for settings compatibility.
@@ -166,13 +152,13 @@ class PostgreSQLBackend(Backend):
             try:
                 self._cursor.execute(sql)
             except Exception as e:
-                _log_execute_error(sql, None, e)
+                Backend.log_execute_error(sql, None, e)
                 raise
         else:
             try:
                 self._cursor.execute(sql, list(args))
             except Exception as e:
-                _log_execute_error(sql, args, e)
+                Backend.log_execute_error(sql, args, e)
                 raise
 
     def execute_and_fetchall(
@@ -293,3 +279,70 @@ class PostgreSQLBackend(Backend):
                 f"cast_null: data_type {data_type!r} not in allowed list"
             )
         return "NULL::" + data_type
+
+    def get_srid_name(self, srid: int) -> str:
+        import re
+
+        srtext = self.execute_and_fetchall(
+            "SELECT srtext FROM spatial_ref_sys WHERE srid = %s",
+            (srid,),
+        )[0][0]
+        # WKT starts with PROJCS["name", or GEOGCS["name", – use first quoted part as name
+        match = re.search(r'^(?:PROJCS|GEOGCS)\["([^"]+)"', srtext)
+        return match.group(1) if match else srtext
+
+    def latlon_sql(self) -> str:
+        return "SELECT obsid, ST_Y(ST_Transform(geometry, 4326)) as lat, ST_X(ST_Transform(geometry, 4326)) as lon from obs_points"
+
+    def rowid_string(self) -> str:
+        return "ctid"
+
+    def numeric_test_sql(self, col_ident: str) -> str:
+        from midvatten.tools.utils.db_utils.helpers import postgresql_numeric_data_types
+
+        type_list = ", ".join("'" + dt + "'" for dt in postgresql_numeric_data_types())
+        return f"pg_typeof({col_ident}) in ({type_list})"
+
+    def not_null_sql(self, col_ident: str, data_type: Optional[str] = None) -> str:
+        from midvatten.tools.utils.db_utils.helpers import postgresql_numeric_data_types
+
+        if data_type is not None and data_type in postgresql_numeric_data_types():
+            return f"{col_ident} IS NOT NULL"
+        return f"{col_ident} IS NOT NULL AND {col_ident} !='' "
+
+    def is_distinct_from(self) -> str:
+        return "IS DISTINCT FROM"
+
+    def is_not_distinct_from(self) -> str:
+        return "IS NOT DISTINCT FROM"
+
+    def numeric_datatypes(self) -> list:
+        return [
+            "smallint",
+            "integer",
+            "bigint",
+            "decimal",
+            "numeric",
+            "real",
+            "double precision",
+        ]
+
+    def activate_foreign_keys(self, activated: bool) -> None:
+        # PostgreSQL enforces foreign keys natively; this is a no-op.
+        pass
+
+    def median_sql(self, col_ident: str, table_ident: str, ph: str) -> tuple:
+        sql = f"SELECT median({col_ident}) FROM {table_ident} t1 WHERE obsid = {ph};"
+        return sql, 1
+
+    def backup(self, dbconnection: Any) -> None:
+        from midvatten.tools.utils.common_utils import MessagebarAndLog
+        from qgis.PyQt.QtCore import QCoreApplication
+
+        MessagebarAndLog.info(
+            bar_msg=QCoreApplication.translate(
+                "backup_db",
+                "Backup of PostGIS database not supported yet!",
+            ),
+            duration=15,
+        )

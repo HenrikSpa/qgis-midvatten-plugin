@@ -3,15 +3,12 @@ Higher-level helpers: cast_date_time_as_epoch, cast_null, backup_db, get_srid_na
 """
 
 import ast
-import datetime
 import os
 import re
 import traceback
-import zipfile
 from typing import Any, Optional
 
 import psycopg2
-import qgis.core
 from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools.utils.common_utils import (
@@ -33,41 +30,12 @@ from midvatten.tools.utils.db_utils.schema import (
 
 def add_insert_or_ignore_to_sql(sql: str, dbconnection: DbConnectionManager) -> str:
     """Return SQL with INSERT OR IGNORE (SQLite) or ON CONFLICT DO NOTHING (PG)."""
-    return dbconnection._backend.add_insert_or_ignore_to_sql(sql)
+    return dbconnection.add_insert_or_ignore_to_sql(sql)
 
 
 def backup_db(dbconnection: Optional[DbConnectionManager] = None) -> None:
-    try:
-        compression = zipfile.ZIP_DEFLATED
-    except Exception:
-        compression = zipfile.ZIP_STORED
     with use_or_create_connection(dbconnection) as dbconnection:
-        if dbconnection.dbtype == "spatialite":
-            dbconnection.cursor.execute("begin immediate")
-            bkupname = (
-                dbconnection.dbpath
-                + datetime.datetime.now().strftime("%Y%m%dT%H%M")
-                + ".zip"
-            )
-            zf = zipfile.ZipFile(bkupname, mode="w")
-            zf.write(dbconnection.dbpath, compress_type=compression)
-            zf.close()
-            dbconnection.conn.rollback()
-            MessagebarAndLog.info(
-                bar_msg=QCoreApplication.translate(
-                    "backup_db", "Database backup was written to %s "
-                )
-                % bkupname,
-                duration=15,
-            )
-        else:
-            MessagebarAndLog.info(
-                bar_msg=QCoreApplication.translate(
-                    "backup_db",
-                    "Backup of PostGIS database not supported yet!",
-                ),
-                duration=15,
-            )
+        dbconnection.backup()
 
 
 def cast_date_time_as_epoch(
@@ -75,7 +43,7 @@ def cast_date_time_as_epoch(
     date_time: Optional[str] = None,
 ) -> str:
     with use_or_create_connection(dbconnection) as dbconnection:
-        return dbconnection._backend.cast_date_time_as_epoch(date_time)
+        return dbconnection.cast_date_time_as_epoch(date_time)
 
 
 def cast_null(
@@ -83,7 +51,7 @@ def cast_null(
     dbconnection: Optional[DbConnectionManager] = None,
 ) -> str:
     with use_or_create_connection(dbconnection) as dbconnection:
-        return dbconnection._backend.cast_null(data_type)
+        return dbconnection.cast_null(data_type)
 
 
 def get_dbtype(dbtype: str) -> str:
@@ -98,21 +66,7 @@ def get_srid_name(
     dbconnection: Optional[DbConnectionManager] = None,
 ) -> str:
     with use_or_create_connection(dbconnection) as dbconnection:
-        if dbconnection.dbtype == "spatialite":
-            ref_sys_name = dbconnection.execute_and_fetchall(
-                "SELECT ref_sys_name FROM spatial_ref_sys WHERE srid = ?",
-                (srid,),
-            )[0][0]
-        else:
-            # PostGIS spatial_ref_sys uses srtext (WKT); extract short name (caller appends ", EPSG:srid")
-            srtext = dbconnection.execute_and_fetchall(
-                "SELECT srtext FROM spatial_ref_sys WHERE srid = %s",
-                (srid,),
-            )[0][0]
-            # WKT starts with PROJCS["name", or GEOGCS["name", – use first quoted part as name
-            match = re.search(r'^(?:PROJCS|GEOGCS)\["([^"]+)"', srtext)
-            ref_sys_name = match.group(1) if match else srtext
-        return ref_sys_name
+        return dbconnection.get_srid_name(srid)
 
 
 def get_spatialite_db_path_from_dbsettings_string(db_settings: str) -> str:
@@ -149,15 +103,11 @@ def get_spatialite_db_path_from_dbsettings_string(db_settings: str) -> str:
 
 
 def is_distinct_from(dbconnection: DbConnectionManager) -> str:
-    if dbconnection.dbtype == "postgis":
-        return "IS DISTINCT FROM"
-    return "IS NOT"
+    return dbconnection.is_distinct_from()
 
 
 def is_not_distinct_from(dbconnection: DbConnectionManager) -> str:
-    if dbconnection.dbtype == "postgis":
-        return "IS NOT DISTINCT FROM"
-    return "IS"
+    return dbconnection.is_not_distinct_from()
 
 
 def test_not_null_and_not_empty_string(
@@ -167,19 +117,13 @@ def test_not_null_and_not_empty_string(
 ) -> str:
     with use_or_create_connection(dbconnection) as dbconnection:
         col_ident = dbconnection.ident(column)
-        if dbconnection.dbtype == "spatialite":
-            return f"{col_ident} IS NOT NULL AND {col_ident} !='' "
         table_info = [
             col
             for col in get_table_info(table, dbconnection)
             if col and col[1] == column
         ]
-        if not table_info:
-            return f"{col_ident} IS NOT NULL AND {col_ident} !='' "
-        data_type = table_info[0][2]
-        if data_type in postgresql_numeric_data_types():
-            return f"{col_ident} IS NOT NULL"
-        return f"{col_ident} IS NOT NULL AND {col_ident} !='' "
+        data_type = table_info[0][2] if table_info else None
+        return dbconnection.not_null_sql(col_ident, data_type)
 
 
 def postgresql_numeric_data_types() -> list:
@@ -228,10 +172,7 @@ def get_latlon_for_all_obsids(
     dbconnection: Optional[DbConnectionManager] = None,
 ) -> dict:
     with use_or_create_connection(dbconnection) as dbconnection:
-        if dbconnection.dbtype == "spatialite":
-            sql = "SELECT obsid, Y(Transform(geometry, 4326)) as lat, X(Transform(geometry, 4326)) as lon from obs_points"
-        else:
-            sql = "SELECT obsid, ST_Y(ST_Transform(geometry, 4326)) as lat, ST_X(ST_Transform(geometry, 4326)) as lon from obs_points"
+        sql = dbconnection.latlon_sql()
         latlon_dict = get_sql_result_as_dict(sql, dbconnection=dbconnection)[1]
         return dict((obsid, lat_lon[0]) for obsid, lat_lon in latlon_dict.items())
 
@@ -319,9 +260,7 @@ def rowid_string(
     dbconnection: Optional[DbConnectionManager] = None,
 ) -> str:
     with use_or_create_connection(dbconnection) as dbconnection:
-        if dbconnection.dbtype == "spatialite":
-            return "ROWID"
-        return "ctid"
+        return dbconnection.rowid_string()
 
 
 def delete_duplicate_values(
@@ -329,10 +268,7 @@ def delete_duplicate_values(
     tablename: str,
     primary_keys: list,
 ) -> None:
-    if dbconnection.dbtype == "spatialite":
-        rowid = "rowid"
-    else:
-        rowid = "ctid"
+    rowid = dbconnection.rowid_string().lower()
     table_ident = dbconnection.ident(tablename)
     rowid_ident = dbconnection.ident(rowid)
     pk_idents = ", ".join(dbconnection.ident(pk) for pk in primary_keys)
@@ -348,11 +284,7 @@ def activate_foreign_keys(
     dbconnection: Optional[DbConnectionManager] = None,
 ) -> None:
     with use_or_create_connection(dbconnection) as dbconnection:
-        if dbconnection.dbtype == "spatialite":
-            if activated:
-                dbconnection.execute("PRAGMA foreign_keys = ON")
-            else:
-                dbconnection.execute("PRAGMA foreign_keys = OFF")
+        dbconnection.activate_foreign_keys(activated)
 
 
 def test_if_numeric(
@@ -361,21 +293,14 @@ def test_if_numeric(
 ) -> str:
     with use_or_create_connection(dbconnection) as dbconnection:
         col_ident = dbconnection.ident(column)
-        if dbconnection.dbtype == "spatialite":
-            return (
-                f"(typeof({col_ident})=typeof(0.01) OR typeof({col_ident})=typeof(1))"
-            )
-        type_list = ", ".join("'" + dt + "'" for dt in postgresql_numeric_data_types())
-        return f"pg_typeof({col_ident}) in ({type_list})"
+        return dbconnection.numeric_test_sql(col_ident)
 
 
 def numeric_datatypes(
     dbconnection: Optional[DbConnectionManager] = None,
 ) -> list:
     with use_or_create_connection(dbconnection) as dbconnection:
-        if dbconnection.dbtype == "spatialite":
-            return sqlite_numeric_data_types()
-        return postgresql_numeric_data_types()
+        return dbconnection.numeric_datatypes()
 
 
 def calculate_median_value(
@@ -386,38 +311,23 @@ def calculate_median_value(
 ) -> Optional[float]:
     sql = ""
     with use_or_create_connection(dbconnection) as dbconnection:
-        if dbconnection.dbtype == "spatialite":
-            ph = dbconnection.placeholder()
-            col_ident = dbconnection.ident(column)
-            table_ident = dbconnection.ident(table)
-            sql = (
-                f"SELECT AVG({col_ident}) "
-                f"FROM (SELECT {col_ident} "
-                f"      FROM {table_ident} "
-                f"      WHERE obsid = {ph} "
-                f"      ORDER BY {col_ident} "
-                f"      LIMIT 2 - (SELECT COUNT(*) FROM {table_ident} WHERE obsid = {ph}) % 2 "
-                f"      OFFSET (SELECT (COUNT(*) - 1) / 2 FROM {table_ident} WHERE obsid = {ph}))"
-            )
-            connection_ok, median_value = sql_load_fr_db(
-                sql, dbconnection=dbconnection, execute_args=(obsid, obsid, obsid)
-            )
-        else:
-            ph = dbconnection.placeholder()
-            col_ident = dbconnection.ident(column)
-            table_ident = dbconnection.ident(table)
+        ph = dbconnection.placeholder()
+        col_ident = dbconnection.ident(column)
+        table_ident = dbconnection.ident(table)
+        sql, arg_count = dbconnection.median_sql(col_ident, table_ident, ph)
+        # PostgreSQL's median aggregate requires at least one non-null value to exist
+        # (the AVG-based subquery SQLite uses handles empty sets natively).
+        if arg_count == 1:
             if not sql_load_fr_db(
                 f"SELECT {col_ident} FROM {table_ident} WHERE obsid = {ph} AND {col_ident} IS NOT NULL LIMIT 1",
                 dbconnection,
                 execute_args=(obsid,),
             )[1]:
                 return None
-            sql = (
-                f"SELECT median({col_ident}) FROM {table_ident} t1 WHERE obsid = {ph};"
-            )
-            connection_ok, median_value = sql_load_fr_db(
-                sql, dbconnection, execute_args=(obsid,)
-            )
+        execute_args = tuple([obsid] * arg_count)
+        connection_ok, median_value = sql_load_fr_db(
+            sql, dbconnection=dbconnection, execute_args=execute_args
+        )
         try:
             return median_value[0][0] if median_value else None
         except (IndexError, TypeError):
@@ -438,10 +348,8 @@ def delete_srids(
     execute_able_object: Any,
     keep_epsg_code: str,
 ) -> None:
-    from midvatten.tools.utils.db_utils.connection import DbConnectionManager
-
     if isinstance(execute_able_object, DbConnectionManager):
-        if execute_able_object.dbtype != "spatialite":
+        if execute_able_object.is_postgresql():
             return None
     ph = (
         execute_able_object.placeholder()
@@ -468,7 +376,7 @@ def delete_srids(
 
 
 def export_bytea_as_bytes(dbconnection: DbConnectionManager) -> None:
-    if dbconnection.dbtype == "spatialite":
+    if not dbconnection.is_postgresql():
         return
 
     def bytea2bytes(value: Any, cur: Any) -> Any:

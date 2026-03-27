@@ -551,6 +551,7 @@ class ImportTableChooser(VRowEntry):
         self.tables_columns = tables_columns
         self.file_header = file_header
         self.columns = []
+        self.grid = None
         self.numeric_datatypes = db_utils.numeric_datatypes()
 
         chooser = RowEntry()
@@ -642,11 +643,9 @@ class ImportTableChooser(VRowEntry):
         if file_header is None:
             return None
 
-        try:
+        if self.grid is not None:
             self.layout.removeWidget(self.grid.widget)
             self.grid.widget.close()
-        except Exception:
-            common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
 
         self.columns = []
 

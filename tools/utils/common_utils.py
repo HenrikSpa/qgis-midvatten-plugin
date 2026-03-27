@@ -1,6 +1,6 @@
 """
 /***************************************************************************
- This part of the Midvatten plugin handles dates.
+ Utilities that doesn't fit anywhere else.
                              -------------------
         begin                : 2016-03-09
         copyright            : (C) 2016 by HenrikSpa

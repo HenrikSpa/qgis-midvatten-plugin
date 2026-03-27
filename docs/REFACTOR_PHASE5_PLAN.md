@@ -15,7 +15,7 @@ passing and a commit.
 - [x] **Task 7**: Decompose `general_import()` (421-line monolith)
 - [x] **Task 8**: Migrate callers off `common_utils` re-exports
 - [x] **Task 9**: Fix remaining style issues (mutable defaults, `== None`, etc.)
-- [ ] **Task 10**: Decompose `initGui()` in `midvatten_plugin.py` (381 lines)
+- [x] **Task 10**: Decompose `initGui()` in `midvatten_plugin.py` (381 lines)
 
 ## Prerequisites
 

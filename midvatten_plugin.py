@@ -136,8 +136,14 @@ class Midvatten:
 
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
+        self._setup_menu()
+        self._create_actions()
+        self._build_toolbar()
+        self._build_menus()
+        self._connect_signals()
 
-        # Check if the menu exists and get it
+    def _setup_menu(self) -> None:
+        """Find an existing Midvatten menu or create a new one."""
         for child in self.iface.mainWindow().menuBar().children():
             if isinstance(child, QMenu):
                 if child.title() == "Midvatten":
@@ -150,6 +156,17 @@ class Midvatten:
             # Indicator that this plugin must not clean up the midvatten menu
             self.owns_midv_menu = True
 
+    def _create_actions(self) -> None:
+        """Register all plugin QActions grouped by category."""
+        self._create_db_actions()
+        self._create_import_actions()
+        self._create_export_actions()
+        self._create_plot_actions()
+        self._create_report_actions()
+        self._create_utility_actions()
+
+    def _create_db_actions(self) -> None:
+        """Create database-management and top-level actions."""
         self.action_new_db = self.add_action(
             "create_new.xpm",
             text=self.tr("Create a new Midvatten project database"),
@@ -191,6 +208,8 @@ class Midvatten:
             callback=lambda x: self.about(),
         )
 
+    def _create_import_actions(self) -> None:
+        """Create data-import actions."""
         self.action_wlvlcalculate = self.add_action(
             "calc_level_masl.png",
             text=self.tr("Calculate w level from manual measurements"),
@@ -245,6 +264,36 @@ class Midvatten:
             callback=lambda x: self.import_csv(),
         )
 
+    def _create_export_actions(self) -> None:
+        """Create data-export actions."""
+        self.action_export_csv = self.add_action(
+            "export_csv.png",
+            text=self.tr("Export to a set of csv files"),
+            callback=lambda x: self.export_csv(),
+            whats_this=self.tr(
+                "All data for the selected objects (obs_points and obs_lines) will be "
+                "exported to a set of csv files"
+            ),
+        )
+
+        self.action_export_spatialite = self.add_action(
+            "export_spatialite.png",
+            text=self.tr("Export to another spatialite database"),
+            callback=lambda x: self.export_spatialite(),
+            whats_this=self.tr(
+                "All data for the selected objects (obs_points and "
+                "obs_lines) will be exported to another spatialite db"
+            ),
+        )
+
+        self.action_export_fieldlogger = self.add_action(
+            "export_csv.png",
+            text=self.tr("Export to FieldLogger or FieldForm format"),
+            callback=lambda x: self.export_fieldlogger(),
+        )
+
+    def _create_plot_actions(self) -> None:
+        """Create visualization/plot actions."""
         self.action_tsplot = self.add_action(
             "PlotTS.png",
             text=self.tr("Time series plot"),
@@ -281,6 +330,15 @@ class Midvatten:
             whats_this=self.tr("Show stratigraphy for selected objects"),
         )
 
+        self.action_sectionplot = self.add_action(
+            "PlotSection.png",
+            text=self.tr("Section plot"),
+            callback=lambda x: self.plot_section(),
+            whats_this=self.tr("Plot a section with stratigraphy and water levels"),
+        )
+
+    def _create_report_actions(self) -> None:
+        """Create reporting actions."""
         self.action_drillreport = self.add_action(
             "drill_report.png",
             text=self.tr("General drill report"),
@@ -309,13 +367,8 @@ class Midvatten:
             whats_this=self.tr("Create water quality tables for reports"),
         )
 
-        self.action_sectionplot = self.add_action(
-            "PlotSection.png",
-            text=self.tr("Section plot"),
-            callback=lambda x: self.plot_section(),
-            whats_this=self.tr("Plot a section with stratigraphy and water levels"),
-        )
-
+    def _create_utility_actions(self) -> None:
+        """Create utility and database-management actions."""
         self.action_load_qgis2threejs_layers = self.add_action(
             "qgis2threejs.png",
             text=self.tr("Prepare 3D-data for Qgis2threejs plugin"),
@@ -363,32 +416,6 @@ class Midvatten:
             ),
         )
 
-        self.action_export_csv = self.add_action(
-            "export_csv.png",
-            text=self.tr("Export to a set of csv files"),
-            callback=lambda x: self.export_csv(),
-            whats_this=self.tr(
-                "All data for the selected objects (obs_points and obs_lines) will be "
-                "exported to a set of csv files"
-            ),
-        )
-
-        self.action_export_spatialite = self.add_action(
-            "export_spatialite.png",
-            text=self.tr("Export to another spatialite database"),
-            callback=lambda x: self.export_spatialite(),
-            whats_this=self.tr(
-                "All data for the selected objects (obs_points and "
-                "obs_lines) will be exported to another spatialite db"
-            ),
-        )
-
-        self.action_export_fieldlogger = self.add_action(
-            "export_csv.png",
-            text=self.tr("Export to FieldLogger or FieldForm format"),
-            callback=lambda x: self.export_fieldlogger(),
-        )
-
         self.action_calculate_db_table_rows = self.add_action(
             "calc_statistics.png",
             text=self.tr("Calculate database table row"),
@@ -424,7 +451,8 @@ class Midvatten:
             ),
         )
 
-        # Add toolbar with buttons
+    def _build_toolbar(self) -> None:
+        """Add toolbar and populate it with frequently-used actions."""
         self.tool_bar = self.iface.addToolBar("Midvatten")
         self.tool_bar.setObjectName("Midvatten")
         self.tool_bar.addAction(self.action_midvatten_settings)
@@ -439,10 +467,11 @@ class Midvatten:
         self.tool_bar.addAction(self.action_stratsymbology)
         self.tool_bar.addAction(self.action_list_selected_features)
 
+    def _build_menus(self) -> None:
+        """Construct all sub-menus and attach actions to them."""
         self.menu.import_data_menu = self.add_menu(
             self.tr("&Import data to database"), self.menu
         )
-
         self.menu.import_data_menu.addAction(self.actiongeneral_import_csv)
         self.menu.import_data_menu.addAction(self.action_import_diverofficedata)
         self.menu.import_data_menu.addAction(self.action_import_leveloggerdata)
@@ -462,8 +491,6 @@ class Midvatten:
         )
         self.menu.edit_data_menu.addAction(self.action_wlvlcalculate)
         self.menu.edit_data_menu.addAction(self.action_wlvlloggcalibrate)
-        # self.menu.add_data_menu.addAction(self.actionupdatecoord)
-        # self.menu.add_data_menu.addAction(self.actionupdateposition)
         self.menu.edit_data_menu.addAction(self.action_aveflowcalculate)
 
         self.menu.plot_data_menu = self.add_menu(self.tr("&Plots"), self.menu)
@@ -504,6 +531,8 @@ class Midvatten:
         self.menu.addAction(self.action_midvatten_settings)
         self.menu.addAction(self.action_about)
 
+    def _connect_signals(self) -> None:
+        """Connect QGIS iface signals to plugin slots."""
         # QGIS iface connections
         self.iface.projectRead.connect(self.project_opened)
         self.iface.newProjectCreated.connect(self.project_created)

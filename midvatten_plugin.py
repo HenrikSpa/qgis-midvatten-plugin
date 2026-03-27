@@ -1560,6 +1560,7 @@ class Midvatten:
             QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
             with db_utils.use_or_create_connection(None) as dbconnection:
                 dbconnection.vacuum()
+            common_utils.MessagebarAndLog.info(log_msg=self.tr("Vacuum performed."))
             common_utils.stop_waiting_cursor()
 
     @common_utils.general_exception_handler

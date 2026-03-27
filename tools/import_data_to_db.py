@@ -300,6 +300,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
 
             if import_messages:
                 # print('\n'.join(import_messages))
+                common_utils.stop_waiting_cursor()
                 stop_question = common_utils.Askuser(
                     "YesNo",
                     "\n".join(import_messages),
@@ -307,6 +308,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 )
                 if stop_question.result == 0:  # if the user wants to abort
                     raise UserInterruptError()
+            common_utils.start_waiting_cursor()
 
             # Import foreign keys in some special cases
             foreign_keys = db_utils.get_foreign_keys(
@@ -375,9 +377,11 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
 
             count_sql = dbconnection.sql_ident(
                 "SELECT count(*) FROM {t}",
-                t=dest_table
-                if dbconnection.dbtype != "postgis"
-                else f"{dbconnection.schema}.{dest_table}",
+                t=(
+                    dest_table
+                    if dbconnection.dbtype != "postgis"
+                    else f"{dbconnection.schema}.{dest_table}"
+                ),
             )
             recsbefore = dbconnection.execute_and_fetchall(count_sql)[0][0]
             # Update 2026-02-25: Use INSERT OR IGNORE for SQLite and ON CONFLICT DO NOTHING for PostgreSQL.

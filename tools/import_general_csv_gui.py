@@ -182,6 +182,7 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         )
         self.file_data = self.file_to_list(filename, charset, delimiter)
 
+        common_utils.stop_waiting_cursor()
         header_question = common_utils.Askuser(
             question="YesNo",
             msg=ru(
@@ -190,8 +191,8 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
                 )
             ),
         )
-
         common_utils.start_waiting_cursor()
+
         if header_question.result:
             # Remove duplicate header entries
             header = self.file_data[0]
@@ -287,14 +288,16 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
     def parse_features_into_file_data(self, features, active_layer):
         return [[ru(field.name()) for field in active_layer.fields()]] + [
             [
-                ru(attr)
-                if all(
-                    [
-                        ru(attr).strip() != "NULL",
-                        attr is not None,
-                    ]
+                (
+                    ru(attr)
+                    if all(
+                        [
+                            ru(attr).strip() != "NULL",
+                            attr is not None,
+                        ]
+                    )
+                    else ""
                 )
-                else ""
                 for attr in feature
             ]
             for feature in features

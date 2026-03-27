@@ -834,14 +834,14 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                     raise MidvDataImporterError(
                         QCoreApplication.translate(
                             "midv_data_importer",
-                            'ValueError: %s. Obsid "%s", stratid: "%s", depthbot: "%s", depthtop: "%s"',
+                            'ValueError: %s. Obsid "%s", stratid: "%s", depthtop: "%s", depthbot: "%s"',
                         )
                         % (
                             str(e),
                             obsid,
-                            stratid_depthbot_depthtop[0],
-                            stratid_depthbot_depthtop[1],
-                            stratid_depthbot_depthtop[2],
+                            stratid_depthbot_depthtop[0][0],
+                            stratid_depthbot_depthtop[0][1],
+                            stratid_depthbot_depthtop[0][2],
                         )
                     )
                 sorted_strats = sorted(strats, key=itemgetter(0))

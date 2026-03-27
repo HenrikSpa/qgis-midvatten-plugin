@@ -209,13 +209,11 @@ class SQLiteBackend(Backend):
                 raise DatabaseLockedError(msg)
 
     def vacuum(self) -> None:
-        self._conn.commit()
-        old_isolation_level = self._conn.isolation_level
+        # Workaround https://bugs.python.org/issue28518 — VACUUM cannot run
+        # inside a transaction; set isolation_level=None (autocommit) first.
         self._conn.isolation_level = None
-        try:
-            self._cursor.execute("VACUUM")
-        finally:
-            self._conn.isolation_level = old_isolation_level
+        self._cursor.execute("VACUUM")
+        self._conn.isolation_level = ""  # reset to default (deferred)
 
     def add_insert_or_ignore_to_sql(self, sql: str) -> str:
         return sql.replace("INSERT", "INSERT OR IGNORE")

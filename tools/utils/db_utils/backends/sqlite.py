@@ -5,7 +5,6 @@ SQLite (Spatialite) backend. Connection via spatialite_connect.
 import ast
 import os
 import traceback
-from collections.abc import Sequence
 from sqlite3 import Connection
 from typing import Any, Optional
 
@@ -16,7 +15,7 @@ from qgis.utils import spatialite_connect
 
 import sqlite3 as sqlite
 
-from midvatten.tools.utils.message_utils import MessagebarAndLog, sql_failed_msg
+from midvatten.tools.utils.message_utils import MessagebarAndLog
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.exceptions import UsageError
 from midvatten.tools.utils.db_utils.backends.base import Backend
@@ -127,41 +126,6 @@ class SQLiteBackend(Backend):
     @property
     def dbpath(self) -> str:
         return self._dbpath
-
-    def connect2db(self) -> bool:
-        self.check_db_is_locked()
-        return self._cursor is not None
-
-    def execute(self, sql: str, args: Optional[Sequence[Any]] = None) -> None:
-        if args is None:
-            try:
-                self._cursor.execute(sql)
-            except Exception as e:
-                Backend.log_execute_error(sql, None, e)
-                raise
-        else:
-            try:
-                self._cursor.execute(sql, list(args))
-            except Exception as e:
-                Backend.log_execute_error(sql, args, e)
-                raise
-
-    def execute_and_fetchall(
-        self, sql: str, args: Optional[Sequence[Any]] = None
-    ) -> list[Any]:
-        try:
-            if args is not None:
-                self._cursor.execute(sql, args)
-            else:
-                self._cursor.execute(sql)
-        except (sqlite.OperationalError, Exception) as e:
-            textstring = QCoreApplication.translate(
-                "sql_load_fr_db",
-                """DB error!\n SQL causing this error:%s\nMsg:\n%s""",
-            ) % (ru(sql), str(e))
-            MessagebarAndLog.warning(bar_msg=sql_failed_msg(), log_msg=textstring)
-            raise
-        return self._cursor.fetchall()
 
     def commit(self) -> None:
         self._conn.commit()
@@ -284,8 +248,10 @@ class SQLiteBackend(Backend):
     def is_not_distinct_from(self) -> str:
         return "IS"
 
+    _NUMERIC_DATATYPES = ["integer", "double"]
+
     def numeric_datatypes(self) -> list:
-        return ["integer", "double"]
+        return self._NUMERIC_DATATYPES
 
     def activate_foreign_keys(self, activated: bool) -> None:
         if activated:

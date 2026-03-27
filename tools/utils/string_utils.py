@@ -98,39 +98,31 @@ def unicode_2_utf8(anything):  # takes an unicode and tries to return it as utf8
     :param anything: just about anything
     :return: hopefully a utf8 converted anything
     """
-    # anything = returnunicode(anything)
-    text = None
     try:
         if anything is None:
-            text = b""
+            return b""
         elif isinstance(anything, str):
-            text = anything.encode("utf-8")
+            return anything.encode("utf-8")
+        elif isinstance(anything, bytes):
+            return anything
         elif isinstance(anything, list):
-            text = [unicode_2_utf8(x) for x in anything]
+            return [unicode_2_utf8(x) for x in anything]
         elif isinstance(anything, tuple):
-            text = tuple([unicode_2_utf8(x) for x in anything])
-        elif isinstance(anything, float):
-            text = anything.encode("utf-8")
-        elif isinstance(anything, int):
-            text = anything.encode("utf-8")
+            return tuple([unicode_2_utf8(x) for x in anything])
         elif isinstance(anything, dict):
-            text = dict(
+            return dict(
                 [(unicode_2_utf8(k), unicode_2_utf8(v)) for k, v in anything.items()]
             )
-        elif isinstance(anything, str):
-            text = anything
-        elif isinstance(anything, bool):
-            text = anything.encode("utf-8")
+        else:
+            return str(anything).encode("utf-8")
     except Exception:
         from midvatten.tools.utils.message_utils import MessagebarAndLog
 
         MessagebarAndLog.info(log_msg=traceback.format_exc())
 
-    if text is None:
-        text = returnunicode(
-            tr("unicode_2_utf8", "data type unknown, check database")
-        ).encode("utf-8")
-    return text
+    return returnunicode(
+        tr("unicode_2_utf8", "data type unknown, check database")
+    ).encode("utf-8")
 
 
 def lists_to_string(alist_of_lists, quote=False):
@@ -182,19 +174,14 @@ def lists_to_string(alist_of_lists, quote=False):
                     ";".join(
                         [
                             (
-                                '"{}"'.format(
-                                    returnunicode(col).replace('"', '""')
-                                    if all(
-                                        [
-                                            '"' in returnunicode(col),
-                                            '""' not in returnunicode(col),
-                                        ]
-                                    )
-                                    else returnunicode(col)
+                                lambda col_str: '"{}"'.format(
+                                    col_str.replace('"', '""')
+                                    if '"' in col_str and '""' not in col_str
+                                    else col_str
                                 )
-                                if quote
-                                else returnunicode(col)
-                            )
+                            )(returnunicode(col))
+                            if quote
+                            else returnunicode(col)
                             for col in row
                         ]
                     )

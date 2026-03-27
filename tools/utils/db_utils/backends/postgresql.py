@@ -5,7 +5,6 @@ PostgreSQL (PostGIS) backend. Connection via psycopg2; connector logic merged in
 import os
 import re
 import traceback
-from collections.abc import Sequence
 from typing import Any, Optional
 
 import psycopg2
@@ -15,8 +14,7 @@ import qgis.core
 from qgis.PyQt.QtCore import QCoreApplication, QFile
 from qgis.core import QgsCredentials, QgsDataSourceUri
 
-from midvatten.tools.utils.message_utils import MessagebarAndLog, sql_failed_msg
-from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils.message_utils import MessagebarAndLog
 from midvatten.tools.utils.exceptions import UserInterruptError
 from midvatten.tools.utils.db_utils.backends.base import Backend
 from midvatten.tools.utils.db_utils.settings import get_postgis_connections
@@ -144,37 +142,6 @@ class PostgreSQLBackend(Backend):
     @property
     def cursor(self):
         return self._cursor
-
-    def execute(self, sql: str, args: Optional[Sequence[Any]] = None) -> None:
-        if args is None:
-            try:
-                self._cursor.execute(sql)
-            except Exception as e:
-                Backend.log_execute_error(sql, None, e)
-                raise
-        else:
-            try:
-                self._cursor.execute(sql, list(args))
-            except Exception as e:
-                Backend.log_execute_error(sql, args, e)
-                raise
-
-    def execute_and_fetchall(
-        self, sql: str, args: Optional[Sequence[Any]] = None
-    ) -> list[Any]:
-        try:
-            if args is not None:
-                self._cursor.execute(sql, args)
-            else:
-                self._cursor.execute(sql)
-        except Exception as e:
-            textstring = QCoreApplication.translate(
-                "sql_load_fr_db",
-                """DB error!\n SQL causing this error:%s\nMsg:\n%s""",
-            ) % (ru(sql), str(e))
-            MessagebarAndLog.warning(bar_msg=sql_failed_msg(), log_msg=textstring)
-            raise
-        return self._cursor.fetchall()
 
     def commit(self) -> None:
         self._conn.commit()
@@ -308,16 +275,18 @@ class PostgreSQLBackend(Backend):
     def is_not_distinct_from(self) -> str:
         return "IS NOT DISTINCT FROM"
 
+    _NUMERIC_DATATYPES = [
+        "smallint",
+        "integer",
+        "bigint",
+        "decimal",
+        "numeric",
+        "real",
+        "double precision",
+    ]
+
     def numeric_datatypes(self) -> list:
-        return [
-            "smallint",
-            "integer",
-            "bigint",
-            "decimal",
-            "numeric",
-            "real",
-            "double precision",
-        ]
+        return self._NUMERIC_DATATYPES
 
     def activate_foreign_keys(self, activated: bool) -> None:
         # PostgreSQL enforces foreign keys natively; this is a no-op.

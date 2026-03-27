@@ -27,8 +27,10 @@ from midvatten.tools.utils import common_utils, db_utils
 
 class XYPlot:
     def __init__(
-        self, layer=None, settingsdict={}
+        self, layer=None, settingsdict=None
     ):  # Might need revision of variables and method for loading default variables
+        if settingsdict is None:
+            settingsdict = {}
         self.settingsdict = settingsdict
         self.table = settingsdict["xytable"]
         self.xcol = settingsdict["xy_xcolumn"]

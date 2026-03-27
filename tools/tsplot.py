@@ -32,8 +32,10 @@ from midvatten.tools.utils.string_utils import returnunicode as ru
 
 class TimeSeriesPlot:
     def __init__(
-        self, layer=None, settingsdict={}
+        self, layer=None, settingsdict=None
     ):  # Might need revision of variables and method for loading default variables
+        if settingsdict is None:
+            settingsdict = {}
         self.settingsdict = settingsdict
         self.showtheplot(layer)
 

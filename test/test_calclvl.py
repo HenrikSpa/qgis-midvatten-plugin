@@ -60,7 +60,9 @@ class CalclvlMixin:
         print(f"{mock_messagebar.mock_calls=}")
         assert test_string == reference_string
 
-    @mock.patch("midvatten.tools.calculate_level.common_utils.get_selected_object_names")
+    @mock.patch(
+        "midvatten.tools.calculate_level.common_utils.get_selected_object_names"
+    )
     def test_calc_selected(self, mock_selected_obsids):
         mock_selected_obsids.return_value = ["rb1"]
         db_utils.sql_alter_db(
@@ -91,7 +93,9 @@ class CalclvlMixin:
         reference_string = "(True, [(rb1, 2005-01-01 00:00:00, 222.0, 1.0, -221.0), (rb2, 2005-01-01 00:00:00, 444.0, None, None)])"
         assert test_string == reference_string
 
-    @mock.patch("midvatten.tools.calculate_level.common_utils.get_selected_object_names")
+    @mock.patch(
+        "midvatten.tools.calculate_level.common_utils.get_selected_object_names"
+    )
     def test_calc_selected_overwrite(self, mock_selected_obsids):
         mock_selected_obsids.return_value = ["rb1", "rb2"]
         db_utils.sql_alter_db(
@@ -130,7 +134,9 @@ class CalclvlMixin:
         assert test_string == reference_string
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch("midvatten.tools.calculate_level.common_utils.get_selected_object_names")
+    @mock.patch(
+        "midvatten.tools.calculate_level.common_utils.get_selected_object_names"
+    )
     def test_calc_selected_dont_overwrite(self, mock_selected_obsids, mock_messagebar):
         mock_selected_obsids.return_value = ["rb1", "rb2"]
         db_utils.sql_alter_db(
@@ -170,7 +176,9 @@ class CalclvlMixin:
 
     @mock.patch("midvatten.tools.loggereditor.common_utils.pop_up_info", autospec=True)
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch("midvatten.tools.calculate_level.common_utils.get_selected_object_names")
+    @mock.patch(
+        "midvatten.tools.calculate_level.common_utils.get_selected_object_names"
+    )
     def test_calc_selected_dont_overwrite_dont_skip_nulls(
         self, mock_selected_obsids, mock_messagebar, mock_skippopup
     ):
@@ -213,7 +221,9 @@ class CalclvlMixin:
 
     @mock.patch("midvatten.tools.loggereditor.common_utils.pop_up_info", autospec=True)
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch("midvatten.tools.calculate_level.common_utils.get_selected_object_names")
+    @mock.patch(
+        "midvatten.tools.calculate_level.common_utils.get_selected_object_names"
+    )
     def test_calc_selected_dont_overwrite_skip_nulls(
         self, mock_selected_obsids, mock_messagebar, mock_skippopup
     ):

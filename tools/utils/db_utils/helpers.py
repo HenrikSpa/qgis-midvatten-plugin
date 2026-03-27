@@ -123,34 +123,6 @@ def test_not_null_and_not_empty_string(
         return dbconnection.not_null_sql(col_ident, data_type)
 
 
-def postgresql_numeric_data_types() -> list:
-    return [
-        "smallint",
-        "integer",
-        "bigint",
-        "decimal",
-        "numeric",
-        "real",
-        "double precision",
-    ]
-
-
-def postgresql_cast_null_types() -> list:
-    return [
-        "text",
-        "character varying",
-        "timestamp with time zone",
-        "timestamp without time zone",
-        "date",
-        "boolean",
-        "geometry",
-    ]
-
-
-def sqlite_numeric_data_types() -> list:
-    return ["integer", "double"]
-
-
 def get_all_obsids(
     table: str = "obs_points",
     dbconnection: Optional[DbConnectionManager] = None,

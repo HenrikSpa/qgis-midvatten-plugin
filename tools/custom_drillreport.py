@@ -605,15 +605,27 @@ class Drillreport:  # general observation point info for the selected object
         geo_metadata_header="",
         strat_columns_header="",
         comment_header="",
-        general_rounding=[],
-        geo_rounding=[],
-        strat_sql_columns_list=[],
-        topleft_topright_colwidths=[],
-        general_colwidth=[],
-        geo_colwidth=[],
+        general_rounding=None,
+        geo_rounding=None,
+        strat_sql_columns_list=None,
+        topleft_topright_colwidths=None,
+        general_colwidth=None,
+        geo_colwidth=None,
         decimal_separator=".",
     ):
         """This part only handles writing the information. It does not do any db data collection."""
+        if general_rounding is None:
+            general_rounding = []
+        if geo_rounding is None:
+            geo_rounding = []
+        if strat_sql_columns_list is None:
+            strat_sql_columns_list = []
+        if topleft_topright_colwidths is None:
+            topleft_topright_colwidths = []
+        if general_colwidth is None:
+            general_colwidth = []
+        if geo_colwidth is None:
+            geo_colwidth = []
 
         rpt = ""
 

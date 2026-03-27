@@ -41,17 +41,34 @@ class Backend(ABC):
 
     # --- Execution (single sql string, args optional) ---
 
-    @abstractmethod
     def execute(self, sql: str, args: Optional[Sequence[Any]] = None) -> None:
         """Execute a single SQL statement. No commit."""
-        pass
+        if args is None:
+            try:
+                self.cursor.execute(sql)
+            except Exception as e:
+                Backend.log_execute_error(sql, None, e)
+                raise
+        else:
+            try:
+                self.cursor.execute(sql, list(args))
+            except Exception as e:
+                Backend.log_execute_error(sql, args, e)
+                raise
 
-    @abstractmethod
     def execute_and_fetchall(
         self, sql: str, args: Optional[Sequence[Any]] = None
     ) -> list[Any]:
         """Execute and return cursor.fetchall()."""
-        pass
+        try:
+            if args is not None:
+                self.cursor.execute(sql, args)
+            else:
+                self.cursor.execute(sql)
+        except Exception as e:
+            Backend.log_execute_error(sql, args, e)
+            raise
+        return self.cursor.fetchall()
 
     def execute_and_commit(
         self, sql: str, args: Optional[Sequence[Any]] = None

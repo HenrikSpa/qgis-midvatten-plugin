@@ -35,10 +35,14 @@ from midvatten.tools.utils.string_utils import returnunicode as ru
 class Drillreport:  # general observation point info for the selected object
     def __init__(
         self,
-        obsids: List[str] = [""],
-        settingsdict: Dict[str, Union[str, int, bool, float]] = {},
+        obsids: List[str] = None,
+        settingsdict: Dict[str, Union[str, int, bool, float]] = None,
     ):
 
+        if obsids is None:
+            obsids = [""]
+        if settingsdict is None:
+            settingsdict = {}
         reportfolder = os.path.join(QDir.tempPath(), "midvatten_reports")
         if not os.path.exists(reportfolder):
             os.makedirs(reportfolder)
@@ -151,7 +155,7 @@ class Drillreport:  # general observation point info for the selected object
             obsid, "obs_points", "n"
         )  # MacOSX fix1
         # utils.pop_up_info(str(connection_ok))#debug
-        if connection_ok == True:
+        if connection_ok:
             result2 = db_utils.sql_load_fr_db(
                 r"""SELECT srid FROM geometry_columns where f_table_name = 'obs_points'"""
             )[1][0][0]

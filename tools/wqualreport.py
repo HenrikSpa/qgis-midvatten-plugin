@@ -39,10 +39,12 @@ log = logging.getLogger(__name__)
 
 
 class Wqualreport:  # extracts water quality data for selected objects, selected db and given table, results shown in html report
-    def __init__(self, layer, settingsdict={}):
+    def __init__(self, layer, settingsdict=None):
         # show the user this may take a long time...
         common_utils.start_waiting_cursor()
 
+        if settingsdict is None:
+            settingsdict = {}
         self.settingsdict = settingsdict
         provider = layer.dataProvider()  # OGR provider
         kolumnindex = provider.fieldNameIndex(

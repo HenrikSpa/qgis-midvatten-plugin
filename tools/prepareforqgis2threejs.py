@@ -37,7 +37,7 @@ log = logging.getLogger(__name__)
 
 
 class PrepareForQgis2Threejs:
-    def __init__(self, iface, settingsdict={}):
+    def __init__(self, iface, settingsdict=None):
 
         self.dbconnection = db_utils.DbConnectionManager()
 

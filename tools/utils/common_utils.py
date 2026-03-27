@@ -24,6 +24,7 @@ import datetime
 import difflib
 import logging
 import math
+import os
 import time
 import traceback
 from contextlib import contextmanager
@@ -477,7 +478,13 @@ def transpose_lists_of_lists(list_of_lists):
 
 
 def fn_timer(function: Callable) -> Callable:
-    """from http://www.marinamele.com/7-tips-to-time-python-scripts-and-control-memory-and-cpu-usage"""
+    """Timing decorator. Active only when the MIDVATTEN_TIMING environment variable is set.
+
+    Usage: set MIDVATTEN_TIMING=1 before running QGIS to enable timing output.
+    Reference: http://www.marinamele.com/7-tips-to-time-python-scripts-and-control-memory-and-cpu-usage
+    """
+    if not os.environ.get("MIDVATTEN_TIMING"):
+        return function
 
     @wraps(function)
     def function_timer(*args, **kwargs):

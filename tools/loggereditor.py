@@ -36,7 +36,7 @@ Calibr_Ui_Dialog = uic.loadUiType(
 
 class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     @fn_timer
-    def __init__(self, parent, settingsdict1={}, obsid=""):
+    def __init__(self, parent, settingsdict1=None, obsid=""):
         qgis.PyQt.QtWidgets.QMainWindow.__init__(self, parent)
         self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt4 to initialize the UI
@@ -554,7 +554,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         last_used_obsid = self.obsid
         obsid = self.load_obsid_and_init()
         common_utils.start_waiting_cursor()
-        if obsid == None:
+        if obsid is None:
             self.statusbar.clearMessage()
             return
         self.selected_line = None

@@ -54,7 +54,7 @@ log = logging.getLogger(__name__)
 
 
 class Stratigraphy:
-    def __init__(self, iface, layer=None, settingsdict={}):
+    def __init__(self, iface, layer=None, settingsdict=None):
         self.iface = iface
         self.stratitable = (
             defs.stratigraphy_table()
@@ -121,7 +121,7 @@ class SurveyInfo:  # This class is to define the data structure...
         self.top_lvl = top_lvl
         self.coord = coord
         self.length = length
-        if strata == None:
+        if strata is None:
             strata = []
         self.strata = strata
 
@@ -186,7 +186,7 @@ class SurveyStore:
             data_loading_status, surveys = self._get_data_step2(surveys)
         except Exception:
             data_loading_status = False
-        if data_loading_status == True:
+        if data_loading_status:
             surveys = self.sanity_check(surveys)
             return surveys
         else:

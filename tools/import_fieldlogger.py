@@ -817,7 +817,7 @@ class DateShiftQuestion(QtWidgets.QWidget):
             raise common_utils.UsageError()
 
         test_shift = dateshift("2015-02-01", step, steplength)
-        if test_shift == None:
+        if test_shift is None:
             common_utils.MessagebarAndLog.warning(bar_msg=bar_msg, log_msg=log_msg)
             raise common_utils.UsageError()
 

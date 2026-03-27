@@ -15,12 +15,9 @@ import qgis.core
 from qgis.PyQt.QtCore import QCoreApplication, QFile
 from qgis.core import QgsCredentials, QgsDataSourceUri
 
-from midvatten.tools.utils.common_utils import (
-    MessagebarAndLog,
-    returnunicode as ru,
-    UserInterruptError,
-    sql_failed_msg,
-)
+from midvatten.tools.utils.message_utils import MessagebarAndLog, sql_failed_msg
+from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils.exceptions import UserInterruptError
 from midvatten.tools.utils.db_utils.backends.base import Backend
 from midvatten.tools.utils.db_utils.settings import get_postgis_connections
 
@@ -331,7 +328,7 @@ class PostgreSQLBackend(Backend):
         return sql, 1
 
     def backup(self, dbconnection: Any) -> None:
-        from midvatten.tools.utils.common_utils import MessagebarAndLog
+        from midvatten.tools.utils.message_utils import MessagebarAndLog
         from qgis.PyQt.QtCore import QCoreApplication
 
         MessagebarAndLog.info(

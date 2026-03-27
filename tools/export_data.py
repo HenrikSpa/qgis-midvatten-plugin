@@ -24,7 +24,7 @@ import os.path
 from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools.utils import common_utils, db_utils
-from midvatten.tools.utils.common_utils import returnunicode as ru
+from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.definitions import midvatten_defs as defs, db_defs
 
 from midvatten.tools.import_data_to_db import MidvDataImporter

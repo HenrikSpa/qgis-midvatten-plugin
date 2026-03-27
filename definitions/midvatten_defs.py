@@ -24,11 +24,11 @@ import cycler as _cycler_mod
 from cycler import cycler
 from qgis.PyQt.QtCore import QCoreApplication
 
-from midvatten.tools.utils.common_utils import (
+from midvatten.tools.utils.string_utils import (
     returnunicode as ru,
-    MessagebarAndLog,
     anything_to_string_representation,
 )
+from midvatten.tools.utils.message_utils import MessagebarAndLog
 from midvatten.tools.utils.db_utils import (
     get_sql_result_as_dict,
     sql_load_fr_db,

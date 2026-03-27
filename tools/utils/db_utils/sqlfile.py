@@ -6,12 +6,8 @@ Supports SPATIALITE/POSTGIS and SQLITE/POSTGRESQL prefixes (Option B).
 import re
 from typing import Callable, Optional
 
-from midvatten.tools.utils.common_utils import (
-    lstrip,
-    returnunicode as ru,
-    sql_failed_msg,
-)
-from midvatten.tools.utils.common_utils import MessagebarAndLog
+from midvatten.tools.utils.string_utils import lstrip, returnunicode as ru
+from midvatten.tools.utils.message_utils import MessagebarAndLog, sql_failed_msg
 from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools.utils.db_utils.connection import DbConnectionManager

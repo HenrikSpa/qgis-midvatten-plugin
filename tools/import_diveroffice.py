@@ -32,10 +32,8 @@ from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools import import_data_to_db
 from midvatten.tools.utils import common_utils, midvatten_utils, db_utils
-from midvatten.tools.utils.common_utils import (
-    returnunicode as ru,
-    format_timezone_string,
-)
+from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils.common_utils import format_timezone_string
 from midvatten.tools.utils.date_utils import (
     find_date_format,
     datestring_to_date,

@@ -32,7 +32,7 @@ from qgis.PyQt.QtCore import QCoreApplication
 import midvatten.definitions.midvatten_defs as defs
 from midvatten.tools import import_data_to_db
 from midvatten.tools.utils import common_utils, midvatten_utils, db_utils, date_utils
-from midvatten.tools.utils.common_utils import returnunicode as ru
+from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.gui_utils import (
     RowEntry,
     VRowEntry,

@@ -25,7 +25,8 @@ from typing import List
 import pytz
 from qgis.PyQt.QtCore import QCoreApplication
 
-from midvatten.tools.utils.common_utils import returnunicode as ru, MessagebarAndLog
+from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils.message_utils import MessagebarAndLog
 
 log = logging.getLogger(__name__)
 

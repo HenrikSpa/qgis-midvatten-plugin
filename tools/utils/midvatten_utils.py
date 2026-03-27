@@ -54,20 +54,20 @@ else:
     pandas_on = True
 
 
-from midvatten.tools.utils.common_utils import (
-    MessagebarAndLog,
-    find_layer,
+from midvatten.tools.utils.message_utils import MessagebarAndLog, sql_failed_msg
+from midvatten.tools.utils.layer_utils import find_layer
+from midvatten.tools.utils.string_utils import (
     returnunicode as ru,
-    sql_failed_msg,
-    UsageError,
-    get_full_filename,
     returnunicode,
-    UserInterruptError,
+    anything_to_string_representation,
+)
+from midvatten.tools.utils.exceptions import UsageError, UserInterruptError
+from midvatten.tools.utils.file_utils import get_full_filename
+from midvatten.tools.utils.dialog_utils import Askuser
+from midvatten.tools.utils.common_utils import (
     transpose_lists_of_lists,
     general_exception_handler,
     get_save_file_name_no_extension,
-    anything_to_string_representation,
-    Askuser,
 )
 
 from midvatten.definitions.db_defs import latest_database_version

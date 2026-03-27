@@ -50,7 +50,8 @@ import matplotlib.ticker as tick
 from qgis.PyQt.QtWidgets import QApplication
 
 from midvatten.tools.utils import common_utils, midvatten_utils, db_utils
-from midvatten.tools.utils.common_utils import returnunicode as ru, LEGEND_NCOL_KEY
+from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils.common_utils import LEGEND_NCOL_KEY
 from midvatten.definitions import midvatten_defs as defs
 from midvatten.tools.utils.gui_utils import (
     set_groupbox_children_visibility,

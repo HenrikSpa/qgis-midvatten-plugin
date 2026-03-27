@@ -13,7 +13,7 @@ passing and a commit.
 - [x] **Task 5**: Rename camelCase methods to snake_case (21 methods)
 - [x] **Task 6**: Fix QMainWindow/QDialog init mismatch (9 classes)
 - [x] **Task 7**: Decompose `general_import()` (421-line monolith)
-- [ ] **Task 8**: Migrate callers off `common_utils` re-exports
+- [x] **Task 8**: Migrate callers off `common_utils` re-exports
 - [ ] **Task 9**: Fix remaining style issues (mutable defaults, `== None`, etc.)
 - [ ] **Task 10**: Decompose `initGui()` in `midvatten_plugin.py` (381 lines)
 

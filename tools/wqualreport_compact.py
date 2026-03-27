@@ -32,10 +32,8 @@ from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools.utils import common_utils, db_utils, gui_utils
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
-from midvatten.tools.utils.common_utils import (
-    returnunicode as ru,
-    general_exception_handler,
-)
+from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils.common_utils import general_exception_handler
 from midvatten.tools.wqualreport_core import (
     report_path,
     write_html_preamble,

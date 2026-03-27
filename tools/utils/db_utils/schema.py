@@ -9,10 +9,7 @@ from collections.abc import Sequence
 
 from qgis.PyQt.QtCore import QCoreApplication
 
-from midvatten.tools.utils.common_utils import (
-    MessagebarAndLog,
-    sql_failed_msg,
-)
+from midvatten.tools.utils.message_utils import MessagebarAndLog, sql_failed_msg
 from midvatten.tools.utils.db_utils.connection import DbConnectionManager
 from midvatten.tools.utils.db_utils.execution import (
     sql_load_fr_db,

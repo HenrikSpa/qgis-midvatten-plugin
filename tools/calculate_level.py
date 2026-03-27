@@ -44,7 +44,8 @@ except Exception:
     )
 
 from midvatten.tools.utils import common_utils, db_utils
-from midvatten.tools.utils.common_utils import returnunicode as ru, fn_timer
+from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils.common_utils import fn_timer
 
 Calc_Ui_Dialog = uic.loadUiType(
     os.path.join(os.path.dirname(__file__), "..", "ui", "calc_lvl_dialog.ui")

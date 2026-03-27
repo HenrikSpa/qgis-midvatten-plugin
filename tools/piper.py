@@ -32,7 +32,8 @@ import numpy as np
 
 from midvatten.definitions.midvatten_defs import piperplot2_style
 from midvatten.tools.utils import common_utils, db_utils
-from midvatten.tools.utils.common_utils import returnunicode as ru, LEGEND_NCOL_KEY
+from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils.common_utils import LEGEND_NCOL_KEY
 
 log = logging.getLogger(__name__)
 

@@ -241,11 +241,8 @@ class Backend(ABC):
     @staticmethod
     def log_execute_error(sql: str, args: Any, e: Exception) -> None:
         """Log a DB execute error via MessagebarAndLog."""
-        from midvatten.tools.utils.common_utils import (
-            MessagebarAndLog,
-            returnunicode as ru,
-            sql_failed_msg,
-        )
+        from midvatten.tools.utils.message_utils import MessagebarAndLog, sql_failed_msg
+        from midvatten.tools.utils.string_utils import returnunicode as ru
         from qgis.PyQt.QtCore import QCoreApplication
 
         if args is None:
@@ -269,7 +266,7 @@ class Backend(ABC):
         """Export table to a temp CSV file."""
         import os
         import tempfile
-        from midvatten.tools.utils.common_utils import write_printlist_to_file
+        from midvatten.tools.utils.file_utils import write_printlist_to_file
 
         if table_name is None:
             raise ValueError("table_name is required")

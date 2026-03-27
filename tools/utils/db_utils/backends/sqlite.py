@@ -16,12 +16,9 @@ from qgis.utils import spatialite_connect
 
 import sqlite3 as sqlite
 
-from midvatten.tools.utils.common_utils import (
-    MessagebarAndLog,
-    returnunicode as ru,
-    UsageError,
-    sql_failed_msg,
-)
+from midvatten.tools.utils.message_utils import MessagebarAndLog, sql_failed_msg
+from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils.exceptions import UsageError
 from midvatten.tools.utils.db_utils.backends.base import Backend
 from midvatten.tools.utils.db_utils.errors import DatabaseLockedError
 
@@ -312,7 +309,7 @@ class SQLiteBackend(Backend):
         import datetime
         import zipfile
 
-        from midvatten.tools.utils.common_utils import MessagebarAndLog
+        from midvatten.tools.utils.message_utils import MessagebarAndLog
         from qgis.PyQt.QtCore import QCoreApplication
 
         try:

@@ -40,7 +40,7 @@ from qgis.core import (
 from midvatten.definitions import midvatten_defs as defs
 from midvatten.tools.utils import common_utils, db_utils, midvatten_utils
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
-from midvatten.tools.utils.common_utils import returnunicode as ru
+from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.midvatten_utils import add_layers_to_list
 
 log = logging.getLogger(__name__)

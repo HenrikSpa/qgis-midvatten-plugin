@@ -15,7 +15,8 @@ from matplotlib.widgets import RectangleSelector
 
 from qgis.PyQt import uic
 from midvatten.tools.utils import common_utils, db_utils
-from midvatten.tools.utils.common_utils import fn_timer, returnunicode as ru
+from midvatten.tools.utils.common_utils import fn_timer
+from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.date_utils import (
     change_timezone,
     datestring_to_date,

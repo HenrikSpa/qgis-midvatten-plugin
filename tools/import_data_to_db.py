@@ -30,7 +30,7 @@ import psycopg2.extras
 from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools.utils import common_utils, db_utils
-from midvatten.tools.utils.common_utils import UserInterruptError
+from midvatten.tools.utils.exceptions import UserInterruptError
 from midvatten.tools.utils.db_utils import DbConnectionManager
 
 

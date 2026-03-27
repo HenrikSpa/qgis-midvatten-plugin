@@ -31,7 +31,8 @@ from qgis.PyQt.QtCore import QCoreApplication, QItemSelectionModel
 
 from midvatten.tools import import_data_to_db
 from midvatten.tools.utils import common_utils, midvatten_utils, db_utils
-from midvatten.tools.utils.common_utils import returnunicode as ru, Cancel
+from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils.common_utils import Cancel
 from midvatten.tools.utils.date_utils import datestring_to_date
 from midvatten.tools.utils.db_utils import tables_columns, sql_load_fr_db
 from midvatten.tools.utils.gui_utils import (

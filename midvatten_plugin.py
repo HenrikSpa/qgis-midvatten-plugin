@@ -64,7 +64,7 @@ from midvatten.tools.stratigraphy import Stratigraphy
 from midvatten.tools.tsplot import TimeSeriesPlot
 from midvatten.tools.utils import common_utils, db_utils, midvatten_utils
 from midvatten.tools.utils import matplotlib_replacements
-from midvatten.tools.utils.common_utils import returnunicode as ru
+from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.util_translate import get_translate
 from midvatten.tools.w_flow_calc_aveflow import CalculateAveflow
 from midvatten.tools.wqualreport import Wqualreport

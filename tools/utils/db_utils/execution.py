@@ -9,11 +9,8 @@ from typing import Callable, Any, Optional
 
 from qgis.PyQt.QtCore import QCoreApplication
 
-from midvatten.tools.utils.common_utils import (
-    MessagebarAndLog,
-    returnunicode as ru,
-    sql_failed_msg,
-)
+from midvatten.tools.utils.message_utils import MessagebarAndLog, sql_failed_msg
+from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.db_utils.connection import DbConnectionManager
 
 

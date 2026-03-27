@@ -34,7 +34,7 @@ from qgis.PyQt.QtGui import QDesktopServices
 
 from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
-from midvatten.tools.utils.common_utils import returnunicode as ru
+from midvatten.tools.utils.string_utils import returnunicode as ru
 
 custom_drillreport_dialog = qgis.PyQt.uic.loadUiType(
     os.path.join(os.path.dirname(__file__), "..", "ui", "custom_drillreport.ui")

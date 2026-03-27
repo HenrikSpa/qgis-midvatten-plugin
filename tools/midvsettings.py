@@ -16,7 +16,7 @@ from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import QgsProject
 
 from midvatten.definitions import midvatten_defs
-from midvatten.tools.utils.common_utils import MessagebarAndLog
+from midvatten.tools.utils.message_utils import MessagebarAndLog
 
 log = logging.getLogger(__name__)
 

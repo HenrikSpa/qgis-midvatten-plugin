@@ -10,11 +10,9 @@ import qgis.core
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import QgsProject
 
-from midvatten.tools.utils.common_utils import (
-    MessagebarAndLog,
-    returnunicode as ru,
-    UsageError,
-)
+from midvatten.tools.utils.message_utils import MessagebarAndLog
+from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils.exceptions import UsageError
 from midvatten.tools.utils.db_utils.backends.base import Backend
 from midvatten.tools.utils.db_utils.backends.postgresql import PostgreSQLBackend
 from midvatten.tools.utils.db_utils.backends.sqlite import SQLiteBackend

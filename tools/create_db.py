@@ -30,11 +30,9 @@ from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import Qgis
 
 from midvatten.tools.utils import common_utils, db_utils
-from midvatten.tools.utils.common_utils import (
-    returnunicode as ru,
-    get_full_filename,
-    format_timezone_string,
-)
+from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils.file_utils import get_full_filename
+from midvatten.tools.utils.common_utils import format_timezone_string
 from midvatten.tools.utils.date_utils import get_pytz_timezones
 from midvatten.tools.utils.db_utils import DbConnectionManager, execute_sqlfile
 

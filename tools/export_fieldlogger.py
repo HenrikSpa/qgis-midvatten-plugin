@@ -39,11 +39,8 @@ from qgis.gui import QgsMapLayerComboBox
 
 import midvatten.definitions.midvatten_defs as defs
 from midvatten.tools.utils import common_utils, db_utils, gui_utils
-from midvatten.tools.utils.common_utils import (
-    returnunicode as ru,
-    start_waiting_cursor,
-    stop_waiting_cursor,
-)
+from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils.common_utils import start_waiting_cursor, stop_waiting_cursor
 from midvatten.tools.utils.gui_utils import (
     SplitterWithHandel,
     ExtendedQPlainTextEdit,

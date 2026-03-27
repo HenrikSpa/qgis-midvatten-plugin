@@ -34,11 +34,8 @@ from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QComboBox
 
-from midvatten.tools.utils.common_utils import (
-    returnunicode as ru,
-    MessagebarAndLog,
-    sql_failed_msg,
-)
+from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils.message_utils import MessagebarAndLog, sql_failed_msg
 from midvatten.tools.utils.date_utils import datestring_to_date
 from midvatten.tools.utils.db_utils import DbConnectionManager, sql_load_fr_db
 

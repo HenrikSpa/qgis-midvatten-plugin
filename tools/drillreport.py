@@ -29,7 +29,7 @@ from qgis.PyQt.QtGui import QDesktopServices
 from midvatten.tools.calculate_statistics import get_statistics_for_single_obsid
 from midvatten.tools.drillreport_models import ObsPointsRow, StratigraphyRow
 from midvatten.tools.utils import common_utils, midvatten_utils, db_utils
-from midvatten.tools.utils.common_utils import returnunicode as ru
+from midvatten.tools.utils.string_utils import returnunicode as ru
 
 
 class Drillreport:  # general observation point info for the selected object

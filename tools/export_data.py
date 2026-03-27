@@ -130,7 +130,7 @@ class ExportData:
         # Statistics
         statistics = self.get_table_rows_with_differences()
 
-        self.dest_dbconnection.cursor.execute("vacuum")
+        self.dest_dbconnection.vacuum()
 
         common_utils.MessagebarAndLog.info(
             bar_msg=QCoreApplication.translate(

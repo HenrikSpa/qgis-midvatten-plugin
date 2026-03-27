@@ -442,10 +442,6 @@ def warn_about_old_database():
     try:
         dbconnection = db_utils.DbConnectionManager()
     except UsageError:
-        try:
-            dbconnection.closedb()
-        except Exception:
-            MessagebarAndLog.info(log_msg=traceback.format_exc())
         # Probably empty project
         return
 

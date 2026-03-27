@@ -1558,7 +1558,8 @@ class Midvatten:
         )  # verify midv settings are loaded
         if err_flag == 0:
             QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
-            db_utils.sql_alter_db("vacuum")
+            with db_utils.use_or_create_connection(None) as dbconnection:
+                dbconnection.vacuum()
             common_utils.stop_waiting_cursor()
 
     @common_utils.general_exception_handler

@@ -18,13 +18,17 @@
 """
 
 import datetime
+import logging
 import re
 from typing import List
 
 import pytz
 from qgis.PyQt.QtCore import QCoreApplication
 
-from midvatten.tools.utils.common_utils import returnunicode as ru, MessagebarAndLog
+from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils.message_utils import MessagebarAndLog
+
+log = logging.getLogger(__name__)
 
 
 def find_date_format(datestring: str, suppress_error_msg: bool = False) -> str:
@@ -94,11 +98,9 @@ def find_date_format(datestring: str, suppress_error_msg: bool = False) -> str:
                 bar_msg=QCoreApplication.translate(
                     "find_date_format", "Date parsing failed, see log message panel"
                 ),
-                log_msg=ru(
-                    QCoreApplication.translate(
-                        "find_date_format",
-                        'Could not find the date format for string "%s"\nSupported date formats:\n%s',
-                    )
+                log_msg=QCoreApplication.translate(
+                    "find_date_format",
+                    'Could not find the date format for string "%s"\nSupported date formats:\n%s',
                 )
                 % (ru(datestring), "\n".join(date_formats_to_try)),
             )
@@ -148,7 +150,7 @@ def dateshift(adate: datetime.datetime, n: int, step_lenght: str) -> datetime.da
 
 
 def datestring_to_date(
-    astring: str, now: datetime.datetime = datetime.datetime.now(), df: None = None
+    astring: str, now: datetime.datetime = datetime.datetime.now(), df: str = None
 ) -> datetime.datetime:
     """
     Takes a string representing a date and converts it to datetime
@@ -187,7 +189,7 @@ def datestring_to_date(
     return adate
 
 
-def long_dateformat(astring: str, dateformat: None = None) -> str:
+def long_dateformat(astring: str, dateformat: str = None) -> str:
     return datetime.datetime.strftime(
         datestring_to_date(astring, df=dateformat), "%Y-%m-%d %H:%M:%S"
     )
@@ -244,7 +246,7 @@ def find_time_format(datestring: str):
 
     format_list = time_formats_to_try.get(length, None)
     if format_list is None:
-        print("Timeformat not supported for %s" % datestring)
+        log.debug("Timeformat not supported for %s" % datestring)
         return None
 
     for timeformat in format_list:
@@ -311,11 +313,9 @@ def parse_timezone_to_timedelta(tz_string: str) -> datetime.timedelta:
             res = ("", "", "", "")
         else:
             raise ValueError(
-                ru(
-                    QCoreApplication.translate(
-                        "parse_timezone_to_timedelta",
-                        "Timezone string %s could not be parsed!",
-                    )
+                QCoreApplication.translate(
+                    "parse_timezone_to_timedelta",
+                    "Timezone string %s could not be parsed!",
                 )
                 % tz_string
             )

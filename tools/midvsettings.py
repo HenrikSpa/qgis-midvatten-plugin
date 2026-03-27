@@ -9,14 +9,16 @@
         email                : groundwatergis [at] gmail.com
  ***************************************************************************/"""
 
+import logging
 import traceback
 
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import QgsProject
 
 from midvatten.definitions import midvatten_defs
-from midvatten.tools.utils.common_utils import MessagebarAndLog
-from midvatten.tools.utils.common_utils import returnunicode as ru
+from midvatten.tools.utils.message_utils import MessagebarAndLog
+
+log = logging.getLogger(__name__)
 
 
 class MidvSettings:
@@ -65,11 +67,9 @@ class MidvSettings:
                 self.settingsdict[key] = output[key][0]
             except KeyError:
                 MessagebarAndLog.warning(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "midvsettings",
-                            "Settings key %s does not exist in project file. Maybe this file was last used with old Midvatten plugin?",
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "midvsettings",
+                        "Settings key %s does not exist in project file. Maybe this file was last used with old Midvatten plugin?",
                     )
                     % (str(key))
                 )
@@ -100,6 +100,6 @@ class MidvSettings:
                 try:
                     save_func("Midvatten", key, value)
                 except Exception:
-                    print(
+                    log.debug(
                         f"debug info; midvsettings.save_settings failed, key: '{key}', value '{str(value)}', value type: '{str(type(value))}', msg:\n{traceback.format_exc()}"
                     )

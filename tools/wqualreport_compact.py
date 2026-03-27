@@ -20,6 +20,7 @@
 import ast
 import codecs
 import json
+import logging
 import os
 import traceback
 
@@ -30,16 +31,17 @@ import qgis.PyQt
 from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools.utils import common_utils, db_utils, gui_utils
-from midvatten.tools.utils.common_utils import (
-    returnunicode as ru,
-    general_exception_handler,
-)
+from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
+from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils.common_utils import general_exception_handler
 from midvatten.tools.wqualreport_core import (
     report_path,
     write_html_preamble,
     write_html_close,
     open_report_in_browser,
 )
+
+log = logging.getLogger(__name__)
 
 custom_drillreport_dialog = qgis.PyQt.uic.loadUiType(
     os.path.join(os.path.dirname(__file__), "..", "ui", "compact_w_qual_report.ui")
@@ -53,14 +55,12 @@ class CompactWqualReportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_d
         self.tables_columns = db_utils.tables_columns()
 
         self.ms = midv_settings
-        qgis.PyQt.QtWidgets.QDialog.__init__(self, parent)
-        self.setAttribute(qgis.PyQt.QtCore.Qt.WA_DeleteOnClose)
+        qgis.PyQt.QtWidgets.QMainWindow.__init__(self, parent)
+        self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt
         self.setWindowTitle(
-            ru(
-                QCoreApplication.translate(
-                    "CompactWqualReportUi", "Compact water quality report"
-                )
+            QCoreApplication.translate(
+                "CompactWqualReportUi", "Compact water quality report"
             )
         )
 
@@ -207,11 +207,9 @@ class CompactWqualReportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_d
         date_time_as_columns = self.date_time_as_columns.isChecked()
         if date_time_as_columns and not sort_order:
             common_utils.MessagebarAndLog.critical(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "CompactWqualReportUi",
-                        "Must give at least one column to sort by!",
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "CompactWqualReportUi",
+                    "Must give at least one column to sort by!",
                 )
             )
             return
@@ -278,11 +276,9 @@ class CompactWqualReportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_d
                 attr = getattr(self, attrname)
             except Exception:
                 common_utils.MessagebarAndLog.info(
-                    log_msg=ru(
-                        QCoreApplication.translate(
-                            "DrillreportUi",
-                            "Programming error. Attribute name %s didn't exist in self.",
-                        )
+                    log_msg=QCoreApplication.translate(
+                        "DrillreportUi",
+                        "Programming error. Attribute name %s didn't exist in self.",
                     )
                     % attrname
                 )
@@ -300,11 +296,9 @@ class CompactWqualReportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_d
                     val = attr.currentText()
                 else:
                     common_utils.MessagebarAndLog.info(
-                        log_msg=ru(
-                            QCoreApplication.translate(
-                                "DrillreportUi",
-                                "Programming error. The Qt-type %s is unhandled.",
-                            )
+                        log_msg=QCoreApplication.translate(
+                            "DrillreportUi",
+                            "Programming error. The Qt-type %s is unhandled.",
                         )
                         % str(type(attr))
                     )
@@ -327,15 +321,14 @@ class CompactWqualReportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_d
             tupleformatter="(\n%s, )",
         )
 
-        msg = ru(
-            QCoreApplication.translate(
-                "CompactWqualReportUi",
-                "Replace the settings string with a new settings string.",
-            )
+        msg = QCoreApplication.translate(
+            "CompactWqualReportUi",
+            "Replace the settings string with a new settings string.",
         )
+
         new_string = qgis.PyQt.QtWidgets.QInputDialog.getText(
             None,
-            ru(QCoreApplication.translate("DrillreportUi", "Edit settings string")),
+            QCoreApplication.translate("DrillreportUi", "Edit settings string"),
             msg,
             qgis.PyQt.QtWidgets.QLineEdit.Normal,
             old_string,
@@ -354,11 +347,9 @@ class CompactWqualReportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_d
                 as_dict = ast.literal_eval(new_string_text)
         except Exception as e:
             common_utils.MessagebarAndLog.warning(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "CompactWqualReportUi",
-                        "Translating string to dict failed, see log message panel",
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "CompactWqualReportUi",
+                    "Translating string to dict failed, see log message panel",
                 ),
                 log_msg=str(e),
             )
@@ -411,10 +402,8 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
             w_qual_lab_layer = qgis.utils.iface.activeLayer()
             if w_qual_lab_layer is None:
                 raise common_utils.UsageError(
-                    ru(
-                        QCoreApplication.translate(
-                            "CompactWqualReport", "Must select a layer!"
-                        )
+                    QCoreApplication.translate(
+                        "CompactWqualReport", "Must select a layer!"
                     )
                 )
             if not w_qual_lab_layer.selectedFeatureCount():
@@ -422,14 +411,14 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
             df = self.get_data_from_qgislayer(w_qual_lab_layer, data_columns)
         else:
             df = self.get_data_from_sql(
-                sql_table, common_utils.getselectedobjectnames(), data_columns
+                sql_table, common_utils.get_selected_object_names(), data_columns
             )
 
         if "depth" in df.columns:
             try:
                 df.loc[df["depth"] == "", "depth"] = np.nan
             except Exception:
-                print(f"Something went wrong: {traceback.format_exc()}")
+                log.debug(f"Something went wrong: {traceback.format_exc()}")
 
             df["depth"] = df["depth"].fillna(0)
             df.loc[:, "obsid"].where(
@@ -521,10 +510,8 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
         columns = [column for column in columns if column in fieldnames]
         if any(missing):
             raise common_utils.UsageError(
-                ru(
-                    QCoreApplication.translate(
-                        "CompactWqualReport", "The chosen table must contain columns %s"
-                    )
+                QCoreApplication.translate(
+                    "CompactWqualReport", "The chosen table must contain columns %s"
                 )
                 % str(columns)
             )
@@ -560,10 +547,8 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
 
         if any(missing):
             raise common_utils.UsageError(
-                ru(
-                    QCoreApplication.translate(
-                        "CompactWqualReport", "The chosen layer must contain columns %s"
-                    )
+                QCoreApplication.translate(
+                    "CompactWqualReport", "The chosen layer must contain columns %s"
                 )
                 % str(columns)
             )
@@ -596,11 +581,9 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
             msgfunc = common_utils.MessagebarAndLog.info
 
         msgfunc(
-            bar_msg=ru(
-                QCoreApplication.translate(
-                    "CompactWqualReport",
-                    "Layer processed with %s selected features, %s read features and %s invalid features.",
-                )
+            bar_msg=QCoreApplication.translate(
+                "CompactWqualReport",
+                "Layer processed with %s selected features, %s read features and %s invalid features.",
             )
             % (
                 str(w_qual_lab_layer.selectedFeatureCount()),
@@ -720,7 +703,7 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
                     )
                     rpt += "</tr>\n"
             except Exception:
-                print("here was an error: %s" % row)
+                log.debug("here was an error: %s" % row)
             f.write(rpt)
 
         f.write("\n</table><p></p><p></p>")

@@ -23,6 +23,7 @@ import copy
 import json
 import io
 import locale
+import logging
 import os
 import re
 import shutil
@@ -53,25 +54,27 @@ else:
     pandas_on = True
 
 
-from midvatten.tools.utils.common_utils import (
-    MessagebarAndLog,
-    find_layer,
+from midvatten.tools.utils.message_utils import MessagebarAndLog, sql_failed_msg
+from midvatten.tools.utils.layer_utils import find_layer
+from midvatten.tools.utils.string_utils import (
     returnunicode as ru,
-    sql_failed_msg,
-    UsageError,
-    get_full_filename,
     returnunicode,
-    UserInterruptError,
+    anything_to_string_representation,
+)
+from midvatten.tools.utils.exceptions import UsageError, UserInterruptError
+from midvatten.tools.utils.file_utils import get_full_filename
+from midvatten.tools.utils.dialog_utils import Askuser
+from midvatten.tools.utils.common_utils import (
     transpose_lists_of_lists,
     general_exception_handler,
     get_save_file_name_no_extension,
-    anything_to_string_representation,
-    Askuser,
 )
 
 from midvatten.definitions.db_defs import latest_database_version
 
 from midvatten.tools.utils import db_utils
+
+log = logging.getLogger(__name__)
 
 
 def verify_msettings_loaded_and_layer_edit_mode(
@@ -95,11 +98,9 @@ def verify_msettings_loaded_and_layer_edit_mode(
             if not only_error_if_editing_enabled:
                 errorsignal += 1
                 MessagebarAndLog.warning(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "verify_msettings_loaded_and_layer_edit_mode",
-                            "Error layer %s is required but missing!",
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "verify_msettings_loaded_and_layer_edit_mode",
+                        "Error layer %s is required but missing!",
                     )
                     % str(layername)
                 )
@@ -108,11 +109,9 @@ def verify_msettings_loaded_and_layer_edit_mode(
             if layerexists:
                 if layerexists.isEditable():
                     MessagebarAndLog.warning(
-                        bar_msg=ru(
-                            QCoreApplication.translate(
-                                "verify_msettings_loaded_and_layer_edit_mode",
-                                "Error %s is currently in editing mode.\nPlease exit this mode before proceeding with this operation.",
-                            )
+                        bar_msg=QCoreApplication.translate(
+                            "verify_msettings_loaded_and_layer_edit_mode",
+                            "Error %s is currently in editing mode.\nPlease exit this mode before proceeding with this operation.",
                         )
                         % str(layerexists.name())
                     )
@@ -165,11 +164,9 @@ def ask_for_charset(default_charset=None, msg=None):
         if default_charset is None:
             if msg is None:
                 msg = (
-                    ru(
-                        QCoreApplication.translate(
-                            "ask_for_charset",
-                            "Give charset used in the file, normally\niso-8859-1, utf-8, cp1250 or cp1252.\n\nOn your computer %s is default.",
-                        )
+                    QCoreApplication.translate(
+                        "ask_for_charset",
+                        "Give charset used in the file, normally\niso-8859-1, utf-8, cp1250 or cp1252.\n\nOn your computer %s is default.",
                     )
                     % localencoding
                 )
@@ -269,7 +266,7 @@ from midvatten.tools.utils.db_utils.helpers import sql_to_parameters_units_tuple
 
 
 def getcurrentlocale(
-    print_error_message_in_bar: bool = True, dbconnection: None = None
+    print_error_message_in_bar: bool = True, dbconnection=None
 ) -> List[str]:
     if not isinstance(dbconnection, db_utils.DbConnectionManager):
         try:
@@ -333,11 +330,9 @@ def get_locale_from_db(
             return locale_setting
     else:
         MessagebarAndLog.info(
-            log_msg=ru(
-                QCoreApplication.translate(
-                    "get_locale_from_db",
-                    "Connection to db failed when getting locale from db.",
-                )
+            log_msg=QCoreApplication.translate(
+                "get_locale_from_db",
+                "Connection to db failed when getting locale from db.",
             )
         )
         return None
@@ -403,7 +398,7 @@ def add_layers_to_list(
         orig_tablename = tablename
 
         if tablename not in existing_tables:
-            print(f"Tablename {tablename} not found among {existing_tables}")
+            log.debug(f"Tablename {tablename} not found among {existing_tables}")
             continue
 
         layername = layernames[idx] if layernames is not None else None
@@ -459,13 +454,11 @@ def warn_about_old_database():
         rows = dbconnection.cursor.fetchall()
     except Exception as e:
         MessagebarAndLog.warning(
-            bar_msg=ru(
-                QCoreApplication.translate(
-                    "warn_about_old_database",
-                    "Database might not be a valid Midvatten database!",
-                )
+            bar_msg=QCoreApplication.translate(
+                "warn_about_old_database",
+                "Database might not be a valid Midvatten database!",
             ),
-            log_msg=ru(QCoreApplication.translate("warn_about_old_database", "msg: %s"))
+            log_msg=QCoreApplication.translate("warn_about_old_database", "msg: %s")
             % str(e),
         )
         return
@@ -474,11 +467,9 @@ def warn_about_old_database():
         row = rows[0][0]
     except Exception:
         MessagebarAndLog.info(
-            log_msg=ru(
-                QCoreApplication.translate(
-                    "warn_about_old_database",
-                    "No row returned from about_db when searching for version.",
-                )
+            log_msg=QCoreApplication.translate(
+                "warn_about_old_database",
+                "No row returned from about_db when searching for version.",
             )
         )
         return
@@ -504,11 +495,9 @@ def warn_about_old_database():
 
             if is_old:
                 MessagebarAndLog.info(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "warn_about_old_database",
-                            """The database version appears to be older than %s. An upgrade is suggested! See %s""",
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "warn_about_old_database",
+                        """The database version appears to be older than %s. An upgrade is suggested! See %s""",
                     )
                     % (latest_database_version(), wikipage),
                     duration=4,
@@ -539,11 +528,9 @@ def version_comparison_list(version_string: str) -> List[int]:
                         except ValueError:
                             """Programming error. Version string was 1.5.7b."""
                             MessagebarAndLog.info(
-                                bar_msg=ru(
-                                    QCoreApplication.translate(
-                                        "version_comparison_list",
-                                        """Programming error. Version string was %s.""",
-                                    )
+                                bar_msg=QCoreApplication.translate(
+                                    "version_comparison_list",
+                                    """Programming error. Version string was %s.""",
                                 )
                                 % version_string,
                                 duration=5,
@@ -1189,9 +1176,6 @@ class MatplotlibStyles:
         selected = self.style_list.selectedItems()
         if selected:
             return selected[0].text()
-
-    def style_from_filename(self, filename):
-        return os.path.splitext(os.path.basename(filename))
 
     def filename_from_style(self, style):
         filename = os.path.join(self.style_folder, style + self.style_extension)

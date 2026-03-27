@@ -33,7 +33,8 @@ from qgis.PyQt.QtCore import QUrl, QDir
 from qgis.PyQt.QtGui import QDesktopServices
 
 from midvatten.tools.utils import common_utils, db_utils
-from midvatten.tools.utils.common_utils import returnunicode as ru
+from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
+from midvatten.tools.utils.string_utils import returnunicode as ru
 
 custom_drillreport_dialog = qgis.PyQt.uic.loadUiType(
     os.path.join(os.path.dirname(__file__), "..", "ui", "custom_drillreport.ui")
@@ -45,8 +46,8 @@ class DrillreportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
         self.iface = parent
 
         self.ms = midv_settings
-        qgis.PyQt.QtWidgets.QDialog.__init__(self, parent)
-        self.setAttribute(qgis.PyQt.QtCore.Qt.WA_DeleteOnClose)
+        qgis.PyQt.QtWidgets.QMainWindow.__init__(self, parent)
+        self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt
 
         self.stored_settings_key = "customdrillreportstoredsettings"
@@ -76,7 +77,7 @@ class DrillreportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
         skip_empty = self.skip_empty.isChecked()
         include_comments = self.include_comments.isChecked()
         obsids = sorted(
-            common_utils.getselectedobjectnames(qgis.utils.iface.activeLayer())
+            common_utils.get_selected_object_names(qgis.utils.iface.activeLayer())
         )  # selected obs_point is now found in obsid[0]
         general_metadata_header = self.general_metadata_header.text()
         geo_metadata_header = self.geo_metadata_header.text()
@@ -89,11 +90,9 @@ class DrillreportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
         decimal_separator = self.decimal_separator.text()
         if not obsids:
             common_utils.MessagebarAndLog.critical(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "DrillreportUi",
-                        "Must select at least 1 obsid in selected layer",
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "DrillreportUi",
+                    "Must select at least 1 obsid in selected layer",
                 )
             )
             raise common_utils.UsageError()
@@ -189,20 +188,16 @@ class DrillreportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
             )
 
             self.general_metadata_header.setText(
-                ru(QCoreApplication.translate("Drillreport2", "General information"))
+                QCoreApplication.translate("Drillreport2", "General information")
             )
             self.geo_metadata_header.setText(
-                ru(
-                    QCoreApplication.translate(
-                        "Drillreport2", "Geographical information"
-                    )
-                )
+                QCoreApplication.translate("Drillreport2", "Geographical information")
             )
             self.strat_columns_header.setText(
-                ru(QCoreApplication.translate("Drillreport2", "Stratigraphy"))
+                QCoreApplication.translate("Drillreport2", "Stratigraphy")
             )
             self.comment_header.setText(
-                ru(QCoreApplication.translate("Drillreport2", "Comment"))
+                QCoreApplication.translate("Drillreport2", "Comment")
             )
             ##If False, the header will be written outside the table
             # header_in_table = True
@@ -235,11 +230,9 @@ class DrillreportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
                 attr = getattr(self, attrname)
             except Exception:
                 common_utils.MessagebarAndLog.info(
-                    log_msg=ru(
-                        QCoreApplication.translate(
-                            "DrillreportUi",
-                            "Programming error. Attribute name %s didn't exist in self.",
-                        )
+                    log_msg=QCoreApplication.translate(
+                        "DrillreportUi",
+                        "Programming error. Attribute name %s didn't exist in self.",
                     )
                     % attrname
                 )
@@ -252,11 +245,9 @@ class DrillreportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
                     val = attr.text()
                 else:
                     common_utils.MessagebarAndLog.info(
-                        log_msg=ru(
-                            QCoreApplication.translate(
-                                "DrillreportUi",
-                                "Programming error. The Qt-type %s is unhandled.",
-                            )
+                        log_msg=QCoreApplication.translate(
+                            "DrillreportUi",
+                            "Programming error. The Qt-type %s is unhandled.",
                         )
                         % str(type(attr))
                     )
@@ -279,15 +270,14 @@ class DrillreportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
             tupleformatter="(\n%s, )",
         )
 
-        msg = ru(
-            QCoreApplication.translate(
-                "DrillreportUi",
-                "Replace the settings string with a new settings string.",
-            )
+        msg = QCoreApplication.translate(
+            "DrillreportUi",
+            "Replace the settings string with a new settings string.",
         )
+
         new_string = qgis.PyQt.QtWidgets.QInputDialog.getText(
             None,
-            ru(QCoreApplication.translate("DrillreportUi", "Edit settings string")),
+            QCoreApplication.translate("DrillreportUi", "Edit settings string"),
             msg,
             qgis.PyQt.QtWidgets.QLineEdit.Normal,
             old_string,
@@ -306,11 +296,9 @@ class DrillreportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
                 as_dict = ast.literal_eval(new_string_text)
         except Exception as e:
             common_utils.MessagebarAndLog.warning(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "DrillreportUi",
-                        "Translating string to dict failed, see log message panel",
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "DrillreportUi",
+                    "Translating string to dict failed, see log message panel",
                 ),
                 log_msg=str(e),
             )
@@ -352,10 +340,8 @@ class Drillreport:  # general observation point info for the selected object
 
         if len(obsids) == 0:
             common_utils.pop_up_info(
-                ru(
-                    QCoreApplication.translate(
-                        "Drillreport", "Must select one or more obsids!"
-                    )
+                QCoreApplication.translate(
+                    "Drillreport", "Must select one or more obsids!"
                 )
             )
             return None
@@ -363,37 +349,37 @@ class Drillreport:  # general observation point info for the selected object
         obsids = sorted(set(obsids))
 
         obs_points_translations = {
-            "obsid": ru(QCoreApplication.translate("Drillreport2", "obsid")),
-            "name": ru(QCoreApplication.translate("Drillreport2", "name")),
-            "place": ru(QCoreApplication.translate("Drillreport2", "place")),
-            "type": ru(QCoreApplication.translate("Drillreport2", "type")),
-            "length": ru(QCoreApplication.translate("Drillreport2", "length")),
-            "drillstop": ru(QCoreApplication.translate("Drillreport2", "drillstop")),
-            "diam": ru(QCoreApplication.translate("Drillreport2", "diam")),
-            "material": ru(QCoreApplication.translate("Drillreport2", "material")),
-            "screen": ru(QCoreApplication.translate("Drillreport2", "screen")),
-            "capacity": ru(QCoreApplication.translate("Drillreport2", "capacity")),
-            "drilldate": ru(QCoreApplication.translate("Drillreport2", "drilldate")),
-            "wmeas_yn": ru(QCoreApplication.translate("Drillreport2", "wmeas_yn")),
-            "wlogg_yn": ru(QCoreApplication.translate("Drillreport2", "wlogg_yn")),
-            "east": ru(QCoreApplication.translate("Drillreport2", "east")),
-            "north": ru(QCoreApplication.translate("Drillreport2", "north")),
-            "ne_accur": ru(QCoreApplication.translate("Drillreport2", "ne_accur")),
-            "ne_source": ru(QCoreApplication.translate("Drillreport2", "ne_source")),
-            "h_toc": ru(QCoreApplication.translate("Drillreport2", "h_toc")),
-            "h_tocags": ru(QCoreApplication.translate("Drillreport2", "h_tocags")),
-            "h_gs": ru(QCoreApplication.translate("Drillreport2", "h_gs")),
-            "h_accur": ru(QCoreApplication.translate("Drillreport2", "h_accur")),
-            "h_syst": ru(QCoreApplication.translate("Drillreport2", "h_syst")),
-            "h_source": ru(QCoreApplication.translate("Drillreport2", "h_source")),
-            "source": ru(QCoreApplication.translate("Drillreport2", "source")),
-            "com_onerow": ru(QCoreApplication.translate("Drillreport2", "com_onerow")),
-            "com_html": ru(QCoreApplication.translate("Drillreport2", "com_html")),
+            "obsid": QCoreApplication.translate("Drillreport2", "obsid"),
+            "name": QCoreApplication.translate("Drillreport2", "name"),
+            "place": QCoreApplication.translate("Drillreport2", "place"),
+            "type": QCoreApplication.translate("Drillreport2", "type"),
+            "length": QCoreApplication.translate("Drillreport2", "length"),
+            "drillstop": QCoreApplication.translate("Drillreport2", "drillstop"),
+            "diam": QCoreApplication.translate("Drillreport2", "diam"),
+            "material": QCoreApplication.translate("Drillreport2", "material"),
+            "screen": QCoreApplication.translate("Drillreport2", "screen"),
+            "capacity": QCoreApplication.translate("Drillreport2", "capacity"),
+            "drilldate": QCoreApplication.translate("Drillreport2", "drilldate"),
+            "wmeas_yn": QCoreApplication.translate("Drillreport2", "wmeas_yn"),
+            "wlogg_yn": QCoreApplication.translate("Drillreport2", "wlogg_yn"),
+            "east": QCoreApplication.translate("Drillreport2", "east"),
+            "north": QCoreApplication.translate("Drillreport2", "north"),
+            "ne_accur": QCoreApplication.translate("Drillreport2", "ne_accur"),
+            "ne_source": QCoreApplication.translate("Drillreport2", "ne_source"),
+            "h_toc": QCoreApplication.translate("Drillreport2", "h_toc"),
+            "h_tocags": QCoreApplication.translate("Drillreport2", "h_tocags"),
+            "h_gs": QCoreApplication.translate("Drillreport2", "h_gs"),
+            "h_accur": QCoreApplication.translate("Drillreport2", "h_accur"),
+            "h_syst": QCoreApplication.translate("Drillreport2", "h_syst"),
+            "h_source": QCoreApplication.translate("Drillreport2", "h_source"),
+            "source": QCoreApplication.translate("Drillreport2", "source"),
+            "com_onerow": QCoreApplication.translate("Drillreport2", "com_onerow"),
+            "com_html": QCoreApplication.translate("Drillreport2", "com_html"),
         }
 
         """
         thelist = [ "obsid", "stratid", "depthtop", "depthbot", "geology", "geoshort", "capacity", "development", "comment"]
-        >>> y = '\n'.join(["'%s'"%x + ': ' + "ru(QCoreApplication.translate('Drillreport2', '%s')),"%x for x in thelist])
+        >>> y = '\n'.join(["'%s'"%x + ': ' + "QCoreApplication.translate('Drillreport2', '%s'),"%x for x in thelist])
         >>> print(y)
         """
 
@@ -507,10 +493,8 @@ class Drillreport:  # general observation point info for the selected object
                 ):
                     geo_data.append(
                         (
-                            ru(
-                                QCoreApplication.translate(
-                                    "Drillreport2", "XY Reference system"
-                                )
+                            QCoreApplication.translate(
+                                "Drillreport2", "XY Reference system"
                             ),
                             "%s" % ("%s, " % crsname if crsname else "")
                             + "EPSG:"
@@ -587,10 +571,8 @@ class Drillreport:  # general observation point info for the selected object
         )
         rpt += r"""<head><title>%s %s</title></head>""" % (
             header,
-            ru(
-                QCoreApplication.translate(
-                    "Drillreport", "General report from Midvatten plugin for QGIS"
-                )
+            QCoreApplication.translate(
+                "Drillreport", "General report from Midvatten plugin for QGIS"
             ),
         )
 
@@ -623,15 +605,27 @@ class Drillreport:  # general observation point info for the selected object
         geo_metadata_header="",
         strat_columns_header="",
         comment_header="",
-        general_rounding=[],
-        geo_rounding=[],
-        strat_sql_columns_list=[],
-        topleft_topright_colwidths=[],
-        general_colwidth=[],
-        geo_colwidth=[],
+        general_rounding=None,
+        geo_rounding=None,
+        strat_sql_columns_list=None,
+        topleft_topright_colwidths=None,
+        general_colwidth=None,
+        geo_colwidth=None,
         decimal_separator=".",
     ):
         """This part only handles writing the information. It does not do any db data collection."""
+        if general_rounding is None:
+            general_rounding = []
+        if geo_rounding is None:
+            geo_rounding = []
+        if strat_sql_columns_list is None:
+            strat_sql_columns_list = []
+        if topleft_topright_colwidths is None:
+            topleft_topright_colwidths = []
+        if general_colwidth is None:
+            general_colwidth = []
+        if geo_colwidth is None:
+            geo_colwidth = []
 
         rpt = ""
 
@@ -728,12 +722,10 @@ class Drillreport:  # general observation point info for the selected object
 
         if not col_widths or len(col_widths) != 2:
             common_utils.MessagebarAndLog.warning(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "Drillreport2",
-                        "Column width not entered correctly, must be like x;y. Was %s"
-                        % str(col_widths),
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "Drillreport2",
+                    "Column width not entered correctly, must be like x;y. Was %s"
+                    % str(col_widths),
                 )
             )
             col_widths = ["2*", "3*"]
@@ -785,17 +777,13 @@ class Drillreport:  # general observation point info for the selected object
                 rpt += rf"""<TR VALIGN=TOP><TD WIDTH=33%><P><font size=1>{header}</font></P></TD><TD WIDTH=50%><P><font size=1>{value}</font></P></TD></TR>"""
             except UnicodeEncodeError:
                 common_utils.MessagebarAndLog.critical(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "custom_drillreport",
-                            "Writing drillreport failed, see log message panel",
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "custom_drillreport",
+                        "Writing drillreport failed, see log message panel",
                     ),
-                    log_msg=ru(
-                        QCoreApplication.translate(
-                            "custom_drillreport",
-                            "Writing header %s and value %s failed",
-                        )
+                    log_msg=QCoreApplication.translate(
+                        "custom_drillreport",
+                        "Writing header %s and value %s failed",
                     )
                     % (header, value),
                 )
@@ -831,61 +819,45 @@ class Drillreport:  # general observation point info for the selected object
             [
                 (
                     "stratid",
-                    ru(
-                        QCoreApplication.translate("Drillreport2_strat", "Layer number")
-                    ),
+                    QCoreApplication.translate("Drillreport2_strat", "Layer number"),
                 ),
                 (
                     "depth",
-                    ru(
-                        QCoreApplication.translate(
-                            "Drillreport2_strat", "level (m b gs)"
-                        )
-                    ),
+                    QCoreApplication.translate("Drillreport2_strat", "level (m b gs)"),
                 ),
                 (
                     "depthtop",
-                    ru(
-                        QCoreApplication.translate(
-                            "Drillreport2_strat", "top of layer (m b gs)"
-                        )
+                    QCoreApplication.translate(
+                        "Drillreport2_strat", "top of layer (m b gs)"
                     ),
                 ),
                 (
                     "depthbot",
-                    ru(
-                        QCoreApplication.translate(
-                            "Drillreport2_strat", "bottom of layer (m b gs)"
-                        )
+                    QCoreApplication.translate(
+                        "Drillreport2_strat", "bottom of layer (m b gs)"
                     ),
                 ),
                 (
                     "geology",
-                    ru(
-                        QCoreApplication.translate(
-                            "Drillreport2_strat", "geology, full text"
-                        )
+                    QCoreApplication.translate(
+                        "Drillreport2_strat", "geology, full text"
                     ),
                 ),
                 (
                     "geoshort",
-                    ru(
-                        QCoreApplication.translate(
-                            "Drillreport2_strat", "geology, short"
-                        )
-                    ),
+                    QCoreApplication.translate("Drillreport2_strat", "geology, short"),
                 ),
                 (
                     "capacity",
-                    ru(QCoreApplication.translate("Drillreport2_strat", "capacity")),
+                    QCoreApplication.translate("Drillreport2_strat", "capacity"),
                 ),
                 (
                     "development",
-                    ru(QCoreApplication.translate("Drillreport2_strat", "development")),
+                    QCoreApplication.translate("Drillreport2_strat", "development"),
                 ),
                 (
                     "comment",
-                    ru(QCoreApplication.translate("Drillreport2_strat", "comment")),
+                    QCoreApplication.translate("Drillreport2_strat", "comment"),
                 ),
             ]
         )
@@ -905,11 +877,9 @@ class Drillreport:  # general observation point info for the selected object
                             depthbot_idx = strat_sql_columns_list.index("depthbot")
                         except ValueError:
                             common_utils.MessagebarAndLog.critical(
-                                bar_msg=ru(
-                                    QCoreApplication.translate(
-                                        "Drillreport2",
-                                        "Programming error, depthtop and depthbot columns was supposed to exist",
-                                    )
+                                bar_msg=QCoreApplication.translate(
+                                    "Drillreport2",
+                                    "Programming error, depthtop and depthbot columns was supposed to exist",
                                 )
                             )
                             rpt += r"""<TD><P><font size=1> </font></P></TD>"""

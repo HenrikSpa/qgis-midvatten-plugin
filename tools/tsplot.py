@@ -27,13 +27,15 @@ from matplotlib.dates import datestr2num
 from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools.utils import common_utils, db_utils
-from midvatten.tools.utils.common_utils import returnunicode as ru
+from midvatten.tools.utils.string_utils import returnunicode as ru
 
 
 class TimeSeriesPlot:
     def __init__(
-        self, layer=None, settingsdict={}
+        self, layer=None, settingsdict=None
     ):  # Might need revision of variables and method for loading default variables
+        if settingsdict is None:
+            settingsdict = {}
         self.settingsdict = settingsdict
         self.showtheplot(layer)
 
@@ -176,19 +178,15 @@ class TimeSeriesPlot:
                 dbconnection.closedb()
             else:
                 common_utils.pop_up_info(
-                    ru(
-                        QCoreApplication.translate(
-                            "TimeSeriesPlot",
-                            "Please select at least one point with time series data",
-                        )
+                    QCoreApplication.translate(
+                        "TimeSeriesPlot",
+                        "Please select at least one point with time series data",
                     )
                 )
         else:
             common_utils.pop_up_info(
-                ru(
-                    QCoreApplication.translate(
-                        "TimeSeriesPlot",
-                        "Please select a layer with time series observation points",
-                    )
+                QCoreApplication.translate(
+                    "TimeSeriesPlot",
+                    "Please select a layer with time series observation points",
                 )
             )

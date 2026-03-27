@@ -26,7 +26,8 @@ from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtWidgets import QMainWindow
 
 from midvatten.tools.utils import common_utils, gui_utils, db_utils
-from midvatten.tools.utils.common_utils import returnunicode as ru
+from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
+from midvatten.tools.utils.string_utils import returnunicode as ru
 
 calculate_statistics_dialog = qgis.PyQt.uic.loadUiType(
     os.path.join(os.path.dirname(__file__), "..", "ui", "calculate_statistics_ui.ui")
@@ -44,7 +45,7 @@ class CalculateStatisticsGui(
 
         self.ms = midv_settings
         qgis.PyQt.QtWidgets.QDialog.__init__(self, parent)
-        self.setAttribute(qgis.PyQt.QtCore.Qt.WA_DeleteOnClose)
+        self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt
 
         tables_columns = db_utils.tables_columns()
@@ -67,11 +68,9 @@ class CalculateStatisticsGui(
 
         if not all([table, column, obsids]):
             common_utils.MessagebarAndLog.critical(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "CalculateStatisticsGui",
-                        """Calculation failed, make sure you've selected a table, a column and features with a column obsid.""",
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "CalculateStatisticsGui",
+                    """Calculation failed, make sure you've selected a table, a column and features with a column obsid.""",
                 )
             )
             return None
@@ -82,10 +81,8 @@ class CalculateStatisticsGui(
         )
         printlist = []
         printlist.append(
-            ru(
-                QCoreApplication.translate(
-                    "Midvatten", "Obsid;Min;Median;Average;Max;Nr of values"
-                )
+            QCoreApplication.translate(
+                "Midvatten", "Obsid;Min;Median;Average;Max;Nr of values"
             )
         )
         printlist.extend(
@@ -95,11 +92,9 @@ class CalculateStatisticsGui(
             ]
         )
         common_utils.MessagebarAndLog.info(
-            bar_msg=ru(
-                QCoreApplication.translate(
-                    "Midvatten",
-                    "Statistics for table %s column %s done, see log for results.",
-                )
+            bar_msg=QCoreApplication.translate(
+                "Midvatten",
+                "Statistics for table %s column %s done, see log for results.",
             )
             % (table, column),
             log_msg="\n".join(printlist),

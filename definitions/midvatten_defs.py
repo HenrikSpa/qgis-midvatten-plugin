@@ -24,11 +24,11 @@ import cycler as _cycler_mod
 from cycler import cycler
 from qgis.PyQt.QtCore import QCoreApplication
 
-from midvatten.tools.utils.common_utils import (
+from midvatten.tools.utils.string_utils import (
     returnunicode as ru,
-    MessagebarAndLog,
     anything_to_string_representation,
 )
+from midvatten.tools.utils.message_utils import MessagebarAndLog
 from midvatten.tools.utils.db_utils import (
     get_sql_result_as_dict,
     sql_load_fr_db,
@@ -336,11 +336,9 @@ def geocolorsymbols():
                         dictionary[geoshort] = dict_qt[ru(strata)][0]
                     except Exception as c:
                         MessagebarAndLog.warning(
-                            log_msg=ru(
-                                QCoreApplication.translate(
-                                    "geocolorsymbols",
-                                    'Error in geocolorsymbols, setting brush and color for strata "%s" using geoshort %s failed. Msg1:\n%s\nMsg2:\n%s\\Msg3:\n%s',
-                                )
+                            log_msg=QCoreApplication.translate(
+                                "geocolorsymbols",
+                                'Error in geocolorsymbols, setting brush and color for strata "%s" using geoshort %s failed. Msg1:\n%s\nMsg2:\n%s\\Msg3:\n%s',
                             )
                             % (strata, geoshort, str(a), str(b), str(c))
                         )
@@ -457,11 +455,9 @@ def hydrocolors():
         except Exception:
             pass
         MessagebarAndLog.warning(
-            bar_msg=ru(
-                QCoreApplication.translate(
-                    "hydrocolors",
-                    "Getting hydrocolors from database failed, using fallback method!",
-                )
+            bar_msg=QCoreApplication.translate(
+                "hydrocolors",
+                "Getting hydrocolors from database failed, using fallback method!",
             )
         )
         dict_qt = {
@@ -736,11 +732,9 @@ def staff_list():
             bar_msg=QCoreApplication.translate(
                 "staff_list", "Sql failed, see log message panel"
             ),
-            log_msg=ru(
-                QCoreApplication.translate(
-                    "staff_list",
-                    "Failed to get existing staff from staff table from sql %s",
-                )
+            log_msg=QCoreApplication.translate(
+                "staff_list",
+                "Failed to get existing staff from staff table from sql %s",
             )
             % sql,
         )
@@ -762,10 +756,8 @@ def w_flow_flowtypes_units():
             bar_msg=QCoreApplication.translate(
                 "w_flow_flowtypes_units", "Error, sql failed, see log message panel"
             ),
-            log_msg=ru(
-                QCoreApplication.translate(
-                    "w_flow_flowtypes_units", "Cannot get data from sql %s"
-                )
+            log_msg=QCoreApplication.translate(
+                "w_flow_flowtypes_units", "Cannot get data from sql %s"
             )
             % ru(sql),
         )
@@ -784,10 +776,8 @@ def w_qual_field_parameter_units():
                 "w_qual_field_parameter_units",
                 "Error, sql failed, see log message panel",
             ),
-            log_msg=ru(
-                QCoreApplication.translate(
-                    "w_qual_field_parameter_units", "Cannot get data from sql %s"
-                )
+            log_msg=QCoreApplication.translate(
+                "w_qual_field_parameter_units", "Cannot get data from sql %s"
             )
             % ru(sql),
         )
@@ -1241,21 +1231,19 @@ def secplot_default_template() -> Dict[str, Any]:
     loaded_template = {}
     loaded_template["ticklabels_Text_set_fontsize"] = {"fontsize": 10}
     loaded_template["Axes_set_xlabel"] = {
-        "xlabel": ru(
-            QCoreApplication.translate("SectionPlot", "Distance along section")
-        ),
+        "xlabel": QCoreApplication.translate("SectionPlot", "Distance along section"),
         "fontsize": 10,
     }
     loaded_template["Axes_set_xlabel_stratplot"] = {
-        "xlabel": ru(
-            QCoreApplication.translate("SectionPlot", "Observation Location Code")
+        "xlabel": QCoreApplication.translate(
+            "SectionPlot", "Observation Location Code"
         ),
         "fontsize": 10,
     }
     loaded_template["Axes_set_xlim"] = None  # Tuple like (min, max)
     loaded_template["Axes_set_ylim"] = None  # Tuple like (min, max)
     loaded_template["Axes_set_ylabel"] = {
-        "ylabel": ru(QCoreApplication.translate("SectionPlot", "Level, masl")),
+        "ylabel": QCoreApplication.translate("SectionPlot", "Level, masl"),
         "fontsize": 10,
     }
     loaded_template["dems_Axes_plot"] = {
@@ -1403,42 +1391,36 @@ def piperplot2_style():
 
 
 def pandas_rule_tooltip():
-    return ru(
-        QCoreApplication.translate(
-            "pandas_rule_tooltip",
-            "Steplength for resampling, ex:\n"
-            '"10S" = 10 seconds\n'
-            '"20T" = 20 minutes\n'
-            '"1h" = 1 hour\n'
-            '"24h" = 24 hours\n'
-            "(D = calendar day, M = month end, MS = month start, W = weekly, AS = year start, A = year end, ...)\n"
-            "No resampling if field is empty\n"
-            "See pandas pandas.DataFrame.resample documentation for more info.",
-        )
+    return QCoreApplication.translate(
+        "pandas_rule_tooltip",
+        "Steplength for resampling, ex:\n"
+        '"10S" = 10 seconds\n'
+        '"20T" = 20 minutes\n'
+        '"1h" = 1 hour\n'
+        '"24h" = 24 hours\n'
+        "(D = calendar day, M = month end, MS = month start, W = weekly, AS = year start, A = year end, ...)\n"
+        "No resampling if field is empty\n"
+        "See pandas pandas.DataFrame.resample documentation for more info.",
     )
 
 
 def pandas_base_tooltip():
-    return ru(
-        QCoreApplication.translate(
-            "pandas_base_tooltip",
-            'The hour to start each timestep when rule "evenly subdivide 1 day" (for example Rule = 24h)\n'
-            "Ex: 7 (= 07:00). Default is 0 (00:00)\n"
-            "See pandas pandas.DataFrame.resample documentation for more info:\n"
-            'For frequencies that evenly subdivide 1 day, the "origin" of the aggregated intervals.\n'
-            'For example, for "5min" frequency, base could range from 0 through 4. Defaults to 0.',
-        )
+    return QCoreApplication.translate(
+        "pandas_base_tooltip",
+        'The hour to start each timestep when rule "evenly subdivide 1 day" (for example Rule = 24h)\n'
+        "Ex: 7 (= 07:00). Default is 0 (00:00)\n"
+        "See pandas pandas.DataFrame.resample documentation for more info:\n"
+        'For frequencies that evenly subdivide 1 day, the "origin" of the aggregated intervals.\n'
+        'For example, for "5min" frequency, base could range from 0 through 4. Defaults to 0.',
     )
 
 
 def pandas_how_tooltip():
-    return ru(
-        QCoreApplication.translate(
-            "pandas_how_tooltip",
-            'How to make the resample, ex. "mean" (default), "first", "last", "sum".\n'
-            "See pandas pandas.DataFrame.resample documentation for more info\n"
-            '(though "how" is not explained a lot)',
-        )
+    return QCoreApplication.translate(
+        "pandas_how_tooltip",
+        'How to make the resample, ex. "mean" (default), "first", "last", "sum".\n'
+        "See pandas pandas.DataFrame.resample documentation for more info\n"
+        '(though "how" is not explained a lot)',
     )
 
 

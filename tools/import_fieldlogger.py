@@ -21,7 +21,6 @@
 """
 
 import copy
-import io
 import os
 from queue import Queue
 from collections import OrderedDict
@@ -36,7 +35,7 @@ from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools.utils import common_utils, midvatten_utils, db_utils
 import midvatten.tools.import_data_to_db as import_data_to_db
-from midvatten.tools.utils.common_utils import returnunicode as ru
+from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.date_utils import datestring_to_date, dateshift
 import midvatten.definitions.midvatten_defs as defs
 from midvatten.tools.utils.gui_utils import (
@@ -45,11 +44,11 @@ from midvatten.tools.utils.gui_utils import (
     RowEntryGrid,
     VRowEntry,
     DateTimeFilter,
+    WA_DeleteOnClose,
     set_combobox,
 )
-from PyQt5.QtWidgets import QComboBox
+from qgis.PyQt.QtWidgets import QComboBox
 from typing import Dict, List, Union
-from unittest.mock import MagicMock
 
 
 import_fieldlogger_ui_dialog = uic.loadUiType(
@@ -63,8 +62,8 @@ class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
         self.iface = parent
         self.ms = msettings
         self.ms.load_settings()
-        QtWidgets.QDialog.__init__(self, parent)
-        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+        QtWidgets.QMainWindow.__init__(self, parent)
+        self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt
         self.status = True
         self.main_vertical_layout.setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
@@ -95,11 +94,9 @@ class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
             QCoreApplication.translate("FieldloggerImport", "Filter dates")
         )
         self.date_time_filter.date_time_filter_update_button.setToolTip(
-            ru(
-                QCoreApplication.translate(
-                    "FieldloggerImport",
-                    "Filter observations using from and to dates and update gui.",
-                )
+            QCoreApplication.translate(
+                "FieldloggerImport",
+                "Filter observations using from and to dates and update gui.",
             )
         )
         self.date_time_filter.layout().addWidget(
@@ -110,7 +107,6 @@ class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
         for setting in self.settings:
             if isinstance(setting, QtWidgets.QWidget):
                 settings_layout.addWidget(setting)
-        # self.add_line(settings_layout)
 
         # Settings with own loop gets self.observations to work on.
         self.settings_with_own_loop = [ObsidFilter()]
@@ -120,8 +116,6 @@ class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
         self.sublocation_filter = SublocationFilter(sublocations)
         self.settings.append(self.sublocation_filter)
         splitter.addWidget(self.sublocation_filter)
-        # sublocations_layout.addWidget(self.sublocation_filter.widget)
-        # self.add_line(sublocations_layout)
 
         self.stored_settingskey = "fieldlogger_import_parameter_settings"
         self.stored_settings = common_utils.get_stored_settings(
@@ -138,7 +132,7 @@ class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
 
         # General buttons
         self.save_settings_button = QtWidgets.QPushButton(
-            ru(QCoreApplication.translate("FieldloggerImport", "Save settings"))
+            QCoreApplication.translate("FieldloggerImport", "Save settings")
         )
         self.grid_layout_buttons.addWidget(self.save_settings_button, 0, 0)
         self.save_settings_button.clicked.connect(
@@ -156,14 +150,12 @@ class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
         )
 
         self.clear_settings_button = QtWidgets.QPushButton(
-            ru(QCoreApplication.translate("FieldloggerImport", "Clear settings"))
+            QCoreApplication.translate("FieldloggerImport", "Clear settings")
         )
         self.clear_settings_button.setToolTip(
-            ru(
-                QCoreApplication.translate(
-                    "FieldloggerImport",
-                    'Clear all parameter settings\nReopen Fieldlogger import gui to have it reset,\nor press "Save settings" to undo.',
-                )
+            QCoreApplication.translate(
+                "FieldloggerImport",
+                'Clear all parameter settings\nReopen Fieldlogger import gui to have it reset,\nor press "Save settings" to undo.',
             )
         )
         self.grid_layout_buttons.addWidget(self.clear_settings_button, 1, 0)
@@ -175,11 +167,9 @@ class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
                         self.ms, [], self.stored_settingskey
                     ),
                     lambda: common_utils.pop_up_info(
-                        ru(
-                            QCoreApplication.translate(
-                                "FieldloggerImport",
-                                "Settings cleared. Restart import Fieldlogger dialog",
-                            )
+                        QCoreApplication.translate(
+                            "FieldloggerImport",
+                            "Settings cleared. Restart import Fieldlogger dialog",
                         )
                     ),
                 ]
@@ -187,17 +177,13 @@ class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
         )
 
         self.close_after_import = QtWidgets.QCheckBox(
-            ru(
-                QCoreApplication.translate(
-                    "FieldloggerImport", "Close dialog after import"
-                )
-            )
+            QCoreApplication.translate("FieldloggerImport", "Close dialog after import")
         )
         self.close_after_import.setChecked(True)
         self.grid_layout_buttons.addWidget(self.close_after_import, 2, 0)
 
         self.start_import_button = QtWidgets.QPushButton(
-            ru(QCoreApplication.translate("FieldloggerImport", "Start import"))
+            QCoreApplication.translate("FieldloggerImport", "Start import")
         )
         self.grid_layout_buttons.addWidget(self.start_import_button, 3, 0)
         self.start_import_button.clicked.connect(
@@ -348,25 +334,6 @@ class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
         else:
             layout.addWidget(line)
 
-    @staticmethod
-    def sublocation_to_groups(sublocations, delimiter="."):
-        """
-        This method splits sublocation using a splitter, default to u'.'. Each list position is grouped to lists
-         containing all distinct values. It's finally stored in a dict with the lenght of the splitted group as key.
-        :param: sublocations: A list of sublocations, ex: ['c', 'a.1', 'a.2', 'b.1.1']
-        :return: a dict like {1: [set(distinct values)], 2: [set(distinct values)}, set(), set()], ...)
-        """
-        sublocation_groups = {}
-        for sublocation in sublocations:
-            splitted = sublocation.split(delimiter)
-            length = len(splitted)
-            for index in range(length):
-                # a dict like {1: [set()], 2: [set(), set()], ...}
-                sublocation_groups.setdefault(length, [set() for i in range(length)])[
-                    index
-                ].add(splitted[index])
-        return sublocation_groups
-
     def update_sublocations_and_inputfields_on_date_change(self):
         sleep(0.2)
         observations = copy.deepcopy(self.observations)
@@ -496,29 +463,23 @@ class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
                     else:
                         last_used_instrumentid = [""]
                 question = common_utils.NotFoundQuestion(
-                    dialogtitle=ru(
-                        QCoreApplication.translate(
-                            "FieldloggerImport", "Submit instrument id"
-                        )
+                    dialogtitle=QCoreApplication.translate(
+                        "FieldloggerImport", "Submit instrument id"
                     ),
                     msg="".join(
                         [
-                            ru(
-                                QCoreApplication.translate(
-                                    "FieldloggerImport",
-                                    "Submit the instrument id for the measurement:\n ",
-                                )
+                            QCoreApplication.translate(
+                                "FieldloggerImport",
+                                "Submit the instrument id for the measurement:\n ",
                             ),
                             ", ".join([sublocation, obsid, date_time, flowtype, unit]),
                         ]
                     ),
                     existing_list=last_used_instrumentid,
                     default_value=last_used_instrumentid[0],
-                    combobox_label=ru(
-                        QCoreApplication.translate(
-                            "FieldloggerImport",
-                            "Instrument id:s in database for obsid %s.\nThe last used instrument id for obsid %s is prefilled:",
-                        )
+                    combobox_label=QCoreApplication.translate(
+                        "FieldloggerImport",
+                        "Instrument id:s in database for obsid %s.\nThe last used instrument id for obsid %s is prefilled:",
                     )
                     % (obsid, obsid),
                 )
@@ -640,18 +601,14 @@ class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
         ]
         if not chosen_methods:
             common_utils.pop_up_info(
-                ru(
-                    QCoreApplication.translate(
-                        "FieldloggerImport",
-                        "Must choose at least one parameter import method",
-                    )
+                QCoreApplication.translate(
+                    "FieldloggerImport",
+                    "Must choose at least one parameter import method",
                 )
             )
             common_utils.MessagebarAndLog.critical(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "FieldloggerImport", "No parameter import method chosen"
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "FieldloggerImport", "No parameter import method chosen"
                 )
             )
             return None
@@ -668,11 +625,9 @@ class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
 
         if not observations:
             common_utils.MessagebarAndLog.warning(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "FieldloggerImport",
-                        "No observations left to import after filtering",
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "FieldloggerImport",
+                    "No observations left to import after filtering",
                 )
             )
             return None
@@ -768,11 +723,9 @@ class ObsidFilter:
 
         if len(observations) == 0:
             raise common_utils.UsageError(
-                ru(
-                    QCoreApplication.translate(
-                        "ObsidFilter",
-                        "No observations returned from obsid verification. Were all skipped?",
-                    )
+                QCoreApplication.translate(
+                    "ObsidFilter",
+                    "No observations returned from obsid verification. Were all skipped?",
                 )
             )
         return observations
@@ -784,11 +737,7 @@ class StaffQuestion(QtWidgets.QWidget):
         self.setLayout(qgis.PyQt.QtWidgets.QHBoxLayout())
         self.layout().setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
         self.label = QtWidgets.QLabel(
-            ru(
-                QCoreApplication.translate(
-                    "StaffQuestion", "Staff who did the measurement"
-                )
-            )
+            QCoreApplication.translate("StaffQuestion", "Staff who did the measurement")
         )
         self.existing_staff_combobox = default_combobox()
         existing_staff = sorted(defs.staff_list()[1])
@@ -809,10 +758,8 @@ class StaffQuestion(QtWidgets.QWidget):
         observation = copy.deepcopy(observation)
         if self.staff is None or not self.staff:
             raise common_utils.UsageError(
-                ru(
-                    QCoreApplication.translate(
-                        "StaffQuestion", "Import error, staff not given"
-                    )
+                QCoreApplication.translate(
+                    "StaffQuestion", "Import error, staff not given"
                 )
             )
 
@@ -826,10 +773,8 @@ class DateShiftQuestion(QtWidgets.QWidget):
         self.setLayout(qgis.PyQt.QtWidgets.QHBoxLayout())
         self.layout().setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
         self.label = QtWidgets.QLabel(
-            ru(
-                QCoreApplication.translate(
-                    "DateShiftQuestion", 'Shift dates, supported format ex. "%s":'
-                )
+            QCoreApplication.translate(
+                "DateShiftQuestion", 'Shift dates, supported format ex. "%s":'
             )
             % "-1 hours"
         )
@@ -846,18 +791,14 @@ class DateShiftQuestion(QtWidgets.QWidget):
         step_steplength = shift_specification.split(" ")
         failed = False
 
-        bar_msg = ru(
-            QCoreApplication.translate(
-                "DateShiftQuestion",
-                "Dateshift specification wrong format, se log message panel",
-            )
+        bar_msg = QCoreApplication.translate(
+            "DateShiftQuestion",
+            "Dateshift specification wrong format, se log message panel",
         )
 
-        log_msg = ru(
-            QCoreApplication.translate(
-                "DateShiftQuestion",
-                'Dateshift specification must be made using format "step step_length", ex: "%s", "%s", "%s" etc.\nSupported step lengths: %s',
-            )
+        log_msg = QCoreApplication.translate(
+            "DateShiftQuestion",
+            'Dateshift specification must be made using format "step step_length", ex: "%s", "%s", "%s" etc.\nSupported step lengths: %s',
         ) % (
             "0 hours",
             "-1 hours",
@@ -876,7 +817,7 @@ class DateShiftQuestion(QtWidgets.QWidget):
             raise common_utils.UsageError()
 
         test_shift = dateshift("2015-02-01", step, steplength)
-        if test_shift == None:
+        if test_shift is None:
             common_utils.MessagebarAndLog.warning(bar_msg=bar_msg, log_msg=log_msg)
             raise common_utils.UsageError()
 
@@ -897,10 +838,8 @@ class SublocationFilter(QtWidgets.QWidget):
 
         self.layout().addWidget(
             QtWidgets.QLabel(
-                ru(
-                    QCoreApplication.translate(
-                        "FieldloggerImport", "Select sublocations to import:"
-                    )
+                QCoreApplication.translate(
+                    "FieldloggerImport", "Select sublocations to import:"
                 )
             )
         )
@@ -985,10 +924,8 @@ class InputFields(QtWidgets.QWidget):
 
         self.layout().addWidget(
             QtWidgets.QLabel(
-                ru(
-                    QCoreApplication.translate(
-                        "InputFields", "Specify import methods for input fields"
-                    )
+                QCoreApplication.translate(
+                    "InputFields", "Specify import methods for input fields"
                 )
             )
         )
@@ -998,14 +935,12 @@ class InputFields(QtWidgets.QWidget):
         # This button has to get filtered observations as input, so it has to be
         # connected elsewhere.
         self.update_parameters_button = QtWidgets.QPushButton(
-            ru(QCoreApplication.translate("InputFields", "Update input fields"))
+            QCoreApplication.translate("InputFields", "Update input fields")
         )
         self.update_parameters_button.setToolTip(
-            ru(
-                QCoreApplication.translate(
-                    "InputFields",
-                    "Update input fields using the observations remaining after filtering by date and sublocation selection.",
-                )
+            QCoreApplication.translate(
+                "InputFields",
+                "Update input fields using the observations remaining after filtering by date and sublocation selection.",
             )
         )
         self.layout().addWidget(self.update_parameters_button)
@@ -1041,8 +976,6 @@ class InputFields(QtWidgets.QWidget):
                 break
             imp_obj.deleteLater()
             imp_obj = None
-            # self.layout.removeWidget(imp_obj.widget)
-            # imp_obj.close()
 
         observations = copy.deepcopy(observations)
         parameter_names = list(
@@ -1121,10 +1054,8 @@ class InputFields(QtWidgets.QWidget):
         :return:
         """
         common_utils.MessagebarAndLog.info(
-            log_msg=ru(
-                QCoreApplication.translate(
-                    "InputFields", "Setting parameters using stored settings: %s"
-                )
+            log_msg=QCoreApplication.translate(
+                "InputFields", "Setting parameters using stored settings: %s"
             )
             % str(stored_settings)
         )
@@ -1151,11 +1082,9 @@ class InputFields(QtWidgets.QWidget):
                 ][0]
             except ValueError:
                 common_utils.MessagebarAndLog.info(
-                    log_msg=ru(
-                        QCoreApplication.translate(
-                            "InputFields",
-                            'Could not parse setting "%s". The stored settings probably use an old format. This will be corrected automatically.',
-                        )
+                    log_msg=QCoreApplication.translate(
+                        "InputFields",
+                        'Could not parse setting "%s". The stored settings probably use an old format. This will be corrected automatically.',
                     )
                     % str(settings)
                 )
@@ -1174,11 +1103,9 @@ class InputFields(QtWidgets.QWidget):
                     setattr(import_method_chooser.parameter_import_fields, attr, val)
                 except Exception as e:
                     common_utils.MessagebarAndLog.info(
-                        log_msg=ru(
-                            QCoreApplication.translate(
-                                "InputFields",
-                                "Setting parameter %s for %s to value %s failed, msg:\n%s",
-                            )
+                        log_msg=QCoreApplication.translate(
+                            "InputFields",
+                            "Setting parameter %s for %s to value %s failed, msg:\n%s",
                         )
                         % (
                             str(attr),
@@ -1209,10 +1136,8 @@ class InputFields(QtWidgets.QWidget):
                 settings = parameter_import_fields.get_settings()
             except AttributeError as e:
                 common_utils.MessagebarAndLog.info(
-                    log_msg=ru(
-                        QCoreApplication.translate(
-                            "InputFields", "Getting attribute failed: %s, msg: %s"
-                        )
+                    log_msg=QCoreApplication.translate(
+                        "InputFields", "Getting attribute failed: %s, msg: %s"
                     )
                     % (str(type(parameter_import_fields)), str(e))
                 )
@@ -1232,8 +1157,6 @@ class InputFields(QtWidgets.QWidget):
     def clear_widgets(self):
         for name, param_import_obj in self.parameter_imports.items():
             param_import_obj.deleteLater()
-            # self.layout.removeWidget(param_import_obj.widget)
-            # param_import_obj.widget.close()
         self.parameter_imports = OrderedDict()
 
 
@@ -1290,7 +1213,6 @@ class ImportMethodChooser(QtWidgets.QWidget):
         if self.parameter_widget is not None:
             try:
                 self.parameter_widget.deleteLater()
-                # self.layout.removeWidget(self.parameter_widget)
             except Exception as e:
                 self.parameter_widget = None
             else:
@@ -1328,7 +1250,7 @@ class CommentsImportFields(QtWidgets.QWidget):
     """ """
 
     def __init__(
-        self, import_method_chooser: MagicMock, staff: None = None, parent: None = None
+        self, import_method_chooser: "ImportMethodChooser", staff=None, parent=None
     ):
         """ """
         super().__init__(parent)
@@ -1382,18 +1304,14 @@ class WLevelsImportFields(QtWidgets.QWidget):
         self.label_value_column = QtWidgets.QLabel("Value column: ")
         self._value_column = QtWidgets.QComboBox()
         self._calculate_level_masl_checkbox = QtWidgets.QCheckBox(
-            ru(
-                QCoreApplication.translate(
-                    "WLevelsImportFields", "Calculate level_masl from meas and h_toc"
-                )
+            QCoreApplication.translate(
+                "WLevelsImportFields", "Calculate level_masl from meas and h_toc"
             )
         )
         self._calculate_level_masl_checkbox.setToolTip(
-            ru(
-                QCoreApplication.translate(
-                    "WLevelsImportFields",
-                    "If h_toc is not NULL in table obs_points, level_masl is calculated as h_toc - meas.",
-                )
+            QCoreApplication.translate(
+                "WLevelsImportFields",
+                "If h_toc is not NULL in table obs_points, level_masl is calculated as h_toc - meas.",
             )
         )
         self._value_column.addItems(["meas", "level_masl"])
@@ -1559,18 +1477,14 @@ class WFlowImportFields(QtWidgets.QWidget):
     def alter_data(self, observations):
         if not self.flowtype:
             raise common_utils.UsageError(
-                ru(
-                    QCoreApplication.translate(
-                        "WFlowImportFields", "Import error, flowtype not given"
-                    )
+                QCoreApplication.translate(
+                    "WFlowImportFields", "Import error, flowtype not given"
                 )
             )
         if not self.unit:
             raise common_utils.UsageError(
-                ru(
-                    QCoreApplication.translate(
-                        "WFlowImportFields", "Import error, unit not given"
-                    )
+                QCoreApplication.translate(
+                    "WFlowImportFields", "Import error, unit not given"
                 )
             )
 
@@ -1607,43 +1521,41 @@ class WQualFieldImportFields(QtWidgets.QWidget):
         self.staff = staff
         self._import_method_chooser = import_method_chooser
         self.label_parameter = QtWidgets.QLabel(
-            ru(QCoreApplication.translate("WQualFieldImportFields", "Parameter: "))
+            QCoreApplication.translate("WQualFieldImportFields", "Parameter: ")
         )
         self.__parameter = default_combobox()
 
         self._parameters_units = self.get_sorted_parameter_date_time_list(self.staff, 1)
         self.__parameter.addItems(list(self._parameters_units.keys()))
         self.label_unit = QtWidgets.QLabel(
-            ru(QCoreApplication.translate("WQualFieldImportFields", "Unit: "))
+            QCoreApplication.translate("WQualFieldImportFields", "Unit: ")
         )
         self.__unit = default_combobox()
-        unit_tooltip = ru(
-            QCoreApplication.translate(
-                "WQualFieldImportFields",
-                (
-                    "The unit list is sorted with the unit from the\n"
-                    "currently chosen staff first in descending date order, then\n"
-                    "the rest of the units in descending date order."
-                ),
-            )
+        unit_tooltip = QCoreApplication.translate(
+            "WQualFieldImportFields",
+            (
+                "The unit list is sorted with the unit from the\n"
+                "currently chosen staff first in descending date order, then\n"
+                "the rest of the units in descending date order."
+            ),
         )
+
         self.__unit.setToolTip(unit_tooltip)
         self.label_unit.setToolTip(unit_tooltip)
 
         self.__instrument = default_combobox()
         self.label_instrument = QtWidgets.QLabel(
-            ru(QCoreApplication.translate("WQualFieldImportFields", "Instrument: "))
+            QCoreApplication.translate("WQualFieldImportFields", "Instrument: ")
         )
-        instrument_tooltip = ru(
-            QCoreApplication.translate(
-                "WQualFieldImportFields",
-                (
-                    "The instrument list is sorted with the instruments from the\n"
-                    "currently chosen staff first in descending date order, then\n"
-                    "the rest of the instruments in descending date order."
-                ),
-            )
+        instrument_tooltip = QCoreApplication.translate(
+            "WQualFieldImportFields",
+            (
+                "The instrument list is sorted with the instruments from the\n"
+                "currently chosen staff first in descending date order, then\n"
+                "the rest of the instruments in descending date order."
+            ),
         )
+
         self.__instrument.setToolTip(instrument_tooltip)
         self.label_instrument.setToolTip(instrument_tooltip)
         self.parameter_instruments = self.get_sorted_parameter_date_time_list(
@@ -1783,10 +1695,8 @@ class WQualFieldImportFields(QtWidgets.QWidget):
     def alter_data(self, observations):
         if not self.parameter:
             raise common_utils.UsageError(
-                ru(
-                    QCoreApplication.translate(
-                        "WQualFieldImportFields", "Import error, parameter not given"
-                    )
+                QCoreApplication.translate(
+                    "WQualFieldImportFields", "Import error, parameter not given"
                 )
             )
 
@@ -1814,17 +1724,13 @@ class WQualFieldImportFields(QtWidgets.QWidget):
                     observation["unit"] = self.unit
             except TypeError:
                 common_utils.MessagebarAndLog.critical(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "WQualFieldImportFields",
-                            "Import error. See message log panel",
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "WQualFieldImportFields",
+                        "Import error. See message log panel",
                     ),
-                    log_msg=ru(
-                        QCoreApplication.translate(
-                            "WQualFieldImportFields",
-                            "error on observation : %s\nand parameter: %s",
-                        )
+                    log_msg=QCoreApplication.translate(
+                        "WQualFieldImportFields",
+                        "error on observation : %s\nand parameter: %s",
                     )
                     % (str(observation), self.parameter),
                 )
@@ -1882,9 +1788,6 @@ class WQualFieldDepthImportFields(QtWidgets.QWidget):
 
     def get_settings(self):
         return tuple()
-
-    def set_settings(self):
-        pass
 
 
 def default_combobox(editable: bool = True) -> QComboBox:

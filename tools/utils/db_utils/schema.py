@@ -9,11 +9,7 @@ from collections.abc import Sequence
 
 from qgis.PyQt.QtCore import QCoreApplication
 
-from midvatten.tools.utils.common_utils import (
-    MessagebarAndLog,
-    returnunicode as ru,
-    sql_failed_msg,
-)
+from midvatten.tools.utils.message_utils import MessagebarAndLog, sql_failed_msg
 from midvatten.tools.utils.db_utils.connection import DbConnectionManager
 from midvatten.tools.utils.db_utils.execution import (
     sql_load_fr_db,
@@ -82,10 +78,8 @@ def get_table_info(
             except Exception as e:
                 MessagebarAndLog.warning(
                     bar_msg=sql_failed_msg(),
-                    log_msg=ru(
-                        QCoreApplication.translate(
-                            "get_table_info", "Sql failed: %s\nmsg:%s"
-                        )
+                    log_msg=QCoreApplication.translate(
+                        "get_table_info", "Sql failed: %s\nmsg:%s"
                     )
                     % (columns_sql, str(e)),
                 )
@@ -287,11 +281,9 @@ def db_tables_columns_info(
                 columns = None
             if columns is None:
                 MessagebarAndLog.warning(
-                    log_msg=ru(
-                        QCoreApplication.translate(
-                            "db_tables_columns_info",
-                            "Getting columns from table %s failed!",
-                        )
+                    log_msg=QCoreApplication.translate(
+                        "db_tables_columns_info",
+                        "Getting columns from table %s failed!",
                     )
                     % tablename
                 )

@@ -20,7 +20,6 @@
  ***************************************************************************/
 """
 
-import io
 import os
 import re
 import traceback
@@ -33,10 +32,8 @@ from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools import import_data_to_db
 from midvatten.tools.utils import common_utils, midvatten_utils, db_utils
-from midvatten.tools.utils.common_utils import (
-    returnunicode as ru,
-    format_timezone_string,
-)
+from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils.common_utils import format_timezone_string
 from midvatten.tools.utils.date_utils import (
     find_date_format,
     datestring_to_date,
@@ -44,6 +41,7 @@ from midvatten.tools.utils.date_utils import (
 )
 from midvatten.tools.utils.gui_utils import (
     VRowEntry,
+    WA_DeleteOnClose,
     get_line,
     DateTimeFilter,
     RowEntry,
@@ -71,8 +69,8 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         self.iface = parent
         self.ms = msettings
         self.ms.load_settings()
-        qgis.PyQt.QtWidgets.QDialog.__init__(self, parent)
-        self.setAttribute(qgis.PyQt.QtCore.Qt.WA_DeleteOnClose)
+        qgis.PyQt.QtWidgets.QMainWindow.__init__(self, parent)
+        self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt
         self.setWindowTitle(
             QCoreApplication.translate("DiverofficeImport", "Diveroffice import")
@@ -199,11 +197,7 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         self.select_files_button.clicked.connect(lambda: self.select_files())
 
         self.close_after_import = qgis.PyQt.QtWidgets.QCheckBox(
-            ru(
-                QCoreApplication.translate(
-                    "DiverofficeImport", "Close dialog after import"
-                )
-            )
+            QCoreApplication.translate("DiverofficeImport", "Close dialog after import")
         )
         self.close_after_import.setChecked(True)
         self.grid_layout_buttons.addWidget(self.close_after_import, 1, 0)
@@ -308,10 +302,8 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
                 )
             except Exception:
                 common_utils.MessagebarAndLog.critical(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "LeveloggerImport", """Error on file %s."""
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "LeveloggerImport", """Error on file %s."""
                     )
                     % selected_file,
                     log_msg=traceback.format_exc(),
@@ -331,10 +323,8 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
                     bar_msg=QCoreApplication.translate(
                         "DiverofficeImport", "Import error, see log message panel"
                     ),
-                    log_msg=ru(
-                        QCoreApplication.translate(
-                            "DiverofficeImport", "File %s could not be parsed. Msg:\n%s"
-                        )
+                    log_msg=QCoreApplication.translate(
+                        "DiverofficeImport", "File %s could not be parsed. Msg:\n%s"
                     )
                     % (selected_file, str(e)),
                 )
@@ -346,11 +336,9 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
                     if not file_utc_offset:
                         missing_utcoffset = True
                         common_utils.MessagebarAndLog.warning(
-                            log_msg=ru(
-                                QCoreApplication.translate(
-                                    "DiverofficeImport",
-                                    "UTC-offset not found in file %s",
-                                )
+                            log_msg=QCoreApplication.translate(
+                                "DiverofficeImport",
+                                "UTC-offset not found in file %s",
                             )
                             % (filename)
                         )
@@ -363,11 +351,9 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
                                 file_utc_offset
                             )
                         except ValueError as e:
-                            msg = ru(
-                                QCoreApplication.translate(
-                                    "DiverofficeImport",
-                                    "Reading timezone in file %s failed,\n no conversion done:\n%s\n\nSkip file?",
-                                )
+                            msg = QCoreApplication.translate(
+                                "DiverofficeImport",
+                                "Reading timezone in file %s failed,\n no conversion done:\n%s\n\nSkip file?",
                             ) % (ru(selected_file), str(e))
                             common_utils.stop_waiting_cursor()
                             question = common_utils.Askuser(
@@ -452,11 +438,9 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
                         "DiverofficeImport",
                         "Diveroffice import warning. See log message panel",
                     ),
-                    log_msg=ru(
-                        QCoreApplication.translate(
-                            "DiverofficeImport",
-                            "No data parsed from file %s. Remove rows without the correct number of columns.",
-                        )
+                    log_msg=QCoreApplication.translate(
+                        "DiverofficeImport",
+                        "No data parsed from file %s. Remove rows without the correct number of columns.",
                     )
                     % filename,
                 )
@@ -511,7 +495,9 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
                     "w_levels_logger", file_to_import_to_db
                 )
             except Exception:
-                print(f"Got error {traceback.format_exc()}")
+                common_utils.MessagebarAndLog.warning(
+                    log_msg=f"Got error {traceback.format_exc()}"
+                )
                 raise
         if export_csv:
             path = qgis.PyQt.QtWidgets.QFileDialog.getSaveFileName(
@@ -544,11 +530,9 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
     ) -> Tuple[List[List[Optional[Union[str, float, int]]]], str, str, str]:
         if not pandas_on:
             raise common_utils.UsageError(
-                ru(
-                    QCoreApplication.translate(
-                        "DiverofficeImport",
-                        "Parsing mon-files requires Python Pandas library!",
-                    )
+                QCoreApplication.translate(
+                    "DiverofficeImport",
+                    "Parsing mon-files requires Python Pandas library!",
                 )
             )
 
@@ -649,12 +633,10 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
                     "DiverofficeImport",
                     "Diveroffice import warning. See log message panel",
                 ),
-                log_msg=ru(
-                    QCoreApplication.translate(
-                        "DiverofficeImport",
-                        "Warning, the file %s \ndid not have Water head as a "
-                        "channel.\nMake sure its barocompensated!",
-                    )
+                log_msg=QCoreApplication.translate(
+                    "DiverofficeImport",
+                    "Warning, the file %s \ndid not have Water head as a "
+                    "channel.\nMake sure its barocompensated!",
                 )
                 % path,
             )
@@ -702,13 +684,11 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         filedata.extend(df.loc[:, filedata[0]].values.tolist())
         if len(filedata) < 2:
             return common_utils.ask_user_about_stopping(
-                ru(
-                    QCoreApplication.translate(
-                        "DiverofficeImport",
-                        "Failure, parsing failed for file %s\nNo valid data "
-                        "found!\nDo you want to stop the import? "
-                        "(else it will continue with the next file)",
-                    )
+                QCoreApplication.translate(
+                    "DiverofficeImport",
+                    "Failure, parsing failed for file %s\nNo valid data "
+                    "found!\nDo you want to stop the import? "
+                    "(else it will continue with the next file)",
                 )
                 % path
             )
@@ -799,12 +779,10 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
                     "DiverofficeImport",
                     "Diveroffice import warning. See log message panel",
                 ),
-                log_msg=ru(
-                    QCoreApplication.translate(
-                        "DiverofficeImport",
-                        "Warning, the file %s \ndid not have Date/time as a "
-                        "header and will be skipped.\nSupported headers are %s",
-                    )
+                log_msg=QCoreApplication.translate(
+                    "DiverofficeImport",
+                    "Warning, the file %s \ndid not have Date/time as a "
+                    "header and will be skipped.\nSupported headers are %s",
                 )
                 % (ru(path), ", ".join(list(translation_dict_in_order.keys()))),
             )
@@ -824,12 +802,10 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
                     "DiverofficeImport",
                     "Diveroffice import warning. See log message panel",
                 ),
-                log_msg=ru(
-                    QCoreApplication.translate(
-                        "DiverofficeImport",
-                        "Delimiter could not be found for file %s or it "
-                        "contained only one column, skipping it.",
-                    )
+                log_msg=QCoreApplication.translate(
+                    "DiverofficeImport",
+                    "Delimiter could not be found for file %s or it "
+                    "contained only one column, skipping it.",
                 )
                 % path,
             )
@@ -844,13 +820,11 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
                     "DiverofficeImport",
                     "Diveroffice import warning. See log message panel",
                 ),
-                log_msg=ru(
-                    QCoreApplication.translate(
-                        "DiverofficeImport",
-                        "Warning, the file %s \ndid not have Water head[cm] "
-                        "as a header.\nMake sure its barocompensated!\n"
-                        "Supported headers are %s",
-                    )
+                log_msg=QCoreApplication.translate(
+                    "DiverofficeImport",
+                    "Warning, the file %s \ndid not have Water head[cm] "
+                    "as a header.\nMake sure its barocompensated!\n"
+                    "Supported headers are %s",
                 )
                 % (ru(path), ", ".join(list(translation_dict_in_order.keys()))),
             )
@@ -871,14 +845,12 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
             cols = row.split(delimiter)
             if len(cols) != nr_of_cols:
                 return common_utils.ask_user_about_stopping(
-                    ru(
-                        QCoreApplication.translate(
-                            "DiverofficeImport",
-                            "Failure: The number of data columns in file %s "
-                            "was not equal to the header.\nIs the decimal separator "
-                            "the same as the delimiter?\nDo you want to stop the "
-                            "import? (else it will continue with the next file)",
-                        )
+                    QCoreApplication.translate(
+                        "DiverofficeImport",
+                        "Failure: The number of data columns in file %s "
+                        "was not equal to the header.\nIs the decimal separator "
+                        "the same as the delimiter?\nDo you want to stop the "
+                        "import? (else it will continue with the next file)",
                     )
                     % path
                 )
@@ -924,10 +896,8 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
                     )
                 except ValueError as e:
                     errors.add(
-                        ru(
-                            QCoreApplication.translate(
-                                "DiverofficeImport", "parse_diveroffice_file error: %s"
-                            )
+                        QCoreApplication.translate(
+                            "DiverofficeImport", "parse_diveroffice_file error: %s"
                         )
                         % str(e)
                     )
@@ -937,24 +907,20 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
                     filedata.append(printrow)
         if errors:
             common_utils.MessagebarAndLog.warning(
-                log_msg=ru(
-                    QCoreApplication.translate(
-                        "DiverofficeImport",
-                        'Error messages while parsing file "%s":\n%s',
-                    )
+                log_msg=QCoreApplication.translate(
+                    "DiverofficeImport",
+                    'Error messages while parsing file "%s":\n%s',
                 )
                 % (path, "\n".join(errors))
             )
 
         if len(filedata) < 2:
             return common_utils.ask_user_about_stopping(
-                ru(
-                    QCoreApplication.translate(
-                        "DiverofficeImport",
-                        "Failure, parsing failed for file %s\n"
-                        "No valid data found!\nDo you want to stop the import?"
-                        " (else it will continue with the next file)",
-                    )
+                QCoreApplication.translate(
+                    "DiverofficeImport",
+                    "Failure, parsing failed for file %s\n"
+                    "No valid data found!\nDo you want to stop the import?"
+                    " (else it will continue with the next file)",
                 )
                 % path
             )
@@ -1017,8 +983,6 @@ class CheckboxAndExplanation(VRowEntry):
         if explanation:
             self.label.setText(explanation)
             self.layout.addWidget(self.label)
-
-        # self.layout.addStretch()
 
     @property
     def checked(self):

@@ -41,17 +41,34 @@ class Backend(ABC):
 
     # --- Execution (single sql string, args optional) ---
 
-    @abstractmethod
     def execute(self, sql: str, args: Optional[Sequence[Any]] = None) -> None:
         """Execute a single SQL statement. No commit."""
-        pass
+        if args is None:
+            try:
+                self.cursor.execute(sql)
+            except Exception as e:
+                Backend.log_execute_error(sql, None, e)
+                raise
+        else:
+            try:
+                self.cursor.execute(sql, list(args))
+            except Exception as e:
+                Backend.log_execute_error(sql, args, e)
+                raise
 
-    @abstractmethod
     def execute_and_fetchall(
         self, sql: str, args: Optional[Sequence[Any]] = None
     ) -> list[Any]:
         """Execute and return cursor.fetchall()."""
-        pass
+        try:
+            if args is not None:
+                self.cursor.execute(sql, args)
+            else:
+                self.cursor.execute(sql)
+        except Exception as e:
+            Backend.log_execute_error(sql, args, e)
+            raise
+        return self.cursor.fetchall()
 
     def execute_and_commit(
         self, sql: str, args: Optional[Sequence[Any]] = None
@@ -174,13 +191,88 @@ class Backend(ABC):
         """Return SQL for NULL cast to data_type (e.g. NULL::text for PG)."""
         raise NotImplementedError
 
-    def is_distinct_from_sql(self) -> str:
-        """Return 'IS NOT' (SQLite) or 'IS DISTINCT FROM' (PG)."""
-        raise NotImplementedError
+    @abstractmethod
+    def get_srid_name(self, srid: int) -> str:
+        """Return the CRS name string for the given SRID."""
+        pass
 
-    def is_not_distinct_from_sql(self) -> str:
+    @abstractmethod
+    def latlon_sql(self) -> str:
+        """Return SELECT SQL for obsid, lat, lon from obs_points (Y/X vs ST_Y/ST_X)."""
+        pass
+
+    @abstractmethod
+    def rowid_string(self) -> str:
+        """Return the row-id pseudo-column name: 'ROWID' for SQLite, 'ctid' for PG."""
+        pass
+
+    @abstractmethod
+    def numeric_test_sql(self, col_ident: str) -> str:
+        """Return SQL expression that is true when col_ident contains a numeric value."""
+        pass
+
+    @abstractmethod
+    def not_null_sql(self, col_ident: str, data_type: Optional[str] = None) -> str:
+        """Return SQL fragment asserting col_ident is NOT NULL (and not empty string for text).
+
+        ``data_type`` is the column's declared SQL type (used by PostgreSQL to omit
+        the empty-string check for numeric columns).  SQLite ignores ``data_type``.
+
+        For SQLite (and PG text types): ``col_ident IS NOT NULL AND col_ident !=''``
+        For PG numeric types: ``col_ident IS NOT NULL``
+        """
+        pass
+
+    @abstractmethod
+    def is_distinct_from(self) -> str:
+        """Return 'IS NOT' (SQLite) or 'IS DISTINCT FROM' (PG)."""
+        pass
+
+    @abstractmethod
+    def is_not_distinct_from(self) -> str:
         """Return 'IS' (SQLite) or 'IS NOT DISTINCT FROM' (PG)."""
-        raise NotImplementedError
+        pass
+
+    @abstractmethod
+    def numeric_datatypes(self) -> list:
+        """Return list of numeric data type names for this backend."""
+        pass
+
+    @abstractmethod
+    def activate_foreign_keys(self, activated: bool) -> None:
+        """Enable or disable foreign key enforcement (SQLite only; no-op for PG)."""
+        pass
+
+    @abstractmethod
+    def median_sql(self, col_ident: str, table_ident: str, ph: str) -> tuple:
+        """Return (sql, arg_count) for a median query over obsid."""
+        pass
+
+    @abstractmethod
+    def backup(self, dbconnection: Any) -> None:
+        """Perform a database backup (SQLite: zip file; PG: not supported)."""
+        pass
+
+    # --- Error logging (shared across backends) ---
+
+    @staticmethod
+    def log_execute_error(sql: str, args: Any, e: Exception) -> None:
+        """Log a DB execute error via MessagebarAndLog."""
+        from midvatten.tools.utils.message_utils import MessagebarAndLog, sql_failed_msg
+        from midvatten.tools.utils.string_utils import returnunicode as ru
+        from qgis.PyQt.QtCore import QCoreApplication
+
+        if args is None:
+            textstring = QCoreApplication.translate(
+                "sql_load_fr_db",
+                """DB error!\n SQL causing this error:%s\nMsg:\n%s""",
+            ) % (ru(sql), str(e))
+        else:
+            textstring = QCoreApplication.translate(
+                "sql_load_fr_db",
+                """DB error!\n SQL causing this error:%s\nusing args %s\nMsg:\n%s""",
+            ) % (ru(sql), ru(args), str(e))
+        MessagebarAndLog.warning(bar_msg=sql_failed_msg(), log_msg=textstring)
 
     def connect2db(self) -> bool:
         """Check connection is ok (e.g. not locked). Return True if ok."""
@@ -191,7 +283,7 @@ class Backend(ABC):
         """Export table to a temp CSV file."""
         import os
         import tempfile
-        from midvatten.tools.utils.common_utils import write_printlist_to_file
+        from midvatten.tools.utils.file_utils import write_printlist_to_file
 
         if table_name is None:
             raise ValueError("table_name is required")

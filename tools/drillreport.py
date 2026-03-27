@@ -29,16 +29,20 @@ from qgis.PyQt.QtGui import QDesktopServices
 from midvatten.tools.calculate_statistics import get_statistics_for_single_obsid
 from midvatten.tools.drillreport_models import ObsPointsRow, StratigraphyRow
 from midvatten.tools.utils import common_utils, midvatten_utils, db_utils
-from midvatten.tools.utils.common_utils import returnunicode as ru
+from midvatten.tools.utils.string_utils import returnunicode as ru
 
 
 class Drillreport:  # general observation point info for the selected object
     def __init__(
         self,
-        obsids: List[str] = [""],
-        settingsdict: Dict[str, Union[str, int, bool, float]] = {},
+        obsids: List[str] = None,
+        settingsdict: Dict[str, Union[str, int, bool, float]] = None,
     ):
 
+        if obsids is None:
+            obsids = [""]
+        if settingsdict is None:
+            settingsdict = {}
         reportfolder = os.path.join(QDir.tempPath(), "midvatten_reports")
         if not os.path.exists(reportfolder):
             os.makedirs(reportfolder)
@@ -50,10 +54,8 @@ class Drillreport:  # general observation point info for the selected object
 
         if len(obsids) == 0:
             common_utils.pop_up_info(
-                ru(
-                    QCoreApplication.translate(
-                        "Drillreport", "Must select one or more obsids!"
-                    )
+                QCoreApplication.translate(
+                    "Drillreport", "Must select one or more obsids!"
                 )
             )
             return None
@@ -95,10 +97,8 @@ class Drillreport:  # general observation point info for the selected object
         )
         rpt += r"""<head><title>%s %s</title></head>""" % (
             header,
-            ru(
-                QCoreApplication.translate(
-                    "Drillreport", "General report from Midvatten plugin for QGIS"
-                )
+            QCoreApplication.translate(
+                "Drillreport", "General report from Midvatten plugin for QGIS"
             ),
         )
 
@@ -146,7 +146,7 @@ class Drillreport:  # general observation point info for the selected object
         if midvatten_utils.getcurrentlocale()[0] == "sv_SE":
             rpt += "Allmän information"
         else:
-            rpt += ru(QCoreApplication.translate("Drillreport", "General information"))
+            rpt += QCoreApplication.translate("Drillreport", "General information")
         rpt += r"""</B></U></P><TABLE style="font-family:'arial'; font-size:10pt; font-weight:400; font-style:normal;" WIDTH=100% BORDER=0 CELLPADDING=0 CELLSPACING=1><COL WIDTH=43*><COL WIDTH=43*>"""
         f.write(rpt)
 
@@ -155,7 +155,7 @@ class Drillreport:  # general observation point info for the selected object
             obsid, "obs_points", "n"
         )  # MacOSX fix1
         # utils.pop_up_info(str(connection_ok))#debug
-        if connection_ok == True:
+        if connection_ok:
             result2 = db_utils.sql_load_fr_db(
                 r"""SELECT srid FROM geometry_columns where f_table_name = 'obs_points'"""
             )[1][0][0]
@@ -172,7 +172,7 @@ class Drillreport:  # general observation point info for the selected object
             if midvatten_utils.getcurrentlocale()[0] == "sv_SE":
                 rpt += "Lagerföljd"
             else:
-                rpt += ru(QCoreApplication.translate("Drillreport", "Stratigraphy"))
+                rpt += QCoreApplication.translate("Drillreport", "Stratigraphy")
             rpt += r"""</B></U></P><TABLE style="font-family:'arial'; font-size:10pt; font-weight:400; font-style:normal;" WIDTH=100% BORDER=0 CELLPADDING=0 CELLSPACING=1><COL WIDTH=43*><COL WIDTH=43*><COL WIDTH=43*><COL WIDTH=43*><COL WIDTH=43*><COL WIDTH=43*>"""
             f.write(rpt)
 
@@ -188,7 +188,7 @@ class Drillreport:  # general observation point info for the selected object
             if midvatten_utils.getcurrentlocale()[0] == "sv_SE":
                 rpt += "Kommentarer"
             else:
-                rpt += ru(QCoreApplication.translate("Drillreport", "Comments"))
+                rpt += QCoreApplication.translate("Drillreport", "Comments")
             rpt += r"""</B></U></P>"""
             f.write(rpt)
 
@@ -200,7 +200,7 @@ class Drillreport:  # general observation point info for the selected object
             if midvatten_utils.getcurrentlocale()[0] == "sv_SE":
                 rpt += "Vattennivåer"
             else:
-                rpt += ru(QCoreApplication.translate("Drillreport", "Water levels"))
+                rpt += QCoreApplication.translate("Drillreport", "Water levels")
             rpt += r"""</B></U></P>"""
             f.write(rpt)
 
@@ -415,7 +415,7 @@ class Drillreport:  # general observation point info for the selected object
         if ru(r.name) != "" and ru(r.name) != "NULL" and ru(r.name) != ru(r.obsid):
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + ru(QCoreApplication.translate("Drillreport", "original name"))
+                + QCoreApplication.translate("Drillreport", "original name")
                 + r"""</TD><TD WIDTH=67%>"""
                 + ru(r.name)
                 + "</TD></TR>"
@@ -423,7 +423,7 @@ class Drillreport:  # general observation point info for the selected object
         if ru(r.type) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + ru(QCoreApplication.translate("Drillreport", "obs type"))
+                + QCoreApplication.translate("Drillreport", "obs type")
                 + r"""</TD><TD WIDTH=50%>"""
                 + ru(r.type)
                 + "</TD></TR>"
@@ -431,11 +431,7 @@ class Drillreport:  # general observation point info for the selected object
         if ru(r.length) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + ru(
-                    QCoreApplication.translate(
-                        "Drillreport", "depth (m fr gs to bottom)"
-                    )
-                )
+                + QCoreApplication.translate("Drillreport", "depth (m fr gs to bottom)")
                 + r"""</TD><TD WIDTH=50%>"""
                 + ru(r.length)
                 + "</TD></TR>"
@@ -443,11 +439,7 @@ class Drillreport:  # general observation point info for the selected object
         if ru(r.h_toc) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + ru(
-                    QCoreApplication.translate(
-                        "Drillreport", "top of casing, toc (masl)"
-                    )
-                )
+                + QCoreApplication.translate("Drillreport", "top of casing, toc (masl)")
                 + r"""</TD><TD WIDTH=50%>"""
                 + ru(r.h_toc)
             )
@@ -461,10 +453,8 @@ class Drillreport:  # general observation point info for the selected object
         ):
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + ru(
-                    QCoreApplication.translate(
-                        "Drillreport", "distance toc-gs, tocags (mags)"
-                    )
+                + QCoreApplication.translate(
+                    "Drillreport", "distance toc-gs, tocags (mags)"
                 )
                 + r"""</TD><TD WIDTH=50%>"""
                 + ru(r.h_tocags)
@@ -473,10 +463,8 @@ class Drillreport:  # general observation point info for the selected object
         if ru(r.h_gs) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + ru(
-                    QCoreApplication.translate(
-                        "Drillreport", "ground surface level, gs (masl)"
-                    )
+                + QCoreApplication.translate(
+                    "Drillreport", "ground surface level, gs (masl)"
                 )
                 + r"""</TD><TD WIDTH=50%>"""
                 + ru(r.h_gs)
@@ -487,9 +475,7 @@ class Drillreport:  # general observation point info for the selected object
         if ru(r.h_accur) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + ru(
-                    QCoreApplication.translate("Drillreport", "elevation accuracy (m)")
-                )
+                + QCoreApplication.translate("Drillreport", "elevation accuracy (m)")
                 + r"""</TD><TD WIDTH=50%>"""
                 + ru(r.h_accur)
                 + "</TD></TR>"
@@ -497,7 +483,7 @@ class Drillreport:  # general observation point info for the selected object
         if ru(r.east) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + ru(QCoreApplication.translate("Drillreport", "eastern coordinate"))
+                + QCoreApplication.translate("Drillreport", "eastern coordinate")
                 + r"""</TD><TD WIDTH=50%>"""
                 + ru(r.east)
                 + " ("
@@ -509,7 +495,7 @@ class Drillreport:  # general observation point info for the selected object
         if ru(r.north) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + ru(QCoreApplication.translate("Drillreport", "northern coordinate"))
+                + QCoreApplication.translate("Drillreport", "northern coordinate")
                 + r"""</TD><TD WIDTH=50%>"""
                 + ru(r.north)
                 + " ("
@@ -525,7 +511,7 @@ class Drillreport:  # general observation point info for the selected object
         ):
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + ru(QCoreApplication.translate("Drillreport", "position accuracy"))
+                + QCoreApplication.translate("Drillreport", "position accuracy")
                 + r"""</TD><TD WIDTH=50%>"""
                 + ru(r.ne_accur)
                 + "</TD></TR>"
@@ -533,7 +519,7 @@ class Drillreport:  # general observation point info for the selected object
         if ru(r.material) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + ru(QCoreApplication.translate("Drillreport", "material"))
+                + QCoreApplication.translate("Drillreport", "material")
                 + r"""</TD><TD WIDTH=50%>"""
                 + ru(r.material)
                 + "</TD></TR>"
@@ -541,7 +527,7 @@ class Drillreport:  # general observation point info for the selected object
         if ru(r.diam) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + ru(QCoreApplication.translate("Drillreport", "inner diameter (mm)"))
+                + QCoreApplication.translate("Drillreport", "inner diameter (mm)")
                 + r"""</TD><TD WIDTH=50%>"""
                 + ru(r.diam)
                 + "</TD></TR>"
@@ -549,7 +535,7 @@ class Drillreport:  # general observation point info for the selected object
         if ru(r.drillstop) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + ru(QCoreApplication.translate("Drillreport", "drill stop"))
+                + QCoreApplication.translate("Drillreport", "drill stop")
                 + r"""</TD><TD WIDTH=50%>"""
                 + ru(r.drillstop)
                 + "</TD></TR>"
@@ -557,7 +543,7 @@ class Drillreport:  # general observation point info for the selected object
         if ru(r.screen) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + ru(QCoreApplication.translate("Drillreport", "screen type"))
+                + QCoreApplication.translate("Drillreport", "screen type")
                 + r"""</TD><TD WIDTH=50%>"""
                 + ru(r.screen)
                 + "</TD></TR>"
@@ -565,7 +551,7 @@ class Drillreport:  # general observation point info for the selected object
         if ru(r.drilldate) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + ru(QCoreApplication.translate("Drillreport", "drill date"))
+                + QCoreApplication.translate("Drillreport", "drill date")
                 + r"""</TD><TD WIDTH=50%>"""
                 + ru(r.drilldate)
                 + "</TD></TR>"
@@ -573,7 +559,7 @@ class Drillreport:  # general observation point info for the selected object
         if ru(r.capacity) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + ru(QCoreApplication.translate("Drillreport", "capacity"))
+                + QCoreApplication.translate("Drillreport", "capacity")
                 + r"""</TD><TD WIDTH=50%>"""
                 + ru(r.capacity)
                 + "</TD></TR>"
@@ -581,7 +567,7 @@ class Drillreport:  # general observation point info for the selected object
         if ru(r.place) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + ru(QCoreApplication.translate("Drillreport", "place"))
+                + QCoreApplication.translate("Drillreport", "place")
                 + r"""</TD><TD WIDTH=50%>"""
                 + ru(r.place)
                 + "</TD></TR>"
@@ -589,7 +575,7 @@ class Drillreport:  # general observation point info for the selected object
         if ru(r.source) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + ru(QCoreApplication.translate("Drillreport", "reference"))
+                + QCoreApplication.translate("Drillreport", "reference")
                 + r"""</TD><TD WIDTH=50%>"""
                 + ru(r.source)
                 + "</TD></TR>"
@@ -598,7 +584,7 @@ class Drillreport:  # general observation point info for the selected object
         if ru(r.ne_source) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + ru(QCoreApplication.translate("Drillreport", "source for position"))
+                + QCoreApplication.translate("Drillreport", "source for position")
                 + r"""</TD><TD WIDTH=50%>"""
                 + ru(r.ne_source)
                 + "</TD></TR>"
@@ -606,7 +592,7 @@ class Drillreport:  # general observation point info for the selected object
         if ru(r.h_source) not in ["", "NULL"]:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + ru(QCoreApplication.translate("Drillreport", "source for elevation"))
+                + QCoreApplication.translate("Drillreport", "source for elevation")
                 + r"""</TD><TD WIDTH=50%>"""
                 + ru(r.h_source)
                 + "</TD></TR>"
@@ -654,32 +640,32 @@ class Drillreport:  # general observation point info for the selected object
         if len(strat_data) > 0:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=15%><P><u>"""
-                + ru(QCoreApplication.translate("Drillreport", "level (m b gs)"))
+                + QCoreApplication.translate("Drillreport", "level (m b gs)")
                 + "</P></u></TD>"
             )
             rpt += (
                 r"""<TD WIDTH=27%><P><u>"""
-                + ru(QCoreApplication.translate("Drillreport", "geology, full text"))
+                + QCoreApplication.translate("Drillreport", "geology, full text")
                 + "</P></u></TD>"
             )
             rpt += (
                 r"""<TD WIDTH=17%><P><u>"""
-                + ru(QCoreApplication.translate("Drillreport", "geology, short"))
+                + QCoreApplication.translate("Drillreport", "geology, short")
                 + "</P></u></TD>"
             )
             rpt += (
                 r"""<TD WIDTH=9%><P><u>"""
-                + ru(QCoreApplication.translate("Drillreport", "capacity"))
+                + QCoreApplication.translate("Drillreport", "capacity")
                 + "</P></u></TD>"
             )
             rpt += (
                 r"""<TD WIDTH=13%><P><u>"""
-                + ru(QCoreApplication.translate("Drillreport", "development"))
+                + QCoreApplication.translate("Drillreport", "development")
                 + "</P></u></TD>"
             )
             rpt += (
                 r"""<TD WIDTH=21%><P><u>"""
-                + ru(QCoreApplication.translate("Drillreport", "comment"))
+                + QCoreApplication.translate("Drillreport", "comment")
                 + "</P></u></TD></TR>"
             )
         for row in strat_data:
@@ -737,51 +723,38 @@ class Drillreport:  # general observation point info for the selected object
 
     def rpt_lower_right(self, statistics, meas_or_level_masl):
         if meas_or_level_masl == "meas":
-            unit = (
-                ru(QCoreApplication.translate("Drillreport", " m below toc")) + "<br>"
-            )
+            unit = QCoreApplication.translate("Drillreport", " m below toc") + "<br>"
         else:
             unit = (
-                ru(QCoreApplication.translate("Drillreport", " m above sea level"))
-                + "<br>"
+                QCoreApplication.translate("Drillreport", " m above sea level") + "<br>"
             )
         rpt = r"""<p style="font-family:'arial'; font-size:10pt; font-weight:400; font-style:normal;">"""
         if ru(statistics[2]) != "" and ru(statistics[2]) != "0":
             rpt += (
-                ru(
-                    QCoreApplication.translate(
-                        "Drillreport", "Number of water level measurements: "
-                    )
+                QCoreApplication.translate(
+                    "Drillreport", "Number of water level measurements: "
                 )
                 + ru(statistics[2])
                 + "<br>"
             )
             if ru(statistics[0]) != "":
                 rpt += (
-                    ru(
-                        QCoreApplication.translate(
-                            "Drillreport", "Highest measured water level: "
-                        )
+                    QCoreApplication.translate(
+                        "Drillreport", "Highest measured water level: "
                     )
                     + ru(statistics[0])
                     + unit
                 )
             if ru(statistics[1]) != "":
                 rpt += (
-                    ru(
-                        QCoreApplication.translate(
-                            "Drillreport", "Median water level: "
-                        )
-                    )
+                    QCoreApplication.translate("Drillreport", "Median water level: ")
                     + ru(statistics[1])
                     + unit
                 )
             if ru(statistics[3]) != "":
                 rpt += (
-                    ru(
-                        QCoreApplication.translate(
-                            "Drillreport", "Lowest measured water level: "
-                        )
+                    QCoreApplication.translate(
+                        "Drillreport", "Lowest measured water level: "
                     )
                     + ru(statistics[3])
                     + unit

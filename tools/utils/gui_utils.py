@@ -20,8 +20,10 @@
 """
 
 import copy
+import logging
 import os
 import traceback
+from datetime import datetime
 from functools import partial
 from typing import Any, Dict, List, Union
 
@@ -32,15 +34,20 @@ from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QComboBox
 
-from midvatten.tools.utils.common_utils import (
-    returnunicode as ru,
-    MessagebarAndLog,
-    sql_failed_msg,
-)
+from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils.message_utils import MessagebarAndLog, sql_failed_msg
 from midvatten.tools.utils.date_utils import datestring_to_date
 from midvatten.tools.utils.db_utils import DbConnectionManager, sql_load_fr_db
-import PyQt5.QtWidgets
-from datetime import datetime
+
+# Qt6 uses scoped enums (Qt.WidgetAttribute.WA_DeleteOnClose),
+# Qt5 uses flat enums (Qt.WA_DeleteOnClose). Prefer Qt6; fall back to Qt5.
+try:
+    WA_DeleteOnClose = QtCore.Qt.WidgetAttribute.WA_DeleteOnClose
+except AttributeError:
+    # Qt5 fallback — remove when Qt5 support is dropped
+    WA_DeleteOnClose = QtCore.Qt.WA_DeleteOnClose
+
+log = logging.getLogger(__name__)
 
 
 class SplitterWithHandel(qgis.PyQt.QtWidgets.QSplitter):
@@ -134,7 +141,7 @@ class DateTimeFilter(qgis.PyQt.QtWidgets.QWidget):
         self.layout().setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
 
         self.label = qgis.PyQt.QtWidgets.QLabel(
-            ru(QCoreApplication.translate("DateTimeFilter", "Import data from: "))
+            QCoreApplication.translate("DateTimeFilter", "Import data from: ")
         )
         self.from_datetimeedit = qgis.PyQt.QtWidgets.QDateTimeEdit(
             datestring_to_date("1901-01-01 00:00:00")
@@ -143,7 +150,7 @@ class DateTimeFilter(qgis.PyQt.QtWidgets.QWidget):
         self.from_datetimeedit.setMinimumWidth(180)
 
         self.label_to = qgis.PyQt.QtWidgets.QLabel(
-            ru(QCoreApplication.translate("DateTimeFilter", "to: "))
+            QCoreApplication.translate("DateTimeFilter", "to: ")
         )
         self.to_datetimeedit = qgis.PyQt.QtWidgets.QDateTimeEdit(
             datestring_to_date("2099-12-31 23:59:59")
@@ -154,7 +161,6 @@ class DateTimeFilter(qgis.PyQt.QtWidgets.QWidget):
         if calendar:
             self.from_datetimeedit.setCalendarPopup(True)
             self.to_datetimeedit.setCalendarPopup(True)
-        # self.import_after_last_date = PyQt4.QtWidgets.QCheckBox("Import after latest date in database for each obsid")
         for widget in [
             self.label,
             self.from_datetimeedit,
@@ -213,18 +219,18 @@ class DistinctValuesBrowser(VRowEntry):
         super().__init__()
 
         self.browser_label = qgis.PyQt.QtWidgets.QLabel(
-            ru(QCoreApplication.translate("DistinctValuesBrowser", "DB browser:"))
+            QCoreApplication.translate("DistinctValuesBrowser", "DB browser:")
         )
         self.table_label = qgis.PyQt.QtWidgets.QLabel(
-            ru(QCoreApplication.translate("DistinctValuesBrowser", "Table"))
+            QCoreApplication.translate("DistinctValuesBrowser", "Table")
         )
         self._table_list = qgis.PyQt.QtWidgets.QComboBox()
         self.column_label = qgis.PyQt.QtWidgets.QLabel(
-            ru(QCoreApplication.translate("DistinctValuesBrowser", "Column"))
+            QCoreApplication.translate("DistinctValuesBrowser", "Column")
         )
         self._column_list = qgis.PyQt.QtWidgets.QComboBox()
         self.distinct_value_label = qgis.PyQt.QtWidgets.QLabel(
-            ru(QCoreApplication.translate("DistinctValuesBrowser", "Distinct values"))
+            QCoreApplication.translate("DistinctValuesBrowser", "Distinct values")
         )
         self._distinct_value = qgis.PyQt.QtWidgets.QComboBox()
         self._distinct_value.setEditable(True)
@@ -277,10 +283,8 @@ class DistinctValuesBrowser(VRowEntry):
         if not connection_ok:
             MessagebarAndLog.critical(
                 bar_msg=sql_failed_msg(),
-                log_msg=ru(
-                    QCoreApplication.translate(
-                        "DistinctValuesBrowser", """Cannot get data from sql %s"""
-                    )
+                log_msg=QCoreApplication.translate(
+                    "DistinctValuesBrowser", """Cannot get data from sql %s"""
                 )
                 % ru(sql),
             )
@@ -374,7 +378,7 @@ class NavigationButton(QtWidgets.QWidget):
 class DetachFigureButton(NavigationButton):
     """ """
 
-    def __init__(self, fig, parent=None, callback=lambda x: None):
+    def __init__(self, fig, parent=None, callback=None):
         super().__init__(parent, fig)
         if callback is None:
             callback = self._detach_button
@@ -407,5 +411,5 @@ class DetachFigureButton(NavigationButton):
                 try:
                     self.fig.canvas.set_window_title(title)
                 except AttributeError:
-                    print(f"Error, {e}, followup:\n{traceback.format_exc()}")
+                    log.debug(f"Error, {e}, followup:\n{traceback.format_exc()}")
         self.fig.show()

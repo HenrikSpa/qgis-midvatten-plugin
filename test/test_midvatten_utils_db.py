@@ -179,6 +179,4 @@ class TestAddViewObsPointsObsLinesPostgis(
 class TestAddViewObsPointsObsLinesSpatialite(
     AddViewObsPointsObsLinesMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
-    expected_views_message = (
-        'Views added. Please reload layers (Midvatten>Load default db-layers to qgis or "F7").'
-    )
+    expected_views_message = 'Views added. Please reload layers (Midvatten>Load default db-layers to qgis or "F7").'

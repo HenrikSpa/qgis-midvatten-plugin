@@ -23,13 +23,14 @@ import numpy as np
 from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools.utils import common_utils, db_utils
-from midvatten.tools.utils.common_utils import returnunicode as ru
 
 
 class XYPlot:
     def __init__(
-        self, layer=None, settingsdict={}
+        self, layer=None, settingsdict=None
     ):  # Might need revision of variables and method for loading default variables
+        if settingsdict is None:
+            settingsdict = {}
         self.settingsdict = settingsdict
         self.table = settingsdict["xytable"]
         self.xcol = settingsdict["xy_xcolumn"]
@@ -217,18 +218,14 @@ class XYPlot:
                 dbconnection.closedb()
             else:
                 common_utils.pop_up_info(
-                    ru(
-                        QCoreApplication.translate(
-                            "XYPlot", "Please select at least one point with xy data"
-                        )
+                    QCoreApplication.translate(
+                        "XYPlot", "Please select at least one point with xy data"
                     )
                 )
         else:
             common_utils.pop_up_info(
-                ru(
-                    QCoreApplication.translate(
-                        "XYPlot",
-                        "Please select a layer containing observations with xy data",
-                    )
+                QCoreApplication.translate(
+                    "XYPlot",
+                    "Please select a layer containing observations with xy data",
                 )
             )

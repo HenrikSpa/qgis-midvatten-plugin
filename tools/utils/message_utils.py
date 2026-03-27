@@ -102,13 +102,15 @@ class MessagebarAndLog:
         log_msg: Optional[str] = None,
         duration: int = 10,
         button: bool = True,
-        optional_bar: bool = False,
     ):
         MessagebarAndLog.log(bar_msg, log_msg, duration, Qgis.Info, Qgis.Info, button)
 
     @staticmethod
     def warning(
-        bar_msg=None, log_msg=None, duration=10, button=True, optional_bar=False
+        bar_msg: Optional[str] = None,
+        log_msg: Optional[str] = None,
+        duration: int = 10,
+        button: bool = True,
     ):
         MessagebarAndLog.log(
             bar_msg, log_msg, duration, Qgis.Warning, Qgis.Warning, button
@@ -120,7 +122,6 @@ class MessagebarAndLog:
         log_msg: Optional[str] = None,
         duration: int = 10,
         button: bool = True,
-        optional_bar: bool = False,
     ):
         MessagebarAndLog.log(
             bar_msg, log_msg, duration, Qgis.Critical, Qgis.Critical, button

@@ -26,7 +26,7 @@ from qgis.PyQt.QtWidgets import QGridLayout, QMainWindow
 
 from midvatten.tools.midvsettings import MidvSettings
 from midvatten.tools.utils import common_utils, gui_utils, db_utils
-from midvatten.tools.utils.common_utils import returnunicode as ru
+from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
 from midvatten.tools.utils.midvatten_utils import warn_about_old_database
 
 midvsettingsdock_ui_class = uic.loadUiType(
@@ -45,7 +45,7 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
         self.ms = msettings
         self.ms.load_settings()
         QDockWidget.__init__(self, self.parent)
-        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+        self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)
         self.init_ui()
 
@@ -555,20 +555,16 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
         )  # For some reason it is not possible to send currentText with the SIGNAL-trigger
         if ("obsid" in columns) and ("date_time" in columns):
             text = "<font color=green>{}</font>".format(
-                ru(
-                    QCoreApplication.translate(
-                        "midvsettingsdialogdock",
-                        "Correct table, both obsid and date_time columns have been found.",
-                    )
+                QCoreApplication.translate(
+                    "midvsettingsdialogdock",
+                    "Correct table, both obsid and date_time columns have been found.",
                 )
             )
         else:
             text = "<font color=red>{}</font>".format(
-                ru(
-                    QCoreApplication.translate(
-                        "midvsettingsdialogdock",
-                        "Wrong table! obsid and/or date_time is missing.",
-                    )
+                QCoreApplication.translate(
+                    "midvsettingsdialogdock",
+                    "Wrong table! obsid and/or date_time is missing.",
                 )
             )
         self.info_txt_ts_plot.setText(text)
@@ -642,19 +638,15 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
         )  # For some reason it is not possible to send currentText with the SIGNAL-trigger
         if "obsid" in columns:
             text = "<font color=green>{}</font>".format(
-                ru(
-                    QCoreApplication.translate(
-                        "midvsettingsdialogdock",
-                        "Correct table! obsid column is found.",
-                    )
+                QCoreApplication.translate(
+                    "midvsettingsdialogdock",
+                    "Correct table! obsid column is found.",
                 )
             )
         else:
             text = "<font color=red>{}</font>".format(
-                ru(
-                    QCoreApplication.translate(
-                        "midvsettingsdialogdock", "Wrong table! obsid is missing."
-                    )
+                QCoreApplication.translate(
+                    "midvsettingsdialogdock", "Wrong table! obsid is missing."
                 )
             )
         self.info_txt_xy_plot.setText(text)
@@ -673,7 +665,7 @@ class DatabaseSettings:
         self.label_width = self.maximum_label_width()
 
         self._label = qgis.PyQt.QtWidgets.QLabel(
-            ru(QCoreApplication.translate("DatabaseSettings", "Database type"))
+            QCoreApplication.translate("DatabaseSettings", "Database type")
         )
         self._label.setFixedWidth(self.label_width)
         self._dbtype_combobox = qgis.PyQt.QtWidgets.QComboBox()
@@ -745,10 +737,8 @@ class DatabaseSettings:
             db_settings = ast.literal_eval(_db_settings)
         except Exception:
             common_utils.MessagebarAndLog.warning(
-                log_msg=ru(
-                    QCoreApplication.translate(
-                        "DatabaseSettings", "Reading db_settings failed using string %s"
-                    )
+                log_msg=QCoreApplication.translate(
+                    "DatabaseSettings", "Reading db_settings failed using string %s"
                 )
                 % _db_settings
             )
@@ -773,11 +763,9 @@ class DatabaseSettings:
                             setattr(self.db_settings_obj, str(setting_name), value)
                         else:
                             common_utils.MessagebarAndLog.warning(
-                                log_msg=ru(
-                                    QCoreApplication.translate(
-                                        "DatabaseSettings",
-                                        "Databasetype %s didn' t have setting %s",
-                                    )
+                                log_msg=QCoreApplication.translate(
+                                    "DatabaseSettings",
+                                    "Databasetype %s didn' t have setting %s",
                                 )
                                 % (dbtype, setting_name)
                             )
@@ -786,16 +774,12 @@ class DatabaseSettings:
                         raise
         else:
             common_utils.MessagebarAndLog.warning(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "DatabaseSettings",
-                        "Could not load database settings. Select database again!",
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "DatabaseSettings",
+                    "Could not load database settings. Select database again!",
                 ),
-                log_msg=ru(
-                    QCoreApplication.translate(
-                        "DatabaseSettings", "Tried to load db_settings string %s"
-                    )
+                log_msg=QCoreApplication.translate(
+                    "DatabaseSettings", "Tried to load db_settings string %s"
                 )
                 % _db_settings,
             )
@@ -807,9 +791,9 @@ class DatabaseSettings:
     def maximum_label_width(self) -> int:
         maximumwidth = 0
         for label_name in [
-            ru(QCoreApplication.translate("DatabaseSettings", "Database type")),
-            ru(QCoreApplication.translate("DatabaseSettings", "Select db")),
-            ru(QCoreApplication.translate("DatabaseSettings", "Connections")),
+            QCoreApplication.translate("DatabaseSettings", "Database type"),
+            QCoreApplication.translate("DatabaseSettings", "Select db"),
+            QCoreApplication.translate("DatabaseSettings", "Connections"),
         ]:
             testlabel = qgis.PyQt.QtWidgets.QLabel(label_name)
             maximumwidth = max(maximumwidth, testlabel.sizeHint().width())
@@ -822,7 +806,7 @@ class SpatialiteSettings(gui_utils.RowEntryGrid):
         super().__init__()
         self.midvsettingsdialogdock = midvsettingsdialogdock
         self.btn_set_db = qgis.PyQt.QtWidgets.QPushButton(
-            ru(QCoreApplication.translate("SpatialiteSettings", "Select db"))
+            QCoreApplication.translate("SpatialiteSettings", "Select db")
         )
         self.btn_set_db.setFixedWidth(label_width)
         self.layout.addWidget(self.btn_set_db, 0, 0)
@@ -850,11 +834,9 @@ class SpatialiteSettings(gui_utils.RowEntryGrid):
 
         else:  # debug
             common_utils.MessagebarAndLog.info(
-                log_msg=ru(
-                    QCoreApplication.translate(
-                        "SpatialiteSettings",
-                        "DB selection cancelled and still using database path %s",
-                    )
+                log_msg=QCoreApplication.translate(
+                    "SpatialiteSettings",
+                    "DB selection cancelled and still using database path %s",
                 )
                 % common_utils.returnunicode(
                     self.midvsettingsdialogdock.ms.settingsdict["database"]
@@ -886,7 +868,7 @@ class PostgisSettings(gui_utils.RowEntryGrid):
         postgis_connections = db_utils.get_postgis_connections()
 
         self.label = qgis.PyQt.QtWidgets.QLabel(
-            ru(QCoreApplication.translate("PostgisSettings", "Connections"))
+            QCoreApplication.translate("PostgisSettings", "Connections")
         )
         if label_width is not None:
             self.label.setFixedWidth(label_width)

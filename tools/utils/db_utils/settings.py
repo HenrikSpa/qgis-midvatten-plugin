@@ -2,7 +2,7 @@
 
 from qgis.PyQt.QtCore import QSettings
 
-from midvatten.tools.utils.common_utils import returnunicode as ru
+from midvatten.tools.utils.string_utils import returnunicode as ru
 
 
 def get_postgis_connections() -> dict[str, dict[str, str]]:

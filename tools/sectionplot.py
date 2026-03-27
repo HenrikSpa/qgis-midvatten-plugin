@@ -13,6 +13,7 @@
 import ast
 import copy
 import json
+import logging
 import os
 import traceback
 import types
@@ -66,16 +67,16 @@ import matplotlib.dates as mdates
 from copy import deepcopy
 
 from midvatten.tools.utils import common_utils, db_utils
-from midvatten.tools.utils.common_utils import (
-    returnunicode as ru,
-    UsageError,
-    LEGEND_NCOL_KEY,
-)
+from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils.exceptions import UsageError
+from midvatten.tools.utils.common_utils import LEGEND_NCOL_KEY
 from midvatten.tools.utils.midvatten_utils import PlotTemplates
 from midvatten.tools.utils.gui_utils import DetachFigureButton
 import midvatten.definitions.midvatten_defs as defs
 from midvatten.tools.utils import matplotlib_replacements
 from midvatten.tools.utils.sampledem import qchain, sampling
+
+log = logging.getLogger(__name__)
 
 try:
     import pandas as pd
@@ -109,13 +110,13 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             )  # not really implemented yet
 
         self.setupUi(self)
-        self.initUI()
+        self.init_ui()
         self.template_plot_label.setText(
             '<a href="https://github.com/jkall/qgis-midvatten-plugin/wiki/5.-Plots-and-reports#create-section-plot">Templates manual</a>'
         )
         self.template_plot_label.setOpenExternalLinks(True)
 
-    def initUI(self):
+    def init_ui(self):
         # connect signal
         self.push_button.clicked.connect(lambda x: self.draw_plot())
         self.topLevelChanged.connect(lambda x: self.add_titlebar(self))
@@ -167,11 +168,9 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             selected_features = [f for f in line_layer.getSelectedFeatures()]
             if len(selected_features) != 1:
                 common_utils.MessagebarAndLog.critical(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "SectionPlot",
-                            "Must select only one feature in qgis layer: %s)",
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "SectionPlot",
+                        "Must select only one feature in qgis layer: %s)",
                     )
                     % line_layer.name()
                 )
@@ -570,11 +569,9 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                 obsids_x_position = self.get_length_along(selected_obspoints)
                 # hidden feature, printout to python console
                 common_utils.MessagebarAndLog.info(
-                    log_msg=ru(
-                        QCoreApplication.translate(
-                            "SectionPlot",
-                            "Hidden features, obsids and length along section:\n%s\\%s",
-                        )
+                    log_msg=QCoreApplication.translate(
+                        "SectionPlot",
+                        "Hidden features, obsids and length along section:\n%s\\%s",
                     )
                     % (
                         ";".join(obsids_x_position.keys()),
@@ -666,22 +663,18 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             elif common_utils.isfloat(str(h_toc)) and h_toc > -999:
                 z = h_toc
                 common_utils.MessagebarAndLog.warning(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "SectionPlot",
-                            "Obsid %s: using h_gs '%s' failed, using '%s' instead.",
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "SectionPlot",
+                        "Obsid %s: using h_gs '%s' failed, using '%s' instead.",
                     )
                     % (obs, str(h_gs), "h_toc")
                 )
             else:
                 z = 0
                 common_utils.MessagebarAndLog.warning(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "SectionPlot",
-                            "Obsid %s: using h_gs %s or h_toc %s failed, using 0 instead.",
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "SectionPlot",
+                        "Obsid %s: using h_gs %s or h_toc %s failed, using 0 instead.",
                     )
                     % (obs, str(h_gs), str(h_toc))
                 )
@@ -712,12 +705,13 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             common_utils.stop_waiting_cursor()
             return bars
 
-        for typ, subtypes in typ_subtypes.items():
+        for typ, _subtypes in typ_subtypes.items():
+            subtypes = _subtypes
             for obs, x in obsids_x_position.items():
                 if subtypes is None:
                     condition = "NOT IN"
                     subtypes = [
-                        x for k, v in typ_subtypes.items() for x in v if k != typ
+                        st for k, v in typ_subtypes.items() for st in v if k != typ
                     ]
                 else:
                     condition = "IN"
@@ -874,20 +868,16 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                 mpl.rcParams[k] = v
             except KeyError:
                 common_utils.MessagebarAndLog.info(
-                    log_msg=ru(
-                        QCoreApplication.translate(
-                            "SectionPlot", "rcParams key %s didn't exist"
-                        )
+                    log_msg=QCoreApplication.translate(
+                        "SectionPlot", "rcParams key %s didn't exist"
                     )
                     % ru(k)
                 )
 
         try:
             common_utils.MessagebarAndLog.info(
-                log_msg=ru(
-                    QCoreApplication.translate(
-                        "SectionPlot", "Plotting using settings:\n%s"
-                    )
+                log_msg=QCoreApplication.translate(
+                    "SectionPlot", "Plotting using settings:\n%s"
                 )
                 % self.secplot_templates.readable_output()
             )
@@ -978,13 +968,11 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             self.dbconnection = None
         except KeyError as e:
             common_utils.MessagebarAndLog.critical(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "SectionPlot",
-                        'Section plot optional settings error, press "Restore defaults"',
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "SectionPlot",
+                    'Section plot optional settings error, press "Restore defaults"',
                 ),
-                log_msg=ru(QCoreApplication.translate("SectionPlot", "Error msg: %s"))
+                log_msg=QCoreApplication.translate("SectionPlot", "Error msg: %s")
                 % str(traceback.format_exc()),
             )
             common_utils.stop_waiting_cursor()
@@ -993,12 +981,10 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
 
         except Exception:
             common_utils.MessagebarAndLog.critical(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "SectionPlot", "An error occured, see log message panel!"
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "SectionPlot", "An error occured, see log message panel!"
                 ),
-                log_msg=ru(QCoreApplication.translate("SectionPlot", "Error msg:\n %s"))
+                log_msg=QCoreApplication.translate("SectionPlot", "Error msg:\n %s")
                 % str(traceback.format_exc()),
             )
 
@@ -1233,10 +1219,8 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             )
         except Exception as e:
             common_utils.MessagebarAndLog.info(
-                log_msg=ru(
-                    QCoreApplication.translate(
-                        "SectionPlot", "Could not alter NavigationToolbar, msg: %s"
-                    )
+                log_msg=QCoreApplication.translate(
+                    "SectionPlot", "Could not alter NavigationToolbar, msg: %s"
                 )
                 % str(e)
             )
@@ -1358,11 +1342,9 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         color_layer_srid = color_layer.crs().authid()
         if points_srid != color_layer_srid:
             common_utils.MessagebarAndLog.warning(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "SectionPlot",
-                        "Grade dem: Layer %s had wrong srid! Had '%s' but should have '%s'.",
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "SectionPlot",
+                    "Grade dem: Layer %s had wrong srid! Had '%s' but should have '%s'.",
                 )
                 % (layername, str(color_layer_srid), str(points_srid))
             )
@@ -1372,10 +1354,10 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             isinstance(color_layer, QgsVectorLayer)
             or color_layer.type() == QgsMapLayer.LayerType.VectorLayer
         ):
-            print(f"Sampling as polygon")
+            log.debug("Sampling as polygon")
             labels_colors = sample_polygon(color_layer, sectionlinelayer, xarray)
         else:
-            print(f"Sampling as raster")
+            log.debug("Sampling as raster")
             labels_colors_dict = {}
             colors = sampling(
                 temp_memorylayer, color_layer, extract_type="value", bands=(1, 2, 3)
@@ -1493,11 +1475,9 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
     def plot_tem(self):
         if not pandas_on:
             common_utils.MessagebarAndLog.info(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "SectionPlot",
-                        "Python package Pandas required for plotting TEM inversion model",
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "SectionPlot",
+                    "Python package Pandas required for plotting TEM inversion model",
                 )
             )
             return
@@ -1615,11 +1595,9 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                 )
             except Exception:
                 common_utils.MessagebarAndLog.warning(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "SectionPlot",
-                            "Error: Supplied vmin could not be interpreted as a number",
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "SectionPlot",
+                        "Error: Supplied vmin could not be interpreted as a number",
                     )
                 )
         if self.ms.settingsdict["secplot_tem_vmax"].strip():
@@ -1629,11 +1607,9 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                 )
             except Exception:
                 common_utils.MessagebarAndLog.warning(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "SectionPlot",
-                            "Error: Supplied vmax could not be interpreted as a number",
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "SectionPlot",
+                        "Error: Supplied vmax could not be interpreted as a number",
                     )
                 )
 
@@ -1803,11 +1779,9 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
 
                 if path is None:
                     common_utils.MessagebarAndLog.warning(
-                        bar_msg=ru(
-                            QCoreApplication.translate(
-                                "SectionPlot",
-                                "Error: The image path '%s' could not be found!",
-                            )
+                        bar_msg=QCoreApplication.translate(
+                            "SectionPlot",
+                            "Error: The image path '%s' could not be found!",
                         )
                         % _path
                     )
@@ -1897,11 +1871,9 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                 )
             except Exception as e:
                 common_utils.MessagebarAndLog.info(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "Sectionplot",
-                            "Type %s color %s could not be plotted. Default to white!. See message log",
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "Sectionplot",
+                        "Type %s color %s could not be plotted. Default to white!. See message log",
                     )
                     % (str(typ), settings["color"]),
                     log_msg=traceback.format_exc(),
@@ -2046,11 +2018,9 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         )
         if df.empty:
             common_utils.MessagebarAndLog.info(
-                log_msg=ru(
-                    QCoreApplication.translate(
-                        "SectionPlot",
-                        "Interactive plot: No waterlevels found for chosen obsids in %s.",
-                    )
+                log_msg=QCoreApplication.translate(
+                    "SectionPlot",
+                    "Interactive plot: No waterlevels found for chosen obsids in %s.",
                 )
                 % self.ms.settingsdict["secplotwlvltab"]
             )
@@ -2107,9 +2077,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         self.figure._midv_ax_wlvl.legend()
 
         self.figure._midv_ax_wlvl.set_xlabel("")
-        # axes_set_ylabel = dict([(k, v) for k, v in self.secplot_templates.loaded_template.get('axes_set_ylabel', {}).items() if k != 'ylabel'])
-        # ylabel = self.secplot_templates.loaded_template.get('axes_set_ylabel', {}).get('ylabel', defs.secplot_default_template()['axes_set_ylabel']['ylabel'])
-        # self.figure._midv_ax_wlvl.set_ylabel(ylabel, **axes_set_ylabel)  #Allows international characters ('åäö') as ylabel
         self.figure._midv_ax_wlvl.set_ylabel("")
 
         for label in self.figure._midv_ax_wlvl.yaxis.get_ticklabels():
@@ -2270,13 +2237,9 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
 
     # ----- Methods used by the gui -----
     def detach_figure(self, button):
-        print(f"Detach pressed")
+        log.debug("Detach pressed")
         self.layoutplot.removeWidget(self.figure.canvas.toolbar)
         self.layoutplot.removeWidget(self.figure.canvas)
-
-        # self.previous_title = self.figure._midv_ax_main.get_title()
-        # self.previous_xaxis_label = self.figure._midv_ax_main.get_xlabel()
-        # self.previous_yaxis_label = self.figure._midv_ax_main.get_ylabel()
 
         self.figure.canvas.toolbar.close()
         self.figure.canvas.close()
@@ -2308,7 +2271,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                     try:
                         fig.canvas.setWindowTitle(window_title)
                     except Exception:
-                        print(f"Error, {e}, followup:\n{traceback.format_exc()}")
+                        log.debug(f"Error, {e}, followup:\n{traceback.format_exc()}")
 
     def resize_widget(self, parent):
         """
@@ -2455,7 +2418,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                 longdateformat(df_idx_as_datetime(fig._midv_df, current_idx))
             )
             fig.canvas.draw_idle()
-            # self.update_legend(from_navbar=True, fig=fig)
 
     def update_slider(self, event):
         fig = event.canvas.figure
@@ -2579,10 +2541,8 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                     _obs = obs.encode("utf8").decode("utf8")
                 except Exception as e:
                     common_utils.MessagebarAndLog.info(
-                        log_msg=ru(
-                            QCoreApplication.translate(
-                                "SectionPlot", "Encoding string failed for %s"
-                            )
+                        log_msg=QCoreApplication.translate(
+                            "SectionPlot", "Encoding string failed for %s"
                         )
                         % ru(obs)
                     )

@@ -18,6 +18,7 @@
 """
 
 import codecs
+import logging
 import os
 import time  # for debugging
 import traceback
@@ -26,7 +27,7 @@ from qgis.PyQt.QtCore import QCoreApplication
 
 # midvatten modules
 from midvatten.tools.utils import common_utils, db_utils
-from midvatten.tools.utils.common_utils import returnunicode as ru
+from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.wqualreport_core import (
     report_path,
     write_html_preamble,
@@ -34,12 +35,16 @@ from midvatten.tools.wqualreport_core import (
     open_report_in_browser,
 )
 
+log = logging.getLogger(__name__)
+
 
 class Wqualreport:  # extracts water quality data for selected objects, selected db and given table, results shown in html report
-    def __init__(self, layer, settingsdict={}):
+    def __init__(self, layer, settingsdict=None):
         # show the user this may take a long time...
         common_utils.start_waiting_cursor()
 
+        if settingsdict is None:
+            settingsdict = {}
         self.settingsdict = settingsdict
         provider = layer.dataProvider()  # OGR provider
         kolumnindex = provider.fieldNameIndex(
@@ -56,20 +61,20 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
         for feature in observations:
             attributes = feature.attributes()
             obsid = attributes[kolumnindex]
-            print(
+            log.debug(
                 "about to get data for " + obsid + ", at time: " + str(time.time())
-            )  # debug
+            )
             report_data = self.get_data(
                 self.settingsdict["database"], obsid, dbconnection
             )  # one observation at a time
-            print(
+            log.debug(
                 "done with getting data for " + obsid + ", at time: " + str(time.time())
-            )  # debug
+            )
             if report_data:
                 self.write_html_report(report_data, f)
-            print(
+            log.debug(
                 "wrote html report for " + obsid + ", at time: " + str(time.time())
-            )  # debug
+            )
 
         dbconnection.closedb()
         write_html_close(f)
@@ -99,18 +104,14 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
         )
         if not parameters:
             common_utils.MessagebarAndLog.warning(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "Wqualreport",
-                        "Debug, something is wrong, no parameters are found in table w_qual_lab for %s",
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "Wqualreport",
+                    "Debug, something is wrong, no parameters are found in table w_qual_lab for %s",
                 )
                 % obsid
             )
             return False
-        print(
-            "parameters for " + obsid + " is loaded at time: " + str(time.time())
-        )  # debug
+        log.debug("parameters for " + obsid + " is loaded at time: " + str(time.time()))
         # Load all date_times, stored in two result columns: reportnr, date_time
         dt_len = len(self.settingsdict["wqual_date_time_format"])
         if self.settingsdict[
@@ -130,19 +131,17 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
             sql, dbconnection, execute_args=(obsid,)
         )
 
-        print(
+        log.debug(
             "loaded distinct date_time for the parameters for "
             + obsid
             + " at time: "
             + str(time.time())
-        )  # debug
+        )
         if not date_times:
             common_utils.MessagebarAndLog.warning(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "Wqualreport",
-                        "Debug, Something is wrong, no parameters are found in table w_qual_lab for %s",
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "Wqualreport",
+                    "Debug, Something is wrong, no parameters are found in table w_qual_lab for %s",
                 )
                 % obsid
             )
@@ -150,11 +149,9 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
         else:
             if any([x[1] is None for x in date_times]):
                 common_utils.MessagebarAndLog.warning(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "Wqualreport",
-                            "Warning: Found rows with datetime = NULL. Column without date_time might be aggregated from multiple reports!",
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "Wqualreport",
+                        "Warning: Found rows with datetime = NULL. Column without date_time might be aggregated from multiple reports!",
                     )
                 )
 
@@ -185,9 +182,9 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
                 # report_table[parametercounter][0] = p.encode(utils.getcurrentlocale()[1])
                 report_table[parametercounter][0] = p
 
-        print(
+        log.debug(
             "Prepare report_table for " + obsid + ", at time: " + str(time.time())
-        )  # debug
+        )
         report_table[0][0] = "obsid"
         report_table[1][0] = "date_time"
         for datecounter, r_d in enumerate(
@@ -200,12 +197,12 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
                 report_table[2][0] = self.settingsdict["wqual_sortingcolumn"]
                 report_table[2][datecounter] = r
 
-        print(
+        log.debug(
             "now go for each parameter value for "
             + obsid
             + ", at time: "
             + str(time.time())
-        )  # debug
+        )
         for datecounter, sorting_date_time in enumerate(
             date_times, start=1
         ):  # Loop through all report
@@ -256,11 +253,9 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
                     except Exception:
                         report_table[parametercounter][datecounter] = ""
                         common_utils.MessagebarAndLog.warning(
-                            bar_msg=ru(
-                                QCoreApplication.translate(
-                                    "Wqualreport",
-                                    "Note!, the value for %s [%s] at %s, %s was not readable. Check your data!",
-                                )
+                            bar_msg=QCoreApplication.translate(
+                                "Wqualreport",
+                                "Note!, the value for %s [%s] at %s, %s was not readable. Check your data!",
                             )
                             % (p, u, sorting, date_time)
                         )
@@ -285,17 +280,13 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
             try:
                 if counter < self.nr_header_rows:
                     rpt = "  <tr><th>"
-                    rpt += '    </th><th width ="75">'.join(
-                        [ru(x) if x is not None else "" for x in sublist]
-                    )
+                    rpt += '    </th><th width ="75">'.join([ru(x) for x in sublist])
                     rpt += "  </th></tr>\n"
                 else:
                     rpt = "  <tr><td>"
-                    rpt += '    </td><td align="right">'.join(
-                        [ru(x) if x is not None else "" for x in sublist]
-                    )
+                    rpt += '    </td><td align="right">'.join([ru(x) for x in sublist])
                     rpt += "  </td></tr>\n"
             except Exception:
-                print("here was an error: %s" % sublist)
+                log.warning("here was an error: %s" % sublist)
             f.write(rpt)
         f.write("\n</table><p></p><p></p>")

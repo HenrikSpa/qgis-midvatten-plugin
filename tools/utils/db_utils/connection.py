@@ -10,11 +10,9 @@ import qgis.core
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import QgsProject
 
-from midvatten.tools.utils.common_utils import (
-    MessagebarAndLog,
-    returnunicode as ru,
-    UsageError,
-)
+from midvatten.tools.utils.message_utils import MessagebarAndLog
+from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils.exceptions import UsageError
 from midvatten.tools.utils.db_utils.backends.base import Backend
 from midvatten.tools.utils.db_utils.backends.postgresql import PostgreSQLBackend
 from midvatten.tools.utils.db_utils.backends.sqlite import SQLiteBackend
@@ -34,31 +32,25 @@ def _parse_db_settings(db_settings: Optional[str]) -> tuple:
         else:
             if not db_settings:
                 raise UsageError(
-                    ru(
-                        QCoreApplication.translate(
-                            "DbConnectionManager",
-                            "Database setting was empty. Check DB tab in Midvatten settings.",
-                        )
+                    QCoreApplication.translate(
+                        "DbConnectionManager",
+                        "Database setting was empty. Check DB tab in Midvatten settings.",
                     )
                 )
             try:
                 db_settings = ast.literal_eval(db_settings)
             except Exception:
                 raise UsageError(
-                    ru(
-                        QCoreApplication.translate(
-                            "DbConnectionManager",
-                            "Database could not be set. Check DB tab in Midvatten settings.",
-                        )
+                    QCoreApplication.translate(
+                        "DbConnectionManager",
+                        "Database could not be set. Check DB tab in Midvatten settings.",
                     )
                 )
     elif not isinstance(db_settings, dict):
         raise Exception(
-            ru(
-                QCoreApplication.translate(
-                    "DbConnectionManager",
-                    "DbConnectionManager programming error: db_settings must be either a dict like {'spatialite': {'dbpath': 'x'} or a string representation of it. Was: %s",
-                )
+            QCoreApplication.translate(
+                "DbConnectionManager",
+                "DbConnectionManager programming error: db_settings must be either a dict like {'spatialite': {'dbpath': 'x'} or a string representation of it. Was: %s",
             )
             % ru(db_settings)
         )
@@ -78,11 +70,9 @@ def create_backend(db_settings: Optional[str] = None) -> Backend:
             connection_name=connection_settings["connection"].split("/")[0],
         )
     raise UsageError(
-        ru(
-            QCoreApplication.translate(
-                "DbConnectionManager",
-                "Unsupported database type: %s",
-            )
+        QCoreApplication.translate(
+            "DbConnectionManager",
+            "Unsupported database type: %s",
         )
         % dbtype
     )
@@ -203,3 +193,51 @@ class DbConnectionManager:
 
     def drop_view(self, view_name: str) -> None:
         self._backend.drop_view(view_name)
+
+    def add_insert_or_ignore_to_sql(self, sql: str) -> str:
+        return self._backend.add_insert_or_ignore_to_sql(sql)
+
+    def cast_date_time_as_epoch(self, date_time: Optional[str] = None) -> str:
+        return self._backend.cast_date_time_as_epoch(date_time)
+
+    def cast_null(self, data_type: str) -> str:
+        return self._backend.cast_null(data_type)
+
+    def get_srid_name(self, srid: int) -> str:
+        return self._backend.get_srid_name(srid)
+
+    def latlon_sql(self) -> str:
+        return self._backend.latlon_sql()
+
+    def rowid_string(self) -> str:
+        return self._backend.rowid_string()
+
+    def numeric_test_sql(self, col_ident: str) -> str:
+        return self._backend.numeric_test_sql(col_ident)
+
+    def not_null_sql(self, col_ident: str, data_type: Optional[str] = None) -> str:
+        return self._backend.not_null_sql(col_ident, data_type)
+
+    def is_distinct_from(self) -> str:
+        return self._backend.is_distinct_from()
+
+    def is_not_distinct_from(self) -> str:
+        return self._backend.is_not_distinct_from()
+
+    def is_postgresql(self) -> bool:
+        """Return True if the backend is PostgreSQL (PostGIS)."""
+        from midvatten.tools.utils.db_utils.backends.postgresql import PostgreSQLBackend
+
+        return isinstance(self._backend, PostgreSQLBackend)
+
+    def numeric_datatypes(self) -> list:
+        return self._backend.numeric_datatypes()
+
+    def activate_foreign_keys(self, activated: bool) -> None:
+        self._backend.activate_foreign_keys(activated)
+
+    def median_sql(self, col_ident: str, table_ident: str, ph: str) -> tuple:
+        return self._backend.median_sql(col_ident, table_ident, ph)
+
+    def backup(self) -> None:
+        self._backend.backup(self)

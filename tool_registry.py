@@ -42,14 +42,14 @@ def add_plugin_action(
     :param parent: Parent widget for the action (defaults to main window).
     :returns: The created QAction.
     """
+    if parent is None:
+        parent = iface.mainWindow()
+
     icon_full_path = plugin_dir / "icons" / icon_path
     icon = QIcon(str(icon_full_path))
     action = QAction(icon, text, parent)
     action.triggered.connect(callback)
     action.setEnabled(enabled_flag)
-
-    if parent is None:
-        parent = iface.mainWindow()
 
     if status_tip is not None:
         action.setStatusTip(status_tip)

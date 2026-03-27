@@ -21,6 +21,7 @@ __modified_date__ = "Nov 2013"
 
 import datetime
 import itertools
+import logging
 import math
 import traceback
 from operator import sub
@@ -31,7 +32,10 @@ import numpy as np
 
 from midvatten.definitions.midvatten_defs import piperplot2_style
 from midvatten.tools.utils import common_utils, db_utils
-from midvatten.tools.utils.common_utils import returnunicode as ru, LEGEND_NCOL_KEY
+from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils.common_utils import LEGEND_NCOL_KEY
+
+log = logging.getLogger(__name__)
 
 
 class PiperPlot:
@@ -62,17 +66,15 @@ class PiperPlot:
             self.create_markers()
         self.get_piper_data()
         # here is a simple printout (to python console) to let the user see the piper plt.plot data
-        print(
+        log.debug(
             """obsid, date_time, type, Cl_meqPl, HCO3_meqPl, SO4_meqPl, Na+K_meqPl, Ca_meqPl, Mg_meqPl"""
         )
         for row in self.obsrecarray:
             # print ','.join([unicode(col).encode('utf-8') for col in row])
             try:
-                # fix_print_with_import
-                print(",".join([ru(col) for col in row]))
+                log.debug(",".join([ru(col) for col in row]))
             except Exception:
-                # fix_print_with_import
-                print("failed printing piper data...")
+                log.debug("failed printing piper data...")
 
         self.plot_function()
 
@@ -249,7 +251,6 @@ class PiperPlot:
                     self.parameters[piper_setting] = [specified_name]
                 else:
                     self.parameters[piper_setting] = parameters
-                    self.parameters.append(parameters)
             else:
                 self.parameters[piper_setting] = [
                     f"%{backup_name}%" for backup_name in backup_names
@@ -265,7 +266,7 @@ class PiperPlot:
         conn_ok, self.date_times = db_utils.sql_load_fr_db(sql2, execute_args=args)
 
     def get_selected_observations(self):
-        self.observations = common_utils.getselectedobjectnames(self.activelayer)
+        self.observations = common_utils.get_selected_object_names(self.activelayer)
 
     def get_selected_obstypes(self):
         dbconnection = db_utils.DbConnectionManager()
@@ -465,15 +466,6 @@ class PiperPlot:
             "rotation_mode": "anchor",
             "fontsize": mpl.rcParams["ytick.labelsize"],
         }
-        # 50%
-        # ax.text(*tri1.transform(50, 50), '50%', ha='right', va='bottom', **shared_ticklabels_params)
-        # self.labels_positive_rotation.append(ax.text(*tri1.transform(-2, 50), '50%', ha='left', va='bottom', **shared_ticklabels_params))
-        # self.labels_negative_rotation.append(ax.text(*tri1.transform(50, 0), '50%', ha='left', va='top', **shared_ticklabels_params))
-
-        # self.labels_negative_rotation.append(ax.text(*tri2.transform(-2, 50), '50%', ha='right', va='bottom', **shared_ticklabels_params))
-        # ax.text(*tri2.transform(50, 50), '50%', ha='left', va='bottom', **shared_ticklabels_params)
-        # self.labels_positive_rotation.append(ax.text(*tri2.transform(50, -2), '50%', ha='right', va='bottom', **shared_ticklabels_params))
-
         # Tri1 left side
         ax.text(
             *tri1.transform(90, 10),
@@ -1071,33 +1063,6 @@ class TriangleGraph:
             (x + (y / 2) - self.xlim[0]) / (self.xlim[1] - self.xlim[0])
         )
         return transformed_x, transformed_y
-
-    def to_piper_coords(self, transformed_x, transformed_y):
-        y = self.ylim[1](
-            (((transformed_y - self.ymin) / math.sin(math.radians(60))) + self.ylim[0])
-            / self.side_length
-        )
-        x = (
-            ((transformed_x - self.xmin) / self.side_length)
-            * (self.xlim[1] - self.xlim[0])
-            - y / 2
-            + self.xlim[0]
-        )
-
-    def get_triangle_nodes(self, step):
-        x_s = []
-        y_s = []
-        for xidx, x in enumerate(range(min(self.xlim), max(self.xlim) + step, step)):
-            for yidx, y in enumerate(
-                range(min(self.ylim), max(self.ylim) + step, step)
-            ):
-                if x + y < self.ylim[1] + self.ylim[1] * 0.5 - x / 2:
-                    x_t, y_t = self.transform(x, y)
-                    x_s.append(x_t)
-                    y_s.append(y_t)
-        x = np.asarray(x_s)
-        y = np.asarray(y_s)
-        return x, y
 
 
 class RhomboidGraph:

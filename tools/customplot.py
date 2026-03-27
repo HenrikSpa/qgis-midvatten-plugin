@@ -50,9 +50,13 @@ import matplotlib.ticker as tick
 from qgis.PyQt.QtWidgets import QApplication
 
 from midvatten.tools.utils import common_utils, midvatten_utils, db_utils
-from midvatten.tools.utils.common_utils import returnunicode as ru, LEGEND_NCOL_KEY
+from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils.common_utils import LEGEND_NCOL_KEY
 from midvatten.definitions import midvatten_defs as defs
-from midvatten.tools.utils.gui_utils import set_groupbox_children_visibility
+from midvatten.tools.utils.gui_utils import (
+    set_groupbox_children_visibility,
+    WA_DeleteOnClose,
+)
 
 import pandas as pd
 
@@ -65,8 +69,8 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
     def __init__(self, parent, msettings):
         self.ms = msettings
         self.ms.load_settings()
-        QtWidgets.QDialog.__init__(self, parent)
-        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+        QtWidgets.QMainWindow.__init__(self, parent)
+        self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # due to initialisation of Ui_MainWindow instance
         self.init_ui()
         self.tables_columns = db_utils.tables_columns()
@@ -146,12 +150,10 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
     def _connect_signals(self):
         """Wire all UI widget signals to their handlers."""
         # function partial due to problems with currentindexChanged and Combobox
-        # self.tab1_table, QtCore.SIGNAL("currentIndexChanged(int)"), partial(self.table1_changed))#currentIndexChanged caused unnecessary signals when scrolling in combobox
         self.tab1_table.currentIndexChanged.connect(partial(self.table1_changed))
         self.tab1_filtercol1.currentIndexChanged.connect(
             partial(self.tab1_filter1_changed)
         )
-        # self.tab1_filtercol1.currentIndexChanged.connect( partial(self.FilterChanged(1,1)))
         self.tab1_filtercol2.currentIndexChanged.connect(
             partial(self.tab1_filter2_changed)
         )
@@ -414,8 +416,8 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         else:
             if not self.p:
                 common_utils.MessagebarAndLog.warning(
-                    bar_msg=ru(
-                        QCoreApplication.translate("CustomPlot", "Plot not updated.")
+                    bar_msg=QCoreApplication.translate(
+                        "CustomPlot", "Plot not updated."
                     )
                 )
                 return None
@@ -434,17 +436,15 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                 ]  # Fix to not have the date ticks overlap at month end/start
             except Exception as e:
                 common_utils.MessagebarAndLog.warning(
-                    log_msg=ru(
-                        QCoreApplication.translate(
-                            "Customplot", "Setting intervald failed! msg:\n%s "
-                        )
+                    log_msg=QCoreApplication.translate(
+                        "Customplot", "Setting intervald failed! msg:\n%s "
                     )
                     % str(e)
                 )
 
             self.drawn = True
 
-            self.refreshPlot()
+            self.refresh_plot()
             common_utils.stop_waiting_cursor()
 
     def _setup_color_cyclers(self):
@@ -518,7 +518,6 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             filter2_col = str(filter2_col.currentText())
             filter2list = filter2.selectedItems()
             nop = max(len(filter1list), 1) * max(len(filter2list), 1)
-            # self.p= [None]*nop#list for plot objects
             self.p.extend([None] * nop)  # list for plot objects
             self.plabels.extend([None] * nop)  # List for plot labels
             try:
@@ -595,10 +594,8 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                             label = str(item1.text()) + """, """ + str(item2.text())
                             if not recs:
                                 common_utils.MessagebarAndLog.info(
-                                    log_msg=ru(
-                                        QCoreApplication.translate(
-                                            "CustomPlot", "No plottable data for %s."
-                                        )
+                                    log_msg=QCoreApplication.translate(
+                                        "CustomPlot", "No plottable data for %s."
                                     )
                                     % label
                                 )
@@ -638,11 +635,9 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                                 label = str(item.text())
                                 if not recs:
                                     common_utils.MessagebarAndLog.warning(
-                                        log_msg=ru(
-                                            QCoreApplication.translate(
-                                                "CustomPlot",
-                                                "No plottable data for %s.",
-                                            )
+                                        log_msg=QCoreApplication.translate(
+                                            "CustomPlot",
+                                            "No plottable data for %s.",
                                         )
                                         % label
                                     )
@@ -689,21 +684,17 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             )  # conv list of strings to numpy.ndarray of floats
         except Exception as e:
             common_utils.MessagebarAndLog.warning(
-                log_msg=ru(
-                    QCoreApplication.translate(
-                        "plotsqlitewindow", "Plotting date_time failed, msg: %s"
-                    )
+                log_msg=QCoreApplication.translate(
+                    "plotsqlitewindow", "Plotting date_time failed, msg: %s"
                 )
                 % str(e)
             )
             common_utils.MessagebarAndLog.info(
-                log_msg=ru(
-                    QCoreApplication.translate(
-                        "plotsqlitewindow",
-                        "Customplot, transforming to recarray with date_time as x-axis failed, msg: %s",
-                    )
+                log_msg=QCoreApplication.translate(
+                    "plotsqlitewindow",
+                    "Customplot, transforming to recarray with date_time as x-axis failed, msg: %s",
                 )
-                % ru(str(e))
+                % str(e)
             )
             my_format = [("numx", float), ("values", float)]
             table = np.array(
@@ -722,11 +713,9 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         else:
             if self.used_format != flag_time_xy:
                 raise common_utils.UsageError(
-                    ru(
-                        QCoreApplication.translate(
-                            "CustomPlot",
-                            "Plotting both xy and time plot at the same time doesn't work! Check the x-y axix settings in all tabs!",
-                        )
+                    QCoreApplication.translate(
+                        "CustomPlot",
+                        "Plotting both xy and time plot at the same time doesn't work! Check the x-y axix settings in all tabs!",
                     )
                 )
 
@@ -761,11 +750,9 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         if flag_time_xy == "time" and plottype == "frequency":
             if len(table2) < 2:
                 common_utils.MessagebarAndLog.warning(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "plotsqlitewindow",
-                            "Frequency plot failed for %s. The timeseries must be longer than 1 value!",
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "plotsqlitewindow",
+                        "Frequency plot failed for %s. The timeseries must be longer than 1 value!",
                     )
                     % ru(self.plabels[i]),
                     duration=30,
@@ -812,10 +799,8 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                     numtime = table2.date_time
                 else:
                     common_utils.MessagebarAndLog.info(
-                        bar_msg=ru(
-                            QCoreApplication.translate(
-                                "plotsqlitewindow", "Pandas calculate failed."
-                            )
+                        bar_msg=QCoreApplication.translate(
+                            "plotsqlitewindow", "Pandas calculate failed."
                         )
                     )
 
@@ -1056,7 +1041,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         searchindex = filter_combobox.findText(self.ms.settingsdict[custplot_filter])
         if searchindex >= 0:
             filter_combobox.setCurrentIndex(searchindex)
-            self.FilterChanged(filterno1, filterno2)
+            self.filter_changed(filterno1, filterno2)
 
     def filter_selections(self, filter_qlistwidget, custplot_filter_selection):
         # filtre1_1_selection
@@ -1128,7 +1113,6 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
     def table1_changed(self):  # This method is called whenever table1 is changed
         # First, update combobox with columns
         self.clearthings(1)
-        # self.ms.settingsdict['custplot_table1'] = self.tab1_table.currentText()
         self.populate_combo_box(
             "tab1_xcol", self.tab1_table.currentText()
         )  # GeneralNote: For some reason it is not possible to send currentText with the SIGNAL-trigger
@@ -1145,7 +1129,6 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
     def table2_changed(self):  # This method is called whenever table2 is changed
         # First, update combobox with columns
         self.clearthings(2)
-        # self.ms.settingsdict['custplot_table2'] = self.tab2_table.currentText()
         self.populate_combo_box(
             "tab2_xcol", self.tab2_table.currentText()
         )  # GeneralNote: For some reason it is not possible to send currentText with the SIGNAL-trigger
@@ -1162,7 +1145,6 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
     def table3_changed(self):  # This method is called whenever table3 is changed
         # First, update combobox with columns
         self.clearthings(3)
-        # self.ms.settingsdict['custplot_table2'] = self.tab3_table.currentText()
         self.populate_combo_box(
             "tab3_xcol", self.tab3_table.currentText()
         )  # GeneralNote: For some reason it is not possible to send currentText with the SIGNAL-trigger
@@ -1292,13 +1274,13 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
 
     @common_utils.general_exception_handler
     def redraw(self):
-        self.styles.load(self.refreshPlot, (self, "mpltoolbar"))
+        self.styles.load(self.refresh_plot, (self, "mpltoolbar"))
 
     @common_utils.general_exception_handler
-    def refreshPlot(self):
+    def refresh_plot(self):
         # If the user has not pressed "draw" before, do nothing
         common_utils.MessagebarAndLog.info(
-            log_msg=ru(QCoreApplication.translate("Customplot", "Loaded style:\n%s "))
+            log_msg=QCoreApplication.translate("Customplot", "Loaded style:\n%s ")
             % (self.styles.rcparams())
         )
 
@@ -1334,11 +1316,9 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                     self.xaxis_formatters[1].__dict__["interval_multiples"] = True
             except Exception as e:
                 common_utils.MessagebarAndLog.warning(
-                    log_msg=ru(
-                        QCoreApplication.translate(
-                            "Customplot",
-                            "Setting regular xaxis interval failed! msg:\n%s ",
-                        )
+                    log_msg=QCoreApplication.translate(
+                        "Customplot",
+                        "Setting regular xaxis interval failed! msg:\n%s ",
                     )
                     % str(e)
                 )
@@ -1396,7 +1376,6 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             self.widget_plot.setMaximumWidth(16777215)
             self.widget_plot.setMinimumHeight(10)
             self.widget_plot.setMaximumHeight(16777215)
-            # self.widget_plot.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         else:
             width_inches, height_inches = mpl.rcParams["figure.figsize"]
             screen_dpi = QApplication.screens()[0].logicalDotsPerInch()
@@ -1480,9 +1459,6 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         self.ms.settingsdict["custplot_maxtstep"] = self.spn_max_tstep.value()
         self.ms.settingsdict["custplot_legend"] = self.create_legend.isChecked()
         self.ms.settingsdict["custplot_grid"] = self.grid.isChecked()
-        # self.ms.settingsdict['custplot_title'] = unicode(self.axes.get_title())
-        # self.ms.settingsdict['custplot_xtitle'] = unicode(self.axes.get_xlabel())
-        # self.ms.settingsdict['custplot_ytitle'] = unicode(self.axes.get_ylabel())
         self.ms.settingsdict["custplot_tabwidget"] = self.tab_widget.currentIndex()
         self.ms.settingsdict["custplot_regular_xaxis_interval"] = (
             self.regular_xaxis_interval.isChecked()
@@ -1495,7 +1471,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         current_column = ru(filter_combobox.currentText())
         if not current_column:
             return
-        selected_values = common_utils.getselectedobjectnames(
+        selected_values = common_utils.get_selected_object_names(
             column_name=current_column
         )
         [
@@ -1565,26 +1541,22 @@ class PandasCalculations:
         self.center.setChecked(True)
         for wid in [self.window_label, self.window]:
             wid.setToolTip(
-                ru(
-                    QCoreApplication.translate(
-                        "PandasCalculations",
-                        "The number of timesteps in each moving average (rolling mean) mean\n"
-                        "The result is stored at the center timestep of each mean.\n"
-                        "See Pandas pandas.DataFrame.rolling documentation for more info.\n"
-                        "No rolling mean if field is empty.",
-                    )
+                QCoreApplication.translate(
+                    "PandasCalculations",
+                    "The number of timesteps in each moving average (rolling mean) mean\n"
+                    "The result is stored at the center timestep of each mean.\n"
+                    "See Pandas pandas.DataFrame.rolling documentation for more info.\n"
+                    "No rolling mean if field is empty.",
                 )
             )
 
         for wid in [self.center_label, self.center]:
             wid.setToolTip(
-                ru(
-                    QCoreApplication.translate(
-                        "PandasCalculations",
-                        "Check (default) to store the rolling mean at the center timestep.\n"
-                        "Uncheck to store the rolling mean at the last timestep.\n"
-                        "See Pandas pandas.rolling_mean documentation for more info.",
-                    )
+                QCoreApplication.translate(
+                    "PandasCalculations",
+                    "Check (default) to store the rolling mean at the center timestep.\n"
+                    "Uncheck to store the rolling mean at the last timestep.\n"
+                    "See Pandas pandas.rolling_mean documentation for more info.",
                 )
             )
 
@@ -1657,10 +1629,8 @@ class PandasCalculations:
                 base = int(base)
             except ValueError:
                 common_utils.MessagebarAndLog.critical(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "PandasCalculations", "Resample base must be an integer"
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "PandasCalculations", "Resample base must be an integer"
                     )
                 )
                 # Rule is set to None to skip resampling
@@ -1686,11 +1656,9 @@ class PandasCalculations:
                 window = int(window)
             except ValueError:
                 common_utils.MessagebarAndLog.critical(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "PandasCalculations",
-                            "Rolling mean window must be an integer",
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "PandasCalculations",
+                        "Rolling mean window must be an integer",
                     )
                 )
             else:
@@ -1716,7 +1684,7 @@ def horizontal_line():
 class SaveToCsvDialog(QtWidgets.QDialog):
     def __init__(self, parent, data):
         super().__init__(parent)
-        self.setAttribute(qgis.PyQt.QtCore.Qt.WA_DeleteOnClose)
+        self.setAttribute(WA_DeleteOnClose)
         self.setWindowTitle(
             QCoreApplication.translate("SaveToCsvDialog", "Save as csv")
         )

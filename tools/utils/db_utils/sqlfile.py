@@ -6,15 +6,10 @@ Supports SPATIALITE/POSTGIS and SQLITE/POSTGRESQL prefixes (Option B).
 import re
 from typing import Callable, Optional
 
-from midvatten.tools.utils.common_utils import (
-    lstrip,
-    returnunicode as ru,
-    sql_failed_msg,
-)
-from midvatten.tools.utils.common_utils import MessagebarAndLog
+from midvatten.tools.utils.string_utils import lstrip, returnunicode as ru
+from midvatten.tools.utils.message_utils import MessagebarAndLog, sql_failed_msg
 from qgis.PyQt.QtCore import QCoreApplication
 
-from midvatten.tools.utils.db_utils.backends.postgresql import PostgreSQLBackend
 from midvatten.tools.utils.db_utils.connection import DbConnectionManager
 from midvatten.tools.utils.db_utils.execution import sql_alter_db
 
@@ -84,20 +79,17 @@ def execute_sqlfile(
     if merge_newlines:
         lines = [f"{line};" for line in " ".join(lines).split(";") if line.strip()]
 
-    backend = dbconnection._backend
     for line in lines:
         if line:
-            if isinstance(backend, PostgreSQLBackend):
+            if dbconnection.is_postgresql():
                 line = _transform_line_for_postgresql(line)
             try:
                 dbconnection.execute(line)
             except Exception as e:
                 MessagebarAndLog.critical(
                     bar_msg=sql_failed_msg(),
-                    log_msg=ru(
-                        QCoreApplication.translate(
-                            "NewDb", "sql failed:\n%s\nerror msg:\n%s\n"
-                        )
+                    log_msg=QCoreApplication.translate(
+                        "NewDb", "sql failed:\n%s\nerror msg:\n%s\n"
                     )
                     % (ru(line), str(e)),
                 )

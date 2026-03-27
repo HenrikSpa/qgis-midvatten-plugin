@@ -14,9 +14,12 @@ class TestNotFoundQuestion:
     """Test NotFoundQuestion dialog construction and setupUi (self.dialog)."""
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch("midvatten.tools.utils.dialog_utils.QtWidgets.QDialog.exec", return_value=0)
+    @mock.patch("midvatten.tools.utils.dialog_utils.QtWidgets.QWidget.show")
+    @mock.patch(
+        "midvatten.tools.utils.dialog_utils.QtWidgets.QDialog.exec", return_value=0
+    )
     def test_setup_ui_sets_dialog_and_widgets(
-        self, mock_exec, mock_messagebar
+        self, mock_exec, mock_show, mock_messagebar
     ):
         """NotFoundQuestion can be constructed; setupUi runs and dialog/widgets exist."""
         print(f"{mock_messagebar.mock_calls=}")
@@ -39,8 +42,11 @@ class TestNotFoundQuestion:
         assert mock_exec.called
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch("midvatten.tools.utils.dialog_utils.QtWidgets.QDialog.exec", return_value=0)
-    def test_default_value_in_combobox(self, mock_exec, mock_messagebar):
+    @mock.patch("midvatten.tools.utils.dialog_utils.QtWidgets.QWidget.show")
+    @mock.patch(
+        "midvatten.tools.utils.dialog_utils.QtWidgets.QDialog.exec", return_value=0
+    )
+    def test_default_value_in_combobox(self, mock_exec, mock_show, mock_messagebar):
         """Default value is added to combo box."""
         print(f"{mock_messagebar.mock_calls=}")
         d = dialog_utils.NotFoundQuestion(

@@ -60,7 +60,7 @@ class TestDrillreportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
     @mock.patch("midvatten.tools.custom_drillreport.QDesktopServices.openUrl")
     @mock.patch(
-        "midvatten.tools.custom_drillreport.common_utils.getselectedobjectnames"
+        "midvatten.tools.custom_drillreport.common_utils.get_selected_object_names"
     )
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
@@ -86,7 +86,7 @@ class TestDrillreportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert "0" in report and "1" in report
 
     @mock.patch(
-        "midvatten.tools.custom_drillreport.common_utils.getselectedobjectnames"
+        "midvatten.tools.custom_drillreport.common_utils.get_selected_object_names"
     )
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
@@ -116,7 +116,7 @@ class TestDrillreportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
     @mock.patch("midvatten.tools.custom_drillreport.QDesktopServices.openUrl")
     @mock.patch(
-        "midvatten.tools.custom_drillreport.common_utils.getselectedobjectnames"
+        "midvatten.tools.custom_drillreport.common_utils.get_selected_object_names"
     )
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
@@ -139,7 +139,7 @@ class TestDrillreportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
     @mock.patch("midvatten.tools.custom_drillreport.QDesktopServices.openUrl")
     @mock.patch(
-        "midvatten.tools.custom_drillreport.common_utils.getselectedobjectnames"
+        "midvatten.tools.custom_drillreport.common_utils.get_selected_object_names"
     )
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
@@ -166,7 +166,7 @@ class TestDrillreportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
     @mock.patch("midvatten.tools.custom_drillreport.QDesktopServices.openUrl")
     @mock.patch(
-        "midvatten.tools.custom_drillreport.common_utils.getselectedobjectnames"
+        "midvatten.tools.custom_drillreport.common_utils.get_selected_object_names"
     )
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
@@ -191,7 +191,7 @@ class TestDrillreportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
     @mock.patch("midvatten.tools.custom_drillreport.QDesktopServices.openUrl")
     @mock.patch(
-        "midvatten.tools.custom_drillreport.common_utils.getselectedobjectnames"
+        "midvatten.tools.custom_drillreport.common_utils.get_selected_object_names"
     )
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)

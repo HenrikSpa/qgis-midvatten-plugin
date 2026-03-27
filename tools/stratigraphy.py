@@ -38,6 +38,7 @@
  ***************************************************************************/
 """
 
+import logging
 import traceback
 import unicodedata
 from functools import partial  # only to get combobox signals to work
@@ -47,91 +48,80 @@ from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.definitions import midvatten_defs as defs
 from midvatten.tools.utils import common_utils, db_utils
-from midvatten.tools.utils.common_utils import returnunicode as ru
+from midvatten.tools.utils.string_utils import returnunicode as ru
+
+log = logging.getLogger(__name__)
 
 
 class Stratigraphy:
-    def __init__(self, iface, layer=None, settingsdict={}):
+    def __init__(self, iface, layer=None, settingsdict=None):
         self.iface = iface
         self.stratitable = (
             defs.stratigraphy_table()
         )  # no longer an option to select other tables than 'stratigraphy'
         self.layer = layer
         self.store = None
-        # self.showSurvey()
         self.w = None
 
-    def initStore(self):
+    def init_store(self):
         try:  # return from SurveyStore is stored in self.store only if no object belonging to DataError class is created
             self.store = SurveyStore(self.stratitable)
         except (
             DataError
         ) as e:  # if an object 'e' belonging to DataError is created, then do following
-            # fix_print_with_import
-            print("Load failed due: " + e.problem)
+            log.debug("Load failed due: " + e.problem)
             self.store = None
 
-    def showSurvey(self):
-        # lyr = self.iface.activeLayer() # THIS IS TSPLOT-method, GETS THE SELECTED LAYER
+    def show_survey(self):
         lyr = self.layer
         ids = lyr.selectedFeatureIds()
         if len(ids) == 0:
             common_utils.pop_up_info(
-                ru(QCoreApplication.translate(" Stratigraphy", "No selection")),
-                ru(
-                    QCoreApplication.translate(
-                        " Stratigraphy", "No features are selected"
-                    )
-                ),
+                QCoreApplication.translate(" Stratigraphy", "No selection"),
+                QCoreApplication.translate(" Stratigraphy", "No features are selected"),
             )
             return
         # initiate the datastore if not yet done
-        self.initStore()
+        self.init_store()
         common_utils.start_waiting_cursor()  # Sets the mouse cursor to wait symbol
-        try:  # return from store.getData is stored in data only if no object belonging to DataSanityError class is created
-            self.data = self.store.getData(ids, lyr)  # added lyr as an argument!!!
+        try:  # return from store.get_data is stored in data only if no object belonging to DataSanityError class is created
+            self.data = self.store.get_data(ids, lyr)  # added lyr as an argument!!!
         except DataSanityError as e:  # if an object 'e' belonging to DataSanityError is created, then do following
-            print("DataSanityError %s" % str(e))
+            log.warning("DataSanityError %s" % str(e))
             common_utils.stop_waiting_cursor()
             common_utils.pop_up_info(
-                ru(
-                    QCoreApplication.translate(
-                        " Stratigraphy", "Data sanity problem, obsid: %s\n%s"
-                    )
+                QCoreApplication.translate(
+                    " Stratigraphy", "Data sanity problem, obsid: %s\n%s"
                 )
                 % (e.sond_id, e.message)
             )
             return
         except Exception as e:  # if an object 'e' belonging to DataSanityError is created, then do following
-            print("exception : %s" % str(e))
+            log.error("exception : %s" % str(e))
             common_utils.stop_waiting_cursor()
             common_utils.MessagebarAndLog.critical(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        " Stratigraphy",
-                        "The stratigraphy plot failed, check Midvatten plugin settings and your data!",
-                    )
+                bar_msg=QCoreApplication.translate(
+                    " Stratigraphy",
+                    "The stratigraphy plot failed, check Midvatten plugin settings and your data!",
                 )
             )
             return
         common_utils.stop_waiting_cursor()  # Restores the mouse cursor to normal symbol
         # show widget
         w = SurveyDialog()
-        # w.widget.setData2_nosorting(data)  #THIS IS IF DATA IS NOT TO BE SORTED!!
-        w.widget.setData(self.data)  # THIS IS ONLY TO SORT DATA!!
+        # w.widget.set_data2_nosorting(data)  #THIS IS IF DATA IS NOT TO BE SORTED!!
+        w.widget.set_data(self.data)  # THIS IS ONLY TO SORT DATA!!
         w.show()
         self.w = w  # save reference so it doesn't get deleted immediately        This has to be done both here and also in midvatten instance
 
 
 class SurveyInfo:  # This class is to define the data structure...
-    def __init__(
-        self, obsid="", top_lvl=0, coord=None, strata=None, length=None
-    ):  # _CHANGE_ added obsid
-        self.obsid = obsid  # _CHANGE_
+    def __init__(self, obsid="", top_lvl=0, coord=None, strata=None, length=None):
+        self.obsid = obsid
         self.top_lvl = top_lvl
         self.coord = coord
         self.length = length
-        if strata == None:
+        if strata is None:
             strata = []
         self.strata = strata
 
@@ -142,7 +132,7 @@ class SurveyInfo:  # This class is to define the data structure...
             str(self.obsid),
             self.top_lvl,
             self.coord,
-        )  # _CHANGE_
+        )
 
 
 class StrataInfo:
@@ -182,40 +172,34 @@ class SurveyStore:
         self.stratitable = stratitable
         self.warning_popup = True
 
-    def getData(
+    def get_data(
         self, feature_ids, vectorlayer
-    ):  # THIS FUNCTION IS ONLY CALLED FROM ARPATPLUGIN/SHOWSURVEY
+    ):  # THIS FUNCTION IS ONLY CALLED FROM ARPATPLUGIN/SHOW_SURVEY
         """get data from databases for array of features specified by their IDs"""
-        surveys = self._getDataStep1(feature_ids, vectorlayer)
+        surveys = self._get_data_step1(feature_ids, vectorlayer)
         if not surveys:
             raise DataSanityError(
                 "feature ids {}".format(", ".join([str(x) for x in feature_ids])),
                 "Could not get data from layer!",
             )
         try:
-            data_loading_status, surveys = self._getDataStep2(surveys)
+            data_loading_status, surveys = self._get_data_step2(surveys)
         except Exception:
             data_loading_status = False
-        if data_loading_status == True:
-            surveys = self.sanityCheck(surveys)
+        if data_loading_status:
+            surveys = self.sanity_check(surveys)
             return surveys
         else:
             raise DataSanityError("Unknown obsid", "Dataloading failed!")
 
-    def _getDataStep1(self, feature_ids, vlayer):
-        """STEP 1: get data from selected layer"""  # _CHANGE_ Completely revised to TSPLot method
-        provider = vlayer.dataProvider()  # _CHANGE_  THIS IS TSPLOT-method, we do not use the db loadeds by ARPAT _init_ surveystore
-        obsid_col_no = provider.fieldNameIndex(
-            "obsid"
-        )  # _CHANGE_  THIS IS TSPLOT-method To find the column named 'obsid'
+    def _get_data_step1(self, feature_ids, vlayer):
+        """STEP 1: get data from selected layer"""
+        provider = vlayer.dataProvider()
+        obsid_col_no = provider.fieldNameIndex("obsid")
         if obsid_col_no == -1:
             obsid_col_no = provider.fieldNameIndex("OBSID")  # backwards compatibility
-        h_gs_col_no = provider.fieldNameIndex(
-            "h_gs"
-        )  # _CHANGE_  THIS IS TSPLOT-method To find the column named 'h_gs'
-        h_toc_col_no = provider.fieldNameIndex(
-            "h_toc"
-        )  # _CHANGE_  THIS IS TSPLOT-method To find the column named 'h_toc'
+        h_gs_col_no = provider.fieldNameIndex("h_gs")
+        h_toc_col_no = provider.fieldNameIndex("h_toc")
         if h_gs_col_no == -1 and h_toc_col_no == -1:
             h_gs_col_no = provider.fieldNameIndex("SURF_LVL")  # backwards compatibility
         length_col_no = provider.fieldNameIndex("length")
@@ -244,11 +228,10 @@ class SurveyStore:
                         try:
                             level_val = float(h_gs)
                         except ValueError:
-                            error_msg = ru(
-                                QCoreApplication.translate(
-                                    "Stratigraphy", "Converting to float failed."
-                                )
+                            error_msg = QCoreApplication.translate(
+                                "Stratigraphy", "Converting to float failed."
                             )
+
                         except Exception as e:
                             error_msg = e
                     if level_val is None:
@@ -262,25 +245,21 @@ class SurveyStore:
                             using = "h_toc"
 
                         common_utils.MessagebarAndLog.warning(
-                            bar_msg=ru(
-                                QCoreApplication.translate(
-                                    "Stratigraphy",
-                                    "Obsid %s: using h_gs '%s' failed, using '%s' instead.",
-                                )
+                            bar_msg=QCoreApplication.translate(
+                                "Stratigraphy",
+                                "Obsid %s: using h_gs '%s' failed, using '%s' instead.",
                             )
                             % (obsid, h_gs, using),
-                            log_msg=ru(QCoreApplication.translate("Stratigraphy", "%s"))
+                            log_msg=QCoreApplication.translate("Stratigraphy", "%s")
                             % error_msg,
                             duration=90,
                         )
 
                         if self.warning_popup:
                             common_utils.pop_up_info(
-                                ru(
-                                    QCoreApplication.translate(
-                                        "Stratigraphy",
-                                        "Warning, h_gs is missing. See messagebar.",
-                                    )
+                                QCoreApplication.translate(
+                                    "Stratigraphy",
+                                    "Warning, h_gs is missing. See messagebar.",
                                 )
                             )
                             self.warning_popup = False
@@ -301,11 +280,11 @@ class SurveyStore:
                     )
         else:
             common_utils.pop_up_info(
-                ru(QCoreApplication.translate("Stratigraphy", "getDataStep1 failed"))
-            )  # _CHANGE_ for debugging
+                QCoreApplication.translate("Stratigraphy", "getDataStep1 failed")
+            )
         return surveys
 
-    def _getDataStep2(self, surveys):
+    def _get_data_step2(self, surveys):
         """STEP 2: get strata information for every point"""
         dbconnection = db_utils.DbConnectionManager()
         for obsid, survey in surveys.items():
@@ -334,11 +313,9 @@ class SurveyStore:
                 else:
                     raise DataSanityError(
                         str(obsid),
-                        ru(
-                            QCoreApplication.translate(
-                                "SurveyStore",
-                                "Something bad with stratid, depthtop or depthbot!",
-                            )
+                        QCoreApplication.translate(
+                            "SurveyStore",
+                            "Something bad with stratid, depthtop or depthbot!",
                         ),
                     )
                     stratigaphy_id = (
@@ -401,14 +378,14 @@ class SurveyStore:
         dbconnection.closedb()
         return data_loading_status, surveys
 
-    def sanityCheck(self, _surveys):
+    def sanity_check(self, _surveys):
         """does a sanity check on retreived data"""
         surveys = {}
         for obsid, survey in _surveys.items():
             # check whether there's at least one strata information
             if len(survey.strata) == 0:
                 # raise DataSanityError(str(obsid), "No strata information")
-                print(str(obsid) + " has no strata information")
+                log.debug(str(obsid) + " has no strata information")
                 continue
                 # del surveys[obsid]#simply remove the item without strata info
             else:
@@ -420,11 +397,9 @@ class SurveyStore:
                     if top1 > strato.depth_top:
                         raise DataSanityError(
                             str(obsid),
-                            ru(
-                                QCoreApplication.translate(
-                                    "SurveyStore",
-                                    "Top depth is incorrect (%.2f > %.2f)",
-                                )
+                            QCoreApplication.translate(
+                                "SurveyStore",
+                                "Top depth is incorrect (%.2f > %.2f)",
                             )
                             % (top1, strato.depth_top),
                         )
@@ -432,11 +407,9 @@ class SurveyStore:
                     if bed1 > strato.depth_bot:
                         raise DataSanityError(
                             str(obsid),
-                            ru(
-                                QCoreApplication.translate(
-                                    "SurveyStore",
-                                    "Bed depth is incorrect (%.2f > %.2f)",
-                                )
+                            QCoreApplication.translate(
+                                "SurveyStore",
+                                "Bed depth is incorrect (%.2f > %.2f)",
                             )
                             % (bed1, strato.depth_bot),
                         )
@@ -444,11 +417,9 @@ class SurveyStore:
                     if bed1 != strato.depth_top:
                         raise DataSanityError(
                             str(obsid),
-                            ru(
-                                QCoreApplication.translate(
-                                    "SurveyStore",
-                                    "Top and bed depth don't match (%.2f != %.2f)",
-                                )
+                            QCoreApplication.translate(
+                                "SurveyStore",
+                                "Top and bed depth don't match (%.2f != %.2f)",
                             )
                             % (bed1, strato.depth_top),
                         )
@@ -487,7 +458,7 @@ class SurveyWidget(QtWidgets.QFrame):
             Qt.transparent    a transparent black value (i.e., PySide.QtGui.QColor (0, 0, 0, 0))
         """
         # ------------------Please note!---------------------
-        # Due to unicode normalize in getData function below, swedish national characters will be
+        # Due to unicode normalize in get_data function below, swedish national characters will be
         # transformed to a, a, and o when read from the stratigraphy table
         self.geo_color_symbols = defs.geocolorsymbols()
         # print(self.geo_color_symbols)#debug
@@ -497,7 +468,7 @@ class SurveyWidget(QtWidgets.QFrame):
         self.geo_or_comment = "geology"  # Default is that text =  geology description
         self.show_desc = True  # Default is to show text
 
-    def setData(self, sondaggio):
+    def set_data(self, sondaggio):
         self.sondaggio = sondaggio
         # find out whether the overall distance is bigger on x or y axis
         # so columns will be sorted by their x or y coordinate
@@ -524,25 +495,23 @@ class SurveyWidget(QtWidgets.QFrame):
             # cc = lambda a,b: cmp(a.coord.y(), b.coord.y())
         order = sorted(self.sondaggio.values(), key=cc)
         self.order = order  # THIS SHOULD BE REPLACED BY 2L BELOW
-        # for o in order:
-        #    self.order.append(o.obsid)   # _CHANGE_  Should be fixed
 
-    def setData2_nosorting(self, sondaggio):  # Without sorting
+    def set_data2_nosorting(self, sondaggio):  # Without sorting
         self.order = []
         for s in sondaggio.values():
             self.order.append(s)
 
-    def setType(self, switch_geo_hydro):
+    def set_type(self, switch_geo_hydro):
         """sets whether fill columns with Geo colors (0) or Hydro colors (1)"""
         self.switch_geo_hydro = switch_geo_hydro
         self.update()
 
-    def setGeoOrComment(self, geo_or_comment):
+    def set_geo_or_comment(self, geo_or_comment):
         """sets whether to print geology ("geology") or Comment ("comment")"""
         self.geo_or_comment = geo_or_comment
         self.update()
 
-    def setShowDesc(self, show):
+    def set_show_desc(self, show):
         self.show_desc = show
         self.update()
 
@@ -557,15 +526,15 @@ class SurveyWidget(QtWidgets.QFrame):
             p.drawText(
                 self.rect(),
                 QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter,
-                ru(QCoreApplication.translate("SurveyWidget", "No data to display")),
+                QCoreApplication.translate("SurveyWidget", "No data to display"),
             )
             return
 
         painter = QtGui.QPainter(self)
 
-        self.drawSurveys(self.rect(), painter)
+        self.draw_surveys(self.rect(), painter)
 
-    def drawSurveys(self, rect, painter):
+    def draw_surveys(self, rect, painter):
         """draw surveys to specified rect with specified painter"""
         surveys = len(self.sondaggio)
         survey_width = rect.width() / surveys
@@ -602,11 +571,11 @@ class SurveyWidget(QtWidgets.QFrame):
             sond = self.sondaggio[survey.obsid]
             # draw the survey
             try:
-                self.drawSurvey(painter, sond, r, column_width, (depth_bot, depth_top))
+                self.draw_survey(painter, sond, r, column_width, (depth_bot, depth_top))
             except Exception:
                 common_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
-    def drawSurvey(self, p, sond, s_rect, column_width, interval):
+    def draw_survey(self, p, sond, s_rect, column_width, interval):
         """draws one survey to rectangle in widget specified by s_rect"""
         depth_top = sond.top_lvl
         depth_bot = depth_top - sond.strata[-1].depth_bot
@@ -665,14 +634,14 @@ class SurveyWidget(QtWidgets.QFrame):
                 QtCore.QPoint(s_rect.right(), int(y + y2)),
             )
 
-            b_type = self.geoToSymbol(
+            b_type = self.geo_to_symbol(
                 layer.geo_short
             )  # select brush pattern depending on the geo_short
             # select brush pattern depending on usage of geo or hydro
             if self.switch_geo_hydro == 0:
-                color = self.textToColor(layer.geo_short, "geo")
+                color = self.text_to_color(layer.geo_short, "geo")
             else:
-                color = self.textToColor(layer.hydro, "hydro")
+                color = self.text_to_color(layer.hydro, "hydro")
             # draw column with background color
             p.setBrush(color)
             p.drawRect(c_rect)
@@ -723,7 +692,7 @@ class SurveyWidget(QtWidgets.QFrame):
 
             y += y2
 
-    def textToColor(
+    def text_to_color(
         self, id="", type=""
     ):  # _ DEFINE (in the class method) AND USE (in this function) A DICTIONARY INSTEAD
         """returns QColor from the specified text"""
@@ -747,7 +716,7 @@ class SurveyWidget(QtWidgets.QFrame):
             else:
                 return QtCore.Qt.white
 
-    def geoToSymbol(
+    def geo_to_symbol(
         self, id=""
     ):  # A function to return fill type for the box representing the stratigraphy layer
         """returns Symbol from the specified text"""
@@ -759,7 +728,7 @@ class SurveyWidget(QtWidgets.QFrame):
         else:
             return QtCore.Qt.NoBrush
 
-    def printDiagram(self):
+    def print_diagram(self):
         """outputs the diagram to the printer (or PDF)"""
         printer = QtPrintSupport.QPrinter(QtPrintSupport.QPrinter.HighResolution)
 
@@ -780,7 +749,7 @@ class SurveyWidget(QtWidgets.QFrame):
         rect = printer.pageRect()
         # print "rect: ", rect.left(), rect.top(), rect.width(), rect.height()
 
-        self.drawSurveys(rect, p)
+        self.draw_surveys(rect, p)
 
         p.end()
 
@@ -798,7 +767,7 @@ class SurveyDialog(QtWidgets.QDialog):
         )
 
         self.setWindowTitle(
-            ru(QCoreApplication.translate("SurveyDialog", "Identify Results"))
+            QCoreApplication.translate("SurveyDialog", "Identify Results")
         )
 
         self.layout = QtWidgets.QVBoxLayout(self)
@@ -813,14 +782,13 @@ class SurveyDialog(QtWidgets.QDialog):
         self.rad_geo.setChecked(True)  # Default is to show colors as per geo
         self.layout2.addWidget(self.rad_geo)
         self.rad_hydro = QtWidgets.QRadioButton("Hydro")
-        # self.rad_hydro.setChecked(False)  #Default is NOT to show colors as per hydro
         self.layout2.addWidget(self.rad_hydro)
 
         spacer_item = QtWidgets.QSpacerItem(100, 0)
         self.layout2.addItem(spacer_item)
 
         self.chk_show_desc = QtWidgets.QCheckBox(
-            ru(QCoreApplication.translate("SurveyDialog", "Show text"))
+            QCoreApplication.translate("SurveyDialog", "Show text")
         )
         self.chk_show_desc.setChecked(True)
         self.layout2.addWidget(self.chk_show_desc)
@@ -835,22 +803,22 @@ class SurveyDialog(QtWidgets.QDialog):
         self.layout2.addWidget(self.geology_or_comment_cbox)
 
         self.btn_print = QtWidgets.QPushButton(
-            ru(QCoreApplication.translate("SurveyDialog", "Print"))
+            QCoreApplication.translate("SurveyDialog", "Print")
         )
         self.layout2.addWidget(self.btn_print)
 
         self.btn_close = QtWidgets.QPushButton(
-            ru(QCoreApplication.translate("SurveyDialog", "Close"))
+            QCoreApplication.translate("SurveyDialog", "Close")
         )
         self.layout2.addWidget(self.btn_close)
 
         self.layout.addLayout(self.layout2)
 
         self.btn_close.clicked.connect(lambda x: self.close())
-        self.btn_print.clicked.connect(self.widget.printDiagram)
-        self.rad_geo.toggled.connect(self.typeToggled)
-        self.rad_hydro.toggled.connect(self.typeToggled)
-        self.chk_show_desc.toggled.connect(self.widget.setShowDesc)
+        self.btn_print.clicked.connect(self.widget.print_diagram)
+        self.rad_geo.toggled.connect(self.type_toggled)
+        self.rad_hydro.toggled.connect(self.type_toggled)
+        self.chk_show_desc.toggled.connect(self.widget.set_show_desc)
         self.geology_or_comment_cbox.currentIndexChanged.connect(
             partial(self.combo_box_updated)
         )
@@ -859,15 +827,15 @@ class SurveyDialog(QtWidgets.QDialog):
     def close(self):
         self.accept()
 
-    def typeToggled(self):
+    def type_toggled(self):
         if self.rad_geo.isChecked():
-            self.widget.setType(0)
+            self.widget.set_type(0)
         else:
-            self.widget.setType(1)
+            self.widget.set_type(1)
 
     def combo_box_updated(self):
         text = self.geology_or_comment_cbox.currentText()
-        self.widget.setGeoOrComment(text)
+        self.widget.set_geo_or_comment(text)
 
 
 class DataSanityError(

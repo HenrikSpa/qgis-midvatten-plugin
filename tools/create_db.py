@@ -19,6 +19,7 @@
 
 import datetime
 import locale
+import logging
 import os
 import re
 import traceback
@@ -29,13 +30,13 @@ from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import Qgis
 
 from midvatten.tools.utils import common_utils, db_utils
-from midvatten.tools.utils.common_utils import (
-    returnunicode as ru,
-    get_full_filename,
-    format_timezone_string,
-)
+from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils.file_utils import get_full_filename
+from midvatten.tools.utils.common_utils import format_timezone_string
 from midvatten.tools.utils.date_utils import get_pytz_timezones
 from midvatten.tools.utils.db_utils import DbConnectionManager, execute_sqlfile
+
+log = logging.getLogger(__name__)
 
 
 class NewDb:
@@ -48,8 +49,8 @@ class NewDb:
         user_select_crs: str = "y",
         epsg_code: str = "4326",
         delete_srids: bool = True,
-        w_levels_logger_timezone: None = None,
-        w_levels_timezone: None = None,
+        w_levels_logger_timezone: str = None,
+        w_levels_timezone: str = None,
     ):  # CreateNewDB(self, verno):
         """Open a new DataBase (create an empty one if file doesn't exists) and set as default DB"""
 
@@ -101,11 +102,9 @@ class NewDb:
 
         if os.path.exists(dbpath):
             common_utils.MessagebarAndLog.critical(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "NewDb",
-                        "A database with the chosen name already existed. Cancelling...",
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "NewDb",
+                    "A database with the chosen name already existed. Cancelling...",
                 )
             )
             common_utils.stop_waiting_cursor()
@@ -129,13 +128,11 @@ class NewDb:
 
         except Exception as e:
             common_utils.MessagebarAndLog.critical(
-                bar_msg=ru(
-                    QCoreApplication.translate(
-                        "NewDb",
-                        "Impossible to connect to selected DataBase, see log message panel",
-                    )
+                bar_msg=QCoreApplication.translate(
+                    "NewDb",
+                    "Impossible to connect to selected DataBase, see log message panel",
                 ),
-                log_msg=ru(QCoreApplication.translate("NewDb", "Msg:\n") + str(e)),
+                log_msg=QCoreApplication.translate("NewDb", "Msg:\n") + str(e),
             )
             common_utils.stop_waiting_cursor()
             return ""
@@ -150,11 +147,9 @@ class NewDb:
             not int(versionstext[0][0]) > 3
         ):  # which file to use depends on spatialite version installed
             common_utils.pop_up_info(
-                ru(
-                    QCoreApplication.translate(
-                        "NewDb",
-                        "Midvatten plugin needs spatialite4.\nDatabase can not be created",
-                    )
+                QCoreApplication.translate(
+                    "NewDb",
+                    "Midvatten plugin needs spatialite4.\nDatabase can not be created",
                 )
             )
             common_utils.stop_waiting_cursor()
@@ -203,7 +198,7 @@ class NewDb:
             try:
                 dbconnection.execute(sql)
             except Exception:
-                print(str(sql))
+                log.debug(str(sql))
                 raise
 
         if delete_srids:
@@ -249,8 +244,8 @@ class NewDb:
         verno: str,
         user_select_crs: str = "y",
         epsg_code: str = "4326",
-        w_levels_logger_timezone: None = None,
-        w_levels_timezone: None = None,
+        w_levels_logger_timezone: str = None,
+        w_levels_timezone: str = None,
     ):
 
         dbconnection = db_utils.DbConnectionManager()
@@ -364,12 +359,12 @@ class NewDb:
             try:
                 dbconnection.execute(sql)
             except Exception:
-                print(str(sql))
-                print("numlines: " + str(len(sql_lines)))
-                print(f"Error on line nr {str(linenr)}")
-                print("before " + sql_lines[linenr - 1])
+                log.debug(str(sql))
+                log.debug("numlines: " + str(len(sql_lines)))
+                log.debug(f"Error on line nr {str(linenr)}")
+                log.debug("before " + sql_lines[linenr - 1])
                 if linenr + 1 < len(sql_lines):
-                    print("after " + sql_lines[linenr + 1])
+                    log.debug("after " + sql_lines[linenr + 1])
                 raise
             else:
                 _sql = sql.lstrip("\r").lstrip("\n").lstrip()
@@ -445,16 +440,14 @@ class NewDb:
         locale_names.append(locale.getlocale()[0])
         locale_names = list(set(locale_names))
         question = common_utils.NotFoundQuestion(
-            dialogtitle=ru(QCoreApplication.translate("NewDb", "User input needed")),
-            msg=ru(
-                QCoreApplication.translate(
-                    "NewDb",
-                    "Supply locale for the database.\nCurrently, only locale sv_SE has special meaning,\nall other locales will use english.",
-                )
+            dialogtitle=QCoreApplication.translate("NewDb", "User input needed"),
+            msg=QCoreApplication.translate(
+                "NewDb",
+                "Supply locale for the database.\nCurrently, only locale sv_SE has special meaning,\nall other locales will use english.",
             ),
             existing_list=locale_names,
             default_value="",
-            combobox_label=ru(QCoreApplication.translate("newdb", "Locales")),
+            combobox_label=QCoreApplication.translate("newdb", "Locales"),
             button_names=["Cancel", "Ok"],
         )
         answer = question.answer
@@ -472,12 +465,10 @@ class NewDb:
             default_crs = 4326
         epsg_id = qgis.PyQt.QtWidgets.QInputDialog.getInt(
             None,
-            ru(QCoreApplication.translate("NewDb", "Select CRS")),
-            ru(
-                QCoreApplication.translate(
-                    "NewDb",
-                    "Give EPSG-ID (integer) corresponding to\nthe CRS you want to use in the database:",
-                )
+            QCoreApplication.translate("NewDb", "Select CRS"),
+            QCoreApplication.translate(
+                "NewDb",
+                "Give EPSG-ID (integer) corresponding to\nthe CRS you want to use in the database:",
             ),
             default_crs,
         )
@@ -488,30 +479,28 @@ class NewDb:
     def ask_for_timezone(self, table: str, default_tz: str = "") -> str:
         timezone_list = [""]
         if table == "w_levels_logger":
-            msg = ru(
-                QCoreApplication.translate(
-                    "NewDb",
-                    "Supply preferred timezone for logger data for table w_levels_logger (use as default timezone for some logger data imports).",
-                )
+            msg = QCoreApplication.translate(
+                "NewDb",
+                "Supply preferred timezone for logger data for table w_levels_logger (use as default timezone for some logger data imports).",
             )
+
             timezone_list.extend(
                 [format_timezone_string(hour) for hour in range(-12, 15)]
             )
         elif table == "w_levels":
-            msg = ru(
-                QCoreApplication.translate(
-                    "NewDb",
-                    "Supply preferred timezone for level data for table w_levels (on-the-fly conversion during logger data editing).",
-                )
+            msg = QCoreApplication.translate(
+                "NewDb",
+                "Supply preferred timezone for level data for table w_levels (on-the-fly conversion during logger data editing).",
             )
+
             timezone_list.extend(get_pytz_timezones())
 
         question = common_utils.NotFoundQuestion(
-            dialogtitle=ru(QCoreApplication.translate("NewDb", "User input needed")),
+            dialogtitle=QCoreApplication.translate("NewDb", "User input needed"),
             msg=msg,
             existing_list=timezone_list,
             default_value=default_tz,
-            combobox_label=ru(QCoreApplication.translate("newdb", "Timezone")),
+            combobox_label=QCoreApplication.translate("newdb", "Timezone"),
             button_names=["Cancel", "Ok"],
         )
         answer = question.answer
@@ -523,7 +512,7 @@ class NewDb:
 
     def insert_datadomains(
         self,
-        set_locale: str = False,
+        set_locale: str = "",
         dbconnection: Optional[DbConnectionManager] = None,
     ):
         filenamestring = "insert_datadomain"
@@ -631,7 +620,7 @@ class NewDb:
                 try:
                     dbconnection.execute(sql, all_args=[row_values])
                 except Exception:
-                    print(sql)
+                    log.debug(sql)
                     raise
         ph = dbconnection.placeholder()
         for tz, tname in [

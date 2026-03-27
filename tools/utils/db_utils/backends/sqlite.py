@@ -5,7 +5,6 @@ SQLite (Spatialite) backend. Connection via spatialite_connect.
 import ast
 import os
 import traceback
-from collections.abc import Sequence
 from sqlite3 import Connection
 from typing import Any, Optional
 
@@ -16,12 +15,9 @@ from qgis.utils import spatialite_connect
 
 import sqlite3 as sqlite
 
-from midvatten.tools.utils.common_utils import (
-    MessagebarAndLog,
-    returnunicode as ru,
-    UsageError,
-    sql_failed_msg,
-)
+from midvatten.tools.utils.message_utils import MessagebarAndLog
+from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils.exceptions import UsageError
 from midvatten.tools.utils.db_utils.backends.base import Backend
 from midvatten.tools.utils.db_utils.errors import DatabaseLockedError
 
@@ -89,11 +85,9 @@ class SQLiteBackend(Backend):
         self._dbpath = ru(dbpath)
         if not os.path.isfile(self._dbpath):
             raise UsageError(
-                ru(
-                    QCoreApplication.translate(
-                        "DbConnectionManager",
-                        'Database error! File "%s" not found! Check db tab in Midvatten settings!',
-                    )
+                QCoreApplication.translate(
+                    "DbConnectionManager",
+                    'Database error! File "%s" not found! Check db tab in Midvatten settings!',
                 )
                 % self._dbpath
             )
@@ -108,16 +102,12 @@ class SQLiteBackend(Backend):
                 )
             except Exception as e:
                 MessagebarAndLog.critical(
-                    bar_msg=ru(
-                        QCoreApplication.translate(
-                            "DbConnectionManager",
-                            "Connecting to spatialite db %s failed! Check that the file or path exists.",
-                        )
+                    bar_msg=QCoreApplication.translate(
+                        "DbConnectionManager",
+                        "Connecting to spatialite db %s failed! Check that the file or path exists.",
                     )
                     % self._dbpath,
-                    log_msg=ru(
-                        QCoreApplication.translate("DbConnectionManager", "msg %s")
-                    )
+                    log_msg=QCoreApplication.translate("DbConnectionManager", "msg %s")
                     % str(e),
                 )
                 raise
@@ -136,43 +126,6 @@ class SQLiteBackend(Backend):
     @property
     def dbpath(self) -> str:
         return self._dbpath
-
-    def connect2db(self) -> bool:
-        self.check_db_is_locked()
-        return self._cursor is not None
-
-    def execute(self, sql: str, args: Optional[Sequence[Any]] = None) -> None:
-        if args is None:
-            try:
-                self._cursor.execute(sql)
-            except Exception as e:
-                _log_execute_error(sql, None, e)
-                raise
-        else:
-            try:
-                self._cursor.execute(sql, list(args))
-            except Exception as e:
-                _log_execute_error(sql, args, e)
-                raise
-
-    def execute_and_fetchall(
-        self, sql: str, args: Optional[Sequence[Any]] = None
-    ) -> list[Any]:
-        try:
-            if args is not None:
-                self._cursor.execute(sql, args)
-            else:
-                self._cursor.execute(sql)
-        except (sqlite.OperationalError, Exception) as e:
-            textstring = ru(
-                QCoreApplication.translate(
-                    "sql_load_fr_db",
-                    """DB error!\n SQL causing this error:%s\nMsg:\n%s""",
-                )
-            ) % (ru(sql), ru(str(e)))
-            MessagebarAndLog.warning(bar_msg=sql_failed_msg(), log_msg=textstring)
-            raise
-        return self._cursor.fetchall()
 
     def commit(self) -> None:
         self._conn.commit()
@@ -211,11 +164,9 @@ class SQLiteBackend(Backend):
         except Exception as e:
             if "database mem is already in use" not in str(e):
                 MessagebarAndLog.info(
-                    log_msg=ru(
-                        QCoreApplication.translate(
-                            "create_temporary_table_for_import",
-                            "attaching memory database failed, %s",
-                        )
+                    log_msg=QCoreApplication.translate(
+                        "create_temporary_table_for_import",
+                        "attaching memory database failed, %s",
                     )
                     % traceback.format_exc()
                 )
@@ -246,13 +197,11 @@ class SQLiteBackend(Backend):
             MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
     def check_db_is_locked(self) -> None:
-        for ext in ("journal", "wal", "shm"):
+        for ext in ("journal", "wal"):
             msg = (
-                ru(
-                    QCoreApplication.translate(
-                        "DbConnectionManager",
-                        "Error, The database is already in use (a %s-file was found)",
-                    )
+                QCoreApplication.translate(
+                    "DbConnectionManager",
+                    "Error, The database is already in use (a %s-file was found)",
                 )
                 % ext
             )
@@ -275,26 +224,76 @@ class SQLiteBackend(Backend):
     def cast_null(self, data_type: str) -> str:
         return "NULL"
 
-    def is_distinct_from_sql(self) -> str:
+    def get_srid_name(self, srid: int) -> str:
+        return self.execute_and_fetchall(
+            "SELECT ref_sys_name FROM spatial_ref_sys WHERE srid = ?",
+            (srid,),
+        )[0][0]
+
+    def latlon_sql(self) -> str:
+        return "SELECT obsid, Y(Transform(geometry, 4326)) as lat, X(Transform(geometry, 4326)) as lon from obs_points"
+
+    def rowid_string(self) -> str:
+        return "ROWID"
+
+    def numeric_test_sql(self, col_ident: str) -> str:
+        return f"(typeof({col_ident})=typeof(0.01) OR typeof({col_ident})=typeof(1))"
+
+    def not_null_sql(self, col_ident: str, data_type: Optional[str] = None) -> str:
+        return f"{col_ident} IS NOT NULL AND {col_ident} !='' "
+
+    def is_distinct_from(self) -> str:
         return "IS NOT"
 
-    def is_not_distinct_from_sql(self) -> str:
+    def is_not_distinct_from(self) -> str:
         return "IS"
 
+    _NUMERIC_DATATYPES = ["integer", "double"]
 
-def _log_execute_error(sql: str, args: Any, e: Exception) -> None:
-    if args is None:
-        textstring = ru(
-            QCoreApplication.translate(
-                "sql_load_fr_db",
-                """DB error!\n SQL causing this error:%s\nMsg:\n%s""",
+    def numeric_datatypes(self) -> list:
+        return self._NUMERIC_DATATYPES
+
+    def activate_foreign_keys(self, activated: bool) -> None:
+        if activated:
+            self.execute("PRAGMA foreign_keys = ON")
+        else:
+            self.execute("PRAGMA foreign_keys = OFF")
+
+    def median_sql(self, col_ident: str, table_ident: str, ph: str) -> tuple:
+        sql = (
+            f"SELECT AVG({col_ident}) "
+            f"FROM (SELECT {col_ident} "
+            f"      FROM {table_ident} "
+            f"      WHERE obsid = {ph} "
+            f"      ORDER BY {col_ident} "
+            f"      LIMIT 2 - (SELECT COUNT(*) FROM {table_ident} WHERE obsid = {ph}) % 2 "
+            f"      OFFSET (SELECT (COUNT(*) - 1) / 2 FROM {table_ident} WHERE obsid = {ph}))"
+        )
+        return sql, 3
+
+    def backup(self, dbconnection: Any) -> None:
+        import datetime
+        import zipfile
+
+        from midvatten.tools.utils.message_utils import MessagebarAndLog
+        from qgis.PyQt.QtCore import QCoreApplication
+
+        try:
+            compression = zipfile.ZIP_DEFLATED
+        except Exception:
+            compression = zipfile.ZIP_STORED
+        self._cursor.execute("begin immediate")
+        bkupname = (
+            self._dbpath + datetime.datetime.now().strftime("%Y%m%dT%H%M") + ".zip"
+        )
+        zf = zipfile.ZipFile(bkupname, mode="w")
+        zf.write(self._dbpath, compress_type=compression)
+        zf.close()
+        self._conn.rollback()
+        MessagebarAndLog.info(
+            bar_msg=QCoreApplication.translate(
+                "backup_db", "Database backup was written to %s "
             )
-        ) % (ru(sql), ru(str(e)))
-    else:
-        textstring = ru(
-            QCoreApplication.translate(
-                "sql_load_fr_db",
-                """DB error!\n SQL causing this error:%s\nusing args %s\nMsg:\n%s""",
-            )
-        ) % (ru(sql), ru(args), ru(str(e)))
-    MessagebarAndLog.warning(bar_msg=sql_failed_msg(), log_msg=textstring)
+            % bkupname,
+            duration=15,
+        )

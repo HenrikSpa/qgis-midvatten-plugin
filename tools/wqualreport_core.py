@@ -10,7 +10,7 @@ from qgis.PyQt.QtCore import QDir
 from qgis.PyQt.QtCore import QUrl
 from qgis.PyQt.QtGui import QDesktopServices
 
-from midvatten.tools.utils.common_utils import returnunicode as ru
+from midvatten.tools.utils.string_utils import returnunicode as ru
 
 
 REPORT_FILENAME = "w_qual_report.html"
@@ -31,11 +31,9 @@ def report_path() -> str:
 
 def default_report_title() -> str:
     """Return the default title for the water quality report."""
-    return ru(
-        QCoreApplication.translate(
-            "Wqualreport",
-            "water quality report from Midvatten plugin for QGIS",
-        )
+    return QCoreApplication.translate(
+        "Wqualreport",
+        "water quality report from Midvatten plugin for QGIS",
     )
 
 

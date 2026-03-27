@@ -29,7 +29,9 @@ from midvatten.tools.utils.midvatten_utils import add_layers_to_list
 
 
 class LoadLayers:
-    def __init__(self, iface, settingsdict={}, group_name="Midvatten_OBS_DB"):
+    def __init__(self, iface, settingsdict=None, group_name="Midvatten_OBS_DB"):
+        if settingsdict is None:
+            settingsdict = {}
         self.settingsdict = settingsdict
         self.group_name = group_name
         self.default_layers = defs.get_subset_of_tables_fr_db(category="default_layers")

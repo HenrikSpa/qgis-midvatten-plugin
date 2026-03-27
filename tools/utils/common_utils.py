@@ -1,6 +1,6 @@
 """
 /***************************************************************************
- This part of the Midvatten plugin handles dates.
+ Utilities that doesn't fit anywhere else.
                              -------------------
         begin                : 2016-03-09
         copyright            : (C) 2016 by HenrikSpa
@@ -22,7 +22,9 @@ import copy
 import json
 import datetime
 import difflib
+import logging
 import math
+import os
 import time
 import traceback
 from contextlib import contextmanager
@@ -54,10 +56,10 @@ from midvatten.tools.utils.file_utils import (
 )
 from midvatten.tools.utils.layer_utils import (
     find_layer,
-    getQgisVectorLayers,
+    get_qgis_vector_layers,
     get_active_layer,
     get_selected_features_as_tuple,
-    getselectedobjectnames,
+    get_selected_object_names,
     selection_check,
     strat_selection_check,
     verify_layer_selection,
@@ -83,6 +85,8 @@ from midvatten.tools.utils.string_utils import (
 from cycler import Cycler
 from itertools import cycle
 from numpy import ndarray
+
+log = logging.getLogger(__name__)
 
 LEGEND_NCOL_KEY = "ncol" if mpl.__version__ < "3.6.0" else "ncols"
 
@@ -474,7 +478,13 @@ def transpose_lists_of_lists(list_of_lists):
 
 
 def fn_timer(function: Callable) -> Callable:
-    """from http://www.marinamele.com/7-tips-to-time-python-scripts-and-control-memory-and-cpu-usage"""
+    """Timing decorator. Active only when the MIDVATTEN_TIMING environment variable is set.
+
+    Usage: set MIDVATTEN_TIMING=1 before running QGIS to enable timing output.
+    Reference: http://www.marinamele.com/7-tips-to-time-python-scripts-and-control-memory-and-cpu-usage
+    """
+    if not os.environ.get("MIDVATTEN_TIMING"):
+        return function
 
     @wraps(function)
     def function_timer(*args, **kwargs):
@@ -482,7 +492,7 @@ def fn_timer(function: Callable) -> Callable:
         result = function(*args, **kwargs)
         t1 = time.time()
         try:
-            print(
+            log.debug(
                 "Total time running %s: %s seconds" % (function.__name__, str(t1 - t0))
             )
         except OSError:
@@ -842,12 +852,6 @@ class Timer:
         MessagebarAndLog.info(
             log_msg=tr("Timer", "Total time running %s: %s seconds")
             % (self.name, str(t - self.t0))
-        )
-
-    def current_time(self, info=""):
-        MessagebarAndLog.info(
-            log_msg=tr("Timer", "Current time running %s%s: %s seconds")
-            % (self.name, info, str(time.time() - self.t0))
         )
 
     def diff(self, info=""):

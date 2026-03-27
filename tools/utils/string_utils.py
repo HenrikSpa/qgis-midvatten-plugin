@@ -2,12 +2,15 @@
 String conversion and validation utilities for the Midvatten plugin.
 """
 
+import logging
 import time
 import traceback
 from collections import OrderedDict
 from typing import Any
 
 from qgis.PyQt.QtCore import QCoreApplication
+
+log = logging.getLogger(__name__)
 
 
 def tr(context: str, msg: str) -> str:
@@ -46,23 +49,23 @@ def returnunicode(
     """
     if isinstance(anything, str):
         return anything
-    elif anything is None:
-        decoded = ""
-    elif isinstance(anything, (list, tuple, dict, OrderedDict)):
+    if anything is None:
+        return ""
+    # Handle QGIS NULL (PyQt5.QtCore.QVariant null instance, not Python None)
+    if hasattr(anything, "isNull") and anything.isNull():
+        return ""
+    if isinstance(anything, bytes):
+        for charset in ["utf-8", "cp1252", "iso-8859-1", "ascii"]:
+            try:
+                return anything.decode(charset)
+            except (UnicodeDecodeError, UnicodeEncodeError):
+                continue
+        return str(anything)  # fallback to repr
+    if isinstance(anything, (list, tuple, dict, OrderedDict)):
         if isinstance(anything, list):
             decoded = [returnunicode(x, keep_containers) for x in anything]
         elif isinstance(anything, tuple):
             decoded = tuple([returnunicode(x, keep_containers) for x in anything])
-        elif isinstance(anything, dict):
-            decoded = dict(
-                [
-                    (
-                        returnunicode(k, keep_containers),
-                        returnunicode(v, keep_containers),
-                    )
-                    for k, v in anything.items()
-                ]
-            )
         elif isinstance(anything, OrderedDict):
             decoded = OrderedDict(
                 [
@@ -73,48 +76,20 @@ def returnunicode(
                     for k, v in anything.items()
                 ]
             )
+        elif isinstance(anything, dict):
+            decoded = dict(
+                [
+                    (
+                        returnunicode(k, keep_containers),
+                        returnunicode(v, keep_containers),
+                    )
+                    for k, v in anything.items()
+                ]
+            )
         if not keep_containers:
             decoded = str(decoded)
-    # This is not optimal, but needed for tests where nosetests stand alone PyQt4 instead of QGis PyQt4.
-    elif str(type(anything)) in (
-        "<class 'PyQt4.QtCore.QVariant'>",
-        "<class 'PyQt5.QtCore.QVariant'>",
-    ):
-        if anything.isNull():
-            decoded = ""
-        else:
-            decoded = returnunicode(anything.toString())
-    # This is not optimal, but needed for tests where nosetests stand alone PyQt4 instead of QGis PyQt4.
-    elif str(type(anything)) in (
-        "<class 'PyQt4.QtCore.QString'>",
-        "<class 'PyQt5.QtCore.QString'>",
-    ):
-        decoded = returnunicode(str(anything.toUtf8(), "utf-8"))
-    # This is not optimal, but needed for tests where nosetests stand alone PyQt4 instead of QGis PyQt4.
-    elif str(type(anything)) in (
-        "<class 'PyQt4.QtCore.QPyNullVariant'>",
-        "<class 'PyQt5.QtCore.QPyNullVariant'>",
-    ):
-        decoded = ""
-    elif str(type(anything)) in ("<class 'PyQt5.QtCore.QDateTime'>",):
-        decoded = returnunicode(anything.toString())
-    else:
-        decoded = str(anything)
-
-    if isinstance(decoded, bytes):
-        for charset in ["ascii", "utf-8", "utf-16", "cp1252", "iso-8859-1", "ascii"]:
-            try:
-                decoded = anything.decode(charset)
-            except UnicodeEncodeError:
-                continue
-            except UnicodeDecodeError:
-                continue
-            else:
-                break
-        else:
-            decoded = str(tr("returnunicode", "data type unknown, check database"))
-
-    return decoded
+        return decoded
+    return str(anything)
 
 
 def unicode_2_utf8(anything):  # takes an unicode and tries to return it as utf8
@@ -123,39 +98,31 @@ def unicode_2_utf8(anything):  # takes an unicode and tries to return it as utf8
     :param anything: just about anything
     :return: hopefully a utf8 converted anything
     """
-    # anything = returnunicode(anything)
-    text = None
     try:
         if anything is None:
-            text = b""
+            return b""
         elif isinstance(anything, str):
-            text = anything.encode("utf-8")
+            return anything.encode("utf-8")
+        elif isinstance(anything, bytes):
+            return anything
         elif isinstance(anything, list):
-            text = [unicode_2_utf8(x) for x in anything]
+            return [unicode_2_utf8(x) for x in anything]
         elif isinstance(anything, tuple):
-            text = tuple([unicode_2_utf8(x) for x in anything])
-        elif isinstance(anything, float):
-            text = anything.encode("utf-8")
-        elif isinstance(anything, int):
-            text = anything.encode("utf-8")
+            return tuple([unicode_2_utf8(x) for x in anything])
         elif isinstance(anything, dict):
-            text = dict(
+            return dict(
                 [(unicode_2_utf8(k), unicode_2_utf8(v)) for k, v in anything.items()]
             )
-        elif isinstance(anything, str):
-            text = anything
-        elif isinstance(anything, bool):
-            text = anything.encode("utf-8")
+        else:
+            return str(anything).encode("utf-8")
     except Exception:
         from midvatten.tools.utils.message_utils import MessagebarAndLog
 
         MessagebarAndLog.info(log_msg=traceback.format_exc())
 
-    if text is None:
-        text = returnunicode(
-            tr("unicode_2_utf8", "data type unknown, check database")
-        ).encode("utf-8")
-    return text
+    return returnunicode(
+        tr("unicode_2_utf8", "data type unknown, check database")
+    ).encode("utf-8")
 
 
 def lists_to_string(alist_of_lists, quote=False):
@@ -175,7 +142,7 @@ def lists_to_string(alist_of_lists, quote=False):
                         try:
                             innerlist.append('"{}"'.format(innerword))
                         except UnicodeDecodeError:
-                            print(str(innerword))
+                            log.debug(str(innerword))
                             raise Exception
                     else:
                         innerlist.append(returnunicode(col))
@@ -207,19 +174,14 @@ def lists_to_string(alist_of_lists, quote=False):
                     ";".join(
                         [
                             (
-                                '"{}"'.format(
-                                    returnunicode(col).replace('"', '""')
-                                    if all(
-                                        [
-                                            '"' in returnunicode(col),
-                                            '""' not in returnunicode(col),
-                                        ]
-                                    )
-                                    else returnunicode(col)
+                                lambda col_str: '"{}"'.format(
+                                    col_str.replace('"', '""')
+                                    if '"' in col_str and '""' not in col_str
+                                    else col_str
                                 )
-                                if quote
-                                else returnunicode(col)
-                            )
+                            )(returnunicode(col))
+                            if quote
+                            else returnunicode(col)
                             for col in row
                         ]
                     )

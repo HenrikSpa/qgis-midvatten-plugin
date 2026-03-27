@@ -1998,7 +1998,6 @@ class TestWlevelsImportSpatialite(
     pass
 
 
-
 @pytest.mark.postgis
 class TestSeismicImportPostgis(
     SeismicImportMixin,

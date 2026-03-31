@@ -730,10 +730,18 @@ class SurveyWidget(QtWidgets.QFrame):
 
     def print_diagram(self):
         """outputs the diagram to the printer (or PDF)"""
-        printer = QtPrintSupport.QPrinter(QtPrintSupport.QPrinter.HighResolution)
+        try:
+            printer = QtPrintSupport.QPrinter(
+                QtPrintSupport.QPrinter.PrinterMode.HighResolution
+            )
+        except AttributeError:
+            printer = QtPrintSupport.QPrinter(QtPrintSupport.QPrinter.HighResolution)
 
         # set defaults
-        printer.setOrientation(QtPrintSupport.QPrinter.Landscape)
+        try:
+            printer.setPageOrientation(QtGui.QPageLayout.Orientation.Landscape)
+        except AttributeError:
+            printer.setOrientation(QtPrintSupport.QPrinter.Landscape)
 
         # setting output file name results in not opening print dialog on Win
         # printer.setOutputFileName("arpat.pdf")
@@ -746,7 +754,10 @@ class SurveyWidget(QtWidgets.QFrame):
         p = QtGui.QPainter()
         p.begin(printer)
 
-        rect = printer.pageRect()
+        try:
+            rect = printer.pageRect(QtPrintSupport.QPrinter.Unit.DevicePixel)
+        except AttributeError:
+            rect = printer.pageRect()
         # print "rect: ", rect.left(), rect.top(), rect.width(), rect.height()
 
         self.draw_surveys(rect, p)
@@ -771,7 +782,7 @@ class SurveyDialog(QtWidgets.QDialog):
         )
 
         self.layout = QtWidgets.QVBoxLayout(self)
-        self.layout.setMargin(5)
+        self.layout.setContentsMargins(5, 5, 5, 5)
 
         self.layout2 = QtWidgets.QHBoxLayout()
 

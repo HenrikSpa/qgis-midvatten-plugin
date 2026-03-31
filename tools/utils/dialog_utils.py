@@ -6,7 +6,11 @@ import os
 
 import qgis.PyQt
 from qgis.PyQt import QtCore, QtWidgets, uic
-from qgis.PyQt.QtWebKitWidgets import QWebView
+
+try:
+    from qgis.PyQt.QtWebKitWidgets import QWebView
+except ImportError:
+    from qgis.PyQt.QtWebEngineWidgets import QWebEngineView as QWebView
 
 from midvatten.tools.utils.exceptions import UserInterruptError
 from midvatten.tools.utils.message_utils import pop_up_info
@@ -232,14 +236,14 @@ class HtmlDialog(QtWidgets.QDialog):
         self.setWindowTitle(title)
         self.vertical_layout = QtWidgets.QVBoxLayout()
         self.vertical_layout.setSpacing(2)
-        self.vertical_layout.setMargin(0)
+        self.vertical_layout.setContentsMargins(0, 0, 0, 0)
         self.vertical_layout.addWidget(self.web_view)
         self.close_button = QtWidgets.QPushButton()
         self.close_button.setText(tr("HtmlDialog", "Close"))
         self.close_button.setMaximumWidth(150)
         self.horizontal_layout = QtWidgets.QHBoxLayout()
         self.horizontal_layout.setSpacing(2)
-        self.horizontal_layout.setMargin(0)
+        self.horizontal_layout.setContentsMargins(0, 0, 0, 0)
         self.horizontal_layout.addStretch(1000)
         self.horizontal_layout.addWidget(self.close_button)
         self.close_button.clicked.connect(lambda x: self.closeWindow())

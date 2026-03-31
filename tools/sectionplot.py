@@ -27,7 +27,17 @@ import matplotlib.ticker as tick
 import numpy as np
 import qgis.PyQt
 from matplotlib import container, patches
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+
+try:
+    from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+    from matplotlib.backends.backend_qtagg import (
+        NavigationToolbar2QT as NavigationToolbar,
+    )
+except ImportError:
+    from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+    from matplotlib.backends.backend_qt5agg import (
+        NavigationToolbar2QT as NavigationToolbar,
+    )
 from psycopg2.sql import SQL, Identifier
 from qgis.PyQt import QtWidgets
 from qgis.PyQt import uic
@@ -43,15 +53,6 @@ from qgis.core import (
     QgsRenderContext,
     Qgis,
 )
-
-try:  # assume matplotlib >=1.5.1
-    from matplotlib.backends.backend_qt5agg import (
-        NavigationToolbar2QT as NavigationToolbar,
-    )
-except Exception:
-    from matplotlib.backends.backend_qt5agg import (
-        NavigationToolbar2QTAgg as NavigationToolbar,
-    )
 
 from midvatten.tools.utils.gui_utils import set_combobox
 

@@ -66,7 +66,7 @@ class SplitterWithHandel(qgis.PyQt.QtWidgets.QSplitter):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
 
-        layout.setMargin(0)
+        layout.setContentsMargins(0, 0, 0, 0)
         line = qgis.PyQt.QtWidgets.QFrame(handle)
         line.setFrameShape(qgis.PyQt.QtWidgets.QFrame.HLine)
         line.setFrameShadow(qgis.PyQt.QtWidgets.QFrame.Sunken)

@@ -29,21 +29,22 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import qgis.PyQt
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.dates import datestr2num
-from qgis.PyQt import QtGui, QtCore, uic, QtWidgets  # , QtSql
-from qgis.PyQt.QtCore import QCoreApplication
 
-try:  # assume matplotlib >=1.5.1
+try:
+    from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+    from matplotlib.backends.backend_qtagg import (
+        NavigationToolbar2QT as NavigationToolbar,
+    )
+    from matplotlib.backends.backend_qtagg import NavigationToolbar2QT
+except ImportError:
+    from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
     from matplotlib.backends.backend_qt5agg import (
         NavigationToolbar2QT as NavigationToolbar,
     )
     from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
-except Exception:
-    from matplotlib.backends.backend_qt5agg import (
-        NavigationToolbar2QTAgg as NavigationToolbar,
-    )
-    from matplotlib.backends.backend_qt5agg import NavigationToolbar2QTAgg
+from matplotlib.dates import datestr2num
+from qgis.PyQt import QtGui, QtCore, uic, QtWidgets  # , QtSql
+from qgis.PyQt.QtCore import QCoreApplication
 import datetime
 import matplotlib.ticker as tick
 
@@ -107,8 +108,12 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
 
         # Validator for QlineEdit that should contain only floats, any number of
         # decimals with either point(.) or comma(,) as a decimal separater
-        regexp = QtCore.QRegExp("[+-]?\\d*[\\.,]?\\d+")
-        validator = QtGui.QRegExpValidator(regexp)
+        try:
+            regexp = QtCore.QRegularExpression("[+-]?\\d*[\\.,]?\\d+")
+            validator = QtGui.QRegularExpressionValidator(regexp)
+        except AttributeError:
+            regexp = QtCore.QRegExp("[+-]?\\d*[\\.,]?\\d+")
+            validator = QtGui.QRegExpValidator(regexp)
         self.tab1_factor.setValidator(validator)
         self.tab2_factor.setValidator(validator)
         self.tab3_factor.setValidator(validator)

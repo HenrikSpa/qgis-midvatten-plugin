@@ -20,15 +20,14 @@
 
 import matplotlib as mpl
 from itertools import chain
-import six
 
-try:  # assume matplotlib >=1.5.1
-    from matplotlib.backends.backend_qt5agg import (
+try:
+    from matplotlib.backends.backend_qtagg import (
         NavigationToolbar2QT as NavigationToolbar,
     )
-except Exception:
+except ImportError:
     from matplotlib.backends.backend_qt5agg import (
-        NavigationToolbar2QTAgg as NavigationToolbar,
+        NavigationToolbar2QT as NavigationToolbar,
     )
 
 from matplotlib import cbook, cm, colors as mcolors, markers, image as mimage
@@ -56,7 +55,7 @@ def replace_matplotlib_style_core_update_nested_dict():
         """
         # update named styles specified by user
         # print("Uses replacement for update_nested_dict")
-        for name, rc_dict in six.iteritems(new_dict):
+        for name, rc_dict in new_dict.items():
             main_dict[name] = rc_dict
             # if name in main_dict:
             #    main_dict[name] = rc_dict

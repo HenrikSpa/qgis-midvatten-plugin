@@ -23,6 +23,7 @@ SQLite or PostgreSQL database.
 """
 
 import io
+import logging
 import os.path
 import shutil
 import traceback
@@ -71,6 +72,8 @@ from midvatten.tools.wqualreport import Wqualreport
 from midvatten.tools.wqualreport_compact import CompactWqualReportUi
 from midvatten.tools.xyplot import XYPlot
 from midvatten.tool_registry import add_plugin_action
+
+log = logging.getLogger(__name__)
 
 
 class Midvatten:
@@ -742,11 +745,8 @@ class Midvatten:
             # Get two lists (obsid_p and obsid_l) with selected obs_points and obs_lines
             obsid_p = common_utils.get_selected_features_as_tuple("obs_points")
             obsid_l = common_utils.get_selected_features_as_tuple("obs_lines")
-            try:
-                print(f"Selected obs_points to export:{obsid_p}")
-                print(f"Selected obs_lines to export:{obsid_l}")
-            except Exception as e:
-                print(f"Error printing selected features: {e}")
+            log.debug("Selected obs_points to export:%s", obsid_p)
+            log.debug("Selected obs_lines to export:%s", obsid_l)
             common_utils.stop_waiting_cursor()
 
             selected_all = (

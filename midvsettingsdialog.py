@@ -19,6 +19,8 @@ from functools import partial  # only to get combobox signals to work
 from typing import Any, List, Optional
 
 import qgis.PyQt
+import logging
+
 from qgis.PyQt import uic, QtCore
 from qgis.PyQt.QtCore import QCoreApplication, Qt
 from qgis.PyQt.QtWidgets import QDockWidget, QFileDialog
@@ -28,6 +30,8 @@ from midvatten.tools.midvsettings import MidvSettings
 from midvatten.tools.utils import common_utils, gui_utils, db_utils
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
 from midvatten.tools.utils.midvatten_utils import warn_about_old_database
+
+log = logging.getLogger(__name__)
 
 midvsettingsdock_ui_class = uic.loadUiType(
     os.path.join(os.path.dirname(__file__), "ui", "midvsettingsdock.ui")
@@ -770,7 +774,7 @@ class DatabaseSettings:
                                 % (dbtype, setting_name)
                             )
                     except Exception:
-                        print(str(setting_name))
+                        log.debug(str(setting_name))
                         raise
         else:
             common_utils.MessagebarAndLog.warning(

@@ -370,8 +370,6 @@ class ExportData:
         if obsids:
             clause, args = dbconnection.in_clause(obsids)
             sql += f" WHERE obsid IN {clause}"
-        dbconnection.execute_safe(sql, args)
-
         table_data = [[x.lower() for x in columns]]
         table_data.extend([row for row in dbconnection.execute_and_fetchall(sql, args)])
 

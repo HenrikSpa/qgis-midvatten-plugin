@@ -8,7 +8,10 @@ import re
 import traceback
 from typing import Any, Optional
 
-import psycopg2
+try:
+    import psycopg2
+except ImportError:
+    psycopg2 = None
 from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools.utils.message_utils import MessagebarAndLog, sql_failed_msg

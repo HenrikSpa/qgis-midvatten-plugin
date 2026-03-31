@@ -8,8 +8,17 @@ import qgis.PyQt
 from qgis.PyQt.QtCore import QCoreApplication, Qt
 from matplotlib import pyplot as plt, ticker as tick
 from matplotlib.backend_bases import PickEvent, MouseButton
-from matplotlib.backends.backend_qt import NavigationToolbar2QT as NavigationToolbar
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+
+try:
+    from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+    from matplotlib.backends.backend_qtagg import (
+        NavigationToolbar2QT as NavigationToolbar,
+    )
+except ImportError:
+    from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+    from matplotlib.backends.backend_qt5agg import (
+        NavigationToolbar2QT as NavigationToolbar,
+    )
 from matplotlib.dates import num2date, datestr2num
 from matplotlib.widgets import RectangleSelector
 

@@ -124,13 +124,15 @@ class NotFoundQuestion(QtWidgets.QDialog, not_found_dialog):
         existing_list=None,
         default_value="",
         parent=None,
-        button_names=["Ignore", "Cancel", "Ok"],
+        button_names=None,
         combobox_label="Similar values found in db (choose or edit):",
         reuse_header_list=None,
         reuse_column="",
         ignore_checkbox=False,
     ):
         QtWidgets.QDialog.__init__(self, parent)
+        if button_names is None:
+            button_names = ["Ignore", "Cancel", "Ok"]
         self.answer = None
         # Root widget in not_found_gui.ui is named "dialog". PyQt uic generates
         # connection code like dialog.dialog.accept (receiver name as attribute of

@@ -1279,7 +1279,7 @@ class CommentsImportFields(QtWidgets.QWidget):
                 comment_obs = comment_obsdict.get(observation["sublocation"], {}).get(
                     datestring, None
                 )
-                if comment_obs != None:
+                if comment_obs is not None:
                     observation["comment"] = comment_obs["value"]
                     comment_obs["skip_comment_import"] = True
 

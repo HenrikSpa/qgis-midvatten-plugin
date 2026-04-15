@@ -446,60 +446,61 @@ def warn_about_old_database():
         return
 
     try:
-        dbconnection.cursor.execute("""SELECT description FROM about_db LIMIT 1""")
-        rows = dbconnection.cursor.fetchall()
-    except Exception as e:
-        MessagebarAndLog.warning(
-            bar_msg=QCoreApplication.translate(
-                "warn_about_old_database",
-                "Database might not be a valid Midvatten database!",
-            ),
-            log_msg=QCoreApplication.translate("warn_about_old_database", "msg: %s")
-            % str(e),
-        )
-        return
-
-    try:
-        row = rows[0][0]
-    except Exception:
-        MessagebarAndLog.info(
-            log_msg=QCoreApplication.translate(
-                "warn_about_old_database",
-                "No row returned from about_db when searching for version.",
+        try:
+            dbconnection.cursor.execute("""SELECT description FROM about_db LIMIT 1""")
+            rows = dbconnection.cursor.fetchall()
+        except Exception as e:
+            MessagebarAndLog.warning(
+                bar_msg=QCoreApplication.translate(
+                    "warn_about_old_database",
+                    "Database might not be a valid Midvatten database!",
+                ),
+                log_msg=QCoreApplication.translate("warn_about_old_database", "msg: %s")
+                % str(e),
             )
-        )
-        return
-    if row:
-        patterns = [
-            r"""Midvatten plugin Version ([0-9\.a-b]+)""",
-            r"""Midvatten plugin ([0-9\.a-b]+)""",
-        ]
-        version = None
-        for pattern in patterns:
-            m = re.search(pattern, row)
-            if m:
-                version = m.groups()[0]
-                break
+            return
 
-        if version:
-            wikipage = "https://github.com/jkall/qgis-midvatten-plugin/wiki/6.-Database-management#upgrade-database"
-
-            is_old = compare_verson_lists(
-                version_comparison_list(version),
-                version_comparison_list(latest_database_version()),
+        try:
+            row = rows[0][0]
+        except Exception:
+            MessagebarAndLog.info(
+                log_msg=QCoreApplication.translate(
+                    "warn_about_old_database",
+                    "No row returned from about_db when searching for version.",
+                )
             )
+            return
+        if row:
+            patterns = [
+                r"""Midvatten plugin Version ([0-9\.a-b]+)""",
+                r"""Midvatten plugin ([0-9\.a-b]+)""",
+            ]
+            version = None
+            for pattern in patterns:
+                m = re.search(pattern, row)
+                if m:
+                    version = m.groups()[0]
+                    break
 
-            if is_old:
-                MessagebarAndLog.info(
-                    bar_msg=QCoreApplication.translate(
-                        "warn_about_old_database",
-                        """The database version appears to be older than %s. An upgrade is suggested! See %s""",
-                    )
-                    % (latest_database_version(), wikipage),
-                    duration=4,
+            if version:
+                wikipage = "https://github.com/jkall/qgis-midvatten-plugin/wiki/6.-Database-management#upgrade-database"
+
+                is_old = compare_verson_lists(
+                    version_comparison_list(version),
+                    version_comparison_list(latest_database_version()),
                 )
 
-    dbconnection.closedb()
+                if is_old:
+                    MessagebarAndLog.info(
+                        bar_msg=QCoreApplication.translate(
+                            "warn_about_old_database",
+                            """The database version appears to be older than %s. An upgrade is suggested! See %s""",
+                        )
+                        % (latest_database_version(), wikipage),
+                        duration=4,
+                    )
+    finally:
+        dbconnection.closedb()
 
 
 def version_comparison_list(version_string: str) -> List[int]:

@@ -31,6 +31,8 @@ from midvatten.tools.drillreport_models import ObsPointsRow, StratigraphyRow
 from midvatten.tools.utils import common_utils, midvatten_utils, db_utils
 from midvatten.tools.utils.string_utils import returnunicode as ru
 
+_EMPTY_VALS = ("", "NULL")
+
 
 class Drillreport:  # general observation point info for the selected object
     def __init__(
@@ -420,7 +422,7 @@ class Drillreport:  # general observation point info for the selected object
                 + ru(r.name)
                 + "</TD></TR>"
             )
-        if ru(r.type) not in ["", "NULL"]:
+        if ru(r.type) not in _EMPTY_VALS:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + QCoreApplication.translate("Drillreport", "obs type")
@@ -428,7 +430,7 @@ class Drillreport:  # general observation point info for the selected object
                 + ru(r.type)
                 + "</TD></TR>"
             )
-        if ru(r.length) not in ["", "NULL"]:
+        if ru(r.length) not in _EMPTY_VALS:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + QCoreApplication.translate("Drillreport", "depth (m fr gs to bottom)")
@@ -436,7 +438,7 @@ class Drillreport:  # general observation point info for the selected object
                 + ru(r.length)
                 + "</TD></TR>"
             )
-        if ru(r.h_toc) not in ["", "NULL"]:
+        if ru(r.h_toc) not in _EMPTY_VALS:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + QCoreApplication.translate("Drillreport", "top of casing, toc (masl)")
@@ -447,7 +449,7 @@ class Drillreport:  # general observation point info for the selected object
                 rpt += " (" + ru(r.h_syst) + ")"
             rpt += "</TD></TR>"
         if (
-            ru(r.h_tocags) not in ["", "NULL"]
+            ru(r.h_tocags) not in _EMPTY_VALS
             and ru(r.h_tocags) != "0"
             and ru(r.h_tocags) != "0.0"
         ):
@@ -460,7 +462,7 @@ class Drillreport:  # general observation point info for the selected object
                 + ru(r.h_tocags)
                 + "</TD></TR>"
             )
-        if ru(r.h_gs) not in ["", "NULL"]:
+        if ru(r.h_gs) not in _EMPTY_VALS:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + QCoreApplication.translate(
@@ -472,7 +474,7 @@ class Drillreport:  # general observation point info for the selected object
             if ru(r.h_syst) != "":
                 rpt += " (" + ru(r.h_syst) + ")"
             rpt += "</TD></TR>"
-        if ru(r.h_accur) not in ["", "NULL"]:
+        if ru(r.h_accur) not in _EMPTY_VALS:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + QCoreApplication.translate("Drillreport", "elevation accuracy (m)")
@@ -480,7 +482,7 @@ class Drillreport:  # general observation point info for the selected object
                 + ru(r.h_accur)
                 + "</TD></TR>"
             )
-        if ru(r.east) not in ["", "NULL"]:
+        if ru(r.east) not in _EMPTY_VALS:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + QCoreApplication.translate("Drillreport", "eastern coordinate")
@@ -492,7 +494,7 @@ class Drillreport:  # general observation point info for the selected object
                 + crs
                 + ")</TD></TR>"
             )
-        if ru(r.north) not in ["", "NULL"]:
+        if ru(r.north) not in _EMPTY_VALS:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + QCoreApplication.translate("Drillreport", "northern coordinate")
@@ -504,11 +506,7 @@ class Drillreport:  # general observation point info for the selected object
                 + crs
                 + ")</TD></TR>"
             )
-        if (
-            ru(r.east) not in ["", "NULL"]
-            and ru(r.north) != ""
-            and ru(r.ne_accur) != ""
-        ):
+        if ru(r.east) not in _EMPTY_VALS and ru(r.north) != "" and ru(r.ne_accur) != "":
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + QCoreApplication.translate("Drillreport", "position accuracy")
@@ -516,7 +514,7 @@ class Drillreport:  # general observation point info for the selected object
                 + ru(r.ne_accur)
                 + "</TD></TR>"
             )
-        if ru(r.material) not in ["", "NULL"]:
+        if ru(r.material) not in _EMPTY_VALS:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + QCoreApplication.translate("Drillreport", "material")
@@ -524,7 +522,7 @@ class Drillreport:  # general observation point info for the selected object
                 + ru(r.material)
                 + "</TD></TR>"
             )
-        if ru(r.diam) not in ["", "NULL"]:
+        if ru(r.diam) not in _EMPTY_VALS:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + QCoreApplication.translate("Drillreport", "inner diameter (mm)")
@@ -532,7 +530,7 @@ class Drillreport:  # general observation point info for the selected object
                 + ru(r.diam)
                 + "</TD></TR>"
             )
-        if ru(r.drillstop) not in ["", "NULL"]:
+        if ru(r.drillstop) not in _EMPTY_VALS:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + QCoreApplication.translate("Drillreport", "drill stop")
@@ -540,7 +538,7 @@ class Drillreport:  # general observation point info for the selected object
                 + ru(r.drillstop)
                 + "</TD></TR>"
             )
-        if ru(r.screen) not in ["", "NULL"]:
+        if ru(r.screen) not in _EMPTY_VALS:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + QCoreApplication.translate("Drillreport", "screen type")
@@ -548,7 +546,7 @@ class Drillreport:  # general observation point info for the selected object
                 + ru(r.screen)
                 + "</TD></TR>"
             )
-        if ru(r.drilldate) not in ["", "NULL"]:
+        if ru(r.drilldate) not in _EMPTY_VALS:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + QCoreApplication.translate("Drillreport", "drill date")
@@ -556,7 +554,7 @@ class Drillreport:  # general observation point info for the selected object
                 + ru(r.drilldate)
                 + "</TD></TR>"
             )
-        if ru(r.capacity) not in ["", "NULL"]:
+        if ru(r.capacity) not in _EMPTY_VALS:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + QCoreApplication.translate("Drillreport", "capacity")
@@ -564,7 +562,7 @@ class Drillreport:  # general observation point info for the selected object
                 + ru(r.capacity)
                 + "</TD></TR>"
             )
-        if ru(r.place) not in ["", "NULL"]:
+        if ru(r.place) not in _EMPTY_VALS:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + QCoreApplication.translate("Drillreport", "place")
@@ -572,7 +570,7 @@ class Drillreport:  # general observation point info for the selected object
                 + ru(r.place)
                 + "</TD></TR>"
             )
-        if ru(r.source) not in ["", "NULL"]:
+        if ru(r.source) not in _EMPTY_VALS:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + QCoreApplication.translate("Drillreport", "reference")
@@ -581,7 +579,7 @@ class Drillreport:  # general observation point info for the selected object
                 + "</TD></TR>"
             )
         rpt += r"""</p>"""
-        if ru(r.ne_source) not in ["", "NULL"]:
+        if ru(r.ne_source) not in _EMPTY_VALS:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + QCoreApplication.translate("Drillreport", "source for position")
@@ -589,7 +587,7 @@ class Drillreport:  # general observation point info for the selected object
                 + ru(r.ne_source)
                 + "</TD></TR>"
             )
-        if ru(r.h_source) not in ["", "NULL"]:
+        if ru(r.h_source) not in _EMPTY_VALS:
             rpt += (
                 r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
                 + QCoreApplication.translate("Drillreport", "source for elevation")
@@ -692,12 +690,12 @@ class Drillreport:  # general observation point info for the selected object
     ) -> str:
         r = general_data[0]
         rpt = r"""<p style="font-family:'arial'; font-size:10pt; font-weight:400; font-style:normal;">"""
-        if ru(r.com_onerow) not in ["", "NULL"] and ru(r.com_html) not in ["", "NULL"]:
+        if ru(r.com_onerow) not in _EMPTY_VALS and ru(r.com_html) not in _EMPTY_VALS:
             rpt += ru(r.com_onerow)
             rpt += ru(r.com_html)
-        elif ru(r.com_onerow) not in ["", "NULL"]:
+        elif ru(r.com_onerow) not in _EMPTY_VALS:
             rpt += ru(r.com_onerow)
-        elif ru(r.com_html) not in ["", "NULL"]:
+        elif ru(r.com_html) not in _EMPTY_VALS:
             rpt += ru(r.com_html)
         rpt += r"""</p>"""
         return rpt

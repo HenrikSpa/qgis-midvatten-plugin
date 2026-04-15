@@ -386,7 +386,7 @@ class PiperPlot:
 
             self.plot_data(nosamples, ax, tri1, tri2, rhomb)
 
-            if self.ms.settingsdict["piper_markers"] in ["type", "obsid", "date_time"]:
+            if self.ms.settingsdict["piper_markers"] in ("type", "obsid", "date_time"):
                 self.add_legend(ax)
 
             # Turn of the regular grid and the regular axes edges,

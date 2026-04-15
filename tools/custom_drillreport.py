@@ -36,6 +36,8 @@ from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
 from midvatten.tools.utils.string_utils import returnunicode as ru
 
+_EMPTY_VALS = ("", "NULL")
+
 custom_drillreport_dialog = qgis.PyQt.uic.loadUiType(
     os.path.join(os.path.dirname(__file__), "..", "ui", "custom_drillreport.ui")
 )[0]
@@ -918,9 +920,7 @@ class Drillreport:  # general observation point info for the selected object
                 rpt = r""
 
             rpt += r"""<p style="font-family:'Ubuntu'; font-size:8pt; font-weight:400; font-style:normal;"><font size=1>"""
-            rpt += r". ".join(
-                [ru(x) for x in comment_data if ru(x) not in ["", "NULL"]]
-            )
+            rpt += r". ".join([ru(x) for x in comment_data if ru(x) not in _EMPTY_VALS])
             rpt += r"""</font></p>"""
         else:
             rpt = ""

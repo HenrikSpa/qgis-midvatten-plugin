@@ -404,7 +404,7 @@ def add_layers_to_list(
         layername = layernames[idx] if layernames is not None else None
 
         if (
-            tablename in ["obs_points", "obs_lines"]
+            tablename in ("obs_points", "obs_lines")
             and f"view_{tablename}" in existing_tables
         ):
             # The bug that required view_obs_points (https://github.com/qgis/QGIS/issues/28453)
@@ -430,7 +430,7 @@ def add_layers_to_list(
             MessagebarAndLog.critical(bar_msg=layer.name() + " is not valid layer")
             continue
 
-        if tablename in ["view_obs_points", "view_obs_lines"]:
+        if tablename in ("view_obs_points", "view_obs_lines"):
             layer.setName(orig_tablename)
         resultlist.append(layer)
 

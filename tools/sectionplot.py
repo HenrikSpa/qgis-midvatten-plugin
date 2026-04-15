@@ -77,6 +77,26 @@ import midvatten.definitions.midvatten_defs as defs
 from midvatten.tools.utils import matplotlib_replacements
 from midvatten.tools.utils.sampledem import qchain, sampling
 
+_WLVL_EXCLUDED_TABLES = (
+    "comments",
+    "obs_points",
+    "obs_lines",
+    "obs_p_w_lvl",
+    "obs_p_w_qual_field",
+    "obs_p_w_qual_lab",
+    "obs_p_w_strat",
+    "seismic_data",
+    "meteo",
+    "vlf_data",
+    "w_flow",
+    "w_qual_field_geom",
+    "zz_flowtype",
+    "w_qual_lab",
+    "w_qual_field",
+    "stratigraphy",
+    "about_db",
+)
+
 log = logging.getLogger(__name__)
 
 try:
@@ -383,27 +403,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             for x in db_utils.get_tables(
                 dbconnection=self.dbconnection, skip_views=skip_views
             )
-            if not x.startswith("zz_")
-            and x
-            not in [
-                "comments",
-                "obs_points",
-                "obs_lines",
-                "obs_p_w_lvl",
-                "obs_p_w_qual_field",
-                "obs_p_w_qual_lab",
-                "obs_p_w_strat",
-                "seismic_data",
-                "meteo",
-                "vlf_data",
-                "w_flow",
-                "w_qual_field_geom",
-                "zz_flowtype",
-                "w_qual_lab",
-                "w_qual_field",
-                "stratigraphy",
-                "about_db",
-            ]
+            if not x.startswith("zz_") and x not in _WLVL_EXCLUDED_TABLES
         ]
         self.wlvltable.addItem("")
         for tabell in tabeller:

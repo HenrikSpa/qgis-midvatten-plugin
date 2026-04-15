@@ -33,6 +33,7 @@ import qgis.PyQt
 from qgis.PyQt import QtCore, QtWidgets, uic
 from qgis.PyQt.QtCore import QCoreApplication
 
+from midvatten.tools.base_importer import BaseImporter
 from midvatten.tools.utils import common_utils, midvatten_utils, db_utils
 import midvatten.tools.import_data_to_db as import_data_to_db
 from midvatten.tools.utils.string_utils import returnunicode as ru
@@ -56,16 +57,9 @@ import_fieldlogger_ui_dialog = uic.loadUiType(
 )[0]
 
 
-class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
+class FieldloggerImport(BaseImporter, import_fieldlogger_ui_dialog):
     def __init__(self, parent, msettings=None):
-        self.status = False
-        self.iface = parent
-        self.ms = msettings
-        self.ms.load_settings()
-        QtWidgets.QMainWindow.__init__(self, parent)
-        self.setAttribute(WA_DeleteOnClose)
-        self.setupUi(self)  # Required by Qt
-        self.status = True
+        super().__init__(parent, msettings)
         self.main_vertical_layout.setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
         self.main_vertical_layout.setContentsMargins(0, 0, 0, 0)
 
@@ -311,12 +305,6 @@ class FieldloggerImport(QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
             if observation["value"]:
                 observations.append(observation)
         return observations
-
-    def add_row(self, a_widget):
-        """
-        :param: a_widget:
-        """
-        self.main_vertical_layout.addWidget(a_widget)
 
     def add_line(self, layout=None):
         """just adds a line"""

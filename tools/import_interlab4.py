@@ -30,6 +30,7 @@ import qgis.PyQt
 from qgis.PyQt.QtCore import QCoreApplication, QItemSelectionModel
 
 from midvatten.tools import import_data_to_db
+from midvatten.tools.base_importer import BaseImporter
 from midvatten.tools.utils import common_utils, midvatten_utils, db_utils
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.common_utils import Cancel
@@ -49,22 +50,15 @@ import_fieldlogger_ui_dialog = qgis.PyQt.uic.loadUiType(
 )[0]
 
 
-class Interlab4Import(qgis.PyQt.QtWidgets.QMainWindow, import_fieldlogger_ui_dialog):
+class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
     def __init__(self, parent, msettings=None):
-        self.status = False
-        self.iface = parent
-        self.ms = msettings
-        self.ms.load_settings()
-        qgis.PyQt.QtWidgets.QMainWindow.__init__(self, parent)
-        self.setAttribute(WA_DeleteOnClose)
+        self.obsid_assignment_table = "zz_interlab4_obsid_assignment"
+        super().__init__(parent, msettings)
         self.setWindowTitle(
             QCoreApplication.translate(
                 "Interlab4Import", "Import interlab4 data to w_qual_lab table"
             )
         )
-        self.setupUi(self)  # Required by Qt
-        self.status = True
-        self.obsid_assignment_table = "zz_interlab4_obsid_assignment"
 
     def init_gui(self):
         splitter = SplitterWithHandel(qgis.PyQt.QtCore.Qt.Vertical)
@@ -874,12 +868,6 @@ class Interlab4Import(qgis.PyQt.QtWidgets.QMainWindow, import_fieldlogger_ui_dia
             )
 
         return file_data
-
-    def add_row(self, a_widget):
-        """
-        :param: a_widget:
-        """
-        self.main_vertical_layout.addWidget(a_widget)
 
     def add_line(self, layout=None):
         """just adds a line"""

@@ -31,6 +31,7 @@ from qgis.PyQt import QtWidgets
 from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools import import_data_to_db
+from midvatten.tools.base_importer import BaseImporter
 from midvatten.tools.utils import common_utils, midvatten_utils, db_utils
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.common_utils import format_timezone_string
@@ -61,26 +62,19 @@ import_ui_dialog = qgis.PyQt.uic.loadUiType(
 )[0]
 
 
-class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
+class DiverofficeImport(BaseImporter, import_ui_dialog):
     def __init__(self, parent, msettings=None):
-        self.status = False
         self.default_charset = "cp1252"
         self.utc_offset = None
-        self.iface = parent
-        self.ms = msettings
-        self.ms.load_settings()
-        qgis.PyQt.QtWidgets.QMainWindow.__init__(self, parent)
-        self.setAttribute(WA_DeleteOnClose)
-        self.setupUi(self)  # Required by Qt
-        self.setWindowTitle(
-            QCoreApplication.translate("DiverofficeImport", "Diveroffice import")
-        )
         self.table_chooser = None
         self.file_data = None
-        self.status = True
         self.files = []
         self.parse_func = self.parse_diveroffice_file
         self.use_skiprows = True
+        super().__init__(parent, msettings)
+        self.setWindowTitle(
+            QCoreApplication.translate("DiverofficeImport", "Diveroffice import")
+        )
         self.load_gui()
 
     def load_gui(self):
@@ -965,12 +959,6 @@ class DiverofficeImport(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         filtered_file_data.append(file_data[0])
         filtered_file_data.reverse()
         return filtered_file_data
-
-    def add_row(self, a_widget):
-        """
-        :param: a_widget:
-        """
-        self.main_vertical_layout.addWidget(a_widget)
 
 
 class CheckboxAndExplanation(VRowEntry):

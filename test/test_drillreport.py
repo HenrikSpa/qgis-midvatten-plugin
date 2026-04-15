@@ -83,12 +83,12 @@ class DrillreportMixin:
         # src='/home/henrik/Sync/pythoncode/henrikspa/midvatten/tools/
         # src='/home/henrik/Sync/pythoncode/henrikspa/midvatten/tools/
         report = re.sub(
-            """src="[a-zA-ZåäöÅÄÖ0-9/]+midvatten/tools/""",
+            r"""src="[^"]+midvatten/tools/""",
             """src="midvatten/tools/""",
             report,
         )
         report = re.sub(
-            """src='[a-zA-ZåäöÅÄÖ0-9/]+midvatten/tools/""",
+            r"""src='[^']+midvatten/tools/""",
             """src='midvatten/tools/""",
             report,
         )

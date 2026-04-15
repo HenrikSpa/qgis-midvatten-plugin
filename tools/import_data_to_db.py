@@ -125,7 +125,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 x[0] for x in dbconnection.execute_and_fetchall(sql_remaining)
             ]
             get_removed_rownumbers = lambda start_numbers, remaining: [
-                x for x in start_numbers if x not in remaining
+                x for x in start_numbers if x not in set(remaining)
             ]
             get_row_subset = lambda rownumbers: [
                 ", ".join([str(x) for x in file_data[1:][rownr]])
@@ -305,9 +305,6 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             primary_keys, dest_table, dbconnection
         )
         remaining_rownumbers = get_remaining_rownumbers()
-        common_utils.MessagebarAndLog.info(
-            log_msg=f"remaining_rownumbers {remaining_rownumbers=}"
-        )
         if not remaining_rownumbers:
             common_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
@@ -410,9 +407,6 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
 
         Raises UserInterruptError if the user chooses not to import.
         """
-        common_utils.MessagebarAndLog.info(
-            log_msg=f"{remaining_rownumbers=} {all_rownumbers=}"
-        )
         if len(remaining_rownumbers) == len(all_rownumbers):
             if self.foreign_keys_import_question:
                 import_messages = []

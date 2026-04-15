@@ -858,7 +858,17 @@ class SpatialiteSettings(gui_utils.RowEntryGrid):
             )
         )
         self.midvsettingsdialogdock.ms.save_settings("database")
-        self.midvsettingsdialogdock.load_plot_settings()
+        try:
+            self.midvsettingsdialogdock.load_plot_settings()
+        except db_utils.DatabaseLockedError as e:
+            common_utils.MessagebarAndLog.warning(
+                bar_msg=QCoreApplication.translate(
+                    "SpatialiteSettings",
+                    "Database is locked (a journal file was found). Close other programs using this database and try again.",
+                ),
+                log_msg=str(e),
+            )
+            return
         warn_about_old_database()
 
 

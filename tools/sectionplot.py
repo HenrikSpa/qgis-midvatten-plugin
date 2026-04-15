@@ -119,9 +119,9 @@ class SectionPlotFigure(mpl.figure.Figure):
         self.ax_data_fit: mpl.axes.Axes | None = None
         # Plot handles list — used to rebuild the legend
         self.plot_handles: list = []
-        self.waterlevel_lineplot = None
+        self.waterlevel_lineplot: mpl.artist.Artist | None = None
         # Water level data for interactive slider
-        self.df = None
+        self.df: pd.DataFrame | None = None
         # QGIS refs (set to None when not running in QGIS)
         self.line_layer = None
         self.line_feature = None
@@ -132,9 +132,11 @@ class SectionPlotFigure(mpl.figure.Figure):
         self.tem_cbar_label: str = ""
         self.figname: str = ""
         # Interactive widgets
-        self.detach_figure_button = None
+        self.detach_figure_button: DetachFigureButton | None = None
         self.date_slider = None
-        self.axvline = None
+        self.axvline: mpl.lines.Line2D | None = None
+        # Event connection ID for the legend-update draw callback
+        self.update_legend_cid: int | None = None
 
 
 class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
@@ -2709,7 +2711,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             fig.canvas.mpl_connect("draw_event", self.update_slider)
             fig.date_slider.on_changed(partial(self.update_animation, fig))
 
-        fig._midv_update_legend_cid = fig.canvas.mpl_connect(
+        fig.update_legend_cid = fig.canvas.mpl_connect(
             "draw_event", lambda x: self.update_legend(True, fig)
         )
         # Connecting to draw_event instead, but if it's too slow this one also works:
@@ -2726,10 +2728,10 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
 
         draw_idle probably doesn't work with the context manager as it exits the manager before draw is triggered
         reusling in a very slow gui as legend is redone over and over again."""
-        fig.canvas.mpl_disconnect(fig._midv_update_legend_cid)
-        fig._midv_update_legend_cid = None
+        fig.canvas.mpl_disconnect(fig.update_legend_cid)
+        fig.update_legend_cid = None
         yield
-        fig._midv_update_legend_cid = fig.canvas.mpl_connect(
+        fig.update_legend_cid = fig.canvas.mpl_connect(
             "draw_event", lambda x: self.update_legend(True, fig)
         )
 

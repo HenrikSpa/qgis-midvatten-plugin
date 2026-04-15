@@ -825,7 +825,6 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             (self.p[i],) = plotfunc(
                 numtime,
                 table2.values,
-                "",
                 picker=2,
                 drawstyle="steps-pre",
                 marker="None",
@@ -836,7 +835,6 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             (self.p[i],) = plotfunc(
                 numtime,
                 table2.values,
-                "",
                 picker=2,
                 drawstyle="steps-post",
                 marker="None",
@@ -847,7 +845,6 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             (self.p[i],) = plotfunc(
                 numtime,
                 table2.values,
-                "",
                 picker=2,
                 marker="x",
                 label=self.plabels[i],
@@ -858,7 +855,6 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             (self.p[i],) = plotfunc(
                 numtime,
                 table2.values,
-                "",
                 picker=2,
                 linestyle="None",
                 label=self.plabels[i],
@@ -869,7 +865,6 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             (self.p[i],) = plotfunc(
                 numtime,
                 table2.values,
-                "",
                 picker=2,
                 marker="None",
                 label=self.plabels[i],
@@ -880,7 +875,6 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                 (self.p[i],) = plotfunc(
                     numtime,
                     table2.values,
-                    "",
                     picker=2,
                     marker="None",
                     label="frequency " + str(self.plabels[i]),
@@ -891,7 +885,6 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                 (self.p[i],) = plotfunc(
                     np.array([]),
                     np.array([]),
-                    "",
                     picker=2,
                     marker="None",
                     label="frequency " + str(self.plabels[i]),
@@ -903,7 +896,6 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             (self.p[i],) = plotfunc(
                 numtime,
                 table2.values,
-                "",
                 picker=2,
                 label=self.plabels[i],
                 markeredgewidth=markeredgewidth,

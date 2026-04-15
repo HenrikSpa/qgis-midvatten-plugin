@@ -30,18 +30,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import qgis.PyQt
 
-try:
-    from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
-    from matplotlib.backends.backend_qtagg import (
-        NavigationToolbar2QT as NavigationToolbar,
-    )
-    from matplotlib.backends.backend_qtagg import NavigationToolbar2QT
-except ImportError:
-    from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-    from matplotlib.backends.backend_qt5agg import (
-        NavigationToolbar2QT as NavigationToolbar,
-    )
-    from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
+from midvatten.tools.utils.mpl_compat import FigureCanvas, NavigationToolbar
 from matplotlib.dates import datestr2num
 from qgis.PyQt import QtGui, QtCore, uic, QtWidgets  # , QtSql
 from qgis.PyQt.QtCore import QCoreApplication
@@ -291,7 +280,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             fignum = self.custplotfigure.number
             plt.close(fignum)
 
-        self.custplotfigure = plt.figure()
+        self.custplotfigure = plt.figure(layout="constrained")
         self.axes = self.custplotfigure.add_subplot(111)
         self.canvas = FigureCanvas(self.custplotfigure)
 
@@ -426,6 +415,12 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                     )
                 )
                 return None
+            if self.used_format == "time":
+                # ax.plot() does not auto-configure date formatting the way
+                # the deprecated ax.plot_date() did.  Call xaxis_date() to
+                # install AutoDateLocator + AutoDateFormatter before we
+                # capture them in self.xaxis_formatters below.
+                self.axes.xaxis_date()
             self.xaxis_formatters = (
                 self.axes.xaxis.get_major_formatter(),
                 self.axes.xaxis.get_major_locator(),
@@ -810,7 +805,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                     )
 
         if flag_time_xy == "time":
-            plotfunc = self.axes.plot_date
+            plotfunc = self.axes.plot
         elif flag_time_xy == "XY":
             plotfunc = self.axes.plot
         else:

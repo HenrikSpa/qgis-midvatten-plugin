@@ -34,14 +34,7 @@ import qgis.PyQt
 from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QCoreApplication
 
-try:
-    from matplotlib.backends.backend_qtagg import (
-        NavigationToolbar2QT as NavigationToolbar,
-    )
-except ImportError:
-    from matplotlib.backends.backend_qt5agg import (
-        NavigationToolbar2QT as NavigationToolbar,
-    )
+from midvatten.tools.utils.mpl_compat import NavigationToolbar
 
 from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.string_utils import returnunicode as ru

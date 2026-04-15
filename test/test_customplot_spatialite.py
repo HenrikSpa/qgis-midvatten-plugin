@@ -889,3 +889,118 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert np.isclose(float(y2[1]), 7.0)
         assert np.isclose(float(y3[0]), 5.75)
         assert np.isclose(float(y3[1]), 7.0)
+
+    # -------------------------------------------------------------------------
+    # Integration tests for createsingleplotobject() (Step 1 additions)
+    # These tests exercise the full plotting pipeline and verify the figure
+    # has the expected axes/lines after createsingleplotobject() runs.
+    # -------------------------------------------------------------------------
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_createsingleplotobject_xy_fallback(self, mock_messagebar):
+        """When x-column is numeric (not datetime), createsingleplotobject falls back to XY mode."""
+        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('o1')""")
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels (obsid, date_time, meas, h_toc, level_masl) VALUES ('o1', '2026-01-01 00:00', 1.0, 10.0, 9.0)"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels (obsid, date_time, meas, h_toc, level_masl) VALUES ('o1', '2026-01-02 00:00', 2.0, 10.0, 8.0)"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels (obsid, date_time, meas, h_toc, level_masl) VALUES ('o1', '2026-01-03 00:00', 3.0, 10.0, 7.0)"""
+        )
+        self.midvatten.plot_sqlite()
+        customplot = self.midvatten.customplot
+        gui_utils.set_combobox(customplot.tab1_table, "w_levels")
+        gui_utils.set_combobox(customplot.tab1_xcol, "meas")
+        gui_utils.set_combobox(customplot.tab1_ycol, "level_masl")
+        gui_utils.set_combobox(customplot.tab1_filtercol1, "obsid")
+        customplot.tab1_filter1.item(0).setSelected(True)
+        customplot.draw_plot_all()
+        lines = customplot.axes.get_lines()
+        print(f"{mock_messagebar.mock_calls=}")
+        assert len(lines) >= 1
+        xdata, ydata = lines[0].get_data()
+        assert len(xdata) == 3
+        assert list(ydata) == [9.0, 8.0, 7.0]
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_createsingleplotobject_step_post(self, mock_messagebar):
+        """step-post plot type produces steps-post drawstyle."""
+        _insert_w_levels_logger_data()
+        self.midvatten.plot_sqlite()
+        customplot = self.midvatten.customplot
+        _configure_customplot_tab1_tab2(customplot, tab2=False)
+        gui_utils.set_combobox(customplot.tab1_plot_type, "step-post")
+        customplot.draw_plot_all()
+        lines = customplot.axes.get_lines()
+        print(f"{mock_messagebar.mock_calls=}")
+        assert len(lines) >= 1
+        assert lines[0].get_drawstyle() == "steps-post"
+        assert lines[0].get_marker() in (None, "None", "none")
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_createsingleplotobject_factor_and_offset(self, mock_messagebar):
+        """Factor and offset are applied to y values."""
+        _insert_w_levels_logger_data()
+        self.midvatten.plot_sqlite()
+        customplot = self.midvatten.customplot
+        _configure_customplot_tab1_tab2(customplot, tab2=False)
+        customplot.draw_plot_all()
+        _, ydata_raw = customplot.axes.get_lines()[0].get_data()
+
+        customplot.tab1_factor.setText("2.0")
+        customplot.tab1_offset.setText("1.0")
+        customplot.draw_plot_all()
+        _, ydata_scaled = customplot.axes.get_lines()[0].get_data()
+        print(f"{mock_messagebar.mock_calls=}")
+        # scaled = raw * 2.0 + 1.0
+        assert np.allclose(ydata_scaled, ydata_raw * 2.0 + 1.0)
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_createsingleplotobject_max_tstep_inserts_gaps(self, mock_messagebar):
+        """When max timestep is set, gaps are inserted between distant points.
+        o2 has data on 2026-01-01 and 2026-01-02 (>= 1 day apart), which triggers
+        NaN insertion when spn_max_tstep is set to 0.5 (days).
+        """
+        _insert_w_levels_logger_data()
+        self.midvatten.plot_sqlite()
+        customplot = self.midvatten.customplot
+        # Use o2 which spans two calendar days (~1 day gap between last point on
+        # 2026-01-01 03:30 and first point on 2026-01-02 09:00)
+        gui_utils.set_combobox(customplot.tab1_table, "w_levels_logger")
+        gui_utils.set_combobox(customplot.tab1_xcol, "date_time")
+        gui_utils.set_combobox(customplot.tab1_ycol, "level_masl")
+        gui_utils.set_combobox(customplot.tab1_filtercol1, "obsid")
+        # item(1) is o2
+        customplot.tab1_filter1.item(1).setSelected(True)
+
+        customplot.spn_max_tstep.setValue(0)
+        customplot.draw_plot_all()
+        _, ydata_no_gap = customplot.axes.get_lines()[0].get_data()
+
+        # max_tstep = 0.5 days → gap between 01-01 03:30 and 01-02 09:00 (~1.23 days) triggers NaN
+        customplot.spn_max_tstep.setValue(0.5)
+        customplot.draw_plot_all()
+        _, ydata_with_gap = customplot.axes.get_lines()[0].get_data()
+        print(f"{mock_messagebar.mock_calls=}")
+        assert len(ydata_with_gap) > len(ydata_no_gap)
+        assert np.any(np.isnan(ydata_with_gap))
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_createsingleplotobject_frequency_plot(self, mock_messagebar):
+        """Frequency plot type computes rate-of-change values."""
+        _insert_w_levels_logger_data()
+        self.midvatten.plot_sqlite()
+        customplot = self.midvatten.customplot
+        _configure_customplot_tab1_tab2(customplot, tab2=False)
+        customplot.draw_plot_all()
+        _, ydata_line = customplot.axes.get_lines()[0].get_data()
+
+        gui_utils.set_combobox(customplot.tab1_plot_type, "frequency")
+        customplot.draw_plot_all()
+        _, ydata_freq = customplot.axes.get_lines()[0].get_data()
+        print(f"{mock_messagebar.mock_calls=}")
+        assert len(ydata_freq) == len(ydata_line)
+        # frequency values are rates; should differ from raw values
+        assert not np.allclose(ydata_freq, ydata_line)

@@ -50,8 +50,17 @@ from midvatten.tools.utils.gui_utils import (
 
 import pandas as pd
 
+from midvatten.tools.customplot.plot_object import (
+    apply_max_timestep_gaps,
+    apply_pandas_calculations,
+    parse_recs_to_recarray,
+    render_series,
+    transform_values,
+)
+
+# The UI file lives two directories above this package: tools/ui/
 customplot_ui_class = uic.loadUiType(
-    os.path.join(os.path.dirname(__file__), "..", "ui", "customplotdialog.ui")
+    os.path.join(os.path.dirname(__file__), "..", "..", "ui", "customplotdialog.ui")
 )[0]
 
 
@@ -671,43 +680,19 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         pandas_calc=None,
         only_get_data=False,
     ):
-        # Transform data to a numpy.recarray
-        try:
-            table = np.array(recs, dtype=my_format)  # NDARRAY
-            table2 = table.view(
-                np.recarray
-            )  # RECARRAY transform the 2 cols into callable objects
-            flag_time_xy = "time"
-            my_timestring = list(table2.date_time)
-            numtime = datestr2num(
-                my_timestring
-            )  # conv list of strings to numpy.ndarray of floats
-        except Exception as e:
-            common_utils.MessagebarAndLog.warning(
-                log_msg=QCoreApplication.translate(
-                    "plotsqlitewindow", "Plotting date_time failed, msg: %s"
-                )
-                % str(e)
-            )
-            common_utils.MessagebarAndLog.info(
-                log_msg=QCoreApplication.translate(
-                    "plotsqlitewindow",
-                    "Customplot, transforming to recarray with date_time as x-axis failed, msg: %s",
-                )
-                % str(e)
-            )
-            my_format = [("numx", float), ("values", float)]
-            table = np.array(
-                recs, dtype=my_format
-            )  # NDARRAY #define a format for xy-plot (to use if not datetime on x-axis)
+        """Orchestrate parsing, transforming and rendering one data series.
 
-            table2 = table.view(
-                np.recarray
-            )  # RECARRAY transform the 2 cols into callable objects
+        The heavy lifting is done by five focused helpers in plot_object.py.
+        This method only reads/writes self state that cannot live in those
+        pure functions (used_format consistency check, spn_max_tstep widget,
+        data/p/plabels lists, axes, and the cyclers).
+        """
+        # Step 1: parse raw records into a recarray; detect time vs XY axis
+        table, table2, flag_time_xy, numtime, my_format = parse_recs_to_recarray(
+            recs, my_format
+        )
 
-            flag_time_xy = "XY"
-            numtime = list(table2.numx)
-
+        # Validate that all tabs use the same axis type
         if self.used_format is None:
             self.used_format = flag_time_xy
         else:
@@ -719,188 +704,47 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                     )
                 )
 
-        # from version 0.2 there is a possibility to make discontinuous plot if timestep bigger than maxtstep
-        if (
-            self.spn_max_tstep.value() > 0
-        ):  # if user selected a time step bigger than zero than thre may be discontinuous plots
-            pos = (
-                np.where(np.abs(np.diff(numtime)) >= self.spn_max_tstep.value())[0] + 1
-            )
-            pos = pos.tolist()
-            if pos:
-                numtime = np.insert(numtime, pos, np.nan)
-                try:
-                    table2 = np.insert(table2, pos, np.nan)
-                except (ValueError, TypeError):
-                    for_concat = []
-                    nan = np.array([(np.nan, np.nan)], dtype=my_format)
-                    for idx, p in enumerate(pos):
-                        if idx == 0:
-                            for_concat.append(table[0:p])
-                            for_concat.append(nan.copy())
-                            continue
-                        for_concat.append(table[pos[idx - 1] : p])
-                        for_concat.append(nan.copy())
-                    else:
-                        for_concat.append(table[pos[-1] :])
-                    table = np.concatenate(for_concat)
-                    table = table.astype(my_format)
-                    table2 = table.view(np.recarray)
-
-        if flag_time_xy == "time" and plottype == "frequency":
-            if len(table2) < 2:
-                common_utils.MessagebarAndLog.warning(
-                    bar_msg=QCoreApplication.translate(
-                        "plotsqlitewindow",
-                        "Frequency plot failed for %s. The timeseries must be longer than 1 value!",
-                    )
-                    % ru(self.plabels[i]),
-                    duration=30,
-                )
-                table2.values[:] = [None] * len(table2)
-            else:
-                table2.values[:] = self.calc_frequency(table2)[:]
-
-        if remove_mean:
-            table2.values[:] = common_utils.remove_mean_from_nparray(table2.values)[:]
-
-        if any(
-            [
-                factor != 1 and factor,
-                offset,
-            ]
-        ):
-            table2.values[:] = common_utils.scale_nparray(
-                table2.values, factor, offset
-            )[:]
-
-        if pandas_calc and flag_time_xy == "time":
-            if pandas_calc.use_pandas():
-                df = pd.DataFrame.from_records(
-                    table2, columns=["values"], exclude=["date_time"]
-                )
-                df.set_index(
-                    pd.DatetimeIndex(table2.date_time, name="date_time"), inplace=True
-                )
-                df.columns = ["values"]
-
-                df = pandas_calc.calculate(df)
-                if df is not None:
-                    try:
-                        table = np.array(
-                            list(zip(df.index, df["values"])), dtype=my_format
-                        )
-                    except TypeError:
-                        common_utils.MessagebarAndLog.info(log_msg=str(df))
-                        raise
-                    table2 = table.view(
-                        np.recarray
-                    )  # RECARRAY transform the 2 cols into callable objects
-                    numtime = table2.date_time
-                else:
-                    common_utils.MessagebarAndLog.info(
-                        bar_msg=QCoreApplication.translate(
-                            "plotsqlitewindow", "Pandas calculate failed."
-                        )
-                    )
-
-        if flag_time_xy == "time":
-            plotfunc = self.axes.plot
-        elif flag_time_xy == "XY":
-            plotfunc = self.axes.plot
-        else:
-            raise Exception("Programming error. Must be time or XY!")
-
-        # Matplotlib rcParams often uses lines.markeredgewidth: 0.0 which makes the marker invisible.
-        markeredgewidth = (
-            1.0
-            if not mpl.rcParams["lines.markeredgewidth"]
-            else mpl.rcParams["lines.markeredgewidth"]
+        # Step 2: insert NaN gaps for large time steps (discontinuous plot)
+        table, table2, numtime = apply_max_timestep_gaps(
+            table, table2, numtime, self.spn_max_tstep.value(), my_format
         )
 
+        # Step 3: value transformations (frequency, remove_mean, scale)
+        table2 = transform_values(
+            table2,
+            flag_time_xy,
+            plottype,
+            self.plabels[i],
+            self.calc_frequency,
+            remove_mean,
+            factor,
+            offset,
+        )
+
+        # Step 4: optional pandas resample / rolling-mean
+        table2, numtime = apply_pandas_calculations(
+            table2, numtime, flag_time_xy, pandas_calc, my_format
+        )
+
+        # Early exit when caller only wants data (no rendering)
         if only_get_data:
             self.data.append((table2, self.plabels[i]))
             return
-        if plottype == "step-pre":
-            (self.p[i],) = plotfunc(
-                numtime,
-                table2.values,
-                picker=2,
-                drawstyle="steps-pre",
-                marker="None",
-                label=self.plabels[i],
-                **next(self.line_cycler),
-            )  # 'steps-pre' best for precipitation and flowmeters, optional types are 'steps', 'steps-mid', 'steps-post'
-        elif plottype == "step-post":
-            (self.p[i],) = plotfunc(
-                numtime,
-                table2.values,
-                picker=2,
-                drawstyle="steps-post",
-                marker="None",
-                label=self.plabels[i],
-                **next(self.line_cycler),
-            )
-        elif plottype == "line and cross":
-            (self.p[i],) = plotfunc(
-                numtime,
-                table2.values,
-                picker=2,
-                marker="x",
-                label=self.plabels[i],
-                markeredgewidth=markeredgewidth,
-                **next(self.line_cycler),
-            )
-        elif plottype == "marker":
-            (self.p[i],) = plotfunc(
-                numtime,
-                table2.values,
-                picker=2,
-                linestyle="None",
-                label=self.plabels[i],
-                markeredgewidth=markeredgewidth,
-                **next(self.marker_cycler),
-            )
-        elif plottype == "line":
-            (self.p[i],) = plotfunc(
-                numtime,
-                table2.values,
-                picker=2,
-                marker="None",
-                label=self.plabels[i],
-                **next(self.line_cycler),
-            )
-        elif plottype == "frequency" and flag_time_xy == "time":
-            try:
-                (self.p[i],) = plotfunc(
-                    numtime,
-                    table2.values,
-                    picker=2,
-                    marker="None",
-                    label="frequency " + str(self.plabels[i]),
-                    **next(self.line_cycler),
-                )
-                self.plabels[i] = "frequency " + str(self.plabels[i])
-            except Exception:
-                (self.p[i],) = plotfunc(
-                    np.array([]),
-                    np.array([]),
-                    picker=2,
-                    marker="None",
-                    label="frequency " + str(self.plabels[i]),
-                    **next(self.line_cycler),
-                )
-                self.plabels[i] = "frequency " + str(self.plabels[i])
-        else:
-            # line and marker
-            (self.p[i],) = plotfunc(
-                numtime,
-                table2.values,
-                picker=2,
-                label=self.plabels[i],
-                markeredgewidth=markeredgewidth,
-                **next(self.line_and_marker_cycler),
-            )
+
+        # Step 5: render the series onto the axes
+        render_series(
+            self.p,
+            i,
+            self.plabels,
+            self.axes,
+            flag_time_xy,
+            numtime,
+            table2,
+            plottype,
+            self.line_cycler,
+            self.marker_cycler,
+            self.line_and_marker_cycler,
+        )
 
     def last_selections(self):  # set same selections as last plot
 

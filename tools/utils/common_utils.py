@@ -88,7 +88,7 @@ from numpy import ndarray
 
 log = logging.getLogger(__name__)
 
-LEGEND_NCOL_KEY = "ncol" if mpl.__version__ < "3.6.0" else "ncols"
+LEGEND_NCOL_KEY = "ncols"
 
 
 def write_qgs_log_to_file(message: str, tag: str, level: Qgis.MessageLevel):

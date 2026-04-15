@@ -97,13 +97,13 @@ class Stratigraphy:
             )
             return
         except Exception as e:  # if an object 'e' belonging to DataSanityError is created, then do following
-            log.error("exception : %s" % str(e))
             common_utils.stop_waiting_cursor()
             common_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
                     " Stratigraphy",
                     "The stratigraphy plot failed, check Midvatten plugin settings and your data!",
-                )
+                ),
+                log_msg=str(e),
             )
             return
         common_utils.stop_waiting_cursor()  # Restores the mouse cursor to normal symbol
@@ -184,7 +184,8 @@ class SurveyStore:
             )
         try:
             data_loading_status, surveys = self._get_data_step2(surveys)
-        except Exception:
+        except Exception as e:
+            log.error("_get_data_step2 failed: %s", str(e))
             data_loading_status = False
         if data_loading_status:
             surveys = self.sanity_check(surveys)
@@ -238,7 +239,7 @@ class SurveyStore:
                         h_toc = ru(attributes[h_toc_col_no])
                         try:
                             level_val = float(h_toc)
-                        except Exception:
+                        except (TypeError, ValueError):
                             using = "-1"
                             level_val = -1
                         else:
@@ -271,7 +272,7 @@ class SurveyStore:
                     else:
                         try:
                             length = float(ru(attributes[length_col_no]))
-                        except Exception:
+                        except (TypeError, ValueError):
                             length = None
 
                     # add to array
@@ -556,7 +557,7 @@ class SurveyWidget(QtWidgets.QFrame):
                     depth_top = d_top
                 if d_bed < depth_bot:
                     depth_bot = d_bed
-            except Exception:
+            except Exception as e:
                 common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
 
         # draw surveys
@@ -572,7 +573,7 @@ class SurveyWidget(QtWidgets.QFrame):
             # draw the survey
             try:
                 self.draw_survey(painter, sond, r, column_width, (depth_bot, depth_top))
-            except Exception:
+            except Exception as e:
                 common_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
     def draw_survey(self, p, sond, s_rect, column_width, interval):
@@ -711,7 +712,7 @@ class SurveyWidget(QtWidgets.QFrame):
                 try:  # first we assume it is a predefined Qt color, hence use PyQt4.QtCore.Qt
                     # return getattr(PyQt4.QtCore.Qt, self.geo_color_symbols[id.lower()][1])
                     return getattr(QtCore.Qt, self.geo_color_symbols[id][1])
-                except Exception:  # otherwise it must be a SVG 1.0 color name, then it must be created by QtGui.QColor instead
+                except AttributeError:  # otherwise it must be a SVG 1.0 color name, then it must be created by QtGui.QColor instead
                     return QtGui.QColor(self.geo_color_symbols[id][1])
             else:
                 return QtCore.Qt.white

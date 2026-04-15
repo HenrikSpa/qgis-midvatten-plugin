@@ -14,3 +14,4 @@ qgis-auth.db
 .pytest_cache
 __pycache__
 monkeytype.sqlite3
+.worktrees/

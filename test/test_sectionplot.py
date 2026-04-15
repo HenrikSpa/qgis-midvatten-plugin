@@ -94,14 +94,14 @@ class SectionPlotMixin:
             self.sectionplot.draw_plot()
 
         _test_plot_section(self)
-        print(self.sectionplot.figure._midv_obsids_x_position.keys())
+        print(self.sectionplot.figure.obsids_x_position.keys())
 
         print(f"{mock_messagebar.mock_calls=}")
         assert """call.info(log_msg='Settings {""" in str(mock_messagebar.mock_calls)
         assert self.sectionplot.drillstop.text() == "%berg%"
         assert (
             anything_to_string_representation(
-                list(self.sectionplot.figure._midv_obsids_x_position.keys())
+                list(self.sectionplot.figure.obsids_x_position.keys())
             )
             == """["P1", "P2", "P3"]"""
         )
@@ -109,13 +109,13 @@ class SectionPlotMixin:
         assert not mock_messagebar.critical.called
         # print(f"{mock_messagebar.mock_calls=}")
         print(
-            f"self.sectionplot.figure._midv_p {str(self.sectionplot.figure._midv_p)} get_legend_items_labels(self.sectionplot.figure._midv_p)[1] {str(get_legend_items_labels(self.sectionplot.figure._midv_p)[1])}"
+            f"self.sectionplot.figure.plot_handles {str(self.sectionplot.figure.plot_handles)} get_legend_items_labels(self.sectionplot.figure.plot_handles)[1] {str(get_legend_items_labels(self.sectionplot.figure.plot_handles)[1])}"
         )
-        assert len(get_legend_items_labels(self.sectionplot.figure._midv_p)[0]) == len(
-            get_legend_items_labels(self.sectionplot.figure._midv_p)[1]
+        assert len(get_legend_items_labels(self.sectionplot.figure.plot_handles)[0]) == len(
+            get_legend_items_labels(self.sectionplot.figure.plot_handles)[1]
         )
-        assert len(self.sectionplot.figure._midv_p) - 1 == len(
-            get_legend_items_labels(self.sectionplot.figure._midv_p)[0]
+        assert len(self.sectionplot.figure.plot_handles) - 1 == len(
+            get_legend_items_labels(self.sectionplot.figure.plot_handles)[0]
         )  # The bars should not be labeled, so there is one less label than plot.
 
     @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
@@ -193,7 +193,7 @@ class SectionPlotMixin:
         assert self.sectionplot.drillstop.text() == "%berg%"
         assert (
             anything_to_string_representation(
-                list(self.sectionplot.figure._midv_obsids_x_position.keys())
+                list(self.sectionplot.figure.obsids_x_position.keys())
             )
             == """["P1", "P2", "P3"]"""
         )
@@ -366,7 +366,7 @@ class SectionPlotMixin:
         print(f"{mock_messagebar.mock_calls=}")
         assert not mock_messagebar.warning.called
         assert not mock_messagebar.critical.called
-        labels = [p.get_label() for p in self.sectionplot.figure._midv_p]
+        labels = [p.get_label() for p in self.sectionplot.figure.plot_handles]
         print(str(labels))
         assert (
             anything_to_string_representation(labels)
@@ -422,7 +422,7 @@ class SectionPlotMixin:
         test_string = utils_for_tests.create_test_string(
             {
                 k: round(v, 6)
-                for k, v in self.sectionplot.figure._midv_obsids_x_position.items()
+                for k, v in self.sectionplot.figure.obsids_x_position.items()
             }
         )
         print(str(test_string))
@@ -470,10 +470,10 @@ class SectionPlotMixin:
             return myplot
 
         myplot = _test(self.midvatten, self.vlayer)
-        print(myplot.figure._midv_obsids_x_position)
+        print(myplot.figure.obsids_x_position)
 
         test_string = utils_for_tests.create_test_string(
-            myplot.figure._midv_obsids_x_position
+            myplot.figure.obsids_x_position
         )
         assert test_string == "{P1: 1.0, P2: 3.0, P3: 5.0}"
         assert (
@@ -531,8 +531,8 @@ class SectionPlotMixin:
         _test(self)
 
         print(f"{mock_messagebar.mock_calls=}")
-        print(str(self.sectionplot.figure._midv_p))
-        assert len(get_legend_items_labels(self.sectionplot.figure._midv_p)[0]) == 2
+        print(str(self.sectionplot.figure.plot_handles))
+        assert len(get_legend_items_labels(self.sectionplot.figure.plot_handles)[0]) == 2
         # assert False
 
     @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
@@ -587,12 +587,12 @@ class SectionPlotMixin:
         _test(self)
 
         print(f"{mock_messagebar.mock_calls=}")
-        print(str(self.sectionplot.figure._midv_p))
-        assert len(get_legend_items_labels(self.sectionplot.figure._midv_p)[0]) == len(
-            get_legend_items_labels(self.sectionplot.figure._midv_p)[1]
+        print(str(self.sectionplot.figure.plot_handles))
+        assert len(get_legend_items_labels(self.sectionplot.figure.plot_handles)[0]) == len(
+            get_legend_items_labels(self.sectionplot.figure.plot_handles)[1]
         )
-        print(str(get_legend_items_labels(self.sectionplot.figure._midv_p)[1]))
-        assert len(get_legend_items_labels(self.sectionplot.figure._midv_p)[0]) == 4
+        print(str(get_legend_items_labels(self.sectionplot.figure.plot_handles)[1]))
+        assert len(get_legend_items_labels(self.sectionplot.figure.plot_handles)[0]) == 4
 
     @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
     def test_plot_section_p_label_lengths_with_geology_changed_label(
@@ -662,12 +662,12 @@ class SectionPlotMixin:
         _test(self)
 
         # print(f"{mock_messagebar.mock_calls=}")
-        # print(str(self.sectionplot.figure._midv_p))
-        labels = [p.get_label() for p in self.sectionplot.figure._midv_p]
-        assert len(get_legend_items_labels(self.sectionplot.figure._midv_p)[0]) == len(
-            get_legend_items_labels(self.sectionplot.figure._midv_p)[1]
+        # print(str(self.sectionplot.figure.plot_handles))
+        labels = [p.get_label() for p in self.sectionplot.figure.plot_handles]
+        assert len(get_legend_items_labels(self.sectionplot.figure.plot_handles)[0]) == len(
+            get_legend_items_labels(self.sectionplot.figure.plot_handles)[1]
         )
-        assert len(get_legend_items_labels(self.sectionplot.figure._midv_p)[1]) == 4
+        assert len(get_legend_items_labels(self.sectionplot.figure.plot_handles)[1]) == 4
         assert (
             anything_to_string_representation(labels)
             == """["sandtest", "grustest", "2015", "drillstop like %berg%", "frame"]"""
@@ -784,11 +784,11 @@ class SectionPlotMixin:
             self.sectionplot.draw_plot()
 
         _test(self)
-        # print(str(self.sectionplot.figure._midv_obsid_annotation))
-        print(str(self.sectionplot.figure._midv_obsid_annotation))
+        # print(str(self.sectionplot.figure.obsid_annotation))
+        print(str(self.sectionplot.figure.obsid_annotation))
         # print(f"{mock_messagebar.mock_calls=}")
         assert (
-            str(self.sectionplot.figure._midv_obsid_annotation)
+            str(self.sectionplot.figure.obsid_annotation)
             == """{'P1': (0.0, 50.0), 'P3': (3.0, 90.0), 'P2': (1.0, 183.0)}"""
         )
         assert mock_messagebar.warning.called
@@ -838,7 +838,7 @@ class SectionPlotMixin:
         _test(self)
 
         print(f"{mock_messagebar.mock_calls=}")
-        print(str(self.sectionplot.figure._midv_p))
+        print(str(self.sectionplot.figure.plot_handles))
 
         pattern_obsids = {
             """Obsid {}: using h_gs '[0-9None]+' failed, using 'h_toc' instead.""": [
@@ -916,9 +916,9 @@ class SectionPlotMixin:
         assert secplot.figure is None
         assert old_toolbar is not fig.canvas.toolbar
 
-        # print(fig._midv_ax_main.__dict__)
-        print(f"{fig._midv_ax_main=}")
-        leg = fig._midv_ax_main.get_legend()
+        # print(fig.ax_main.__dict__)
+        print(f"{fig.ax_main=}")
+        leg = fig.ax_main.get_legend()
 
         def markersize(leg):
             handles = getattr(leg, "legend_handles", None) or leg.legendHandles
@@ -931,7 +931,7 @@ class SectionPlotMixin:
             start_markersize != new_markersize
         )  # Make sure they are different for the test to work
 
-        for line in fig._midv_ax_main.get_lines():
+        for line in fig.ax_main.get_lines():
             line.set_markersize(new_markersize)
 
         not_changed_markersize = markersize(leg)

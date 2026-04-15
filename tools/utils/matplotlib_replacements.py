@@ -21,14 +21,8 @@
 import matplotlib as mpl
 from itertools import chain
 
-try:
-    from matplotlib.backends.backend_qtagg import (
-        NavigationToolbar2QT as NavigationToolbar,
-    )
-except ImportError:
-    from matplotlib.backends.backend_qt5agg import (
-        NavigationToolbar2QT as NavigationToolbar,
-    )
+# Import from mpl_compat so all files share the same class object — required for monkey-patching to take effect.
+from midvatten.tools.utils.mpl_compat import NavigationToolbar
 
 from matplotlib import cbook, cm, colors as mcolors, markers, image as mimage
 from matplotlib.backends.qt_compat import QtGui

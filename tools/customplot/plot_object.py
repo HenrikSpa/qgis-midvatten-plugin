@@ -247,6 +247,120 @@ def apply_pandas_calculations(
 # ---------------------------------------------------------------------------
 
 
+def _markeredgewidth() -> float:
+    """Return a non-zero markeredgewidth, falling back to 1.0 when rcParams is 0."""
+    return mpl.rcParams["lines.markeredgewidth"] or 1.0
+
+
+def _render_step_pre(plotfunc, numtime, table2, p_list, i, line_cycler, label) -> None:
+    """Render a step-pre series (best for precipitation and flowmeters)."""
+    (p_list[i],) = plotfunc(
+        numtime,
+        table2.values,
+        picker=2,
+        drawstyle="steps-pre",
+        marker="None",
+        label=label,
+        **next(line_cycler),
+    )
+
+
+def _render_step_post(plotfunc, numtime, table2, p_list, i, line_cycler, label) -> None:
+    """Render a step-post series."""
+    (p_list[i],) = plotfunc(
+        numtime,
+        table2.values,
+        picker=2,
+        drawstyle="steps-post",
+        marker="None",
+        label=label,
+        **next(line_cycler),
+    )
+
+
+def _render_line_and_cross(
+    plotfunc, numtime, table2, p_list, i, line_cycler, label
+) -> None:
+    """Render a line-with-cross-markers series."""
+    (p_list[i],) = plotfunc(
+        numtime,
+        table2.values,
+        picker=2,
+        marker="x",
+        label=label,
+        markeredgewidth=_markeredgewidth(),
+        **next(line_cycler),
+    )
+
+
+def _render_marker(plotfunc, numtime, table2, p_list, i, marker_cycler, label) -> None:
+    """Render a markers-only series."""
+    (p_list[i],) = plotfunc(
+        numtime,
+        table2.values,
+        picker=2,
+        linestyle="None",
+        label=label,
+        markeredgewidth=_markeredgewidth(),
+        **next(marker_cycler),
+    )
+
+
+def _render_line(plotfunc, numtime, table2, p_list, i, line_cycler, label) -> None:
+    """Render a plain line series."""
+    (p_list[i],) = plotfunc(
+        numtime,
+        table2.values,
+        picker=2,
+        marker="None",
+        label=label,
+        **next(line_cycler),
+    )
+
+
+def _render_frequency(
+    plotfunc, numtime, table2, p_list, plabels, i, line_cycler
+) -> None:
+    """Render a frequency series, falling back to an empty plot on error.
+
+    Mutates both *p_list[i]* (the Artist) and *plabels[i]* (the label string).
+    """
+    freq_label = "frequency " + str(plabels[i])
+    try:
+        (p_list[i],) = plotfunc(
+            numtime,
+            table2.values,
+            picker=2,
+            marker="None",
+            label=freq_label,
+            **next(line_cycler),
+        )
+    except Exception:
+        (p_list[i],) = plotfunc(
+            np.array([]),
+            np.array([]),
+            picker=2,
+            marker="None",
+            label=freq_label,
+            **next(line_cycler),
+        )
+    plabels[i] = freq_label
+
+
+def _render_line_and_marker(
+    plotfunc, numtime, table2, p_list, i, line_and_marker_cycler, label
+) -> None:
+    """Render a line-and-marker (default) series."""
+    (p_list[i],) = plotfunc(
+        numtime,
+        table2.values,
+        picker=2,
+        label=label,
+        markeredgewidth=_markeredgewidth(),
+        **next(line_and_marker_cycler),
+    )
+
+
 def render_series(
     p_list: list,
     i: int,
@@ -260,7 +374,7 @@ def render_series(
     marker_cycler,
     line_and_marker_cycler,
 ) -> None:
-    """Call ``axes.plot()`` with the appropriate style for *plottype*.
+    """Dispatch to the appropriate per-plottype renderer.
 
     Mutates *p_list[i]* and *plabels[i]* in-place (the frequency branch
     prepends "frequency " to the label).
@@ -271,97 +385,35 @@ def render_series(
     axes : matplotlib Axes object
     flag_time_xy : "time" or "XY"
     """
-    if flag_time_xy == "time":
-        plotfunc = axes.plot
-    elif flag_time_xy == "XY":
-        plotfunc = axes.plot
-    else:
+    if flag_time_xy not in ("time", "XY"):
         raise Exception("Programming error. Must be time or XY!")
 
-    # Matplotlib rcParams often uses lines.markeredgewidth: 0.0 which makes the marker invisible.
-    markeredgewidth = (
-        1.0
-        if not mpl.rcParams["lines.markeredgewidth"]
-        else mpl.rcParams["lines.markeredgewidth"]
-    )
+    plotfunc = axes.plot
+    label = plabels[i]
 
-    if plottype == "step-pre":
-        (p_list[i],) = plotfunc(
-            numtime,
-            table2.values,
-            picker=2,
-            drawstyle="steps-pre",
-            marker="None",
-            label=plabels[i],
-            **next(line_cycler),
-        )  # 'steps-pre' best for precipitation and flowmeters, optional types are 'steps', 'steps-mid', 'steps-post'
-    elif plottype == "step-post":
-        (p_list[i],) = plotfunc(
-            numtime,
-            table2.values,
-            picker=2,
-            drawstyle="steps-post",
-            marker="None",
-            label=plabels[i],
-            **next(line_cycler),
-        )
-    elif plottype == "line and cross":
-        (p_list[i],) = plotfunc(
-            numtime,
-            table2.values,
-            picker=2,
-            marker="x",
-            label=plabels[i],
-            markeredgewidth=markeredgewidth,
-            **next(line_cycler),
-        )
-    elif plottype == "marker":
-        (p_list[i],) = plotfunc(
-            numtime,
-            table2.values,
-            picker=2,
-            linestyle="None",
-            label=plabels[i],
-            markeredgewidth=markeredgewidth,
-            **next(marker_cycler),
-        )
-    elif plottype == "line":
-        (p_list[i],) = plotfunc(
-            numtime,
-            table2.values,
-            picker=2,
-            marker="None",
-            label=plabels[i],
-            **next(line_cycler),
-        )
+    _simple_dispatch = {
+        "step-pre": lambda: _render_step_pre(
+            plotfunc, numtime, table2, p_list, i, line_cycler, label
+        ),
+        "step-post": lambda: _render_step_post(
+            plotfunc, numtime, table2, p_list, i, line_cycler, label
+        ),
+        "line and cross": lambda: _render_line_and_cross(
+            plotfunc, numtime, table2, p_list, i, line_cycler, label
+        ),
+        "marker": lambda: _render_marker(
+            plotfunc, numtime, table2, p_list, i, marker_cycler, label
+        ),
+        "line": lambda: _render_line(
+            plotfunc, numtime, table2, p_list, i, line_cycler, label
+        ),
+    }
+
+    if plottype in _simple_dispatch:
+        _simple_dispatch[plottype]()
     elif plottype == "frequency" and flag_time_xy == "time":
-        try:
-            (p_list[i],) = plotfunc(
-                numtime,
-                table2.values,
-                picker=2,
-                marker="None",
-                label="frequency " + str(plabels[i]),
-                **next(line_cycler),
-            )
-            plabels[i] = "frequency " + str(plabels[i])
-        except Exception:
-            (p_list[i],) = plotfunc(
-                np.array([]),
-                np.array([]),
-                picker=2,
-                marker="None",
-                label="frequency " + str(plabels[i]),
-                **next(line_cycler),
-            )
-            plabels[i] = "frequency " + str(plabels[i])
+        _render_frequency(plotfunc, numtime, table2, p_list, plabels, i, line_cycler)
     else:
-        # line and marker
-        (p_list[i],) = plotfunc(
-            numtime,
-            table2.values,
-            picker=2,
-            label=plabels[i],
-            markeredgewidth=markeredgewidth,
-            **next(line_and_marker_cycler),
+        _render_line_and_marker(
+            plotfunc, numtime, table2, p_list, i, line_and_marker_cycler, label
         )

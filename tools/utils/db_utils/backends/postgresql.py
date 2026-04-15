@@ -61,9 +61,9 @@ class PostgreSQLBackend(Backend):
     """
 
     dbtype = "postgis"
-    schema = "public"
 
-    def __init__(self, connection_name: str) -> None:
+    def __init__(self, connection_name: str, schema: str = "public") -> None:
+        self._schema = schema
         self._connection_name = connection_name
         self.postgis_settings = get_postgis_connections()[connection_name]
         self.uri = QgsDataSourceUri()
@@ -129,11 +129,24 @@ class PostgreSQLBackend(Backend):
             raise last_error
         self._conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
         self._cursor = self._conn.cursor()
+        self._set_search_path(self._schema)
+
+    def _set_search_path(self, schema: str) -> None:
+        """Execute SET search_path, always including public as fallback for PostGIS functions."""
         self._cursor.execute(
-            psycopg2.sql.SQL("SET search_path = {}").format(
-                psycopg2.sql.Identifier(self.schema)
+            psycopg2.sql.SQL("SET search_path = {}, public").format(
+                psycopg2.sql.Identifier(schema)
             )
         )
+
+    @property
+    def schema(self) -> str:
+        return self._schema
+
+    @schema.setter
+    def schema(self, value: str) -> None:
+        self._schema = value
+        self._set_search_path(value)
 
     @property
     def conn(self):

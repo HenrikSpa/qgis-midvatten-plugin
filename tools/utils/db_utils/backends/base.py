@@ -39,6 +39,11 @@ class Backend(ABC):
         """Schema name (e.g. 'public' for PostgreSQL)."""
         return "public"
 
+    @schema.setter
+    def schema(self, value: str) -> None:
+        """No-op for backends without schema support (e.g. SQLite)."""
+        pass
+
     # --- Execution (single sql string, args optional) ---
 
     def execute(self, sql: str, args: Optional[Sequence[Any]] = None) -> None:

@@ -259,6 +259,25 @@ def tables_columns(
     )
 
 
+def get_available_schemas(dbconnection: DbConnectionManager) -> list[str]:
+    """Return user-visible schema names for a PostgreSQL connection.
+
+    Returns an empty list for SQLite (no schema concept).
+    Excludes PostgreSQL internal schemas (information_schema, pg_catalog, pg_toast).
+    """
+    if not dbconnection.is_postgresql():
+        return []
+    rows = dbconnection.execute_and_fetchall(
+        """
+        SELECT schema_name
+        FROM information_schema.schemata
+        WHERE schema_name NOT IN ('information_schema', 'pg_catalog', 'pg_toast')
+        ORDER BY schema_name
+        """
+    )
+    return [row[0] for row in rows]
+
+
 def db_tables_columns_info(
     table: Optional[str] = None,
     dbconnection: Optional[DbConnectionManager] = None,

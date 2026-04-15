@@ -25,6 +25,7 @@ import pytest
 
 from midvatten.test import utils_for_tests
 from midvatten.tools.utils import db_utils
+from midvatten.tools.utils.db_utils.backends.sqlite import SQLiteBackend
 
 
 class DbTablesColumnsInfoMixin:
@@ -292,3 +293,29 @@ class TestSqlInjectionHardeningSpatialite(
     SqlInjectionHardeningMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass
+
+
+@pytest.mark.spatialite
+class TestSQLiteBackendClosedb:
+    def test_closedb_rolls_back_before_close(self):
+        """closedb() must call rollback() then close() to discard any lingering transaction."""
+        mock_conn = mock.MagicMock()
+        mock_conn.cursor.return_value = mock.MagicMock()
+
+        with (
+            mock.patch(
+                "midvatten.tools.utils.db_utils.backends.sqlite.spatialite_connect",
+                return_value=mock_conn,
+            ),
+            mock.patch("os.path.isfile", return_value=True),
+            mock.patch.object(SQLiteBackend, "check_db_is_locked"),
+        ):
+            backend = SQLiteBackend("/fake/path.db")
+
+        mock_conn.reset_mock()  # discard calls made during __init__
+        backend.closedb()
+
+        method_names = [c[0] for c in mock_conn.method_calls]
+        assert method_names == ["rollback", "close"], (
+            f"Expected ['rollback', 'close'] but got {method_names}"
+        )

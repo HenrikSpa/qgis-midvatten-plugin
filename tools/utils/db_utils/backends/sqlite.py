@@ -116,21 +116,14 @@ class SQLiteBackend(Backend):
         self.uri.setDatabase(self._dbpath)
 
     @property
-    def conn(self) -> Connection:
-        return self._conn
-
-    @property
-    def cursor(self):
-        return self._cursor
-
-    @property
     def dbpath(self) -> str:
         return self._dbpath
 
-    def commit(self) -> None:
-        self._conn.commit()
-
     def closedb(self) -> None:
+        try:
+            self._conn.rollback()
+        except Exception:
+            pass
         self._conn.close()
 
     def placeholder(self) -> str:

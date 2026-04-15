@@ -61,7 +61,6 @@ class PostgreSQLBackend(Backend):
     """
 
     dbtype = "postgis"
-    schema = "public"
 
     def __init__(self, connection_name: str) -> None:
         self._connection_name = connection_name
@@ -134,20 +133,6 @@ class PostgreSQLBackend(Backend):
                 psycopg2.sql.Identifier(self.schema)
             )
         )
-
-    @property
-    def conn(self):
-        return self._conn
-
-    @property
-    def cursor(self):
-        return self._cursor
-
-    def commit(self) -> None:
-        self._conn.commit()
-
-    def closedb(self) -> None:
-        self._conn.close()
 
     def placeholder(self) -> str:
         return "%s"

@@ -24,20 +24,17 @@ class Backend(ABC):
     # One of "spatialite", "postgis".
     dbtype: str
 
+    schema: str = "public"
+    """Schema name. Override as a class attribute in subclasses that use a different schema."""
+
+    # Subclasses must assign self._conn and self._cursor in __init__.
     @property
-    @abstractmethod
     def conn(self):  # sqlite3.Connection or psycopg2 connection
-        pass
+        return self._conn
 
     @property
-    @abstractmethod
     def cursor(self):  # cursor
-        pass
-
-    @property
-    def schema(self) -> str:
-        """Schema name (e.g. 'public' for PostgreSQL)."""
-        return "public"
+        return self._cursor
 
     # --- Execution (single sql string, args optional) ---
 
@@ -81,13 +78,12 @@ class Backend(ABC):
         self.commit()
         self.closedb()
 
-    @abstractmethod
     def commit(self) -> None:
-        pass
+        self._conn.commit()
 
-    @abstractmethod
     def closedb(self) -> None:
-        pass
+        """Close the database connection. Override in subclasses that need cleanup before close."""
+        self._conn.close()
 
     def execute_safe(
         self,

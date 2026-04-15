@@ -2,7 +2,7 @@
 /***************************************************************************
  Base class for all Midvatten data importer dialogs.
                              -------------------
-        begin                : 2016-11-27
+        begin                : 2026
         copyright            : (C) 2016 by HenrikSpa (and joskal)
         email                : groundwatergis [at] gmail.com
  ***************************************************************************/
@@ -17,7 +17,6 @@
  ***************************************************************************/
 """
 
-import qgis.PyQt
 from qgis.PyQt import QtWidgets
 
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
@@ -48,7 +47,7 @@ class BaseImporter(QtWidgets.QMainWindow):
         self.iface = parent
         self.ms = msettings
         self.ms.load_settings()
-        qgis.PyQt.QtWidgets.QMainWindow.__init__(self, parent)
+        QtWidgets.QMainWindow.__init__(self, parent)
         self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt
         self.status = True

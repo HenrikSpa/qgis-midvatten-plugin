@@ -45,7 +45,6 @@ from midvatten.tools.utils.gui_utils import (
     RowEntryGrid,
     VRowEntry,
     DateTimeFilter,
-    WA_DeleteOnClose,
     set_combobox,
 )
 from qgis.PyQt.QtWidgets import QComboBox

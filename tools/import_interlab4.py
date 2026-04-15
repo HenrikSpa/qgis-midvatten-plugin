@@ -41,7 +41,6 @@ from midvatten.tools.utils.gui_utils import (
     RowEntry,
     VRowEntry,
     ExtendedQPlainTextEdit,
-    WA_DeleteOnClose,
     get_line,
 )
 

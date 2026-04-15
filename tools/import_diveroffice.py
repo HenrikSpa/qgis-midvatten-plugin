@@ -42,7 +42,6 @@ from midvatten.tools.utils.date_utils import (
 )
 from midvatten.tools.utils.gui_utils import (
     VRowEntry,
-    WA_DeleteOnClose,
     get_line,
     DateTimeFilter,
     RowEntry,

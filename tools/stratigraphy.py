@@ -186,6 +186,7 @@ class SurveyStore:
             data_loading_status, surveys = self._get_data_step2(surveys)
         except Exception as e:
             log.error("_get_data_step2 failed: %s", str(e))
+            common_utils.MessagebarAndLog.warning(log_msg=str(e))
             data_loading_status = False
         if data_loading_status:
             surveys = self.sanity_check(surveys)
@@ -557,7 +558,7 @@ class SurveyWidget(QtWidgets.QFrame):
                     depth_top = d_top
                 if d_bed < depth_bot:
                     depth_bot = d_bed
-            except Exception as e:
+            except Exception:
                 common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
 
         # draw surveys
@@ -573,7 +574,7 @@ class SurveyWidget(QtWidgets.QFrame):
             # draw the survey
             try:
                 self.draw_survey(painter, sond, r, column_width, (depth_bot, depth_top))
-            except Exception as e:
+            except Exception:
                 common_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
     def draw_survey(self, p, sond, s_rect, column_width, interval):

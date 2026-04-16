@@ -14,6 +14,10 @@ import traceback
 from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools.utils import common_utils
+from midvatten.tools.sectionplot._utils import (
+    get_legend_items_labels,
+    get_plot_label_name,
+)
 
 
 def paint_bars(
@@ -254,11 +258,6 @@ def paint_obs_lines_data(
         ``"bedrock"``, ``"ground"``, ``"gw_table"``).
     """
     import numpy as np
-
-    from midvatten.tools.sectionplot._sectionplot import (
-        get_legend_items_labels,
-        get_plot_label_name,
-    )
 
     def remove_nones(xdata, ydata):
         x_y = [(xdata[idx], row) for idx, row in enumerate(ydata) if not np.isnan(row)]

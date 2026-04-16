@@ -69,6 +69,10 @@ from midvatten.tools.utils.sampledem import qchain, sampling
 from midvatten.tools.sectionplot.figure import SectionPlotFigure
 from midvatten.tools.sectionplot.legend import SectionPlotLegendManager
 from midvatten.tools.sectionplot import painters as _painters
+from midvatten.tools.sectionplot._utils import (  # noqa: F401
+    get_legend_items_labels,
+    get_plot_label_name,
+)
 
 _WLVL_EXCLUDED_TABLES = (
     "comments",
@@ -2678,14 +2682,6 @@ def get_slider_idx(slider):
     return int(round(slider.val, 0))
 
 
-def get_plot_label_name(label, labels):
-    label_occurence = labels.count(label)
-    if not label_occurence:
-        return label
-    else:
-        return label + "_" + str(label_occurence + 1)
-
-
 def tabwidget_resize(tabwidget):
     current_index = tabwidget.currentIndex()
     for tabnr in range(tabwidget.count()):
@@ -2696,12 +2692,6 @@ def tabwidget_resize(tabwidget):
     tab = tabwidget.currentWidget()
     tab.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
     tab.adjustSize()
-
-
-def get_legend_items_labels(plot_items):
-    legend_items = [p for p in plot_items if not getattr(p, "skip_legend", False)]
-    labels = [p.get_label() for p in legend_items]
-    return legend_items, labels
 
 
 def get_length_map(length_series: pd.Series):

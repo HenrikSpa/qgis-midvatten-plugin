@@ -24,10 +24,12 @@ resolves correctly.
 from midvatten.tools.utils import common_utils  # noqa: F401
 import midvatten.definitions.midvatten_defs as defs  # noqa: F401
 
-from midvatten.tools.sectionplot._sectionplot import (  # noqa: F401
-    SectionPlot,
+from midvatten.tools.sectionplot._utils import (  # noqa: F401
     get_legend_items_labels,
     get_plot_label_name,
+)
+from midvatten.tools.sectionplot._sectionplot import (  # noqa: F401
+    SectionPlot,
     tabwidget_resize,
     resample,
     groupby,

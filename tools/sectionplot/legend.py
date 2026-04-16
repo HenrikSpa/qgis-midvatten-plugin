@@ -10,6 +10,9 @@ needs to be updated — e.g. after new artists are added to the figure.
 """
 
 from midvatten.tools.utils.common_utils import LEGEND_NCOL_KEY
+from midvatten.tools.sectionplot._utils import get_legend_items_labels
+
+_LEGACY_NCOL_KEY = "ncol"  # Matplotlib < 3.6 used "ncol"; >= 3.6 uses "ncols"
 
 
 class SectionPlotLegendManager:
@@ -42,10 +45,8 @@ class SectionPlotLegendManager:
         legend_kwargs = dict(loaded_template["legend_Axes_legend"])
         # Normalise ncol vs ncols key (matplotlib changed the kwarg name).
         if LEGEND_NCOL_KEY not in legend_kwargs:
-            if LEGEND_NCOL_KEY.rstrip("s") in legend_kwargs:
-                legend_kwargs[LEGEND_NCOL_KEY] = legend_kwargs.pop(
-                    LEGEND_NCOL_KEY.rstrip("s")
-                )
+            if _LEGACY_NCOL_KEY in legend_kwargs:
+                legend_kwargs[LEGEND_NCOL_KEY] = legend_kwargs.pop(_LEGACY_NCOL_KEY)
 
         config = dict(legend_kwargs)
         config["frame_facecolor"] = loaded_template["legend_Frame_set_facecolor"]
@@ -59,9 +60,10 @@ class SectionPlotLegendManager:
         plot_handles: list of matplotlib artist objects (Line2D, BarContainer,
         PolyCollection, …) — items with ``skip_legend=True`` are excluded.
         """
-        from midvatten.tools.sectionplot._sectionplot import get_legend_items_labels
-
         items, labels = get_legend_items_labels(plot_handles)
+        if not items:
+            # Nothing to show — don't create an empty legend frame
+            return
 
         # Separate display-only keys from kwargs forwarded to ax.legend().
         frame_facecolor = self.legend_config.pop("frame_facecolor", None)

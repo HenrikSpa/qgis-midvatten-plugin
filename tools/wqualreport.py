@@ -39,7 +39,16 @@ log = logging.getLogger(__name__)
 
 
 class Wqualreport:  # extracts water quality data for selected objects, selected db and given table, results shown in html report
-    def __init__(self, layer, settingsdict=None):
+    def __init__(self, iface, ms):
+        self._iface = iface
+        self._ms = ms
+
+    def show(self) -> None:
+        layer = self._iface.activeLayer()
+        settingsdict = self._ms.settingsdict
+        self._run_report(layer, settingsdict)
+
+    def _run_report(self, layer, settingsdict=None):
         # show the user this may take a long time...
         common_utils.start_waiting_cursor()
 

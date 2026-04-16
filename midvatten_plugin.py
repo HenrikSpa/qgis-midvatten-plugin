@@ -662,10 +662,7 @@ class Midvatten:
             err_flag, 0
         )  # verify the selected layer has attribute "obsid" and that exactly one feature is selected
         if err_flag == 0:
-            obsids = common_utils.get_selected_object_names(
-                qgis.utils.iface.activeLayer()
-            )  # selected obs_point is now found in obsid[0]
-            Drillreport(obsids, self.ms.settingsdict)
+            Drillreport(self.iface, self.ms).show()
 
     @common_utils.general_exception_handler
     def custom_drillreport(self):
@@ -1507,7 +1504,7 @@ class Midvatten:
                 return"""
 
             common_utils.start_waiting_cursor()  # show the user this may take a long time...
-            PrepareForQgis2Threejs(qgis.utils.iface, self.ms.settingsdict)
+            PrepareForQgis2Threejs(self.iface, self.ms).show()
             common_utils.stop_waiting_cursor()
 
     def project_created(self):
@@ -1610,9 +1607,7 @@ class Midvatten:
                         )
                         fail = 1
                 if not fail == 1:  # only if all objects has data
-                    Wqualreport(
-                        qgis.utils.iface.activeLayer(), self.ms.settingsdict
-                    )  # TEMPORARY FOR GVAB
+                    Wqualreport(self.iface, self.ms).show()  # TEMPORARY FOR GVAB
             finally:
                 dbconnection.closedb()
 

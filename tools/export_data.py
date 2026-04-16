@@ -39,10 +39,10 @@ class ExportData:
         self._ms = ms
         self.dest_dbconnection = None
         self.source_dbconnection = None
-        # NOTE: ID_obs_points and ID_obs_lines are set by show() or directly for export_spatialite usage
+        self.ID_obs_points: tuple = ()
+        self.ID_obs_lines: tuple = ()
 
     def show(self) -> None:
-        """Fetch selected obsids, prompt for folder, and export to CSV."""
         common_utils.start_waiting_cursor()
         obsid_p = common_utils.get_selected_features_as_tuple("obs_points")
         obsid_l = common_utils.get_selected_features_as_tuple("obs_lines")

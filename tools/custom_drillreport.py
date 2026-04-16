@@ -44,11 +44,11 @@ custom_drillreport_dialog = qgis.PyQt.uic.loadUiType(
 
 
 class DrillreportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
-    def __init__(self, parent, midv_settings):
-        self.iface = parent
+    def __init__(self, iface, ms):
+        self.iface = iface
 
-        self.ms = midv_settings
-        qgis.PyQt.QtWidgets.QMainWindow.__init__(self, parent)
+        self.ms = ms
+        qgis.PyQt.QtWidgets.QMainWindow.__init__(self, iface.mainWindow())
         self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt
 
@@ -66,7 +66,9 @@ class DrillreportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
             lambda x: self.ask_and_update_stored_settings()
         )
 
-        self.show()
+    def show(self) -> None:
+        super().show()
+        self.activateWindow()
 
     @common_utils.general_exception_handler
     def drillreport(self):

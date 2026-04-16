@@ -206,11 +206,11 @@ class ParameterGroup:
 
 
 class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
-    def __init__(self, parent, midv_settings):
-        self.iface = parent
+    def __init__(self, iface, ms):
+        self.iface = iface
 
-        self.ms = midv_settings
-        QtWidgets.QMainWindow.__init__(self, parent)
+        self.ms = ms
+        QtWidgets.QMainWindow.__init__(self, iface.mainWindow())
         self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt
         self.setWindowTitle(
@@ -484,7 +484,9 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
 
         self.grid_layout_buttons.setRowStretch(self.grid_layout_buttons.rowCount(), 1)
 
-        self.show()
+    def show(self) -> None:
+        super().show()
+        self.activateWindow()
 
     @staticmethod
     def init_splitters_layouts(splitter):

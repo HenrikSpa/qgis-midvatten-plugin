@@ -49,15 +49,16 @@ custom_drillreport_dialog = qgis.PyQt.uic.loadUiType(
 
 
 class CompactWqualReportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
-    def __init__(self, parent, midv_settings):
-        self.iface = parent
+    def __init__(self, iface, ms):
+        self.iface = iface
+
+        self.ms = ms
+        qgis.PyQt.QtWidgets.QMainWindow.__init__(self, iface.mainWindow())
+        self.setAttribute(WA_DeleteOnClose)
+        self.setupUi(self)  # Required by Qt
 
         self.tables_columns = db_utils.tables_columns()
 
-        self.ms = midv_settings
-        qgis.PyQt.QtWidgets.QMainWindow.__init__(self, parent)
-        self.setAttribute(WA_DeleteOnClose)
-        self.setupUi(self)  # Required by Qt
         self.setWindowTitle(
             QCoreApplication.translate(
                 "CompactWqualReportUi", "Compact water quality report"
@@ -173,7 +174,9 @@ class CompactWqualReportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_d
         )
         self.update_from_stored_settings(self.stored_settings)
 
-        self.show()
+    def show(self) -> None:
+        super().show()
+        self.activateWindow()
 
     def set_columns_from_sql_layer(self):
         fields = self.tables_columns[self.sql_table.currentText()]

@@ -749,6 +749,31 @@ class TestObsPointsTriggers(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
 
 @pytest.mark.spatialite
+class TestNewSpatialiteDbDialog(utils_for_tests.MidvattenTestSpatialiteNotCreated):
+    def test_dialog_sv_defaults(self):
+        """Dialog sets sv_SE locale defaults when locale changed to sv_SE."""
+        from midvatten.tools.create_db_dialogs import NewSpatialiteDbDialog
+
+        dialog = NewSpatialiteDbDialog()
+        dialog._locale_combo.setCurrentText("sv_SE")
+        dialog._on_locale_changed("sv_SE")
+        assert dialog.epsg_code == 3006
+        assert dialog.w_levels_logger_timezone == "UTC+1"
+        assert dialog.w_levels_timezone == "Europe/Stockholm"
+
+    def test_dialog_en_defaults(self):
+        """Dialog sets en_US locale defaults when locale changed to en_US."""
+        from midvatten.tools.create_db_dialogs import NewSpatialiteDbDialog
+
+        dialog = NewSpatialiteDbDialog()
+        dialog._locale_combo.setCurrentText("en_US")
+        dialog._on_locale_changed("en_US")
+        assert dialog.epsg_code == 4326
+        assert dialog.w_levels_logger_timezone == ""
+        assert dialog.w_levels_timezone == ""
+
+
+@pytest.mark.spatialite
 class TestSqls(utils_for_tests.MidvattenTestSpatialiteDbSv):
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_import_null_as_double(self, mock_messagebar):

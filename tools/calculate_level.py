@@ -25,7 +25,6 @@ import traceback
 from typing import List
 
 import matplotlib as mpl
-from qgis.PyQt.QtWidgets import QWidget
 
 mpl.use("Qt5Agg")
 
@@ -34,7 +33,6 @@ import qgis.PyQt
 from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QCoreApplication
 
-from midvatten.tools.utils.mpl_compat import NavigationToolbar
 
 from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.string_utils import returnunicode as ru
@@ -49,14 +47,19 @@ class CalculateLevel(
     qgis.PyQt.QtWidgets.QDialog, Calc_Ui_Dialog
 ):  # An instance of the class Calc_Ui_Dialog is created same time as instance of calclvl is created
     @fn_timer
-    def __init__(self, parent: QWidget, layerin: int):
-        qgis.PyQt.QtWidgets.QDialog.__init__(self)
+    def __init__(self, iface, ms):
+        qgis.PyQt.QtWidgets.QDialog.__init__(self, iface.mainWindow())
+        self._iface = iface
+        self._ms = ms
         self.setupUi(self)  # Required by Qt
         self.setWindowTitle(QCoreApplication.translate("Calclvl", "Calculate levels"))
         self.push_button_all.clicked.connect(lambda x: self.calcall())
         self.push_button_selected.clicked.connect(lambda x: self.calcselected())
         self.push_button_cancel.clicked.connect(lambda x: self.close())
-        self.layer = layerin
+        self.layer = iface.activeLayer()
+
+    def show(self) -> None:
+        self.exec()
 
     def calc(self, obsids: List[str]):
         fr_d_t = (

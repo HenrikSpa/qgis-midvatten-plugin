@@ -106,7 +106,7 @@ class GeneralCsvGuiMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = GeneralCsvImportGui(self.iface.mainWindow(), ms)
+                importer = GeneralCsvImportGui(self.iface, ms)
                 importer.load_gui()
 
                 importer.load_files()
@@ -190,7 +190,7 @@ class GeneralCsvGuiMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = GeneralCsvImportGui(self.iface.mainWindow(), ms)
+                importer = GeneralCsvImportGui(self.iface, ms)
                 importer.load_gui()
 
                 importer.load_files()
@@ -281,7 +281,7 @@ class GeneralCsvGuiMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = GeneralCsvImportGui(self.iface.mainWindow(), ms)
+                importer = GeneralCsvImportGui(self.iface, ms)
                 importer.load_gui()
 
                 importer.load_files()
@@ -375,7 +375,7 @@ class GeneralCsvGuiMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = GeneralCsvImportGui(self.iface.mainWindow(), ms)
+                importer = GeneralCsvImportGui(self.iface, ms)
                 importer.load_gui()
 
                 importer.load_files()
@@ -460,7 +460,7 @@ class GeneralCsvGuiMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = GeneralCsvImportGui(self.iface.mainWindow(), ms)
+                importer = GeneralCsvImportGui(self.iface, ms)
                 importer.load_gui()
 
                 importer.load_files()
@@ -555,7 +555,7 @@ class GeneralCsvGuiMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = GeneralCsvImportGui(self.iface.mainWindow(), ms)
+                importer = GeneralCsvImportGui(self.iface, ms)
                 importer.load_gui()
 
                 importer.load_files()
@@ -642,7 +642,7 @@ class GeneralCsvGuiMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = GeneralCsvImportGui(self.iface.mainWindow(), ms)
+                importer = GeneralCsvImportGui(self.iface, ms)
                 importer.load_gui()
 
                 importer.load_files()
@@ -733,7 +733,7 @@ class GeneralCsvGuiMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = GeneralCsvImportGui(self.iface.mainWindow(), ms)
+                importer = GeneralCsvImportGui(self.iface, ms)
                 importer.load_gui()
 
                 importer.load_files()
@@ -821,7 +821,7 @@ class GeneralCsvGuiMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = GeneralCsvImportGui(self.iface.mainWindow(), ms)
+                importer = GeneralCsvImportGui(self.iface, ms)
                 importer.load_gui()
 
                 importer.load_files()
@@ -910,7 +910,7 @@ class GeneralCsvGuiMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = GeneralCsvImportGui(self.iface.mainWindow(), ms)
+                importer = GeneralCsvImportGui(self.iface, ms)
                 importer.load_gui()
 
                 importer.load_files()
@@ -993,7 +993,7 @@ class GeneralCsvGuiMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = GeneralCsvImportGui(self.iface.mainWindow(), ms)
+                importer = GeneralCsvImportGui(self.iface, ms)
                 importer.load_gui()
 
                 importer.load_files()
@@ -1076,7 +1076,7 @@ class GeneralCsvGuiMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = GeneralCsvImportGui(self.iface.mainWindow(), ms)
+                importer = GeneralCsvImportGui(self.iface, ms)
                 importer.load_gui()
 
                 importer.load_files()
@@ -1166,7 +1166,7 @@ class GeneralCsvGuiMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = GeneralCsvImportGui(self.iface.mainWindow(), ms)
+                importer = GeneralCsvImportGui(self.iface, ms)
                 importer.load_gui()
 
                 importer.load_files()
@@ -1249,7 +1249,7 @@ class GeneralCsvGuiMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = GeneralCsvImportGui(self.iface.mainWindow(), ms)
+                importer = GeneralCsvImportGui(self.iface, ms)
                 importer.load_gui()
 
                 importer.load_files()
@@ -1334,7 +1334,7 @@ class GeneralCsvGuiMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = GeneralCsvImportGui(self.iface.mainWindow(), ms)
+                importer = GeneralCsvImportGui(self.iface, ms)
                 importer.load_gui()
 
                 importer.load_files()
@@ -1422,7 +1422,7 @@ class GeneralCsvGuiMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = GeneralCsvImportGui(self.iface.mainWindow(), ms)
+                importer = GeneralCsvImportGui(self.iface, ms)
                 importer.load_gui()
 
                 importer.load_files()
@@ -1535,7 +1535,7 @@ class GeneralCsvGuiFromLayerMixin:
 
             ms = MagicMock()
             ms.settingsdict = OrderedDict()
-            importer = GeneralCsvImportGui(self.iface.mainWindow(), ms)
+            importer = GeneralCsvImportGui(self.iface, ms)
             importer.load_gui()
 
             importer.import_all_features()
@@ -1618,7 +1618,7 @@ class GeneralCsvGuiFromLayerMixin:
 
             ms = MagicMock()
             ms.settingsdict = OrderedDict()
-            importer = GeneralCsvImportGui(self.iface.mainWindow(), ms)
+            importer = GeneralCsvImportGui(self.iface, ms)
             importer.load_gui()
 
             importer.import_all_features()

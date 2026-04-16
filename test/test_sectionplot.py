@@ -84,6 +84,7 @@ class SectionPlotMixin:
             self, mock_iface, mock_getselectedobjectnames, mock_findlayer
         ):
             mock_iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
+            self.iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
             mock_findlayer.return_value.isEditable.return_value = False
             mock_getselectedobjectnames.return_value = ("P1", "P2", "P3")
             mock_mapcanvas = mock_iface.mapCanvas.return_value
@@ -130,6 +131,7 @@ class SectionPlotMixin:
         def _test(self, mock_iface, mock_getselectedobjectnames, mock_sectionplot):
             mock_layer = mock.Mock(spec=QgsVectorLayer)
             mock_iface.mapCanvas.return_value.currentLayer.return_value = mock_layer
+            self.iface.mapCanvas.return_value.currentLayer.return_value = mock_layer
             mock_layer.selectedFeatureCount.return_value = 2
             mock_geom = mock.Mock()
             mock_geom.wkbType.return_value = "test"
@@ -178,6 +180,7 @@ class SectionPlotMixin:
             self, mock_iface, mock_getselectedobjectnames, mock_findlayer
         ):
             mock_iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
+            self.iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
             mock_findlayer.return_value.isEditable.return_value = False
             mock_getselectedobjectnames.return_value = ("P1", "P2", "P3")
             mock_mapcanvas = mock_iface.mapCanvas.return_value
@@ -232,6 +235,7 @@ class SectionPlotMixin:
             mock_findlayer,
         ):
             mock_iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
+            self.iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
             mock_findlayer.return_value.isEditable.return_value = False
             mock_getselectedobjectnames.return_value = ("P1", "P2", "P3")
             mock_mapcanvas = mock_iface.mapCanvas.return_value
@@ -277,6 +281,7 @@ class SectionPlotMixin:
         @mock.patch("qgis.utils.iface", autospec=True)
         def _test(self, mock_iface, mock_getselectedobjectnames, mock_findlayer):
             mock_iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
+            self.iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
             mock_findlayer.return_value.isEditable.return_value = False
             mock_getselectedobjectnames.return_value = ("P1", "P2", "P3")
             mock_mapcanvas = mock_iface.mapCanvas.return_value
@@ -324,6 +329,7 @@ class SectionPlotMixin:
         @mock.patch("qgis.utils.iface", autospec=True)
         def _test(self, mock_iface, mock_getselectedobjectnames, mock_findlayer):
             mock_iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
+            self.iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
             mock_findlayer.return_value.isEditable.return_value = False
             mock_getselectedobjectnames.return_value = ("P1", "P2", "P3")
             mock_mapcanvas = mock_iface.mapCanvas.return_value
@@ -408,6 +414,7 @@ class SectionPlotMixin:
             midvatten, vlayer, mock_iface, mock_getselectedobjectnames, mock_findlayer
         ):
             mock_iface.mapCanvas.return_value.currentLayer.return_value = vlayer
+            midvatten.iface.mapCanvas.return_value.currentLayer.return_value = vlayer
             mock_findlayer.return_value.isEditable.return_value = False
             mock_getselectedobjectnames.return_value = ("P1", "P2", "P3")
             mock_mapcanvas = mock_iface.mapCanvas.return_value
@@ -459,6 +466,7 @@ class SectionPlotMixin:
             midvatten, vlayer, mock_iface, mock_getselectedobjectnames, mock_findlayer
         ):
             mock_iface.mapCanvas.return_value.currentLayer.return_value = vlayer
+            midvatten.iface.mapCanvas.return_value.currentLayer.return_value = vlayer
             mock_findlayer.return_value.isEditable.return_value = False
             mock_getselectedobjectnames.return_value = ("P1", "P2", "P3")
             mock_mapcanvas = mock_iface.mapCanvas.return_value
@@ -516,6 +524,7 @@ class SectionPlotMixin:
         @mock.patch("qgis.utils.iface", autospec=True)
         def _test(self, mock_iface, mock_getselectedobjectnames, mock_findlayer):
             mock_iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
+            self.iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
             mock_findlayer.return_value.isEditable.return_value = False
             mock_getselectedobjectnames.return_value = ("P1", "P2", "P3")
             mock_mapcanvas = mock_iface.mapCanvas.return_value
@@ -574,6 +583,7 @@ class SectionPlotMixin:
         @mock.patch("qgis.utils.iface", autospec=True)
         def _test(self, mock_iface, mock_getselectedobjectnames, mock_findlayer):
             mock_iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
+            self.iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
             mock_findlayer.return_value.isEditable.return_value = False
             mock_getselectedobjectnames.return_value = ("P1", "P2", "P3")
             mock_mapcanvas = mock_iface.mapCanvas.return_value
@@ -637,6 +647,7 @@ class SectionPlotMixin:
         @mock.patch("qgis.utils.iface", autospec=True)
         def _test(self, mock_iface, mock_getselectedobjectnames, mock_findlayer):
             mock_iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
+            self.iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
             mock_findlayer.return_value.isEditable.return_value = False
             mock_getselectedobjectnames.return_value = ("P1", "P2", "P3")
             mock_mapcanvas = mock_iface.mapCanvas.return_value
@@ -721,6 +732,7 @@ class SectionPlotMixin:
         @mock.patch("qgis.utils.iface", autospec=True)
         def _test(self, mock_iface, mock_getselectedobjectnames, mock_findlayer):
             mock_iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
+            self.iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
             mock_findlayer.return_value.isEditable.return_value = False
             mock_getselectedobjectnames.return_value = ("P1", "P2", "P3")
             mock_mapcanvas = mock_iface.mapCanvas.return_value
@@ -779,6 +791,7 @@ class SectionPlotMixin:
         @mock.patch("qgis.utils.iface", autospec=True)
         def _test(self, mock_iface, mock_getselectedobjectnames, mock_findlayer):
             mock_iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
+            self.iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
             mock_findlayer.return_value.isEditable.return_value = False
             mock_getselectedobjectnames.return_value = ("P1", "P2", "P3")
             mock_mapcanvas = mock_iface.mapCanvas.return_value
@@ -831,6 +844,7 @@ class SectionPlotMixin:
         @mock.patch("qgis.utils.iface", autospec=True)
         def _test(self, mock_iface, mock_getselectedobjectnames, mock_findlayer):
             mock_iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
+            self.iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
             mock_findlayer.return_value.isEditable.return_value = False
             mock_getselectedobjectnames.return_value = ("P1", "P2", "P3")
             mock_mapcanvas = mock_iface.mapCanvas.return_value
@@ -893,6 +907,7 @@ class SectionPlotMixin:
             self, mock_iface, mock_getselectedobjectnames, mock_findlayer
         ):
             mock_iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
+            self.iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
             mock_findlayer.return_value.isEditable.return_value = False
             mock_getselectedobjectnames.return_value = ("P1", "P2", "P3")
             mock_mapcanvas = mock_iface.mapCanvas.return_value

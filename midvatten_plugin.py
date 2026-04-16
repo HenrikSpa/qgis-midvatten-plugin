@@ -1144,7 +1144,7 @@ class Midvatten:
             )
         else:
             self.strat_symbology = StratSymbology(
-                qgis.utils.iface, self.iface.mainWindow()
+                self.iface, self.ms
             )
         common_utils.stop_waiting_cursor()
 

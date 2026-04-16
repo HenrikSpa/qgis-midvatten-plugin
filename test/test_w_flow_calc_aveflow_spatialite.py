@@ -20,7 +20,6 @@
 
 from unittest import mock
 import pytest
-from qgis.PyQt import QtWidgets
 
 from midvatten.test import utils_for_tests
 from midvatten.tools import w_flow_calc_aveflow
@@ -48,8 +47,7 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
             """INSERT INTO w_flow (obsid, instrumentid, flowtype, date_time, reading, unit) VALUES ('2', 'inst2', 'Accvol', '2019-02-03 00:00', 5.0, 'm3')"""
         )
 
-        widget = QtWidgets.QWidget()
-        calcave = w_flow_calc_aveflow.CalculateAveflow(widget)
+        calcave = w_flow_calc_aveflow.CalculateAveflow(self.iface, self.midvatten.ms)
         calcave.from_date_time.setDateTime(
             date_utils.datestring_to_date("2000-01-01 00:00:00")
         )
@@ -103,8 +101,7 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
             """INSERT INTO w_flow (obsid, instrumentid, flowtype, date_time, reading, unit) VALUES ('2', 'inst2', 'Accvol', '2019-02-03 00:00', 5.0, 'm3')"""
         )
 
-        widget = QtWidgets.QWidget()
-        calcave = w_flow_calc_aveflow.CalculateAveflow(widget)
+        calcave = w_flow_calc_aveflow.CalculateAveflow(self.iface, self.midvatten.ms)
         calcave.from_date_time.setDateTime(
             date_utils.datestring_to_date("2000-01-01 00:00:00")
         )
@@ -163,8 +160,7 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
             """INSERT INTO w_flow (obsid, instrumentid, flowtype, date_time, reading, unit) VALUES ('2', 'inst2', 'Accvol', '2019-02-03 00:00', 5.0, 'm3')"""
         )
 
-        widget = QtWidgets.QWidget()
-        calcave = w_flow_calc_aveflow.CalculateAveflow(widget)
+        calcave = w_flow_calc_aveflow.CalculateAveflow(self.iface, self.midvatten.ms)
         calcave.from_date_time.setDateTime(
             date_utils.datestring_to_date("2000-01-01 00:00:00")
         )
@@ -216,8 +212,7 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
             """INSERT INTO w_flow (obsid, instrumentid, flowtype, date_time, reading, unit) VALUES ('2', 'inst2', 'Accvol', '2019-02-03 23:59', 5.0, 'm3')"""
         )
 
-        widget = QtWidgets.QWidget()
-        calcave = w_flow_calc_aveflow.CalculateAveflow(widget)
+        calcave = w_flow_calc_aveflow.CalculateAveflow(self.iface, self.midvatten.ms)
         calcave.from_date_time.setDateTime(
             date_utils.datestring_to_date("2000-01-01 00:00:00")
         )

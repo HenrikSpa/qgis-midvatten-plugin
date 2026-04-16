@@ -113,6 +113,7 @@ class SectionPlotIntegrationMixin:
         @mock.patch("qgis.utils.iface", autospec=True)
         def _run(mock_iface, mock_getselected, mock_findlayer):
             mock_iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
+            self.iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
             mock_findlayer.return_value.isEditable.return_value = False
             mock_getselected.return_value = ("P1", "P2")
             mock_iface.mapCanvas.return_value.layerCount.return_value = 0
@@ -157,6 +158,7 @@ class SectionPlotIntegrationMixin:
         @mock.patch("qgis.utils.iface", autospec=True)
         def _run(mock_iface, mock_getselected, mock_findlayer):
             mock_iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
+            self.iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
             mock_findlayer.return_value.isEditable.return_value = False
             mock_getselected.return_value = ("P1", "P2")
             mock_iface.mapCanvas.return_value.layerCount.return_value = 0
@@ -200,6 +202,7 @@ class SectionPlotIntegrationMixin:
         @mock.patch("qgis.utils.iface", autospec=True)
         def _run(mock_iface, mock_getselected, mock_findlayer):
             mock_iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
+            self.iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
             mock_findlayer.return_value.isEditable.return_value = False
             mock_getselected.return_value = ("P1", "P2")
             mock_iface.mapCanvas.return_value.layerCount.return_value = 0

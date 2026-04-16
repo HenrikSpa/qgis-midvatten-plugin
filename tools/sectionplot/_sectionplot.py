@@ -375,7 +375,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         self.fill_tem(self.line_feature)
         self.fill_images(self.line_feature)
         self.fill_dem_list(self.line_layer)
-        self.show()
+        super().show()
 
         # Get plot data
         self.obsids_x_position = self.prepare_line_and_obsid_positions(

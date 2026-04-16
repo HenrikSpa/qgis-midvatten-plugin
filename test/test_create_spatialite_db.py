@@ -31,36 +31,20 @@ from midvatten.tools.utils import db_utils
 @pytest.mark.spatialite
 class TestCreateMemoryDb(utils_for_tests.MidvattenTestSpatialiteNotCreated):
     @mock.patch("qgis.utils.iface")
-    @mock.patch("midvatten.tools.create_db.common_utils.NotFoundQuestion")
-    @mock.patch("midvatten.tools.utils.common_utils.Askuser")
-    @mock.patch("midvatten.tools.create_db.qgis.PyQt.QtWidgets.QInputDialog.getInt")
-    @mock.patch(
-        "midvatten.tools.create_db.qgis.PyQt.QtWidgets.QFileDialog.getSaveFileName"
-    )
+    @mock.patch("midvatten.midvatten_plugin.NewSpatialiteDbDialog")
     def test_memory_db(
         self,
-        mock_savefilename,
-        mock_crs_question,
-        mock_answer_yes,
-        mock_not_found,
+        mock_dialog_cls,
         mock_iface,
     ):
-        def side_effect(*args, **kwargs):
-            mock_result = mock.MagicMock()
-            if kwargs.get("combobox_label", None) == "Locales":
-                mock_result.answer = "ok"
-                mock_result.value = "sv_SE"
-            elif kwargs.get("combobox_label", None) == "Timezone":
-                mock_result.answer = "ok"
-                mock_result.value = ""
-            return mock_result
-
-        mock_not_found.side_effect = side_effect
-
-        mock_answer_yes.return_value.result = 1
-        mock_crs_question.return_value.__getitem__.return_value = 3006
-        # QFileDialog.getSaveFileName returns (filename, selected_filter)
-        mock_savefilename.return_value = (":memory:", "")
+        mock_dlg = mock.MagicMock()
+        mock_dialog_cls.return_value = mock_dlg
+        mock_dlg.exec.return_value = 1  # QDialog.Accepted
+        mock_dlg.locale = "sv_SE"
+        mock_dlg.epsg_code = 3006
+        mock_dlg.w_levels_logger_timezone = ""
+        mock_dlg.w_levels_timezone = ""
+        mock_dlg.dbpath = ":memory:"
         self.midvatten.new_db()
 
 
@@ -68,36 +52,21 @@ class TestCreateMemoryDb(utils_for_tests.MidvattenTestSpatialiteNotCreated):
 class TestCreateDb(utils_for_tests.MidvattenTestSpatialiteNotCreated):
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface")
-    @mock.patch("midvatten.tools.create_db.common_utils.NotFoundQuestion")
-    @mock.patch("midvatten.tools.utils.common_utils.Askuser")
-    @mock.patch("midvatten.tools.create_db.qgis.PyQt.QtWidgets.QInputDialog.getInt")
-    @mock.patch(
-        "midvatten.tools.create_db.qgis.PyQt.QtWidgets.QFileDialog.getSaveFileName"
-    )
+    @mock.patch("midvatten.midvatten_plugin.NewSpatialiteDbDialog")
     def test_create_db_locale_sv(
         self,
-        mock_savefilename,
-        mock_crs_question,
-        mock_answer_yes,
-        mock_not_found,
+        mock_dialog_cls,
         mock_iface,
         mock_messagebar,
     ):
-        def side_effect(*args, **kwargs):
-            mock_result = mock.MagicMock()
-            if kwargs.get("combobox_label", None) == "Locales":
-                mock_result.answer = "ok"
-                mock_result.value = "sv_SE"
-            elif kwargs.get("combobox_label", None) == "Timezone":
-                mock_result.answer = "ok"
-                mock_result.value = ""
-            return mock_result
-
-        mock_not_found.side_effect = side_effect
-
-        mock_answer_yes.return_value.result = 1
-        mock_crs_question.return_value.__getitem__.return_value = 3006
-        mock_savefilename.return_value = (self.TEMP_DBPATH, "Spatialite (*.sqlite)")
+        mock_dlg = mock.MagicMock()
+        mock_dialog_cls.return_value = mock_dlg
+        mock_dlg.exec.return_value = 1  # QDialog.Accepted
+        mock_dlg.locale = "sv_SE"
+        mock_dlg.epsg_code = 3006
+        mock_dlg.w_levels_logger_timezone = ""
+        mock_dlg.w_levels_timezone = ""
+        mock_dlg.dbpath = self.TEMP_DBPATH
 
         self.midvatten.new_db()
         assert db_utils.check_connection_ok()
@@ -110,35 +79,20 @@ class TestCreateDb(utils_for_tests.MidvattenTestSpatialiteNotCreated):
         assert current_locale == "sv_SE"
 
     @mock.patch("qgis.utils.iface")
-    @mock.patch("midvatten.tools.create_db.common_utils.NotFoundQuestion")
-    @mock.patch("midvatten.tools.utils.common_utils.Askuser")
-    @mock.patch("midvatten.tools.create_db.qgis.PyQt.QtWidgets.QInputDialog.getInt")
-    @mock.patch(
-        "midvatten.tools.create_db.qgis.PyQt.QtWidgets.QFileDialog.getSaveFileName"
-    )
+    @mock.patch("midvatten.midvatten_plugin.NewSpatialiteDbDialog")
     def test_create_db_locale_en(
         self,
-        mock_savefilename,
-        mock_crs_question,
-        mock_answer_yes,
-        mock_not_found,
+        mock_dialog_cls,
         mock_iface,
     ):
-        def side_effect(*args, **kwargs):
-            mock_result = mock.MagicMock()
-            if kwargs.get("combobox_label", None) == "Locales":
-                mock_result.answer = "ok"
-                mock_result.value = "en_US"
-            elif kwargs.get("combobox_label", None) == "Timezone":
-                mock_result.answer = "ok"
-                mock_result.value = ""
-            return mock_result
-
-        mock_not_found.side_effect = side_effect
-
-        mock_answer_yes.return_value.result = 1
-        mock_crs_question.return_value.__getitem__.return_value = 3006
-        mock_savefilename.return_value = (self.TEMP_DBPATH, "Spatialite (*.sqlite)")
+        mock_dlg = mock.MagicMock()
+        mock_dialog_cls.return_value = mock_dlg
+        mock_dlg.exec.return_value = 1  # QDialog.Accepted
+        mock_dlg.locale = "en_US"
+        mock_dlg.epsg_code = 3006
+        mock_dlg.w_levels_logger_timezone = ""
+        mock_dlg.w_levels_timezone = ""
+        mock_dlg.dbpath = self.TEMP_DBPATH
         self.midvatten.new_db()
         assert db_utils.check_connection_ok()
         test_string = utils_for_tests.create_test_string(
@@ -151,40 +105,24 @@ class TestCreateDb(utils_for_tests.MidvattenTestSpatialiteNotCreated):
         assert current_locale == "en_US"
 
     @mock.patch("qgis.utils.iface")
-    @mock.patch("midvatten.tools.create_db.common_utils.NotFoundQuestion")
-    @mock.patch("midvatten.tools.utils.common_utils.Askuser")
-    @mock.patch("midvatten.tools.create_db.qgis.PyQt.QtWidgets.QInputDialog.getInt")
-    @mock.patch(
-        "midvatten.tools.create_db.qgis.PyQt.QtWidgets.QFileDialog.getSaveFileName"
-    )
+    @mock.patch("midvatten.midvatten_plugin.NewSpatialiteDbDialog")
     def test_create_db_setup_string(
         self,
-        mock_savefilename,
-        mock_crs_question,
-        mock_answer_yes,
-        mock_not_found,
+        mock_dialog_cls,
         mock_iface,
     ):
         """
         This test fails every time anything other than comments are changed in create_db
         The purpose is to be sure that every change is meant to be.
         """
-
-        def side_effect(*args, **kwargs):
-            mock_result = mock.MagicMock()
-            if kwargs.get("combobox_label", None) == "Locales":
-                mock_result.answer = "ok"
-                mock_result.value = "sv_SE"
-            elif kwargs.get("combobox_label", None) == "Timezone":
-                mock_result.answer = "ok"
-                mock_result.value = ""
-            return mock_result
-
-        mock_not_found.side_effect = side_effect
-
-        mock_answer_yes.return_value.result = 1
-        mock_crs_question.return_value.__getitem__.return_value = 3006
-        mock_savefilename.return_value = (self.TEMP_DBPATH, "Spatialite (*.sqlite)")
+        mock_dlg = mock.MagicMock()
+        mock_dialog_cls.return_value = mock_dlg
+        mock_dlg.exec.return_value = 1  # QDialog.Accepted
+        mock_dlg.locale = "sv_SE"
+        mock_dlg.epsg_code = 3006
+        mock_dlg.w_levels_logger_timezone = ""
+        mock_dlg.w_levels_timezone = ""
+        mock_dlg.dbpath = self.TEMP_DBPATH
         self.midvatten.new_db()
         # reference_string_no_view_obs_points = '[("about_db", ), [(0, "tablename", "text", 0, None, 0, ), (1, "columnname", "text", 0, None, 0, ), (2, "data_type", "text", 0, None, 0, ), (3, "not_null", "text", 0, None, 0, ), (4, "default_value", "text", 0, None, 0, ), (5, "primary_key", "text", 0, None, 0, ), (6, "foreign_key", "text", 0, None, 0, ), (7, "description", "text", 0, None, 0, ), (8, "upd_date", "text", 0, None, 0, ), (9, "upd_sign", "text", 0, None, 0, )], ("comments", ), [(0, "obsid", "text", 1, None, 1, ), (1, "date_time", "text", 1, None, 2, ), (2, "comment", "text", 1, None, 0, ), (3, "staff", "text", 1, None, 0, )], ("zz_interlab4_obsid_assignment", ), [(0, "specifik_provplats", "text", 1, None, 1, ), (1, "provplatsnamn", "text", 1, None, 2, ), (2, "obsid", "text", 1, None, 0, )], ("meteo", ), [(0, "obsid", "text", 1, None, 1, ), (1, "instrumentid", "text", 1, None, 2, ), (2, "parameter", "text", 1, None, 3, ), (3, "date_time", "text", 1, None, 4, ), (4, "reading_num", "double", 0, None, 0, ), (5, "reading_txt", "text", 0, None, 0, ), (6, "unit", "text", 0, None, 0, ), (7, "comment", "text", 0, None, 0, )], ("obs_lines", ), [(0, "obsid", "text", 1, None, 1, ), (1, "name", "text", 0, None, 0, ), (2, "place", "text", 0, None, 0, ), (3, "type", "text", 0, None, 0, ), (4, "source", "text", 0, None, 0, ), (5, "geometry", "LINESTRING", 0, None, 0, )], ("obs_p_w_lvl", ), [(0, "rowid", "INTEGER", 0, None, 0, ), (1, "obsid", "text", 0, None, 0, ), (2, "geometry", "POINT", 0, None, 0, )], ("obs_p_w_qual_field", ), [(0, "rowid", "INTEGER", 0, None, 0, ), (1, "obsid", "text", 0, None, 0, ), (2, "geometry", "POINT", 0, None, 0, )], ("obs_p_w_qual_lab", ), [(0, "rowid", "INTEGER", 0, None, 0, ), (1, "obsid", "text", 0, None, 0, ), (2, "geometry", "POINT", 0, None, 0, )], ("obs_p_w_strat", ), [(0, "rowid", "INTEGER", 0, None, 0, ), (1, "obsid", "text", 0, None, 0, ), (2, "h_toc", "double", 0, None, 0, ), (3, "h_gs", "double", 0, None, 0, ), (4, "geometry", "POINT", 0, None, 0, )], ("obs_points", ), [(0, "obsid", "text", 1, None, 1, ), (1, "name", "text", 0, None, 0, ), (2, "place", "text", 0, None, 0, ), (3, "type", "text", 0, None, 0, ), (4, "length", "double", 0, None, 0, ), (5, "drillstop", "text", 0, None, 0, ), (6, "diam", "double", 0, None, 0, ), (7, "material", "text", 0, None, 0, ), (8, "screen", "text", 0, None, 0, ), (9, "capacity", "text", 0, None, 0, ), (10, "drilldate", "text", 0, None, 0, ), (11, "wmeas_yn", "INTEGER", 0, None, 0, ), (12, "wlogg_yn", "INTEGER", 0, None, 0, ), (13, "east", "double", 0, None, 0, ), (14, "north", "double", 0, None, 0, ), (15, "ne_accur", "double", 0, None, 0, ), (16, "ne_source", "text", 0, None, 0, ), (17, "h_toc", "double", 0, None, 0, ), (18, "h_tocags", "double", 0, None, 0, ), (19, "h_gs", "double", 0, None, 0, ), (20, "h_accur", "double", 0, None, 0, ), (21, "h_syst", "text", 0, None, 0, ), (22, "h_source", "text", 0, None, 0, ), (23, "source", "text", 0, None, 0, ), (24, "com_onerow", "text", 0, None, 0, ), (25, "com_html", "text", 0, None, 0, ), (26, "geometry", "POINT", 0, None, 0, )], ("seismic_data", ), [(0, "obsid", "text", 1, None, 1, ), (1, "length", "double", 1, None, 2, ), (2, "ground", "double", 0, None, 0, ), (3, "bedrock", "double", 0, None, 0, ), (4, "gw_table", "double", 0, None, 0, ), (5, "comment", "text", 0, None, 0, )], ("stratigraphy", ), [(0, "obsid", "text", 1, None, 1, ), (1, "stratid", "INTEGER", 1, None, 2, ), (2, "depthtop", "double", 0, None, 0, ), (3, "depthbot", "double", 0, None, 0, ), (4, "geology", "text", 0, None, 0, ), (5, "geoshort", "text", 0, None, 0, ), (6, "capacity", "text", 0, None, 0, ), (7, "development", "text", 0, None, 0, ), (8, "comment", "text", 0, None, 0, )], ("vlf_data", ), [(0, "obsid", "text", 1, None, 1, ), (1, "length", "double", 1, None, 2, ), (2, "real_comp", "double", 0, None, 0, ), (3, "imag_comp", "double", 0, None, 0, ), (4, "comment", "text", 0, None, 0, )], ("w_flow", ), [(0, "obsid", "text", 1, None, 1, ), (1, "instrumentid", "text", 1, None, 2, ), (2, "flowtype", "text", 1, None, 3, ), (3, "date_time", "text", 1, None, 4, ), (4, "reading", "double", 0, None, 0, ), (5, "unit", "text", 0, None, 0, ), (6, "comment", "text", 0, None, 0, )], ("w_flow_accvol", ), [(0, "obsid", "text", 0, None, 0, ), (1, "instrumentid", "text", 0, None, 0, ), (2, "date_time", "text", 0, None, 0, ), (3, "reading", "double", 0, None, 0, ), (4, "unit", "text", 0, None, 0, ), (5, "comment", "text", 0, None, 0, )], ("w_flow_aveflow", ), [(0, "obsid", "text", 0, None, 0, ), (1, "instrumentid", "text", 0, None, 0, ), (2, "date_time", "text", 0, None, 0, ), (3, "reading", "double", 0, None, 0, ), (4, "unit", "text", 0, None, 0, ), (5, "comment", "text", 0, None, 0, )], ("w_flow_momflow", ), [(0, "obsid", "text", 0, None, 0, ), (1, "instrumentid", "text", 0, None, 0, ), (2, "date_time", "text", 0, None, 0, ), (3, "reading", "double", 0, None, 0, ), (4, "unit", "text", 0, None, 0, ), (5, "comment", "text", 0, None, 0, )], ("w_levels", ), [(0, "obsid", "text", 1, None, 1, ), (1, "date_time", "text", 1, None, 2, ), (2, "meas", "double", 0, None, 0, ), (3, "h_toc", "double", 0, None, 0, ), (4, "level_masl", "double", 0, None, 0, ), (5, "comment", "text", 0, None, 0, )], ("w_levels_geom", ), [(0, "rowid", "INTEGER", 0, None, 0, ), (1, "obsid", "text", 0, None, 0, ), (2, "date_time", "text", 0, None, 0, ), (3, "meas", "double", 0, None, 0, ), (4, "h_toc", "double", 0, None, 0, ), (5, "level_masl", "double", 0, None, 0, ), (6, "geometry", "POINT", 0, None, 0, )], ("w_levels_logger", ), [(0, "obsid", "text", 1, None, 1, ), (1, "date_time", "text", 1, None, 2, ), (2, "head_cm", "double", 0, None, 0, ), (3, "temp_degc", "double", 0, None, 0, ), (4, "cond_mscm", "double", 0, None, 0, ), (5, "level_masl", "double", 0, None, 0, ), (6, "comment", "text", 0, None, 0, )], ("w_lvls_last_geom", ), [(0, "rowid", "INTEGER", 0, None, 0, ), (1, "obsid", "text", 0, None, 0, ), (2, "date_time", "", 0, None, 0, ), (3, "meas", "double", 0, None, 0, ), (4, "level_masl", "double", 0, None, 0, ), (5, "geometry", "POINT", 0, None, 0, )], ("w_qual_field", ), [(0, "obsid", "text", 1, None, 1, ), (1, "staff", "text", 0, None, 0, ), (2, "date_time", "text", 1, None, 2, ), (3, "instrument", "text", 0, None, 0, ), (4, "parameter", "text", 1, None, 3, ), (5, "reading_num", "double", 0, None, 0, ), (6, "reading_txt", "text", 0, None, 0, ), (7, "unit", "text", 0, None, 4, ), (8, "depth", "double", 0, None, 0, ), (9, "comment", "text", 0, None, 0, )], ("w_qual_field_geom", ), [(0, "rowid", "INTEGER", 0, None, 0, ), (1, "obsid", "text", 0, None, 0, ), (2, "staff", "text", 0, None, 0, ), (3, "date_time", "text", 0, None, 0, ), (4, "instrument", "text", 0, None, 0, ), (5, "parameter", "text", 0, None, 0, ), (6, "reading_num", "double", 0, None, 0, ), (7, "reading_txt", "text", 0, None, 0, ), (8, "unit", "text", 0, None, 0, ), (9, "comment", "text", 0, None, 0, ), (10, "geometry", "POINT", 0, None, 0, )], ("w_qual_lab", ), [(0, "obsid", "text", 1, None, 0, ), (1, "depth", "double", 0, None, 0, ), (2, "report", "text", 1, None, 1, ), (3, "project", "text", 0, None, 0, ), (4, "staff", "text", 0, None, 0, ), (5, "date_time", "text", 0, None, 0, ), (6, "anameth", "text", 0, None, 0, ), (7, "parameter", "text", 1, None, 2, ), (8, "reading_num", "double", 0, None, 0, ), (9, "reading_txt", "text", 0, None, 0, ), (10, "unit", "text", 0, None, 0, ), (11, "comment", "text", 0, None, 0, )], ("w_qual_lab_geom", ), [(0, "rowid", "INTEGER", 0, None, 0, ), (1, "obsid", "text", 0, None, 0, ), (2, "depth", "double", 0, None, 0, ), (3, "report", "text", 0, None, 0, ), (4, "staff", "text", 0, None, 0, ), (5, "date_time", "text", 0, None, 0, ), (6, "anameth", "text", 0, None, 0, ), (7, "parameter", "text", 0, None, 0, ), (8, "reading_txt", "text", 0, None, 0, ), (9, "reading_num", "double", 0, None, 0, ), (10, "unit", "text", 0, None, 0, ), (11, "geometry", "POINT", 0, None, 0, )], ("zz_capacity", ), [(0, "capacity", "text", 1, None, 1, ), (1, "explanation", "text", 1, None, 0, )], ("zz_capacity_plots", ), [(0, "capacity", "text", 1, None, 1, ), (1, "color_qt", "text", 1, None, 0, )], ("zz_flowtype", ), [(0, "type", "text", 1, None, 1, ), (1, "explanation", "text", 0, None, 0, )], ("zz_meteoparam", ), [(0, "parameter", "text", 1, None, 1, ), (1, "explanation", "text", 0, None, 0, )], ("zz_staff", ), [(0, "staff", "text", 1, None, 1, ), (1, "name", "text", 0, None, 0, )], ("zz_strat", ), [(0, "geoshort", "text", 1, None, 1, ), (1, "strata", "text", 1, None, 0, )], ("zz_stratigraphy_plots", ), [(0, "strata", "text", 1, None, 1, ), (1, "color_mplot", "text", 1, None, 0, ), (2, "hatch_mplot", "text", 1, None, 0, ), (3, "color_qt", "text", 1, None, 0, ), (4, "brush_qt", "text", 1, None, 0, )]]'
         reference_string_with_view_obs_points_obs_lines = '[("about_db", ), [(0, "id", "INTEGER", 0, None, 1, ), (1, "tablename", "TEXT", 0, None, 0, ), (2, "columnname", "TEXT", 0, None, 0, ), (3, "data_type", "TEXT", 0, None, 0, ), (4, "not_null", "TEXT", 0, None, 0, ), (5, "default_value", "TEXT", 0, None, 0, ), (6, "primary_key", "TEXT", 0, None, 0, ), (7, "foreign_key", "TEXT", 0, None, 0, ), (8, "description", "TEXT", 0, None, 0, ), (9, "upd_date", "TEXT", 0, None, 0, ), (10, "upd_sign", "TEXT", 0, None, 0, )], ("comments", ), [(0, "obsid", "TEXT", 1, None, 1, ), (1, "date_time", "TEXT", 1, None, 2, ), (2, "comment", "TEXT", 1, None, 0, ), (3, "staff", "TEXT", 1, None, 0, ), (4, "type", "TEXT", 0, None, 0, )], ("meteo", ), [(0, "obsid", "TEXT", 1, None, 1, ), (1, "instrumentid", "TEXT", 1, None, 2, ), (2, "parameter", "TEXT", 1, None, 3, ), (3, "date_time", "TEXT", 1, None, 4, ), (4, "reading_num", "double", 0, None, 0, ), (5, "reading_txt", "TEXT", 0, None, 0, ), (6, "unit", "TEXT", 0, None, 0, ), (7, "comment", "TEXT", 0, None, 0, )], ("obs_lines", ), [(0, "obsid", "TEXT", 1, None, 1, ), (1, "name", "TEXT", 0, None, 0, ), (2, "place", "TEXT", 0, None, 0, ), (3, "type", "TEXT", 0, None, 0, ), (4, "source", "TEXT", 0, None, 0, ), (5, "geometry", "LINESTRING", 0, None, 0, )], ("obs_p_w_lvl", ), [(0, "rowid", "INTEGER", 0, None, 0, ), (1, "obsid", "TEXT", 0, None, 0, ), (2, "geometry", "POINT", 0, None, 0, )], ("obs_p_w_lvl_logger", ), [(0, "rowid", "INTEGER", 0, None, 0, ), (1, "obsid", "TEXT", 0, None, 0, ), (2, "geometry", "POINT", 0, None, 0, )], ("obs_p_w_qual_field", ), [(0, "rowid", "INTEGER", 0, None, 0, ), (1, "obsid", "TEXT", 0, None, 0, ), (2, "geometry", "POINT", 0, None, 0, )], ("obs_p_w_qual_lab", ), [(0, "rowid", "INTEGER", 0, None, 0, ), (1, "obsid", "TEXT", 0, None, 0, ), (2, "geometry", "POINT", 0, None, 0, )], ("obs_p_w_strat", ), [(0, "rowid", "INTEGER", 0, None, 0, ), (1, "obsid", "TEXT", 0, None, 0, ), (2, "h_toc", "double", 0, None, 0, ), (3, "h_gs", "double", 0, None, 0, ), (4, "geometry", "POINT", 0, None, 0, )], ("obs_points", ), [(0, "obsid", "TEXT", 1, None, 1, ), (1, "name", "TEXT", 0, None, 0, ), (2, "place", "TEXT", 0, None, 0, ), (3, "type", "TEXT", 0, None, 0, ), (4, "length", "double", 0, None, 0, ), (5, "drillstop", "TEXT", 0, None, 0, ), (6, "diam", "double", 0, None, 0, ), (7, "material", "TEXT", 0, None, 0, ), (8, "screen", "TEXT", 0, None, 0, ), (9, "capacity", "TEXT", 0, None, 0, ), (10, "drilldate", "TEXT", 0, None, 0, ), (11, "wmeas_yn", "INTEGER", 0, None, 0, ), (12, "wlogg_yn", "INTEGER", 0, None, 0, ), (13, "east", "double", 0, None, 0, ), (14, "north", "double", 0, None, 0, ), (15, "ne_accur", "double", 0, None, 0, ), (16, "ne_source", "TEXT", 0, None, 0, ), (17, "h_toc", "double", 0, None, 0, ), (18, "h_tocags", "double", 0, None, 0, ), (19, "h_gs", "double", 0, None, 0, ), (20, "h_accur", "double", 0, None, 0, ), (21, "h_syst", "TEXT", 0, None, 0, ), (22, "h_source", "TEXT", 0, None, 0, ), (23, "source", "TEXT", 0, None, 0, ), (24, "com_onerow", "TEXT", 0, None, 0, ), (25, "com_html", "TEXT", 0, None, 0, ), (26, "geometry", "POINT", 0, None, 0, )], ("profile_images", ), [(0, "id", "INTEGER", 0, None, 1, ), (1, "obsid", "TEXT", 1, None, 0, ), (2, "alias", "TEXT", 1, None, 0, ), (3, "path", "TEXT", 1, None, 0, ), (4, "clip_left_right_top_bottom", "TEXT", 0, None, 0, ), (5, "extent_left_right_top_bottom", "TEXT", 1, None, 0, ), (6, "source", "TEXT", 0, None, 0, ), (7, "comment", "TEXT", 0, None, 0, )], ("s_qual_lab", ), [(0, "obsid", "TEXT", 1, None, 0, ), (1, "depth", "double", 0, None, 0, ), (2, "report", "TEXT", 1, None, 1, ), (3, "project", "TEXT", 0, None, 0, ), (4, "staff", "TEXT", 0, None, 0, ), (5, "date_time", "TEXT", 0, None, 0, ), (6, "anameth", "TEXT", 0, None, 0, ), (7, "parameter", "TEXT", 1, None, 2, ), (8, "reading_num", "double", 0, None, 0, ), (9, "reading_txt", "TEXT", 0, None, 0, ), (10, "unit", "TEXT", 0, None, 0, ), (11, "comment", "TEXT", 0, None, 0, )], ("seismic_data", ), [(0, "obsid", "TEXT", 1, None, 1, ), (1, "length", "double", 1, None, 2, ), (2, "ground", "double", 0, None, 0, ), (3, "bedrock", "double", 0, None, 0, ), (4, "gw_table", "double", 0, None, 0, ), (5, "comment", "TEXT", 0, None, 0, )], ("spatial_history", ), [(0, "id", "INTEGER", 0, None, 1, ), (1, "obsid", "TEXT", 1, None, 0, ), (2, "valid_from_date", "TEXT", 1, None, 0, ), (3, "east", "double", 0, None, 0, ), (4, "north", "double", 0, None, 0, ), (5, "ne_accur", "double", 0, None, 0, ), (6, "ne_source", "TEXT", 0, None, 0, ), (7, "h_toc", "double", 0, None, 0, ), (8, "h_tocags", "double", 0, None, 0, ), (9, "h_gs", "double", 0, None, 0, ), (10, "h_accur", "double", 0, None, 0, ), (11, "h_syst", "TEXT", 0, None, 0, ), (12, "h_source", "TEXT", 0, None, 0, ), (13, "valid", "BOOLEAN", 0, None, 0, )], ("stratigraphy", ), [(0, "obsid", "TEXT", 1, None, 1, ), (1, "stratid", "INTEGER", 1, None, 2, ), (2, "depthtop", "double", 0, None, 0, ), (3, "depthbot", "double", 0, None, 0, ), (4, "geology", "TEXT", 0, None, 0, ), (5, "geoshort", "TEXT", 0, None, 0, ), (6, "capacity", "TEXT", 0, None, 0, ), (7, "development", "TEXT", 0, None, 0, ), (8, "comment", "TEXT", 0, None, 0, )], ("tem_data", ), [(0, "id", "INTEGER", 0, None, 1, ), (1, "obsid", "TEXT", 1, None, 0, ), (2, "inversion_name", "TEXT", 1, None, 0, ), (3, "length", "double", 1, None, 0, ), (4, "elevation", "double", 0, None, 0, ), (5, "data_fit", "double", 0, None, 0, ), (6, "doi", "double", 0, None, 0, ), (7, "thickness", "TEXT", 0, None, 0, ), (8, "resistivity", "TEXT", 0, None, 0, ), (9, "comment", "TEXT", 0, None, 0, )], ("view_obs_lines", ), [(0, "rowid", "INTEGER", 0, None, 0, ), (1, "obsid", "TEXT", 0, None, 0, ), (2, "name", "TEXT", 0, None, 0, ), (3, "place", "TEXT", 0, None, 0, ), (4, "type", "TEXT", 0, None, 0, ), (5, "source", "TEXT", 0, None, 0, ), (6, "geometry", "LINESTRING", 0, None, 0, )], ("view_obs_points", ), [(0, "rowid", "INTEGER", 0, None, 0, ), (1, "obsid", "TEXT", 0, None, 0, ), (2, "name", "TEXT", 0, None, 0, ), (3, "place", "TEXT", 0, None, 0, ), (4, "type", "TEXT", 0, None, 0, ), (5, "length", "double", 0, None, 0, ), (6, "drillstop", "TEXT", 0, None, 0, ), (7, "diam", "double", 0, None, 0, ), (8, "material", "TEXT", 0, None, 0, ), (9, "screen", "TEXT", 0, None, 0, ), (10, "capacity", "TEXT", 0, None, 0, ), (11, "drilldate", "TEXT", 0, None, 0, ), (12, "wmeas_yn", "INTEGER", 0, None, 0, ), (13, "wlogg_yn", "INTEGER", 0, None, 0, ), (14, "east", "double", 0, None, 0, ), (15, "north", "double", 0, None, 0, ), (16, "ne_accur", "double", 0, None, 0, ), (17, "ne_source", "TEXT", 0, None, 0, ), (18, "h_toc", "double", 0, None, 0, ), (19, "h_tocags", "double", 0, None, 0, ), (20, "h_gs", "double", 0, None, 0, ), (21, "h_accur", "double", 0, None, 0, ), (22, "h_syst", "TEXT", 0, None, 0, ), (23, "h_source", "TEXT", 0, None, 0, ), (24, "source", "TEXT", 0, None, 0, ), (25, "com_onerow", "TEXT", 0, None, 0, ), (26, "com_html", "TEXT", 0, None, 0, ), (27, "geometry", "POINT", 0, None, 0, )], ("vlf_data", ), [(0, "obsid", "TEXT", 1, None, 1, ), (1, "length", "double", 1, None, 2, ), (2, "real_comp", "double", 0, None, 0, ), (3, "imag_comp", "double", 0, None, 0, ), (4, "comment", "TEXT", 0, None, 0, )], ("w_flow", ), [(0, "obsid", "TEXT", 1, None, 1, ), (1, "instrumentid", "TEXT", 1, None, 2, ), (2, "flowtype", "TEXT", 1, None, 3, ), (3, "date_time", "TEXT", 1, None, 4, ), (4, "reading", "double", 0, None, 0, ), (5, "unit", "TEXT", 0, None, 0, ), (6, "comment", "TEXT", 0, None, 0, )], ("w_flow_accvol", ), [(0, "obsid", "TEXT", 0, None, 0, ), (1, "instrumentid", "TEXT", 0, None, 0, ), (2, "date_time", "TEXT", 0, None, 0, ), (3, "reading", "double", 0, None, 0, ), (4, "unit", "TEXT", 0, None, 0, ), (5, "comment", "TEXT", 0, None, 0, )], ("w_flow_aveflow", ), [(0, "obsid", "TEXT", 0, None, 0, ), (1, "instrumentid", "TEXT", 0, None, 0, ), (2, "date_time", "TEXT", 0, None, 0, ), (3, "reading", "double", 0, None, 0, ), (4, "unit", "TEXT", 0, None, 0, ), (5, "comment", "TEXT", 0, None, 0, )], ("w_flow_momflow", ), [(0, "obsid", "TEXT", 0, None, 0, ), (1, "instrumentid", "TEXT", 0, None, 0, ), (2, "date_time", "TEXT", 0, None, 0, ), (3, "reading", "double", 0, None, 0, ), (4, "unit", "TEXT", 0, None, 0, ), (5, "comment", "TEXT", 0, None, 0, )], ("w_levels", ), [(0, "obsid", "TEXT", 1, None, 1, ), (1, "date_time", "TEXT", 1, None, 2, ), (2, "meas", "double", 0, None, 0, ), (3, "h_toc", "double", 0, None, 0, ), (4, "level_masl", "double", 0, None, 0, ), (5, "comment", "TEXT", 0, None, 0, )], ("w_levels_geom", ), [(0, "rowid", "INTEGER", 0, None, 0, ), (1, "obsid", "TEXT", 0, None, 0, ), (2, "date_time", "TEXT", 0, None, 0, ), (3, "meas", "double", 0, None, 0, ), (4, "h_toc", "double", 0, None, 0, ), (5, "level_masl", "double", 0, None, 0, ), (6, "geometry", "POINT", 0, None, 0, )], ("w_levels_logger", ), [(0, "obsid", "TEXT", 1, None, 1, ), (1, "date_time", "TEXT", 1, None, 2, ), (2, "head_cm", "double", 0, None, 0, ), (3, "temp_degc", "double", 0, None, 0, ), (4, "cond_mscm", "double", 0, None, 0, ), (5, "level_masl", "double", 0, None, 0, ), (6, "comment", "TEXT", 0, None, 0, ), (7, "source", "TEXT", 0, None, 0, )], ("w_lvls_last_geom", ), [(0, "rowid", "INTEGER", 0, None, 0, ), (1, "obsid", "TEXT", 0, None, 0, ), (2, "date_time", "", 0, None, 0, ), (3, "meas", "double", 0, None, 0, ), (4, "level_masl", "double", 0, None, 0, ), (5, "h_tocags", "double", 0, None, 0, ), (6, "geometry", "POINT", 0, None, 0, )], ("w_qual_field", ), [(0, "obsid", "TEXT", 1, None, 1, ), (1, "staff", "TEXT", 0, None, 0, ), (2, "date_time", "TEXT", 1, None, 2, ), (3, "instrument", "TEXT", 0, None, 0, ), (4, "parameter", "TEXT", 1, None, 3, ), (5, "reading_num", "double", 0, None, 0, ), (6, "reading_txt", "TEXT", 0, None, 0, ), (7, "unit", "TEXT", 0, None, 4, ), (8, "depth", "double", 0, None, 0, ), (9, "comment", "TEXT", 0, None, 0, )], ("w_qual_field_geom", ), [(0, "rowid", "INTEGER", 0, None, 0, ), (1, "obsid", "TEXT", 0, None, 0, ), (2, "staff", "TEXT", 0, None, 0, ), (3, "date_time", "TEXT", 0, None, 0, ), (4, "instrument", "TEXT", 0, None, 0, ), (5, "parameter", "TEXT", 0, None, 0, ), (6, "reading_num", "double", 0, None, 0, ), (7, "reading_txt", "TEXT", 0, None, 0, ), (8, "unit", "TEXT", 0, None, 0, ), (9, "comment", "TEXT", 0, None, 0, ), (10, "geometry", "POINT", 0, None, 0, )], ("w_qual_lab", ), [(0, "obsid", "TEXT", 1, None, 0, ), (1, "depth", "double", 0, None, 0, ), (2, "report", "TEXT", 1, None, 1, ), (3, "project", "TEXT", 0, None, 0, ), (4, "staff", "TEXT", 0, None, 0, ), (5, "date_time", "TEXT", 0, None, 0, ), (6, "anameth", "TEXT", 0, None, 0, ), (7, "parameter", "TEXT", 1, None, 2, ), (8, "reading_num", "double", 0, None, 0, ), (9, "reading_txt", "TEXT", 0, None, 0, ), (10, "unit", "TEXT", 0, None, 0, ), (11, "comment", "TEXT", 0, None, 0, )], ("w_qual_lab_geom", ), [(0, "rowid", "INTEGER", 0, None, 0, ), (1, "obsid", "TEXT", 0, None, 0, ), (2, "depth", "double", 0, None, 0, ), (3, "report", "TEXT", 0, None, 0, ), (4, "staff", "TEXT", 0, None, 0, ), (5, "date_time", "TEXT", 0, None, 0, ), (6, "anameth", "TEXT", 0, None, 0, ), (7, "parameter", "TEXT", 0, None, 0, ), (8, "reading_txt", "TEXT", 0, None, 0, ), (9, "reading_num", "double", 0, None, 0, ), (10, "unit", "TEXT", 0, None, 0, ), (11, "geometry", "POINT", 0, None, 0, )], ("w_qual_logger", ), [(0, "obsid", "TEXT", 1, None, 1, ), (1, "date_time", "TEXT", 1, None, 2, ), (2, "instrument", "TEXT", 0, None, 3, ), (3, "parameter", "TEXT", 1, None, 4, ), (4, "reading_num", "double", 0, None, 0, ), (5, "unit", "TEXT", 0, None, 5, ), (6, "comment", "TEXT", 0, None, 0, )], ("zz_capacity", ), [(0, "capacity", "TEXT", 1, None, 1, ), (1, "explanation", "TEXT", 1, None, 0, )], ("zz_capacity_plots", ), [(0, "capacity", "TEXT", 1, None, 1, ), (1, "color_qt", "TEXT", 1, None, 0, )], ("zz_flowtype", ), [(0, "type", "TEXT", 1, None, 1, ), (1, "explanation", "TEXT", 0, None, 0, )], ("zz_interlab4_obsid_assignment", ), [(0, "specifik_provplats", "TEXT", 1, None, 1, ), (1, "provplatsnamn", "TEXT", 1, None, 2, ), (2, "obsid", "TEXT", 1, None, 0, )], ("zz_meteoparam", ), [(0, "parameter", "TEXT", 1, None, 1, ), (1, "explanation", "TEXT", 0, None, 0, )], ("zz_staff", ), [(0, "staff", "TEXT", 1, None, 1, ), (1, "name", "TEXT", 0, None, 0, )], ("zz_strat", ), [(0, "geoshort", "TEXT", 1, None, 1, ), (1, "strata", "TEXT", 1, None, 0, )], ("zz_stratigraphy_plots", ), [(0, "strata", "TEXT", 1, None, 1, ), (1, "color_mplot", "TEXT", 1, None, 0, ), (2, "hatch_mplot", "TEXT", 1, None, 0, ), (3, "color_qt", "TEXT", 1, None, 0, ), (4, "brush_qt", "TEXT", 1, None, 0, )]]'
@@ -216,39 +154,23 @@ class TestCreateDb(utils_for_tests.MidvattenTestSpatialiteNotCreated):
         assert test_string == reference_string_with_view_obs_points_obs_lines
 
     @mock.patch("qgis.utils.iface")
-    @mock.patch("midvatten.tools.create_db.common_utils.NotFoundQuestion")
-    @mock.patch("midvatten.tools.utils.common_utils.Askuser")
-    @mock.patch("midvatten.tools.create_db.qgis.PyQt.QtWidgets.QInputDialog.getInt")
-    @mock.patch(
-        "midvatten.tools.create_db.qgis.PyQt.QtWidgets.QFileDialog.getSaveFileName"
-    )
+    @mock.patch("midvatten.midvatten_plugin.NewSpatialiteDbDialog")
     def test_about_db_creation(
         self,
-        mock_savefilename,
-        mock_crs_question,
-        mock_answer_yes,
-        mock_not_found,
+        mock_dialog_cls,
         mock_iface,
     ):
         """
         Check that about_db is written correctly
         """
-
-        def side_effect(*args, **kwargs):
-            mock_result = mock.MagicMock()
-            if kwargs.get("combobox_label", None) == "Locales":
-                mock_result.answer = "ok"
-                mock_result.value = "sv_SE"
-            elif kwargs.get("combobox_label", None) == "Timezone":
-                mock_result.answer = "ok"
-                mock_result.value = ""
-            return mock_result
-
-        mock_not_found.side_effect = side_effect
-
-        mock_answer_yes.return_value.result = 1
-        mock_crs_question.return_value.__getitem__.return_value = 3006
-        mock_savefilename.return_value = (self.TEMP_DBPATH, "Spatialite (*.sqlite)")
+        mock_dlg = mock.MagicMock()
+        mock_dialog_cls.return_value = mock_dlg
+        mock_dlg.exec.return_value = 1  # QDialog.Accepted
+        mock_dlg.locale = "sv_SE"
+        mock_dlg.epsg_code = 3006
+        mock_dlg.w_levels_logger_timezone = ""
+        mock_dlg.w_levels_timezone = ""
+        mock_dlg.dbpath = self.TEMP_DBPATH
         self.midvatten.new_db()
 
         # print(str(midvatten_utils.sql_load_fr_db('select * from about_db')))
@@ -280,40 +202,24 @@ class TestCreateDb(utils_for_tests.MidvattenTestSpatialiteNotCreated):
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface")
-    @mock.patch("midvatten.tools.create_db.common_utils.NotFoundQuestion")
-    @mock.patch("midvatten.tools.utils.common_utils.Askuser")
-    @mock.patch("midvatten.tools.create_db.qgis.PyQt.QtWidgets.QInputDialog.getInt")
-    @mock.patch(
-        "midvatten.tools.create_db.qgis.PyQt.QtWidgets.QFileDialog.getSaveFileName"
-    )
+    @mock.patch("midvatten.midvatten_plugin.NewSpatialiteDbDialog")
     def test_about_db_creation_version_string(
         self,
-        mock_savefilename,
-        mock_crs_question,
-        mock_answer_yes,
-        mock_not_found,
+        mock_dialog_cls,
         mock_iface,
         mock_messagebar,
     ):
         """
         Check that version string in about_db is written correctly
         """
-
-        def side_effect(*args, **kwargs):
-            mock_result = mock.MagicMock()
-            if kwargs.get("combobox_label", None) == "Locales":
-                mock_result.answer = "ok"
-                mock_result.value = "sv_SE"
-            elif kwargs.get("combobox_label", None) == "Timezone":
-                mock_result.answer = "ok"
-                mock_result.value = ""
-            return mock_result
-
-        mock_not_found.side_effect = side_effect
-
-        mock_answer_yes.return_value.result = 1
-        mock_crs_question.return_value.__getitem__.return_value = 3006
-        mock_savefilename.return_value = (self.TEMP_DBPATH, "Spatialite (*.sqlite)")
+        mock_dlg = mock.MagicMock()
+        mock_dialog_cls.return_value = mock_dlg
+        mock_dlg.exec.return_value = 1  # QDialog.Accepted
+        mock_dlg.locale = "sv_SE"
+        mock_dlg.epsg_code = 3006
+        mock_dlg.w_levels_logger_timezone = ""
+        mock_dlg.w_levels_timezone = ""
+        mock_dlg.dbpath = self.TEMP_DBPATH
         self.midvatten.new_db()
 
         result = db_utils.sql_load_fr_db(

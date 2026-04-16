@@ -111,9 +111,9 @@ class SectionPlotMixin:
         print(
             f"self.sectionplot.figure.plot_handles {str(self.sectionplot.figure.plot_handles)} get_legend_items_labels(self.sectionplot.figure.plot_handles)[1] {str(get_legend_items_labels(self.sectionplot.figure.plot_handles)[1])}"
         )
-        assert len(get_legend_items_labels(self.sectionplot.figure.plot_handles)[0]) == len(
-            get_legend_items_labels(self.sectionplot.figure.plot_handles)[1]
-        )
+        assert len(
+            get_legend_items_labels(self.sectionplot.figure.plot_handles)[0]
+        ) == len(get_legend_items_labels(self.sectionplot.figure.plot_handles)[1])
         assert len(self.sectionplot.figure.plot_handles) - 1 == len(
             get_legend_items_labels(self.sectionplot.figure.plot_handles)[0]
         )  # The bars should not be labeled, so there is one less label than plot.
@@ -532,7 +532,9 @@ class SectionPlotMixin:
 
         print(f"{mock_messagebar.mock_calls=}")
         print(str(self.sectionplot.figure.plot_handles))
-        assert len(get_legend_items_labels(self.sectionplot.figure.plot_handles)[0]) == 2
+        assert (
+            len(get_legend_items_labels(self.sectionplot.figure.plot_handles)[0]) == 2
+        )
         # assert False
 
     @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
@@ -588,11 +590,13 @@ class SectionPlotMixin:
 
         print(f"{mock_messagebar.mock_calls=}")
         print(str(self.sectionplot.figure.plot_handles))
-        assert len(get_legend_items_labels(self.sectionplot.figure.plot_handles)[0]) == len(
-            get_legend_items_labels(self.sectionplot.figure.plot_handles)[1]
-        )
+        assert len(
+            get_legend_items_labels(self.sectionplot.figure.plot_handles)[0]
+        ) == len(get_legend_items_labels(self.sectionplot.figure.plot_handles)[1])
         print(str(get_legend_items_labels(self.sectionplot.figure.plot_handles)[1]))
-        assert len(get_legend_items_labels(self.sectionplot.figure.plot_handles)[0]) == 4
+        assert (
+            len(get_legend_items_labels(self.sectionplot.figure.plot_handles)[0]) == 4
+        )
 
     @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
     def test_plot_section_p_label_lengths_with_geology_changed_label(
@@ -664,10 +668,12 @@ class SectionPlotMixin:
         # print(f"{mock_messagebar.mock_calls=}")
         # print(str(self.sectionplot.figure.plot_handles))
         labels = [p.get_label() for p in self.sectionplot.figure.plot_handles]
-        assert len(get_legend_items_labels(self.sectionplot.figure.plot_handles)[0]) == len(
-            get_legend_items_labels(self.sectionplot.figure.plot_handles)[1]
+        assert len(
+            get_legend_items_labels(self.sectionplot.figure.plot_handles)[0]
+        ) == len(get_legend_items_labels(self.sectionplot.figure.plot_handles)[1])
+        assert (
+            len(get_legend_items_labels(self.sectionplot.figure.plot_handles)[1]) == 4
         )
-        assert len(get_legend_items_labels(self.sectionplot.figure.plot_handles)[1]) == 4
         assert (
             anything_to_string_representation(labels)
             == """["sandtest", "grustest", "2015", "drillstop like %berg%", "frame"]"""

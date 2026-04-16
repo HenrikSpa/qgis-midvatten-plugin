@@ -41,7 +41,7 @@ class Drillreport:  # general observation point info for the selected object
 
     def show(self) -> None:
         layer = self._iface.activeLayer()
-        obsids = tuple(str(f["obsid"]) for f in layer.selectedFeatures())
+        obsids = tuple(common_utils.get_selected_object_names(layer))
         settingsdict = self._ms.settingsdict
         self._run_report(obsids, settingsdict)
 

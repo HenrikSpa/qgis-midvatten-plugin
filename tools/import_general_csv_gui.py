@@ -53,7 +53,7 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         self.iface = iface
         self.ms = ms
         self.ms.load_settings()
-        qgis.PyQt.QtWidgets.QMainWindow.__init__(self, iface)
+        qgis.PyQt.QtWidgets.QMainWindow.__init__(self, iface.mainWindow())
         self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt
         self.setWindowTitle(

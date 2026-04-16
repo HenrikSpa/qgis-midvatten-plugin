@@ -47,7 +47,7 @@ class BaseImporter(QtWidgets.QMainWindow):
         self.iface = iface
         self.ms = ms
         self.ms.load_settings()
-        QtWidgets.QMainWindow.__init__(self, iface)
+        QtWidgets.QMainWindow.__init__(self, iface.mainWindow())
         self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt
         self.status = True

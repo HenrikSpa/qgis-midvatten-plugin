@@ -201,8 +201,6 @@ class FieldloggerImport(BaseImporter, import_fieldlogger_ui_dialog):
 
         self.setGeometry(500, 150, 1100, 700)
 
-        self.show()
-
     @staticmethod
     @common_utils.general_exception_handler
     def select_file_and_parse_rows(row_parser):

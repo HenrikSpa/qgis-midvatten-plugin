@@ -74,9 +74,9 @@ class DiverofficeImport(BaseImporter, import_ui_dialog):
         self.setWindowTitle(
             QCoreApplication.translate("DiverofficeImport", "Diveroffice import")
         )
-        self.load_gui()
 
     def show(self) -> None:
+        self.load_gui()
         super().show()
         self.activateWindow()
 

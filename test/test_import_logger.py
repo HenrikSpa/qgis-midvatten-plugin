@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import os
 import pytest
 from unittest import mock
 from unittest.mock import MagicMock
 from collections import OrderedDict
+
+from qgis.PyQt import QtWidgets
 
 from midvatten.tools.import_logger import (
     DiverOfficeParser,
@@ -17,7 +20,10 @@ from midvatten.tools.import_logger import (
 )
 from midvatten.tools.utils import common_utils
 from midvatten.tools.utils import db_utils
+from midvatten.tools.utils.date_utils import datestring_to_date
+from midvatten.tools.utils.gui_utils import set_combobox
 from midvatten.test import utils_for_tests
+from midvatten.test.mocks_for_tests import MockReturnUsingDictIn
 
 
 @pytest.mark.active
@@ -579,9 +585,7 @@ class TestLoggerImportHoboSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
 class TestFilterDatesFromFiledataOld:
     """Ported from TestFilterDatesFromFiledata in test_import_diveroffice.py."""
 
-    def test_filter_dates_from_filedata(self):
-        from midvatten.tools.utils.date_utils import datestring_to_date
-
+    def test_filter_dates_from_filedata_with_date_objects(self):
         file_data = [
             ["obsid", "date_time"],
             ["rb1", "2015-05-01 00:00:00"],
@@ -613,8 +617,6 @@ class TestDiverOfficeParserOldFormat:
     These specifically test parse_old (legacy CSV) and parse (new .mon/.csv) methods."""
 
     def test_parse_old_utf8(self):
-        import os
-
         f = (
             "Location=rb1",
             "Date/time,Water head[cm],Temperature[\u00b0C]",
@@ -632,8 +634,6 @@ class TestDiverOfficeParserOldFormat:
         assert file_data[2] == "rb1"
 
     def test_parse_old_cp1252(self):
-        import os
-
         f = (
             "Location=rb1",
             "Date/time,Water head[cm],Temperature[\u00b0C]",
@@ -651,8 +651,6 @@ class TestDiverOfficeParserOldFormat:
         assert file_data[2] == "rb1"
 
     def test_parse_old_semicolon_sep(self):
-        import os
-
         f = (
             "Location=rb1",
             "Date/time;Water head[cm];Temperature[\u00b0C]",
@@ -670,8 +668,6 @@ class TestDiverOfficeParserOldFormat:
         assert file_data[2] == "rb1"
 
     def test_parse_old_comma_dec(self):
-        import os
-
         f = (
             "Location=rb1",
             "Date/time;Water head[cm];Temperature[\u00b0C]",
@@ -689,8 +685,6 @@ class TestDiverOfficeParserOldFormat:
         assert file_data[2] == "rb1"
 
     def test_parse_old_comma_sep_comma_dec_failed(self):
-        from midvatten.test.mocks_for_tests import MockReturnUsingDictIn
-
         utils_ask_user_about_stopping = MockReturnUsingDictIn(
             {
                 "Failure, delimiter did not match": "cancel",
@@ -753,8 +747,6 @@ class TestDiverOfficeParserOldFormat:
         assert test_string == reference_string
 
     def test_parse_old_changed_order(self):
-        import os
-
         f = (
             "Location=rb1",
             "Temperature[\u00b0C];2:Spec.cond.[mS/cm];Date/time;Water head[cm]",
@@ -773,8 +765,6 @@ class TestDiverOfficeParserOldFormat:
 
     @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
     def test_parse_old_warning_missing_head_cm(self, mock_messagebar):
-        import os
-
         f = (
             "Location=rb1",
             "Temperature[\u00b0C];2:Spec.cond.[mS/cm];Date/time",
@@ -809,8 +799,6 @@ class TestDiverOfficeParserOldFormat:
 
     @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
     def test_parse_old_get_timezone(self, mock_messagebar):
-        import os
-
         f = (
             "Location=rb1",
             "Instrument number       =UTC+1",
@@ -832,8 +820,6 @@ class TestDiverOfficeParserOldFormat:
     @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
     def test_parse_comma_missing_head_cm_value(self, mock_messagebar):
         """parse() (new-style .csv/.mon) with missing head_cm value."""
-        import os
-
         f = (
             "[Logger settings]",
             "Location=rb1",
@@ -875,8 +861,6 @@ class TestHoboParserOldAPI:
 
     @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
     def test_parse_hobologger_file_utf8(self, mock_messagelog):
-        import os
-
         f = (
             '\ufeff"Plot Title: temp"',
             '"#","Date Time, GMT+01:00","Temp, \u00b0C (LGR S/N: 1234, SEN S/N: 1234, LBL: Rb1)","Coupler Detached (LGR S/N: 1234)","Coupler Attached (LGR S/N: 1234)","Stopped (LGR S/N: 1234)","End Of File (LGR S/N: 1234)"',
@@ -900,8 +884,6 @@ class TestHoboParserOldAPI:
 
     @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
     def test_parse_hobologger_file_convert_tz(self, mock_messagelog):
-        import os
-
         f = (
             '\ufeff"Plot Title: temp"',
             '"#","Date Time, GMT+03:00","Temp, \u00b0C (LGR S/N: 1234, SEN S/N: 1234, LBL: Rb1)","Coupler Detached (LGR S/N: 1234)","Coupler Attached (LGR S/N: 1234)","Stopped (LGR S/N: 1234)","End Of File (LGR S/N: 1234)"',
@@ -925,8 +907,6 @@ class TestHoboParserOldAPI:
         assert file_data[2] == "Rb1"
 
     def test_parse_hobologger_file_changed_order(self):
-        import os
-
         f = (
             '\ufeff"Plot Title: temp"',
             '"#","Temp, \u00b0C (LGR S/N: 1234, SEN S/N: 1234, LBL: Rb1)","Date Time, GMT+01:00","Coupler Detached (LGR S/N: 1234)","Coupler Attached (LGR S/N: 1234)","Stopped (LGR S/N: 1234)","End Of File (LGR S/N: 1234)"',
@@ -950,8 +930,6 @@ class TestHoboParserOldAPI:
 
     @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
     def test_parse_hobologger_file_other_dateformat(self, mock_messagelog):
-        import os
-
         f = (
             '\ufeff"Plot Title: temp"',
             '"#","Date Time, GMT+01:00","Temp, \u00b0C (LGR S/N: 1234, SEN S/N: 1234, LBL: Rb1)","Coupler Detached (LGR S/N: 1234)","Coupler Attached (LGR S/N: 1234)","Stopped (LGR S/N: 1234)","End Of File (LGR S/N: 1234)"',
@@ -1833,7 +1811,6 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
                 importer = LoggerImport(self.iface, ms)
                 importer.load_gui()
                 importer.confirm_names.checked = False
-                from midvatten.tools.utils.gui_utils import set_combobox
 
                 set_combobox(importer.utc_offset, "UTC+1", add_if_not_exists=False)
                 importer.select_files()
@@ -1931,7 +1908,6 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
                 importer = LoggerImport(self.iface, ms)
                 importer.load_gui()
                 importer.confirm_names.checked = False
-                from midvatten.tools.utils.gui_utils import set_combobox
 
                 set_combobox(importer.utc_offset, "UTC+1", add_if_not_exists=False)
                 importer.select_files()
@@ -2052,7 +2028,6 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
                 importer = LoggerImport(self.iface, ms)
                 importer.load_gui()
                 importer.confirm_names.checked = False
-                from midvatten.tools.utils.gui_utils import set_combobox
 
                 set_combobox(importer.utc_offset, "UTC+1", add_if_not_exists=False)
                 importer.select_files()
@@ -2157,13 +2132,11 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
                 importer = LoggerImport(self.iface, ms)
                 importer.load_gui()
                 importer.confirm_names.checked = False
-                from midvatten.tools.utils.gui_utils import set_combobox
 
                 set_combobox(importer.utc_offset, "UTC+1", add_if_not_exists=False)
                 importer.select_files()
-                from qgis.PyQt import QtWidgets as _QtWidgets
 
-                mock_askuser.return_value = _QtWidgets.QMessageBox.Cancel
+                mock_askuser.return_value = QtWidgets.QMessageBox.Cancel
                 importer.start_import(
                     importer.files,
                     importer.skip_rows.checked,

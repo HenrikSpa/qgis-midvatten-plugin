@@ -5,8 +5,7 @@ Replaces the sequential dialog pattern with unified single dialogs.
 
 import locale as locale_module
 
-import qgis.PyQt
-from qgis.PyQt.QtCore import QCoreApplication
+from qgis.PyQt.QtCore import QCoreApplication, QLocale
 from qgis.PyQt.QtWidgets import (
     QComboBox,
     QDialog,
@@ -27,12 +26,8 @@ from midvatten.tools.utils.date_utils import get_pytz_timezones
 
 def _locale_options() -> list:
     locales = [
-        qgis.PyQt.QtCore.QLocale(
-            qgis.PyQt.QtCore.QLocale.Swedish, qgis.PyQt.QtCore.QLocale.Sweden
-        ),
-        qgis.PyQt.QtCore.QLocale(
-            qgis.PyQt.QtCore.QLocale.English, qgis.PyQt.QtCore.QLocale.UnitedStates
-        ),
+        QLocale(QLocale.Swedish, QLocale.Sweden),
+        QLocale(QLocale.English, QLocale.UnitedStates),
     ]
     names = [loc.name() for loc in locales]
     sys_locale = locale_module.getlocale()[0]

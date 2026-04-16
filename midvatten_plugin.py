@@ -187,7 +187,13 @@ def _make_actions(plugin: "Midvatten") -> list[ActionSpec]:
             icon="export_spatialite.png",
             menu="export",
             tool_class=ExportSpatialite,
-            critical_layers=("obs_points", "obs_lines"),
+            critical_layers=tuple(
+                midvatten_defs.get_subset_of_tables_fr_db("obs_points")
+                + midvatten_defs.get_subset_of_tables_fr_db("obs_lines")
+                + midvatten_defs.get_subset_of_tables_fr_db("data_domains")
+                + midvatten_defs.get_subset_of_tables_fr_db("default_layers")
+                + midvatten_defs.get_subset_of_tables_fr_db("default_nonspatlayers")
+            ),
         ),
         ActionSpec(
             id="export_fieldlogger",

@@ -49,12 +49,10 @@ from midvatten.tools.drillreport import Drillreport
 from midvatten.tools.export_data import ExportData
 from midvatten.tools.export_fieldlogger import ExportToFieldLogger
 from midvatten.tools.export_spatialite import ExportSpatialite
-from midvatten.tools.import_diveroffice import DiverofficeImport
 from midvatten.tools.import_fieldlogger import FieldloggerImport
 from midvatten.tools.import_general_csv_gui import GeneralCsvImportGui
-from midvatten.tools.import_hobologger import HobologgerImport
 from midvatten.tools.import_interlab4 import Interlab4Import
-from midvatten.tools.import_levelogger import LeveloggerImport
+from midvatten.tools.import_logger import LoggerImport
 from midvatten.tools.loadlayers import LoadLayers
 from midvatten.tools.loggereditor import LoggerEditor
 from midvatten.tools.midvsettings import MidvSettings
@@ -109,36 +107,14 @@ def _make_actions(plugin: "Midvatten") -> list[ActionSpec]:
             persistent=True,
         ),
         ActionSpec(
-            id="import_diveroffice",
+            id="import_logger",
             label=QCoreApplication.translate(
                 "Midvatten",
-                "Import logger data using Diver-Office csv-format",
+                "Import logger data (DiverOffice / Levelogger / Hobo)",
             ),
             icon="load_wlevels_logger.png",
             menu="import",
-            tool_class=DiverofficeImport,
-            critical_layers=("obs_points", "w_levels_logger"),
-        ),
-        ActionSpec(
-            id="import_levelogger",
-            label=QCoreApplication.translate(
-                "Midvatten",
-                "Import logger data using Levelogger csv-format",
-            ),
-            icon="load_wlevels_logger.png",
-            menu="import",
-            tool_class=LeveloggerImport,
-            critical_layers=("obs_points", "w_levels_logger"),
-        ),
-        ActionSpec(
-            id="import_hobologger",
-            label=QCoreApplication.translate(
-                "Midvatten",
-                "Import logger data using HOBO logger csv-format",
-            ),
-            icon="load_wlevels_logger.png",
-            menu="import",
-            tool_class=HobologgerImport,
+            tool_class=LoggerImport,
             critical_layers=("obs_points", "w_levels_logger"),
         ),
         ActionSpec(

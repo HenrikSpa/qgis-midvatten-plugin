@@ -42,7 +42,8 @@ class CalibrloggerMixin:
         db_utils.sql_alter_db(
             "INSERT INTO w_levels_logger (obsid, date_time, head_cm, level_masl) VALUES ('rb1', '2017-03-01 00:00', 100, NULL)"
         )
-        calibrlogger = LoggerEditor(self.iface.mainWindow(), self.midvatten.ms)
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
 
         calibrlogger.update_plot()
         test = utils_for_tests.create_test_string(
@@ -61,7 +62,8 @@ class CalibrloggerMixin:
         db_utils.sql_alter_db(
             "INSERT INTO w_levels_logger (obsid, date_time, head_cm) VALUES ('rb1', '2017-02-01 00:00', 100)"
         )
-        calibrlogger = LoggerEditor(self.iface.mainWindow(), self.midvatten.ms)
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
 
         calibrlogger.update_plot()
 
@@ -88,7 +90,8 @@ class CalibrloggerMixin:
         db_utils.sql_alter_db(
             "INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('rb1', '2017-02-01 00:00', 100)"
         )
-        calibrlogger = LoggerEditor(self.iface.mainWindow(), self.midvatten.ms)
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
 
         calibrlogger.update_plot()
 
@@ -122,7 +125,8 @@ class CalibrloggerMixin:
         db_utils.sql_alter_db(
             "INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('rb1', '2017-03-01 00:00', 50)"
         )
-        calibrlogger = LoggerEditor(self.iface.mainWindow(), self.midvatten.ms)
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
 
         calibrlogger.update_plot()
 
@@ -154,7 +158,8 @@ class CalibrloggerMixin:
         db_utils.sql_alter_db(
             "INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('rb1', '2017-02-01 01:00', 50)"
         )
-        calibrlogger = LoggerEditor(self.iface.mainWindow(), self.midvatten.ms)
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
 
         calibrlogger.update_plot()
 
@@ -189,7 +194,8 @@ class CalibrloggerMixin:
         db_utils.sql_alter_db(
             "INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('rb1', '2017-02-01 01:00', 50)"
         )
-        calibrlogger = LoggerEditor(self.iface.mainWindow(), self.midvatten.ms)
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
 
         calibrlogger.update_plot()
 
@@ -225,7 +231,8 @@ class CalibrloggerMixin:
         db_utils.sql_alter_db(
             "INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('rb1', '2017-02-01 01:00', 50)"
         )
-        calibrlogger = LoggerEditor(self.iface.mainWindow(), self.midvatten.ms)
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
 
         calibrlogger.update_plot()
 
@@ -260,7 +267,8 @@ class CalibrloggerMixin:
         db_utils.sql_alter_db(
             "INSERT INTO w_levels_logger (obsid, date_time, head_cm, level_masl) VALUES ('rb1', '2017-03-01 00:00', 100, NULL)"
         )
-        calibrlogger = LoggerEditor(self.iface.mainWindow(), self.midvatten.ms)
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
 
         """(level_masl - (head_cm/100))"""
 
@@ -281,7 +289,8 @@ class CalibrloggerMixin:
         db_utils.sql_alter_db(
             "INSERT INTO w_levels_logger (obsid, date_time, head_cm, level_masl) VALUES ('rb1', '2017-03-01 00:00', 100, NULL)"
         )
-        calibrlogger = LoggerEditor(self.iface.mainWindow(), self.midvatten.ms)
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
 
         """(level_masl - (head_cm/100))"""
 
@@ -305,7 +314,8 @@ class CalibrloggerMixin:
         db_utils.sql_alter_db(
             "INSERT INTO w_levels_logger (obsid, date_time, head_cm, level_masl) VALUES ('rb1', '2017-03-01 00:00', 200, 300)"
         )
-        calibrlogger = LoggerEditor(self.iface.mainWindow(), self.midvatten.ms)
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
         test = utils_for_tests.create_test_string(
             calibrlogger.get_uncalibrated_obsids()
         )
@@ -328,7 +338,8 @@ class CalibrloggerMixin:
             "INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('rb1', '2017-01-28 00:00', 200)"
         )
 
-        calibrlogger = LoggerEditor(self.iface.mainWindow(), self.midvatten.ms)
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
         gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
         calibrlogger.update_plot()
         calibrlogger.from_date_time.setDateTime(
@@ -364,7 +375,8 @@ class CalibrloggerMixin:
         db_utils.sql_alter_db(
             "INSERT INTO w_levels (obsid, date_time, meas, level_masl) VALUES ('rb1', '2017-02-01 00:00', 200, 2)"
         )
-        calibrlogger = LoggerEditor(self.iface.mainWindow(), self.midvatten.ms)
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
         gui_utils.set_combobox(
             calibrlogger.combobox_obsid, "rb1", add_if_not_exists=False
         )
@@ -391,7 +403,8 @@ class CalibrloggerMixin:
                                  WHERE tablename = 'w_levels';"""
         )
 
-        calibrlogger = LoggerEditor(self.iface.mainWindow(), self.midvatten.ms)
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
         gui_utils.set_combobox(
             calibrlogger.combobox_obsid, "rb1", add_if_not_exists=False
         )
@@ -418,7 +431,8 @@ class CalibrloggerMixin:
                                  WHERE tablename = 'w_levels';"""
         )
 
-        calibrlogger = LoggerEditor(self.iface.mainWindow(), self.midvatten.ms)
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
         gui_utils.set_combobox(
             calibrlogger.combobox_obsid, "rb1", add_if_not_exists=False
         )
@@ -445,7 +459,8 @@ class CalibrloggerMixin:
                                  WHERE tablename = 'w_levels';"""
         )
 
-        calibrlogger = LoggerEditor(self.iface.mainWindow(), self.midvatten.ms)
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
         gui_utils.set_combobox(
             calibrlogger.combobox_obsid, "rb1", add_if_not_exists=False
         )
@@ -465,7 +480,8 @@ class CalibrloggerMixin:
         db_utils.sql_alter_db(
             "INSERT INTO w_levels_logger (obsid, date_time, head_cm, level_masl) VALUES ('rb1', '2017-03-01 00:00', 100, NULL)"
         )
-        calibrlogger = LoggerEditor(self.iface.mainWindow(), self.midvatten.ms)
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
         calibrlogger.plot_logger_head.setChecked(True)
         calibrlogger.normalize_head.setChecked(True)
 
@@ -496,7 +512,8 @@ class CalibrloggerMixin:
         db_utils.sql_alter_db(
             "INSERT INTO w_levels_logger (obsid, date_time, head_cm, level_masl) VALUES ('rb1', '2017-03-01 00:00', 100, NULL)"
         )
-        calibrlogger = LoggerEditor(self.iface.mainWindow(), self.midvatten.ms)
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
         calibrlogger.plot_logger_head.setChecked(True)
         calibrlogger.normalize_head.setChecked(True)
 
@@ -535,7 +552,8 @@ class CalibrloggerPostgisMixin(CalibrloggerMixin):
             "INSERT INTO w_levels (obsid, date_time, level_masl) VALUES ('rb1', '2017-02-10 00:00', 100)"
         )
 
-        calibrlogger = LoggerEditor(self.iface.mainWindow(), self.midvatten.ms)
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
         gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
         calibrlogger.update_plot()
         calibrlogger.from_date_time.setDateTime(
@@ -600,7 +618,8 @@ class CalibrloggerPostgisMixin(CalibrloggerMixin):
         db_utils.sql_alter_db(
             "INSERT INTO w_levels_logger (obsid, date_time, head_cm, source) VALUES ('rb1', '2017-02-06 00:00', 105, NULL)"
         )
-        calibrlogger = LoggerEditor(self.iface.mainWindow(), self.midvatten.ms)
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
 
         calibrlogger.update_plot()
 
@@ -770,7 +789,8 @@ class CalibrloggerSpatialiteMixin(CalibrloggerMixin):
             "INSERT INTO w_levels (obsid, date_time, level_masl) VALUES ('rb1', '2017-02-10 00:00', 100)"
         )
 
-        calibrlogger = LoggerEditor(self.iface.mainWindow(), self.midvatten.ms)
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
         gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
         calibrlogger.update_plot()
         calibrlogger.from_date_time.setDateTime(
@@ -835,7 +855,8 @@ class CalibrloggerSpatialiteMixin(CalibrloggerMixin):
         db_utils.sql_alter_db(
             "INSERT INTO w_levels_logger (obsid, date_time, head_cm, source) VALUES ('rb1', '2017-02-06 00:00', 105, NULL)"
         )
-        calibrlogger = LoggerEditor(self.iface.mainWindow(), self.midvatten.ms)
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
 
         calibrlogger.update_plot()
 

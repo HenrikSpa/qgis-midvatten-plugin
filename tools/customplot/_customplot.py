@@ -65,10 +65,11 @@ customplot_ui_class = uic.loadUiType(
 
 
 class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
-    def __init__(self, parent, msettings):
-        self.ms = msettings
+    def __init__(self, iface, ms):
+        self._iface = iface
+        self.ms = ms
         self.ms.load_settings()
-        QtWidgets.QMainWindow.__init__(self, parent)
+        QtWidgets.QMainWindow.__init__(self, iface.mainWindow())
         self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # due to initialisation of Ui_MainWindow instance
         self.init_ui()
@@ -81,6 +82,10 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             """<a href="https://matplotlib.org/stable/gallery/style_sheets/style_sheets_reference.html">Matplotlib style sheet reference</a>"""
         )
         self.matplotlib_style_sheet_reference.setOpenExternalLinks(True)
+
+    def show(self) -> None:
+        super().show()
+        self.activateWindow()
 
     def init_ui(self):
         self.tab1_table.clear()
@@ -148,7 +153,6 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         self.init_figure()
         self.tabwidget_resize(self.tab_widget)
         self.tabwidget_resize(self.plot_tabwidget)
-        self.show()
 
     def _connect_signals(self):
         """Wire all UI widget signals to their handlers."""

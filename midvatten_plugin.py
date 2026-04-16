@@ -1485,9 +1485,10 @@ class Midvatten:
         if not (err_flag == 0):
             return
         try:
-            self.customplot.activateWindow()
+            self.customplot.show()
         except Exception:
-            self.customplot = CustomPlot(self.iface.mainWindow(), self.ms)
+            self.customplot = CustomPlot(self.iface, self.ms)
+            self.customplot.show()
 
     @common_utils.general_exception_handler
     def prepare_layers_for_qgis2threejs(self):
@@ -1646,11 +1647,10 @@ class Midvatten:
         )  # verify midv settings are loaded
         if err_flag == 0:
             try:
-                self.calibrplot.activateWindow()
+                self.calibrplot.show()
             except Exception:
-                self.calibrplot = LoggerEditor(
-                    self.iface.mainWindow(), self.ms.settingsdict
-                )  # ,obsid)
+                self.calibrplot = LoggerEditor(self.iface, self.ms)  # ,obsid)
+                self.calibrplot.show()
 
     @common_utils.waiting_cursor
     def zip_db(self):

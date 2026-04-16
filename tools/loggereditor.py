@@ -36,8 +36,10 @@ Calibr_Ui_Dialog = uic.loadUiType(
 
 class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     @fn_timer
-    def __init__(self, parent, settingsdict1=None, obsid=""):
-        qgis.PyQt.QtWidgets.QMainWindow.__init__(self, parent)
+    def __init__(self, iface, ms):
+        qgis.PyQt.QtWidgets.QMainWindow.__init__(self, iface.mainWindow())
+        self._iface = iface
+        self.settingsdict = ms.settingsdict
         self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt4 to initialize the UI
         self.setWindowTitle(
@@ -45,8 +47,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 "Calibrlogger", "Edit water level logger (w_levels_logger) data"
             )
         )  # Set the title for the dialog
-        common_utils.start_waiting_cursor()  # show the user this may take a long time...
-        self.obsid = obsid
+        self.obsid = ""
         self.meas_ts = None
         self.head_ts = None
         self.head_ts_for_plot = None
@@ -55,8 +56,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self.loggerpos_masl_or_offset_state = 1
         self.selected_line = None
         self.moving_idx = None
-
-        self.settingsdict = settingsdict1
 
         text = QCoreApplication.translate(
             "Calibrlogger",
@@ -67,16 +66,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self.log_calc_manual.setText(
             '<a href="https://github.com/jkall/qgis-midvatten-plugin/wiki/4.-Edit-data">Midvatten manual</a>'
         )
-
-        # Create a plot window with one single subplot
-        self.calibrplotfigure = plt.figure()
-        self.axes = self.calibrplotfigure.add_subplot(111)
-        self.canvas = FigureCanvas(self.calibrplotfigure)
-        self.mpltoolbar = NavigationToolbar(self.canvas, self.widget_plot)
-        self.layoutplot.addWidget(self.canvas)
-        self.layoutplot.addWidget(self.mpltoolbar)
-
-        self.show()
 
         self.cid = []
 
@@ -119,54 +108,71 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         )
         self.adjust_trend_button.clicked.connect(lambda x: self.adjust_trend_func())
 
-        try:
-            # Support for older version of Matplotlib
-            self.period_selector = RectangleSelector(
-                self.axes,
-                self.line_select_callback,
-                useblit=True,
-                button=[1],
-                minspanx=0,
-                minspany=0,
-                spancoords="data",
-                interactive=False,
-                # lineprops=dict(color="black", linestyle="-", linewidth=2, alpha=0.5),
-                rectprops=dict(
-                    facecolor=None, edgecolor="black", alpha=0.5, fill=False
-                ),
-            )
-        except Exception:
-            self.period_selector = RectangleSelector(
-                self.axes,
-                self.line_select_callback,
-                useblit=True,
-                button=[1],
-                minspanx=0,
-                minspany=0,
-                spancoords="data",
-                interactive=False,
-                # lineprops=dict(color="black", linestyle="-", linewidth=2, alpha=0.5),
-                props=dict(facecolor=None, edgecolor="black", alpha=0.5, fill=False),
-            )
-        self.period_selector.set_active(False)
-
-        self.select_nodes_button = SelectNodesButton(self, self.calibrplotfigure)
-        self.move_nodes_button = MoveNodesButton(self, self.calibrplotfigure)
-
         self.from_date_time.dateTimeChanged.connect(
             lambda: self.plot_or_update_selected_line()
         )
         self.to_date_time.dateTimeChanged.connect(
             lambda: self.plot_or_update_selected_line()
         )
-        self.get_search_radius()
 
-        # Populate combobox with obsid from table w_levels_logger
-        self.load_obsid_from_db()
-        common_utils.stop_waiting_cursor()  # now this long process is done and the cursor is back as normal
+    def show(self) -> None:
+        if not hasattr(self, "calibrplotfigure"):
+            # Create a plot window with one single subplot
+            self.calibrplotfigure = plt.figure()
+            self.axes = self.calibrplotfigure.add_subplot(111)
+            self.canvas = FigureCanvas(self.calibrplotfigure)
+            self.mpltoolbar = NavigationToolbar(self.canvas, self.widget_plot)
+            self.layoutplot.addWidget(self.canvas)
+            self.layoutplot.addWidget(self.mpltoolbar)
 
-        self.w_levels_logger_tz = db_utils.get_timezone_from_db("w_levels_logger")
-        self.w_levels_tz = db_utils.get_timezone_from_db("w_levels")
+            try:
+                # Support for older version of Matplotlib
+                self.period_selector = RectangleSelector(
+                    self.axes,
+                    self.line_select_callback,
+                    useblit=True,
+                    button=[1],
+                    minspanx=0,
+                    minspany=0,
+                    spancoords="data",
+                    interactive=False,
+                    # lineprops=dict(color="black", linestyle="-", linewidth=2, alpha=0.5),
+                    rectprops=dict(
+                        facecolor=None, edgecolor="black", alpha=0.5, fill=False
+                    ),
+                )
+            except Exception:
+                self.period_selector = RectangleSelector(
+                    self.axes,
+                    self.line_select_callback,
+                    useblit=True,
+                    button=[1],
+                    minspanx=0,
+                    minspany=0,
+                    spancoords="data",
+                    interactive=False,
+                    # lineprops=dict(color="black", linestyle="-", linewidth=2, alpha=0.5),
+                    props=dict(
+                        facecolor=None, edgecolor="black", alpha=0.5, fill=False
+                    ),
+                )
+            self.period_selector.set_active(False)
+
+            self.select_nodes_button = SelectNodesButton(self, self.calibrplotfigure)
+            self.move_nodes_button = MoveNodesButton(self, self.calibrplotfigure)
+
+            self.get_search_radius()
+
+            common_utils.start_waiting_cursor()
+            # Populate combobox with obsid from table w_levels_logger
+            self.load_obsid_from_db()
+            common_utils.stop_waiting_cursor()
+
+            self.w_levels_logger_tz = db_utils.get_timezone_from_db("w_levels_logger")
+            self.w_levels_tz = db_utils.get_timezone_from_db("w_levels")
+
+        super().show()
+        self.activateWindow()
 
     def update_date_from_extent(self, date_time_edit, xbound_min_or_max):
         date_time_edit.setDateTime(num2date(xbound_min_or_max))

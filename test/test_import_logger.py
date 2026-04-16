@@ -18,7 +18,6 @@ from midvatten.tools.import_logger import (
 from midvatten.tools.utils import common_utils
 from midvatten.tools.utils import db_utils
 from midvatten.test import utils_for_tests
-from midvatten.test.mocks_for_tests import MockUsingReturnValue
 
 
 @pytest.mark.active
@@ -272,45 +271,67 @@ class TestHoboParser:
 
 
 @pytest.mark.spatialite
-class TestLoggerImportDiverOfficeSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv):
+class TestLoggerImportDiverOfficeSpatialite(
+    utils_for_tests.MidvattenTestSpatialiteDbSv
+):
     """Integration tests for LoggerImport with DiverOffice format."""
 
     def test_basic_diveroffice_import(self):
         """Three files, three obsids (only rb1 exists) — two are added via NotFoundQuestion."""
         files = [
-            "\n".join([
-                "Location=rb1",
-                "Date/time,Water head[cm],Temperature[\u00b0C]",
-                "2016/03/15 10:30:00,1,10",
-                "2016/03/15 11:00:00,11,101",
-            ]),
-            "\n".join([
-                "Location=rb2",
-                "Date/time,Water head[cm],Temperature[\u00b0C]",
-                "2016/04/15 10:30:00,2,20",
-                "2016/04/15 11:00:00,21,201",
-            ]),
-            "\n".join([
-                "Location=rb3",
-                "Date/time,Water head[cm],Temperature[\u00b0C],Conductivity[mS/cm]",
-                "2016/05/15 10:30:00,3,30,5",
-                "2016/05/15 11:00:00,31,301,6",
-            ]),
+            "\n".join(
+                [
+                    "Location=rb1",
+                    "Date/time,Water head[cm],Temperature[\u00b0C]",
+                    "2016/03/15 10:30:00,1,10",
+                    "2016/03/15 11:00:00,11,101",
+                ]
+            ),
+            "\n".join(
+                [
+                    "Location=rb2",
+                    "Date/time,Water head[cm],Temperature[\u00b0C]",
+                    "2016/04/15 10:30:00,2,20",
+                    "2016/04/15 11:00:00,21,201",
+                ]
+            ),
+            "\n".join(
+                [
+                    "Location=rb3",
+                    "Date/time,Water head[cm],Temperature[\u00b0C],Conductivity[mS/cm]",
+                    "2016/05/15 10:30:00,3,30,5",
+                    "2016/05/15 11:00:00,31,301,6",
+                ]
+            ),
         ]
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
 
-        with common_utils.tempinput(files[0], "utf-8") as f1, \
-             common_utils.tempinput(files[1], "utf-8") as f2, \
-             common_utils.tempinput(files[2], "utf-8") as f3:
+        with (
+            common_utils.tempinput(files[0], "utf-8") as f1,
+            common_utils.tempinput(files[1], "utf-8") as f2,
+            common_utils.tempinput(files[2], "utf-8") as f3,
+        ):
             filenames = [f1, f2, f3]
 
-            @mock.patch("midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion")
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
+            )
             @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
-            @mock.patch("midvatten.tools.import_data_to_db.common_utils.pop_up_info", autospec=True)
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
             @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
-            def _run(self, filenames, mock_select_files, mock_popup,
-                     mock_iface, mock_askuser, mock_notfound):
+            def _run(
+                self,
+                filenames,
+                mock_select_files,
+                mock_popup,
+                mock_iface,
+                mock_askuser,
+                mock_notfound,
+            ):
                 mock_notfound.return_value.answer = "ok"
                 mock_notfound.return_value.value = "rb1"
                 mock_notfound.return_value.reuse_column = "location"
@@ -354,20 +375,35 @@ class TestLoggerImportDiverOfficeSpatialite(utils_for_tests.MidvattenTestSpatial
             "INSERT INTO w_levels_logger (obsid, date_time, head_cm) "
             "VALUES ('rb1', '2016-03-15 10:30:00', 1)"
         )
-        file_content = "\n".join([
-            "Location=rb1",
-            "Date/time,Water head[cm],Temperature[\u00b0C]",
-            "2016/03/15 10:30:00,1,10",
-            "2016/03/15 11:00:00,11,101",
-        ])
+        file_content = "\n".join(
+            [
+                "Location=rb1",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/03/15 10:30:00,1,10",
+                "2016/03/15 11:00:00,11,101",
+            ]
+        )
         with common_utils.tempinput(file_content, "utf-8") as f:
-            @mock.patch("midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion")
+
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
+            )
             @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
-            @mock.patch("midvatten.tools.import_data_to_db.common_utils.pop_up_info", autospec=True)
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
             @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
-            def _run(self, filename, mock_select_files, mock_popup,
-                     mock_iface, mock_askuser, mock_notfound):
+            def _run(
+                self,
+                filename,
+                mock_select_files,
+                mock_popup,
+                mock_iface,
+                mock_askuser,
+                mock_notfound,
+            ):
                 mock_notfound.return_value.answer = "ok"
                 mock_notfound.return_value.value = "rb1"
                 mock_notfound.return_value.reuse_column = "location"
@@ -407,24 +443,39 @@ class TestLoggerImportLeveloggerSpatialite(utils_for_tests.MidvattenTestSpatiali
 
     def test_basic_levelogger_import(self):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
-        file_content = "\n".join([
-            "Serial_number: 123",
-            "Location: rb1",
-            "LEVEL",
-            "UNIT: cm",
-            "TEMPERATURE",
-            "Date;Time;ms;LEVEL;TEMPERATURE",
-            "2016-03-15;10:30:00;0;1;10",
-            "2016-03-15;11:00:00;0;11;101",
-        ])
+        file_content = "\n".join(
+            [
+                "Serial_number: 123",
+                "Location: rb1",
+                "LEVEL",
+                "UNIT: cm",
+                "TEMPERATURE",
+                "Date;Time;ms;LEVEL;TEMPERATURE",
+                "2016-03-15;10:30:00;0;1;10",
+                "2016-03-15;11:00:00;0;11;101",
+            ]
+        )
         with common_utils.tempinput(file_content, "cp1252") as f:
-            @mock.patch("midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion")
+
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
+            )
             @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
-            @mock.patch("midvatten.tools.import_data_to_db.common_utils.pop_up_info", autospec=True)
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
             @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
-            def _run(self, filename, mock_select_files, mock_popup,
-                     mock_iface, mock_askuser, mock_notfound):
+            def _run(
+                self,
+                filename,
+                mock_select_files,
+                mock_popup,
+                mock_iface,
+                mock_askuser,
+                mock_notfound,
+            ):
                 mock_notfound.return_value.answer = "ok"
                 mock_notfound.return_value.value = "rb1"
                 mock_notfound.return_value.reuse_column = "location"
@@ -471,13 +522,26 @@ class TestLoggerImportHoboSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
             '2,"07/19/18 11:00:00 fm",4.402\n'
         )
         with common_utils.tempinput(file_content, "utf-8") as f:
-            @mock.patch("midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion")
+
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
+            )
             @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
-            @mock.patch("midvatten.tools.import_data_to_db.common_utils.pop_up_info", autospec=True)
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
             @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
-            def _run(self, filename, mock_select_files, mock_popup,
-                     mock_iface, mock_askuser, mock_notfound):
+            def _run(
+                self,
+                filename,
+                mock_select_files,
+                mock_popup,
+                mock_iface,
+                mock_askuser,
+                mock_notfound,
+            ):
                 mock_notfound.return_value.answer = "ok"
                 mock_notfound.return_value.value = "Rb1"
                 mock_notfound.return_value.reuse_column = "location"
@@ -506,3 +570,2791 @@ class TestLoggerImportHoboSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
         assert result[1][0][0] == "Rb1"
         assert result[1][0][1] == "2018-07-19 10:00:00"
         assert abs(result[1][0][2] - 4.558) < 0.001
+
+
+# ── Migrated from test_import_diveroffice.py (parser unit tests) ──────────────
+
+
+@pytest.mark.active
+class TestFilterDatesFromFiledataOld:
+    """Ported from TestFilterDatesFromFiledata in test_import_diveroffice.py."""
+
+    def test_filter_dates_from_filedata(self):
+        from midvatten.tools.utils.date_utils import datestring_to_date
+
+        file_data = [
+            ["obsid", "date_time"],
+            ["rb1", "2015-05-01 00:00:00"],
+            ["rb1", "2016-05-01 00:00"],
+            ["rb2", "2015-05-01 00:00:00"],
+            ["rb2", "2016-05-01 00:00"],
+            ["rb3", "2015-05-01 00:00:00"],
+            ["rb3", "2016-05-01 00:00"],
+        ]
+        obsid_last_imported_dates = {
+            "rb1": [(datestring_to_date("2016-01-01 00:00:00"),)],
+            "rb2": [(datestring_to_date("2017-01-01 00:00:00"),)],
+        }
+        test_file_data = utils_for_tests.create_test_string(
+            filter_dates_from_filedata(file_data, obsid_last_imported_dates)
+        )
+        reference_file_data = "[[obsid, date_time], [rb1, 2016-05-01 00:00], [rb3, 2015-05-01 00:00:00], [rb3, 2016-05-01 00:00]]"
+        assert test_file_data == reference_file_data
+
+
+# ── Migrated from test_import_diveroffice.py: TestParseDiverofficeFile ────────
+# (appended to existing TestDiverOfficeParser class above via separate tests
+#  so as not to duplicate.  The 9 tests below use parse_old/parse API.)
+
+
+@pytest.mark.active
+class TestDiverOfficeParserOldFormat:
+    """Parser unit tests ported from TestParseDiverofficeFile in test_import_diveroffice.py.
+    These specifically test parse_old (legacy CSV) and parse (new .mon/.csv) methods."""
+
+    def test_parse_old_utf8(self):
+        import os
+
+        f = (
+            "Location=rb1",
+            "Date/time,Water head[cm],Temperature[\u00b0C]",
+            "2016/03/15 10:30:00,26.9,5.18",
+            "2016/03/15 11:00:00,157.7,0.6",
+        )
+        charset = "utf-8"
+        with common_utils.tempinput("\n".join(f), charset) as path:
+            file_data = DiverOfficeParser.parse_old(path, charset)
+
+        test_string = utils_for_tests.create_test_string(file_data[0])
+        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, 26.9, 5.18, ], [2016-03-15 11:00:00, 157.7, 0.6, ]]"
+        assert test_string == reference_string
+        assert os.path.basename(path) == file_data[1]
+        assert file_data[2] == "rb1"
+
+    def test_parse_old_cp1252(self):
+        import os
+
+        f = (
+            "Location=rb1",
+            "Date/time,Water head[cm],Temperature[\u00b0C]",
+            "2016/03/15 10:30:00,26.9,5.18",
+            "2016/03/15 11:00:00,157.7,0.6",
+        )
+        charset = "cp1252"
+        with common_utils.tempinput("\n".join(f), charset) as path:
+            file_data = DiverOfficeParser.parse_old(path, charset)
+
+        test_string = utils_for_tests.create_test_string(file_data[0])
+        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, 26.9, 5.18, ], [2016-03-15 11:00:00, 157.7, 0.6, ]]"
+        assert test_string == reference_string
+        assert os.path.basename(path) == file_data[1]
+        assert file_data[2] == "rb1"
+
+    def test_parse_old_semicolon_sep(self):
+        import os
+
+        f = (
+            "Location=rb1",
+            "Date/time;Water head[cm];Temperature[\u00b0C]",
+            "2016/03/15 10:30:00;26.9;5.18",
+            "2016/03/15 11:00:00;157.7;0.6",
+        )
+        charset = "cp1252"
+        with common_utils.tempinput("\n".join(f), charset) as path:
+            file_data = DiverOfficeParser.parse_old(path, charset)
+
+        test_string = utils_for_tests.create_test_string(file_data[0])
+        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, 26.9, 5.18, ], [2016-03-15 11:00:00, 157.7, 0.6, ]]"
+        assert test_string == reference_string
+        assert os.path.basename(path) == file_data[1]
+        assert file_data[2] == "rb1"
+
+    def test_parse_old_comma_dec(self):
+        import os
+
+        f = (
+            "Location=rb1",
+            "Date/time;Water head[cm];Temperature[\u00b0C]",
+            "2016/03/15 10:30:00;26,9;5,18",
+            "2016/03/15 11:00:00;157,7;0,6",
+        )
+        charset = "cp1252"
+        with common_utils.tempinput("\n".join(f), charset) as path:
+            file_data = DiverOfficeParser.parse_old(path, charset)
+
+        test_string = utils_for_tests.create_test_string(file_data[0])
+        reference_string = r"""[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, 26.9, 5.18, ], [2016-03-15 11:00:00, 157.7, 0.6, ]]"""
+        assert test_string == reference_string
+        assert os.path.basename(path) == file_data[1]
+        assert file_data[2] == "rb1"
+
+    def test_parse_old_comma_sep_comma_dec_failed(self):
+        from midvatten.test.mocks_for_tests import MockReturnUsingDictIn
+
+        utils_ask_user_about_stopping = MockReturnUsingDictIn(
+            {
+                "Failure, delimiter did not match": "cancel",
+                "Failure: The number of data columns in file": "cancel",
+                "Failure, parsing failed for file": "cancel",
+            },
+            0,
+        )
+
+        @mock.patch(
+            "midvatten.tools.import_data_to_db.common_utils.ask_user_about_stopping",
+            utils_ask_user_about_stopping.get_v,
+        )
+        def _run():
+            f = (
+                "Location=rb1",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/03/15 10:30:00,26,9,5,18",
+                "2016/03/15 11:00:00,157,7,0,6",
+            )
+            charset = "cp1252"
+            with common_utils.tempinput("\n".join(f), charset) as path:
+                return DiverOfficeParser.parse_old(path, charset)
+
+        file_data = _run()
+        test_string = utils_for_tests.create_test_string(file_data)
+        reference_string = "cancel"
+        assert test_string == reference_string
+
+    def test_parse_old_different_separators_failed(self):
+        from midvatten.test.mocks_for_tests import MockReturnUsingDictIn
+
+        utils_ask_user_about_stopping = MockReturnUsingDictIn(
+            {
+                "Failure, delimiter did not match": "cancel",
+                "Failure: The number of data columns in file": "cancel",
+                "Failure, parsing failed for file": "cancel",
+            },
+            0,
+        )
+
+        @mock.patch(
+            "midvatten.tools.import_data_to_db.common_utils.ask_user_about_stopping",
+            utils_ask_user_about_stopping.get_v,
+        )
+        def _run():
+            f = (
+                "Location=rb1",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/03/15 10:30:00;26,9;5,18",
+                "2016/03/15 11:00:00;157,7;0,6",
+            )
+            charset = "cp1252"
+            with common_utils.tempinput("\n".join(f), charset) as path:
+                return DiverOfficeParser.parse_old(path, charset)
+
+        file_data = _run()
+        test_string = utils_for_tests.create_test_string(file_data)
+        reference_string = "cancel"
+        assert test_string == reference_string
+
+    def test_parse_old_changed_order(self):
+        import os
+
+        f = (
+            "Location=rb1",
+            "Temperature[\u00b0C];2:Spec.cond.[mS/cm];Date/time;Water head[cm]",
+            "5.18;2;2016/03/15 10:30:00;26.9",
+            "0.6;3;2016/03/15 11:00:00;157.7",
+        )
+        charset = "cp1252"
+        with common_utils.tempinput("\n".join(f), charset) as path:
+            file_data = DiverOfficeParser.parse_old(path, charset)
+
+        test_string = utils_for_tests.create_test_string(file_data[0])
+        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, 26.9, 5.18, 2.0], [2016-03-15 11:00:00, 157.7, 0.6, 3.0]]"
+        assert test_string == reference_string
+        assert os.path.basename(path) == file_data[1]
+        assert file_data[2] == "rb1"
+
+    @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+    def test_parse_old_warning_missing_head_cm(self, mock_messagebar):
+        import os
+
+        f = (
+            "Location=rb1",
+            "Temperature[\u00b0C];2:Spec.cond.[mS/cm];Date/time",
+            "5.18;2;2016/03/15 10:30:00",
+            "0.6;3;2016/03/15 11:00:00",
+        )
+        charset = "cp1252"
+        with common_utils.tempinput("\n".join(f), charset) as path:
+            file_data = DiverOfficeParser.parse_old(path, charset)
+
+        test_string = utils_for_tests.create_test_string(file_data[0])
+        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, , 5.18, 2.0], [2016-03-15 11:00:00, , 0.6, 3.0]]"
+        assert len(mock_messagebar.mock_calls) == 1
+        assert test_string == reference_string
+        assert os.path.basename(path) == file_data[1]
+        assert file_data[2] == "rb1"
+
+    @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+    def test_parse_old_warning_missing_date_time(self, mock_messagebar):
+        f = (
+            "Location=rb1",
+            "Temperature[\u00b0C];2:Spec.cond.[mS/cm];dada",
+            "5.18;2;2016/03/15 10:30:00",
+            "0.6;3;2016/03/15 11:00:00",
+        )
+        charset = "cp1252"
+        with common_utils.tempinput("\n".join(f), charset) as path:
+            file_data = DiverOfficeParser.parse_old(path, charset)
+
+        assert file_data == "skip"
+        assert len(mock_messagebar.mock_calls) == 1
+
+    @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+    def test_parse_old_get_timezone(self, mock_messagebar):
+        import os
+
+        f = (
+            "Location=rb1",
+            "Instrument number       =UTC+1",
+            "Date/time,Water head[cm],Temperature[\u00b0C]",
+            "2016/03/15 10:30:00,26.9,5.18",
+            "2016/03/15 11:00:00,157.7,0.6",
+        )
+        charset = "utf-8"
+        with common_utils.tempinput("\n".join(f), charset) as path:
+            file_data = DiverOfficeParser.parse_old(path, charset)
+
+        test_string = utils_for_tests.create_test_string(file_data[0])
+        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, 26.9, 5.18, ], [2016-03-15 11:00:00, 157.7, 0.6, ]]"
+        assert test_string == reference_string
+        assert os.path.basename(path) == file_data[1]
+        assert file_data[2] == "rb1"
+        assert file_data[3] == "UTC+1"
+
+    @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+    def test_parse_comma_missing_head_cm_value(self, mock_messagebar):
+        """parse() (new-style .csv/.mon) with missing head_cm value."""
+        import os
+
+        f = (
+            "[Logger settings]",
+            "Location=rb1",
+            "[Channel 1]",
+            "Identification          =LEVEL",
+            "[Channel 2]",
+            "Identification          =TEMPERATURE",
+            "",
+            "Date/time;Water head[cm];Temperature[\u00b0C]",
+            "2016/03/15 10:30:00;1,2;10",
+            "2016/03/15 11:00:00;    ;101",
+            "END OF DATA FILE OF DATALOGGER FOR WINDOWS",
+            "    ",
+        )
+        charset = "utf-8"
+        with common_utils.tempinput("\n".join(f), charset, suffix=".csv") as path:
+            file_data = DiverOfficeParser.parse(
+                path=path,
+                charset=charset,
+                skip_rows_without_water_level=False,
+                begindate=None,
+                enddate=None,
+            )
+
+        test_string = utils_for_tests.create_test_string(file_data[0])
+        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, 1.2, 10, None], [2016-03-15 11:00:00, None, 101, None]]"
+        assert test_string == reference_string
+        assert os.path.basename(path) == file_data[1]
+        assert file_data[2] == "rb1"
+
+
+# ── Hobo parser tests ported from test_import_hobologger.py ───────────────────
+
+
+@pytest.mark.active
+class TestHoboParserOldAPI:
+    """Parser unit tests ported from TestParseHobologgerFile in test_import_hobologger.py.
+    These test HoboParser.parse() (which replaced HobologgerImport.parse_hobologger_file)."""
+
+    @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+    def test_parse_hobologger_file_utf8(self, mock_messagelog):
+        import os
+
+        f = (
+            '\ufeff"Plot Title: temp"',
+            '"#","Date Time, GMT+01:00","Temp, \u00b0C (LGR S/N: 1234, SEN S/N: 1234, LBL: Rb1)","Coupler Detached (LGR S/N: 1234)","Coupler Attached (LGR S/N: 1234)","Stopped (LGR S/N: 1234)","End Of File (LGR S/N: 1234)"',
+            "1,07/19/18 10:00:00 fm,4.558,Logged,,,",
+            "2,07/19/18 11:00:00 fm,4.402,,,,",
+            "3,07/19/18 12:00:00 em,4.402,,,,",
+            "4,07/19/18 01:00:00 em,4.402,,,,",
+        )
+        charset = "utf-8"
+        tzconverter = TzConverter()
+        with common_utils.tempinput("\n".join(f), charset) as path:
+            file_data = HoboParser.parse(
+                path, charset, tz_converter=tzconverter, begindate=None, enddate=None
+            )
+
+        test_string = utils_for_tests.create_test_string(file_data[0])
+        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2018-07-19 10:00:00, , 4.558, ], [2018-07-19 11:00:00, , 4.402, ], [2018-07-19 12:00:00, , 4.402, ], [2018-07-19 13:00:00, , 4.402, ]]"
+        assert test_string == reference_string
+        assert os.path.basename(path) == file_data[1]
+        assert file_data[2] == "Rb1"
+
+    @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+    def test_parse_hobologger_file_convert_tz(self, mock_messagelog):
+        import os
+
+        f = (
+            '\ufeff"Plot Title: temp"',
+            '"#","Date Time, GMT+03:00","Temp, \u00b0C (LGR S/N: 1234, SEN S/N: 1234, LBL: Rb1)","Coupler Detached (LGR S/N: 1234)","Coupler Attached (LGR S/N: 1234)","Stopped (LGR S/N: 1234)","End Of File (LGR S/N: 1234)"',
+            "1,07/19/18 10:00:00 fm,4.558,Logged,,,",
+            "2,07/19/18 11:00:00 fm,4.402,,,,",
+            "3,07/19/18 12:00:00 em,4.402,,,,",
+            "4,07/19/18 01:00:00 em,4.402,,,,",
+        )
+        charset = "utf-8"
+        tzconverter = TzConverter()
+        tzconverter.target_tz = "GMT+01:00"
+        with common_utils.tempinput("\n".join(f), charset) as path:
+            file_data = HoboParser.parse(
+                path, charset, tz_converter=tzconverter, begindate=None, enddate=None
+            )
+
+        test_string = utils_for_tests.create_test_string(file_data[0])
+        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2018-07-19 08:00:00, , 4.558, ], [2018-07-19 09:00:00, , 4.402, ], [2018-07-19 10:00:00, , 4.402, ], [2018-07-19 11:00:00, , 4.402, ]]"
+        assert test_string == reference_string
+        assert os.path.basename(path) == file_data[1]
+        assert file_data[2] == "Rb1"
+
+    def test_parse_hobologger_file_changed_order(self):
+        import os
+
+        f = (
+            '\ufeff"Plot Title: temp"',
+            '"#","Temp, \u00b0C (LGR S/N: 1234, SEN S/N: 1234, LBL: Rb1)","Date Time, GMT+01:00","Coupler Detached (LGR S/N: 1234)","Coupler Attached (LGR S/N: 1234)","Stopped (LGR S/N: 1234)","End Of File (LGR S/N: 1234)"',
+            "1,4.558,07/19/18 10:00:00 fm,Logged,,,",
+            "2,4.402,07/19/18 11:00:00 fm,,,,",
+            "3,4.402,07/19/18 12:00:00 em,,,,",
+            "4,4.402,07/19/18 01:00:00 em,,,,",
+        )
+        charset = "utf-8"
+        tzconverter = TzConverter()
+        with common_utils.tempinput("\n".join(f), charset) as path:
+            file_data = HoboParser.parse(
+                path, charset, tz_converter=tzconverter, begindate=None, enddate=None
+            )
+
+        test_string = utils_for_tests.create_test_string(file_data[0])
+        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2018-07-19 10:00:00, , 4.558, ], [2018-07-19 11:00:00, , 4.402, ], [2018-07-19 12:00:00, , 4.402, ], [2018-07-19 13:00:00, , 4.402, ]]"
+        assert test_string == reference_string
+        assert os.path.basename(path) == file_data[1]
+        assert file_data[2] == "Rb1"
+
+    @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+    def test_parse_hobologger_file_other_dateformat(self, mock_messagelog):
+        import os
+
+        f = (
+            '\ufeff"Plot Title: temp"',
+            '"#","Date Time, GMT+01:00","Temp, \u00b0C (LGR S/N: 1234, SEN S/N: 1234, LBL: Rb1)","Coupler Detached (LGR S/N: 1234)","Coupler Attached (LGR S/N: 1234)","Stopped (LGR S/N: 1234)","End Of File (LGR S/N: 1234)"',
+            "1,2018-07-19 10:00:00,4.558,Logged,,,",
+            "2,2018-07-19 11:00:00,4.402,,,,",
+            "3,2018-07-19 12:00:00,4.402,,,,",
+            "4,2018-07-19 13:00:00,4.402,,,,",
+        )
+        charset = "utf-8"
+        tzconverter = TzConverter()
+        with common_utils.tempinput("\n".join(f), charset) as path:
+            file_data = HoboParser.parse(
+                path, charset, tz_converter=tzconverter, begindate=None, enddate=None
+            )
+
+        test_string = utils_for_tests.create_test_string(file_data[0])
+        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2018-07-19 10:00:00, , 4.558, ], [2018-07-19 11:00:00, , 4.402, ], [2018-07-19 12:00:00, , 4.402, ], [2018-07-19 13:00:00, , 4.402, ]]"
+        assert test_string == reference_string
+        assert os.path.basename(path) == file_data[1]
+        assert file_data[2] == "Rb1"
+
+
+# ── Integration test mixin: DiverOffice ──────────────────────────────────────
+# Ported from WlvllogImportFromDiverofficeFilesMixin in test_import_diveroffice_backends.py
+
+_CHARSET = "utf-8"
+
+
+class WlvllogImportFromLoggerDiverOfficeMixin:
+    """Integration tests for LoggerImport (DiverOffice format).
+
+    Ported from WlvllogImportFromDiverofficeFilesMixin.
+    Each inner helper _run() applies the migration pattern:
+    - DiverofficeImport -> LoggerImport (default DiverOffice format)
+    - mock import_logger.midvatten_utils.select_files
+    - remove QInputDialog.getText mock (encoding is automatic)
+    """
+
+    def test_wlvllogg_import_from_diveroffice_files(self):
+        files = [
+            (
+                "Location=rb1",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/03/15 10:30:00,1,10",
+                "2016/03/15 11:00:00,11,101",
+            ),
+            (
+                "Location=rb2",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/04/15 10:30:00,2,20",
+                "2016/04/15 11:00:00,21,201",
+            ),
+            (
+                "Location=rb3",
+                "Date/time,Water head[cm],Temperature[\u00b0C],Conductivity[mS/cm]",
+                "2016/05/15 10:30:00,3,30,5",
+                "2016/05/15 11:00:00,31,301,6",
+            ),
+        ]
+
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+
+        with (
+            common_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
+            common_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
+            common_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
+        ):
+            filenames = [f1, f2, f3]
+
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
+            )
+            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("qgis.utils.iface", autospec=True)
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
+            @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
+            def _run(
+                self,
+                filenames,
+                mock_filenames,
+                mock_skippopup,
+                mock_iface,
+                mock_askuser,
+                mock_notfoundquestion,
+            ):
+                mock_notfoundquestion.return_value.answer = "ok"
+                mock_notfoundquestion.return_value.value = "rb1"
+                mock_notfoundquestion.return_value.reuse_column = "location"
+                mock_filenames.return_value = filenames
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = LoggerImport(self.iface, ms)
+                importer.load_gui()
+                importer.select_files()
+                importer.start_import(
+                    importer.files,
+                    importer.skip_rows.checked,
+                    importer.confirm_names.checked,
+                    importer.import_all_data.checked,
+                )
+
+            _run(self, filenames)
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger ORDER BY obsid, date_time"
+            )
+        )
+        reference_string = r"""(True, [(rb1, 2016-03-15 10:30:00, 1.0, 10.0, None, None, None), (rb1, 2016-03-15 11:00:00, 11.0, 101.0, None, None, None), (rb1, 2016-04-15 10:30:00, 2.0, 20.0, None, None, None), (rb1, 2016-04-15 11:00:00, 21.0, 201.0, None, None, None), (rb1, 2016-05-15 10:30:00, 3.0, 30.0, 5.0, None, None), (rb1, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None)])"""
+        assert test_string == reference_string
+
+    def test_wlvllogg_import_from_diveroffice_files_skip_duplicate_datetimes(self):
+        files = [
+            (
+                "Location=rb1",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/03/15 10:30:00,1,10",
+                "2016/03/15 11:00:00,11,101",
+            ),
+            (
+                "Location=rb2",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/04/15 10:30:00,2,20",
+                "2016/04/15 11:00:00,21,201",
+            ),
+            (
+                "Location=rb3",
+                "Date/time,Water head[cm],Temperature[\u00b0C],Conductivity[mS/cm]",
+                "2016/05/15 10:30:00,3,30,5",
+                "2016/05/15 11:00:00,31,301,6",
+            ),
+        ]
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, head_cm) VALUES ('rb1', '2016-03-15 10:30', '5.0')"
+        )
+
+        with (
+            common_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
+            common_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
+            common_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
+        ):
+            filenames = [f1, f2, f3]
+
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
+            )
+            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("qgis.utils.iface", autospec=True)
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
+            @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
+            def _run(
+                self,
+                filenames,
+                mock_filenames,
+                mock_skippopup,
+                mock_iface,
+                mock_askuser,
+                mock_notfoundquestion,
+            ):
+                mock_notfoundquestion.return_value.answer = "ok"
+                mock_notfoundquestion.return_value.value = "rb1"
+                mock_notfoundquestion.return_value.reuse_column = "location"
+                mock_filenames.return_value = filenames
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = LoggerImport(self.iface, ms)
+                importer.load_gui()
+                importer.select_files()
+                importer.start_import(
+                    importer.files,
+                    importer.skip_rows.checked,
+                    importer.confirm_names.checked,
+                    importer.import_all_data.checked,
+                )
+
+            _run(self, filenames)
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger ORDER BY obsid, date_time"
+            )
+        )
+        reference_string = r"""(True, [(rb1, 2016-03-15 10:30, 5.0, None, None, None, None), (rb1, 2016-03-15 11:00:00, 11.0, 101.0, None, None, None), (rb1, 2016-04-15 10:30:00, 2.0, 20.0, None, None, None), (rb1, 2016-04-15 11:00:00, 21.0, 201.0, None, None, None), (rb1, 2016-05-15 10:30:00, 3.0, 30.0, 5.0, None, None), (rb1, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None)])"""
+        assert test_string == reference_string
+
+    def test_wlvllogg_import_from_diveroffice_files_filter_dates(self):
+        files = [
+            (
+                "Location=rb1",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/03/15 10:30:00,1,10",
+                "2016/03/15 11:00:00,11,101",
+            ),
+            (
+                "Location=rb2",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/04/15 10:30:00,2,20",
+                "2016/04/15 11:00:00,21,201",
+            ),
+            (
+                "Location=rb3",
+                "Date/time,Water head[cm],Temperature[\u00b0C],Conductivity[mS/cm]",
+                "2016/05/15 10:30:00,3,30,5",
+                "2016/05/15 11:00:00,31,301,6",
+            ),
+        ]
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, head_cm) VALUES ('rb1', '2016-03-15 10:31', '5.0')"
+        )
+
+        with (
+            common_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
+            common_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
+            common_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
+        ):
+            filenames = [f1, f2, f3]
+
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
+            )
+            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("qgis.utils.iface", autospec=True)
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
+            @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
+            def _run(
+                self,
+                filenames,
+                mock_filenames,
+                mock_skippopup,
+                mock_iface,
+                mock_askuser,
+                mock_notfoundquestion,
+            ):
+                mock_notfoundquestion.return_value.answer = "ok"
+                mock_notfoundquestion.return_value.value = "rb1"
+                mock_notfoundquestion.return_value.reuse_column = "location"
+                mock_filenames.return_value = filenames
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = LoggerImport(self.iface, ms)
+                importer.load_gui()
+                importer.select_files()
+                importer.import_all_data.checked = False
+                importer.start_import(
+                    importer.files,
+                    importer.skip_rows.checked,
+                    importer.confirm_names.checked,
+                    importer.import_all_data.checked,
+                )
+
+            _run(self, filenames)
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger ORDER BY obsid, date_time"
+            )
+        )
+        reference_string = r"""(True, [(rb1, 2016-03-15 10:31, 5.0, None, None, None, None), (rb1, 2016-03-15 11:00:00, 11.0, 101.0, None, None, None), (rb1, 2016-04-15 10:30:00, 2.0, 20.0, None, None, None), (rb1, 2016-04-15 11:00:00, 21.0, 201.0, None, None, None), (rb1, 2016-05-15 10:30:00, 3.0, 30.0, 5.0, None, None), (rb1, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None)])"""
+        assert test_string == reference_string
+
+    def test_wlvllogg_import_from_diveroffice_files_all_dates(self):
+        files = [
+            (
+                "Location=rb1",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/03/15 10:30:00,1,10",
+                "2016/03/15 11:00:00,11,101",
+            ),
+            (
+                "Location=rb2",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/04/15 10:30:00,2,20",
+                "2016/04/15 11:00:00,21,201",
+            ),
+            (
+                "Location=rb3",
+                "Date/time,Water head[cm],Temperature[\u00b0C],Conductivity[mS/cm]",
+                "2016/05/15 10:30:00,3,30,5",
+                "2016/05/15 11:00:00,31,301,6",
+            ),
+        ]
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb2')")
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb3')")
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, head_cm) VALUES ('rb1', '2016-03-15 10:31', '5.0')"
+        )
+
+        with (
+            common_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
+            common_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
+            common_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
+        ):
+            filenames = [f1, f2, f3]
+
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
+            )
+            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("qgis.utils.iface", autospec=True)
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
+            @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
+            def _run(
+                self,
+                filenames,
+                mock_filenames,
+                mock_skippopup,
+                mock_iface,
+                mock_askuser,
+                mock_notfoundquestion,
+            ):
+                mock_notfoundquestion.return_value.answer = "ok"
+                mock_notfoundquestion.return_value.value = "rb1"
+                mock_notfoundquestion.return_value.reuse_column = "location"
+                mock_filenames.return_value = filenames
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = LoggerImport(self.iface, ms)
+                importer.load_gui()
+                importer.select_files()
+                importer.import_all_data.checked = True
+                importer.confirm_names.checked = False
+                importer.start_import(
+                    importer.files,
+                    importer.skip_rows.checked,
+                    importer.confirm_names.checked,
+                    importer.import_all_data.checked,
+                )
+
+            _run(self, filenames)
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger ORDER BY obsid, date_time"
+            )
+        )
+        reference_string = r"""(True, [(rb1, 2016-03-15 10:30:00, 1.0, 10.0, None, None, None), (rb1, 2016-03-15 10:31, 5.0, None, None, None, None), (rb1, 2016-03-15 11:00:00, 11.0, 101.0, None, None, None), (rb2, 2016-04-15 10:30:00, 2.0, 20.0, None, None, None), (rb2, 2016-04-15 11:00:00, 21.0, 201.0, None, None, None), (rb3, 2016-05-15 10:30:00, 3.0, 30.0, 5.0, None, None), (rb3, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None)])"""
+        assert test_string == reference_string
+
+    def test_wlvllogg_import_from_diveroffice_files_try_capitalize(self):
+        files = [
+            (
+                "Location=rb1",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/03/15 10:30:00,1,10",
+                "2016/03/15 11:00:00,11,101",
+            )
+        ]
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('Rb1')")
+
+        with common_utils.tempinput("\n".join(files[0]), _CHARSET) as f1:
+            filenames = [f1]
+
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
+            )
+            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("qgis.utils.iface", autospec=True)
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
+            @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
+            def _run(
+                self,
+                filenames,
+                mock_filenames,
+                mock_skippopup,
+                mock_iface,
+                mock_askuser,
+                mock_notfoundquestion,
+            ):
+                mock_notfoundquestion.return_value.answer = "ok"
+                mock_notfoundquestion.return_value.value = "rb1"
+                mock_notfoundquestion.return_value.reuse_column = "location"
+                mock_filenames.return_value = filenames
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = LoggerImport(self.iface, ms)
+                importer.load_gui()
+                importer.select_files()
+                importer.import_all_data.checked = False
+                importer.confirm_names.checked = False
+                importer.start_import(
+                    importer.files,
+                    importer.skip_rows.checked,
+                    importer.confirm_names.checked,
+                    importer.import_all_data.checked,
+                )
+
+            _run(self, filenames)
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger ORDER BY obsid, date_time"
+            )
+        )
+        reference_string = r"""(True, [(Rb1, 2016-03-15 10:30:00, 1.0, 10.0, None, None, None), (Rb1, 2016-03-15 11:00:00, 11.0, 101.0, None, None, None)])"""
+        assert test_string == reference_string
+
+    def test_wlvllogg_import_from_diveroffice_files_cancel(self):
+        files = [
+            (
+                "Location=rb2",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/03/15 10:30:00,1,10",
+                "2016/03/15 11:00:00,11,101",
+            )
+        ]
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('Rb1')")
+
+        with common_utils.tempinput("\n".join(files[0]), _CHARSET) as f1:
+            filenames = [f1]
+
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
+            )
+            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("qgis.utils.iface", autospec=True)
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
+            @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
+            def _run(
+                self,
+                filenames,
+                mock_filenames,
+                mock_skippopup,
+                mock_iface,
+                mock_askuser,
+                mock_notfoundquestion,
+            ):
+                mock_notfoundquestion.return_value.answer = "cancel"
+                mock_notfoundquestion.return_value.value = "rb1"
+                mock_notfoundquestion.return_value.reuse_column = "location"
+                mock_filenames.return_value = filenames
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = LoggerImport(self.iface, ms)
+                importer.load_gui()
+                importer.select_files()
+                importer.import_all_data.checked = True
+                importer.confirm_names.checked = False
+                importer.start_import(
+                    importer.files,
+                    importer.skip_rows.checked,
+                    importer.confirm_names.checked,
+                    importer.import_all_data.checked,
+                )
+
+            _run(self, filenames)
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger ORDER BY obsid, date_time"
+            )
+        )
+        reference_string = r"""(True, [])"""
+        assert test_string == reference_string
+
+    def test_wlvllogg_import_from_diveroffice_files_skip_missing_water_level(self):
+        files = [
+            (
+                "Location=rb1",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/03/15 10:30:00,1,10",
+                "2016/03/15 11:00:00,,101",
+            ),
+            (
+                "Location=rb2",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/04/15 10:30:00,2,20",
+                "2016/04/15 11:00:00,21,201",
+            ),
+            (
+                "Location=rb3",
+                "Date/time,Water head[cm],Temperature[\u00b0C],Conductivity[mS/cm]",
+                "2016/05/15 10:30:00,3,30,5",
+                "2016/05/15 11:00:00,31,301,6",
+            ),
+        ]
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb2')")
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb3')")
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, head_cm) VALUES ('rb1', '2016-03-15 10:31', '5.0')"
+        )
+
+        with (
+            common_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
+            common_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
+            common_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
+        ):
+            filenames = [f1, f2, f3]
+
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
+            )
+            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("qgis.utils.iface", autospec=True)
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
+            @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
+            def _run(
+                self,
+                filenames,
+                mock_filenames,
+                mock_skippopup,
+                mock_iface,
+                mock_askuser,
+                mock_notfoundquestion,
+            ):
+                mock_notfoundquestion.return_value.answer = "ok"
+                mock_notfoundquestion.return_value.value = "rb1"
+                mock_notfoundquestion.return_value.reuse_column = "location"
+                mock_filenames.return_value = filenames
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = LoggerImport(self.iface, ms)
+                importer.load_gui()
+                importer.select_files()
+                importer.import_all_data.checked = True
+                importer.confirm_names.checked = False
+                importer.skip_rows.checked = True
+                importer.start_import(
+                    importer.files,
+                    importer.skip_rows.checked,
+                    importer.confirm_names.checked,
+                    importer.import_all_data.checked,
+                )
+
+            _run(self, filenames)
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger ORDER BY obsid, date_time"
+            )
+        )
+        reference_string = r"""(True, [(rb1, 2016-03-15 10:30:00, 1.0, 10.0, None, None, None), (rb1, 2016-03-15 10:31, 5.0, None, None, None, None), (rb2, 2016-04-15 10:30:00, 2.0, 20.0, None, None, None), (rb2, 2016-04-15 11:00:00, 21.0, 201.0, None, None, None), (rb3, 2016-05-15 10:30:00, 3.0, 30.0, 5.0, None, None), (rb3, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None)])"""
+        assert test_string == reference_string
+
+    def test_wlvllogg_import_from_diveroffice_files_not_skip_missing_water_level(self):
+        files = [
+            (
+                "Location=rb1",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/03/15 10:30:00,1,10",
+                "2016/03/15 11:00:00,,101",
+            ),
+            (
+                "Location=rb2",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/04/15 10:30:00,2,20",
+                "2016/04/15 11:00:00,21,201",
+            ),
+            (
+                "Location=rb3",
+                "Date/time,Water head[cm],Temperature[\u00b0C],Conductivity[mS/cm]",
+                "2016/05/15 10:30:00,3,30,5",
+                "2016/05/15 11:00:00,31,301,6",
+            ),
+        ]
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb2')")
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb3')")
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, head_cm) VALUES ('rb1', '2016-03-15 10:31', '5.0')"
+        )
+
+        with (
+            common_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
+            common_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
+            common_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
+        ):
+            filenames = [f1, f2, f3]
+
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
+            )
+            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("qgis.utils.iface", autospec=True)
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
+            @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
+            def _run(
+                self,
+                filenames,
+                mock_filenames,
+                mock_skippopup,
+                mock_iface,
+                mock_askuser,
+                mock_notfoundquestion,
+            ):
+                mock_notfoundquestion.return_value.answer = "ok"
+                mock_notfoundquestion.return_value.value = "rb1"
+                mock_notfoundquestion.return_value.reuse_column = "location"
+                mock_filenames.return_value = filenames
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = LoggerImport(self.iface, ms)
+                importer.load_gui()
+                importer.select_files()
+                importer.import_all_data.checked = True
+                importer.confirm_names.checked = False
+                importer.skip_rows.checked = False
+                importer.start_import(
+                    importer.files,
+                    importer.skip_rows.checked,
+                    importer.confirm_names.checked,
+                    importer.import_all_data.checked,
+                )
+
+            _run(self, filenames)
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger ORDER BY obsid, date_time"
+            )
+        )
+        reference_string = r"""(True, [(rb1, 2016-03-15 10:30:00, 1.0, 10.0, None, None, None), (rb1, 2016-03-15 10:31, 5.0, None, None, None, None), (rb1, 2016-03-15 11:00:00, None, 101.0, None, None, None), (rb2, 2016-04-15 10:30:00, 2.0, 20.0, None, None, None), (rb2, 2016-04-15 11:00:00, 21.0, 201.0, None, None, None), (rb3, 2016-05-15 10:30:00, 3.0, 30.0, 5.0, None, None), (rb3, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None)])"""
+        assert test_string == reference_string
+
+    def test_wlvllogg_import_from_diveroffice_files_datetime_filter(self):
+        files = [
+            (
+                "Location=rb1",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/03/15 10:30:00,1,10",
+                "2016/03/15 11:00:00,11,101",
+                "2016/06/15 11:00:00,11,101",
+            ),
+            (
+                "Location=rb2",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/04/15 10:30:00,2,20",
+                "2016/04/15 11:00:00,21,201",
+            ),
+        ]
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb2')")
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, head_cm) VALUES ('rb1', '2016-03-15 10:31', '5.0')"
+        )
+
+        with (
+            common_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
+            common_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
+        ):
+            filenames = [f1, f2]
+
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
+            )
+            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("qgis.utils.iface", autospec=True)
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
+            @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
+            def _run(
+                self,
+                filenames,
+                mock_filenames,
+                mock_skippopup,
+                mock_iface,
+                mock_askuser,
+                mock_notfoundquestion,
+            ):
+                mock_notfoundquestion.return_value.answer = "ok"
+                mock_notfoundquestion.return_value.value = "rb1"
+                mock_notfoundquestion.return_value.reuse_column = "location"
+                mock_filenames.return_value = filenames
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = LoggerImport(self.iface, ms)
+                importer.load_gui()
+                importer.select_files()
+                importer.import_all_data.checked = True
+                importer.confirm_names.checked = False
+                importer.date_time_filter.from_date = "2016-03-15 11:00:00"
+                importer.date_time_filter.to_date = "2016-04-15 10:30:00"
+                importer.start_import(
+                    importer.files,
+                    importer.skip_rows.checked,
+                    importer.confirm_names.checked,
+                    importer.import_all_data.checked,
+                    importer.date_time_filter.from_date,
+                    importer.date_time_filter.to_date,
+                )
+
+            _run(self, filenames)
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger ORDER BY obsid, date_time"
+            )
+        )
+        reference_string = r"""(True, [(rb1, 2016-03-15 10:31, 5.0, None, None, None, None), (rb1, 2016-03-15 11:00:00, 11.0, 101.0, None, None, None), (rb2, 2016-04-15 10:30:00, 2.0, 20.0, None, None, None)])"""
+        assert test_string == reference_string
+
+    def test_wlvllogg_import_from_diveroffice_files_skip_obsid(self):
+        files = [
+            (
+                "Location=rb1",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/03/15 10:30:00,1,10",
+                "2016/03/15 11:00:00,11,101",
+            ),
+            (
+                "Location=rb2",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/04/15 10:30:00,2,20",
+                "2016/04/15 11:00:00,21,201",
+            ),
+            (
+                "Location=rb3",
+                "Date/time,Water head[cm],Temperature[\u00b0C],Conductivity[mS/cm]",
+                "2016/05/15 10:30:00,3,30,5",
+                "2016/05/15 11:00:00,31,301,6",
+            ),
+        ]
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb2')")
+
+        with (
+            common_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
+            common_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
+            common_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
+        ):
+            filenames = [f1, f2, f3]
+
+            @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
+            )
+            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("qgis.utils.iface", autospec=True)
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
+            @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
+            def _run(
+                self,
+                filenames,
+                mock_filenames,
+                mock_skippopup,
+                mock_iface,
+                mock_askuser,
+                mock_notfoundquestion,
+                mock_messagebar,
+            ):
+                mocks_notfoundquestion = []
+                for answer, value in [["ok", "rb1"], ["ok", "rb2"], ["skip", "rb3"]]:
+                    a_mock = MagicMock()
+                    a_mock.answer = answer
+                    a_mock.value = value
+                    a_mock.reuse_column = "location"
+                    mocks_notfoundquestion.append(a_mock)
+                mock_notfoundquestion.side_effect = mocks_notfoundquestion
+                mock_filenames.return_value = filenames
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = LoggerImport(self.iface, ms)
+                importer.load_gui()
+                importer.select_files()
+                importer.start_import(
+                    importer.files,
+                    importer.skip_rows.checked,
+                    importer.confirm_names.checked,
+                    importer.import_all_data.checked,
+                )
+                print("\n".join([str(x) for x in mock_messagebar.mock_calls]))
+
+            _run(self, filenames)
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger ORDER BY obsid, date_time"
+            )
+        )
+        reference_string = r"""(True, [(rb1, 2016-03-15 10:30:00, 1.0, 10.0, None, None, None), (rb1, 2016-03-15 11:00:00, 11.0, 101.0, None, None, None), (rb2, 2016-04-15 10:30:00, 2.0, 20.0, None, None, None), (rb2, 2016-04-15 11:00:00, 21.0, 201.0, None, None, None)])"""
+        assert test_string == reference_string
+
+    def test_wlvllogg_import_change_timezone(self):
+        files = [
+            (
+                "Location=rb1",
+                "Instrument number=UTC+1",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/03/15 10:30:00,1,10",
+                "2016/03/15 11:00:00,11,101",
+            ),
+            (
+                "Location=rb2",
+                "Instrument number=UTC+2",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/04/15 10:30:00,2,20",
+                "2016/04/15 11:00:00,21,201",
+            ),
+            (
+                "Location=rb3",
+                "Instrument number",
+                "Date/time,Water head[cm],Temperature[\u00b0C],Conductivity[mS/cm]",
+                "2016/05/15 10:30:00,3,30,5",
+                "2016/05/15 11:00:00,31,301,6",
+            ),
+            (
+                "Location=rb4",
+                "Date/time,Water head[cm],Temperature[\u00b0C],Conductivity[mS/cm]",
+                "2016/05/15 10:30:00,3,30,5",
+                "2016/05/15 11:00:00,31,301,6",
+            ),
+            (
+                "Location=rb5",
+                "Instrument number=UTC-2",
+                "Date/time,Water head[cm],Temperature[\u00b0C],Conductivity[mS/cm]",
+                "2016/05/15 10:30:00,3,30,5",
+                "2016/05/15 11:00:00,31,301,6",
+            ),
+        ]
+        for obsid in ["rb1", "rb2", "rb3", "rb4", "rb5"]:
+            db_utils.sql_alter_db(f"INSERT INTO obs_points (obsid) VALUES ('{obsid}')")
+
+        with (
+            common_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
+            common_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
+            common_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
+            common_utils.tempinput("\n".join(files[3]), _CHARSET) as f4,
+            common_utils.tempinput("\n".join(files[4]), _CHARSET) as f5,
+        ):
+            filenames = [f1, f2, f3, f4, f5]
+
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
+            )
+            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("qgis.utils.iface", autospec=True)
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
+            @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
+            def _run(
+                self,
+                filenames,
+                mock_filenames,
+                mock_skippopup,
+                mock_iface,
+                mock_askuser,
+                mock_notfoundquestion,
+            ):
+                mock_notfoundquestion.return_value.answer = "ok"
+                mock_notfoundquestion.return_value.value = "rb1"
+                mock_notfoundquestion.return_value.reuse_column = "location"
+                mock_filenames.return_value = filenames
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = LoggerImport(self.iface, ms)
+                importer.load_gui()
+                importer.confirm_names.checked = False
+                from midvatten.tools.utils.gui_utils import set_combobox
+
+                set_combobox(importer.utc_offset, "UTC+1", add_if_not_exists=False)
+                importer.select_files()
+                importer.start_import(
+                    importer.files,
+                    importer.skip_rows.checked,
+                    importer.confirm_names.checked,
+                    importer.import_all_data.checked,
+                )
+
+            _run(self, filenames)
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger ORDER BY obsid, date_time"
+            )
+        )
+        reference_string = r"""(True, [(rb1, 2016-03-15 10:30:00, 1.0, 10.0, None, None, None), (rb1, 2016-03-15 11:00:00, 11.0, 101.0, None, None, None), (rb2, 2016-04-15 09:30:00, 2.0, 20.0, None, None, None), (rb2, 2016-04-15 10:00:00, 21.0, 201.0, None, None, None), (rb3, 2016-05-15 10:30:00, 3.0, 30.0, 5.0, None, None), (rb3, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None), (rb4, 2016-05-15 10:30:00, 3.0, 30.0, 5.0, None, None), (rb4, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None), (rb5, 2016-05-15 13:30:00, 3.0, 30.0, 5.0, None, None), (rb5, 2016-05-15 14:00:00, 31.0, 301.0, 6.0, None, None)])"""
+        assert test_string == reference_string
+
+    def test_wlvllogg_import_change_timezone_file_timezone_failed_dont_skip(self):
+        files = [
+            (
+                "Location=rb1",
+                "Instrument number=UTC+1",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/03/15 10:30:00,1,10",
+                "2016/03/15 11:00:00,11,101",
+            ),
+            (
+                "Location=rb2",
+                "Instrument number=UTC+ABC2",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/04/15 10:30:00,2,20",
+                "2016/04/15 11:00:00,21,201",
+            ),
+            (
+                "Location=rb3",
+                "Instrument number",
+                "Date/time,Water head[cm],Temperature[\u00b0C],Conductivity[mS/cm]",
+                "2016/05/15 10:30:00,3,30,5",
+                "2016/05/15 11:00:00,31,301,6",
+            ),
+            (
+                "Location=rb4",
+                "Date/time,Water head[cm],Temperature[\u00b0C],Conductivity[mS/cm]",
+                "2016/05/15 10:30:00,3,30,5",
+                "2016/05/15 11:00:00,31,301,6",
+            ),
+            (
+                "Location=rb5",
+                "Instrument number=UTC-2",
+                "Date/time,Water head[cm],Temperature[\u00b0C],Conductivity[mS/cm]",
+                "2016/05/15 10:30:00,3,30,5",
+                "2016/05/15 11:00:00,31,301,6",
+            ),
+        ]
+        for obsid in ["rb1", "rb2", "rb3", "rb4", "rb5"]:
+            db_utils.sql_alter_db(f"INSERT INTO obs_points (obsid) VALUES ('{obsid}')")
+
+        with (
+            common_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
+            common_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
+            common_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
+            common_utils.tempinput("\n".join(files[3]), _CHARSET) as f4,
+            common_utils.tempinput("\n".join(files[4]), _CHARSET) as f5,
+        ):
+            filenames = [f1, f2, f3, f4, f5]
+
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
+            )
+            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("qgis.utils.iface", autospec=True)
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
+            @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
+            def _run(
+                self,
+                filenames,
+                mock_filenames,
+                mock_skippopup,
+                mock_iface,
+                mock_askuser,
+                mock_notfoundquestion,
+            ):
+                mock_notfoundquestion.return_value.answer = "ok"
+                mock_notfoundquestion.return_value.value = "rb1"
+                mock_notfoundquestion.return_value.reuse_column = "location"
+                mock_filenames.return_value = filenames
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = LoggerImport(self.iface, ms)
+                importer.load_gui()
+                importer.confirm_names.checked = False
+                from midvatten.tools.utils.gui_utils import set_combobox
+
+                set_combobox(importer.utc_offset, "UTC+1", add_if_not_exists=False)
+                importer.select_files()
+
+                def side_effect(*args, **kwargs):
+                    mock_result = MagicMock()
+                    if "msg" in kwargs:
+                        if (
+                            "UTC+ABC2 could not be parsed!\n\nSkip file?"
+                            in kwargs["msg"]
+                        ):
+                            mock_result.result = 0
+                            return mock_result
+                    if len(args) > 1:
+                        if args[1].startswith(
+                            "Note:\nForeign keys will be imported silently.\nProceed with import?"
+                        ):
+                            mock_result.result = 1
+                            return mock_result
+
+                mock_askuser.side_effect = side_effect
+                importer.start_import(
+                    importer.files,
+                    importer.skip_rows.checked,
+                    importer.confirm_names.checked,
+                    importer.import_all_data.checked,
+                )
+                return mock_askuser
+
+            mock_askuser = _run(self, filenames)
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger ORDER BY obsid, date_time"
+            )
+        )
+        reference_string = r"""(True, [(rb1, 2016-03-15 10:30:00, 1.0, 10.0, None, None, None), (rb1, 2016-03-15 11:00:00, 11.0, 101.0, None, None, None), (rb2, 2016-04-15 10:30:00, 2.0, 20.0, None, None, None), (rb2, 2016-04-15 11:00:00, 21.0, 201.0, None, None, None), (rb3, 2016-05-15 10:30:00, 3.0, 30.0, 5.0, None, None), (rb3, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None), (rb4, 2016-05-15 10:30:00, 3.0, 30.0, 5.0, None, None), (rb4, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None), (rb5, 2016-05-15 13:30:00, 3.0, 30.0, 5.0, None, None), (rb5, 2016-05-15 14:00:00, 31.0, 301.0, 6.0, None, None)])"""
+        assert test_string == reference_string
+        assert (
+            mock_askuser.mock_calls[0].kwargs.get("dialogtitle", "")
+            == "File timezone error!"
+        )
+
+    def test_wlvllogg_import_change_timezone_file_timezone_failed_skip(self):
+        files = [
+            (
+                "Location=rb1",
+                "Instrument number=UTC+1",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/03/15 10:30:00,1,10",
+                "2016/03/15 11:00:00,11,101",
+            ),
+            (
+                "Location=rb2",
+                "Instrument number=UTC+ABC2",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/04/15 10:30:00,2,20",
+                "2016/04/15 11:00:00,21,201",
+            ),
+            (
+                "Location=rb3",
+                "Instrument number",
+                "Date/time,Water head[cm],Temperature[\u00b0C],Conductivity[mS/cm]",
+                "2016/05/15 10:30:00,3,30,5",
+                "2016/05/15 11:00:00,31,301,6",
+            ),
+            (
+                "Location=rb4",
+                "Date/time,Water head[cm],Temperature[\u00b0C],Conductivity[mS/cm]",
+                "2016/05/15 10:30:00,3,30,5",
+                "2016/05/15 11:00:00,31,301,6",
+            ),
+            (
+                "Location=rb5",
+                "Instrument number=UTC-2",
+                "Date/time,Water head[cm],Temperature[\u00b0C],Conductivity[mS/cm]",
+                "2016/05/15 10:30:00,3,30,5",
+                "2016/05/15 11:00:00,31,301,6",
+            ),
+        ]
+        for obsid in ["rb1", "rb2", "rb3", "rb4", "rb5"]:
+            db_utils.sql_alter_db(f"INSERT INTO obs_points (obsid) VALUES ('{obsid}')")
+
+        with (
+            common_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
+            common_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
+            common_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
+            common_utils.tempinput("\n".join(files[3]), _CHARSET) as f4,
+            common_utils.tempinput("\n".join(files[4]), _CHARSET) as f5,
+        ):
+            filenames = [f1, f2, f3, f4, f5]
+
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
+            )
+            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("qgis.utils.iface", autospec=True)
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
+            @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
+            def _run(
+                self,
+                filenames,
+                mock_filenames,
+                mock_skippopup,
+                mock_iface,
+                mock_askuser,
+                mock_notfoundquestion,
+            ):
+                mock_notfoundquestion.return_value.answer = "ok"
+                mock_notfoundquestion.return_value.value = "rb1"
+                mock_notfoundquestion.return_value.reuse_column = "location"
+                mock_filenames.return_value = filenames
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = LoggerImport(self.iface, ms)
+                importer.load_gui()
+                importer.confirm_names.checked = False
+                from midvatten.tools.utils.gui_utils import set_combobox
+
+                set_combobox(importer.utc_offset, "UTC+1", add_if_not_exists=False)
+                importer.select_files()
+                mock_askuser.return_value.result = 1
+                importer.start_import(
+                    importer.files,
+                    importer.skip_rows.checked,
+                    importer.confirm_names.checked,
+                    importer.import_all_data.checked,
+                )
+                return mock_askuser
+
+            mock_askuser = _run(self, filenames)
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger ORDER BY obsid, date_time"
+            )
+        )
+        reference_string = r"""(True, [(rb1, 2016-03-15 10:30:00, 1.0, 10.0, None, None, None), (rb1, 2016-03-15 11:00:00, 11.0, 101.0, None, None, None), (rb3, 2016-05-15 10:30:00, 3.0, 30.0, 5.0, None, None), (rb3, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None), (rb4, 2016-05-15 10:30:00, 3.0, 30.0, 5.0, None, None), (rb4, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None), (rb5, 2016-05-15 13:30:00, 3.0, 30.0, 5.0, None, None), (rb5, 2016-05-15 14:00:00, 31.0, 301.0, 6.0, None, None)])"""
+        assert test_string == reference_string
+        assert "File timezone error!" in ", ".join(
+            [str(x) for x in mock_askuser.mock_calls]
+        )
+
+    def test_wlvllogg_import_change_timezone_file_timezone_failed_cancel(self):
+        files = [
+            (
+                "Location=rb1",
+                "Instrument number=UTC+1",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/03/15 10:30:00,1,10",
+                "2016/03/15 11:00:00,11,101",
+            ),
+            (
+                "Location=rb2",
+                "Instrument number=UTC+ABC2",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/04/15 10:30:00,2,20",
+                "2016/04/15 11:00:00,21,201",
+            ),
+            (
+                "Location=rb3",
+                "Instrument number",
+                "Date/time,Water head[cm],Temperature[\u00b0C],Conductivity[mS/cm]",
+                "2016/05/15 10:30:00,3,30,5",
+                "2016/05/15 11:00:00,31,301,6",
+            ),
+            (
+                "Location=rb4",
+                "Date/time,Water head[cm],Temperature[\u00b0C],Conductivity[mS/cm]",
+                "2016/05/15 10:30:00,3,30,5",
+                "2016/05/15 11:00:00,31,301,6",
+            ),
+            (
+                "Location=rb5",
+                "Instrument number=UTC-2",
+                "Date/time,Water head[cm],Temperature[\u00b0C],Conductivity[mS/cm]",
+                "2016/05/15 10:30:00,3,30,5",
+                "2016/05/15 11:00:00,31,301,6",
+            ),
+        ]
+        for obsid in ["rb1", "rb2", "rb3", "rb4", "rb5"]:
+            db_utils.sql_alter_db(f"INSERT INTO obs_points (obsid) VALUES ('{obsid}')")
+
+        with (
+            common_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
+            common_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
+            common_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
+            common_utils.tempinput("\n".join(files[3]), _CHARSET) as f4,
+            common_utils.tempinput("\n".join(files[4]), _CHARSET) as f5,
+        ):
+            filenames = [f1, f2, f3, f4, f5]
+
+            @mock.patch(
+                "midvatten.tools.import_logger.QtWidgets.QMessageBox.information"
+            )
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
+            )
+            @mock.patch("qgis.utils.iface", autospec=True)
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
+            @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
+            def _run(
+                self,
+                filenames,
+                mock_filenames,
+                mock_skippopup,
+                mock_iface,
+                mock_notfoundquestion,
+                mock_askuser,
+            ):
+                mock_notfoundquestion.return_value.answer = "ok"
+                mock_notfoundquestion.return_value.value = "rb1"
+                mock_notfoundquestion.return_value.reuse_column = "location"
+                mock_filenames.return_value = filenames
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = LoggerImport(self.iface, ms)
+                importer.load_gui()
+                importer.confirm_names.checked = False
+                from midvatten.tools.utils.gui_utils import set_combobox
+
+                set_combobox(importer.utc_offset, "UTC+1", add_if_not_exists=False)
+                importer.select_files()
+                from qgis.PyQt import QtWidgets as _QtWidgets
+
+                mock_askuser.return_value = _QtWidgets.QMessageBox.Cancel
+                importer.start_import(
+                    importer.files,
+                    importer.skip_rows.checked,
+                    importer.confirm_names.checked,
+                    importer.import_all_data.checked,
+                )
+                return mock_askuser
+
+            mock_askuser = _run(self, filenames)
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger ORDER BY obsid, date_time"
+            )
+        )
+        reference_string = r"""(True, [])"""
+        assert test_string == reference_string
+        assert mock_askuser.call_args.args[1] == "File timezone error!"
+
+    def test_wlvllogg_import_change_timezone_read_from_db(self):
+        files = [
+            (
+                "Location=rb1",
+                "Instrument number=UTC+1",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/03/15 10:30:00,1,10",
+                "2016/03/15 11:00:00,11,101",
+            ),
+            (
+                "Location=rb2",
+                "Instrument number=UTC+2",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/04/15 10:30:00,2,20",
+                "2016/04/15 11:00:00,21,201",
+            ),
+            (
+                "Location=rb3",
+                "Instrument number",
+                "Date/time,Water head[cm],Temperature[\u00b0C],Conductivity[mS/cm]",
+                "2016/05/15 10:30:00,3,30,5",
+                "2016/05/15 11:00:00,31,301,6",
+            ),
+            (
+                "Location=rb4",
+                "Date/time,Water head[cm],Temperature[\u00b0C],Conductivity[mS/cm]",
+                "2016/05/15 10:30:00,3,30,5",
+                "2016/05/15 11:00:00,31,301,6",
+            ),
+            (
+                "Location=rb5",
+                "Instrument number=UTC-2",
+                "Date/time,Water head[cm],Temperature[\u00b0C],Conductivity[mS/cm]",
+                "2016/05/15 10:30:00,3,30,5",
+                "2016/05/15 11:00:00,31,301,6",
+            ),
+        ]
+        for obsid in ["rb1", "rb2", "rb3", "rb4", "rb5"]:
+            db_utils.sql_alter_db(f"INSERT INTO obs_points (obsid) VALUES ('{obsid}')")
+        db_utils.sql_alter_db(
+            "UPDATE about_db SET description = description || ' (UTC+1)' WHERE tablename = 'w_levels_logger' and columnname = 'date_time';"
+        )
+
+        with (
+            common_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
+            common_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
+            common_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
+            common_utils.tempinput("\n".join(files[3]), _CHARSET) as f4,
+            common_utils.tempinput("\n".join(files[4]), _CHARSET) as f5,
+        ):
+            filenames = [f1, f2, f3, f4, f5]
+
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
+            )
+            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("qgis.utils.iface", autospec=True)
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
+            @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
+            def _run(
+                self,
+                filenames,
+                mock_filenames,
+                mock_skippopup,
+                mock_iface,
+                mock_askuser,
+                mock_notfoundquestion,
+            ):
+                mock_notfoundquestion.return_value.answer = "ok"
+                mock_notfoundquestion.return_value.value = "rb1"
+                mock_notfoundquestion.return_value.reuse_column = "location"
+                mock_filenames.return_value = filenames
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = LoggerImport(self.iface, ms)
+                importer.load_gui()
+                importer.confirm_names.checked = False
+                importer.select_files()
+                importer.start_import(
+                    importer.files,
+                    importer.skip_rows.checked,
+                    importer.confirm_names.checked,
+                    importer.import_all_data.checked,
+                )
+
+            _run(self, filenames)
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger ORDER BY obsid, date_time"
+            )
+        )
+        reference_string = r"""(True, [(rb1, 2016-03-15 10:30:00, 1.0, 10.0, None, None, None), (rb1, 2016-03-15 11:00:00, 11.0, 101.0, None, None, None), (rb2, 2016-04-15 09:30:00, 2.0, 20.0, None, None, None), (rb2, 2016-04-15 10:00:00, 21.0, 201.0, None, None, None), (rb3, 2016-05-15 10:30:00, 3.0, 30.0, 5.0, None, None), (rb3, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None), (rb4, 2016-05-15 10:30:00, 3.0, 30.0, 5.0, None, None), (rb4, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None), (rb5, 2016-05-15 13:30:00, 3.0, 30.0, 5.0, None, None), (rb5, 2016-05-15 14:00:00, 31.0, 301.0, 6.0, None, None)])"""
+        assert test_string == reference_string
+
+    def test_wlvllogg_import_from_diveroffice_comma_missing_head_cm_value(self):
+        files = [
+            (
+                "[Logger settings]",
+                "Location=rb1",
+                "[Channel 1]",
+                "Identification          =LEVEL",
+                "[Channel 2]",
+                "Identification          =TEMPERATURE",
+                "",
+                "Date/time;Water head[cm];Temperature[\u00b0C]",
+                "2016/03/15 10:30:00;1,2;10",
+                "2016/03/15 11:00:00;    ;101",
+                "END OF DATA FILE OF DATALOGGER FOR WINDOWS",
+                "    ",
+            )
+        ]
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+
+        with common_utils.tempinput("\n".join(files[0]), _CHARSET, ".csv") as f1:
+            filenames = [f1]
+
+            @mock.patch("midvatten.tools.utils.file_utils.ask_for_delimiter")
+            @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
+            )
+            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("qgis.utils.iface", autospec=True)
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
+            @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
+            def _run(
+                self,
+                filenames,
+                mock_filenames,
+                mock_skippopup,
+                mock_iface,
+                mock_askuser,
+                mock_notfoundquestion,
+                mock_messagebar,
+                mock_delimiter_question,
+            ):
+                mock_delimiter_question.return_value = (";", True)
+                mock_notfoundquestion.return_value.answer = "ok"
+                mock_notfoundquestion.return_value.value = "rb1"
+                mock_notfoundquestion.return_value.reuse_column = "location"
+                mock_filenames.return_value = filenames
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = LoggerImport(self.iface, ms)
+                importer.load_gui()
+                importer.select_files()
+                try:
+                    importer.start_import(
+                        importer.files,
+                        importer.skip_rows.checked,
+                        importer.confirm_names.checked,
+                        importer.import_all_data.checked,
+                    )
+                except Exception:
+                    pass
+
+            _run(self, filenames)
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger ORDER BY obsid, date_time"
+            )
+        )
+        reference_string = (
+            r"""(True, [(rb1, 2016-03-15 10:30:00, 1.2, 10.0, None, None, None)])"""
+        )
+        assert test_string == reference_string
+
+    def test_wlvllogg_import_from_diveroffice_mon_files_space_sep(self):
+        files = [
+            (
+                "[Logger settings]",
+                "Location=rb1",
+                "[Channel 1]",
+                "Identification          =LEVEL",
+                "[Channel 2]",
+                "Identification          =TEMPERATURE",
+                "[Data]",
+                "3",
+                "2022/06/10 12:00:00.0      268.892       7.280",
+                "2022/06/10 13:00:00.0      269.883       7.077",
+                "2022/06/10 14:00:00.0      271.500       7.067",
+                "END OF DATA FILE OF DATALOGGER FOR WINDOWS",
+            )
+        ]
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+
+        with common_utils.tempinput("\n".join(files[0]), _CHARSET, ".mon") as f1:
+            filenames = [f1]
+
+            @mock.patch("midvatten.tools.utils.file_utils.ask_for_delimiter")
+            @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
+            )
+            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("qgis.utils.iface", autospec=True)
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
+            @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
+            def _run(
+                self,
+                filenames,
+                mock_filenames,
+                mock_skippopup,
+                mock_iface,
+                mock_askuser,
+                mock_notfoundquestion,
+                mock_messagebar,
+                mock_delimiter_question,
+            ):
+                mock_delimiter_question.return_value = (";", True)
+                mock_notfoundquestion.return_value.answer = "ok"
+                mock_notfoundquestion.return_value.value = "rb1"
+                mock_notfoundquestion.return_value.reuse_column = "location"
+                mock_filenames.return_value = filenames
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = LoggerImport(self.iface, ms)
+                importer.load_gui()
+                importer.select_files()
+                try:
+                    importer.start_import(
+                        importer.files,
+                        importer.skip_rows.checked,
+                        importer.confirm_names.checked,
+                        importer.import_all_data.checked,
+                    )
+                except Exception:
+                    pass
+
+            _run(self, filenames)
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger ORDER BY obsid, date_time"
+            )
+        )
+        reference_string = r"""(True, [(rb1, 2022-06-10 12:00:00, 268.892, 7.28, None, None, None), (rb1, 2022-06-10 13:00:00, 269.883, 7.077, None, None, None), (rb1, 2022-06-10 14:00:00, 271.5, 7.067, None, None, None)])"""
+        assert test_string == reference_string
+
+    def test_wlvllogg_import_from_diveroffice_mon_files(self):
+        files = [
+            (
+                "[Logger settings]",
+                "Location=rb1",
+                "[Channel 1]",
+                "Identification          =LEVEL",
+                "[Channel 2]",
+                "Identification          =TEMPERATURE",
+                "[Data]",
+                "2",
+                "2016/03/15 10:30:00,1,10",
+                "2016/03/15 11:00:00,11,101",
+                "END OF DATA FILE OF DATALOGGER FOR WINDOWS",
+            ),
+            (
+                "[Series settings]",
+                "Location=rb2",
+                "[Channel 1]",
+                "Identification          =Water head",
+                "[Channel 2]",
+                "Identification          =TEMPERATURE",
+                "[Data]",
+                "2",
+                "2016/04/15 10:30:00\t2\t20",
+                "2016/04/15 11:00:00\t21\t201",
+                "END OF DATA FILE OF DATALOGGER FOR WINDOWS",
+            ),
+            (
+                "[Series settings]",
+                "Location=rb3",
+                "[Channel 1]",
+                "Identification          =WATER HEAD (WC)",
+                "[Channel 2]",
+                "Identification          =TEMPERATURE",
+                "[Channel 3]",
+                "Identification          =2: SPEC.COND.",
+                "[Data]",
+                "2",
+                "2016/05/15 10:30:00;3,0;30,0;5,0",
+                "2016/05/15 11:00:00;31,0;301,0;6,0",
+                "END OF DATA FILE OF DATALOGGER FOR WINDOWS",
+            ),
+        ]
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+
+        with (
+            common_utils.tempinput("\n".join(files[0]), _CHARSET, ".mon") as f1,
+            common_utils.tempinput("\n".join(files[1]), _CHARSET, ".mon") as f2,
+            common_utils.tempinput("\n".join(files[2]), _CHARSET, ".mon") as f3,
+        ):
+            filenames = [f1, f2, f3]
+
+            @mock.patch("midvatten.tools.utils.file_utils.ask_for_delimiter")
+            @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
+            )
+            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("qgis.utils.iface", autospec=True)
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
+            @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
+            def _run(
+                self,
+                filenames,
+                mock_filenames,
+                mock_skippopup,
+                mock_iface,
+                mock_askuser,
+                mock_notfoundquestion,
+                mock_messagebar,
+                mock_delimiter_question,
+            ):
+                mock_delimiter_question.return_value = (";", True)
+                mock_notfoundquestion.return_value.answer = "ok"
+                mock_notfoundquestion.return_value.value = "rb1"
+                mock_notfoundquestion.return_value.reuse_column = "location"
+                mock_filenames.return_value = filenames
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = LoggerImport(self.iface, ms)
+                importer.load_gui()
+                importer.select_files()
+                try:
+                    importer.start_import(
+                        importer.files,
+                        importer.skip_rows.checked,
+                        importer.confirm_names.checked,
+                        importer.import_all_data.checked,
+                    )
+                except Exception:
+                    pass
+
+            _run(self, filenames)
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger ORDER BY obsid, date_time"
+            )
+        )
+        reference_string = r"""(True, [(rb1, 2016-03-15 10:30:00, 1.0, 10.0, None, None, None), (rb1, 2016-03-15 11:00:00, 11.0, 101.0, None, None, None), (rb1, 2016-04-15 10:30:00, 2.0, 20.0, None, None, None), (rb1, 2016-04-15 11:00:00, 21.0, 201.0, None, None, None), (rb1, 2016-05-15 10:30:00, 3.0, 30.0, 5.0, None, None), (rb1, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None)])"""
+        assert test_string == reference_string
+
+    def test_wlvllogg_import_from_diveroffice_mon_files_missing_attr(self):
+        files = [
+            (
+                "[Logger settings]",
+                "Location=rb1",
+                "[Channel 1]",
+                "Identification          =LEVEL",
+                "[Channel 2]",
+                "Identification          =TEMPERATURE",
+                "[Data]",
+                "2",
+                "2016/03/15 10:30:00,1,10",
+                "2016/03/15 11:00:00,11,101",
+                "END OF DATA FILE OF DATALOGGER FOR WINDOWS",
+            ),
+            (
+                "[Series settings]",
+                "Location=rb2",
+                "[Channel 1]",
+                "Identification          =Water head",
+                "[Channel 2]",
+                "Identification          =TEMPERATURE",
+                "[Data]",
+                "2",
+                "2016/04/15 10:30:00\t2\t20",
+                "2016/04/15 11:00:00\t21\t201",
+                "END OF DATA FILE OF DATALOGGER FOR WINDOWS",
+            ),
+            (
+                "[Series settings]",
+                "Location=rb3",
+                "[Channel 1]",
+                "Identification          =WATER HEAD (WC)",
+                "[Channel 2]",
+                "Identification          =TEMPERATURE",
+                "Anything                  =",
+                "                  =",
+                "[Channel 3]",
+                "Identification          =2: SPEC.COND.",
+                "[Data]",
+                "2",
+                "2016/05/15 10:30:00;3,0;30,0;5,0",
+                "2016/05/15 11:00:00;31,0;301,0;6,0",
+                "END OF DATA FILE OF DATALOGGER FOR WINDOWS",
+            ),
+        ]
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+
+        with (
+            common_utils.tempinput("\n".join(files[0]), _CHARSET, ".mon") as f1,
+            common_utils.tempinput("\n".join(files[1]), _CHARSET, ".mon") as f2,
+            common_utils.tempinput("\n".join(files[2]), _CHARSET, ".mon") as f3,
+        ):
+            filenames = [f1, f2, f3]
+
+            @mock.patch("midvatten.tools.utils.file_utils.ask_for_delimiter")
+            @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
+            )
+            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("qgis.utils.iface", autospec=True)
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
+            @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
+            def _run(
+                self,
+                filenames,
+                mock_filenames,
+                mock_skippopup,
+                mock_iface,
+                mock_askuser,
+                mock_notfoundquestion,
+                mock_messagebar,
+                mock_delimiter_question,
+            ):
+                mock_delimiter_question.return_value = (";", True)
+                mock_notfoundquestion.return_value.answer = "ok"
+                mock_notfoundquestion.return_value.value = "rb1"
+                mock_notfoundquestion.return_value.reuse_column = "location"
+                mock_filenames.return_value = filenames
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = LoggerImport(self.iface, ms)
+                importer.load_gui()
+                importer.select_files()
+                try:
+                    importer.start_import(
+                        importer.files,
+                        importer.skip_rows.checked,
+                        importer.confirm_names.checked,
+                        importer.import_all_data.checked,
+                    )
+                except Exception:
+                    pass
+
+            _run(self, filenames)
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger ORDER BY obsid, date_time"
+            )
+        )
+        reference_string = r"""(True, [(rb1, 2016-03-15 10:30:00, 1.0, 10.0, None, None, None), (rb1, 2016-03-15 11:00:00, 11.0, 101.0, None, None, None), (rb1, 2016-04-15 10:30:00, 2.0, 20.0, None, None, None), (rb1, 2016-04-15 11:00:00, 21.0, 201.0, None, None, None), (rb1, 2016-05-15 10:30:00, 3.0, 30.0, 5.0, None, None), (rb1, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None)])"""
+        assert test_string == reference_string
+
+    def test_wlvllogg_import_from_diveroffice_files_with_source(self):
+        files = [
+            (
+                "Location=rb1",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/03/15 10:30:00,1,10",
+                "2016/03/15 11:00:00,11,101",
+            ),
+            (
+                "Location=rb2",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/04/15 10:30:00,2,20",
+                "2016/04/15 11:00:00,21,201",
+            ),
+            (
+                "Location=rb3",
+                "Date/time,Water head[cm],Temperature[\u00b0C],Conductivity[mS/cm]",
+                "2016/05/15 10:30:00,3,30,5",
+                "2016/05/15 11:00:00,31,301,6",
+            ),
+        ]
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+
+        with (
+            common_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
+            common_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
+            common_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
+        ):
+            filenames = [f1, f2, f3]
+
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
+            )
+            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("qgis.utils.iface", autospec=True)
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
+            @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
+            def _run(
+                self,
+                filenames,
+                mock_filenames,
+                mock_skippopup,
+                mock_iface,
+                mock_askuser,
+                mock_notfoundquestion,
+            ):
+                mock_notfoundquestion.return_value.answer = "ok"
+                mock_notfoundquestion.return_value.value = "rb1"
+                mock_notfoundquestion.return_value.reuse_column = "location"
+                mock_filenames.return_value = filenames
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = LoggerImport(self.iface, ms)
+                importer.load_gui()
+                importer.select_files()
+                importer.source_edit.setText("Testsource")
+                importer.start_import(
+                    importer.files,
+                    importer.skip_rows.checked,
+                    importer.confirm_names.checked,
+                    importer.import_all_data.checked,
+                )
+
+            _run(self, filenames)
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment, source FROM w_levels_logger ORDER BY obsid, date_time"
+            )
+        )
+        reference_string = r"""(True, [(rb1, 2016-03-15 10:30:00, 1.0, 10.0, None, None, None, Testsource), (rb1, 2016-03-15 11:00:00, 11.0, 101.0, None, None, None, Testsource), (rb1, 2016-04-15 10:30:00, 2.0, 20.0, None, None, None, Testsource), (rb1, 2016-04-15 11:00:00, 21.0, 201.0, None, None, None, Testsource), (rb1, 2016-05-15 10:30:00, 3.0, 30.0, 5.0, None, None, Testsource), (rb1, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None, Testsource)])"""
+        assert test_string == reference_string
+
+
+@pytest.mark.spatialite
+class TestLoggerImportDiverOfficeSpatialiteFromMixin(
+    WlvllogImportFromLoggerDiverOfficeMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
+):
+    """All 23 DiverOffice integration tests on SpatiaLite backend."""
+
+
+@pytest.mark.postgis
+class TestLoggerImportDiverOfficePostgis(
+    WlvllogImportFromLoggerDiverOfficeMixin, utils_for_tests.MidvattenTestPostgisDbSv
+):
+    """All 23 DiverOffice integration tests on PostGIS backend."""
+
+
+# ── Integration test mixin: Levelogger ────────────────────────────────────────
+# Ported from WlvllogImportFromLeveloggerFilesMixin in test_import_levelogger.py
+
+_LEVELOGGER_FILES_3 = [
+    (
+        "Serial_number:;;;;;;",
+        "123;;;;;;",
+        "Project ID:;;;;;;",
+        "Projname;;;;;;",
+        "Location:;;;;;;",
+        "rb1;;;;;;",
+        "LEVEL;;;;;;",
+        "UNIT: cm;;;;;;",
+        "Offset: 0.000000 m;;;;;;",
+        "Altitude: 0.000000 m;;;;;;",
+        "Density: 1.000000 kg/L;;;;;;",
+        "TEMPERATURE;;;;;;",
+        "UNIT: Deg C;;;;;;",
+        "Date;Time;ms;LEVEL;TEMPERATURE",
+        "2016-03-15;10:30:00;0;1;10",
+        "2016-03-15;11:00:00;0;11;101",
+    ),
+    (
+        "Serial_number:;;;;;;",
+        "123;;;;;;",
+        "Project ID:;;;;;;",
+        "Projname;;;;;;",
+        "Location:;;;;;;",
+        "rb2;;;;;;",
+        "LEVEL;;;;;;",
+        "UNIT: cm;;;;;;",
+        "Offset: 0.000000 m;;;;;;",
+        "Altitude: 0.000000 m;;;;;;",
+        "Density: 1.000000 kg/L;;;;;;",
+        "TEMPERATURE;;;;;;",
+        "UNIT: Deg C;;;;;;",
+        "Date;Time;ms;LEVEL;TEMPERATURE",
+        "2016-04-15;10:30:00;0;2;20",
+        "2016-04-15;11:00:00;0;21;201",
+    ),
+    (
+        "Serial_number:;;;;;;",
+        "123;;;;;;",
+        "Project ID:;;;;;;",
+        "Projname;;;;;;",
+        "Location:;;;;;;",
+        "rb3;;;;;;",
+        "LEVEL;;;;;;",
+        "UNIT: cm;;;;;;",
+        "Offset: 0.000000 m;;;;;;",
+        "Altitude: 0.000000 m;;;;;;",
+        "Density: 1.000000 kg/L;;;;;;",
+        "TEMPERATURE;;;;;;",
+        "UNIT: Deg C;;;;;;",
+        "Date;Time;ms;LEVEL;TEMPERATURE;spec. conductivity (mS/cm)",
+        "2016-05-15;10:30:00;0;3;30;5",
+        "2016-05-15;11:00:00;0;31;301;6",
+    ),
+]
+
+
+class WlvllogImportFromLoggerLeveloggerMixin:
+    """Integration tests for LoggerImport (Levelogger format).
+
+    Ported from WlvllogImportFromLeveloggerFilesMixin in test_import_levelogger.py.
+    Each test sets importer.format_combo to FORMAT_LEVELOGGER after load_gui().
+    Mock target is midvatten.tools.import_logger.midvatten_utils.select_files.
+    """
+
+    def _run_levelogger(self, filenames, extra_setup=None):
+        """Common runner for Levelogger integration tests."""
+
+        @mock.patch("midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion")
+        @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+        @mock.patch("qgis.utils.iface", autospec=True)
+        @mock.patch(
+            "midvatten.tools.import_data_to_db.common_utils.pop_up_info", autospec=True
+        )
+        @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
+        def _inner(
+            self,
+            filenames,
+            mock_filenames,
+            mock_skippopup,
+            mock_iface,
+            mock_askuser,
+            mock_notfoundquestion,
+        ):
+            mock_notfoundquestion.return_value.answer = "ok"
+            mock_notfoundquestion.return_value.value = "rb1"
+            mock_notfoundquestion.return_value.reuse_column = "location"
+            mock_filenames.return_value = filenames
+            ms = MagicMock()
+            ms.settingsdict = OrderedDict()
+            importer = LoggerImport(self.iface, ms)
+            importer.load_gui()
+            importer.format_combo.setCurrentText(LoggerImport.FORMAT_LEVELOGGER)
+            importer.confirm_names.checked = False
+            importer.select_files()
+            if extra_setup:
+                extra_setup(importer)
+            importer.start_import(
+                importer.files,
+                importer.skip_rows.checked,
+                importer.confirm_names.checked,
+                importer.import_all_data.checked,
+            )
+
+        _inner(self, filenames)
+
+    def _run_levelogger_with_messagebar(self, filenames, extra_setup=None):
+        """Runner that also mocks MessagebarAndLog and returns mock_notfoundquestion side_effect support."""
+
+        @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+        @mock.patch("midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion")
+        @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+        @mock.patch("qgis.utils.iface", autospec=True)
+        @mock.patch(
+            "midvatten.tools.import_data_to_db.common_utils.pop_up_info", autospec=True
+        )
+        @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
+        def _inner(
+            self,
+            filenames,
+            mock_filenames,
+            mock_skippopup,
+            mock_iface,
+            mock_askuser,
+            mock_notfoundquestion,
+            mock_messagebar,
+            notfound_side_effect=None,
+        ):
+            if notfound_side_effect:
+                mock_notfoundquestion.side_effect = notfound_side_effect
+            else:
+                mock_notfoundquestion.return_value.answer = "ok"
+                mock_notfoundquestion.return_value.value = "rb1"
+                mock_notfoundquestion.return_value.reuse_column = "location"
+            mock_filenames.return_value = filenames
+            ms = MagicMock()
+            ms.settingsdict = OrderedDict()
+            importer = LoggerImport(self.iface, ms)
+            importer.load_gui()
+            importer.format_combo.setCurrentText(LoggerImport.FORMAT_LEVELOGGER)
+            importer.confirm_names.checked = False
+            importer.select_files()
+            if extra_setup:
+                extra_setup(importer)
+            try:
+                importer.start_import(
+                    importer.files,
+                    importer.skip_rows.checked,
+                    importer.confirm_names.checked,
+                    importer.import_all_data.checked,
+                )
+            except Exception:
+                pass
+            print("\n".join([str(x) for x in mock_messagebar.mock_calls]))
+
+        _inner(self, filenames)
+
+    def test_wlvllogg_import_from_levelogger_files(self):
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+
+        with (
+            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[0]), _CHARSET) as f1,
+            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[1]), _CHARSET) as f2,
+            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[2]), _CHARSET) as f3,
+        ):
+            self._run_levelogger([f1, f2, f3])
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger ORDER BY obsid, date_time"
+            )
+        )
+        reference_string = r"""(True, [(rb1, 2016-03-15 10:30:00, 1.0, 10.0, None, None, None), (rb1, 2016-03-15 11:00:00, 11.0, 101.0, None, None, None), (rb1, 2016-04-15 10:30:00, 2.0, 20.0, None, None, None), (rb1, 2016-04-15 11:00:00, 21.0, 201.0, None, None, None), (rb1, 2016-05-15 10:30:00, 3.0, 30.0, 5.0, None, None), (rb1, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None)])"""
+        assert test_string == reference_string
+
+    def test_wlvllogg_import_from_levelogger_files_skip_duplicate_datetimes(self):
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, head_cm) VALUES ('rb1', '2016-03-15 10:30', '5.0')"
+        )
+
+        with (
+            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[0]), _CHARSET) as f1,
+            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[1]), _CHARSET) as f2,
+            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[2]), _CHARSET) as f3,
+        ):
+            self._run_levelogger([f1, f2, f3])
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger ORDER BY obsid, date_time"
+            )
+        )
+        reference_string = r"""(True, [(rb1, 2016-03-15 10:30, 5.0, None, None, None, None), (rb1, 2016-03-15 11:00:00, 11.0, 101.0, None, None, None), (rb1, 2016-04-15 10:30:00, 2.0, 20.0, None, None, None), (rb1, 2016-04-15 11:00:00, 21.0, 201.0, None, None, None), (rb1, 2016-05-15 10:30:00, 3.0, 30.0, 5.0, None, None), (rb1, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None)])"""
+        assert test_string == reference_string
+
+    def test_wlvllogg_import_from_levelogger_files_filter_dates(self):
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, head_cm) VALUES ('rb1', '2016-03-15 10:31', '5.0')"
+        )
+
+        with (
+            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[0]), _CHARSET) as f1,
+            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[1]), _CHARSET) as f2,
+            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[2]), _CHARSET) as f3,
+        ):
+
+            def _setup(importer):
+                importer.import_all_data.checked = False
+
+            self._run_levelogger([f1, f2, f3], extra_setup=_setup)
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger ORDER BY obsid, date_time"
+            )
+        )
+        reference_string = r"""(True, [(rb1, 2016-03-15 10:31, 5.0, None, None, None, None), (rb1, 2016-03-15 11:00:00, 11.0, 101.0, None, None, None), (rb1, 2016-04-15 10:30:00, 2.0, 20.0, None, None, None), (rb1, 2016-04-15 11:00:00, 21.0, 201.0, None, None, None), (rb1, 2016-05-15 10:30:00, 3.0, 30.0, 5.0, None, None), (rb1, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None)])"""
+        assert test_string == reference_string
+
+    def test_wlvllogg_import_from_levelogger_files_all_dates(self):
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb2')")
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb3')")
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, head_cm) VALUES ('rb1', '2016-03-15 10:31', '5.0')"
+        )
+
+        with (
+            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[0]), _CHARSET) as f1,
+            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[1]), _CHARSET) as f2,
+            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[2]), _CHARSET) as f3,
+        ):
+
+            def _setup(importer):
+                importer.import_all_data.checked = True
+                importer.confirm_names.checked = False
+
+            self._run_levelogger([f1, f2, f3], extra_setup=_setup)
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger ORDER BY obsid, date_time"
+            )
+        )
+        reference_string = r"""(True, [(rb1, 2016-03-15 10:30:00, 1.0, 10.0, None, None, None), (rb1, 2016-03-15 10:31, 5.0, None, None, None, None), (rb1, 2016-03-15 11:00:00, 11.0, 101.0, None, None, None), (rb2, 2016-04-15 10:30:00, 2.0, 20.0, None, None, None), (rb2, 2016-04-15 11:00:00, 21.0, 201.0, None, None, None), (rb3, 2016-05-15 10:30:00, 3.0, 30.0, 5.0, None, None), (rb3, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None)])"""
+        assert test_string == reference_string
+
+    def test_wlvllogg_import_from_levelogger_files_try_capitalize(self):
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('Rb1')")
+
+        with common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[0]), _CHARSET) as f1:
+
+            def _setup(importer):
+                importer.import_all_data.checked = False
+                importer.confirm_names.checked = False
+
+            self._run_levelogger([f1], extra_setup=_setup)
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger ORDER BY obsid, date_time"
+            )
+        )
+        reference_string = r"""(True, [(Rb1, 2016-03-15 10:30:00, 1.0, 10.0, None, None, None), (Rb1, 2016-03-15 11:00:00, 11.0, 101.0, None, None, None)])"""
+        assert test_string == reference_string
+
+    def test_wlvllogg_import_from_levelogger_files_cancel(self):
+        cancel_file = (
+            "Serial_number:;;;;;;",
+            "123;;;;;;",
+            "Project ID:;;;;;;",
+            "Projname;;;;;;",
+            "Location:;;;;;;",
+            "rb2;;;;;;",
+            "LEVEL;;;;;;",
+            "UNIT: cm;;;;;;",
+            "Offset: 0.000000 m;;;;;;",
+            "Altitude: 0.000000 m;;;;;;",
+            "Density: 1.000000 kg/L;;;;;;",
+            "TEMPERATURE;;;;;;",
+            "UNIT: Deg C;;;;;;",
+            "Date;Time;ms;LEVEL;TEMPERATURE",
+            "2016-03-15;10:30:00;0;1;20",
+            "2016-03-15;11:00:00;0;11;101",
+        )
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('Rb1')")
+
+        with common_utils.tempinput("\n".join(cancel_file), _CHARSET) as f1:
+
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
+            )
+            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("qgis.utils.iface", autospec=True)
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
+            @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
+            def _run(
+                self,
+                filenames,
+                mock_filenames,
+                mock_skippopup,
+                mock_iface,
+                mock_askuser,
+                mock_notfoundquestion,
+            ):
+                mock_notfoundquestion.return_value.answer = "cancel"
+                mock_notfoundquestion.return_value.value = "rb1"
+                mock_notfoundquestion.return_value.reuse_column = "location"
+                mock_filenames.return_value = filenames
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = LoggerImport(self.iface, ms)
+                importer.load_gui()
+                importer.format_combo.setCurrentText(LoggerImport.FORMAT_LEVELOGGER)
+                importer.select_files()
+                importer.import_all_data.checked = True
+                importer.confirm_names.checked = False
+                importer.start_import(
+                    importer.files,
+                    importer.skip_rows.checked,
+                    importer.confirm_names.checked,
+                    importer.import_all_data.checked,
+                )
+
+            _run(self, [f1])
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger ORDER BY obsid, date_time"
+            )
+        )
+        reference_string = r"""(True, [])"""
+        assert test_string == reference_string
+
+    def test_wlvllogg_import_from_levelogger_files_skip_missing_water_level(self):
+        missing_file = list(_LEVELOGGER_FILES_3[0])
+        missing_file[-1] = "2016-03-15;11:00:00;0;;101"  # empty level (last data row)
+
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb2')")
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb3')")
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, head_cm) VALUES ('rb1', '2016-03-15 10:31', '5.0')"
+        )
+
+        with (
+            common_utils.tempinput("\n".join(missing_file), _CHARSET) as f1,
+            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[1]), _CHARSET) as f2,
+            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[2]), _CHARSET) as f3,
+        ):
+
+            def _setup(importer):
+                importer.import_all_data.checked = True
+                importer.confirm_names.checked = False
+                importer.skip_rows.checked = True
+
+            self._run_levelogger([f1, f2, f3], extra_setup=_setup)
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger ORDER BY obsid, date_time"
+            )
+        )
+        reference_string = r"""(True, [(rb1, 2016-03-15 10:30:00, 1.0, 10.0, None, None, None), (rb1, 2016-03-15 10:31, 5.0, None, None, None, None), (rb2, 2016-04-15 10:30:00, 2.0, 20.0, None, None, None), (rb2, 2016-04-15 11:00:00, 21.0, 201.0, None, None, None), (rb3, 2016-05-15 10:30:00, 3.0, 30.0, 5.0, None, None), (rb3, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None)])"""
+        assert test_string == reference_string
+
+    def test_wlvllogg_import_from_levelogger_files_not_skip_missing_water_level(self):
+        missing_file = list(_LEVELOGGER_FILES_3[0])
+        missing_file[-1] = "2016-03-15;11:00:00;0;;101"  # empty level (last data row)
+
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb2')")
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb3')")
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, head_cm) VALUES ('rb1', '2016-03-15 10:31', '5.0')"
+        )
+
+        with (
+            common_utils.tempinput("\n".join(missing_file), _CHARSET) as f1,
+            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[1]), _CHARSET) as f2,
+            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[2]), _CHARSET) as f3,
+        ):
+
+            def _setup(importer):
+                importer.import_all_data.checked = True
+                importer.confirm_names.checked = False
+                importer.skip_rows.checked = False
+
+            self._run_levelogger([f1, f2, f3], extra_setup=_setup)
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger ORDER BY obsid, date_time"
+            )
+        )
+        reference_string = r"""(True, [(rb1, 2016-03-15 10:30:00, 1.0, 10.0, None, None, None), (rb1, 2016-03-15 10:31, 5.0, None, None, None, None), (rb1, 2016-03-15 11:00:00, None, 101.0, None, None, None), (rb2, 2016-04-15 10:30:00, 2.0, 20.0, None, None, None), (rb2, 2016-04-15 11:00:00, 21.0, 201.0, None, None, None), (rb3, 2016-05-15 10:30:00, 3.0, 30.0, 5.0, None, None), (rb3, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None)])"""
+        assert test_string == reference_string
+
+    def test_wlvllogg_import_from_levelogger_files_datetime_filter(self):
+        files_with_extra = list(_LEVELOGGER_FILES_3[0]) + [
+            "2016-06-15;11:00:00;0;11;101"
+        ]
+
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb2')")
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, head_cm) VALUES ('rb1', '2016-03-15 10:31', '5.0')"
+        )
+
+        with (
+            common_utils.tempinput("\n".join(files_with_extra), _CHARSET) as f1,
+            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[1]), _CHARSET) as f2,
+        ):
+
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
+            )
+            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("qgis.utils.iface", autospec=True)
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
+            @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
+            def _run(
+                self,
+                filenames,
+                mock_filenames,
+                mock_skippopup,
+                mock_iface,
+                mock_askuser,
+                mock_notfoundquestion,
+            ):
+                mock_notfoundquestion.return_value.answer = "ok"
+                mock_notfoundquestion.return_value.value = "rb1"
+                mock_notfoundquestion.return_value.reuse_column = "location"
+                mock_filenames.return_value = filenames
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = LoggerImport(self.iface, ms)
+                importer.load_gui()
+                importer.format_combo.setCurrentText(LoggerImport.FORMAT_LEVELOGGER)
+                importer.select_files()
+                importer.import_all_data.checked = True
+                importer.confirm_names.checked = False
+                importer.date_time_filter.from_date = "2016-03-15 11:00:00"
+                importer.date_time_filter.to_date = "2016-04-15 10:30:00"
+                importer.start_import(
+                    importer.files,
+                    importer.skip_rows.checked,
+                    importer.confirm_names.checked,
+                    importer.import_all_data.checked,
+                    importer.date_time_filter.from_date,
+                    importer.date_time_filter.to_date,
+                )
+
+            _run(self, [f1, f2])
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger ORDER BY obsid, date_time"
+            )
+        )
+        reference_string = r"""(True, [(rb1, 2016-03-15 10:31, 5.0, None, None, None, None), (rb1, 2016-03-15 11:00:00, 11.0, 101.0, None, None, None), (rb2, 2016-04-15 10:30:00, 2.0, 20.0, None, None, None)])"""
+        assert test_string == reference_string
+
+    def test_wlvllogg_import_from_levelogger_files_skip_obsid(self):
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb2')")
+
+        with (
+            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[0]), _CHARSET) as f1,
+            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[1]), _CHARSET) as f2,
+            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[2]), _CHARSET) as f3,
+        ):
+
+            @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
+            )
+            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("qgis.utils.iface", autospec=True)
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
+            @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
+            def _run(
+                self,
+                filenames,
+                mock_filenames,
+                mock_skippopup,
+                mock_iface,
+                mock_askuser,
+                mock_notfoundquestion,
+                mock_messagebar,
+            ):
+                mocks_notfoundquestion = []
+                for answer, value in [["ok", "rb1"], ["ok", "rb2"], ["skip", "rb3"]]:
+                    a_mock = MagicMock()
+                    a_mock.answer = answer
+                    a_mock.value = value
+                    a_mock.reuse_column = "location"
+                    mocks_notfoundquestion.append(a_mock)
+                mock_notfoundquestion.side_effect = mocks_notfoundquestion
+                mock_filenames.return_value = filenames
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = LoggerImport(self.iface, ms)
+                importer.load_gui()
+                importer.format_combo.setCurrentText(LoggerImport.FORMAT_LEVELOGGER)
+                importer.select_files()
+                importer.start_import(
+                    importer.files,
+                    importer.skip_rows.checked,
+                    importer.confirm_names.checked,
+                    importer.import_all_data.checked,
+                )
+                print("\n".join([str(x) for x in mock_messagebar.mock_calls]))
+
+            _run(self, [f1, f2, f3])
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger ORDER BY obsid, date_time"
+            )
+        )
+        reference_string = r"""(True, [(rb1, 2016-03-15 10:30:00, 1.0, 10.0, None, None, None), (rb1, 2016-03-15 11:00:00, 11.0, 101.0, None, None, None), (rb2, 2016-04-15 10:30:00, 2.0, 20.0, None, None, None), (rb2, 2016-04-15 11:00:00, 21.0, 201.0, None, None, None)])"""
+        assert test_string == reference_string
+
+    def test_wlvllogg_import_from_levelogger_files_level_as_m(self):
+        level_m_file = (
+            "Serial_number:;;;;;;",
+            "123;;;;;;",
+            "Project ID:;;;;;;",
+            "Projname;;;;;;",
+            "Location:;;;;;;",
+            "rb1;;;;;;",
+            "LEVEL;;;;;;",
+            "UNIT: m;;;;;;",
+            "Offset: 0.000000 m;;;;;;",
+            "Altitude: 0.000000 m;;;;;;",
+            "Density: 1.000000 kg/L;;;;;;",
+            "TEMPERATURE;;;;;;",
+            "UNIT: Deg C;;;;;;",
+            "Date;Time;ms;LEVEL;TEMPERATURE",
+            "2016-03-15;10:30:00;0;1;10",
+            "2016-03-15;11:00:00;0;11;101",
+        )
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+
+        with (
+            common_utils.tempinput("\n".join(level_m_file), _CHARSET) as f1,
+            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[1]), _CHARSET) as f2,
+            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[2]), _CHARSET) as f3,
+        ):
+            self._run_levelogger([f1, f2, f3])
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger ORDER BY obsid, date_time"
+            )
+        )
+        reference_string = r"""(True, [(rb1, 2016-03-15 10:30:00, 100.0, 10.0, None, None, None), (rb1, 2016-03-15 11:00:00, 1100.0, 101.0, None, None, None), (rb1, 2016-04-15 10:30:00, 2.0, 20.0, None, None, None), (rb1, 2016-04-15 11:00:00, 21.0, 201.0, None, None, None), (rb1, 2016-05-15 10:30:00, 3.0, 30.0, 5.0, None, None), (rb1, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None)])"""
+        assert test_string == reference_string
+
+    def test_wlvllogg_import_from_levelogger_files_cond_as_uscm(self):
+        cond_us_file = (
+            "Serial_number:;;;;;;",
+            "123;;;;;;",
+            "Project ID:;;;;;;",
+            "Projname;;;;;;",
+            "Location:;;;;;;",
+            "rb3;;;;;;",
+            "LEVEL;;;;;;",
+            "UNIT: cm;;;;;;",
+            "Offset: 0.000000 m;;;;;;",
+            "Altitude: 0.000000 m;;;;;;",
+            "Density: 1.000000 kg/L;;;;;;",
+            "TEMPERATURE;;;;;;",
+            "UNIT: Deg C;;;;;;",
+            "Date;Time;ms;LEVEL;TEMPERATURE;spec. conductivity (uS/cm)",
+            "2016-05-15;10:30:00;0;3;30;5000",
+            "2016-05-15;11:00:00;0;31;301;6000",
+        )
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb3')")
+
+        with common_utils.tempinput("\n".join(cond_us_file), _CHARSET) as f1:
+            self._run_levelogger([f1])
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger ORDER BY obsid, date_time"
+            )
+        )
+        reference_string = r"""(True, [(rb3, 2016-05-15 10:30:00, 3.0, 30.0, 5.0, None, None), (rb3, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None)])"""
+        assert test_string == reference_string
+
+
+@pytest.mark.spatialite
+class TestLoggerImportLeveloggerSpatialiteFromMixin(
+    WlvllogImportFromLoggerLeveloggerMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
+):
+    """All 12 Levelogger integration tests on SpatiaLite backend."""
+
+
+@pytest.mark.postgis
+class TestLoggerImportLeveloggerPostgis(
+    WlvllogImportFromLoggerLeveloggerMixin, utils_for_tests.MidvattenTestPostgisDbSv
+):
+    """All 12 Levelogger integration tests on PostGIS backend."""

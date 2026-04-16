@@ -1452,45 +1452,34 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                     if selected_file.endswith(".csv")
                     else DiverOfficeParser.parse
                 )
-
-                def _make_kwargs(charset):
-                    return dict(
-                        path=selected_file,
-                        charset=charset,
-                        skip_rows_without_water_level=skip_rows_without_water_level,
-                        begindate=from_date,
-                        enddate=to_date,
-                    )
-
+                parse_kwargs = dict(
+                    path=selected_file,
+                    skip_rows_without_water_level=skip_rows_without_water_level,
+                    begindate=from_date,
+                    enddate=to_date,
+                )
             elif format_name == self.FORMAT_LEVELOGGER:
                 parse_func = LeveloggerParser.parse
-
-                def _make_kwargs(charset):
-                    return dict(
-                        path=selected_file,
-                        charset=charset,
-                        skip_rows_without_water_level=skip_rows_without_water_level,
-                        begindate=from_date,
-                        enddate=to_date,
-                    )
-
+                parse_kwargs = dict(
+                    path=selected_file,
+                    skip_rows_without_water_level=skip_rows_without_water_level,
+                    begindate=from_date,
+                    enddate=to_date,
+                )
             else:  # FORMAT_HOBO
                 parse_func = HoboParser.parse
-
-                def _make_kwargs(charset):
-                    return dict(
-                        path=selected_file,
-                        charset=charset,
-                        tz_converter=self.tz_converter,
-                        begindate=from_date,
-                        enddate=to_date,
-                    )
+                parse_kwargs = dict(
+                    path=selected_file,
+                    tz_converter=self.tz_converter,
+                    begindate=from_date,
+                    enddate=to_date,
+                )
 
             try:
-                res = parse_func(**_make_kwargs(default_charset))
+                res = parse_func(charset=default_charset, **parse_kwargs)
             except UnicodeDecodeError:
                 try:
-                    res = parse_func(**_make_kwargs(fallback_charset))
+                    res = parse_func(charset=fallback_charset, **parse_kwargs)
                 except UnicodeDecodeError:
                     common_utils.MessagebarAndLog.warning(
                         bar_msg=QCoreApplication.translate(
@@ -1600,10 +1589,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             ]
         )
 
-        if confirm_names:
-            try_capitalize = False
-        else:
-            try_capitalize = True
+        try_capitalize = not confirm_names
 
         existing_obsids = db_utils.get_all_obsids()
         common_utils.stop_waiting_cursor()
@@ -1648,9 +1634,19 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                 file_data = list(file_data)
                 obsid = filenames_obsid[filename]
                 file_data[0].append("obsid")
-                [row.append(obsid) for row in file_data[1:]]
+                for row in file_data[1:]:
+                    row.append(obsid)
                 parsed_files_with_obsid.append([file_data, filename, location])
         # Header
+
+        if not parsed_files_with_obsid:
+            common_utils.MessagebarAndLog.warning(
+                bar_msg=QCoreApplication.translate(
+                    "LoggerImport", "Warning. All files were skipped, nothing imported!"
+                )
+            )
+            common_utils.stop_waiting_cursor()
+            return False
 
         file_to_import_to_db = [parsed_files_with_obsid[0][0][0]]
         file_to_import_to_db.extend(
@@ -1672,7 +1668,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                     "No new data existed in the files. Nothing imported.",
                 )
             )
-            self.status = "True"
+            self.status = True
             common_utils.stop_waiting_cursor()
             return True
 
@@ -1680,14 +1676,13 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             source = self.source_edit.text().strip()
             if source:
                 file_to_import_to_db[0].append("source")
-                [row.append(source) for row in file_to_import_to_db[1:]]
+                for row in file_to_import_to_db[1:]:
+                    row.append(source)
 
         if import_to_db:
             importer = import_data_to_db.MidvDataImporter()
             try:
-                answer = importer.general_import(
-                    "w_levels_logger", file_to_import_to_db
-                )
+                importer.general_import("w_levels_logger", file_to_import_to_db)
             except Exception:
                 common_utils.MessagebarAndLog.warning(
                     log_msg=f"Got error {traceback.format_exc()}"

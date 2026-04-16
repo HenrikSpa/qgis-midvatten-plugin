@@ -984,7 +984,7 @@ class HoboParser:
         except IndexError:
             common_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
-                    "Hobologger import", """File %s could not be parsed."""
+                    "LoggerImport", """File %s could not be parsed."""
                 )
                 % filename
             )
@@ -994,7 +994,7 @@ class HoboParser:
         if not date_colnr:
             raise Exception(
                 QCoreApplication.translate(
-                    "Hobologger import", "Date Time column not found!"
+                    "LoggerImport", "Date Time column not found!"
                 )
             )
         else:
@@ -1005,7 +1005,7 @@ class HoboParser:
             if tz_string is None:
                 common_utils.MessagebarAndLog.warning(
                     bar_msg=QCoreApplication.translate(
-                        "Hobologger import", "Timezone not found in %s"
+                        "LoggerImport", "Timezone not found in %s"
                     )
                     % filename
                 )
@@ -1015,7 +1015,7 @@ class HoboParser:
         if not temp_colnr:
             raise Exception(
                 QCoreApplication.translate(
-                    "Hobologger import", "Temperature column not found!"
+                    "LoggerImport", "Temperature column not found!"
                 )
             )
         else:

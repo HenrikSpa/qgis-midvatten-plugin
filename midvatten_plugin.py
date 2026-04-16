@@ -886,17 +886,27 @@ class Midvatten:
         )
         if not (err_flag == 0):
             return
-        try:
-            self.customplot.show()
-        except Exception:
-            self.customplot = CustomPlot(self.iface, self.ms)
-            self.customplot.show()
+        existing = self._open_tools.get("plot_sqlite")
+        if existing is not None and existing.isVisible():
+            existing.raise_()
+            existing.activateWindow()
+            return
+        tool = CustomPlot(self.iface, self.ms)
+        tool.show()
+        self._open_tools["plot_sqlite"] = tool
+        self.customplot = tool  # kept for test-call-site compatibility
 
     @common_utils.general_exception_handler
     def plot_section(self):
-        if not hasattr(self, "sectionplot"):
-            self.sectionplot = SectionPlot(self.iface, self.ms)
-        self.sectionplot.show()
+        existing = self._open_tools.get("plot_section")
+        if existing is not None and existing.isVisible():
+            existing.raise_()
+            existing.activateWindow()
+            return
+        tool = SectionPlot(self.iface, self.ms)
+        tool.show()
+        self._open_tools["plot_section"] = tool
+        self.sectionplot = tool  # kept for test-call-site compatibility
 
     @common_utils.general_exception_handler
     def prepare_layers_for_qgis2threejs(self):

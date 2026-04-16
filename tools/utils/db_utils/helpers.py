@@ -201,12 +201,6 @@ def nonplot_tables(
 
 def create_dict_from_db_2_cols(params: tuple) -> tuple:
     """params are (col1=keys, col2=values, db-table)."""
-    from midvatten.tools.utils.db_utils.execution import (
-        sql_load_fr_db,
-        use_or_create_connection,
-    )
-    from qgis.PyQt.QtCore import QCoreApplication
-
     col1, col2, table = params
     with use_or_create_connection(None) as dbconnection:
         sqlstring = dbconnection.sql_ident(

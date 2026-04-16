@@ -148,7 +148,6 @@ __all__ = [
     "sql_literal",
     "sql_literal_list",
     "sql_load_fr_db",
-    "rowid_string",
     "sqlite_internal_tables",
     "tables_columns",
     "test_if_numeric",

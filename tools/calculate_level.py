@@ -56,9 +56,9 @@ class CalculateLevel(
         self.push_button_all.clicked.connect(lambda x: self.calcall())
         self.push_button_selected.clicked.connect(lambda x: self.calcselected())
         self.push_button_cancel.clicked.connect(lambda x: self.close())
-        self.layer = iface.activeLayer()
 
     def show(self) -> None:
+        self.layer = self._iface.activeLayer()
         self.exec()
 
     def calc(self, obsids: List[str]):

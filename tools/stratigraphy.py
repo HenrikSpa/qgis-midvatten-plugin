@@ -60,11 +60,12 @@ class Stratigraphy:
         self.stratitable = (
             defs.stratigraphy_table()
         )  # no longer an option to select other tables than 'stratigraphy'
-        self.layer = iface.activeLayer()
+        self.layer = None
         self.store = None
         self.w = None
 
     def show(self) -> None:
+        self.layer = self.iface.activeLayer()
         self.show_survey()
 
     def init_store(self):

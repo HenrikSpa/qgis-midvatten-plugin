@@ -49,7 +49,7 @@ from midvatten.tools.utils.gui_utils import set_combobox
 
 
 Ui_SecPlotDock = uic.loadUiType(
-    os.path.join(os.path.dirname(__file__), "..", "ui", "secplotdockwidget.ui")
+    os.path.join(os.path.dirname(__file__), "..", "..", "ui", "secplotdockwidget.ui")
 )[0]
 
 from matplotlib.widgets import Slider
@@ -61,12 +61,14 @@ from copy import deepcopy
 from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.exceptions import UsageError
-from midvatten.tools.utils.common_utils import LEGEND_NCOL_KEY
 from midvatten.tools.utils.midvatten_utils import PlotTemplates
 from midvatten.tools.utils.gui_utils import DetachFigureButton
 import midvatten.definitions.midvatten_defs as defs
 from midvatten.tools.utils import matplotlib_replacements
 from midvatten.tools.utils.sampledem import qchain, sampling
+from midvatten.tools.sectionplot.figure import SectionPlotFigure
+from midvatten.tools.sectionplot.legend import SectionPlotLegendManager
+from midvatten.tools.sectionplot import painters as _painters
 
 _WLVL_EXCLUDED_TABLES = (
     "comments",
@@ -96,47 +98,6 @@ except Exception:
     pandas_on = False
 else:
     pandas_on = True
-
-
-class SectionPlotFigure(mpl.figure.Figure):
-    """Matplotlib Figure subclass that carries SectionPlot application state.
-
-    When the figure is detached from the Qt dock into a standalone window,
-    SectionPlot is no longer reachable, but legend-update callbacks still need
-    access to the plot handles, axes references, and QGIS layer refs stored
-    here. Declaring them as proper typed attributes gives IDE support and
-    makes the contract explicit.
-
-    Instantiate with: plt.figure(FigureClass=SectionPlotFigure)
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Axes
-        self.ax_main: mpl.axes.Axes | None = None
-        self.ax_wlvl: mpl.axes.Axes | None = None
-        self.ax_slider: mpl.axes.Axes | None = None
-        self.ax_data_fit: mpl.axes.Axes | None = None
-        # Plot handles list — used to rebuild the legend
-        self.plot_handles: list = []
-        self.waterlevel_lineplot: mpl.artist.Artist | None = None
-        # Water level data for interactive slider
-        self.df: pd.DataFrame | None = None
-        # QGIS refs (set to None when not running in QGIS)
-        self.line_layer = None
-        self.line_feature = None
-        # Annotation state
-        self.obsid_annotation: dict = {}
-        self.obsids_x_position: dict = {}
-        self.images_labels: list = []
-        self.tem_cbar_label: str = ""
-        self.figname: str = ""
-        # Interactive widgets
-        self.detach_figure_button: DetachFigureButton | None = None
-        self.date_slider = None
-        self.axvline: mpl.lines.Line2D | None = None
-        # Event connection ID for the legend-update draw callback
-        self.update_legend_cid: int | None = None
 
 
 class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
@@ -239,7 +200,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         self.ms = msettings
 
         template_folder = os.path.join(
-            os.path.split(os.path.dirname(__file__))[0],
+            os.path.split(os.path.split(os.path.dirname(__file__))[0])[0],
             "definitions",
             "secplot_templates",
         )
@@ -1488,17 +1449,16 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                     plotted_axvlines.add(x_vals[_idx])
 
     def plot_drill_stop(self):
-        settings = copy.deepcopy(
-            self.secplot_templates.loaded_template["drillstop_Axes_plot"]
+        drillstop_label = (
+            self.secplot_templates.loaded_template["drillstop_Axes_plot"].get("label")
+            or "drillstop like " + self.ms.settingsdict["secplotdrillstop"]
         )
-        label = settings.get("label", None)
-        if label is None:
-            label = "drillstop like " + self.ms.settingsdict["secplotdrillstop"]
-        settings["label"] = label
-        settings["picker"] = 2
-        (lineplot,) = self.figure.ax_main.plot(*list(zip(*self.drillstops)), **settings)
-
-        self.figure.plot_handles.append(lineplot)
+        _painters.paint_drill_stop(
+            self.figure,
+            self.drillstops,
+            self.secplot_templates.loaded_template,
+            drillstop_label,
+        )
 
     def plot_tem(self):
         if not pandas_on:
@@ -1860,62 +1820,15 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
     def plot_bars(
         self, bars_dict, color_dict, color_key="color", hatch_dict=None, barwidth=1
     ):
-        for typ, bar_data in bars_dict.items():
-            _settings = copy.deepcopy(
-                self.secplot_templates.loaded_template["geology_Axes_bar"]
-            )
-            try:
-                settings = _settings[typ]
-            except KeyError:
-                try:
-                    settings = _settings["DEFAULT"]
-                except KeyError:
-                    settings = _settings
-
-            for _typ in bars_dict.keys():
-                try:
-                    del settings[_typ]
-                except KeyError:
-                    pass
-            try:
-                del settings["DEFAULT"]
-            except KeyError:
-                pass
-
-            settings["width"] = settings.get("width", barwidth)
-            settings["color"] = settings.get(color_key, color_dict[typ])
-            if hatch_dict is not None:
-                settings["hatch"] = settings.get("hatch", hatch_dict[typ])
-            settings["label"] = settings.get("label", typ)
-            try:
-                self.figure.plot_handles.append(
-                    self.figure.ax_main.bar(
-                        [x - barwidth / 2 for x in bar_data["x"]],
-                        bar_data["height"],
-                        bottom=bar_data["bottom"],
-                        align="edge",
-                        **settings,
-                    )
-                )
-            except Exception as e:
-                common_utils.MessagebarAndLog.info(
-                    bar_msg=QCoreApplication.translate(
-                        "Sectionplot",
-                        "Type %s color %s could not be plotted. Default to white!. See message log",
-                    )
-                    % (str(typ), settings["color"]),
-                    log_msg=traceback.format_exc(),
-                )
-                settings["color"] = "white"
-                self.figure.plot_handles.append(
-                    self.figure.ax_main.bar(
-                        bar_data["x"],
-                        bar_data["height"],
-                        bottom=bar_data["bottom"],
-                        align="edge",
-                        **settings,
-                    )
-                )
+        _painters.paint_bars(
+            self.figure,
+            bars_dict,
+            self.secplot_templates.loaded_template,
+            color_dict,
+            color_key=color_key,
+            hatch_dict=hatch_dict,
+            barwidth=barwidth,
+        )
 
     def plot_specific_water_level(self):
         for secplotdates in self.ms.settingsdict["secplotdates"]:
@@ -1975,46 +1888,13 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             self.waterlevel_lineplot(x_wl, wl, _date)
 
     def plot_obs_lines_data(self):
-        def remove_nones(xdata, ydata):
-            x_y = [
-                (xdata[idx], row) for idx, row in enumerate(ydata) if not np.isnan(row)
-            ]
-            x = [row[0] for row in x_y]
-            y = [row[1] for row in x_y]
-            return x, y
-
-        x, y = remove_nones(
-            self.obs_lines_plot_data.obsline_x, self.obs_lines_plot_data.obsline_y1
+        _painters.paint_obs_lines_data(
+            self.figure,
+            self.obs_lines_plot_data,
+            self.y1_column,
+            self.y2_column,
+            self.y3_column,
         )
-        plotlable = get_plot_label_name(
-            self.y1_column, get_legend_items_labels(self.figure.plot_handles)[1]
-        )
-        (lineplot,) = self.figure.ax_main.plot(
-            x, y, picker=2, marker="+", linestyle="-", label=plotlable
-        )  # PLOT!!
-        self.figure.plot_handles.append(lineplot)
-
-        plotlable = get_plot_label_name(
-            self.y2_column, get_legend_items_labels(self.figure.plot_handles)[1]
-        )
-        x, y = remove_nones(
-            self.obs_lines_plot_data.obsline_x, self.obs_lines_plot_data.obsline_y2
-        )
-        (lineplot,) = self.figure.ax_main.plot(
-            x, y, picker=2, marker="+", linestyle="-", label=plotlable
-        )  # PLOT!!
-        self.figure.plot_handles.append(lineplot)
-
-        plotlable = get_plot_label_name(
-            self.y3_column, get_legend_items_labels(self.figure.plot_handles)[1]
-        )
-        x, y = remove_nones(
-            self.obs_lines_plot_data.obsline_x, self.obs_lines_plot_data.obsline_y3
-        )
-        (lineplot,) = self.figure.ax_main.plot(
-            x, y, picker=2, marker="+", linestyle="-", label=plotlable
-        )  # PLOT!!
-        self.figure.plot_handles.append(lineplot)
 
     def plot_water_level(self):
         if not self.ms.settingsdict["secplotwlvltab"]:
@@ -2474,46 +2354,16 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
 
     def update_legend(self, from_navbar=True, fig=None):
         if self.ms.settingsdict["secplotlegendplotted"]:  # Include legend in plot
-            # skipped_bars is self-variable just to make it easily available for tests.
             if fig is None:
                 fig = self.figure
-            main_ax = fig.ax_main
             if getattr(fig, "ax_data_fit", None) is not None:
                 leg_ax = fig.ax_data_fit
             else:
-                leg_ax = main_ax
-            items, labels = get_legend_items_labels(fig.plot_handles)
-
-            legend_kwargs = dict(
-                self.secplot_templates.loaded_template["legend_Axes_legend"]
+                leg_ax = fig.ax_main
+            legend_manager = SectionPlotLegendManager.from_template(
+                self.secplot_templates.loaded_template
             )
-            if LEGEND_NCOL_KEY not in legend_kwargs:
-                if LEGEND_NCOL_KEY.rstrip("s") in legend_kwargs:
-                    legend_kwargs[LEGEND_NCOL_KEY] = legend_kwargs.pop(
-                        LEGEND_NCOL_KEY.rstrip("s")
-                    )
-
-            leg = leg_ax.legend(items, labels, **legend_kwargs)
-            try:
-                leg.set_draggable(state=True)
-            except AttributeError:
-                # For older version of matplotlib
-                leg.draggable(state=True)
-            leg.set_zorder(999)
-            frame = (
-                leg.get_frame()
-            )  # the matplotlib.patches.Rectangle instance surrounding the legend
-            frame.set_facecolor(
-                self.secplot_templates.loaded_template["legend_Frame_set_facecolor"]
-            )
-            # set the frame face color to white
-            frame.set_fill(
-                self.secplot_templates.loaded_template["legend_Frame_set_fill"]
-            )
-            for t in leg.get_texts():
-                t.set_fontsize(
-                    self.secplot_templates.loaded_template["legend_Text_set_fontsize"]
-                )
+            legend_manager.rebuild(leg_ax, fig.plot_handles)
             # if from_navbar:
             #    with self.temporary_deactivate_update_legend(fig): # See docstring for self.temporary_deactivate_update_legend
             #        fig.canvas.draw()
@@ -2643,64 +2493,28 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         self.dbconnection.execute(sql, all_args=[(geom_linestring.asWkt(), srid)])
 
     def write_layer_text(self):
-        xy_texts = self.layer_texts[self.ms.settingsdict["secplottext"]]
-        settings = self.secplot_templates.loaded_template["layer_Axes_annotate"]
-
-        for xy, text in xy_texts.items():
-            if text is None or not str(text):
-                continue
-            if self.ms.settingsdict["secplotlayertextalignment"] == "center":
-                x = xy[0]
-            else:
-                x = xy[0] + (self.barwidth / 2)
-
-            a = self.figure.ax_main.annotate(text, (x, xy[1]), **settings)
-            a.original_xy = xy
+        _painters.paint_layer_text(
+            self.figure,
+            self.layer_texts,
+            self.ms.settingsdict["secplottext"],
+            self.ms.settingsdict["secplotlayertextalignment"],
+            self.barwidth,
+            self.secplot_templates.loaded_template,
+        )
 
     def write_obsid(
         self, plot_labels=True
     ):  # annotation, and also empty bars to show drillings without stratigraphy data
-        if (
-            self.ms.settingsdict["stratigraphyplotted"]
-            or self.ms.settingsdict["secplothydrologyplotted"]
-        ):
-            plotxleftbarcorner = []
-            bottoms = []
-            barheights = []
-
-            for obsid, z_data in self.z_data.items():
-                if not z_data["barheight"]:
-                    continue
-
-                plotxleftbarcorner.append(
-                    self.obsids_x_position[obsid] - self.barwidth / 2
-                )
-                bottoms.append(z_data["bottom"])
-                barheights.append(z_data["barheight"])
-
-            if plotxleftbarcorner:
-                obsid_axes_bar = copy.deepcopy(
-                    self.secplot_templates.loaded_template["obsid_Axes_bar"]
-                )
-                obsid_axes_bar["width"] = obsid_axes_bar.get("width", self.barwidth)
-                obsid_axes_bar["bottom"] = obsid_axes_bar.get("bottom", bottoms)
-                obsid_axes_bar["label"] = "frame"
-                # plot empty bars
-                p = self.figure.ax_main.bar(
-                    plotxleftbarcorner, barheights, align="edge", **obsid_axes_bar
-                )
-                p.skip_legend = True
-                self.figure.plot_handles.append(p)
-
-        if plot_labels:
-            for o, m_n in self.figure.obsid_annotation.items():
-                m, n = m_n
-                # for m,n,o in zip(self.x_id,self.z_id,self.selected_obsids):#change last arg to the one to be written in plot
-                text = self.figure.ax_main.annotate(
-                    o,
-                    xy=(m, n),
-                    **self.secplot_templates.loaded_template["obsid_Axes_annotate"],
-                )
+        _painters.paint_obsids(
+            self.figure,
+            self.z_data,
+            self.obsids_x_position,
+            self.secplot_templates.loaded_template,
+            self.barwidth,
+            plot_stratigraphy=self.ms.settingsdict["stratigraphyplotted"],
+            plot_hydrology=self.ms.settingsdict["secplothydrologyplotted"],
+            plot_labels=plot_labels,
+        )
 
     def attach_signals(self, fig):
         fig.canvas.mpl_connect("button_release_event", self.update_barwidths_from_plot)

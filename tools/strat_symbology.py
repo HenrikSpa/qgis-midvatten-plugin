@@ -51,13 +51,16 @@ strat_symbology_dialog = uic.loadUiType(
 
 
 class StratSymbology(qgis.PyQt.QtWidgets.QDialog, strat_symbology_dialog):
-    def __init__(self, iface, parent):
+    def __init__(self, iface, ms):
+        super().__init__(iface.mainWindow())
         self.iface = iface
-        qgis.PyQt.QtWidgets.QDialog.__init__(self, parent)
+        self._ms = ms
         self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt
         self.ok_button.clicked.connect(lambda: self.create_symbology())
-        self.show()
+
+    def show(self) -> None:
+        super().show()
 
     @common_utils.general_exception_handler
     def create_symbology(self):
@@ -632,7 +635,7 @@ def add_views_to_db(dbconnection, bedrock_geoshort):
     def insert_view(view_name):
         cur.execute(
             f"""INSERT OR IGNORE INTO views_geometry_columns VALUES
-             ({dbconnection.placeholder()}, 
+             ({dbconnection.placeholder()},
              'geometry', 'rowid', 'obs_points', 'geometry', 1)""",
             (view_name,),
         )
@@ -641,12 +644,12 @@ def add_views_to_db(dbconnection, bedrock_geoshort):
         view_ident = dbconnection.ident(view_name)
         sql = f"""
             CREATE VIEW {view_ident} AS
-            SELECT row_number() OVER (ORDER BY "obsid", "stratid") "rowid", "obsid", 
-            (SELECT 
-            MAX(depthbot) 
-            FROM 
+            SELECT row_number() OVER (ORDER BY "obsid", "stratid") "rowid", "obsid",
+            (SELECT
+            MAX(depthbot)
+            FROM
             stratigraphy AS a where a.obsid = stratigraphy.obsid) AS "maxdepthbot",
-            "stratid", "depthtop", "depthbot", "geology", "geoshort", stratigraphy."capacity", 
+            "stratid", "depthtop", "depthbot", "geology", "geoshort", stratigraphy."capacity",
             stratigraphy."development", "comment", geometry FROM stratigraphy JOIN obs_points USING (obsid)"""
     else:
         # The first user that creates this view will own it in the PostgreSQL-database.
@@ -686,10 +689,10 @@ def add_views_to_db(dbconnection, bedrock_geoshort):
     try:
         if dbconnection.dbtype == "spatialite":
             cur.execute(
-                f"""CREATE VIEW {view_name} AS 
-                                    SELECT row_number() OVER (ORDER BY a.obsid) rowid, 
-                                    a.obsid AS obsid, MAX(a.date_time) AS date_time,  a.meas AS meas,  a.level_masl AS level_masl, b.h_tocags AS h_tocags, b.geometry AS geometry 
-                                    FROM w_levels AS a JOIN obs_points AS b using (obsid) 
+                f"""CREATE VIEW {view_name} AS
+                                    SELECT row_number() OVER (ORDER BY a.obsid) rowid,
+                                    a.obsid AS obsid, MAX(a.date_time) AS date_time,  a.meas AS meas,  a.level_masl AS level_masl, b.h_tocags AS h_tocags, b.geometry AS geometry
+                                    FROM w_levels AS a JOIN obs_points AS b using (obsid)
                                     GROUP BY obsid;"""
             )
             insert_view(view_name)
@@ -697,11 +700,11 @@ def add_views_to_db(dbconnection, bedrock_geoshort):
         else:
             cur.execute(
                 SQL(
-                    """CREATE OR REPLACE VIEW {} AS 
-            SELECT a.obsid AS obsid, a.date_time AS date_time, a.meas AS meas, 
-            a.level_masl AS level_masl, c.h_tocags AS h_tocags, c.geometry AS geometry 
-            FROM w_levels AS a JOIN (SELECT obsid, max(date_time) as date_time 
-            FROM w_levels GROUP BY obsid) as b ON a.obsid=b.obsid and 
+                    """CREATE OR REPLACE VIEW {} AS
+            SELECT a.obsid AS obsid, a.date_time AS date_time, a.meas AS meas,
+            a.level_masl AS level_masl, c.h_tocags AS h_tocags, c.geometry AS geometry
+            FROM w_levels AS a JOIN (SELECT obsid, max(date_time) as date_time
+            FROM w_levels GROUP BY obsid) as b ON a.obsid=b.obsid and
             a.date_time=b.date_time JOIN obs_points AS c ON a.obsid=c.obsid;"""
                 ).format(Identifier(view_name))
             )
@@ -773,7 +776,7 @@ def add_views_to_db(dbconnection, bedrock_geoshort):
      LEFT JOIN (SELECT s.obsid, MIN(s.depthtop) AS soildepth,
                 'Stratigraphy: '||MIN(s.geology)||' '||MIN(s.geoshort) AS geo
                 FROM stratigraphy s
-                WHERE EXISTS (SELECT 1 FROM zz_strat zzs 
+                WHERE EXISTS (SELECT 1 FROM zz_strat zzs
                               WHERE LOWER(strata) = '{strata}'
                               AND LOWER(s.geoshort) = LOWER(zzs.geoshort)
                               LIMIT 1)

@@ -35,10 +35,10 @@ selected_features_dialog = qgis.PyQt.uic.loadUiType(
 class ValuesFromSelectedFeaturesGui(
     qgis.PyQt.QtWidgets.QDialog, selected_features_dialog
 ):
-    def __init__(self, parent):
-        self.iface = parent
-
-        qgis.PyQt.QtWidgets.QDialog.__init__(self, parent)
+    def __init__(self, iface, ms):
+        super().__init__(iface.mainWindow())
+        self.iface = iface
+        self._ms = ms
         self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt
 
@@ -53,7 +53,8 @@ class ValuesFromSelectedFeaturesGui(
 
         self.reload_combobox()
 
-        self.show()
+    def show(self) -> None:
+        super().show()
 
     def reload_combobox(self):
         self.activelayer = common_utils.get_active_layer()

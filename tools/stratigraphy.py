@@ -54,14 +54,19 @@ log = logging.getLogger(__name__)
 
 
 class Stratigraphy:
-    def __init__(self, iface, layer=None, settingsdict=None):
+    def __init__(self, iface, ms):
         self.iface = iface
+        self._ms = ms
         self.stratitable = (
             defs.stratigraphy_table()
         )  # no longer an option to select other tables than 'stratigraphy'
-        self.layer = layer
+        self.layer = None
         self.store = None
         self.w = None
+
+    def show(self) -> None:
+        self.layer = self.iface.activeLayer()
+        self.show_survey()
 
     def init_store(self):
         try:  # return from SurveyStore is stored in self.store only if no object belonging to DataError class is created

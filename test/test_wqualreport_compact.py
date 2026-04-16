@@ -80,7 +80,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
             "midvatten.tools.wqualreport_compact.common_utils.get_stored_settings",
             return_value={},
         ):
-            ui = CompactWqualReportUi(self.iface.mainWindow(), self.midvatten.ms)
+            ui = CompactWqualReportUi(self.iface, self.midvatten.ms)
         ui.from_sql_table.setChecked(True)
         gui_utils.set_combobox(ui.sql_table, "w_qual_lab", add_if_not_exists=False)
         gui_utils.set_combobox(ui.data_column, "reading_txt", add_if_not_exists=False)
@@ -109,7 +109,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
             "midvatten.tools.wqualreport_compact.common_utils.get_stored_settings",
             return_value={},
         ):
-            ui = CompactWqualReportUi(self.iface.mainWindow(), self.midvatten.ms)
+            ui = CompactWqualReportUi(self.iface, self.midvatten.ms)
         ui.from_active_layer.setChecked(True)
         ui.set_columns_from_activelayer()
         gui_utils.set_combobox(ui.data_column, "reading_txt", add_if_not_exists=False)
@@ -139,7 +139,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
             "midvatten.tools.wqualreport_compact.common_utils.get_stored_settings",
             return_value={},
         ):
-            ui = CompactWqualReportUi(self.iface.mainWindow(), self.midvatten.ms)
+            ui = CompactWqualReportUi(self.iface, self.midvatten.ms)
         ui.from_sql_table.setChecked(True)
         gui_utils.set_combobox(ui.sql_table, "w_qual_lab", add_if_not_exists=False)
         gui_utils.set_combobox(ui.data_column, "reading_txt", add_if_not_exists=False)
@@ -169,7 +169,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
             "midvatten.tools.wqualreport_compact.common_utils.get_stored_settings",
             return_value={},
         ):
-            ui = CompactWqualReportUi(self.iface.mainWindow(), self.midvatten.ms)
+            ui = CompactWqualReportUi(self.iface, self.midvatten.ms)
         ui.from_sql_table.setChecked(True)
         gui_utils.set_combobox(ui.sql_table, "w_qual_lab", add_if_not_exists=False)
         ui.empty_row_between_tables.setChecked(True)
@@ -195,7 +195,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
             "midvatten.tools.wqualreport_compact.common_utils.get_stored_settings",
             return_value={},
         ):
-            ui = CompactWqualReportUi(self.iface.mainWindow(), self.midvatten.ms)
+            ui = CompactWqualReportUi(self.iface, self.midvatten.ms)
         ui.from_sql_table.setChecked(True)
         gui_utils.set_combobox(ui.sql_table, "w_qual_lab", add_if_not_exists=False)
         ui.page_break_between_tables.setChecked(True)
@@ -220,7 +220,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
             "midvatten.tools.wqualreport_compact.common_utils.get_stored_settings",
             return_value={},
         ):
-            ui = CompactWqualReportUi(self.iface.mainWindow(), self.midvatten.ms)
+            ui = CompactWqualReportUi(self.iface, self.midvatten.ms)
         ui.from_sql_table.setChecked(True)
         gui_utils.set_combobox(ui.sql_table, "w_qual_lab", add_if_not_exists=False)
         ui.num_data_cols.setText("3")
@@ -240,7 +240,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
     )
     def test_sql_table_populates_data_column(self, mock_get_stored):
         _insert_wqual_test_data("WQ1")
-        ui = CompactWqualReportUi(self.iface.mainWindow(), self.midvatten.ms)
+        ui = CompactWqualReportUi(self.iface, self.midvatten.ms)
         ui.from_sql_table.setChecked(True)
         gui_utils.set_combobox(ui.sql_table, "w_qual_lab", add_if_not_exists=False)
         ui.set_columns_from_sql_layer()
@@ -265,7 +265,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
             "midvatten.tools.wqualreport_compact.common_utils.get_stored_settings",
             return_value={},
         ):
-            ui = CompactWqualReportUi(self.iface.mainWindow(), self.midvatten.ms)
+            ui = CompactWqualReportUi(self.iface, self.midvatten.ms)
         ui.from_sql_table.setChecked(True)
         gui_utils.set_combobox(ui.sql_table, "w_qual_lab", add_if_not_exists=False)
         ui.date_time_as_columns.setChecked(True)
@@ -290,7 +290,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
             "midvatten.tools.wqualreport_compact.common_utils.get_stored_settings",
             return_value={},
         ):
-            ui = CompactWqualReportUi(self.iface.mainWindow(), self.midvatten.ms)
+            ui = CompactWqualReportUi(self.iface, self.midvatten.ms)
         ui.push_button_update_from_string.clicked.emit()
         print(f"{mock_messagebar.mock_calls=}")
         assert ui.num_data_cols.text() == "5"
@@ -302,7 +302,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
     )
     def test_save_and_restore_stored_settings(self, mock_get_stored):
         _insert_wqual_test_data("WQ1")
-        ui1 = CompactWqualReportUi(self.iface.mainWindow(), self.midvatten.ms)
+        ui1 = CompactWqualReportUi(self.iface, self.midvatten.ms)
         ui1.num_data_cols.setText("7")
         ui1.rowheader_colwidth_percent.setText("30")
         ui1.from_sql_table.setChecked(True)
@@ -310,7 +310,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
         gui_utils.set_combobox(ui1.data_column, "reading_num", add_if_not_exists=False)
         ui1.save_stored_settings(ui1.save_attrnames)
         stored = dict(ui1.stored_settings)
-        ui2 = CompactWqualReportUi(self.iface.mainWindow(), self.midvatten.ms)
+        ui2 = CompactWqualReportUi(self.iface, self.midvatten.ms)
         ui2.update_from_stored_settings(stored)
         assert ui2.num_data_cols.text() == "7"
         assert ui2.rowheader_colwidth_percent.text() == "30"
@@ -327,7 +327,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
             "midvatten.tools.wqualreport_compact.common_utils.get_stored_settings",
             return_value={},
         ):
-            ui = CompactWqualReportUi(self.iface.mainWindow(), self.midvatten.ms)
+            ui = CompactWqualReportUi(self.iface, self.midvatten.ms)
         ui.from_active_layer.blockSignals(True)
         ui.from_active_layer.setChecked(True)
         ui.from_active_layer.blockSignals(False)

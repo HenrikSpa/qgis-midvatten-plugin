@@ -34,8 +34,13 @@ def add_insert_or_ignore_to_sql(sql: str, dbconnection: DbConnectionManager) -> 
 
 
 def backup_db(dbconnection: Optional[DbConnectionManager] = None) -> None:
-    with use_or_create_connection(dbconnection) as dbconnection:
-        dbconnection.backup()
+    with use_or_create_connection(dbconnection) as dbconn:
+        dbconn.backup()
+
+
+def vacuum_db(dbconnection: Optional[DbConnectionManager] = None) -> None:
+    with use_or_create_connection(dbconnection) as dbconn:
+        dbconn.vacuum()
 
 
 def cast_date_time_as_epoch(
@@ -196,12 +201,6 @@ def nonplot_tables(
 
 def create_dict_from_db_2_cols(params: tuple) -> tuple:
     """params are (col1=keys, col2=values, db-table)."""
-    from midvatten.tools.utils.db_utils.execution import (
-        sql_load_fr_db,
-        use_or_create_connection,
-    )
-    from qgis.PyQt.QtCore import QCoreApplication
-
     col1, col2, table = params
     with use_or_create_connection(None) as dbconnection:
         sqlstring = dbconnection.sql_ident(

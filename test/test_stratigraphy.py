@@ -97,7 +97,8 @@ class StratigraphyMixin:
         # print(str(self.vlayer.isValid()))
         # print(str(db_utils.sql_load_fr_db('select * from obs_points')))
         # print(str(db_utils.sql_load_fr_db('select * from stratigraphy')))
-        dlg = Stratigraphy(self.iface, self.vlayer, self.midvatten.ms.settingsdict)
+        dlg = Stratigraphy(self.iface, self.midvatten.ms)
+        dlg.layer = self.vlayer
         # print(f"{mock_messagebar.mock_calls=}")
         # print(str(mock_skippopup.mock_calls))
         dlg.show_survey()
@@ -156,7 +157,8 @@ class StratigraphyMixin:
         )
         self.create_and_select_vlayer()
 
-        dlg = Stratigraphy(self.iface, self.vlayer, self.midvatten.ms.settingsdict)
+        dlg = Stratigraphy(self.iface, self.midvatten.ms)
+        dlg.layer = self.vlayer
 
         dlg.show_survey()
         print(str(mock_skippopup.mock_calls))
@@ -214,7 +216,8 @@ class StratigraphyMixin:
         print(str(db_utils.sql_load_fr_db("select * from obs_points")))
         print(str(db_utils.sql_load_fr_db("select * from stratigraphy")))
         print(str(db_utils.sql_load_fr_db("""SELECT * FROM zz_strat""")))
-        dlg = Stratigraphy(self.iface, self.vlayer, self.midvatten.ms.settingsdict)
+        dlg = Stratigraphy(self.iface, self.midvatten.ms)
+        dlg.layer = self.vlayer
         print(f"{mock_messagebar.mock_calls=}")
         print(str(mock_skippopup.mock_calls))
         dlg.show_survey()
@@ -273,7 +276,8 @@ class StratigraphyMixin:
         print(str(self.vlayer.isValid()))
         print(str(db_utils.sql_load_fr_db("select * from obs_points")))
         print(str(db_utils.sql_load_fr_db("select * from stratigraphy")))
-        dlg = Stratigraphy(self.iface, self.vlayer, self.midvatten.ms.settingsdict)
+        dlg = Stratigraphy(self.iface, self.midvatten.ms)
+        dlg.layer = self.vlayer
         print(f"{mock_messagebar.mock_calls=}")
         print(str(mock_skippopup.mock_calls))
         dlg.show_survey()
@@ -339,7 +343,8 @@ class StratigraphyMixin:
         )
         self.create_and_select_vlayer()
 
-        dlg = Stratigraphy(self.iface, self.vlayer, self.midvatten.ms.settingsdict)
+        dlg = Stratigraphy(self.iface, self.midvatten.ms)
+        dlg.layer = self.vlayer
 
         dlg.show_survey()
         test = common_utils.anything_to_string_representation(dlg.data)

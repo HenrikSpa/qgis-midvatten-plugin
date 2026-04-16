@@ -39,10 +39,10 @@ from typing import List, Optional, Tuple
 
 
 class HobologgerImport(import_diveroffice.DiverofficeImport):
-    def __init__(self, parent, msettings=None):
-        super(self.__class__, self).__init__(parent, msettings)
-        self.default_charset = "utf8"
+    def __init__(self, iface, ms):
         self.use_skiprows = False
+        super().__init__(iface, ms)
+        self.default_charset = "utf8"
 
         self.setWindowTitle(
             QCoreApplication.translate("HobologgerImport", "Hobologger import")

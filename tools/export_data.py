@@ -22,6 +22,7 @@ import traceback
 import os
 import os.path
 from qgis.PyQt.QtCore import QCoreApplication
+from qgis.PyQt.QtWidgets import QFileDialog
 
 from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.string_utils import returnunicode as ru
@@ -33,15 +34,37 @@ from typing import Any, Callable, List, Optional, Tuple, Union
 
 
 class ExportData:
-    def __init__(
-        self,
-        obsid_p: Union[Tuple[str], Tuple[()]],
-        obsid_l: Union[Tuple[str], Tuple[()]],
-    ):
-        self.ID_obs_points = obsid_p
-        self.ID_obs_lines = obsid_l
+    def __init__(self, iface, ms):
+        self._iface = iface
+        self._ms = ms
         self.dest_dbconnection = None
         self.source_dbconnection = None
+        self.ID_obs_points: tuple = ()
+        self.ID_obs_lines: tuple = ()
+
+    def show(self) -> None:
+        common_utils.start_waiting_cursor()
+        obsid_p = common_utils.get_selected_features_as_tuple("obs_points")
+        obsid_l = common_utils.get_selected_features_as_tuple("obs_lines")
+        common_utils.stop_waiting_cursor()
+
+        exportfolder = QFileDialog.getExistingDirectory(
+            None,
+            QCoreApplication.translate(
+                "Midvatten",
+                "Select a folder where the csv files will be created:",
+            ),
+            ".",
+            QFileDialog.Option.ShowDirsOnly,
+        )
+        if not exportfolder:
+            return
+
+        common_utils.start_waiting_cursor()
+        self.ID_obs_points = obsid_p
+        self.ID_obs_lines = obsid_l
+        self.export_2_csv(exportfolder)
+        common_utils.stop_waiting_cursor()
 
     def export_2_csv(self, exportfolder: str):
         self.source_dbconnection = db_utils.DbConnectionManager()

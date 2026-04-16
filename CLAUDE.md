@@ -41,7 +41,7 @@ ruff format .
 
 ### Plugin Entry Point
 
-`__init__.py` defines `classFactory(iface)` which returns `midvatten_plugin.Midvatten(iface)`. The `Midvatten` class registers all tools via `tool_registry.add_plugin_action()`.
+`__init__.py` defines `classFactory(iface)` which returns `midvatten_plugin.Midvatten(iface)`. The `Midvatten` class builds all plugin actions via `initGui()`, which calls `_make_actions()` to produce a list of `ActionSpec` entries. Each action is dispatched through a single `_dispatch(spec)` method that handles precondition checking, persistent-window reuse, and tool invocation.
 
 ### Database Abstraction Layer (`tools/utils/db_utils/`)
 

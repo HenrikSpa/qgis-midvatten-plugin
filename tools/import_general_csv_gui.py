@@ -49,12 +49,11 @@ import_ui_dialog = qgis.PyQt.uic.loadUiType(
 
 
 class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
-    def __init__(self, parent, msettings=None, dbconnection=None):
-        self.iface = parent
-        self.ms = msettings
-        if self.ms is not None:
-            self.ms.load_settings()
-        qgis.PyQt.QtWidgets.QMainWindow.__init__(self, parent)
+    def __init__(self, iface, ms, dbconnection=None):
+        self.iface = iface
+        self.ms = ms
+        self.ms.load_settings()
+        qgis.PyQt.QtWidgets.QMainWindow.__init__(self, iface.mainWindow())
         self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt
         self.setWindowTitle(
@@ -64,6 +63,11 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         self.file_data = None
         self.srid = None
         self.dbconnection = dbconnection
+
+    def show(self) -> None:
+        self.load_gui()
+        super().show()
+        self.activateWindow()
 
     def load_gui(self):
         self.tables_columns_info = {
@@ -131,7 +135,6 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
 
         self.grid_layout_buttons.setRowStretch(8, 1)
         self.setGeometry(100, 100, 1800, 800)
-        self.show()
 
     @common_utils.general_exception_handler
     def select_file(self):

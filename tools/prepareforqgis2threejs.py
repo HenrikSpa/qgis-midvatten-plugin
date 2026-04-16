@@ -37,11 +37,15 @@ log = logging.getLogger(__name__)
 
 
 class PrepareForQgis2Threejs:
-    def __init__(self, iface, settingsdict=None):
+    def __init__(self, iface, ms):
+        self.iface = iface
+        self._ms = ms
+
+    def show(self) -> None:
+        self.settingsdict = self._ms.settingsdict
 
         self.dbconnection = db_utils.DbConnectionManager()
 
-        self.settingsdict = settingsdict
         self.strat_layers_dict = defs.plot_types_dict("english")
         self.symbolcolors_dict = defs.plot_colors_dict()
         # make all the keys only ascii and only lower case and also add 'strat_' as prefix
@@ -55,7 +59,6 @@ class PrepareForQgis2Threejs:
             newkey = "strat_" + common_utils.return_lower_ascii_string(key)
             self.symbolcolors_dict[newkey] = self.symbolcolors_dict[key]
             del self.symbolcolors_dict[key]
-        self.iface = iface
         self.root = QgsProject.instance().layerTreeRoot()
         self.remove_views()
         self.drop_db_views()

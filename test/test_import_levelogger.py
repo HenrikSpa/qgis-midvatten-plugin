@@ -155,7 +155,8 @@ class WlvllogImportFromLeveloggerFilesMixin:
 
                         ms = MagicMock()
                         ms.settingsdict = OrderedDict()
-                        importer = LeveloggerImport(self.iface.mainWindow(), ms)
+                        importer = LeveloggerImport(self.iface, ms)
+                        importer.load_gui()
                         importer.select_files()
 
                         try:
@@ -288,7 +289,8 @@ class WlvllogImportFromLeveloggerFilesMixin:
 
                         ms = MagicMock()
                         ms.settingsdict = OrderedDict()
-                        importer = LeveloggerImport(self.iface.mainWindow(), ms)
+                        importer = LeveloggerImport(self.iface, ms)
+                        importer.load_gui()
                         importer.select_files()
 
                         importer.start_import(
@@ -416,7 +418,8 @@ class WlvllogImportFromLeveloggerFilesMixin:
 
                         ms = MagicMock()
                         ms.settingsdict = OrderedDict()
-                        importer = LeveloggerImport(self.iface.mainWindow(), ms)
+                        importer = LeveloggerImport(self.iface, ms)
+                        importer.load_gui()
                         importer.select_files()
                         importer.import_all_data.checked = False
                         importer.start_import(
@@ -546,7 +549,8 @@ class WlvllogImportFromLeveloggerFilesMixin:
 
                         ms = MagicMock()
                         ms.settingsdict = OrderedDict()
-                        importer = LeveloggerImport(self.iface.mainWindow(), ms)
+                        importer = LeveloggerImport(self.iface, ms)
+                        importer.load_gui()
                         importer.select_files()
                         importer.import_all_data.checked = True
                         importer.confirm_names.checked = False
@@ -667,7 +671,8 @@ class WlvllogImportFromLeveloggerFilesMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = LeveloggerImport(self.iface.mainWindow(), ms)
+                importer = LeveloggerImport(self.iface, ms)
+                importer.load_gui()
                 importer.select_files()
                 importer.import_all_data.checked = False
                 importer.confirm_names.checked = False
@@ -753,7 +758,8 @@ class WlvllogImportFromLeveloggerFilesMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = LeveloggerImport(self.iface.mainWindow(), ms)
+                importer = LeveloggerImport(self.iface, ms)
+                importer.load_gui()
                 importer.select_files()
                 importer.import_all_data.checked = True
                 importer.confirm_names.checked = False
@@ -888,7 +894,8 @@ class WlvllogImportFromLeveloggerFilesMixin:
 
                         ms = MagicMock()
                         ms.settingsdict = OrderedDict()
-                        importer = LeveloggerImport(self.iface.mainWindow(), ms)
+                        importer = LeveloggerImport(self.iface, ms)
+                        importer.load_gui()
                         importer.select_files()
                         importer.import_all_data.checked = True
                         importer.confirm_names.checked = False
@@ -1022,7 +1029,8 @@ class WlvllogImportFromLeveloggerFilesMixin:
 
                         ms = MagicMock()
                         ms.settingsdict = OrderedDict()
-                        importer = LeveloggerImport(self.iface.mainWindow(), ms)
+                        importer = LeveloggerImport(self.iface, ms)
+                        importer.load_gui()
                         importer.select_files()
                         importer.import_all_data.checked = True
                         importer.confirm_names.checked = False
@@ -1148,7 +1156,8 @@ class WlvllogImportFromLeveloggerFilesMixin:
 
                     ms = MagicMock()
                     ms.settingsdict = OrderedDict()
-                    importer = LeveloggerImport(self.iface.mainWindow(), ms)
+                    importer = LeveloggerImport(self.iface, ms)
+                    importer.load_gui()
                     importer.select_files()
                     importer.import_all_data.checked = True
                     importer.confirm_names.checked = False
@@ -1301,7 +1310,8 @@ class WlvllogImportFromLeveloggerFilesMixin:
 
                         ms = MagicMock()
                         ms.settingsdict = OrderedDict()
-                        importer = LeveloggerImport(self.iface.mainWindow(), ms)
+                        importer = LeveloggerImport(self.iface, ms)
+                        importer.load_gui()
                         importer.select_files()
 
                         importer.start_import(
@@ -1440,7 +1450,8 @@ class WlvllogImportFromLeveloggerFilesMixin:
 
                         ms = MagicMock()
                         ms.settingsdict = OrderedDict()
-                        importer = LeveloggerImport(self.iface.mainWindow(), ms)
+                        importer = LeveloggerImport(self.iface, ms)
+                        importer.load_gui()
                         importer.select_files()
 
                         try:
@@ -1534,7 +1545,8 @@ class WlvllogImportFromLeveloggerFilesMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = LeveloggerImport(self.iface.mainWindow(), ms)
+                importer = LeveloggerImport(self.iface, ms)
+                importer.load_gui()
                 importer.select_files()
 
                 try:

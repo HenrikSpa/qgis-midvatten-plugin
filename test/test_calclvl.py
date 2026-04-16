@@ -32,8 +32,8 @@ from midvatten.tools.utils.date_utils import datestring_to_date
 class CalclvlMixin:
     def setup_method(self):
         super().setup_method()
-        widget = QtWidgets.QWidget()
-        self.calclvl = CalculateLevel(widget, 1)
+        self.calclvl = CalculateLevel(self.iface, self.midvatten.ms)
+        self.calclvl.layer = self.iface.activeLayer()
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_calcall(self, mock_messagebar):

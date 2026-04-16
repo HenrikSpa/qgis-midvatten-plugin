@@ -39,15 +39,19 @@ log = logging.getLogger(__name__)
 
 
 class PiperPlot:
-    def __init__(self, msettings, activelayer):
-        self.ms = msettings
-        self.activelayer = activelayer
+    def __init__(self, iface, ms):
+        self._iface = iface
+        self.ms = ms
         self.plot_function = self.make_plot
 
         self.labels_positive_rotation = []
         self.labels_negative_rotation = []
         self.l1 = None
         self.l2 = None
+
+    def show(self) -> None:
+        self.activelayer = self._iface.activeLayer()
+        self.get_data_and_make_plot()
 
     def get_data_and_make_plot(self):
 

@@ -35,12 +35,21 @@ _EMPTY_VALS = ("", "NULL")
 
 
 class Drillreport:  # general observation point info for the selected object
-    def __init__(
+    def __init__(self, iface, ms):
+        self._iface = iface
+        self._ms = ms
+
+    def show(self) -> None:
+        layer = self._iface.activeLayer()
+        obsids = tuple(common_utils.get_selected_object_names(layer))
+        settingsdict = self._ms.settingsdict
+        self._run_report(obsids, settingsdict)
+
+    def _run_report(
         self,
         obsids: List[str] = None,
         settingsdict: Dict[str, Union[str, int, bool, float]] = None,
     ):
-
         if obsids is None:
             obsids = [""]
         if settingsdict is None:

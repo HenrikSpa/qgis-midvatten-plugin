@@ -71,7 +71,7 @@ class FieldLoggerImporterDbMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = FieldloggerImport(self.iface.mainWindow(), ms)
+                importer = FieldloggerImport(self.iface, ms)
                 importer.parse_observations_and_populate_gui()
 
                 importer.start_import(importer.observations)
@@ -138,7 +138,7 @@ class FieldLoggerImporterDbMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = FieldloggerImport(self.iface.mainWindow(), ms)
+                importer = FieldloggerImport(self.iface, ms)
                 importer.parse_observations_and_populate_gui()
 
                 # Set settings:
@@ -311,7 +311,7 @@ class FieldLoggerImporterDbMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = FieldloggerImport(self.iface.mainWindow(), ms)
+                importer = FieldloggerImport(self.iface, ms)
                 importer.parse_observations_and_populate_gui()
 
                 # Set settings:
@@ -487,7 +487,7 @@ class FieldLoggerImporterDbMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = FieldloggerImport(self.iface.mainWindow(), ms)
+                importer = FieldloggerImport(self.iface, ms)
                 importer.parse_observations_and_populate_gui()
 
                 # Set settings:
@@ -664,7 +664,7 @@ class FieldLoggerImporterDbMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = FieldloggerImport(self.iface.mainWindow(), ms)
+                importer = FieldloggerImport(self.iface, ms)
                 importer.parse_observations_and_populate_gui()
 
                 # Set settings:
@@ -844,7 +844,7 @@ class FieldLoggerImporterDbMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = FieldloggerImport(self.iface.mainWindow(), ms)
+                importer = FieldloggerImport(self.iface, ms)
                 importer.parse_observations_and_populate_gui()
 
                 for setting in importer.settings:
@@ -1024,7 +1024,7 @@ class FieldLoggerImporterDbMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = FieldloggerImport(self.iface.mainWindow(), ms)
+                importer = FieldloggerImport(self.iface, ms)
                 importer.parse_observations_and_populate_gui()
 
                 for setting in importer.settings:
@@ -1224,7 +1224,7 @@ class FieldLoggerImporterDbMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = FieldloggerImport(self.iface.mainWindow(), ms)
+                importer = FieldloggerImport(self.iface, ms)
                 importer.parse_observations_and_populate_gui()
                 for setting in importer.settings:
                     if isinstance(setting, DateTimeFilter):
@@ -1430,7 +1430,7 @@ class FieldLoggerImporterDbMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = FieldloggerImport(self.iface.mainWindow(), ms)
+                importer = FieldloggerImport(self.iface, ms)
                 importer.parse_observations_and_populate_gui()
                 obs_before = copy.deepcopy(importer.observations)
 
@@ -1607,7 +1607,7 @@ class FieldLoggerImporterDbMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = FieldloggerImport(self.iface.mainWindow(), ms)
+                importer = FieldloggerImport(self.iface, ms)
                 importer.parse_observations_and_populate_gui()
 
                 # Set settings:
@@ -1709,7 +1709,7 @@ class FieldLoggerImporterDbMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = FieldloggerImport(self.iface.mainWindow(), ms)
+                importer = FieldloggerImport(self.iface, ms)
                 importer.parse_observations_and_populate_gui()
 
                 # Set settings:
@@ -1866,7 +1866,7 @@ class FieldLoggerImporterDbMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = FieldloggerImport(self.iface.mainWindow(), ms)
+                importer = FieldloggerImport(self.iface, ms)
                 importer.parse_observations_and_populate_gui()
 
                 # Set settings:

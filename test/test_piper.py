@@ -46,8 +46,8 @@ class PiperPlotDbMixin:
             r"""piper_ca""": "",
             r"""piper_mg""": "",
         }
-        mock_active_layer = mock.MagicMock()
-        piperplot = piper.PiperPlot(mock_ms, mock_active_layer)
+        piperplot = piper.PiperPlot(self.iface, self.midvatten.ms)
+        piperplot.ms = mock_ms
         piperplot.create_parameter_selection()
 
         test = common_utils.anything_to_string_representation(piperplot.parameters)
@@ -70,8 +70,8 @@ class PiperPlotDbMixin:
             r"""piper_ca""": "ca",
             r"""piper_mg""": "mg",
         }
-        mock_active_layer = mock.MagicMock()
-        piperplot = piper.PiperPlot(mock_ms, mock_active_layer)
+        piperplot = piper.PiperPlot(self.iface, self.midvatten.ms)
+        piperplot.ms = mock_ms
         piperplot.create_parameter_selection()
 
         test = common_utils.anything_to_string_representation(piperplot.parameters)
@@ -173,9 +173,10 @@ class PiperPlotDbMixin:
             r"""piper_ca""": "",
             r"""piper_mg""": "",
         }
-        mock_active_layer = mock.MagicMock()
         mock_selected.return_value = ["P1", "P2"]
-        piperplot = piper.PiperPlot(mock_ms, mock_active_layer)
+        piperplot = piper.PiperPlot(self.iface, self.midvatten.ms)
+        piperplot.ms = mock_ms
+        piperplot.activelayer = self.iface.activeLayer()
         piperplot.create_parameter_selection()
         piperplot.ms.settingsdict["piper_markers"] = "obsid"
         piperplot.get_data_and_make_plot()

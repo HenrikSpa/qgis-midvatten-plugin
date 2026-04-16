@@ -27,18 +27,19 @@ from midvatten.tools.utils import common_utils, db_utils
 
 class XYPlot:
     def __init__(
-        self, layer=None, settingsdict=None
+        self, iface, ms
     ):  # Might need revision of variables and method for loading default variables
-        if settingsdict is None:
-            settingsdict = {}
-        self.settingsdict = settingsdict
-        self.table = settingsdict["xytable"]
-        self.xcol = settingsdict["xy_xcolumn"]
-        self.y1col = settingsdict["xy_y1column"]
-        self.y2col = settingsdict["xy_y2column"]
-        self.y3col = settingsdict["xy_y3column"]
-        self.markers = settingsdict["xydotmarkers"]
-        self.showtheplot(layer)
+        self._iface = iface
+        self.settingsdict = ms.settingsdict
+        self.table = self.settingsdict["xytable"]
+        self.xcol = self.settingsdict["xy_xcolumn"]
+        self.y1col = self.settingsdict["xy_y1column"]
+        self.y2col = self.settingsdict["xy_y2column"]
+        self.y3col = self.settingsdict["xy_y3column"]
+        self.markers = self.settingsdict["xydotmarkers"]
+
+    def show(self) -> None:
+        self.showtheplot(self._iface.activeLayer())
 
     @db_utils.if_connection_ok
     def showtheplot(

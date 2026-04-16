@@ -73,7 +73,7 @@ class TestDrillreportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
             "midvatten.tools.custom_drillreport.common_utils.get_stored_settings",
             return_value={},
         ):
-            ui = DrillreportUi(self.iface.mainWindow(), self.midvatten.ms)
+            ui = DrillreportUi(self.iface, self.midvatten.ms)
         ui.drillreport()
         print(f"{mock_messagebar.mock_calls=}")
         assert mock_openurl.called
@@ -98,7 +98,7 @@ class TestDrillreportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
             "midvatten.tools.custom_drillreport.common_utils.get_stored_settings",
             return_value={},
         ):
-            ui = DrillreportUi(self.iface.mainWindow(), self.midvatten.ms)
+            ui = DrillreportUi(self.iface, self.midvatten.ms)
         ui.drillreport()
         print(f"{mock_messagebar.mock_calls=}")
         mock_messagebar.critical.assert_called_once()
@@ -110,7 +110,7 @@ class TestDrillreportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
         return_value={},
     )
     def test_cancel_button_closes(self, mock_get_stored):
-        ui = DrillreportUi(self.iface.mainWindow(), self.midvatten.ms)
+        ui = DrillreportUi(self.iface, self.midvatten.ms)
         ui.push_button_cancel.clicked.emit()
         assert not ui.isVisible()
 
@@ -129,7 +129,7 @@ class TestDrillreportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
             "midvatten.tools.custom_drillreport.common_utils.get_stored_settings",
             return_value={},
         ):
-            ui = DrillreportUi(self.iface.mainWindow(), self.midvatten.ms)
+            ui = DrillreportUi(self.iface, self.midvatten.ms)
         ui.empty_row_between_obsids.setChecked(True)
         ui.drillreport()
         print(f"{mock_messagebar.mock_calls=}")
@@ -152,7 +152,7 @@ class TestDrillreportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
             "midvatten.tools.custom_drillreport.common_utils.get_stored_settings",
             return_value={},
         ):
-            ui = DrillreportUi(self.iface.mainWindow(), self.midvatten.ms)
+            ui = DrillreportUi(self.iface, self.midvatten.ms)
         ui.general_metadata.setPlainText("obsid\nh_gs")
         ui.geo_metadata.setPlainText("east\nnorth")
         ui.strat_columns.setPlainText("depth\ngeology\ngeoshort")
@@ -179,7 +179,7 @@ class TestDrillreportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
             "midvatten.tools.custom_drillreport.common_utils.get_stored_settings",
             return_value={},
         ):
-            ui = DrillreportUi(self.iface.mainWindow(), self.midvatten.ms)
+            ui = DrillreportUi(self.iface, self.midvatten.ms)
         ui.general_metadata_header.setText("Custom general")
         ui.geo_metadata_header.setText("Custom geo")
         ui.drillreport()
@@ -204,7 +204,7 @@ class TestDrillreportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
             "midvatten.tools.custom_drillreport.common_utils.get_stored_settings",
             return_value={},
         ):
-            ui = DrillreportUi(self.iface.mainWindow(), self.midvatten.ms)
+            ui = DrillreportUi(self.iface, self.midvatten.ms)
         ui.decimal_separator.setText(",")
         ui.general_metadata.setPlainText("h_gs")
         ui.strat_columns.setPlainText("depth")
@@ -231,7 +231,7 @@ class TestDrillreportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
             "midvatten.tools.custom_drillreport.common_utils.get_stored_settings",
             return_value={},
         ):
-            ui = DrillreportUi(self.iface.mainWindow(), self.midvatten.ms)
+            ui = DrillreportUi(self.iface, self.midvatten.ms)
         ui.push_button_update_from_string.clicked.emit()
         print(f"{mock_messagebar.mock_calls=}")
         assert ui.header_in_table.isChecked() is False
@@ -245,13 +245,13 @@ class TestDrillreportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
         return_value={},
     )
     def test_save_and_restore_stored_settings(self, mock_get_stored):
-        ui1 = DrillreportUi(self.iface.mainWindow(), self.midvatten.ms)
+        ui1 = DrillreportUi(self.iface, self.midvatten.ms)
         ui1.general_metadata_header.setText("SavedHeader")
         ui1.header_in_table.setChecked(False)
         ui1.skip_empty.setChecked(True)
         ui1.save_stored_settings()
         stored = dict(ui1.stored_settings)
-        ui2 = DrillreportUi(self.iface.mainWindow(), self.midvatten.ms)
+        ui2 = DrillreportUi(self.iface, self.midvatten.ms)
         ui2.update_from_stored_settings(stored)
         assert ui2.general_metadata_header.text() == "SavedHeader"
         assert ui2.header_in_table.isChecked() is False

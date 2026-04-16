@@ -37,9 +37,7 @@ from midvatten.tools.import_interlab4 import Interlab4Import
 class Interlab4ImporterDBMixin:
     def setup_method(self):
         super().setup_method()
-        self.importinstance = Interlab4Import(
-            self.iface.mainWindow(), self.midvatten.ms
-        )
+        self.importinstance = Interlab4Import(self.iface, self.midvatten.ms)
 
     def test_interlab4_full_test_to_db(self):
 
@@ -88,7 +86,7 @@ class Interlab4ImporterDBMixin:
                 mock_not_found_question.return_value.value = "anobsid"
                 mock_not_found_question.return_value.reuse_column = "obsid"
                 mock_filenames.return_value = [[filename]]
-                importer = Interlab4Import(self.iface.mainWindow(), self.midvatten.ms)
+                importer = Interlab4Import(self.iface, self.midvatten.ms)
                 importer.init_gui()
                 importer.select_files_button.click()
                 importer.start_import_button.click()
@@ -150,7 +148,7 @@ class Interlab4ImporterDBMixin:
                 mock_not_found_question.return_value.value = "anobsid"
                 mock_not_found_question.return_value.reuse_column = "obsid"
                 mock_filenames.return_value = [[filename]]
-                importer = Interlab4Import(self.iface.mainWindow(), self.midvatten.ms)
+                importer = Interlab4Import(self.iface, self.midvatten.ms)
                 importer.init_gui()
                 importer.select_files_button.click()
                 importer.start_import_button.click()
@@ -221,7 +219,7 @@ class Interlab4ImporterDBMixin:
                 # mock_not_found_question.return_value.value = 'anobsid'
                 # mock_not_found_question.return_value.reuse_column = 'obsid'
                 mock_filenames.return_value = [[filename]]
-                importer = Interlab4Import(self.iface.mainWindow(), self.midvatten.ms)
+                importer = Interlab4Import(self.iface, self.midvatten.ms)
                 importer.init_gui()
                 importer.select_files_button.click()
                 importer.use_obsid_assignment_table.setChecked(True)
@@ -295,7 +293,7 @@ class Interlab4ImporterDBMixin:
                 mock_not_found_question.return_value.value = "anobsid"
                 mock_not_found_question.return_value.reuse_column = "obsid"
                 mock_filenames.return_value = [[filename]]
-                importer = Interlab4Import(self.iface.mainWindow(), self.midvatten.ms)
+                importer = Interlab4Import(self.iface, self.midvatten.ms)
                 importer.init_gui()
                 importer.select_files_button.click()
                 importer.use_obsid_assignment_table.setChecked(True)
@@ -366,7 +364,7 @@ class Interlab4ImporterDBMixin:
                 mock_not_found_question.return_value.value = "anobsid"
                 mock_not_found_question.return_value.reuse_column = "obsid"
                 mock_filenames.return_value = [[filename]]
-                importer = Interlab4Import(self.iface.mainWindow(), self.midvatten.ms)
+                importer = Interlab4Import(self.iface, self.midvatten.ms)
                 importer.init_gui()
                 importer.select_files_button.click()
                 importer.use_obsid_assignment_table.setChecked(True)
@@ -436,7 +434,7 @@ class Interlab4ImporterDBMixin:
             ):
                 mock_not_found_question.return_value.answer = "ok"
                 mock_filenames.return_value = [[filename]]
-                importer = Interlab4Import(self.iface.mainWindow(), self.midvatten.ms)
+                importer = Interlab4Import(self.iface, self.midvatten.ms)
                 importer.init_gui()
                 importer.select_files_button.click()
                 gui_utils.set_combobox(
@@ -499,7 +497,7 @@ class Interlab4ImporterDBMixin:
             ):
                 mock_not_found_question.return_value.answer = "ok"
                 mock_filenames.return_value = [[filename]]
-                importer = Interlab4Import(self.iface.mainWindow(), self.midvatten.ms)
+                importer = Interlab4Import(self.iface, self.midvatten.ms)
                 importer.init_gui()
                 importer.select_files_button.click()
                 gui_utils.set_combobox(
@@ -562,7 +560,7 @@ class Interlab4ImporterDBMixin:
             ):
                 mock_not_found_question.return_value.answer = "ok"
                 mock_filenames.return_value = [[filename]]
-                importer = Interlab4Import(self.iface.mainWindow(), self.midvatten.ms)
+                importer = Interlab4Import(self.iface, self.midvatten.ms)
                 importer.init_gui()
                 importer.select_files_button.click()
                 gui_utils.set_combobox(
@@ -624,7 +622,7 @@ class Interlab4ImporterDBMixin:
             ):
                 mock_not_found_question.return_value.answer = "ok"
                 mock_filenames.return_value = [[filename]]
-                importer = Interlab4Import(self.iface.mainWindow(), self.midvatten.ms)
+                importer = Interlab4Import(self.iface, self.midvatten.ms)
                 importer.init_gui()
                 importer.select_files_button.click()
                 gui_utils.set_combobox(
@@ -696,7 +694,7 @@ class Interlab4ImporterDBMixin:
             ):
                 mock_not_found_question.return_value.answer = "ok"
                 mock_filenames.return_value = [[filename]]
-                importer = Interlab4Import(self.iface.mainWindow(), self.midvatten.ms)
+                importer = Interlab4Import(self.iface, self.midvatten.ms)
                 importer.init_gui()
                 importer.select_files_button.click()
                 gui_utils.set_combobox(
@@ -772,7 +770,7 @@ class Interlab4ImporterDBMixin:
                 mock_not_found_question.return_value.value = "anobsid"
                 mock_not_found_question.return_value.reuse_column = "obsid"
                 mock_filenames.return_value = [[filename]]
-                importer = Interlab4Import(self.iface.mainWindow(), self.midvatten.ms)
+                importer = Interlab4Import(self.iface, self.midvatten.ms)
                 importer.init_gui()
                 importer.select_files_button.click()
                 importer.use_obsid_assignment_table.setChecked(True)

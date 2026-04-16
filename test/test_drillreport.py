@@ -66,7 +66,8 @@ class DrillreportMixin:
         # print(str(self.vlayer.isValid()))
         # print(str(db_utils.sql_load_fr_db('select * from obs_points')))
         # print(str(db_utils.sql_load_fr_db('select * from stratigraphy')))
-        dlg = Drillreport(["1", "2", "3"], self.midvatten.ms.settingsdict)
+        dlg = Drillreport(self.iface, self.midvatten.ms)
+        dlg._run_report(("1", "2", "3"), self.midvatten.ms.settingsdict)
 
         print(f"{mock_messagebar.mock_calls=}")
 

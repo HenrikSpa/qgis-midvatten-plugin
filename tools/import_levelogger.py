@@ -31,8 +31,8 @@ from midvatten.tools.utils import common_utils, date_utils
 
 
 class LeveloggerImport(import_diveroffice.DiverofficeImport):
-    def __init__(self, parent, msettings=None):
-        super(self.__class__, self).__init__(parent, msettings)
+    def __init__(self, iface, ms):
+        super().__init__(iface, ms)
         self.default_charset = "cp1252"
         self.use_skiprows = True
 

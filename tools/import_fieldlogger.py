@@ -57,10 +57,15 @@ import_fieldlogger_ui_dialog = uic.loadUiType(
 
 
 class FieldloggerImport(BaseImporter, import_fieldlogger_ui_dialog):
-    def __init__(self, parent, msettings=None):
-        super().__init__(parent, msettings)
+    def __init__(self, iface, ms):
+        super().__init__(iface, ms)
         self.main_vertical_layout.setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
         self.main_vertical_layout.setContentsMargins(0, 0, 0, 0)
+
+    def show(self) -> None:
+        self.parse_observations_and_populate_gui()
+        super().show()
+        self.activateWindow()
 
     @common_utils.general_exception_handler
     def parse_observations_and_populate_gui(self):
@@ -195,8 +200,6 @@ class FieldloggerImport(BaseImporter, import_fieldlogger_ui_dialog):
         self.grid_layout_buttons.setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
 
         self.setGeometry(500, 150, 1100, 700)
-
-        self.show()
 
     @staticmethod
     @common_utils.general_exception_handler

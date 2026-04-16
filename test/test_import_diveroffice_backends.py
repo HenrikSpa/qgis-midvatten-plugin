@@ -113,7 +113,8 @@ class WlvllogImportFromDiverofficeFilesMixin:
 
                         ms = MagicMock()
                         ms.settingsdict = OrderedDict()
-                        importer = DiverofficeImport(self.iface.mainWindow(), ms)
+                        importer = DiverofficeImport(self.iface, ms)
+                        importer.load_gui()
                         importer.select_files()
 
                         importer.start_import(
@@ -205,7 +206,8 @@ class WlvllogImportFromDiverofficeFilesMixin:
 
                         ms = MagicMock()
                         ms.settingsdict = OrderedDict()
-                        importer = DiverofficeImport(self.iface.mainWindow(), ms)
+                        importer = DiverofficeImport(self.iface, ms)
+                        importer.load_gui()
                         importer.select_files()
 
                         importer.start_import(
@@ -297,7 +299,8 @@ class WlvllogImportFromDiverofficeFilesMixin:
 
                         ms = MagicMock()
                         ms.settingsdict = OrderedDict()
-                        importer = DiverofficeImport(self.iface.mainWindow(), ms)
+                        importer = DiverofficeImport(self.iface, ms)
+                        importer.load_gui()
                         importer.select_files()
                         importer.import_all_data.checked = False
                         importer.start_import(
@@ -391,7 +394,8 @@ class WlvllogImportFromDiverofficeFilesMixin:
 
                         ms = MagicMock()
                         ms.settingsdict = OrderedDict()
-                        importer = DiverofficeImport(self.iface.mainWindow(), ms)
+                        importer = DiverofficeImport(self.iface, ms)
+                        importer.load_gui()
                         importer.select_files()
                         importer.import_all_data.checked = True
                         importer.confirm_names.checked = False
@@ -464,7 +468,8 @@ class WlvllogImportFromDiverofficeFilesMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = DiverofficeImport(self.iface.mainWindow(), ms)
+                importer = DiverofficeImport(self.iface, ms)
+                importer.load_gui()
                 importer.select_files()
                 importer.import_all_data.checked = False
                 importer.confirm_names.checked = False
@@ -537,7 +542,8 @@ class WlvllogImportFromDiverofficeFilesMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = DiverofficeImport(self.iface.mainWindow(), ms)
+                importer = DiverofficeImport(self.iface, ms)
+                importer.load_gui()
                 importer.select_files()
                 importer.import_all_data.checked = True
                 importer.confirm_names.checked = False
@@ -634,7 +640,8 @@ class WlvllogImportFromDiverofficeFilesMixin:
 
                         ms = MagicMock()
                         ms.settingsdict = OrderedDict()
-                        importer = DiverofficeImport(self.iface.mainWindow(), ms)
+                        importer = DiverofficeImport(self.iface, ms)
+                        importer.load_gui()
                         importer.select_files()
                         importer.import_all_data.checked = True
                         importer.confirm_names.checked = False
@@ -731,7 +738,8 @@ class WlvllogImportFromDiverofficeFilesMixin:
 
                         ms = MagicMock()
                         ms.settingsdict = OrderedDict()
-                        importer = DiverofficeImport(self.iface.mainWindow(), ms)
+                        importer = DiverofficeImport(self.iface, ms)
+                        importer.load_gui()
                         importer.select_files()
                         importer.import_all_data.checked = True
                         importer.confirm_names.checked = False
@@ -819,7 +827,8 @@ class WlvllogImportFromDiverofficeFilesMixin:
 
                     ms = MagicMock()
                     ms.settingsdict = OrderedDict()
-                    importer = DiverofficeImport(self.iface.mainWindow(), ms)
+                    importer = DiverofficeImport(self.iface, ms)
+                    importer.load_gui()
                     importer.select_files()
                     importer.import_all_data.checked = True
                     importer.confirm_names.checked = False
@@ -935,7 +944,8 @@ class WlvllogImportFromDiverofficeFilesMixin:
 
                         ms = MagicMock()
                         ms.settingsdict = OrderedDict()
-                        importer = DiverofficeImport(self.iface.mainWindow(), ms)
+                        importer = DiverofficeImport(self.iface, ms)
+                        importer.load_gui()
                         importer.select_files()
 
                         importer.start_import(
@@ -1061,9 +1071,8 @@ class WlvllogImportFromDiverofficeFilesMixin:
 
                                 ms = MagicMock()
                                 ms.settingsdict = OrderedDict()
-                                importer = DiverofficeImport(
-                                    self.iface.mainWindow(), ms
-                                )
+                                importer = DiverofficeImport(self.iface, ms)
+                                importer.load_gui()
                                 importer.confirm_names.checked = False
                                 gui_utils.set_combobox(
                                     importer.utc_offset,
@@ -1200,9 +1209,8 @@ class WlvllogImportFromDiverofficeFilesMixin:
 
                                 ms = MagicMock()
                                 ms.settingsdict = OrderedDict()
-                                importer = DiverofficeImport(
-                                    self.iface.mainWindow(), ms
-                                )
+                                importer = DiverofficeImport(self.iface, ms)
+                                importer.load_gui()
                                 importer.confirm_names.checked = False
                                 gui_utils.set_combobox(
                                     importer.utc_offset,
@@ -1364,9 +1372,8 @@ class WlvllogImportFromDiverofficeFilesMixin:
 
                                 ms = MagicMock()
                                 ms.settingsdict = OrderedDict()
-                                importer = DiverofficeImport(
-                                    self.iface.mainWindow(), ms
-                                )
+                                importer = DiverofficeImport(self.iface, ms)
+                                importer.load_gui()
                                 importer.confirm_names.checked = False
                                 gui_utils.set_combobox(
                                     importer.utc_offset,
@@ -1514,9 +1521,8 @@ class WlvllogImportFromDiverofficeFilesMixin:
 
                                 ms = MagicMock()
                                 ms.settingsdict = OrderedDict()
-                                importer = DiverofficeImport(
-                                    self.iface.mainWindow(), ms
-                                )
+                                importer = DiverofficeImport(self.iface, ms)
+                                importer.load_gui()
                                 importer.confirm_names.checked = False
                                 gui_utils.set_combobox(
                                     importer.utc_offset,
@@ -1663,9 +1669,8 @@ class WlvllogImportFromDiverofficeFilesMixin:
 
                                 ms = MagicMock()
                                 ms.settingsdict = OrderedDict()
-                                importer = DiverofficeImport(
-                                    self.iface.mainWindow(), ms
-                                )
+                                importer = DiverofficeImport(self.iface, ms)
+                                importer.load_gui()
                                 importer.confirm_names.checked = False
                                 # gui_utils.set_combobox(importer.utc_offset, 'UTC+1', add_if_not_exists=False)
                                 importer.select_files()
@@ -1762,7 +1767,8 @@ class WlvllogImportFromDiverofficeFilesMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = DiverofficeImport(self.iface.mainWindow(), ms)
+                importer = DiverofficeImport(self.iface, ms)
+                importer.load_gui()
                 importer.select_files()
                 try:
                     importer.start_import(
@@ -1856,7 +1862,8 @@ class WlvllogImportFromDiverofficeFilesMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = DiverofficeImport(self.iface.mainWindow(), ms)
+                importer = DiverofficeImport(self.iface, ms)
+                importer.load_gui()
                 importer.select_files()
                 try:
                     importer.start_import(
@@ -1955,7 +1962,8 @@ class WlvllogImportFromDiverofficeFilesMixin:
 
                         ms = MagicMock()
                         ms.settingsdict = OrderedDict()
-                        importer = DiverofficeImport(self.iface.mainWindow(), ms)
+                        importer = DiverofficeImport(self.iface, ms)
+                        importer.load_gui()
                         importer.select_files()
                         importer.source_edit.setText("Testsource")
 
@@ -2080,7 +2088,8 @@ class WlvllogImportFromDiverofficeFilesMixin:
 
                         ms = MagicMock()
                         ms.settingsdict = OrderedDict()
-                        importer = DiverofficeImport(self.iface.mainWindow(), ms)
+                        importer = DiverofficeImport(self.iface, ms)
+                        importer.load_gui()
                         importer.select_files()
                         try:
                             importer.start_import(
@@ -2211,7 +2220,8 @@ class WlvllogImportFromDiverofficeFilesMixin:
 
                         ms = MagicMock()
                         ms.settingsdict = OrderedDict()
-                        importer = DiverofficeImport(self.iface.mainWindow(), ms)
+                        importer = DiverofficeImport(self.iface, ms)
+                        importer.load_gui()
                         importer.select_files()
                         try:
                             importer.start_import(
@@ -2303,7 +2313,8 @@ class WlvllogImportFromDiverofficeFilesMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = DiverofficeImport(self.iface.mainWindow(), ms)
+                importer = DiverofficeImport(self.iface, ms)
+                importer.load_gui()
                 importer.select_files()
                 try:
                     importer.start_import(
@@ -2397,7 +2408,8 @@ class WlvllogImportFromDiverofficeFilesMixin:
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()
-                importer = DiverofficeImport(self.iface.mainWindow(), ms)
+                importer = DiverofficeImport(self.iface, ms)
+                importer.load_gui()
                 importer.select_files()
                 try:
                     importer.start_import(
@@ -2496,7 +2508,8 @@ class WlvllogImportFromDiverofficeFilesMixin:
 
                         ms = MagicMock()
                         ms.settingsdict = OrderedDict()
-                        importer = DiverofficeImport(self.iface.mainWindow(), ms)
+                        importer = DiverofficeImport(self.iface, ms)
+                        importer.load_gui()
                         importer.select_files()
                         importer.source_edit.setText("Testsource")
 

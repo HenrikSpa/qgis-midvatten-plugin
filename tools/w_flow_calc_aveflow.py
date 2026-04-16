@@ -35,8 +35,10 @@ Calc_Ui_Dialog = uic.loadUiType(
 
 
 class CalculateAveflow(qgis.PyQt.QtWidgets.QDialog, Calc_Ui_Dialog):
-    def __init__(self, parent):
-        qgis.PyQt.QtWidgets.QDialog.__init__(self)
+    def __init__(self, iface, ms):
+        super().__init__(iface.mainWindow())
+        self._iface = iface
+        self._ms = ms
         self.setupUi(self)  # Required by Qt
         self.setWindowTitle(
             QCoreApplication.translate("Calcave", "Calculate average flow")
@@ -44,6 +46,9 @@ class CalculateAveflow(qgis.PyQt.QtWidgets.QDialog, Calc_Ui_Dialog):
         self.push_button_all.clicked.connect(lambda x: self.calcall())
         self.push_button_selected.clicked.connect(lambda x: self.calcselected())
         self.push_button_cancel.clicked.connect(lambda x: self.close())
+
+    def show(self) -> None:
+        self.exec()
 
     def calcall(self):
         ok, obsar = db_utils.sql_load_fr_db(

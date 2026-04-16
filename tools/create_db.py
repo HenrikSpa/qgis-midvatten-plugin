@@ -26,7 +26,7 @@ import traceback
 from typing import Dict, List, Optional, Tuple
 
 import qgis.PyQt
-from qgis.PyQt.QtCore import QCoreApplication
+from qgis.PyQt.QtCore import QCoreApplication, QSettings
 from qgis.core import Qgis
 
 from midvatten.tools.utils import common_utils, db_utils
@@ -42,6 +42,17 @@ log = logging.getLogger(__name__)
 class NewDb:
     def __init__(self):
         self.db_settings = ""
+
+    def _read_version(self) -> str:
+        filenamepath = os.path.join(os.path.dirname(__file__), "..", "metadata.txt")
+        ini_text = QSettings(filenamepath, QSettings.Format.IniFormat)
+        return str(ini_text.value("version"))
+
+    def show_sqlite(self) -> None:
+        self.create_new_spatialite_db(self._read_version())
+
+    def show_postgis(self) -> None:
+        self.populate_postgis_db(self._read_version())
 
     def create_new_spatialite_db(
         self,

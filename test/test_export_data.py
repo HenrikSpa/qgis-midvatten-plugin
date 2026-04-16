@@ -24,7 +24,8 @@ import os
 import tempfile
 from unittest import mock
 
-from midvatten.tools.utils import db_utils, common_utils
+from midvatten.tools.export_spatialite import ExportSpatialite
+from midvatten.tools.utils import common_utils, db_utils
 from midvatten.test import utils_for_tests
 from midvatten.test.mocks_for_tests import MockUsingReturnValue, MockReturnUsingDictIn
 from midvatten.definitions import db_defs
@@ -375,7 +376,7 @@ class ExportMixin:
 
         mock_locale.return_value.answer = "ok"
         mock_locale.return_value.value = "sv_SE"
-        self.midvatten.export_spatialite()
+        ExportSpatialite(self.iface, self.midvatten.ms).show()
 
         conn = db_utils.connect_with_spatialite_connect(export_path)
         sql_list = [
@@ -517,7 +518,7 @@ class ExportMixin:
 
         mock_locale.return_value.answer = "ok"
         mock_locale.return_value.value = "sv_SE"
-        self.midvatten.export_spatialite()
+        ExportSpatialite(self.iface, self.midvatten.ms).show()
 
         sql_list = [
             """select obsid, ST_AsText(geometry) from obs_points""",
@@ -617,7 +618,7 @@ class ExportMixin:
 
         mock_locale.return_value.answer = "ok"
         mock_locale.return_value.value = "sv_SE"
-        self.midvatten.export_spatialite()
+        ExportSpatialite(self.iface, self.midvatten.ms).show()
 
         sql_list = [
             """select obsid, ST_AsText(geometry) from obs_points""",
@@ -723,7 +724,7 @@ class ExportMixin:
 
         mock_locale.return_value.answer = "ok"
         mock_locale.return_value.value = "sv_SE"
-        self.midvatten.export_spatialite()
+        ExportSpatialite(self.iface, self.midvatten.ms).show()
 
         sql_list = [
             """select obsid, ST_AsText(geometry) from obs_points""",
@@ -909,7 +910,7 @@ class ExportMixin:
         mock_locale.return_value.answer = "ok"
         mock_locale.return_value.value = "en_US"
 
-        self.midvatten.export_spatialite()
+        ExportSpatialite(self.iface, self.midvatten.ms).show()
 
         conn = db_utils.connect_with_spatialite_connect(export_path)
         curs = conn.cursor()
@@ -1037,7 +1038,7 @@ class ExportMixin:
 
         mock_locale.return_value.answer = "ok"
         mock_locale.return_value.value = "sv_SE"
-        self.midvatten.export_spatialite()
+        ExportSpatialite(self.iface, self.midvatten.ms).show()
 
         sql_list = [
             """select obsid, ST_AsText(geometry) from obs_points""",

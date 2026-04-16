@@ -101,7 +101,7 @@ class TimeSeriesPlot:
                         if (
                             self.settingsdict["tsstepplot"] == 2
                         ):  # If the checkbox is checked - draw a step plot #MacOSX fix1
-                            (p[i],) = ax.plot_date(
+                            (p[i],) = ax.plot(
                                 numtime,
                                 table2.values,
                                 marker="o",
@@ -110,14 +110,12 @@ class TimeSeriesPlot:
                                 label=obsid,
                             )  # PLOT!!
                         else:
-                            (p[i],) = ax.plot_date(
-                                numtime, table2.values, "o-", label=obsid
-                            )
+                            (p[i],) = ax.plot(numtime, table2.values, "o-", label=obsid)
                     else:  # NO markers wil be plotted, , just a line
                         if (
                             self.settingsdict["tsstepplot"] == 2
                         ):  # If the checkbox is checked - draw a step plot #MacOSX fix1
-                            (p[i],) = ax.plot_date(
+                            (p[i],) = ax.plot(
                                 numtime,
                                 table2.values,
                                 marker="None",
@@ -126,9 +124,8 @@ class TimeSeriesPlot:
                                 label=obsid,
                             )  # PLOT!!
                         else:
-                            (p[i],) = ax.plot_date(
-                                numtime, table2.values, "-", label=obsid
-                            )
+                            (p[i],) = ax.plot(numtime, table2.values, "-", label=obsid)
+                    ax.xaxis_date()
                     plabel[i] = obsid  # Label for the plot
 
                 """ Finish plot """

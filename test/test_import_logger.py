@@ -715,7 +715,6 @@ class TestDiverOfficeParserOldFormat:
         assert test_string == reference_string
 
     def test_parse_old_different_separators_failed(self):
-        from midvatten.test.mocks_for_tests import MockReturnUsingDictIn
 
         utils_ask_user_about_stopping = MockReturnUsingDictIn(
             {

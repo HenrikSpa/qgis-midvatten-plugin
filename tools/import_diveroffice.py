@@ -62,7 +62,7 @@ import_ui_dialog = qgis.PyQt.uic.loadUiType(
 
 
 class DiverofficeImport(BaseImporter, import_ui_dialog):
-    def __init__(self, parent, msettings=None):
+    def __init__(self, iface, ms):
         self.default_charset = "cp1252"
         self.utc_offset = None
         self.table_chooser = None
@@ -70,11 +70,15 @@ class DiverofficeImport(BaseImporter, import_ui_dialog):
         self.files = []
         self.parse_func = self.parse_diveroffice_file
         self.use_skiprows = True
-        super().__init__(parent, msettings)
+        super().__init__(iface, ms)
         self.setWindowTitle(
             QCoreApplication.translate("DiverofficeImport", "Diveroffice import")
         )
         self.load_gui()
+
+    def show(self) -> None:
+        super().show()
+        self.activateWindow()
 
     def load_gui(self):
         self.date_time_filter = DateTimeFilter(calendar=True)
@@ -235,7 +239,6 @@ class DiverofficeImport(BaseImporter, import_ui_dialog):
         self.main_vertical_layout.addStretch()
 
         self.setGeometry(500, 150, 1200, 700)
-        self.show()
 
     @common_utils.general_exception_handler
     def select_files(self):

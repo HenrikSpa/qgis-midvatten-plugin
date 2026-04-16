@@ -50,14 +50,19 @@ import_fieldlogger_ui_dialog = qgis.PyQt.uic.loadUiType(
 
 
 class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
-    def __init__(self, parent, msettings=None):
+    def __init__(self, iface, ms):
         self.obsid_assignment_table = "zz_interlab4_obsid_assignment"
-        super().__init__(parent, msettings)
+        super().__init__(iface, ms)
         self.setWindowTitle(
             QCoreApplication.translate(
                 "Interlab4Import", "Import interlab4 data to w_qual_lab table"
             )
         )
+
+    def show(self) -> None:
+        self.init_gui()
+        super().show()
+        self.activateWindow()
 
     def init_gui(self):
         splitter = SplitterWithHandel(qgis.PyQt.QtCore.Qt.Vertical)
@@ -184,8 +189,6 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
                 self.ignore_provtagningsorsak.isChecked(),
             )
         )
-
-        self.show()
 
     @common_utils.general_exception_handler
     def load_files(self):

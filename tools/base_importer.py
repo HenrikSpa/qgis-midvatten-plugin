@@ -42,12 +42,12 @@ class BaseImporter(QtWidgets.QMainWindow):
       ``start_import()`` method (cursor management differs per importer)
     """
 
-    def __init__(self, parent, msettings=None):
+    def __init__(self, iface, ms):
         self.status = False
-        self.iface = parent
-        self.ms = msettings
+        self.iface = iface
+        self.ms = ms
         self.ms.load_settings()
-        QtWidgets.QMainWindow.__init__(self, parent)
+        QtWidgets.QMainWindow.__init__(self, iface)
         self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt
         self.status = True

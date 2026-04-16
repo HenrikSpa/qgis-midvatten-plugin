@@ -18,6 +18,8 @@ import qgis.PyQt
 import qgis.PyQt.QtWidgets as QtWidgets
 from qgis.PyQt.QtCore import QCoreApplication
 
+from midvatten.tools import import_data_to_db
+from midvatten.tools.base_importer import BaseImporter
 from midvatten.tools.utils import common_utils, date_utils, db_utils, midvatten_utils
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.common_utils import format_timezone_string
@@ -1096,3 +1098,618 @@ class HoboParser:
         filedata = [row for row in filedata if any(row[1:])]
 
         return filedata, filename, location, None  # 4-tuple fix
+
+
+# ── Dialog class ──────────────────────────────────────────────────────────────
+
+
+class LoggerImport(BaseImporter, import_ui_dialog):
+    """Unified logger data importer for DiverOffice, Levelogger, and HOBO formats.
+
+    Replaces DiverofficeImport, LeveloggerImport, and HobologgerImport with a
+    single dialog that includes a format selector and shows format-specific help
+    text inline (instead of the pre-import wall-of-text Askuser dialogs).
+    """
+
+    FORMAT_DIVEROFFICE = "DiverOffice"
+    FORMAT_LEVELOGGER = "Levelogger"
+    FORMAT_HOBO = "Hobo"
+
+    def __init__(self, iface, ms):
+        self.files = []
+        # BaseImporter.__init__(iface, ms) calls QMainWindow.__init__(self, iface.mainWindow())
+        # internally and sets self.iface = iface, self.ms = ms, self.status = True.
+        super().__init__(iface, ms)
+        self.setWindowTitle(QCoreApplication.translate("LoggerImport", "Logger import"))
+        # Do NOT call load_gui() here — widgets are built lazily in show().
+        # Tests call load_gui() directly to avoid opening a real window.
+
+    def show(self) -> None:
+        """Entry point called by the plugin dispatcher — builds widgets then shows."""
+        self.load_gui()
+        super().show()
+        self.activateWindow()
+
+    # ── GUI construction ─────────────────────────────────────────────────────
+
+    def load_gui(self) -> None:
+        # Format selector
+        format_row = RowEntry()
+        format_label = QtWidgets.QLabel(
+            QCoreApplication.translate("LoggerImport", "Logger format:")
+        )
+        self.format_combo = QtWidgets.QComboBox()
+        self.format_combo.addItems(
+            [
+                self.FORMAT_DIVEROFFICE,
+                self.FORMAT_LEVELOGGER,
+                self.FORMAT_HOBO,
+            ]
+        )
+        format_row.layout.addWidget(format_label)
+        format_row.layout.addWidget(self.format_combo)
+        self.add_row(format_row.widget)
+        self.add_row(get_line())
+
+        # Date/time filter (all formats)
+        self.date_time_filter = DateTimeFilter(calendar=True)
+        self.add_row(self.date_time_filter)
+
+        # Format-specific sections (each builds a container widget shown/hidden by _on_format_changed)
+        self._build_diveroffice_section()
+        self._build_levelogger_section()
+        self._build_hobo_section()
+
+        self.add_row(get_line())
+
+        # skip_rows + its separator line, grouped so both can be shown/hidden together
+        self._skip_rows_container = QtWidgets.QWidget()
+        _vl = QtWidgets.QVBoxLayout(self._skip_rows_container)
+        _vl.setContentsMargins(0, 0, 0, 0)
+        self.skip_rows = CheckboxAndExplanation(
+            QCoreApplication.translate("LoggerImport", "Skip rows without water level"),
+            QCoreApplication.translate(
+                "LoggerImport",
+                "Checked = Rows without a value for columns Water head[cm] or Level[cm] will be skipped.",
+            ),
+        )
+        self.skip_rows.checked = True
+        _vl.addWidget(self.skip_rows.widget)
+        _vl.addWidget(get_line())
+        self.add_row(self._skip_rows_container)
+
+        # confirm_names
+        self.confirm_names = CheckboxAndExplanation(
+            QCoreApplication.translate(
+                "LoggerImport", "Confirm each logger obsid before import"
+            ),
+            QCoreApplication.translate(
+                "LoggerImport",
+                "Checked = The obsid will be requested of the user for every file.\n\n"
+                "Unchecked = the location attribute, both as is and capitalized, in the\n"
+                "file will be matched against obsids in the database.\n\n"
+                "In both cases, obsid will be requested of the user if no match in the "
+                "database is found.",
+            ),
+        )
+        self.confirm_names.checked = True
+        self.add_row(self.confirm_names.widget)
+        self.add_row(get_line())
+
+        # import_all_data
+        self.import_all_data = CheckboxAndExplanation(
+            QCoreApplication.translate("LoggerImport", "Import all data"),
+            QCoreApplication.translate(
+                "LoggerImport",
+                "Checked = any data not matching an exact datetime in the database\n"
+                "for the corresponding obsid will be imported.\n\n"
+                "Unchecked = only new data after the latest date in the database,\n"
+                "for each observation point, will be imported.",
+            ),
+        )
+        self.import_all_data.checked = False
+        self.add_row(self.import_all_data.widget)
+
+        # Optional source comment
+        existing_columns = db_utils.tables_columns(table="w_levels_logger")[
+            "w_levels_logger"
+        ]
+        if "source" in existing_columns:
+            self.add_row(get_line())
+            self.source_row = RowEntry()
+            self.source_label = QtWidgets.QLabel(
+                QCoreApplication.translate(
+                    "LoggerImport", "Add source comment (optional)"
+                )
+            )
+            self.source_edit = QtWidgets.QLineEdit()
+            self.source_row.layout.addWidget(self.source_label)
+            self.source_row.layout.addWidget(self.source_edit)
+            self.add_row(self.source_row.widget)
+        else:
+            self.source_edit = None
+
+        # Buttons
+        self.select_files_button = QtWidgets.QPushButton(
+            QCoreApplication.translate("LoggerImport", "Select files")
+        )
+        self.grid_layout_buttons.addWidget(self.select_files_button, 0, 0)
+        self.select_files_button.clicked.connect(self.select_files)
+
+        self.close_after_import = QtWidgets.QCheckBox(
+            QCoreApplication.translate("LoggerImport", "Close dialog after import")
+        )
+        self.close_after_import.setChecked(True)
+        self.grid_layout_buttons.addWidget(self.close_after_import, 1, 0)
+
+        self.start_import_button = QtWidgets.QPushButton(
+            QCoreApplication.translate("LoggerImport", "Start import")
+        )
+        self.grid_layout_buttons.addWidget(self.start_import_button, 2, 0)
+        self.start_import_button.clicked.connect(
+            lambda: self.start_import(
+                files=self.files,
+                skip_rows_without_water_level=self.skip_rows.checked,
+                confirm_names=self.confirm_names.checked,
+                import_all_data=self.import_all_data.checked,
+                from_date=self.date_time_filter.from_date,
+                to_date=self.date_time_filter.to_date,
+                export_csv=False,
+                import_to_db=True,
+            )
+        )
+        self.start_import_button.setEnabled(False)
+
+        self.export_csv_button = QtWidgets.QPushButton(
+            QCoreApplication.translate("LoggerImport", "Export csv")
+        )
+        self.grid_layout_buttons.addWidget(self.export_csv_button, 3, 0)
+        self.export_csv_button.clicked.connect(
+            lambda: self.start_import(
+                files=self.files,
+                skip_rows_without_water_level=self.skip_rows.checked,
+                confirm_names=self.confirm_names.checked,
+                import_all_data=self.import_all_data.checked,
+                from_date=self.date_time_filter.from_date,
+                to_date=self.date_time_filter.to_date,
+                export_csv=True,
+                import_to_db=False,
+            )
+        )
+        self.export_csv_button.setEnabled(False)
+
+        self.grid_layout_buttons.setRowStretch(4, 1)
+        self.main_vertical_layout.addStretch()
+        self.setGeometry(500, 150, 1200, 700)
+
+        # Wire format change AFTER all widgets are built
+        self.format_combo.currentTextChanged.connect(self._on_format_changed)
+        self._on_format_changed(self.format_combo.currentText())
+
+    def _build_diveroffice_section(self) -> None:
+        """Build DiverOffice-specific section (help text + UTC offset). Hidden for other formats."""
+        self._diveroffice_section = QtWidgets.QWidget()
+        _vl = QtWidgets.QVBoxLayout(self._diveroffice_section)
+        _vl.setContentsMargins(0, 0, 0, 0)
+
+        _help = QtWidgets.QLabel(
+            QCoreApplication.translate(
+                "LoggerImport",
+                "DiverOffice format: semicolon or comma separated.\n"
+                "Data header must contain 'Date/time' and at least one of:\n"
+                "Water head[cm], Temperature[\u00b0C], Level[cm], Conductivity[mS/cm].\n"
+                "Column names matter; column order does not.",
+            )
+        )
+        _help.setWordWrap(True)
+        _vl.addWidget(_help)
+
+        self.utcoffset_label = QtWidgets.QLabel(
+            QCoreApplication.translate(
+                "LoggerImport", "Identify and change UTC offset:"
+            )
+        )
+        self.utc_offset = QtWidgets.QComboBox()
+        self.utc_offset.setToolTip(
+            QCoreApplication.translate(
+                "LoggerImport",
+                "Identifies UTC-offset in file and changes to the selected one.",
+            )
+        )
+        self.utc_offset.addItem("")
+        self.utc_offset.addItems(
+            [format_timezone_string(hour) for hour in range(-12, 15)]
+        )
+        database_timezone = db_utils.get_timezone_from_db("w_levels_logger")
+        if database_timezone is not None:
+            set_combobox(self.utc_offset, database_timezone, add_if_not_exists=False)
+        self.utcoffset_row = RowEntry()
+        self.utcoffset_row.layout.addWidget(self.utcoffset_label)
+        self.utcoffset_row.layout.addWidget(self.utc_offset)
+        _vl.addWidget(self.utcoffset_row.widget)
+
+        self.add_row(self._diveroffice_section)
+
+    def _build_levelogger_section(self) -> None:
+        """Build Levelogger-specific section (help text only). Hidden for other formats."""
+        self._levelogger_section = QtWidgets.QWidget()
+        _vl = QtWidgets.QVBoxLayout(self._levelogger_section)
+        _vl.setContentsMargins(0, 0, 0, 0)
+
+        _help = QtWidgets.QLabel(
+            QCoreApplication.translate(
+                "LoggerImport",
+                "Levelogger format: CSV exported from the Levelogger data wizard.\n"
+                "Header must contain 'Date', 'Time', and at least one of:\n"
+                "LEVEL, TEMPERATURE, spec. conductivity.\n"
+                "LEVEL unit (cm or m) is read from the row after 'LEVEL'.",
+            )
+        )
+        _help.setWordWrap(True)
+        _vl.addWidget(_help)
+        self.add_row(self._levelogger_section)
+
+    def _build_hobo_section(self) -> None:
+        """Build Hobo-specific section (help text + TzConverter). Hidden for other formats."""
+        self._hobo_section = QtWidgets.QWidget()
+        _vl = QtWidgets.QVBoxLayout(self._hobo_section)
+        _vl.setContentsMargins(0, 0, 0, 0)
+
+        _help = QtWidgets.QLabel(
+            QCoreApplication.translate(
+                "LoggerImport",
+                "Hobo format: UTF-8 CSV from HOBO logger.\n"
+                'First row: "Plot Title: <name>"\n'
+                'Second row: "#","Date Time, GMT+HH:MM","Temp, \u00b0C (...LBL: obsid)"\n'
+                "obsid is read from the LBL tag in the temperature column header.",
+            )
+        )
+        _help.setWordWrap(True)
+        _vl.addWidget(_help)
+
+        self.tz_converter = TzConverter()
+        _vl.addWidget(self.tz_converter.widget)
+        self.add_row(self._hobo_section)
+
+    def _on_format_changed(self, format_name: str) -> None:
+        """Show/hide format-specific widgets and update window title."""
+        is_diveroffice = format_name == self.FORMAT_DIVEROFFICE
+        is_hobo = format_name == self.FORMAT_HOBO
+
+        self._diveroffice_section.setVisible(is_diveroffice)
+        self._levelogger_section.setVisible(format_name == self.FORMAT_LEVELOGGER)
+        self._hobo_section.setVisible(is_hobo)
+
+        self._skip_rows_container.setVisible(not is_hobo)
+        self.skip_rows.checked = not is_hobo
+
+        titles = {
+            self.FORMAT_DIVEROFFICE: QCoreApplication.translate(
+                "LoggerImport", "Logger import \u2014 DiverOffice"
+            ),
+            self.FORMAT_LEVELOGGER: QCoreApplication.translate(
+                "LoggerImport", "Logger import \u2014 Levelogger"
+            ),
+            self.FORMAT_HOBO: QCoreApplication.translate(
+                "LoggerImport", "Logger import \u2014 Hobo"
+            ),
+        }
+        self.setWindowTitle(titles.get(format_name, "Logger import"))
+
+        self.files = []
+        self.start_import_button.setEnabled(False)
+        self.export_csv_button.setEnabled(False)
+
+    # ── File selection ───────────────────────────────────────────────────────
+
+    @common_utils.general_exception_handler
+    def select_files(self) -> None:
+        """Open file picker. Encoding is handled automatically in start_import()."""
+        format_name = self.format_combo.currentText()
+        extension = (
+            "csv (*.csv);;mon (*.mon)"
+            if format_name == self.FORMAT_DIVEROFFICE
+            else "csv (*.csv)"
+        )
+        files = midvatten_utils.select_files(only_one_file=False, extension=extension)
+        if not files:
+            raise common_utils.UserInterruptError()
+
+        self.files = files
+        self.start_import_button.setEnabled(True)
+        self.export_csv_button.setEnabled(True)
+
+    # ── Import logic ─────────────────────────────────────────────────────────
+
+    @common_utils.general_exception_handler
+    @import_data_to_db.import_exception_handler
+    def start_import(
+        self,
+        files,
+        skip_rows_without_water_level,
+        confirm_names,
+        import_all_data,
+        from_date=None,
+        to_date=None,
+        export_csv=False,
+        import_to_db=True,
+    ):
+        common_utils.start_waiting_cursor()
+        parsed_files = []
+        missing_utcoffset = False
+        format_name = self.format_combo.currentText()
+
+        default_charset = "utf-8"
+        fallback_charset = "cp1252"
+
+        for selected_file in files:
+            skip_file = False
+            filename = os.path.basename(selected_file)
+
+            if format_name == self.FORMAT_DIVEROFFICE:
+                parse_func = (
+                    DiverOfficeParser.parse_old
+                    if selected_file.endswith(".csv")
+                    else DiverOfficeParser.parse
+                )
+
+                def _make_kwargs(charset):
+                    return dict(
+                        path=selected_file,
+                        charset=charset,
+                        skip_rows_without_water_level=skip_rows_without_water_level,
+                        begindate=from_date,
+                        enddate=to_date,
+                    )
+
+            elif format_name == self.FORMAT_LEVELOGGER:
+                parse_func = LeveloggerParser.parse
+
+                def _make_kwargs(charset):
+                    return dict(
+                        path=selected_file,
+                        charset=charset,
+                        skip_rows_without_water_level=skip_rows_without_water_level,
+                        begindate=from_date,
+                        enddate=to_date,
+                    )
+
+            else:  # FORMAT_HOBO
+                parse_func = HoboParser.parse
+
+                def _make_kwargs(charset):
+                    return dict(
+                        path=selected_file,
+                        charset=charset,
+                        tz_converter=self.tz_converter,
+                        begindate=from_date,
+                        enddate=to_date,
+                    )
+
+            try:
+                res = parse_func(**_make_kwargs(default_charset))
+            except UnicodeDecodeError:
+                try:
+                    res = parse_func(**_make_kwargs(fallback_charset))
+                except UnicodeDecodeError:
+                    common_utils.MessagebarAndLog.warning(
+                        bar_msg=QCoreApplication.translate(
+                            "LoggerImport",
+                            "Could not read %s \u2014 is this a %s file?",
+                        )
+                        % (filename, format_name)
+                    )
+                    continue
+            except Exception:
+                common_utils.MessagebarAndLog.critical(
+                    bar_msg=QCoreApplication.translate(
+                        "LoggerImport", "Error on file %s."
+                    )
+                    % selected_file,
+                    log_msg=traceback.format_exc(),
+                )
+                raise
+
+            if res == "cancel":
+                self.status = True
+                common_utils.stop_waiting_cursor()
+                return res
+            elif res in ("skip", "ignore"):
+                continue
+
+            try:
+                file_data, filename, location, file_utc_offset = res
+            except Exception as e:
+                common_utils.MessagebarAndLog.warning(
+                    bar_msg=QCoreApplication.translate(
+                        "LoggerImport", "Import error, see log message panel"
+                    ),
+                    log_msg=QCoreApplication.translate(
+                        "LoggerImport", "File %s could not be parsed. Msg:\n%s"
+                    )
+                    % (selected_file, str(e)),
+                )
+                continue
+
+            # UTC offset adjustment (DiverOffice only)
+            if format_name == self.FORMAT_DIVEROFFICE and self.utc_offset.currentText():
+                if not file_utc_offset:
+                    missing_utcoffset = True
+                    common_utils.MessagebarAndLog.warning(
+                        log_msg=QCoreApplication.translate(
+                            "LoggerImport", "UTC-offset not found in file %s"
+                        )
+                        % filename
+                    )
+                else:
+                    requested_timedelta = parse_timezone_to_timedelta(
+                        self.utc_offset.currentText()
+                    )
+                    try:
+                        file_timedelta = parse_timezone_to_timedelta(file_utc_offset)
+                    except ValueError as e:
+                        msg = QCoreApplication.translate(
+                            "LoggerImport",
+                            "Reading timezone in file %s failed,\n"
+                            " no conversion done:\n%s\n\nSkip file?",
+                        ) % (ru(selected_file), str(e))
+                        common_utils.stop_waiting_cursor()
+                        question = common_utils.Askuser(
+                            question="YesNo",
+                            msg=msg,
+                            dialogtitle=QCoreApplication.translate(
+                                "askuser", "File timezone error!"
+                            ),
+                            include_cancel_button=True,
+                        )
+                        common_utils.start_waiting_cursor()
+                        if question.result:
+                            skip_file = True
+                    else:
+                        if requested_timedelta != file_timedelta:
+                            td = file_timedelta - requested_timedelta
+                            df = pd.DataFrame.from_records(
+                                file_data[1:],
+                                index="date_time",
+                                columns=file_data[0],
+                            )
+                            df.index = pd.to_datetime(df.index) - td
+                            df.index = df.index.strftime("%Y-%m-%d %H:%M:%S")
+                            file_data = [["date_time"]]
+                            file_data[0].extend(df.columns.tolist())
+                            file_data.extend([list(row) for row in df.itertuples()])
+
+            if not skip_file:
+                parsed_files.append((file_data, filename, location))
+
+        if len(parsed_files) == 0:
+            common_utils.MessagebarAndLog.critical(
+                bar_msg=QCoreApplication.translate(
+                    "LoggerImport", "Import Failure: No files imported"
+                )
+            )
+            common_utils.stop_waiting_cursor()
+            return
+
+        # Add obsid to all parsed filedatas by asking the user for it.
+        filename_location_obsid = [["filename", "location", "obsid"]]
+        filename_location_obsid.extend(
+            [
+                [parsed_file[1], parsed_file[2], parsed_file[2]]
+                for parsed_file in parsed_files
+            ]
+        )
+
+        if confirm_names:
+            try_capitalize = False
+        else:
+            try_capitalize = True
+
+        existing_obsids = db_utils.get_all_obsids()
+        common_utils.stop_waiting_cursor()
+        filename_location_obsid = common_utils.filter_nonexisting_values_and_ask(
+            file_data=filename_location_obsid,
+            header_value="obsid",
+            existing_values=existing_obsids,
+            try_capitalize=try_capitalize,
+            always_ask_user=confirm_names,
+        )
+        common_utils.start_waiting_cursor()
+
+        if len(filename_location_obsid) < 2:
+            common_utils.MessagebarAndLog.warning(
+                bar_msg=QCoreApplication.translate(
+                    "LoggerImport",
+                    "Warning. All files were skipped, nothing imported!",
+                )
+            )
+            common_utils.stop_waiting_cursor()
+            return False
+
+        filenames_obsid = dict([(x[0], x[2]) for x in filename_location_obsid[1:]])
+
+        parsed_files_with_obsid = []
+        for file_data, filename, location in parsed_files:
+            if not file_data:
+                common_utils.MessagebarAndLog.warning(
+                    bar_msg=QCoreApplication.translate(
+                        "LoggerImport",
+                        "Diveroffice import warning. See log message panel",
+                    ),
+                    log_msg=QCoreApplication.translate(
+                        "LoggerImport",
+                        "No data parsed from file %s. Remove rows without the correct number of columns.",
+                    )
+                    % filename,
+                )
+                continue
+
+            if filename in filenames_obsid:
+                file_data = list(file_data)
+                obsid = filenames_obsid[filename]
+                file_data[0].append("obsid")
+                [row.append(obsid) for row in file_data[1:]]
+                parsed_files_with_obsid.append([file_data, filename, location])
+        # Header
+
+        file_to_import_to_db = [parsed_files_with_obsid[0][0][0]]
+        file_to_import_to_db.extend(
+            [
+                row
+                for parsed_file in parsed_files_with_obsid
+                for row in parsed_file[0][1:]
+            ]
+        )
+
+        if not import_all_data:
+            file_to_import_to_db = filter_dates_from_filedata(
+                file_to_import_to_db, db_utils.get_last_logger_dates()
+            )
+        if len(file_to_import_to_db) < 2:
+            common_utils.MessagebarAndLog.info(
+                bar_msg=QCoreApplication.translate(
+                    "LoggerImport",
+                    "No new data existed in the files. Nothing imported.",
+                )
+            )
+            self.status = "True"
+            common_utils.stop_waiting_cursor()
+            return True
+
+        if self.source_edit is not None:
+            source = self.source_edit.text().strip()
+            if source:
+                file_to_import_to_db[0].append("source")
+                [row.append(source) for row in file_to_import_to_db[1:]]
+
+        if import_to_db:
+            importer = import_data_to_db.MidvDataImporter()
+            try:
+                answer = importer.general_import(
+                    "w_levels_logger", file_to_import_to_db
+                )
+            except Exception:
+                common_utils.MessagebarAndLog.warning(
+                    log_msg=f"Got error {traceback.format_exc()}"
+                )
+                raise
+        if export_csv:
+            path = QtWidgets.QFileDialog.getSaveFileName(
+                self, "Save File", "", "CSV(*.csv)"
+            )
+            if path:
+                path = ru(path[0])
+                common_utils.write_printlist_to_file(path, file_to_import_to_db)
+
+        if missing_utcoffset:
+            common_utils.MessagebarAndLog.info(
+                QCoreApplication.translate(
+                    "LoggerImport",
+                    "Could not identify UTC-offset for all files, see log.",
+                )
+            )
+
+        common_utils.stop_waiting_cursor()
+
+        if self.close_after_import.isChecked():
+            self.close()

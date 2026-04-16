@@ -33,7 +33,7 @@ from typing import Callable, Optional
 import qgis.PyQt.QtWidgets
 import qgis.utils
 from qgis.PyQt.QtCore import QCoreApplication, QDir, QSettings, QUrl, Qt
-from qgis.PyQt.QtWidgets import QAction, QApplication, QFileDialog, QMenu
+from qgis.PyQt.QtWidgets import QAction, QApplication, QMenu
 from qgis.core import QgsApplication
 
 import midvatten.midvsettingsdialog as midvsettingsdialog
@@ -678,7 +678,6 @@ class Midvatten:
 
     @common_utils.general_exception_handler
     def export_csv(self):
-        # None of these layers must be in editing mode
         allcritical_layers = tuple(
             midvatten_defs.get_subset_of_tables_fr_db("obs_points")
             + midvatten_defs.get_subset_of_tables_fr_db("obs_lines")
@@ -688,36 +687,11 @@ class Midvatten:
             + midvatten_defs.get_subset_of_tables_fr_db("interlab4_import_table")
             + midvatten_defs.get_subset_of_tables_fr_db("extra_data_tables")
         )
-
         err_flag = midvatten_utils.verify_msettings_loaded_and_layer_edit_mode(
             self.iface, self.ms, allcritical_layers
-        )  # verify midv settings are loaded and the critical layers are not in editing mode
-
+        )
         if err_flag == 0:
-            common_utils.start_waiting_cursor()  # show the user this may take a long time...
-
-            # Get two lists (obsid_p and obsid_l) with selected obs_points and obs_lines
-            obsid_p = common_utils.get_selected_features_as_tuple("obs_points")
-            obsid_l = common_utils.get_selected_features_as_tuple("obs_lines")
-
-            # sanity = midvatten_utils.Askuser("YesNo", QCoreApplication.translate("Midvatten", """You are about to export data for the selected obs_points and obs_lines into a set of csv files. \n\nContinue?"""), QCoreApplication.translate("Midvatten", 'Are you sure?'))
-            # exportfolder =    QtWidgets.QFileDialog.getExistingDirectory(None, 'Select a folder:', 'C:\\', QtWidgets.QFileDialog.ShowDirsOnly)
-            common_utils.stop_waiting_cursor()
-            exportfolder = QFileDialog.getExistingDirectory(
-                None,
-                QCoreApplication.translate(
-                    "Midvatten",
-                    "Select a folder where the csv files will be created:",
-                ),
-                ".",
-                QFileDialog.Option.ShowDirsOnly,
-            )
-            common_utils.start_waiting_cursor()
-            if len(exportfolder) > 0:
-                exportinstance = ExportData(obsid_p, obsid_l)
-                exportinstance.export_2_csv(exportfolder)
-
-            common_utils.stop_waiting_cursor()
+            ExportData(self.iface, self.ms).show()
 
     @common_utils.general_exception_handler
     def export_spatialite(self):
@@ -806,7 +780,9 @@ class Midvatten:
                         )
                         common_utils.stop_waiting_cursor()
                         return
-                    exportinstance = ExportData(obsid_p, obsid_l)
+                    exportinstance = ExportData(self.iface, self.ms)
+                    exportinstance.ID_obs_points = obsid_p
+                    exportinstance.ID_obs_lines = obsid_l
                     exportinstance.export_2_splite(new_dbpath, user_chosen_epsg_code)
 
                 common_utils.stop_waiting_cursor()

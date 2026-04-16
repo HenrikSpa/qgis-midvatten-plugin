@@ -24,6 +24,7 @@ import pytest
 
 from midvatten.definitions import midvatten_defs as defs
 from midvatten.test import utils_for_tests
+from midvatten.tools.create_db_dialogs import NewSpatialiteDbDialog
 from midvatten.tools.utils import common_utils, midvatten_utils
 from midvatten.tools.utils import db_utils
 
@@ -658,8 +659,6 @@ class TestObsPointsTriggers(utils_for_tests.MidvattenTestSpatialiteDbSv):
 class TestNewSpatialiteDbDialog(utils_for_tests.MidvattenTestSpatialiteNotCreated):
     def test_dialog_sv_defaults(self):
         """Dialog sets sv_SE locale defaults when locale changed to sv_SE."""
-        from midvatten.tools.create_db_dialogs import NewSpatialiteDbDialog
-
         dialog = NewSpatialiteDbDialog()
         dialog._locale_combo.setCurrentText("sv_SE")
         dialog._on_locale_changed("sv_SE")
@@ -669,8 +668,6 @@ class TestNewSpatialiteDbDialog(utils_for_tests.MidvattenTestSpatialiteNotCreate
 
     def test_dialog_en_defaults(self):
         """Dialog sets en_US locale defaults when locale changed to en_US."""
-        from midvatten.tools.create_db_dialogs import NewSpatialiteDbDialog
-
         dialog = NewSpatialiteDbDialog()
         dialog._locale_combo.setCurrentText("en_US")
         dialog._on_locale_changed("en_US")

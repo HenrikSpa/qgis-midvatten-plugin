@@ -11,6 +11,7 @@ from midvatten.tools.import_logger import (
     LeveloggerParser,
     HoboParser,
     TzConverter,
+    filter_dates_from_filedata,
 )
 from midvatten.tools.utils import common_utils
 
@@ -117,8 +118,6 @@ class TestFilterDatesFromFiledata:
     """Unit tests for filter_dates_from_filedata module-level function."""
 
     def test_filter_dates_from_filedata(self):
-        from midvatten.tools.import_logger import filter_dates_from_filedata
-
         file_data = [
             ["date_time", "head_cm", "obsid"],
             ["2016-03-15 10:30:00", "1.0", "rb1"],
@@ -197,6 +196,8 @@ class TestLeveloggerParser:
                 enddate=None,
             )
         assert len(result) == 4
+        assert result[0] == []
+        assert result[3] is None
 
 
 @pytest.mark.active

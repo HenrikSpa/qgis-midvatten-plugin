@@ -13,7 +13,6 @@ import re
 import traceback
 from collections import OrderedDict
 from datetime import datetime as _datetime
-from typing import Union
 
 import qgis.PyQt
 import qgis.PyQt.QtWidgets as QtWidgets
@@ -64,7 +63,7 @@ def fix_date(
         if dt is None:
             raise FileError(
                 QCoreApplication.translate(
-                    "HobologgerImport",
+                    "LoggerImport",
                     """Dateformat in file %s could not be parsed.""",
                 )
                 % filename
@@ -80,7 +79,7 @@ def fix_date(
     return dt
 
 
-def get_tz_string(date_time_tz: str) -> str:
+def get_tz_string(date_time_tz: str) -> str | None:
     """Extract a timezone string from a HOBO date-time column header.
 
     Copied verbatim from import_hobologger.get_tz_string().
@@ -410,11 +409,11 @@ class DiverOfficeParser:
         if "head_cm" not in colnames:
             common_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
-                    "DiverofficeImport",
+                    "LoggerImport",
                     "Diveroffice import warning. See log message panel",
                 ),
                 log_msg=QCoreApplication.translate(
-                    "DiverofficeImport",
+                    "LoggerImport",
                     "Warning, the file %s \ndid not have Water head as a "
                     "channel.\nMake sure its barocompensated!",
                 )
@@ -474,7 +473,7 @@ class DiverOfficeParser:
         if len(filedata) < 2:
             return common_utils.ask_user_about_stopping(
                 QCoreApplication.translate(
-                    "DiverofficeImport",
+                    "LoggerImport",
                     "Failure, parsing failed for file %s\nNo valid data "
                     "found!\nDo you want to stop the import? "
                     "(else it will continue with the next file)",
@@ -551,11 +550,11 @@ class DiverOfficeParser:
         if not begin_extraction:
             common_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
-                    "DiverofficeImport",
+                    "LoggerImport",
                     "Diveroffice import warning. See log message panel",
                 ),
                 log_msg=QCoreApplication.translate(
-                    "DiverofficeImport",
+                    "LoggerImport",
                     "Warning, the file %s \ndid not have Date/time as a "
                     "header and will be skipped.\nSupported headers are %s",
                 )
@@ -574,11 +573,11 @@ class DiverOfficeParser:
         if nr_of_cols < 2:
             common_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
-                    "DiverofficeImport",
+                    "LoggerImport",
                     "Diveroffice import warning. See log message panel",
                 ),
                 log_msg=QCoreApplication.translate(
-                    "DiverofficeImport",
+                    "LoggerImport",
                     "Delimiter could not be found for file %s or it "
                     "contained only one column, skipping it.",
                 )
@@ -592,11 +591,11 @@ class DiverOfficeParser:
         if "head_cm" not in translated_header:
             common_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
-                    "DiverofficeImport",
+                    "LoggerImport",
                     "Diveroffice import warning. See log message panel",
                 ),
                 log_msg=QCoreApplication.translate(
-                    "DiverofficeImport",
+                    "LoggerImport",
                     "Warning, the file %s \ndid not have Water head[cm] "
                     "as a header.\nMake sure its barocompensated!\n"
                     "Supported headers are %s",
@@ -621,7 +620,7 @@ class DiverOfficeParser:
             if len(cols) != nr_of_cols:
                 return common_utils.ask_user_about_stopping(
                     QCoreApplication.translate(
-                        "DiverofficeImport",
+                        "LoggerImport",
                         "Failure: The number of data columns in file %s "
                         "was not equal to the header.\nIs the decimal separator "
                         "the same as the delimiter?\nDo you want to stop the "
@@ -672,7 +671,7 @@ class DiverOfficeParser:
                 except ValueError as e:
                     errors.add(
                         QCoreApplication.translate(
-                            "DiverofficeImport", "parse_diveroffice_file error: %s"
+                            "LoggerImport", "parse_diveroffice_file error: %s"
                         )
                         % str(e)
                     )
@@ -683,7 +682,7 @@ class DiverOfficeParser:
         if errors:
             common_utils.MessagebarAndLog.warning(
                 log_msg=QCoreApplication.translate(
-                    "DiverofficeImport",
+                    "LoggerImport",
                     'Error messages while parsing file "%s":\n%s',
                 )
                 % (path, "\n".join(errors))
@@ -692,7 +691,7 @@ class DiverOfficeParser:
         if len(filedata) < 2:
             return common_utils.ask_user_about_stopping(
                 QCoreApplication.translate(
-                    "DiverofficeImport",
+                    "LoggerImport",
                     "Failure, parsing failed for file %s\n"
                     "No valid data found!\nDo you want to stop the import?"
                     " (else it will continue with the next file)",
@@ -748,7 +747,7 @@ class LeveloggerParser:
         except IndexError:
             common_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
-                    "LeveloggerImport", """File %s could not be parsed."""
+                    "LoggerImport", """File %s could not be parsed."""
                 )
                 % filename
             )
@@ -805,7 +804,7 @@ class LeveloggerParser:
                     level_unit_factor_to_cm = 100
                     common_utils.MessagebarAndLog.warning(
                         bar_msg=QCoreApplication.translate(
-                            "LeveloggerImport",
+                            "LoggerImport",
                             """The unit for level wasn't m or cm, a factor of %s was used. Check the imported data.""",
                         )
                         % str(level_unit_factor_to_cm)
@@ -843,7 +842,7 @@ class LeveloggerParser:
         except IndexError:
             common_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
-                    "LeveloggerImport", """No data in file %s."""
+                    "LoggerImport", """No data in file %s."""
                 )
                 % filename
             )
@@ -856,7 +855,7 @@ class LeveloggerParser:
             if date_format is None:
                 common_utils.MessagebarAndLog.warning(
                     bar_msg=QCoreApplication.translate(
-                        "LeveloggerImport",
+                        "LoggerImport",
                         """Dateformat in file %s could not be parsed.""",
                     )
                     % filename
@@ -1036,7 +1035,7 @@ class HoboParser:
         except IndexError:
             common_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
-                    "HobologgerImport", """No data in file %s."""
+                    "LoggerImport", """No data in file %s."""
                 )
                 % filename
             )
@@ -1050,7 +1049,7 @@ class HoboParser:
                 if date_format is None:
                     common_utils.MessagebarAndLog.warning(
                         bar_msg=QCoreApplication.translate(
-                            "HobologgerImport",
+                            "LoggerImport",
                             """Dateformat in file %s could not be parsed.""",
                         )
                         % filename

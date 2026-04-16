@@ -11,7 +11,6 @@ import datetime
 import os
 import re
 import traceback
-from collections import OrderedDict
 from datetime import datetime as _datetime
 
 import qgis.PyQt
@@ -30,7 +29,6 @@ from midvatten.tools.utils.date_utils import (
 )
 from midvatten.tools.utils.gui_utils import (
     VRowEntry,
-    WA_DeleteOnClose,
     get_line,
     DateTimeFilter,
     RowEntry,
@@ -143,22 +141,26 @@ def filter_dates_from_filedata(
     obsid_idx = file_data[0].index(obsid_header_name)
     date_time_idx = file_data[0].index(date_time_header_name)
 
-    def _is_newer(row: list[str]) -> bool:
-        last_val = obsid_last_imported_dates.get(row[obsid_idx])
-        if last_val is None:
-            return True
-        last_date_str = _get_last_date_str(last_val)
-        if last_date_str is None:
-            return True
-        return datestring_to_date(row[date_time_idx]) > datestring_to_date(
-            last_date_str
+    # Pre-parse the last-date for each obsid once (not once per row).
+    last_dates_parsed: dict[str, object] = {}
+    for obsid, val in obsid_last_imported_dates.items():
+        last_date_str = _get_last_date_str(val)
+        last_dates_parsed[obsid] = (
+            datestring_to_date(last_date_str) if last_date_str is not None else None
         )
+
+    def _is_newer(row: list[str]) -> bool:
+        obsid = row[obsid_idx]
+        if obsid not in obsid_last_imported_dates:
+            return True
+        last_date = last_dates_parsed.get(obsid)
+        if last_date is None:
+            return True
+        return datestring_to_date(row[date_time_idx]) > last_date
 
     filtered_file_data = [row for row in file_data[1:] if _is_newer(row)]
 
-    filtered_file_data.reverse()
-    filtered_file_data.append(file_data[0])
-    filtered_file_data.reverse()
+    filtered_file_data.insert(0, file_data[0])
     return filtered_file_data
 
 
@@ -177,7 +179,7 @@ class TzConverter(RowEntry):
         self.label = QtWidgets.QLabel(
             QCoreApplication.translate("TzSelector", "Select target timezone: ")
         )
-        timezones = [f"GMT{x:+d}" for x in range(-11, 15)]
+        timezones = [format_timezone_string(hour) for hour in range(-11, 15)]
 
         self._tz_list = QtWidgets.QComboBox()
         self._tz_list.addItems(timezones)
@@ -503,20 +505,18 @@ class DiverOfficeParser:
 
         Copied verbatim from DiverofficeImport.parse_diveroffice_file_old().
         """
-        translation_dict_in_order = OrderedDict(
-            [
-                ("Date/time", "date_time"),
-                ("Water head[cm]", "head_cm"),
-                ("Level[cm]", "head_cm"),
-                ("Temperature[°C]", "temp_degc"),
-                ("Conductivity[mS/cm]", "cond_mscm"),
-                ("1:Conductivity[mS/cm]", "cond_mscm"),
-                ("2:Spec.cond.[mS/cm]", "cond_mscm"),
-                ("Conductivity[ms/cm]", "cond_mscm"),
-                ("1:Conductivity[ms/cm]", "cond_mscm"),
-                ("2:Spec.cond.[ms/cm]", "cond_mscm"),
-            ]
-        )
+        translation_dict_in_order = {
+            "Date/time": "date_time",
+            "Water head[cm]": "head_cm",
+            "Level[cm]": "head_cm",
+            "Temperature[°C]": "temp_degc",
+            "Conductivity[mS/cm]": "cond_mscm",
+            "1:Conductivity[mS/cm]": "cond_mscm",
+            "2:Spec.cond.[mS/cm]": "cond_mscm",
+            "Conductivity[ms/cm]": "cond_mscm",
+            "1:Conductivity[ms/cm]": "cond_mscm",
+            "2:Spec.cond.[ms/cm]": "cond_mscm",
+        }
 
         filedata = []
         begin_extraction = False
@@ -864,12 +864,21 @@ class LeveloggerParser:
                 )
                 return [], filename, location, timezone
 
-        filedata.extend(
-            [
+        for row in rows[data_header_idx + 1 :]:
+            date_str = " ".join([row[date_colnr], row[time_colnr]])
+            if skip_rows_without_water_level and not isinstance(
+                common_utils.to_float_or_none(row[level_colnr]), float
+            ):
+                continue
+            if begindate is not None or enddate is not None:
+                row_date = date_utils.datestring_to_date(date_str, df=date_format)
+                if begindate is not None and row_date < begindate:
+                    continue
+                if enddate is not None and row_date > enddate:
+                    continue
+            filedata.append(
                 [
-                    date_utils.long_dateformat(
-                        " ".join([row[date_colnr], row[time_colnr]]), date_format
-                    ),
+                    date_utils.long_dateformat(date_str, date_format),
                     (
                         str(
                             float(row[level_colnr].replace(",", "."))
@@ -904,38 +913,7 @@ class LeveloggerParser:
                         else None
                     ),
                 ]
-                for row in rows[data_header_idx + 1 :]
-                if all(
-                    [
-                        (
-                            isinstance(
-                                common_utils.to_float_or_none(row[level_colnr]), float
-                            )
-                            if skip_rows_without_water_level
-                            else True
-                        ),
-                        (
-                            date_utils.datestring_to_date(
-                                " ".join([row[date_colnr], row[time_colnr]]),
-                                df=date_format,
-                            )
-                            >= begindate
-                            if begindate is not None
-                            else True
-                        ),
-                        (
-                            date_utils.datestring_to_date(
-                                " ".join([row[date_colnr], row[time_colnr]]),
-                                df=date_format,
-                            )
-                            <= enddate
-                            if enddate is not None
-                            else True
-                        ),
-                    ]
-                )
-            ]
-        )
+            )
 
         filedata = [row for row in filedata if any(row[1:])]
 
@@ -1058,12 +1036,15 @@ class HoboParser:
                     )
                     return [], filename, location, None  # 4-tuple fix
 
-        filedata.extend(
-            [
+        for row in rows[data_header_idx + 1 :]:
+            dt = fix_date(row[date_colnr], filename, tz_converter)
+            if begindate is not None and dt < begindate:
+                continue
+            if enddate is not None and dt > enddate:
+                continue
+            filedata.append(
                 [
-                    date_utils.long_dateformat(
-                        fix_date(row[date_colnr], filename, tz_converter)
-                    ),
+                    date_utils.long_dateformat(dt),
                     "",
                     (
                         str(float(row[temp_colnr].replace(",", ".")))
@@ -1076,24 +1057,7 @@ class HoboParser:
                     ),
                     "",
                 ]
-                for row in rows[data_header_idx + 1 :]
-                if all(
-                    [
-                        (
-                            fix_date(row[date_colnr], filename, tz_converter)
-                            >= begindate
-                            if begindate is not None
-                            else True
-                        ),
-                        (
-                            fix_date(row[date_colnr], filename, tz_converter) <= enddate
-                            if enddate is not None
-                            else True
-                        ),
-                    ]
-                )
-            ]
-        )
+            )
 
         filedata = [row for row in filedata if any(row[1:])]
 
@@ -1436,44 +1400,36 @@ class LoggerImport(BaseImporter, import_ui_dialog):
     ):
         common_utils.start_waiting_cursor()
         parsed_files = []
-        missing_utcoffset = False
         format_name = self.format_combo.currentText()
 
         default_charset = "utf-8"
         fallback_charset = "cp1252"
 
         for selected_file in files:
-            skip_file = False
             filename = os.path.basename(selected_file)
 
+            parse_kwargs = dict(
+                path=selected_file,
+                begindate=from_date,
+                enddate=to_date,
+            )
             if format_name == self.FORMAT_DIVEROFFICE:
                 parse_func = (
                     DiverOfficeParser.parse_old
                     if selected_file.endswith(".csv")
                     else DiverOfficeParser.parse
                 )
-                parse_kwargs = dict(
-                    path=selected_file,
-                    skip_rows_without_water_level=skip_rows_without_water_level,
-                    begindate=from_date,
-                    enddate=to_date,
+                parse_kwargs["skip_rows_without_water_level"] = (
+                    skip_rows_without_water_level
                 )
             elif format_name == self.FORMAT_LEVELOGGER:
                 parse_func = LeveloggerParser.parse
-                parse_kwargs = dict(
-                    path=selected_file,
-                    skip_rows_without_water_level=skip_rows_without_water_level,
-                    begindate=from_date,
-                    enddate=to_date,
+                parse_kwargs["skip_rows_without_water_level"] = (
+                    skip_rows_without_water_level
                 )
             else:  # FORMAT_HOBO
                 parse_func = HoboParser.parse
-                parse_kwargs = dict(
-                    path=selected_file,
-                    tz_converter=self.tz_converter,
-                    begindate=from_date,
-                    enddate=to_date,
-                )
+                parse_kwargs["tz_converter"] = self.tz_converter
 
             try:
                 res = parse_func(charset=default_charset, **parse_kwargs)
@@ -1523,7 +1479,6 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             # UTC offset adjustment (DiverOffice only)
             if format_name == self.FORMAT_DIVEROFFICE and self.utc_offset.currentText():
                 if not file_utc_offset:
-                    missing_utcoffset = True
                     common_utils.MessagebarAndLog.warning(
                         log_msg=QCoreApplication.translate(
                             "LoggerImport", "UTC-offset not found in file %s"
@@ -1553,7 +1508,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                         )
                         common_utils.start_waiting_cursor()
                         if question.result:
-                            skip_file = True
+                            continue
                     else:
                         if requested_timedelta != file_timedelta:
                             td = file_timedelta - requested_timedelta
@@ -1568,8 +1523,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                             file_data[0].extend(df.columns.tolist())
                             file_data.extend([list(row) for row in df.itertuples()])
 
-            if not skip_file:
-                parsed_files.append((file_data, filename, location))
+            parsed_files.append((file_data, filename, location))
 
         if len(parsed_files) == 0:
             common_utils.MessagebarAndLog.critical(
@@ -1612,7 +1566,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             common_utils.stop_waiting_cursor()
             return False
 
-        filenames_obsid = dict([(x[0], x[2]) for x in filename_location_obsid[1:]])
+        filenames_obsid = {x[0]: x[2] for x in filename_location_obsid[1:]}
 
         parsed_files_with_obsid = []
         for file_data, filename, location in parsed_files:
@@ -1637,7 +1591,6 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                 for row in file_data[1:]:
                     row.append(obsid)
                 parsed_files_with_obsid.append([file_data, filename, location])
-        # Header
 
         if not parsed_files_with_obsid:
             common_utils.MessagebarAndLog.warning(
@@ -1695,14 +1648,6 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             if path:
                 path = ru(path[0])
                 common_utils.write_printlist_to_file(path, file_to_import_to_db)
-
-        if missing_utcoffset:
-            common_utils.MessagebarAndLog.info(
-                QCoreApplication.translate(
-                    "LoggerImport",
-                    "Could not identify UTC-offset for all files, see log.",
-                )
-            )
 
         common_utils.stop_waiting_cursor()
 

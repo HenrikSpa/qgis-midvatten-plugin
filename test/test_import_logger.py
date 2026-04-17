@@ -498,6 +498,67 @@ class TestLoggerImportDiverOfficeSpatialite(
         )
         assert test_string == reference_string
 
+    def test_diveroffice_import_instrument_serial(self):
+        """Serial number extracted from file is stored in w_logger_series.instrument."""
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        file_content = "\n".join(
+            [
+                "[Logger settings]",
+                "Serial number=..00-R2717  214.",
+                "Location=rb1",
+                "[data]",
+                "Date/time;Water head[cm];Temperature[\u00b0C]",
+                "2016/03/15 10:30:00;1.0;10.0",
+            ]
+        )
+        with common_utils.tempinput(file_content, "utf-8") as f:
+
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
+            )
+            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("qgis.utils.iface", autospec=True)
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
+            @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
+            def _run(
+                self,
+                filename,
+                mock_select_files,
+                mock_popup,
+                mock_iface,
+                mock_askuser,
+                mock_notfound,
+            ):
+                mock_notfound.return_value.answer = "ok"
+                mock_notfound.return_value.value = "rb1"
+                mock_notfound.return_value.reuse_column = "location"
+                mock_select_files.return_value = [filename]
+
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = LoggerImport(self.iface, ms)
+                importer.load_gui()
+                importer.format_combo.setCurrentText(LoggerImport.FORMAT_DIVEROFFICE)
+                importer.select_files()
+                importer.start_import(
+                    files=importer.files,
+                    skip_rows_without_water_level=importer.skip_rows.checked,
+                    confirm_names=importer.confirm_names.checked,
+                    import_all_data=importer.import_all_data.checked,
+                )
+
+            _run(self, f)
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT instrument FROM w_logger_series WHERE obsid='rb1'"
+            )
+        )
+        assert test_string == "(True, [(R2717)])"
+
     def test_filter_dates_diveroffice(self):
         """When import_all_data is False, only data newer than last DB date is imported."""
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")

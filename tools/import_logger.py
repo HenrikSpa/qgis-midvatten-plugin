@@ -1501,7 +1501,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                 continue
 
             try:
-                file_data, filename, location, file_utc_offset = res
+                file_data, filename, location, file_utc_offset, serial_number = res
             except Exception as e:
                 common_utils.MessagebarAndLog.warning(
                     bar_msg=QCoreApplication.translate(
@@ -1561,7 +1561,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                             file_data[0].extend(df.columns.tolist())
                             file_data.extend([list(row) for row in df.itertuples()])
 
-            parsed_files.append((file_data, filename, location))
+            parsed_files.append((file_data, filename, location, serial_number))
 
         if len(parsed_files) == 0:
             common_utils.MessagebarAndLog.critical(
@@ -1607,7 +1607,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         filenames_obsid = {x[0]: x[2] for x in filename_location_obsid[1:]}
 
         parsed_files_with_obsid = []
-        for file_data, filename, location in parsed_files:
+        for file_data, filename, location, serial_number in parsed_files:
             if not file_data:
                 common_utils.MessagebarAndLog.warning(
                     bar_msg=QCoreApplication.translate(
@@ -1628,7 +1628,9 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                 file_data[0].append("obsid")
                 for row in file_data[1:]:
                     row.append(obsid)
-                parsed_files_with_obsid.append([file_data, filename, location])
+                parsed_files_with_obsid.append(
+                    [file_data, filename, location, serial_number]
+                )
 
         if not parsed_files_with_obsid:
             common_utils.MessagebarAndLog.warning(
@@ -1664,15 +1666,18 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             dbconn = db_utils.DbConnectionManager()
             try:
                 ph = dbconn.placeholder()
-                for parsed_file in parsed_files_with_obsid:
-                    file_data = parsed_file[0]
-                    filename = parsed_file[1]
+                for (
+                    file_data,
+                    filename,
+                    location,
+                    serial_number,
+                ) in parsed_files_with_obsid:
                     obsid = filenames_obsid[filename]
                     description = os.path.basename(filename) if filename else None
                     dbconn.execute(
                         f"INSERT INTO w_logger_series "
-                        f"(obsid, source, description) VALUES ({ph}, {ph}, {ph})",
-                        (obsid, source_for_series, description),
+                        f"(obsid, source, description, instrument) VALUES ({ph}, {ph}, {ph}, {ph})",
+                        (obsid, source_for_series, description, serial_number or None),
                     )
                     series_id = db_utils.get_last_insert_id(dbconn)
                     file_data[0].append("series_id")

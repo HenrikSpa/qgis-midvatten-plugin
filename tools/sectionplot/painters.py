@@ -149,12 +149,8 @@ def paint_screen_bars(
     for screenshort, bar_data in bars_dict.items():
         raw = style_dict.get(screenshort.lower(), fallback)
         style = {
-            "facecolor": raw.get("facecolor") or "none",
-            "edgecolor": raw.get("edgecolor") or "black",
-            "hatch": raw.get("hatch") if raw.get("hatch") is not None else "",
-            "linewidth": raw.get("linewidth")
-            if raw.get("linewidth") is not None
-            else 1.0,
+            key: raw.get(key) if raw.get(key) is not None else _default_style[key]
+            for key in _default_style
         }
         xs = bar_data["x"]
         heights = bar_data["height"]

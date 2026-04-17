@@ -96,6 +96,9 @@ _WLVL_EXCLUDED_TABLES = (
     "about_db",
 )
 
+_SCREEN_MODE_TO_DISPLAY = {"none": "None", "behind": "Behind", "ontop": "On top"}
+_SCREEN_MODE_FROM_DISPLAY = {v: k for k, v in _SCREEN_MODE_TO_DISPLAY.items()}
+
 log = logging.getLogger(__name__)
 
 
@@ -399,8 +402,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         self.layer_texts = self.get_plot_data_layer_texts(
             self.obsids_x_position, self.z_data, self.hydro_colors
         )
-        _screens_mode = self.ms.settingsdict.get("screensplotmode", "none")
-        if _screens_mode != "none":
+        if self.ms.settingsdict["screensplotmode"] != "none":
             self.screen_bars = self.get_screen_plot_data(self.obsids_x_position)
         else:
             self.screen_bars = {}
@@ -444,12 +446,11 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         if self.ms.settingsdict["secplot_apply_graded_dems"]:
             self.secplot_apply_graded_dems.setChecked(True)
 
-        _mode_map = {"none": "None", "behind": "Behind", "ontop": "On top"}
         self.screens_mode_combo.setCurrentText(
-            _mode_map.get(self.ms.settingsdict.get("screensplotmode", "none"), "None")
+            _SCREEN_MODE_TO_DISPLAY.get(self.ms.settingsdict["screensplotmode"], "None")
         )
         self.screen_width_factor_spin.setValue(
-            float(self.ms.settingsdict.get("screenwidthfactor", 1.2))
+            float(self.ms.settingsdict["screenwidthfactor"])
         )
 
     def fill_combo_boxes(self):
@@ -1093,19 +1094,15 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                     xmax - xmin
                 )
 
-                _screens_mode = self.ms.settingsdict.get("screensplotmode", "none")
-                _screens_width_factor = float(
-                    self.ms.settingsdict.get("screenwidthfactor", 1.2)
-                )
-
-                if _screens_mode == "behind" and self.screen_bars:
+                _screens_mode = self.ms.settingsdict["screensplotmode"]
+                if _screens_mode != "none" and self.screen_bars:
                     _painters.paint_screen_bars(
                         self.figure,
                         self.screen_bars,
                         defs.screen_style_dict(),
                         width=self.barwidth,
-                        zorder=1,
-                        width_factor=_screens_width_factor,
+                        zorder=1 if _screens_mode == "behind" else 3,
+                        width_factor=float(self.ms.settingsdict["screenwidthfactor"]),
                     )
 
                 if self.ms.settingsdict["stratigraphyplotted"]:
@@ -1130,16 +1127,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                     )
                     if len(self.ms.settingsdict["secplottext"]) > 0:
                         self.write_layer_text()
-
-                if _screens_mode == "ontop" and self.screen_bars:
-                    _painters.paint_screen_bars(
-                        self.figure,
-                        self.screen_bars,
-                        defs.screen_style_dict(),
-                        width=self.barwidth,
-                        zorder=3,
-                        width_factor=_screens_width_factor,
-                    )
 
                 self.plot_water_level()
 
@@ -1222,8 +1209,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         self.ms.settingsdict["secplothydrologyplotted"] = (
             self.hydrology_radio_button.isChecked()
         )
-        _mode_to_key = {"None": "none", "Behind": "behind", "On top": "ontop"}
-        self.ms.settingsdict["screensplotmode"] = _mode_to_key.get(
+        self.ms.settingsdict["screensplotmode"] = _SCREEN_MODE_FROM_DISPLAY.get(
             self.screens_mode_combo.currentText(), "none"
         )
         self.ms.settingsdict["screenwidthfactor"] = float(
@@ -1331,6 +1317,8 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         self.ms.save_settings("secplotselectedDEMs")
         self.ms.save_settings("secplotdem_sampling_distance")
         self.ms.save_settings("stratigraphyplotted")
+        self.ms.save_settings("screensplotmode")
+        self.ms.save_settings("screenwidthfactor")
         self.ms.save_settings("secplotlabelsplotted")
         self.ms.save_settings("secplotwidthofplot")
         self.ms.save_settings("secplotincludeviews")

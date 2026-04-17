@@ -1112,4 +1112,179 @@ class TestExportPostgis(ExportMixin, utils_for_tests.MidvattenTestPostgisDbEn):
 
 @pytest.mark.spatialite
 class TestExportSpatialite(ExportMixin, utils_for_tests.MidvattenTestSpatialiteDbEn):
-    pass
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.export_spatialite.NewSpatialiteDbDialog")
+    @mock.patch(
+        "midvatten.tools.utils.midvatten_utils.verify_msettings_loaded_and_layer_edit_mode",
+        autospec=True,
+    )
+    @mock.patch("midvatten.tools.utils.midvatten_utils.find_layer", autospec=True)
+    @mock.patch("qgis.utils.iface", autospec=True)
+    @mock.patch("midvatten.tools.export_data.common_utils.pop_up_info", autospec=True)
+    @mock.patch(
+        "midvatten.tools.utils.common_utils.get_selected_features_as_tuple",
+        ExportMixin.mock_no_selection.get_v,
+    )
+    @mock.patch(
+        "midvatten.tools.utils.common_utils.Askuser", ExportMixin.mock_askuser.get_v
+    )
+    def test_export_spatialite_migrates_old_logger_source_to_series(
+        self,
+        mock_skip_popup,
+        mock_iface,
+        mock_find_layer,
+        mock_verify,
+        mock_dialog_cls,
+        mock_messagebar,
+    ):
+        """Old-schema source DB (w_levels_logger.source column, no
+        w_logger_series) exports cleanly into the new schema: one
+        w_logger_series row per distinct (obsid, source) pair, and every
+        w_levels_logger row on the target linked to the right series.
+        """
+        mock_find_layer.return_value.crs.return_value.authid.return_value = (
+            "EPSG:3006"
+        )
+        mock_verify.return_value = 0
+        export_path = _unique_export_path(self)
+        mock_dlg = mock.MagicMock()
+        mock_dialog_cls.return_value = mock_dlg
+        mock_dlg.exec.return_value = 1
+        mock_dlg.locale = "en_US"
+        mock_dlg.epsg_code = 3006
+        mock_dlg.w_levels_logger_timezone = ""
+        mock_dlg.w_levels_timezone = ""
+        mock_dlg.dbpath = export_path
+
+        dbconn = db_utils.DbConnectionManager()
+        try:
+            # Mutate the source DB to look like Midv 1.x:
+            #   drop w_logger_series, drop w_levels_logger.series_id and
+            #   created_at, add back w_levels_logger.source.
+            dbconn.execute("PRAGMA foreign_keys = OFF")
+            dbconn.execute("DROP INDEX IF EXISTS idx_wlvllogger_series")
+            dbconn.execute("DROP INDEX IF EXISTS idx_wlogger_series_obsid")
+            dbconn.execute("DROP VIEW IF EXISTS obs_p_w_lvl_logger")
+            dbconn.execute(
+                "DELETE FROM views_geometry_columns"
+                " WHERE view_name = 'obs_p_w_lvl_logger'"
+            )
+            dbconn.execute("DROP TABLE IF EXISTS w_logger_series")
+            # SQLite versions that ship with QGIS can be older; rebuild the
+            # table with a CREATE/INSERT/DROP/RENAME pattern so we do not
+            # rely on ALTER TABLE ... DROP COLUMN.
+            dbconn.execute(
+                "CREATE TABLE w_levels_logger_old ("
+                "obsid text NOT NULL,"
+                " date_time text NOT NULL,"
+                " head_cm double,"
+                " temp_degc double,"
+                " cond_mscm double,"
+                " level_masl double,"
+                " comment text,"
+                " source text,"
+                " PRIMARY KEY (obsid, date_time),"
+                " FOREIGN KEY(obsid) REFERENCES obs_points(obsid)"
+                ")"
+            )
+            dbconn.execute(
+                "INSERT INTO w_levels_logger_old"
+                " (obsid, date_time, head_cm, temp_degc, cond_mscm,"
+                "  level_masl, comment)"
+                " SELECT obsid, date_time, head_cm, temp_degc, cond_mscm,"
+                "  level_masl, comment FROM w_levels_logger"
+            )
+            dbconn.execute("DROP TABLE w_levels_logger")
+            dbconn.execute(
+                "ALTER TABLE w_levels_logger_old RENAME TO w_levels_logger"
+            )
+            # Recreate the obs_p_w_lvl_logger view that was dropped above.
+            dbconn.execute(
+                "CREATE VIEW obs_p_w_lvl_logger AS"
+                " SELECT a.rowid, a.obsid, a.geometry FROM obs_points a"
+                " WHERE EXISTS ("
+                "SELECT obsid FROM w_levels_logger b"
+                " WHERE b.obsid = a.obsid LIMIT 1)"
+            )
+            dbconn.execute(
+                "INSERT INTO views_geometry_columns"
+                " (view_name, view_geometry, view_rowid,"
+                "  f_table_name, f_geometry_column, read_only)"
+                " VALUES ('obs_p_w_lvl_logger', 'geometry', 'rowid',"
+                "  'obs_points', 'geometry', 1)"
+            )
+            dbconn.execute("PRAGMA foreign_keys = ON")
+            dbconn.commit()
+
+            # Populate with two wells, three distinct (obsid, source) groups.
+            dbconn.execute(
+                "INSERT INTO obs_points (obsid, geometry) VALUES"
+                " ('P1', ST_GeomFromText('POINT(633466 711659)', 3006))"
+            )
+            dbconn.execute(
+                "INSERT INTO obs_points (obsid, geometry) VALUES"
+                " ('P2', ST_GeomFromText('POINT(633500 711700)', 3006))"
+            )
+            dbconn.execute(
+                "INSERT INTO w_levels_logger"
+                " (obsid, date_time, head_cm, source) VALUES"
+                " ('P1', '2015-01-01 00:00:00', 100.0, 'fileA'),"
+                " ('P1', '2015-01-01 01:00:00', 101.0, 'fileA'),"
+                " ('P1', '2015-01-02 00:00:00', 102.0, 'fileB'),"
+                " ('P2', '2015-01-01 00:00:00', 200.0, 'fileA')"
+            )
+            dbconn.commit()
+        finally:
+            dbconn.closedb()
+
+        ExportSpatialite(self.iface, self.midvatten.ms).show()
+
+        # Inspect the exported DB.
+        conn = db_utils.connect_with_spatialite_connect(export_path)
+        curs = conn.cursor()
+        series_rows = curs.execute(
+            "SELECT obsid, source, description FROM w_logger_series"
+            " ORDER BY obsid, source"
+        ).fetchall()
+        levels_rows = curs.execute(
+            "SELECT l.obsid, l.date_time, l.head_cm, s.source"
+            " FROM w_levels_logger l"
+            " LEFT JOIN w_logger_series s ON s.id = l.series_id"
+            " ORDER BY l.obsid, l.date_time"
+        ).fetchall()
+        # Confirm the two (P1, fileA) rows share a series_id, distinct
+        # from (P1, fileB) and (P2, fileA).
+        p1a_sids = [
+            r[0]
+            for r in curs.execute(
+                "SELECT series_id FROM w_levels_logger l"
+                " WHERE obsid='P1' AND date_time IN"
+                " ('2015-01-01 00:00:00', '2015-01-01 01:00:00')"
+                " ORDER BY date_time"
+            ).fetchall()
+        ]
+        p1b_sid = curs.execute(
+            "SELECT series_id FROM w_levels_logger"
+            " WHERE obsid='P1' AND date_time = '2015-01-02 00:00:00'"
+        ).fetchone()[0]
+        p2_sid = curs.execute(
+            "SELECT series_id FROM w_levels_logger"
+            " WHERE obsid='P2'"
+        ).fetchone()[0]
+        conn.close()
+
+        assert series_rows == [
+            ("P1", "fileA", "Upgraded from Midv 1.x"),
+            ("P1", "fileB", "Upgraded from Midv 1.x"),
+            ("P2", "fileA", "Upgraded from Midv 1.x"),
+        ]
+        assert levels_rows == [
+            ("P1", "2015-01-01 00:00:00", 100.0, "fileA"),
+            ("P1", "2015-01-01 01:00:00", 101.0, "fileA"),
+            ("P1", "2015-01-02 00:00:00", 102.0, "fileB"),
+            ("P2", "2015-01-01 00:00:00", 200.0, "fileA"),
+        ]
+        assert p1a_sids[0] == p1a_sids[1]
+        assert p1a_sids[0] != p1b_sid
+        assert p1a_sids[0] != p2_sid
+        assert p1b_sid != p2_sid

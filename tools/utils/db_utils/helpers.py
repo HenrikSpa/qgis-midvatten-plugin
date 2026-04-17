@@ -33,6 +33,20 @@ def add_insert_or_ignore_to_sql(sql: str, dbconnection: DbConnectionManager) -> 
     return dbconnection.add_insert_or_ignore_to_sql(sql)
 
 
+def get_last_insert_id(dbconnection: DbConnectionManager) -> int:
+    """Return the auto-generated id of the most recent INSERT on this connection.
+
+    Uses ``last_insert_rowid()`` on SpatiaLite and ``lastval()`` on PostgreSQL.
+    Both are connection-scoped, so callers must use the same dbconnection that
+    performed the INSERT without committing / closing in between.
+    """
+    if dbconnection.dbtype == "spatialite":
+        sql = "SELECT last_insert_rowid()"
+    else:
+        sql = "SELECT lastval()"
+    return dbconnection.execute_and_fetchall(sql)[0][0]
+
+
 def backup_db(dbconnection: Optional[DbConnectionManager] = None) -> None:
     with use_or_create_connection(dbconnection) as dbconn:
         dbconn.backup()

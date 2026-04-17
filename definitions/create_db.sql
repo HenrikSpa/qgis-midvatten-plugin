@@ -106,6 +106,16 @@ obsid text NOT NULL --Obsid linked to obs_points.obsid
 , PRIMARY KEY (obsid, date_time)
 , FOREIGN KEY(obsid) REFERENCES obs_points(obsid)
 );
+CREATE TABLE w_logger_series /*Logger deployment series. Groups rows in w_levels_logger (and w_qual_logger in a follow-up plan) that belong together, so batch-level metadata is stored once and a whole batch can be reverted by deleting the series row.*/(
+SPATIALITE id INTEGER PRIMARY KEY AUTOINCREMENT
+POSTGIS id SERIAL PRIMARY KEY
+, obsid text NOT NULL --Obsid linked to obs_points.obsid
+, source text --Free-text provenance (moved from w_levels_logger.source). Not a uniqueness key - different series may reuse the same source text.
+, instrument text --Optional instrument description or serial
+, description text --Short description, e.g. filename or logger position
+, comment text --Longer free-form notes
+, FOREIGN KEY(obsid) REFERENCES obs_points(obsid) ON UPDATE CASCADE
+);
 CREATE TABLE w_levels_logger /*Automatic water level readings*/(
 obsid text NOT NULL --Obsid linked to obs_points.obsid
 , date_time text NOT NULL --Date and Time for the observation
@@ -114,9 +124,11 @@ obsid text NOT NULL --Obsid linked to obs_points.obsid
 , cond_mscm double --Electrical conductivity mS/cm
 , level_masl double --Corresponding Water level elevation (masl)
 , comment text --Comment
-, source text --The source of the measurement (used to keep series apart)
+, series_id integer --Links to w_logger_series.id. Nullable so direct SQL inserts without a series still work. Plugin imports set it to group rows for revert.
+, created_at text NOT NULL DEFAULT CURRENT_TIMESTAMP --Timestamp for when the row entered the database. Set by Python to a single batch timestamp on plugin imports. Falls back to the column default for direct SQL inserts.
 , PRIMARY KEY (obsid, date_time)
 , FOREIGN KEY(obsid) REFERENCES obs_points(obsid)
+, FOREIGN KEY(series_id) REFERENCES w_logger_series(id) ON DELETE CASCADE
 );
 CREATE TABLE stratigraphy /*Stratigraphy information from drillings*/(
 obsid text NOT NULL --Obsid linked to obs_points.obsid
@@ -335,6 +347,7 @@ CREATE VIEW w_flow_accvol AS SELECT obsid AS obsid,instrumentid AS instrumentid,
 CREATE INDEX idx_wquallab_odtp ON w_qual_lab(obsid, date_time, parameter);
 CREATE INDEX idx_wquallab_odtpu ON w_qual_lab(obsid, date_time, parameter, unit);
 CREATE INDEX idx_wqualfield_odtpu ON w_qual_field(obsid, date_time, parameter, unit);
-CREATE INDEX idx_wlvllogger_o ON w_levels_logger(obsid, source);
+CREATE INDEX idx_wlvllogger_series ON w_levels_logger(series_id);
+CREATE INDEX idx_wlogger_series_obsid ON w_logger_series(obsid);
 CREATE INDEX idx_wflow_oif ON w_flow(obsid, instrumentid, flowtype);
 CREATE INDEX idx_wflow_ofi ON w_flow(obsid, flowtype, instrumentid);

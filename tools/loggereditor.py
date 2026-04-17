@@ -310,8 +310,28 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 for x in self.meas_ts.date_time
             ]
 
-        existing_columns = db_utils.tables_columns("w_levels_logger")["w_levels_logger"]
-        if "source" in existing_columns:
+        # Schema variant detection. This reader has to work on three DB
+        # shapes that users have in the wild:
+        #   * Very old DBs: w_levels_logger has no `source` column at all.
+        #   * Current (Midv 1.x) DBs: `source` is a column on w_levels_logger.
+        #   * New DBs: `source` lives on w_logger_series, reached via
+        #     w_levels_logger.series_id.
+        existing_columns = db_utils.tables_columns(table="w_levels_logger").get(
+            "w_levels_logger", []
+        )
+        has_series_id = "series_id" in existing_columns
+        has_series_table = bool(
+            db_utils.tables_columns(table="w_logger_series")
+        )
+        if has_series_id and has_series_table:
+            head_level_masl_sql = (
+                f"SELECT l.date_time, l.head_cm / 100, l.level_masl,"
+                f" TRIM(COALESCE(s.source, ''))"
+                f" FROM w_levels_logger l"
+                f" LEFT JOIN w_logger_series s ON s.id = l.series_id"
+                f" WHERE l.obsid = {ph} ORDER BY l.date_time"
+            )
+        elif "source" in existing_columns:
             head_level_masl_sql = f"SELECT date_time, head_cm / 100, level_masl, TRIM(COALESCE(source, '')) FROM w_levels_logger WHERE obsid = {ph} ORDER BY date_time"
         else:
             head_level_masl_sql = f"SELECT date_time, head_cm / 100, level_masl, '' as source FROM w_levels_logger WHERE obsid = {ph} ORDER BY date_time"

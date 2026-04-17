@@ -115,7 +115,7 @@ def _make_actions(plugin: "Midvatten") -> list[ActionSpec]:
             icon="load_wlevels_logger.png",
             menu="import",
             tool_class=LoggerImport,
-            critical_layers=("obs_points", "w_levels_logger"),
+            critical_layers=("obs_points", "w_logger_series", "w_levels_logger"),
         ),
         ActionSpec(
             id="import_interlab4",
@@ -203,7 +203,7 @@ def _make_actions(plugin: "Midvatten") -> list[ActionSpec]:
             icon="calibr_level_logger_masl.png",
             menu="edit",
             tool_class=LoggerEditor,
-            critical_layers=("w_levels_logger", "w_levels"),
+            critical_layers=("w_logger_series", "w_levels_logger", "w_levels"),
             persistent=True,
         ),
         ActionSpec(

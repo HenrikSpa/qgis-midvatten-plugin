@@ -4,7 +4,7 @@ insert into zz_flowtype(type, explanation) values('Momflow', 'Momentary flow rat
 insert into zz_flowtype(type, explanation) values('Aveflow', 'Average flow since last reading');
 insert into zz_meteoparam(parameter, explanation) values('precip', 'Precipitation');
 insert into zz_meteoparam(parameter, explanation) values('temp', 'Air temperature');
-insert into zz_meteoparam(parameter, explanation) values('baro_cmh2o', 'Barometric pressure (cmH2O)');
+insert into zz_meteoparam(parameter, explanation) values('pressure', 'Barometric pressure');
 insert into zz_strat(geoshort,strata) values('berg','rock');
 insert into zz_strat(geoshort,strata) values('b','rock');
 insert into zz_strat(geoshort,strata) values('rock','rock');

@@ -3642,7 +3642,7 @@ class TestPivotBaroToMeteo:
             "obsid", "instrumentid", "parameter", "date_time", "reading_num", "unit"
         ]
         params = [(r[2], r[4], r[5]) for r in result[1:]]
-        assert ("baro_cmh2o", "978.667", "cmH2O") in params
+        assert ("pressure", "978.667", "cmH2O") in params
         assert ("temp", "9.470", "\u00b0C") in params
 
     def test_uses_serial_number_as_instrumentid(self):
@@ -3668,5 +3668,5 @@ class TestPivotBaroToMeteo:
         ]
         result = _pivot_baro_to_meteo(file_data, "DA123", "baro.mon")
         params = [r[2] for r in result[1:]]
-        assert "baro_cmh2o" in params
+        assert "pressure" in params
         assert "temp" not in params

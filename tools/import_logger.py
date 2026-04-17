@@ -919,13 +919,13 @@ class DiverOfficeBaroParser:
 
 # Column → (meteo parameter, unit) mapping for baro imports
 _BARO_COL_TO_METEO: dict[str, tuple[str, str]] = {
-    "baro_cmh2o": ("baro_cmh2o", "cmH2O"),
+    "baro_cmh2o": ("pressure", "cmH2O"),
     "temp_degc": ("temp", "\u00b0C"),
 }
 
 # Parameters that must exist in zz_meteoparam for baro imports
 _BARO_METEO_PARAMS: list[tuple[str, str]] = [
-    ("baro_cmh2o", "Barometric pressure (cmH2O)"),
+    ("pressure", "Barometric pressure"),
     ("temp", "Air temperature"),
 ]
 

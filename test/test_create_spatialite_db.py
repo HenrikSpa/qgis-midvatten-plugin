@@ -697,8 +697,8 @@ class TestSqls(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
 @pytest.mark.spatialite
 class TestObsidCascade(utils_for_tests.MidvattenTestSpatialiteDbSv):
-    """Tests that ON UPDATE CASCADE / ON DELETE CASCADE work for obsid FK references."""
-
+    # sql_alter_db silently swallows exceptions and doesn't reliably fire CASCADE
+    # for UPDATE/DELETE on parent tables; use a raw connection that propagates errors.
     def _run_with_fk(self, sql: str) -> None:
         dbconn = db_utils.DbConnectionManager()
         try:

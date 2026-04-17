@@ -1,21 +1,5 @@
 # Optional data tables not fully integrated in the plugin
 
-CREATE TABLE s_qual_lab /*Soil quality data*/(
-obsid text not null
-, depth double
-, report text not null
-, project text
-, staff text
-, date_time text
-, anameth text
-, parameter text not null
-, reading_num double
-, reading_txt text
-, unit text
-, comment text
-, primary key(report, parameter)
-, foreign key(obsid) references obs_points(obsid) ON UPDATE CASCADE ON DELETE CASCADE
-);
 
 CREATE TABLE w_qual_logger /*Water quality from logger measurements*/(
  obsid text NOT NULL /*Obsid linked to obs_points.obsid*/

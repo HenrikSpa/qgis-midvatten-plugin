@@ -283,7 +283,7 @@ specifik_provplats text NOT NULL --The attribute Specifik Provplats from interla
 , PRIMARY KEY(specifik_provplats, provplatsnamn)
 , FOREIGN KEY(obsid) REFERENCES obs_points(obsid) ON UPDATE CASCADE ON DELETE CASCADE
 );
-CREATE TABLE s_qual_lab /*Soil quality data*/(
+CREATE TABLE s_qual_lab /*Soil sample analyses*/(
 obsid text not null
 , depth double
 , report text not null

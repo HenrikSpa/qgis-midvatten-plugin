@@ -378,6 +378,7 @@ def get_subset_of_tables_fr_db(category="obs_points"):
             "obs_points",
             "comments",
             "w_levels",
+            "w_logger_series",
             "w_levels_logger",
             "w_flow",
             "w_qual_lab",
@@ -428,6 +429,7 @@ def get_subset_of_tables_fr_db(category="obs_points"):
             "seismic_data",
             "tem_data",
             "vlf_data",
+            "w_logger_series",
             "w_levels_logger",
         ]
     elif category == "extra_data_tables":

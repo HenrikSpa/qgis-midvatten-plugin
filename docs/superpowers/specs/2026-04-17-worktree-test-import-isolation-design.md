@@ -1,7 +1,7 @@
 # Design: Worktree Test Import Isolation
 
 **Date:** 2026-04-17
-**Status:** Implemented
+**Status:** Implemented (see Tasks 2–3 of the implementation plan)
 
 ## Problem
 

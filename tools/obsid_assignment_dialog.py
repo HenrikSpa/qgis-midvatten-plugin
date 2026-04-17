@@ -20,9 +20,6 @@ from qgis.PyQt.QtWidgets import (
 )
 
 
-_OVERRIDE_FIELDS = ("provmärkning", "provtagningsorsak")
-
-
 @dataclass
 class EditorRow:
     """One row in the ObsidAssignmentDialog table.
@@ -34,7 +31,6 @@ class EditorRow:
 
     specifik_provplats: str
     provplatsnamn: str
-    provmärkning: str
     provtagningsorsak: str
     lablitteras: list[str] = field(default_factory=list)
     obsid: str = ""
@@ -44,15 +40,14 @@ class EditorRow:
 
 
 def _has_override(row: dict) -> bool:
-    for key in _OVERRIDE_FIELDS:
-        value = (row.get(key) or "").strip()
-        if key == "provtagningsorsak":
-            # Match the existing sanitisation in import_interlab4.py:
-            # "-" or "0" placeholders in provtagningsorsak mean "no reason".
-            value = value.replace("-", "").replace("0", "").strip()
-        if value:
-            return True
-    return False
+    """True when provtagningsorsak contains a hand-written override note.
+
+    Uses the same sanitisation as the existing import_interlab4.py:
+    "-" or "0" placeholders mean "no reason" and strip to empty.
+    """
+    value = (row.get("provtagningsorsak", "") or "").strip()
+    value = value.replace("-", "").replace("0", "").strip()
+    return bool(value)
 
 
 def group_editor_rows(
@@ -62,9 +57,12 @@ def group_editor_rows(
     """Group raw per-lablittera metadata into EditorRow instances.
 
     `rows` is a list of dicts with lowercase header keys (lablittera,
-    specifik provplats, provplatsnamn, provmärkning?, provtagningsorsak?).
+    specifik provplats, provplatsnamn, provtagningsorsak?).
     `cache_matches` maps (spec_provplats, provplatsnamn) -> obsid from
     zz_interlab4_obsid_assignment.
+
+    Rows with a non-empty provtagningsorsak (after sanitising "-"/"0"
+    placeholders) are treated as override rows and are not deduped.
     """
     cache_matches = cache_matches or {}
     clean_groups: dict[tuple[str, str], EditorRow] = {}
@@ -73,7 +71,6 @@ def group_editor_rows(
     for row in rows:
         spec = row.get("specifik provplats", "") or ""
         namn = row.get("provplatsnamn", "") or ""
-        mark = row.get("provmärkning", "") or ""
         orsak = row.get("provtagningsorsak", "") or ""
         lablittera = row.get("lablittera", "") or ""
         is_override = _has_override(row)
@@ -83,7 +80,6 @@ def group_editor_rows(
                 EditorRow(
                     specifik_provplats=spec,
                     provplatsnamn=namn,
-                    provmärkning=mark,
                     provtagningsorsak=orsak,
                     lablitteras=[lablittera],
                     is_override=True,
@@ -97,7 +93,6 @@ def group_editor_rows(
                 clean_groups[key] = EditorRow(
                     specifik_provplats=spec,
                     provplatsnamn=namn,
-                    provmärkning=mark,
                     provtagningsorsak=orsak,
                     lablitteras=[lablittera],
                     obsid=cached_obsid,
@@ -116,13 +111,13 @@ def _tr(text: str) -> str:
 
 _COL_SPEC = 0
 _COL_NAMN = 1
-_COL_MARK = 2
+_COL_ORSAK = 2
 _COL_NLAB = 3
 _COL_OBSID = 4
 _COLUMN_HEADERS = (
     "specifik provplats",
     "provplatsnamn",
-    "provmärkning",
+    "provtagningsorsak",
     "#lablitteras",
     "obsid",
 )
@@ -162,7 +157,9 @@ class ObsidAssignmentDialog(QDialog):
                 row_idx, _COL_SPEC, QTableWidgetItem(row.specifik_provplats)
             )
             self.table.setItem(row_idx, _COL_NAMN, QTableWidgetItem(row.provplatsnamn))
-            self.table.setItem(row_idx, _COL_MARK, QTableWidgetItem(row.provmärkning))
+            self.table.setItem(
+                row_idx, _COL_ORSAK, QTableWidgetItem(row.provtagningsorsak)
+            )
             self.table.setItem(
                 row_idx, _COL_NLAB, QTableWidgetItem(str(len(row.lablitteras)))
             )

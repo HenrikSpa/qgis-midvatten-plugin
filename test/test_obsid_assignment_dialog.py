@@ -9,12 +9,11 @@ from midvatten.tools.obsid_assignment_dialog import (
 )
 
 
-def _row(lablittera, spec, namn, mark="", orsak=""):
+def _row(lablittera, spec, namn, orsak=""):
     return {
         "lablittera": lablittera,
         "specifik provplats": spec,
         "provplatsnamn": namn,
-        "provmärkning": mark,
         "provtagningsorsak": orsak,
     }
 
@@ -34,8 +33,8 @@ class TestGroupEditorRows:
 
     def test_override_rows_are_not_deduped(self):
         rows = [
-            _row("L1", "Br2", "Brunn 2", mark="egentl. Br3"),
-            _row("L2", "Br2", "Brunn 2", mark="egentl. Br3"),
+            _row("L1", "Br2", "Brunn 2", orsak="annan"),
+            _row("L2", "Br2", "Brunn 2", orsak="annan"),
         ]
         editor_rows = group_editor_rows(rows)
         assert len(editor_rows) == 2
@@ -53,7 +52,7 @@ class TestGroupEditorRows:
         rows = [
             _row("L1", "Br1", "Brunn 1"),
             _row("L2", "Br1", "Brunn 1"),
-            _row("L3", "Br2", "Brunn 2", mark="egentl. Br3"),
+            _row("L3", "Br2", "Brunn 2", orsak="annan"),
         ]
         editor_rows = group_editor_rows(rows)
         clean = [r for r in editor_rows if not r.is_override]
@@ -67,16 +66,6 @@ class TestGroupEditorRows:
         editor_rows = group_editor_rows(rows, cache_matches=cache)
         assert editor_rows[0].obsid == "Br1"
         assert editor_rows[0].cached is True
-
-    def test_provmarkning_dashes_still_count_as_override(self):
-        """provmärkning is free-text; only whitespace gets stripped.
-        '---' in the field is a real hand-written note, not a placeholder,
-        so the row must be treated as an override (per-lablittera)."""
-        rows = [
-            _row("L1", "Br1", "Brunn 1", mark="---"),
-        ]
-        editor_rows = group_editor_rows(rows)
-        assert editor_rows[0].is_override is True
 
     def test_provtagningsorsak_dashes_do_not_count_as_override(self):
         """provtagningsorsak uses '-' and '0' as 'no reason' placeholders;
@@ -98,8 +87,8 @@ class TestObsidAssignmentDialogShell:
 
     def test_dialog_shows_one_row_per_editor_row(self):
         rows = [
-            EditorRow("Br1", "Brunn 1", "", "", ["L1", "L2"]),
-            EditorRow("Br2", "Brunn 2", "", "", ["L3"]),
+            EditorRow("Br1", "Brunn 1", "", ["L1", "L2"]),
+            EditorRow("Br2", "Brunn 2", "", ["L3"]),
         ]
         dialog = ObsidAssignmentDialog(rows, existing_obsids=["Br1", "Br2"])
         try:

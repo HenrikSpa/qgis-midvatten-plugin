@@ -792,10 +792,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         # plt.close(self.calibrplotfigure)#this closes reference to self.calibrplotfigure
         self.statusbar.clearMessage()
 
-    # ------------------------------------------------------------------ #
-    #  Reference subplot                                                   #
-    # ------------------------------------------------------------------ #
-
     def _setup_ref_dock(self) -> None:
         self._ref_series: list[dict] = []
         dock = QDockWidget(
@@ -956,10 +952,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             sql += " WHERE " + " AND ".join(where_parts)
         sql += f" ORDER BY {ident(s['x_col'])}"
         return sql, params
-
-    # ------------------------------------------------------------------ #
-    #  End reference subplot                                               #
-    # ------------------------------------------------------------------ #
 
     @fn_timer
     def plot_recarray(self, axes, a_recarray, label, time_list=None, style=None):

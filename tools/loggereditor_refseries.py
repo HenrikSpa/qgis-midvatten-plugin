@@ -24,6 +24,7 @@ from qgis.PyQt.QtWidgets import (
 
 from midvatten.tools.utils.db_utils.dialect import ident
 from midvatten.tools.utils.db_utils.execution import use_or_create_connection
+from midvatten.tools.utils.db_utils.helpers import nonplot_tables
 from midvatten.tools.utils.db_utils.schema import get_table_info, get_tables
 
 log = logging.getLogger(__name__)
@@ -38,8 +39,6 @@ def _tr(text: str) -> str:
 
 
 class _FilterRow(QWidget):
-    """One filter row: column selector + multi-select values list + search box + remove."""
-
     def __init__(self, table: str, parent_dialog: "RefSeriesDialog"):
         super().__init__()
         self._parent = parent_dialog
@@ -127,17 +126,15 @@ class _FilterRow(QWidget):
             item.setSelected(item.text() in value_set)
 
     def to_filter_dict(self) -> dict:
-        selected = [
-            self.values_list.item(i).text()
-            for i in range(self.values_list.count())
-            if self.values_list.item(i).isSelected()
-        ]
+        selected = []
+        for i in range(self.values_list.count()):
+            item = self.values_list.item(i)
+            if item.isSelected():
+                selected.append(item.text())
         return {"col": self.col_combo.currentText(), "values": selected}
 
 
 class RefSeriesDialog(QDialog):
-    """Dialog for configuring one reference series."""
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle(_tr("Reference series configuration"))
@@ -146,7 +143,6 @@ class RefSeriesDialog(QDialog):
 
         main_layout = QVBoxLayout(self)
 
-        # Table + Y-col
         top_form = QFormLayout()
         top_form.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
 
@@ -159,7 +155,6 @@ class RefSeriesDialog(QDialog):
         top_form.addRow(_tr("Y-column:"), self.ycol_combo)
         main_layout.addLayout(top_form)
 
-        # Filters
         main_layout.addWidget(QLabel(_tr("Filters:")))
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -177,7 +172,6 @@ class RefSeriesDialog(QDialog):
         add_filter_btn.clicked.connect(self._add_filter_row)
         main_layout.addWidget(add_filter_btn)
 
-        # Resample
         resample_form = QFormLayout()
         resample_hl = QHBoxLayout()
         resample_hl.setContentsMargins(0, 0, 0, 0)
@@ -193,11 +187,9 @@ class RefSeriesDialog(QDialog):
         resample_form.addRow(_tr("Resample:"), resample_hl)
         main_layout.addLayout(resample_form)
 
-        # Interpolate
         self.interpolate_cb = QCheckBox(_tr("Interpolate after resample"))
         main_layout.addWidget(self.interpolate_cb)
 
-        # Normalize
         norm_form = QFormLayout()
         norm_hl = QHBoxLayout()
         norm_hl.setContentsMargins(0, 0, 0, 0)
@@ -216,7 +208,6 @@ class RefSeriesDialog(QDialog):
         norm_form.addRow(_tr("Normalize:"), norm_hl)
         main_layout.addLayout(norm_form)
 
-        # Scale, Style, Label
         bottom_form = QFormLayout()
 
         self.scale_spin = QDoubleSpinBox()
@@ -248,8 +239,10 @@ class RefSeriesDialog(QDialog):
         self.table_combo.blockSignals(True)
         self.table_combo.clear()
         try:
+            excluded = set(nonplot_tables(as_tuple=True))
             for t in get_tables():
-                self.table_combo.addItem(t)
+                if t not in excluded and not t.startswith("zz_"):
+                    self.table_combo.addItem(t)
         except Exception:
             log.debug("Failed to load table list")
         self.table_combo.blockSignals(False)

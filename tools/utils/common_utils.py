@@ -37,20 +37,50 @@ from matplotlib.dates import num2date
 import qgis.utils
 from qgis.core import Qgis, QgsLogger
 
+from qgis.PyQt import QtWidgets  # noqa: F401
 from midvatten.tools.utils.dialog_utils import (
+    Askuser,  # noqa: F401
+    HtmlDialog,  # noqa: F401
     NotFoundQuestion,
+    ask_for_export_crs,  # noqa: F401
+    ask_user_about_stopping,  # noqa: F401
 )
 from midvatten.tools.utils.exceptions import UsageError, UserInterruptError
+from midvatten.tools.utils.file_utils import (
+    ask_for_delimiter,  # noqa: F401
+    get_delimiter,  # noqa: F401
+    get_delimiter_from_file_rows,  # noqa: F401
+    get_full_filename,  # noqa: F401
+    tempinput,  # noqa: F401
+    write_printlist_to_file,  # noqa: F401
+)
 from midvatten.tools.utils.layer_utils import (
+    find_layer,  # noqa: F401
     get_active_layer,
+    get_qgis_vector_layers,  # noqa: F401
+    get_selected_features_as_tuple,  # noqa: F401
+    get_selected_object_names,  # noqa: F401
+    selection_check,  # noqa: F401
+    strat_selection_check,  # noqa: F401
+    verify_layer_selection,  # noqa: F401
 )
 from midvatten.tools.utils.message_utils import (
     MessagebarAndLog,
+    pop_up_info,  # noqa: F401
+    show_message_log,  # noqa: F401
+    sql_failed_msg,  # noqa: F401
 )
 from midvatten.tools.utils.string_utils import (
     anything_to_string_representation,
+    isdate,  # noqa: F401
+    isfloat,  # noqa: F401
+    isinteger,  # noqa: F401
+    lists_to_string,  # noqa: F401
+    lstrip,  # noqa: F401
     returnunicode,
+    rstrip,  # noqa: F401
     tr,
+    unicode_2_utf8,  # noqa: F401
 )
 from cycler import Cycler
 from itertools import cycle

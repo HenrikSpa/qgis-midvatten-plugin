@@ -93,24 +93,44 @@ def replace_matplotlib_backends_backend_qt5agg_NavigationToolbar2QT_functions():
             setattr(NavigationToolbar, old_func, apply_func(new_name))
 
 
-def add_to_rc_defaultParams():
-    """
-    Adds parameters to rcParams
+def _find_rcsetup_attr(name: str):
+    """Return a validator from rcsetup, trying public then private name (names vary by matplotlib version)."""
+    return getattr(rcsetup, name, None) or getattr(rcsetup, f"_{name}", None)
 
-    :return:
-    """
+
+def add_to_rc_defaultParams():
+    """Adds custom Midvatten parameters to matplotlib's rcParams system."""
+    validate_cycler = _find_rcsetup_attr("validate_cycler") or (lambda x: x)
+    validate_int = _find_rcsetup_attr("validate_int") or int
+
     params_to_add = {
-        "axes.midv_line_cycle": [defs.midv_line_cycle(), rcsetup.validate_cycler],
-        "axes.midv_marker_cycle": [defs.midv_marker_cycle(), rcsetup.validate_cycler],
-        "legend.midv_ncol": [1, rcsetup.validate_int],
+        "axes.midv_line_cycle": [defs.midv_line_cycle(), validate_cycler],
+        "axes.midv_marker_cycle": [defs.midv_marker_cycle(), validate_cycler],
+        "legend.midv_ncol": [1, validate_int],
     }
-    rcsetup.defaultParams.update(params_to_add)
-    mpl.RcParams.validate.update(
-        {k: converter for k, (default, converter) in params_to_add.items()}
-    )
-    mpl.rcParamsDefault.update(
-        {k: default for k, (default, converter) in params_to_add.items()}
-    )
+
+    # Register validators first — required before setting values in any RcParams instance.
+    if hasattr(mpl.RcParams, "validate"):
+        mpl.RcParams.validate.update(
+            {k: validator for k, (_, validator) in params_to_add.items()}
+        )
+
+    # Update rcsetup.defaultParams if it exists (internal; used for documentation/listing).
+    default_params = getattr(rcsetup, "defaultParams", None)
+    if default_params is not None:
+        try:
+            default_params.update(params_to_add)
+        except Exception:
+            pass
+
+    # Inject defaults so the custom keys survive mpl.rcdefaults().
+    for key, (default, _) in params_to_add.items():
+        try:
+            mpl.rcParamsDefault[key] = default
+        except Exception:
+            # Bypass RcParams validation as last resort.
+            dict.__setitem__(mpl.rcParamsDefault, key, default)
+
     mpl.rcdefaults()
 
 

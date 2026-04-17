@@ -1049,6 +1049,27 @@ class PlotTemplates:
             return as_dict
 
 
+def _sanitize_mplstyle_content(content: str) -> tuple[str, list[str]]:
+    """Return (cleaned_content, skipped_keys) after dropping keys unknown to this matplotlib."""
+    lines = []
+    skipped: list[str] = []
+    for line in content.splitlines(keepends=True):
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            lines.append(line)
+            continue
+        if ":" not in stripped:
+            lines.append(line)
+            continue
+        key, _, _ = stripped.partition(":")
+        key = key.strip()
+        if key in mpl.rcParams:
+            lines.append(line)
+        else:
+            skipped.append(key)
+    return "".join(lines), skipped
+
+
 class MatplotlibStyles:
     def __init__(
         self,
@@ -1154,8 +1175,26 @@ class MatplotlibStyles:
 
     def save_style_to_stylelib(self, stylestring_stylename):
         filename = self.filename_from_style(stylestring_stylename[1])
+        content, skipped = _sanitize_mplstyle_content(stylestring_stylename[0])
+        if skipped:
+            MessagebarAndLog.warning(
+                bar_msg=returnunicode(
+                    QCoreApplication.translate(
+                        "MatplotlibStyles",
+                        "Style '%s': removed %d rcParams key(s) not supported by this matplotlib version (see log).",
+                    )
+                )
+                % (stylestring_stylename[1], len(skipped)),
+                log_msg=returnunicode(
+                    QCoreApplication.translate(
+                        "MatplotlibStyles",
+                        "Style '%s': removed unsupported rcParams keys: %s",
+                    )
+                )
+                % (stylestring_stylename[1], ", ".join(skipped)),
+            )
         with open(filename, "w", encoding="utf-8") as of:
-            of.write(stylestring_stylename[0])
+            of.write(content)
         mpl.style.reload_library()
 
     def get_selected_style(self):
@@ -1188,6 +1227,39 @@ class MatplotlibStyles:
                 with plt.style.context(_style):
                     pass
             except Exception as e:
+                # Before falling back, try to auto-fix the style file by removing unknown keys.
+                style_file = self.filename_from_style(_style)
+                if os.path.isfile(style_file):
+                    try:
+                        with open(style_file, encoding="utf-8") as rf:
+                            raw = rf.read()
+                        content, skipped = _sanitize_mplstyle_content(raw)
+                        if skipped:
+                            with open(style_file, "w", encoding="utf-8") as wf:
+                                wf.write(content)
+                            mpl.style.reload_library()
+                            with plt.style.context(_style):
+                                pass
+                            MessagebarAndLog.warning(
+                                bar_msg=returnunicode(
+                                    QCoreApplication.translate(
+                                        "MatplotlibStyles",
+                                        "Style '%s': auto-removed %d unsupported rcParams key(s) (see log).",
+                                    )
+                                )
+                                % (_style, len(skipped)),
+                                log_msg=returnunicode(
+                                    QCoreApplication.translate(
+                                        "MatplotlibStyles",
+                                        "Style '%s': auto-removed unsupported rcParams keys: %s",
+                                    )
+                                )
+                                % (_style, ", ".join(skipped)),
+                            )
+                            use_style = _style
+                            break
+                    except Exception:
+                        pass
                 MessagebarAndLog.warning(
                     bar_msg=returnunicode(
                         QCoreApplication.translate(
@@ -1241,7 +1313,28 @@ class MatplotlibStyles:
                     )
                     if not answer:
                         return
-                shutil.copy2(filename, new_fullname)
+                with open(filename, encoding="utf-8", errors="replace") as rf:
+                    raw = rf.read()
+                content, skipped = _sanitize_mplstyle_content(raw)
+                with open(new_fullname, "w", encoding="utf-8") as wf:
+                    wf.write(content)
+                if skipped:
+                    MessagebarAndLog.warning(
+                        bar_msg=returnunicode(
+                            QCoreApplication.translate(
+                                "MatplotlibStyles",
+                                "Imported style '%s': removed %d rcParams key(s) not supported by this matplotlib version (see log).",
+                            )
+                        )
+                        % (basename, len(skipped)),
+                        log_msg=returnunicode(
+                            QCoreApplication.translate(
+                                "MatplotlibStyles",
+                                "Imported style '%s': removed unsupported rcParams keys: %s",
+                            )
+                        )
+                        % (basename, ", ".join(skipped)),
+                    )
             self.update_style_list()
 
     @general_exception_handler

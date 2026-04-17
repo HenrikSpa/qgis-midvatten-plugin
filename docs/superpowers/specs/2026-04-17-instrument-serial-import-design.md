@@ -10,7 +10,7 @@ Extract the instrument serial number from each logger file during import and sto
 
 ## Scope
 
-Three parser classes in `tools/import_logger.py`:
+Four parse methods across three parser classes in `tools/import_logger.py`:
 
 - `DiverOfficeParser.parse()` — `.mon` files and structured CSV
 - `DiverOfficeParser.parse_old()` — legacy flat CSV files

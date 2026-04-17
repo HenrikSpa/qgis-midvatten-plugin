@@ -253,6 +253,11 @@ class DiverOfficeParser:
     """
 
     @staticmethod
+    def _extract_diver_serial(serial_raw: str) -> str | None:
+        _tail = serial_raw.split("-")[-1].split()
+        return _tail[0] if _tail else None
+
+    @staticmethod
     def parse(
         path: str,
         charset: str,
@@ -320,8 +325,7 @@ class DiverOfficeParser:
         serial_raw = metadata.get("logger settings", {}).get("serial number", "")
         if not serial_raw:
             serial_raw = metadata.get("series settings", {}).get("serial number", "")
-        _tail = serial_raw.split("-")[-1].split()
-        serial_number = _tail[0] if _tail else None
+        serial_number = DiverOfficeParser._extract_diver_serial(serial_raw)
 
         # Resolve location
         location = metadata.get("logger settings", {}).get("location", "")
@@ -500,14 +504,10 @@ class DiverOfficeParser:
         skip_rows_without_water_level: bool = False,
         begindate: str | None = None,
         enddate: str | None = None,
-    ) -> (
-        tuple[list[list[str]], str, str, str]
-        | str
-        | tuple[list[list[str]], str, str, None]
-    ):
+    ) -> tuple[list, str, str | None, str | None, str | None]:
         """Parse a legacy Diver-Office CSV file.
 
-        Returns ``(filedata, filename, location, utc_offset)``.
+        Returns ``(filedata, filename, location, utc_offset, serial_number)``.
 
         Copied verbatim from DiverofficeImport.parse_diveroffice_file_old().
         """
@@ -551,8 +551,9 @@ class DiverOfficeParser:
                 if row.lower().startswith("serial number"):
                     try:
                         serial_raw = row.split("=")[1].strip()
-                        _tail = serial_raw.split("-")[-1].split()
-                        serial_number = _tail[0] if _tail else None
+                        serial_number = DiverOfficeParser._extract_diver_serial(
+                            serial_raw
+                        )
                     except IndexError:
                         pass
                     continue
@@ -726,6 +727,18 @@ class LeveloggerParser:
     """Parser for Levelogger data wizard CSV files."""
 
     @staticmethod
+    def _col1_value(col1: list[str], key: str) -> str | None:
+        try:
+            idx = col1.index(key)
+            return col1[idx + 1].strip() or None
+        except ValueError:
+            pass
+        for cell in col1:
+            if cell.startswith(key):
+                return cell[len(key) :].strip() or None
+        return None
+
+    @staticmethod
     def parse(
         path: str,
         charset: str,
@@ -790,31 +803,8 @@ class LeveloggerParser:
 
         col1 = [row[0] for row in rows]
 
-        # Original parser: location is on the line AFTER "Location:"
-        try:
-            location_idx = col1.index("Location:")
-        except ValueError:
-            location_idx = None
-
-        if location_idx is not None:
-            location = col1[location_idx + 1]
-        else:
-            # Fallback: handle "Location: value" on the same line
-            for cell in col1:
-                if cell.startswith("Location:"):
-                    location = cell[len("Location:") :].strip()
-                    break
-
-        try:
-            sn_idx = col1.index("Serial_number:")
-            serial_number = col1[sn_idx + 1].strip() or None
-        except ValueError:
-            serial_number = None
-            for cell in col1:
-                if cell.startswith("Serial_number:"):
-                    v = cell[len("Serial_number:") :].strip()
-                    serial_number = v or None
-                    break
+        location = LeveloggerParser._col1_value(col1, "Location:")
+        serial_number = LeveloggerParser._col1_value(col1, "Serial_number:")
 
         try:
             level_unit_idx = col1.index("LEVEL")
@@ -997,8 +987,7 @@ class HoboParser:
                 )
                 % filename
             )
-            return [], filename, location, None, serial_number  # 5-tuple fix
-
+            return [], filename, location, None, serial_number
         date_colnr = [idx for idx, col in enumerate(rows[1]) if "Date Time" in col]
         if not date_colnr:
             raise Exception(
@@ -1051,7 +1040,7 @@ class HoboParser:
                 )
                 % filename
             )
-            return [], filename, location, None, serial_number  # 5-tuple fix
+            return [], filename, location, None, serial_number
         else:
             dt = first_data_row[date_colnr]
             date_format = date_utils.find_date_format(dt, suppress_error_msg=True)
@@ -1066,8 +1055,7 @@ class HoboParser:
                         )
                         % filename
                     )
-                    return [], filename, location, None, serial_number  # 5-tuple fix
-
+                    return [], filename, location, None, serial_number
         for row in rows[data_header_idx + 1 :]:
             dt = fix_date(row[date_colnr], filename, tz_converter)
             if begindate is not None and dt < begindate:
@@ -1093,7 +1081,7 @@ class HoboParser:
 
         filedata = [row for row in filedata if any(row[1:])]
 
-        return filedata, filename, location, None, serial_number  # 5-tuple fix
+        return filedata, filename, location, None, serial_number
 
 
 # ── Dialog class ──────────────────────────────────────────────────────────────
@@ -1677,7 +1665,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                     dbconn.execute(
                         f"INSERT INTO w_logger_series "
                         f"(obsid, source, description, instrument) VALUES ({ph}, {ph}, {ph}, {ph})",
-                        (obsid, source_for_series, description, serial_number or None),
+                        (obsid, source_for_series, description, serial_number),
                     )
                     series_id = db_utils.get_last_insert_id(dbconn)
                     file_data[0].append("series_id")

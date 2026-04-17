@@ -28,6 +28,7 @@ from midvatten.tools.utils.string_utils import (
     anything_to_string_representation,
 )
 from midvatten.tools.utils.message_utils import MessagebarAndLog
+from midvatten.tools.utils.layer_specs import LayerSpec
 from midvatten.tools.utils.db_utils import (
     get_sql_result_as_dict,
     sql_load_fr_db,
@@ -443,6 +444,41 @@ def get_subset_of_tables_fr_db(category="obs_points"):
         return ["zz_interlab4_obsid_assignment"]
     else:
         return []
+
+
+# The loader does `insertLayer(0, layer)`, so each subsequent layer sits
+# ABOVE the previous one in the tree. Non-spatial first, spatial last.
+OBS_DB_LAYERS: list[LayerSpec] = [
+    LayerSpec("screen"),
+    LayerSpec("stratigraphy"),
+    LayerSpec("w_levels"),
+    LayerSpec("w_flow"),
+    LayerSpec("w_qual_lab"),
+    LayerSpec("w_qual_field"),
+    LayerSpec("comments"),
+    LayerSpec("obs_lines", geometry_column="geometry"),
+    LayerSpec("obs_points", geometry_column="geometry"),
+    LayerSpec("obs_p_w_qual_field", geometry_column="geometry"),
+    LayerSpec("obs_p_w_qual_lab", geometry_column="geometry"),
+    LayerSpec("obs_p_w_lvl", geometry_column="geometry"),
+    LayerSpec(
+        "obs_p_w_lvl_logger", geometry_column="geometry", initially_visible=False
+    ),
+    LayerSpec("obs_p_w_strat", geometry_column="geometry"),
+    LayerSpec("w_lvls_last_geom", geometry_column="geometry", initially_visible=False),
+]
+
+DATA_TABLES_LAYERS: list[LayerSpec] = [
+    LayerSpec("profile_images"),
+    LayerSpec("meteo"),
+    LayerSpec("seismic_data"),
+    LayerSpec("tem_data"),
+    LayerSpec("vlf_data"),
+    LayerSpec("w_logger_series"),
+    LayerSpec("w_levels_logger"),
+    LayerSpec("w_qual_logger"),
+    LayerSpec("spatial_history"),
+]
 
 
 def hydrocolors():

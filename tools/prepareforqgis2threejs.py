@@ -30,6 +30,8 @@ from qgis.core import QgsProject
 
 from midvatten.definitions import midvatten_defs as defs
 from midvatten.tools.utils import common_utils, db_utils, midvatten_utils
+from midvatten.tools.utils.layer_build import build_layer
+from midvatten.tools.utils.layer_specs import LayerSpec
 from midvatten.tools.utils.string_utils import returnunicode as ru, lstrip
 
 log = logging.getLogger(__name__)
@@ -81,13 +83,18 @@ class PrepareForQgis2Threejs:
 
         colors = []
 
-        layer_list = []
-        midvatten_utils.add_layers_to_list(
-            layer_list,
-            list_with_all_strat_layer,
-            geometrycolumn="geometry",
-            dbconnection=self.dbconnection,
+        existing_tables = db_utils.get_tables(
+            self.dbconnection, skip_views=False
         )
+        layer_list = []
+        for tablename in list_with_all_strat_layer:
+            layer = build_layer(
+                LayerSpec(tablename, geometry_column="geometry"),
+                self.dbconnection,
+                existing_tables,
+            )
+            if layer is not None:
+                layer_list.append(layer)
 
         for strat_layer_view in list_with_all_strat_layer:
             try:

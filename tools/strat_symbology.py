@@ -39,8 +39,9 @@ from qgis.core import (
 from midvatten.definitions import midvatten_defs as defs
 from midvatten.tools.utils import common_utils, db_utils, midvatten_utils
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
+from midvatten.tools.utils.layer_build import build_layer
+from midvatten.tools.utils.layer_specs import LayerSpec
 from midvatten.tools.utils.string_utils import returnunicode as ru
-from midvatten.tools.utils.midvatten_utils import add_layers_to_list
 
 log = logging.getLogger(__name__)
 
@@ -353,18 +354,29 @@ def strat_symbology(
 
 
 def create_layers(layers_names_tables):
-    layers = []
-    add_layers_to_list(
-        layers,
-        list(layers_names_tables.values()),
-        geometrycolumn="geometry",
-        layernames=list(layers_names_tables.keys()),
-    )
-    layers = {
-        layer_name: layers[idx]
-        for idx, layer_name in enumerate(layers_names_tables.keys())
-    }
-    return layers
+    """Build a {display_name: QgsVectorLayer} dict for the given
+    {display_name: tablename} mapping. Skips any table that cannot be
+    resolved to a valid layer.
+    """
+    dbconnection = db_utils.DbConnectionManager()
+    try:
+        existing_tables = db_utils.get_tables(dbconnection, skip_views=False)
+        result = {}
+        for display_name, tablename in layers_names_tables.items():
+            layer = build_layer(
+                LayerSpec(
+                    tablename,
+                    display_name=display_name,
+                    geometry_column="geometry",
+                ),
+                dbconnection,
+                existing_tables,
+            )
+            if layer is not None:
+                result[display_name] = layer
+    finally:
+        dbconnection.closedb()
+    return result
 
 
 def add_group(parent_group, name, checked=False):

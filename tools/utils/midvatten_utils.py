@@ -353,75 +353,19 @@ def create_layer(
     # For QgsVectorLayer, dbtype has to be postgres instead of postgis
     dbtype = db_utils.get_dbtype(dbtype)
 
+    if dbtype == "postgres":
+        # Don't trust pg_class.reltuples for feature count — it's 0/-1 before
+        # ANALYZE runs, which triggers the "only 100 rows in attribute table"
+        # bug by sizing the QgsVectorLayerCache as `featureCount() + 100`.
+        uri.setParam("estimatedmetadata", "false")
+
     uri.setDataSource(schema, tablename, geometrycolumn, sql, keycolumn)
     _name = tablename if layername is None else layername
     layer = QgsVectorLayer(uri.uri(), _name, dbtype)
-    if tablename == "w_lvls_last_geom":
-        fields = layer.fields()
 
     if dbconnection_created:
         dbconnection.closedb()
     return layer
-
-
-def add_layers_to_list(
-    resultlist,
-    tablenames,
-    geometrycolumn=None,
-    dbconnection=None,
-    layernames=None,
-    key_columns=None,
-):
-    if not isinstance(dbconnection, db_utils.DbConnectionManager):
-        dbconnection = db_utils.DbConnectionManager()
-        dbconnection_created = True
-    else:
-        dbconnection_created = False
-
-    if key_columns is None:
-        key_columns = [None, "obsid", "rowid"]
-
-    existing_tables = db_utils.get_tables(dbconnection, skip_views=False)
-
-    for idx, tablename in enumerate(tablenames):  # first load all non-spatial layers
-        orig_tablename = tablename
-
-        if tablename not in existing_tables:
-            log.debug(f"Tablename {tablename} not found among {existing_tables}")
-            continue
-
-        layername = layernames[idx] if layernames is not None else None
-
-        if (
-            tablename in ("obs_points", "obs_lines")
-            and f"view_{tablename}" in existing_tables
-        ):
-            # The bug that required view_obs_points (https://github.com/qgis/QGIS/issues/28453)
-            # is fixed in 3.16 (and probably much sooner. So view_obs_points is no longer needed above that version.
-            qgisversion = Qgis.QGIS_VERSION
-            is_old = compare_verson_lists(
-                version_comparison_list(qgisversion), version_comparison_list("3.16")
-            )
-            if is_old:
-                tablename = f"view_{tablename}"
-
-        for key_column in key_columns:
-            layer = create_layer(
-                tablename,
-                geometrycolumn=geometrycolumn,
-                dbconnection=dbconnection,
-                layername=layername,
-                keycolumn=key_column,
-            )
-            if layer.isValid():
-                break
-        else:
-            MessagebarAndLog.critical(bar_msg=layer.name() + " is not valid layer")
-            continue
-
-        if tablename in ("view_obs_points", "view_obs_lines"):
-            layer.setName(orig_tablename)
-        resultlist.append(layer)
 
     if dbconnection_created:
         dbconnection.closedb()

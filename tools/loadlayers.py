@@ -1,307 +1,104 @@
-"""
-/***************************************************************************
- This is the part of the Midvatten plugin that (removes) and loads default qgis layers for the selected database.
-                              -------------------
-        begin                : 2011-10-18
-        copyright            : (C) 2011 by joskal
-        email                : groundwatergis [at] gmail.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
-"""
+"""Load the default Midvatten layers into the QGIS layer tree."""
 
 import os
 import traceback
 
-import qgis.utils
-from qgis.core import QgsDataSourceUri, QgsProject, QgsRelation, QgsVectorLayer
+from qgis.core import QgsLayerTreeGroup, QgsProject, QgsRelation
 from qgis.PyQt.QtCore import QCoreApplication
 
-from midvatten.definitions import midvatten_defs as defs
-from midvatten.tools.utils import common_utils, db_utils, midvatten_utils
-from midvatten.tools.utils.midvatten_utils import add_layers_to_list
+from midvatten.tools.utils import common_utils, db_utils
+from midvatten.tools.utils.layer_build import build_layer, prime_feature_count
+from midvatten.tools.utils.layer_specs import GROUPS, GroupSpec, LayerSpec
+from midvatten.tools.utils.midvatten_utils import getcurrentlocale
 
 
 class LoadLayers:
     def __init__(self, iface, settingsdict=None, group_name="Midvatten_OBS_DB"):
-        if settingsdict is None:
-            settingsdict = {}
-        self.settingsdict = settingsdict
-        self.group_name = group_name
-        self.default_layers = defs.get_subset_of_tables_fr_db(category="default_layers")
-        self.default_nonspatlayers = defs.get_subset_of_tables_fr_db(
-            category="default_nonspatlayers"
-        )
+        if group_name not in GROUPS:
+            raise ValueError(f"Unknown Midvatten layer group: {group_name!r}")
         self.iface = iface
+        self.settingsdict = settingsdict or {}
+        self.group: GroupSpec = GROUPS[group_name]
         self.root = QgsProject.instance().layerTreeRoot()
-        self.remove_layers()
-        self.add_layers()
+        self._remove_existing_group()
+        self._load()
 
-    def add_layers(self):
-        """
-        #if I ever choose to store layer_styles in the database, then this is the way to go:
-        self.selection_layer_in_db_or_not()
-        """
-        self.add_layers_new_method()
+    def _remove_existing_group(self) -> None:
+        existing = self.root.findGroup(self.group.name)
+        if existing is not None:
+            self.root.removeChildNode(existing)
 
-    def add_layers_new_method(self):
-        if self.group_name == "Midvatten_OBS_DB":
-            position_index = 0
-        else:
-            position_index = 1
-        my_group = qgis.core.QgsLayerTreeGroup(name=self.group_name, checked=True)
-        self.root.insertChildNode(position_index, my_group)
+    def _load(self) -> None:
         dbconnection = db_utils.DbConnectionManager()
+        try:
+            existing_tables = db_utils.get_tables(dbconnection, skip_views=False)
+            layer_group = QgsLayerTreeGroup(name=self.group.name, checked=True)
+            self.root.insertChildNode(self.group.position_index, layer_group)
 
-        canvas = self.iface.mapCanvas()
-        layer_list = []
-        if self.group_name == "Midvatten_OBS_DB":
-            add_layers_to_list(
-                layer_list, self.default_nonspatlayers, dbconnection=dbconnection
-            )
-            add_layers_to_list(
-                layer_list,
-                self.default_layers,
-                geometrycolumn="geometry",
-                dbconnection=dbconnection,
-            )
+            layers_by_name: dict = {}
+            for spec in self.group.resolve_layers(dbconnection):
+                layer = build_layer(spec, dbconnection, existing_tables)
+                if layer is None:
+                    continue
+                QgsProject.instance().addMapLayers([layer], False)
+                tree_layer = layer_group.insertLayer(0, layer)
+                prime_feature_count(layer)
+                self._apply_style(layer, spec)
+                if not spec.initially_visible and tree_layer is not None:
+                    tree_layer.setItemVisibilityCheckedRecursive(False)
+                layers_by_name[layer.name()] = layer
 
-        elif (
-            self.group_name == "Midvatten_data_domains"
-        ):  # if self.group_name == 'Midvatten_data_domains':
-            tables_columns = db_utils.tables_columns()
-            d_domain_tables = [
-                x for x in list(tables_columns.keys()) if x.startswith("zz_")
-            ]
-            add_layers_to_list(layer_list, d_domain_tables, dbconnection=dbconnection)
+            self._register_relations(layers_by_name, dbconnection)
+            obs_points = layers_by_name.get("obs_points")
+            if obs_points is not None:
+                self.iface.mapCanvas().setExtent(obs_points.extent())
+        finally:
+            dbconnection.closedb()
 
-        elif self.group_name == "Midvatten_data_tables":
-            data_tables = defs.get_subset_of_tables_fr_db("data_tables")
-            data_tables.extend(defs.get_subset_of_tables_fr_db("extra_data_tables"))
-            add_layers_to_list(layer_list, data_tables, dbconnection=dbconnection)
+        self.iface.mapCanvas().refresh()
 
-        # now loop over all the layers and set styles etc
-        for layer in layer_list:
-            # TODO: Made this a comment, but there might be some hidden feature thats still needed!
-            # map_canvas_layer_list.append(QgsMapCanvasLayer(layer))
+    def _apply_style(self, layer, spec: LayerSpec) -> None:
+        definitions = os.path.join(os.path.dirname(__file__), "..", "definitions")
+        style_sv = os.path.join(definitions, f"{spec.tablename}_sv.qml")
+        style_default = os.path.join(definitions, f"{spec.tablename}.qml")
+        locale_is_swedish = getcurrentlocale()[0] == "sv_SE"
+        candidates = []
+        if locale_is_swedish and os.path.isfile(style_sv):
+            candidates.append(style_sv)
+        candidates.append(style_default)
+        for path in candidates:
+            try:
+                layer.loadNamedStyle(path)
+                return
+            except Exception:
+                common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
 
-            QgsProject.instance().addMapLayers([layer], False)
-            my_group.insertLayer(0, layer)
-            # my_group.addLayer(layer)
+    def _register_relations(
+        self, layers_by_name: dict, dbconnection: db_utils.DbConnectionManager
+    ) -> None:
+        if self.group.name != "Midvatten_OBS_DB":
+            return
+        if not db_utils.verify_table_exists("screen", dbconnection=dbconnection):
+            return
+        obs_points_layer = layers_by_name.get("obs_points")
+        screen_layer = layers_by_name.get("screen")
+        if obs_points_layer is None or screen_layer is None:
+            return
 
-            # TODO: Check if this isn't needed.
-            # if self.group_name == 'Midvatten_OBS_DB':
-            #    layer.setEditorLayout(1) #perhaps this is unnecessary since it gets set from the loaded qml below?
-
-            # now try to load the style file
-            stylefile_sv = os.path.join(
-                os.sep,
-                os.path.dirname(__file__),
-                "..",
-                "definitions",
-                layer.name() + "_sv.qml",
-            )
-            stylefile = os.path.join(
-                os.sep,
-                os.path.dirname(__file__),
-                "..",
-                "definitions",
-                layer.name() + ".qml",
-            )
-            if midvatten_utils.getcurrentlocale()[0] == "sv_SE" and os.path.isfile(
-                stylefile_sv
-            ):  # swedish forms are loaded only if locale settings indicate sweden
-                try:
-                    layer.loadNamedStyle(stylefile_sv)
-                except Exception:
-                    try:
-                        layer.loadNamedStyle(stylefile)
-                    except Exception:
-                        common_utils.MessagebarAndLog.info(
-                            log_msg=traceback.format_exc()
-                        )
-            else:
-                try:
-                    layer.loadNamedStyle(stylefile)
-                except Exception:
-                    common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
-
-            if layer.name() == "obs_points":  # zoom to obs_points extent
-                obsp_lyr = layer
-                canvas.setExtent(layer.extent())
-            elif layer.name() in ("w_lvls_last_geom", "obs_p_w_lvl_logger"):
-                my_group.findLayer(layer).setItemVisibilityCheckedRecursive(False)
-
-        # Register obs_points ↔ screen relation (only for OBS_DB group with the
-        # screen table present — guarded for older DBs that lack the table).
-        if self.group_name == "Midvatten_OBS_DB" and db_utils.verify_table_exists(
-            "screen", dbconnection=dbconnection
-        ):
-            obs_points_layer = next(
-                (la for la in layer_list if la.name() == "obs_points"), None
-            )
-            screen_layer = next(
-                (la for la in layer_list if la.name() == "screen"), None
-            )
-            if obs_points_layer is not None and screen_layer is not None:
-                rel = QgsRelation()
-                rel.setId("obs_points_screen")
-                rel.setName(QCoreApplication.translate("LoadLayers", "Screens"))
-                rel.setReferencedLayer(obs_points_layer.id())
-                rel.setReferencingLayer(screen_layer.id())
-                rel.addFieldPair("obsid", "obsid")
-                rel.setStrength(QgsRelation.Association)
-                if rel.isValid():
-                    QgsProject.instance().relationManager().addRelation(rel)
-                else:
-                    common_utils.MessagebarAndLog.warning(
-                        bar_msg=QCoreApplication.translate(
-                            "LoadLayers",
-                            "Failed to create obs_points_screen relation",
-                        ),
-                        log_msg=str(rel.validationError()),
-                    )
-
-        # finally refresh canvas
-        dbconnection.closedb()
-        canvas.refresh()
-
-    def remove_layers(self):
-        remove_group = self.root.findGroup(self.group_name)
-        self.root.removeChildNode(remove_group)
-
-    def add_layers_old_method(self):
-        """
-        this method is depreceated and should no longer be used
-        """
-        try:  # newstyle
-            my_group = self.legend.addGroup("Midvatten_OBS_DB", 1, -1)
-        except Exception:  # olddstyle
-            my_group = self.legend.addGroup("Midvatten_OBS_DB")
-        uri = QgsDataSourceUri()
-        uri.setDatabase(
-            self.settingsdict["database"]
-        )  # MacOSX fix1 #earlier sent byte string, now intending to send unicode string
-        for tablename in (
-            self.default_nonspatlayers
-        ):  # first the non-spatial tables, THEY DO NOT ALL HAVE CUSTOM UI FORMS
-            firststring = (
-                'dbname="'
-                + self.settingsdict["database"]
-                + '" table="'
-                + tablename
-                + '"'
-            )  # MacOSX fix1  #earlier sent byte string, now unicode
-            layer = QgsVectorLayer(
-                firststring, self.dbtype
-            )  # Adding the layer as 'spatialite' and not ogr vector layer is preferred
-            if not layer.isValid():
-                common_utils.MessagebarAndLog.critical(
-                    bar_msg="Error, Failed to load layer %s!" % tablename
-                )
-            else:
-                QgsProject.instance().addMapLayers([layer])
-                group_index = self.legend.groups().index("Midvatten_OBS_DB")
-                self.legend.moveLayer(self.legend.layers()[0], group_index)
-                filename = tablename + ".qml"  #  load styles
-                stylefile = os.path.join(
-                    os.sep, os.path.dirname(__file__), "..", "definitions", filename
-                )
-                layer.loadNamedStyle(stylefile)
-                if tablename in ("w_levels", "w_flow", "stratigraphy"):
-                    if (
-                        midvatten_utils.getcurrentlocale()[0] == "sv_SE"
-                    ):  # swedish forms are loaded only if locale settings indicate sweden
-                        filename = tablename + ".ui"
-                    else:
-                        filename = tablename + "_en.ui"
-                    try:  # python bindings for setEditorLayout were introduced in qgis-master commit 9183adce9f257a097fc54e5a8a700e4d494b2962 november 2012
-                        layer.setEditorLayout(2)
-                    except Exception:
-                        common_utils.MessagebarAndLog.info(
-                            log_msg=traceback.format_exc()
-                        )
-                    uifile = os.path.join(
-                        os.sep, os.path.dirname(__file__), "..", "ui", filename
-                    )
-                    layer.setEditForm(uifile)
-                    formlogic = "form_logics." + tablename + "_form_open"
-                    layer.setEditFormInit(formlogic)
-        for (
-            tablename
-        ) in self.default_layers:  # then the spatial ones, NOT ALL HAVE CUSTOM UI FORMS
-            uri.setDataSource("", tablename, "Geometry")
-            layer = QgsVectorLayer(
-                uri.uri(), self.dbtype
-            )  # Adding the layer as 'spatialite' instead of ogr vector layer is preferred
-            if not layer.isValid():
-                common_utils.MessagebarAndLog.critical(
-                    bar_msg="Error, Failed to load layer %s!" % tablename
-                )
-            else:
-                filename = tablename + ".qml"
-                stylefile = os.path.join(
-                    os.sep, os.path.dirname(__file__), "..", "definitions", filename
-                )
-                layer.loadNamedStyle(stylefile)
-                if tablename in defs.get_subset_of_tables_fr_db(
-                    category="default_layers_w_ui"
-                ):  # =   THE ONES WITH CUSTOM UI FORMS
-                    if (
-                        midvatten_utils.getcurrentlocale()[0] == "sv_SE"
-                    ):  # swedish forms are loaded only if locale settings indicate sweden
-                        filename = tablename + ".ui"
-                    else:
-                        filename = tablename + "_en.ui"
-                    uifile = os.path.join(
-                        os.sep, os.path.dirname(__file__), "..", "ui", filename
-                    )
-                    try:  # python bindings for setEditorLayout were introduced in qgis-master commit 9183adce9f257a097fc54e5a8a700e4d494b2962 november 2012
-                        layer.setEditorLayout(2)
-                    except Exception:
-                        common_utils.MessagebarAndLog.info(
-                            log_msg=traceback.format_exc()
-                        )
-                    layer.setEditForm(uifile)
-                    if tablename in ("obs_points", "obs_lines"):
-                        formlogic = "form_logics." + tablename + "_form_open"
-                        layer.setEditFormInit(formlogic)
-                QgsProject.instance().addMapLayers([layer])
-                group_index = self.legend.groups().index(
-                    "Midvatten_OBS_DB"
-                )  # SIPAPI UPDATE 2.0
-                self.legend.moveLayer(self.legend.layers()[0], group_index)
-                if tablename == "obs_points":  # zoom to obs_points extent
-                    qgis.utils.iface.mapCanvas().setExtent(layer.extent())
-                elif (
-                    tablename == "w_lvls_last_geom"
-                ):  # we do not want w_lvls_last_geom to be visible by default
-                    self.legend.setLayerVisible(layer, False)
-
-    def selection_layer_in_db_or_not(
-        self,
-    ):  # this is not used, it might be if using layer_styles stored in the db
-        sql = r"""select name from sqlite_master where name = 'layer_styles'"""
-        result = db_utils.sql_load_fr_db(sql)[1]
-        if len(result) == 0:  # if it is an old database w/o styles
-            update_db = common_utils.Askuser(
-                "YesNo",
-                """Your database was created with plugin version < 1.1 when layer styles were not stored in the database. You can update this database to the new standard with layer styles (symbols, colors, labels, input forms etc) stored in the database. This will increase plugin stability and multi-user experience but it will also change the layout of all your forms for entering data into the database. Anyway, an update of the database is recommended. Do you want to add these layer styles now?""",
-                "Update database with layer styles?",
-            )
-            if update_db.result == 1:
-                from .create_db import AddLayerStyles
-
-                AddLayerStyles()
-                self.add_layers_new_method()
-            else:
-                self.add_layers_old_method()
+        rel = QgsRelation()
+        rel.setId("obs_points_screen")
+        rel.setName(QCoreApplication.translate("LoadLayers", "Screens"))
+        rel.setReferencedLayer(obs_points_layer.id())
+        rel.setReferencingLayer(screen_layer.id())
+        rel.addFieldPair("obsid", "obsid")
+        rel.setStrength(QgsRelation.Association)
+        if rel.isValid():
+            QgsProject.instance().relationManager().addRelation(rel)
         else:
-            self.add_layers_new_method()
+            common_utils.MessagebarAndLog.warning(
+                bar_msg=QCoreApplication.translate(
+                    "LoadLayers",
+                    "Failed to create obs_points_screen relation",
+                ),
+                log_msg=str(rel.validationError()),
+            )

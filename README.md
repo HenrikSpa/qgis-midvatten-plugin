@@ -22,6 +22,11 @@ The following features are included:
 
 Please visit the [wiki](https://github.com/henrikspa/qgis-midvatten-plugin/wiki) for more information.
 
+For database upgrade instructions (including the `w_logger_series`
+change in DB version 1.10.0) and direct-SQL patterns for working with
+the new schema, see
+[`docs/LOGGER_SERIES_MIGRATION.md`](docs/LOGGER_SERIES_MIGRATION.md).
+
 ## Coding style
 
 This project follows PEP 8 naming conventions:

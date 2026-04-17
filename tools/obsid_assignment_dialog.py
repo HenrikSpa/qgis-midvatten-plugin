@@ -130,6 +130,30 @@ def ask_obsid_rows_as_dicts(ask_obsid_table: list[list]) -> list[dict]:
     return [dict(zip(header, row)) for row in ask_obsid_table[1:]]
 
 
+def fan_out_filled_rows(editor_rows: list[EditorRow]):
+    """Convert dialog state into (filled_map, skipped_set, cache_rows).
+
+    filled_map: {lablittera: obsid}
+    skipped_set: {lablittera}
+    cache_rows: list of (spec_provplats, provplatsnamn, obsid) for
+                 non-override, non-cached, filled rows only.
+    """
+    filled: dict[str, str] = {}
+    skipped: set[str] = set()
+    cache_rows: list[tuple[str, str, str]] = []
+    for row in editor_rows:
+        if row.skipped:
+            skipped.update(row.lablitteras)
+            continue
+        if not row.obsid:
+            continue
+        for lab in row.lablitteras:
+            filled[lab] = row.obsid
+        if not row.is_override and not row.cached:
+            cache_rows.append((row.specifik_provplats, row.provplatsnamn, row.obsid))
+    return filled, skipped, cache_rows
+
+
 def _tr(text: str) -> str:
     return QCoreApplication.translate("Interlab4ObsidDialog", text)
 

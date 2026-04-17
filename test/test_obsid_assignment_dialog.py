@@ -250,3 +250,24 @@ def test_ask_obsid_rows_as_dicts_handles_lowercase_headers():
     assert rows[0]["lablittera"] == "L1"
     assert rows[0]["specifik provplats"] == "Br1"
     assert rows[1]["provtagningsorsak"] == "egentl. Br3"
+
+
+def test_fan_out_filled_rows_into_lablittera_map():
+    from midvatten.tools.obsid_assignment_dialog import (
+        EditorRow,
+        fan_out_filled_rows,
+    )
+
+    rows = [
+        EditorRow("Br1", "Brunn 1", "", ["L1", "L2"], obsid="Br1"),
+        EditorRow("Br2", "Brunn 2", "", ["L3"], skipped=True),
+        EditorRow(
+            "Br3", "Brunn 3", "egentl. Br3", ["L4"], obsid="Br3", is_override=True
+        ),
+        EditorRow("Br4", "Brunn 4", "", ["L5"]),  # unfilled
+    ]
+    filled, skipped, cache_rows = fan_out_filled_rows(rows)
+    assert filled == {"L1": "Br1", "L2": "Br1", "L4": "Br3"}
+    assert skipped == {"L3"}
+    # Override row is not added to cache_rows
+    assert cache_rows == [("Br1", "Brunn 1", "Br1")]

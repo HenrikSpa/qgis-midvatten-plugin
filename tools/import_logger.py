@@ -243,6 +243,19 @@ class CheckboxAndExplanation(VRowEntry):
 
 # ── Parser classes ─────────────────────────────────────────────────────────────
 
+# keyword (space-stripped, lowercase) → output column name
+_DIVEROFFICE_DEFAULT_COL_MAP: dict[str, str] = {
+    "level": "head_cm",
+    "waterhead": "head_cm",
+    "temp": "temp_degc",
+    "cond": "cond_mscm",
+}
+_DIVEROFFICE_BARO_COL_MAP: dict[str, str] = {
+    "pressure": "baro_cmh2o",
+    "baro": "baro_cmh2o",
+    "temp": "temperature",
+}
+
 
 class DiverOfficeParser:
     """Parser for Diver-Office .mon and .csv logger files.
@@ -261,6 +274,8 @@ class DiverOfficeParser:
     def parse(
         path: str,
         charset: str,
+        col_map: dict[str, str] | None = None,
+        output_cols: list[str] | None = None,
         skip_rows_without_water_level: bool = False,
         begindate: str | None = None,
         enddate: str | None = None,
@@ -269,13 +284,14 @@ class DiverOfficeParser:
 
         Returns ``(filedata, filename, location, utc_offset, serial_number)``.
 
-        Based on DiverofficeImport.parse_diveroffice_file() with the following
-        changes:
-        - ``pandas_on`` guard removed (pandas is mandatory).
-        - Metadata key-value separator extended to handle both ``=`` and ``;``.
-        - Additional metadata keys looked up: ``utc offset (hh:mm)`` and
-          ``location`` in the ``channel identification`` section.
+        ``col_map`` maps space-stripped lowercase keywords to output column names.
+        ``output_cols`` fixes the column order in the returned filedata (None-filled
+        when absent); defaults to water-level columns when not supplied.
         """
+        _col_map = col_map if col_map is not None else _DIVEROFFICE_DEFAULT_COL_MAP
+        _output_cols = output_cols if output_cols is not None else [
+            "date_time", "head_cm", "temp_degc", "cond_mscm"
+        ]
         filedata = []
         filename = os.path.basename(path)
         section = None
@@ -362,7 +378,6 @@ class DiverOfficeParser:
             header_row_idx = data_start_row - 1
             if header_row_idx >= 0:
                 header_row = rows[header_row_idx]
-                # Determine the delimiter for this header row
                 if "\t" in header_row:
                     hdr_delim = "\t"
                 elif ";" in header_row:
@@ -372,18 +387,12 @@ class DiverOfficeParser:
                 header_cols = [c.strip() for c in header_row.split(hdr_delim)]
                 for colidx, colname in enumerate(header_cols):
                     if colidx == 0:
-                        continue  # Already mapped to date_time
-                    col_lower = colname.lower()
-                    if (
-                        "level" in col_lower
-                        or "waterhead" in col_lower.replace(" ", "")
-                        or "water head" in col_lower
-                    ):
-                        data_headers[colidx] = "LEVEL"
-                    elif "temp" in col_lower:
-                        data_headers[colidx] = "TEMPERATURE"
-                    elif "cond" in col_lower:
-                        data_headers[colidx] = "CONDUCTIVITY"
+                        continue
+                    col_nospace = colname.lower().replace(" ", "")
+                    for keyword in _col_map:
+                        if keyword in col_nospace:
+                            data_headers[colidx] = keyword
+                            break
 
         delimiter = common_utils.get_delimiter_from_file_rows(
             rows[data_start_row:stop_row] if stop_row else rows[data_start_row:],
@@ -405,22 +414,21 @@ class DiverOfficeParser:
 
         usecols = []
         colnames = []
+        seen_outcols: set[str] = set()
         for k, v in sorted(data_headers.items()):
-            if "level" in v.lower() or "waterhead" in v.lower().replace(" ", ""):
-                usecols.append(k)
-                colnames.append("head_cm")
-            elif "temp" in v.lower():
-                usecols.append(k)
-                colnames.append("temp_degc")
-            elif "cond" in v.lower():
-                usecols.append(k)
-                colnames.append("cond_mscm")
+            v_nospace = v.lower().replace(" ", "")
+            for keyword, outcol in _col_map.items():
+                if keyword in v_nospace and outcol not in seen_outcols:
+                    usecols.append(k)
+                    colnames.append(outcol)
+                    seen_outcols.add(outcol)
+                    break
 
         if colnames:
             colnames.insert(0, "date_time")
             usecols.insert(0, 0)
 
-        if "head_cm" not in colnames:
+        if "head_cm" in _col_map.values() and "head_cm" not in colnames:
             common_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "LoggerImport",
@@ -437,7 +445,6 @@ class DiverOfficeParser:
                 return "skip"
 
         if not colnames:
-            # Nothing to read — return empty result
             return filedata, filename, location, utc_offset or None, serial_number
 
         df = pd.read_csv(
@@ -465,25 +472,22 @@ class DiverOfficeParser:
             if df.empty:
                 return filedata, filename, location, utc_offset or None, serial_number
 
-        if skip_rows_without_water_level:
+        if skip_rows_without_water_level and "head_cm" in df.columns:
             df = df.dropna(subset=["head_cm"])
             if df.empty:
                 return filedata, filename, location, utc_offset or None, serial_number
 
         df["date_time"] = df["date_time"].dt.strftime("%Y-%m-%d %H:%M:%S")
-        # Replaces NaN with None
         df = df.astype(object).where(pd.notnull(df), None)
 
-        filedata = [["date_time", "head_cm", "temp_degc", "cond_mscm"]]
-        for c in filedata[0]:
+        filedata = [_output_cols]
+        for c in _output_cols:
             if c not in df.columns:
                 df[c] = None
-        # Convert numeric values to strings (None stays None) for consistent
-        # downstream handling; the date_time column is already a string.
-        for col in filedata[0][1:]:
+        for col in _output_cols[1:]:
             if col in df.columns:
                 df[col] = df[col].apply(lambda v: str(v) if v is not None else None)
-        filedata.extend(df.loc[:, filedata[0]].values.tolist())
+        filedata.extend(df.loc[:, _output_cols].values.tolist())
         if len(filedata) < 2:
             return common_utils.ask_user_about_stopping(
                 QCoreApplication.translate(
@@ -721,6 +725,73 @@ class DiverOfficeParser:
         filename = os.path.basename(path)
 
         return filedata, filename, location, utc_offset, serial_number
+
+
+class DiverOfficeBaroParser:
+    """Parser for Diver-Office barometric logger files (TD-Diver baro).
+
+    Same file format as DiverOfficeParser; maps Pressure[cmH2O] →
+    ``baro_cmh2o`` and Temperature → ``temperature`` for import into ``meteo``.
+    """
+
+    @staticmethod
+    def parse(
+        path: str,
+        charset: str,
+        begindate: str | None = None,
+        enddate: str | None = None,
+    ) -> tuple[list, str, str, str | None, str | None]:
+        """Parse a DiverOffice baro file (.mon or .csv).
+
+        Returns ``(filedata, filename, location, utc_offset, serial_number)``
+        where filedata has header ``['date_time', 'baro_cmh2o', 'temperature']``.
+        """
+        return DiverOfficeParser.parse(
+            path,
+            charset,
+            col_map=_DIVEROFFICE_BARO_COL_MAP,
+            output_cols=["date_time", "baro_cmh2o", "temperature"],
+            begindate=begindate,
+            enddate=enddate,
+        )
+
+
+# Column → (meteo parameter, unit) mapping for baro imports
+_BARO_COL_TO_METEO: dict[str, tuple[str, str]] = {
+    "baro_cmh2o": ("pressure", "cmH2O"),
+    "temperature": ("temp", "\u00b0C"),
+}
+
+# Parameters that must exist in zz_meteoparam for baro imports
+# ("temp" is always seeded by insert_datadomain.sql — only "pressure" needs checking)
+_BARO_METEO_PARAMS: list[tuple[str, str]] = [
+    ("pressure", "Barometric pressure"),
+]
+
+
+def _pivot_baro_to_meteo(
+    file_data: list[list],
+    serial_number: str | None,
+    filename: str,
+) -> list[list]:
+    """Convert wide baro filedata (date_time, baro_cmh2o, temperature, obsid)
+    to meteo long format (obsid, instrumentid, parameter, date_time,
+    reading_num, unit).
+    """
+    instrumentid = serial_number or filename
+    header = file_data[0]
+    meteo_rows: list[list] = [
+        ["obsid", "instrumentid", "parameter", "date_time", "reading_num", "unit"]
+    ]
+    for row in file_data[1:]:
+        row_dict = dict(zip(header, row))
+        obsid = row_dict.get("obsid", "")
+        date_time = row_dict.get("date_time", "")
+        for col, (param, unit) in _BARO_COL_TO_METEO.items():
+            val = row_dict.get(col)
+            if val is not None:
+                meteo_rows.append([obsid, instrumentid, param, date_time, val, unit])
+    return meteo_rows
 
 
 class LeveloggerParser:
@@ -1096,6 +1167,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
     """
 
     FORMAT_DIVEROFFICE = "DiverOffice"
+    FORMAT_DIVEROFFICE_BARO = "DiverOffice Baro"
     FORMAT_LEVELOGGER = "Levelogger"
     FORMAT_HOBO = "Hobo"
 
@@ -1126,6 +1198,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         self.format_combo.addItems(
             [
                 self.FORMAT_DIVEROFFICE,
+                self.FORMAT_DIVEROFFICE_BARO,
                 self.FORMAT_LEVELOGGER,
                 self.FORMAT_HOBO,
             ]
@@ -1140,7 +1213,9 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         self.add_row(self.date_time_filter)
 
         # Format-specific sections (each builds a container widget shown/hidden by _on_format_changed)
-        self._build_diveroffice_section()
+        _db_tz = db_utils.get_timezone_from_db("w_levels_logger")
+        self._build_diveroffice_section(_db_tz)
+        self._build_diveroffice_baro_section(_db_tz)
         self._build_levelogger_section()
         self._build_hobo_section()
 
@@ -1276,7 +1351,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         self.format_combo.currentTextChanged.connect(self._on_format_changed)
         self._on_format_changed(self.format_combo.currentText())
 
-    def _build_diveroffice_section(self) -> None:
+    def _build_diveroffice_section(self, database_timezone: str | None = None) -> None:
         """Build DiverOffice-specific section (help text + UTC offset). Hidden for other formats."""
         self._diveroffice_section = QtWidgets.QWidget()
         _vl = QtWidgets.QVBoxLayout(self._diveroffice_section)
@@ -1310,7 +1385,6 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         self.utc_offset.addItems(
             [format_timezone_string(hour) for hour in range(-12, 15)]
         )
-        database_timezone = db_utils.get_timezone_from_db("w_levels_logger")
         if database_timezone is not None:
             set_combobox(self.utc_offset, database_timezone, add_if_not_exists=False)
         self.utcoffset_row = RowEntry()
@@ -1319,6 +1393,51 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         _vl.addWidget(self.utcoffset_row.widget)
 
         self.add_row(self._diveroffice_section)
+
+    def _build_diveroffice_baro_section(self, database_timezone: str | None = None) -> None:
+        """Build DiverOffice Baro section (help text + UTC offset). Imports to meteo table."""
+        self._diveroffice_baro_section = QtWidgets.QWidget()
+        _vl = QtWidgets.QVBoxLayout(self._diveroffice_baro_section)
+        _vl.setContentsMargins(0, 0, 0, 0)
+
+        _help = QtWidgets.QLabel(
+            QCoreApplication.translate(
+                "LoggerImport",
+                "DiverOffice Baro format: same file format as DiverOffice.\n"
+                "Imports Pressure[cmH2O] and Temperature[\u00b0C] into the meteo table.\n"
+                "The instrument serial number is used as instrumentid.\n"
+                "Column names matter; column order does not.",
+            )
+        )
+        _help.setWordWrap(True)
+        _vl.addWidget(_help)
+
+        baro_utcoffset_label = QtWidgets.QLabel(
+            QCoreApplication.translate(
+                "LoggerImport", "Identify and change UTC offset:"
+            )
+        )
+        self.baro_utc_offset = QtWidgets.QComboBox()
+        self.baro_utc_offset.setToolTip(
+            QCoreApplication.translate(
+                "LoggerImport",
+                "Identifies UTC-offset in file and changes to the selected one.",
+            )
+        )
+        self.baro_utc_offset.addItem("")
+        self.baro_utc_offset.addItems(
+            [format_timezone_string(hour) for hour in range(-12, 15)]
+        )
+        if database_timezone is not None:
+            set_combobox(
+                self.baro_utc_offset, database_timezone, add_if_not_exists=False
+            )
+        baro_utcoffset_row = RowEntry()
+        baro_utcoffset_row.layout.addWidget(baro_utcoffset_label)
+        baro_utcoffset_row.layout.addWidget(self.baro_utc_offset)
+        _vl.addWidget(baro_utcoffset_row.widget)
+
+        self.add_row(self._diveroffice_baro_section)
 
     def _build_levelogger_section(self) -> None:
         """Build Levelogger-specific section (help text only). Hidden for other formats."""
@@ -1364,18 +1483,28 @@ class LoggerImport(BaseImporter, import_ui_dialog):
     def _on_format_changed(self, format_name: str) -> None:
         """Show/hide format-specific widgets and update window title."""
         is_diveroffice = format_name == self.FORMAT_DIVEROFFICE
+        is_baro = format_name == self.FORMAT_DIVEROFFICE_BARO
         is_hobo = format_name == self.FORMAT_HOBO
 
         self._diveroffice_section.setVisible(is_diveroffice)
+        self._diveroffice_baro_section.setVisible(is_baro)
         self._levelogger_section.setVisible(format_name == self.FORMAT_LEVELOGGER)
         self._hobo_section.setVisible(is_hobo)
 
-        self._skip_rows_container.setVisible(not is_hobo)
-        self.skip_rows.checked = not is_hobo
+        # skip_rows only applies to water-level formats, not baro or hobo
+        show_skip_rows = format_name in (
+            self.FORMAT_DIVEROFFICE,
+            self.FORMAT_LEVELOGGER,
+        )
+        self._skip_rows_container.setVisible(show_skip_rows)
+        self.skip_rows.checked = show_skip_rows
 
         titles = {
             self.FORMAT_DIVEROFFICE: QCoreApplication.translate(
                 "LoggerImport", "Logger import \u2014 DiverOffice"
+            ),
+            self.FORMAT_DIVEROFFICE_BARO: QCoreApplication.translate(
+                "LoggerImport", "Logger import \u2014 DiverOffice Baro"
             ),
             self.FORMAT_LEVELOGGER: QCoreApplication.translate(
                 "LoggerImport", "Logger import \u2014 Levelogger"
@@ -1398,7 +1527,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         format_name = self.format_combo.currentText()
         extension = (
             "csv (*.csv);;mon (*.mon)"
-            if format_name == self.FORMAT_DIVEROFFICE
+            if format_name in (self.FORMAT_DIVEROFFICE, self.FORMAT_DIVEROFFICE_BARO)
             else "csv (*.csv)"
         )
         files = midvatten_utils.select_files(only_one_file=False, extension=extension)
@@ -1448,6 +1577,8 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                 parse_kwargs["skip_rows_without_water_level"] = (
                     skip_rows_without_water_level
                 )
+            elif format_name == self.FORMAT_DIVEROFFICE_BARO:
+                parse_func = DiverOfficeBaroParser.parse
             elif format_name == self.FORMAT_LEVELOGGER:
                 parse_func = LeveloggerParser.parse
                 parse_kwargs["skip_rows_without_water_level"] = (
@@ -1502,8 +1633,20 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                 )
                 continue
 
-            # UTC offset adjustment (DiverOffice only)
-            if format_name == self.FORMAT_DIVEROFFICE and self.utc_offset.currentText():
+            # UTC offset adjustment (DiverOffice and DiverOffice Baro)
+            utc_widget = (
+                self.baro_utc_offset
+                if format_name == self.FORMAT_DIVEROFFICE_BARO
+                else self.utc_offset
+            )
+            if (
+                format_name
+                in (
+                    self.FORMAT_DIVEROFFICE,
+                    self.FORMAT_DIVEROFFICE_BARO,
+                )
+                and utc_widget.currentText()
+            ):
                 if not file_utc_offset:
                     common_utils.MessagebarAndLog.warning(
                         log_msg=QCoreApplication.translate(
@@ -1513,7 +1656,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                     )
                 else:
                     requested_timedelta = parse_timezone_to_timedelta(
-                        self.utc_offset.currentText()
+                        utc_widget.currentText()
                     )
                     try:
                         file_timedelta = parse_timezone_to_timedelta(file_utc_offset)
@@ -1629,6 +1772,68 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             common_utils.stop_waiting_cursor()
             return False
 
+        # ── DiverOffice Baro path: pivot to meteo long format and import ────────
+        if format_name == self.FORMAT_DIVEROFFICE_BARO:
+            meteo_rows: list[list] = []
+            for file_data, filename, location, serial_number in parsed_files_with_obsid:
+                pivoted = _pivot_baro_to_meteo(file_data, serial_number, filename)
+                if not meteo_rows:
+                    meteo_rows = pivoted
+                else:
+                    meteo_rows.extend(pivoted[1:])
+
+            if len(meteo_rows) < 2:
+                common_utils.MessagebarAndLog.info(
+                    bar_msg=QCoreApplication.translate(
+                        "LoggerImport",
+                        "DiverOffice Baro: no data to import.",
+                    )
+                )
+                common_utils.stop_waiting_cursor()
+                return True
+
+            if import_to_db:
+                dbconn = db_utils.DbConnectionManager()
+                try:
+                    ph = dbconn.placeholder()
+                    for param, explanation in _BARO_METEO_PARAMS:
+                        existing = dbconn.execute_and_fetchall(
+                            f"SELECT parameter FROM zz_meteoparam WHERE parameter = {ph}",
+                            (param,),
+                        )
+                        if not existing:
+                            dbconn.execute(
+                                f"INSERT INTO zz_meteoparam(parameter, explanation)"
+                                f" VALUES ({ph}, {ph})",
+                                (param, explanation),
+                            )
+                    dbconn.commit()
+                finally:
+                    dbconn.closedb()
+
+                importer = import_data_to_db.MidvDataImporter()
+                try:
+                    importer.general_import("meteo", meteo_rows)
+                except Exception:
+                    common_utils.MessagebarAndLog.warning(
+                        log_msg=f"Got error {traceback.format_exc()}"
+                    )
+                    raise
+
+            if export_csv:
+                path = QtWidgets.QFileDialog.getSaveFileName(
+                    self, "Save File", "", "CSV(*.csv)"
+                )
+                if path:
+                    path = ru(path[0])
+                    common_utils.write_printlist_to_file(path, meteo_rows)
+
+            common_utils.stop_waiting_cursor()
+            if self.close_after_import.isChecked():
+                self.close()
+            return True
+
+        # ── Water-level path (w_levels_logger) ──────────────────────────────────
         # Schema variant detection. In the new schema, source has moved to a
         # w_logger_series row that groups all rows from one imported file.
         # In older schemas, source is still a column on w_levels_logger. We

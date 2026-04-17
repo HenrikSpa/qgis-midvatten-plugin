@@ -144,3 +144,31 @@ class TestObsidAssignmentDialogShell:
             assert dialog.table.isRowHidden(1) is False
         finally:
             dialog.deleteLater()
+
+    def test_fill_selection_writes_obsid_to_selected_rows(self):
+        from qgis.PyQt.QtCore import QItemSelectionModel
+
+        rows = [
+            EditorRow("Br1", "Brunn 1", "", ["L1"]),
+            EditorRow("Br1", "Brunn 1", "", ["L2"]),
+            EditorRow("Br2", "Brunn 2", "", ["L3"]),
+        ]
+        dialog = ObsidAssignmentDialog(rows, existing_obsids=["Br1", "Br2"])
+        try:
+            # Select rows 0 and 1 (Rows semantics)
+            sel_model = dialog.table.selectionModel()
+            sel_model.select(
+                dialog.table.model().index(0, 0),
+                QItemSelectionModel.Select | QItemSelectionModel.Rows,
+            )
+            sel_model.select(
+                dialog.table.model().index(1, 0),
+                QItemSelectionModel.Select | QItemSelectionModel.Rows,
+            )
+            dialog.fill_combo.setEditText("Br1")
+            dialog.fill_selection_button.click()
+            assert dialog.editor_rows[0].obsid == "Br1"
+            assert dialog.editor_rows[1].obsid == "Br1"
+            assert dialog.editor_rows[2].obsid == ""
+        finally:
+            dialog.deleteLater()

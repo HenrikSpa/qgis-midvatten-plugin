@@ -13,6 +13,7 @@ from qgis.PyQt.QtGui import QBrush, QColor
 from qgis.PyQt.QtWidgets import (
     QAbstractItemView,
     QCheckBox,
+    QComboBox,
     QCompleter,
     QDialog,
     QDialogButtonBox,
@@ -20,6 +21,7 @@ from qgis.PyQt.QtWidgets import (
     QHeaderView,
     QLabel,
     QLineEdit,
+    QPushButton,
     QStyledItemDelegate,
     QTableWidget,
     QTableWidgetItem,
@@ -184,6 +186,21 @@ class ObsidAssignmentDialog(QDialog):
         self.show_matched_checkbox.toggled.connect(self._apply_filters)
         search_row.addWidget(self.show_matched_checkbox)
         layout.addLayout(search_row)
+        bulk_row = QHBoxLayout()
+        bulk_row.addWidget(QLabel(_tr("Fill with:")))
+        self.fill_combo = QComboBox(self)
+        self.fill_combo.setEditable(True)
+        self.fill_combo.addItems(self.existing_obsids)
+        fill_completer = QCompleter(self.existing_obsids, self.fill_combo)
+        fill_completer.setCaseSensitivity(Qt.CaseInsensitive)
+        fill_completer.setFilterMode(Qt.MatchContains)
+        self.fill_combo.setCompleter(fill_completer)
+        bulk_row.addWidget(self.fill_combo)
+        self.fill_selection_button = QPushButton(_tr("Fill selection"), self)
+        self.fill_selection_button.clicked.connect(self._fill_selection)
+        bulk_row.addWidget(self.fill_selection_button)
+        bulk_row.addStretch(1)
+        layout.addLayout(bulk_row)
         layout.addWidget(self.table)
 
         self.buttons = QDialogButtonBox()
@@ -258,6 +275,14 @@ class ObsidAssignmentDialog(QDialog):
             if match:
                 visible += 1
         self.row_count_label.setText(f"{visible} / {self.table.rowCount()}")
+
+    def _selected_row_indices(self) -> list[int]:
+        return sorted({idx.row() for idx in self.table.selectionModel().selectedRows()})
+
+    def _fill_selection(self):
+        obsid = self.fill_combo.currentText().strip()
+        for row_idx in self._selected_row_indices():
+            self.set_obsid_value(row_idx, obsid)
 
     def _on_item_changed(self, item):
         if item.column() != _COL_OBSID:

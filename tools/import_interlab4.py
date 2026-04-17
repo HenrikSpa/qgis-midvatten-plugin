@@ -1073,6 +1073,24 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
 
         return primary_data, duplicate_data
 
+    @staticmethod
+    def _extract_create_table(sql_text: str, table_name: str) -> str:
+        """Extract a single CREATE TABLE block from sql_text by table name."""
+        lines = sql_text.splitlines()
+        result = []
+        inside = False
+        prefix = f"CREATE TABLE {table_name.upper()}"
+        for line in lines:
+            if not inside and line.strip().upper().startswith(prefix):
+                inside = True
+            if inside:
+                result.append(line)
+                if line.strip() == ");":
+                    break
+        if not result:
+            raise ValueError(f"CREATE TABLE {table_name} not found in SQL text")
+        return "\n".join(result)
+
 
 class MetaFilterSelection(VRowEntry):
     def __init__(self, all_lab_results):

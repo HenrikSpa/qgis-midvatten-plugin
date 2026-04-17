@@ -769,3 +769,24 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
         print("Test")
         print(str(result_string))
         assert result_string == reference_string
+
+
+class TestExtractCreateTable:
+    def test_extracts_block(self):
+        sql = (
+            "CREATE TABLE foo (id text);\n"
+            "CREATE TABLE s_qual_lab /*comment*/(\n"
+            "obsid text not null\n"
+            ", primary key(report, parameter)\n"
+            ");\n"
+            "CREATE TABLE bar (x text);\n"
+        )
+        result = Interlab4Import._extract_create_table(sql, "s_qual_lab")
+        assert "CREATE TABLE s_qual_lab" in result
+        assert "primary key(report, parameter)" in result
+        assert "CREATE TABLE bar" not in result
+        assert "CREATE TABLE foo" not in result
+
+    def test_raises_if_not_found(self):
+        with pytest.raises(ValueError, match="CREATE TABLE missing"):
+            Interlab4Import._extract_create_table("CREATE TABLE foo (id text);", "missing")

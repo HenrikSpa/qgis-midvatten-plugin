@@ -14,7 +14,7 @@ obsid text not null
 , unit text
 , comment text
 , primary key(report, parameter)
-, foreign key(obsid) references obs_points(obsid)
+, foreign key(obsid) references obs_points(obsid) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE TABLE w_qual_logger /*Water quality from logger measurements*/(
@@ -26,7 +26,7 @@ CREATE TABLE w_qual_logger /*Water quality from logger measurements*/(
  , unit text /*Unit*/
  , comment text /*Comment*/
  , PRIMARY KEY(obsid, date_time, instrument, parameter, unit)
- , FOREIGN KEY(obsid) REFERENCES obs_points(obsid)
+ , FOREIGN KEY(obsid) REFERENCES obs_points(obsid) ON UPDATE CASCADE ON DELETE CASCADE
  );
 
 CREATE UNIQUE INDEX w_qual_logger_unit_unique_index_null ON w_qual_logger /* Index to stop duplicate values where unit is null */ (
@@ -53,7 +53,7 @@ POSTGIS id SERIAL PRIMARY KEY
 , h_syst text /*Reference system for elevation*/
 , h_source text /*Source for the measuring point elevation (consultancy report or similar)*/
 , valid BOOLEAN /*Specifies if this spatial entry is still valid. Set to False if a new measurement has made the entry not longer valid.*/
-, FOREIGN KEY (obsid) REFERENCES obs_points (obsid) ON DELETE CASCADE
+, FOREIGN KEY (obsid) REFERENCES obs_points (obsid) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE TABLE tem_data /*Raw data from TEM2Go Inversion Models*/(
@@ -69,5 +69,5 @@ POSTGIS id SERIAL PRIMARY KEY
 , resistivity TEXT -- String list with resistivity of the layers, ex for inversion with 3 layers: [29.5, 150.4, 1001.6]
 , comment text --Additional info
 , UNIQUE (obsid, inversion_name, length)
-, FOREIGN KEY (obsid) REFERENCES obs_lines(obsid)
+, FOREIGN KEY (obsid) REFERENCES obs_lines(obsid) ON UPDATE CASCADE ON DELETE CASCADE
 );

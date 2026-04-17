@@ -127,3 +127,20 @@ class TestObsidAssignmentDialogShell:
             assert dialog.row_count_label.text() == "2 / 3"
         finally:
             dialog.deleteLater()
+
+    def test_matched_rows_hidden_by_default_and_toggleable(self):
+        rows = [
+            EditorRow("Br1", "Brunn 1", "", ["L1"], obsid="Br1", cached=True),
+            EditorRow("Br2", "Brunn 2", "", ["L2"]),
+        ]
+        dialog = ObsidAssignmentDialog(rows, existing_obsids=["Br1", "Br2"])
+        try:
+            # Default: matched row hidden
+            assert dialog.table.isRowHidden(0) is True
+            assert dialog.table.isRowHidden(1) is False
+            # Toggle on -> both visible
+            dialog.show_matched_checkbox.setChecked(True)
+            assert dialog.table.isRowHidden(0) is False
+            assert dialog.table.isRowHidden(1) is False
+        finally:
+            dialog.deleteLater()

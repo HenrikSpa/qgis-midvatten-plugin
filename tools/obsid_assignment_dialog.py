@@ -12,6 +12,7 @@ from qgis.PyQt.QtCore import Qt, QCoreApplication
 from qgis.PyQt.QtGui import QBrush, QColor
 from qgis.PyQt.QtWidgets import (
     QAbstractItemView,
+    QCheckBox,
     QCompleter,
     QDialog,
     QDialogButtonBox,
@@ -178,6 +179,10 @@ class ObsidAssignmentDialog(QDialog):
         search_row.addWidget(self.search_input)
         self.row_count_label = QLabel("0 / 0", self)
         search_row.addWidget(self.row_count_label)
+        self.show_matched_checkbox = QCheckBox(_tr("Show matched rows"), self)
+        self.show_matched_checkbox.setChecked(False)
+        self.show_matched_checkbox.toggled.connect(self._apply_filters)
+        search_row.addWidget(self.show_matched_checkbox)
         layout.addLayout(search_row)
         layout.addWidget(self.table)
 
@@ -203,6 +208,11 @@ class ObsidAssignmentDialog(QDialog):
                 row_idx, _COL_NLAB, QTableWidgetItem(str(len(row.lablitteras)))
             )
             self.table.setItem(row_idx, _COL_OBSID, QTableWidgetItem(row.obsid))
+            if row.cached:
+                for col in range(self.table.columnCount()):
+                    item = self.table.item(row_idx, col)
+                    if item is not None:
+                        item.setForeground(QBrush(QColor(120, 120, 120)))
         self._apply_filters()
 
     def set_obsid_value(self, row_idx: int, obsid: str):
@@ -228,17 +238,22 @@ class ObsidAssignmentDialog(QDialog):
 
     def _apply_filters(self):
         needle = self.search_input.text().strip().lower()
+        show_matched = self.show_matched_checkbox.isChecked()
         visible = 0
         for row_idx in range(self.table.rowCount()):
-            if not needle:
-                match = True
-            else:
+            row = self.editor_rows[row_idx]
+            if not show_matched and row.cached:
+                self.table.setRowHidden(row_idx, True)
+                continue
+            if needle:
                 match = False
                 for col in (_COL_SPEC, _COL_NAMN, _COL_ORSAK, _COL_OBSID):
                     item = self.table.item(row_idx, col)
                     if item and needle in item.text().lower():
                         match = True
                         break
+            else:
+                match = True
             self.table.setRowHidden(row_idx, not match)
             if match:
                 visible += 1

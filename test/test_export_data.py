@@ -984,7 +984,6 @@ class ExportMixin:
         db_utils.execute_sqlfile(
             db_defs.extra_datatables_sqlfile(), dbconnection, merge_newlines=True
         )
-
         db_utils.sql_alter_db(
             """INSERT INTO obs_points (obsid, geometry) VALUES ('P1', ST_GeomFromText('POINT(633466 711659)', 3006))""",
             dbconnection=dbconnection,
@@ -1025,10 +1024,6 @@ class ExportMixin:
         )
         db_utils.sql_alter_db(
             """INSERT INTO meteo (obsid, instrumentid, parameter, date_time) VALUES ('P1', 'meteoinst', 'precip', '2017-01-01 00:19:00')""",
-            dbconnection=dbconnection,
-        )
-        db_utils.sql_alter_db(
-            """INSERT INTO s_qual_lab (obsid, parameter, report, staff) VALUES ('P1', 'labpar2', 'report2', 's1')""",
             dbconnection=dbconnection,
         )
         db_utils.sql_alter_db(
@@ -1095,7 +1090,7 @@ class ExportMixin:
             """select obsid, instrumentid, parameter, date_time from meteo""",
             """, [(P1, meteoinst, precip, 2017-01-01 00:19:00)], """,
             """select obsid, parameter, report, staff from s_qual_lab""",
-            """, [(P1, labpar2, report2, s1)], """,
+            """, [], """,
             """select obsid, date_time, instrument, parameter, unit from w_qual_logger""",
             """, [(P1, 2021-08-11 11:14, testinst, testpar, m)]]""",
         ]

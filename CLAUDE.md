@@ -91,6 +91,17 @@ Never build SQL queries with Python string concatenation. Always use:
 
 Never change database schemas (table names, column names, views) unless explicitly asked.
 
+### Test Import Isolation (worktrees)
+
+The repo contains `_pkgroot/midvatten` (a relative symlink → `..`) and a root `conftest.py` that inserts `_pkgroot/` into `sys.path`. This lets every git worktree resolve `import midvatten` from its own directory without touching the shared QGIS plugins symlink.
+
+**Never repoint `~/.local/share/QGIS/QGIS3/profiles/default/python/plugins/midvatten`.** It is not needed for tests and repointing it corrupts imports in other agents running concurrently.
+
+Before running tests in an existing worktree that predates this fix, merge `ai_test` to get `_pkgroot/` and `conftest.py`:
+```bash
+git merge ai_test
+```
+
 ### Testing Conventions
 
 - Mock `MessagebarAndLog` in tests: `@mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")` with param name `mock_messagebar`

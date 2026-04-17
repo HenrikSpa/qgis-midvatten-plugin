@@ -131,6 +131,8 @@ class _BaseNewDbDialog(QDialog):
 class NewSpatialiteDbDialog(_BaseNewDbDialog):
     """Single dialog collecting all settings for a new SpatiaLite database."""
 
+    _DEFAULT_PATH = "midv_obsdb.sqlite"
+
     def __init__(self, parent: QWidget = None):
         super().__init__(
             QCoreApplication.translate(
@@ -145,7 +147,7 @@ class NewSpatialiteDbDialog(_BaseNewDbDialog):
         self._build_common_form(form)
 
         path_row = QHBoxLayout()
-        self._path_edit = QLineEdit("midv_obsdb.sqlite")
+        self._path_edit = QLineEdit(self._DEFAULT_PATH)
         self._browse_btn = QPushButton(
             QCoreApplication.translate("NewDb", "Browse\u2026")
         )
@@ -169,7 +171,7 @@ class NewSpatialiteDbDialog(_BaseNewDbDialog):
         path, _ = QFileDialog.getSaveFileName(
             self,
             QCoreApplication.translate("NewDb", "New DB"),
-            self._path_edit.text() or "midv_obsdb.sqlite",
+            self._path_edit.text() or self._DEFAULT_PATH,
             "Spatialite (*.sqlite)",
         )
         if path:

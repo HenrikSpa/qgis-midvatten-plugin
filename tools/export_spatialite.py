@@ -3,35 +3,20 @@
 import logging
 
 from qgis.PyQt.QtCore import QCoreApplication
-from qgis.PyQt.QtWidgets import (
-    QComboBox,
-    QDialog,
-    QDialogButtonBox,
-    QFileDialog,
-    QFormLayout,
-    QHBoxLayout,
-    QLabel,
-    QLineEdit,
-    QPushButton,
-    QSpinBox,
-    QVBoxLayout,
-    QWidget,
-)
+from qgis.PyQt.QtWidgets import QDialog, QFileDialog, QWidget
 
 from midvatten.tools.create_db import NewDb
-from midvatten.tools.create_db_dialogs import (
-    _levels_tz_options,
-    _locale_options,
-    _logger_tz_options,
-)
+from midvatten.tools.create_db_dialogs import NewSpatialiteDbDialog
 from midvatten.tools.export_data import ExportData
 from midvatten.tools.utils import common_utils, db_utils
 
 log = logging.getLogger(__name__)
 
 
-class ExportSpatialiteDialog(QDialog):
-    """Single dialog collecting destination locale, CRS, timezones, and file path for export."""
+class ExportSpatialiteDialog(NewSpatialiteDbDialog):
+    """Variant of NewSpatialiteDbDialog for export: pre-fills values from source DB."""
+
+    _DEFAULT_PATH = "midv_export.sqlite"
 
     def __init__(
         self,
@@ -44,118 +29,28 @@ class ExportSpatialiteDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle(
             QCoreApplication.translate(
-                "ExportSpatialite", "Export to SpatiaLite database"
-            )
-        )
-        self._source_srid = source_srid
-        self._w_levels_logger_timezone = w_levels_logger_timezone or ""
-        self._w_levels_timezone = w_levels_timezone or ""
-        self._build_ui(selected_all_text)
-        self._connect_signals()
-
-    def _build_ui(self, selected_all_text: str) -> None:
-        layout = QVBoxLayout(self)
-
-        info_label = QLabel(
-            QCoreApplication.translate(
                 "ExportSpatialite",
-                "Exporting {} obs_points and obs_lines.",
+                "Export to SpatiaLite database ({})",
             ).format(selected_all_text)
         )
-        layout.addWidget(info_label)
-
-        form = QFormLayout()
-
-        self._locale_combo = QComboBox()
-        self._locale_combo.addItems(_locale_options())
-        form.addRow(
-            QCoreApplication.translate("ExportSpatialite", "Locale:"),
-            self._locale_combo,
-        )
-
-        self._epsg_spin = QSpinBox()
-        self._epsg_spin.setRange(1, 999999)
-        self._epsg_spin.setValue(self._source_srid if self._source_srid else 4326)
-        form.addRow(
-            QCoreApplication.translate("ExportSpatialite", "Destination CRS (EPSG):"),
-            self._epsg_spin,
-        )
-
-        self._logger_tz_combo = QComboBox()
-        self._logger_tz_combo.addItems(_logger_tz_options())
-        idx = self._logger_tz_combo.findText(self._w_levels_logger_timezone)
-        self._logger_tz_combo.setCurrentIndex(max(0, idx))
-        form.addRow(
-            QCoreApplication.translate(
-                "ExportSpatialite", "Logger timezone (w_levels_logger):"
-            ),
-            self._logger_tz_combo,
-        )
-
-        self._levels_tz_combo = QComboBox()
-        self._levels_tz_combo.addItems(_levels_tz_options())
-        idx = self._levels_tz_combo.findText(self._w_levels_timezone)
-        self._levels_tz_combo.setCurrentIndex(max(0, idx))
-        form.addRow(
-            QCoreApplication.translate(
-                "ExportSpatialite", "Levels timezone (w_levels):"
-            ),
-            self._levels_tz_combo,
-        )
-
-        path_row = QHBoxLayout()
-        self._path_edit = QLineEdit()
-        self._browse_btn = QPushButton(
-            QCoreApplication.translate("ExportSpatialite", "Browse\u2026")
-        )
-        path_row.addWidget(self._path_edit)
-        path_row.addWidget(self._browse_btn)
-        path_widget = QWidget()
-        path_widget.setLayout(path_row)
-        form.addRow(
-            QCoreApplication.translate("ExportSpatialite", "Destination file:"),
-            path_widget,
-        )
-
-        layout.addLayout(form)
-
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
-
-    def _connect_signals(self) -> None:
-        self._browse_btn.clicked.connect(self._browse_path)
+        if source_srid:
+            self._epsg_spin.setValue(source_srid)
+        if w_levels_logger_timezone is not None:
+            idx = self._logger_tz_combo.findText(w_levels_logger_timezone)
+            self._logger_tz_combo.setCurrentIndex(max(0, idx))
+        if w_levels_timezone is not None:
+            idx = self._levels_tz_combo.findText(w_levels_timezone)
+            self._levels_tz_combo.setCurrentIndex(max(0, idx))
 
     def _browse_path(self) -> None:
         path, _ = QFileDialog.getSaveFileName(
             self,
             QCoreApplication.translate("ExportSpatialite", "Export database"),
-            self._path_edit.text() or "midv_export.sqlite",
+            self._path_edit.text() or self._DEFAULT_PATH,
             "Spatialite (*.sqlite)",
         )
         if path:
             self._path_edit.setText(path)
-
-    @property
-    def locale(self) -> str:
-        return self._locale_combo.currentText()
-
-    @property
-    def epsg_code(self) -> int:
-        return self._epsg_spin.value()
-
-    @property
-    def w_levels_logger_timezone(self) -> str:
-        return self._logger_tz_combo.currentText()
-
-    @property
-    def w_levels_timezone(self) -> str:
-        return self._levels_tz_combo.currentText()
-
-    @property
-    def dbpath(self) -> str:
-        return self._path_edit.text()
 
 
 class ExportSpatialite:

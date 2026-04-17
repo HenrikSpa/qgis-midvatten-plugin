@@ -510,15 +510,7 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
                     f" VALUES ({ph}, {ph}, {ph})",
                     (obsid, source_val, description),
                 )
-                if dbconn.dbtype == "spatialite":
-                    sid = dbconn.execute_and_fetchall(
-                        "SELECT last_insert_rowid()"
-                    )[0][0]
-                else:
-                    sid = dbconn.execute_and_fetchall(
-                        "SELECT lastval()"
-                    )[0][0]
-                key_to_sid[key] = sid
+                key_to_sid[key] = db_utils.get_last_insert_id(dbconn)
             dbconn.commit()
         finally:
             if close_dbconn:

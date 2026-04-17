@@ -316,10 +316,13 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         #   * Current (Midv 1.x) DBs: `source` is a column on w_levels_logger.
         #   * New DBs: `source` lives on w_logger_series, reached via
         #     w_levels_logger.series_id.
-        existing_columns = db_utils.tables_columns("w_levels_logger")["w_levels_logger"]
+        existing_columns = db_utils.tables_columns(table="w_levels_logger").get(
+            "w_levels_logger", []
+        )
         has_series_id = "series_id" in existing_columns
-        all_tables = db_utils.tables_columns()
-        has_series_table = "w_logger_series" in all_tables
+        has_series_table = bool(
+            db_utils.tables_columns(table="w_logger_series")
+        )
         if has_series_id and has_series_table:
             head_level_masl_sql = (
                 f"SELECT l.date_time, l.head_cm / 100, l.level_masl,"

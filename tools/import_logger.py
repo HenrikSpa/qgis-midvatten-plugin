@@ -1644,14 +1644,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                         f"(obsid, source, description) VALUES ({ph}, {ph}, {ph})",
                         (obsid, source_for_series, description),
                     )
-                    if dbconn.dbtype == "spatialite":
-                        series_id = dbconn.execute_and_fetchall(
-                            "SELECT last_insert_rowid()"
-                        )[0][0]
-                    else:
-                        series_id = dbconn.execute_and_fetchall(
-                            "SELECT lastval()"
-                        )[0][0]
+                    series_id = db_utils.get_last_insert_id(dbconn)
                     file_data[0].append("series_id")
                     if has_created_at:
                         file_data[0].append("created_at")

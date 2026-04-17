@@ -408,15 +408,7 @@ class ExportData:
                 f"(obsid, source, description) VALUES ({ph}, {ph}, {ph})",
                 (obsid, source_val, "Upgraded from Midv 1.x"),
             )
-            if self.dest_dbconnection.dbtype == "spatialite":
-                sid = self.dest_dbconnection.execute_and_fetchall(
-                    "SELECT last_insert_rowid()"
-                )[0][0]
-            else:
-                sid = self.dest_dbconnection.execute_and_fetchall(
-                    "SELECT lastval()"
-                )[0][0]
-            key_to_sid[key] = sid
+            key_to_sid[key] = db_utils.get_last_insert_id(self.dest_dbconnection)
         self.dest_dbconnection.commit()
 
         new_header = list(header)

@@ -334,6 +334,9 @@ class ExportData:
                 for rownr, row in enumerate(source_data)
             ]
 
+        if tname == "w_levels_logger":
+            source_data = self._migrate_logger_source_to_series(source_data)
+
         self.midv_data_importer.general_import(
             tname,
             source_data,
@@ -357,6 +360,73 @@ class ExportData:
 
         if replace:
             self.dest_dbconnection.execute("""PRAGMA foreign_keys = ON;""")
+
+    def _migrate_logger_source_to_series(
+        self, source_data: List[Any]
+    ) -> List[Any]:
+        """Bridge Midv 1.x w_levels_logger.source -> new w_logger_series.
+
+        When the source DB still has the old ``w_levels_logger.source``
+        column and the destination has the new schema (``series_id`` on
+        ``w_levels_logger`` plus ``w_logger_series``), create one
+        series row per distinct ``(obsid, source)`` pair on the
+        destination and replace the ``source`` column in ``source_data``
+        with a ``series_id`` column pointing at those new series rows.
+
+        No-op when both DBs are on the same schema (source with no
+        ``source`` column, or dest without ``w_logger_series``).
+        """
+        if not source_data or len(source_data) < 2:
+            return source_data
+
+        header = list(source_data[0])
+        if "source" not in header:
+            return source_data
+        src_idx = header.index("source")
+        obsid_idx = header.index("obsid") if "obsid" in header else -1
+        if obsid_idx < 0:
+            return source_data
+
+        dest_tables = db_utils.tables_columns(
+            dbconnection=self.dest_dbconnection
+        )
+        if "w_logger_series" not in dest_tables:
+            return source_data
+        if "series_id" not in dest_tables.get("w_levels_logger", []):
+            return source_data
+
+        ph = self.dest_dbconnection.placeholder()
+        key_to_sid: Dict[Tuple[str, Optional[str]], int] = {}
+        for row in source_data[1:]:
+            obsid = row[obsid_idx]
+            source_val = row[src_idx]
+            key = (obsid, source_val)
+            if key in key_to_sid:
+                continue
+            self.dest_dbconnection.execute(
+                f"INSERT INTO w_logger_series "
+                f"(obsid, source, description) VALUES ({ph}, {ph}, {ph})",
+                (obsid, source_val, "Upgraded from Midv 1.x"),
+            )
+            if self.dest_dbconnection.dbtype == "spatialite":
+                sid = self.dest_dbconnection.execute_and_fetchall(
+                    "SELECT last_insert_rowid()"
+                )[0][0]
+            else:
+                sid = self.dest_dbconnection.execute_and_fetchall(
+                    "SELECT lastval()"
+                )[0][0]
+            key_to_sid[key] = sid
+        self.dest_dbconnection.commit()
+
+        new_header = list(header)
+        new_header[src_idx] = "series_id"
+        migrated = [new_header]
+        for row in source_data[1:]:
+            new_row = list(row)
+            new_row[src_idx] = key_to_sid[(new_row[obsid_idx], new_row[src_idx])]
+            migrated.append(new_row)
+        return migrated
 
     def get_table_data(
         self,

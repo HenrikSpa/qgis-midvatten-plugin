@@ -243,6 +243,19 @@ class CheckboxAndExplanation(VRowEntry):
 
 # ── Parser classes ─────────────────────────────────────────────────────────────
 
+# keyword (space-stripped, lowercase) → output column name
+_DIVEROFFICE_DEFAULT_COL_MAP: dict[str, str] = {
+    "level": "head_cm",
+    "waterhead": "head_cm",
+    "temp": "temp_degc",
+    "cond": "cond_mscm",
+}
+_DIVEROFFICE_BARO_COL_MAP: dict[str, str] = {
+    "pressure": "baro_cmh2o",
+    "baro": "baro_cmh2o",
+    "temp": "temperature",
+}
+
 
 class DiverOfficeParser:
     """Parser for Diver-Office .mon and .csv logger files.
@@ -261,6 +274,8 @@ class DiverOfficeParser:
     def parse(
         path: str,
         charset: str,
+        col_map: dict[str, str] | None = None,
+        output_cols: list[str] | None = None,
         skip_rows_without_water_level: bool = False,
         begindate: str | None = None,
         enddate: str | None = None,
@@ -269,13 +284,14 @@ class DiverOfficeParser:
 
         Returns ``(filedata, filename, location, utc_offset, serial_number)``.
 
-        Based on DiverofficeImport.parse_diveroffice_file() with the following
-        changes:
-        - ``pandas_on`` guard removed (pandas is mandatory).
-        - Metadata key-value separator extended to handle both ``=`` and ``;``.
-        - Additional metadata keys looked up: ``utc offset (hh:mm)`` and
-          ``location`` in the ``channel identification`` section.
+        ``col_map`` maps space-stripped lowercase keywords to output column names.
+        ``output_cols`` fixes the column order in the returned filedata (None-filled
+        when absent); defaults to water-level columns when not supplied.
         """
+        _col_map = col_map if col_map is not None else _DIVEROFFICE_DEFAULT_COL_MAP
+        _output_cols = output_cols if output_cols is not None else [
+            "date_time", "head_cm", "temp_degc", "cond_mscm"
+        ]
         filedata = []
         filename = os.path.basename(path)
         section = None
@@ -362,7 +378,6 @@ class DiverOfficeParser:
             header_row_idx = data_start_row - 1
             if header_row_idx >= 0:
                 header_row = rows[header_row_idx]
-                # Determine the delimiter for this header row
                 if "\t" in header_row:
                     hdr_delim = "\t"
                 elif ";" in header_row:
@@ -372,18 +387,12 @@ class DiverOfficeParser:
                 header_cols = [c.strip() for c in header_row.split(hdr_delim)]
                 for colidx, colname in enumerate(header_cols):
                     if colidx == 0:
-                        continue  # Already mapped to date_time
-                    col_lower = colname.lower()
-                    if (
-                        "level" in col_lower
-                        or "waterhead" in col_lower.replace(" ", "")
-                        or "water head" in col_lower
-                    ):
-                        data_headers[colidx] = "LEVEL"
-                    elif "temp" in col_lower:
-                        data_headers[colidx] = "TEMPERATURE"
-                    elif "cond" in col_lower:
-                        data_headers[colidx] = "CONDUCTIVITY"
+                        continue
+                    col_nospace = colname.lower().replace(" ", "")
+                    for keyword in _col_map:
+                        if keyword in col_nospace:
+                            data_headers[colidx] = keyword
+                            break
 
         delimiter = common_utils.get_delimiter_from_file_rows(
             rows[data_start_row:stop_row] if stop_row else rows[data_start_row:],
@@ -405,22 +414,21 @@ class DiverOfficeParser:
 
         usecols = []
         colnames = []
+        seen_outcols: set[str] = set()
         for k, v in sorted(data_headers.items()):
-            if "level" in v.lower() or "waterhead" in v.lower().replace(" ", ""):
-                usecols.append(k)
-                colnames.append("head_cm")
-            elif "temp" in v.lower():
-                usecols.append(k)
-                colnames.append("temp_degc")
-            elif "cond" in v.lower():
-                usecols.append(k)
-                colnames.append("cond_mscm")
+            v_nospace = v.lower().replace(" ", "")
+            for keyword, outcol in _col_map.items():
+                if keyword in v_nospace and outcol not in seen_outcols:
+                    usecols.append(k)
+                    colnames.append(outcol)
+                    seen_outcols.add(outcol)
+                    break
 
         if colnames:
             colnames.insert(0, "date_time")
             usecols.insert(0, 0)
 
-        if "head_cm" not in colnames:
+        if "head_cm" in _col_map.values() and "head_cm" not in colnames:
             common_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "LoggerImport",
@@ -437,7 +445,6 @@ class DiverOfficeParser:
                 return "skip"
 
         if not colnames:
-            # Nothing to read — return empty result
             return filedata, filename, location, utc_offset or None, serial_number
 
         df = pd.read_csv(
@@ -465,25 +472,22 @@ class DiverOfficeParser:
             if df.empty:
                 return filedata, filename, location, utc_offset or None, serial_number
 
-        if skip_rows_without_water_level:
+        if skip_rows_without_water_level and "head_cm" in df.columns:
             df = df.dropna(subset=["head_cm"])
             if df.empty:
                 return filedata, filename, location, utc_offset or None, serial_number
 
         df["date_time"] = df["date_time"].dt.strftime("%Y-%m-%d %H:%M:%S")
-        # Replaces NaN with None
         df = df.astype(object).where(pd.notnull(df), None)
 
-        filedata = [["date_time", "head_cm", "temp_degc", "cond_mscm"]]
-        for c in filedata[0]:
+        filedata = [_output_cols]
+        for c in _output_cols:
             if c not in df.columns:
                 df[c] = None
-        # Convert numeric values to strings (None stays None) for consistent
-        # downstream handling; the date_time column is already a string.
-        for col in filedata[0][1:]:
+        for col in _output_cols[1:]:
             if col in df.columns:
                 df[col] = df[col].apply(lambda v: str(v) if v is not None else None)
-        filedata.extend(df.loc[:, filedata[0]].values.tolist())
+        filedata.extend(df.loc[:, _output_cols].values.tolist())
         if len(filedata) < 2:
             return common_utils.ask_user_about_stopping(
                 QCoreApplication.translate(
@@ -724,11 +728,10 @@ class DiverOfficeParser:
 
 
 class DiverOfficeBaroParser:
-    """Parser for Diver-Office barometric logger files (e.g. TD-Diver baro).
+    """Parser for Diver-Office barometric logger files (TD-Diver baro).
 
-    Identical file format to DiverOfficeParser but maps the Pressure[cmH2O]
-    channel to ``baro_cmh2o`` and Temperature to ``temp_degc`` for import into
-    the ``meteo`` table rather than ``w_levels_logger``.
+    Same file format as DiverOfficeParser; maps Pressure[cmH2O] →
+    ``baro_cmh2o`` and Temperature → ``temperature`` for import into ``meteo``.
     """
 
     @staticmethod
@@ -741,180 +744,16 @@ class DiverOfficeBaroParser:
         """Parse a DiverOffice baro file (.mon or .csv).
 
         Returns ``(filedata, filename, location, utc_offset, serial_number)``
-        where filedata has header ``['date_time', 'baro_cmh2o', 'temp_degc']``.
+        where filedata has header ``['date_time', 'baro_cmh2o', 'temperature']``.
         """
-        filename = os.path.basename(path)
-        section = None
-        data_start_row = None
-        metadata: dict = {}
-
-        with open(path, encoding=str(charset)) as f:
-            rows = [ru(rawrow).rstrip("\n").rstrip("\r").strip() for rawrow in f]
-
-        for rownr, row in enumerate(rows):
-            if path.lower().endswith(".csv") and row.startswith("Date/time"):
-                data_start_row = rownr + 1
-                break
-            if row.startswith("["):
-                section = row.strip().lstrip("[").rstrip("]").lower()
-                if section == "data":
-                    data_start_row = rownr + 2
-                    break
-                continue
-            if section:
-                if "=" in row:
-                    kv = [x.strip() for x in row.split("=")]
-                    metadata.setdefault(section, {})[kv[0].lower()] = "=".join(kv[1:])
-                elif ";" in row:
-                    kv = [x.strip() for x in row.split(";", 1)]
-                    metadata.setdefault(section, {})[kv[0].lower()] = (
-                        kv[1] if len(kv) > 1 else ""
-                    )
-
-        utc_offset = metadata.get("logger settings", {}).get("instrument number", "")
-        if not utc_offset:
-            utc_offset = metadata.get("series settings", {}).get(
-                "instrument number", ""
-            )
-        if not utc_offset:
-            utc_offset = metadata.get("channel identification", {}).get(
-                "utc offset (hh:mm)", ""
-            )
-
-        serial_raw = metadata.get("logger settings", {}).get("serial number", "")
-        if not serial_raw:
-            serial_raw = metadata.get("series settings", {}).get("serial number", "")
-        serial_number = DiverOfficeParser._extract_diver_serial(serial_raw)
-
-        location = metadata.get("logger settings", {}).get("location", "")
-        if not location:
-            location = metadata.get("series settings", {}).get("location", "")
-        if not location:
-            location = metadata.get("channel identification", {}).get("location", "")
-
-        data_headers: dict[int, str] = {0: "date_time"}
-        for section_name, data in metadata.items():
-            m = re.search("channel ([0-9]+)", section_name)
-            if m is not None:
-                secno = m.groups()[0]
-                colname = data.get("identification", "")
-                if colname:
-                    data_headers[int(secno)] = colname
-
-        stop_row = None
-        for inv_rownr, row in enumerate(rows[::-1]):
-            true_rownr = len(rows) - inv_rownr - 1
-            if true_rownr == data_start_row:
-                break
-            if row.lower().strip().startswith("end of data"):
-                stop_row = true_rownr
-                break
-        skipfooter = (len(rows) - stop_row) if stop_row is not None else 0
-
-        # Fallback: derive column names from header row when no [Channel N] sections
-        if len(data_headers) == 1 and data_start_row is not None:
-            header_row_idx = data_start_row - 1
-            if header_row_idx >= 0:
-                header_row = rows[header_row_idx]
-                hdr_delim = (
-                    "\t" if "\t" in header_row else (";" if ";" in header_row else ",")
-                )
-                for colidx, colname in enumerate(header_row.split(hdr_delim)):
-                    if colidx == 0:
-                        continue
-                    col_lower = colname.strip().lower()
-                    if "pressure" in col_lower or "baro" in col_lower:
-                        data_headers[colidx] = "PRESSURE"
-                    elif "temp" in col_lower:
-                        data_headers[colidx] = "TEMPERATURE"
-
-        if data_start_row is None:
-            return [], filename, location, utc_offset or None, serial_number
-
-        delimiter = common_utils.get_delimiter_from_file_rows(
-            rows[data_start_row:stop_row] if stop_row else rows[data_start_row:],
-            delimiters=[
-                "\t",
-                ";",
-                ",",
-                "        ",
-                "       ",
-                "      ",
-                "     ",
-                "    ",
-                "   ",
-                "  ",
-            ],
-            num_fields=len(data_headers),
-            filename=filename,
-        )
-
-        usecols: list[int] = []
-        colnames: list[str] = []
-        for k, v in sorted(data_headers.items()):
-            v_lower = v.lower()
-            if "pressure" in v_lower or "baro" in v_lower:
-                usecols.append(k)
-                colnames.append("baro_cmh2o")
-            elif "temp" in v_lower:
-                usecols.append(k)
-                colnames.append("temperature")
-
-        if not colnames:
-            common_utils.MessagebarAndLog.warning(
-                bar_msg=QCoreApplication.translate(
-                    "LoggerImport",
-                    "DiverOffice Baro: no Pressure or Temperature columns found in %s.",
-                )
-                % filename
-            )
-            return [], filename, location, utc_offset or None, serial_number
-
-        colnames.insert(0, "date_time")
-        usecols.insert(0, 0)
-
-        df = pd.read_csv(
+        return DiverOfficeParser.parse(
             path,
-            sep=delimiter,
-            encoding=charset,
-            usecols=usecols,
-            names=colnames,
-            skipfooter=skipfooter,
-            skiprows=data_start_row,
-            parse_dates=["date_time"],
-            engine="python",
+            charset,
+            col_map=_DIVEROFFICE_BARO_COL_MAP,
+            output_cols=["date_time", "baro_cmh2o", "temperature"],
+            begindate=begindate,
+            enddate=enddate,
         )
-        for col in df.columns[1:]:
-            df[col] = pd.to_numeric(
-                df[col].astype(str).str.replace(",", ".").str.strip(), errors="coerce"
-            )
-
-        if not df.empty:
-            if begindate is not None:
-                df = df.loc[df["date_time"] >= begindate, :]
-            if enddate is not None:
-                df = df.loc[df["date_time"] <= enddate, :]
-
-        if df.empty:
-            return [], filename, location, utc_offset or None, serial_number
-
-        df["date_time"] = df["date_time"].dt.strftime("%Y-%m-%d %H:%M:%S")
-        df = df.astype(object).where(pd.notnull(df), None)
-
-        output_cols = ["date_time", "baro_cmh2o", "temperature"]
-        for c in output_cols:
-            if c not in df.columns:
-                df[c] = None
-        for col in output_cols[1:]:
-            df[col] = df[col].apply(lambda v: str(v) if v is not None else None)
-
-        filedata = [output_cols]
-        filedata.extend(df.loc[:, output_cols].values.tolist())
-
-        if len(filedata) < 2:
-            return [], filename, location, utc_offset or None, serial_number
-
-        return filedata, filename, location, utc_offset or None, serial_number
 
 
 # Column → (meteo parameter, unit) mapping for baro imports
@@ -924,9 +763,9 @@ _BARO_COL_TO_METEO: dict[str, tuple[str, str]] = {
 }
 
 # Parameters that must exist in zz_meteoparam for baro imports
+# ("temp" is always seeded by insert_datadomain.sql — only "pressure" needs checking)
 _BARO_METEO_PARAMS: list[tuple[str, str]] = [
     ("pressure", "Barometric pressure"),
-    ("temp", "Air temperature"),
 ]
 
 
@@ -935,7 +774,7 @@ def _pivot_baro_to_meteo(
     serial_number: str | None,
     filename: str,
 ) -> list[list]:
-    """Convert wide baro filedata (date_time, baro_cmh2o, temp_degc, obsid)
+    """Convert wide baro filedata (date_time, baro_cmh2o, temperature, obsid)
     to meteo long format (obsid, instrumentid, parameter, date_time,
     reading_num, unit).
     """
@@ -1374,8 +1213,9 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         self.add_row(self.date_time_filter)
 
         # Format-specific sections (each builds a container widget shown/hidden by _on_format_changed)
-        self._build_diveroffice_section()
-        self._build_diveroffice_baro_section()
+        _db_tz = db_utils.get_timezone_from_db("w_levels_logger")
+        self._build_diveroffice_section(_db_tz)
+        self._build_diveroffice_baro_section(_db_tz)
         self._build_levelogger_section()
         self._build_hobo_section()
 
@@ -1511,7 +1351,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         self.format_combo.currentTextChanged.connect(self._on_format_changed)
         self._on_format_changed(self.format_combo.currentText())
 
-    def _build_diveroffice_section(self) -> None:
+    def _build_diveroffice_section(self, database_timezone: str | None = None) -> None:
         """Build DiverOffice-specific section (help text + UTC offset). Hidden for other formats."""
         self._diveroffice_section = QtWidgets.QWidget()
         _vl = QtWidgets.QVBoxLayout(self._diveroffice_section)
@@ -1545,7 +1385,6 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         self.utc_offset.addItems(
             [format_timezone_string(hour) for hour in range(-12, 15)]
         )
-        database_timezone = db_utils.get_timezone_from_db("w_levels_logger")
         if database_timezone is not None:
             set_combobox(self.utc_offset, database_timezone, add_if_not_exists=False)
         self.utcoffset_row = RowEntry()
@@ -1555,7 +1394,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
 
         self.add_row(self._diveroffice_section)
 
-    def _build_diveroffice_baro_section(self) -> None:
+    def _build_diveroffice_baro_section(self, database_timezone: str | None = None) -> None:
         """Build DiverOffice Baro section (help text + UTC offset). Imports to meteo table."""
         self._diveroffice_baro_section = QtWidgets.QWidget()
         _vl = QtWidgets.QVBoxLayout(self._diveroffice_baro_section)
@@ -1573,7 +1412,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         _help.setWordWrap(True)
         _vl.addWidget(_help)
 
-        self.baro_utcoffset_label = QtWidgets.QLabel(
+        baro_utcoffset_label = QtWidgets.QLabel(
             QCoreApplication.translate(
                 "LoggerImport", "Identify and change UTC offset:"
             )
@@ -1589,13 +1428,12 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         self.baro_utc_offset.addItems(
             [format_timezone_string(hour) for hour in range(-12, 15)]
         )
-        database_timezone = db_utils.get_timezone_from_db("w_levels_logger")
         if database_timezone is not None:
             set_combobox(
                 self.baro_utc_offset, database_timezone, add_if_not_exists=False
             )
         baro_utcoffset_row = RowEntry()
-        baro_utcoffset_row.layout.addWidget(self.baro_utcoffset_label)
+        baro_utcoffset_row.layout.addWidget(baro_utcoffset_label)
         baro_utcoffset_row.layout.addWidget(self.baro_utc_offset)
         _vl.addWidget(baro_utcoffset_row.widget)
 
@@ -1936,19 +1774,13 @@ class LoggerImport(BaseImporter, import_ui_dialog):
 
         # ── DiverOffice Baro path: pivot to meteo long format and import ────────
         if format_name == self.FORMAT_DIVEROFFICE_BARO:
-            meteo_rows: list[list] = [
-                [
-                    "obsid",
-                    "instrumentid",
-                    "parameter",
-                    "date_time",
-                    "reading_num",
-                    "unit",
-                ]
-            ]
+            meteo_rows: list[list] = []
             for file_data, filename, location, serial_number in parsed_files_with_obsid:
                 pivoted = _pivot_baro_to_meteo(file_data, serial_number, filename)
-                meteo_rows.extend(pivoted[1:])
+                if not meteo_rows:
+                    meteo_rows = pivoted
+                else:
+                    meteo_rows.extend(pivoted[1:])
 
             if len(meteo_rows) < 2:
                 common_utils.MessagebarAndLog.info(

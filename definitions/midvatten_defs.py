@@ -391,6 +391,7 @@ def get_subset_of_tables_fr_db(category="obs_points"):
         return [
             "zz_flowtype",
             "zz_meteoparam",
+            "zz_screen_plots",
             "zz_staff",
             "zz_strat",
             "zz_stratigraphy_plots",
@@ -410,6 +411,7 @@ def get_subset_of_tables_fr_db(category="obs_points"):
         ]
     elif category == "default_nonspatlayers":
         return [
+            "screen",
             "stratigraphy",
             "w_levels",
             "w_flow",
@@ -717,6 +719,48 @@ def plot_hatch_dict():
             }
     hatch_dict = {k.lower(): v for k, v in hatch_dict.items()}
     return hatch_dict
+
+
+def screen_style_dict() -> Dict[str, Dict[str, Any]]:
+    """
+    Return a dict mapping screenshort (lowercased) to matplotlib patch kwargs
+    for the section-plot screen overlay.
+
+    Each value is a dict with keys: facecolor, edgecolor, hatch, linewidth.
+
+    Callers should fall back to the ``'default'`` key when a screenshort is not
+    present in the returned dict — that lookup is the caller's responsibility.
+
+    On DB failure a small hard-coded fallback covering at least ``'default'`` is
+    returned so section plots still render.
+    """
+    sql = "SELECT screenshort, color_mplot, edgecolor_mplot, hatch_mplot, linewidth_mplot FROM zz_screen_plots"
+    connection_ok, result_list = sql_load_fr_db(sql)
+    if not connection_ok or not result_list:
+        MessagebarAndLog.warning(
+            bar_msg=QCoreApplication.translate(
+                "screen_style_dict",
+                "Getting screen styles from zz_screen_plots failed, using fallback",
+            )
+        )
+        return {
+            "default": {
+                "facecolor": "none",
+                "edgecolor": "black",
+                "hatch": "///",
+                "linewidth": 1.0,
+            }
+        }
+    style_dict = {
+        row[0].lower(): {
+            "facecolor": row[1],
+            "edgecolor": row[2],
+            "hatch": row[3],
+            "linewidth": row[4],
+        }
+        for row in result_list
+    }
+    return style_dict
 
 
 def staff_list():

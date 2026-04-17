@@ -44,6 +44,14 @@ strata text NOT NULL --clay etc
 , brush_qt text NOT NULL --Brush types for Qt plots
 , PRIMARY KEY(strata)
 );
+CREATE TABLE zz_screen_plots /*Data domain for screen plot colors and patterns used by section plot*/(
+screenshort text NOT NULL
+, color_mplot text --matplotlib fill color ('none' for transparent)
+, edgecolor_mplot text --matplotlib border + hatch color (typically 'black')
+, hatch_mplot text --matplotlib hatch pattern (e.g. '///', '|||', 'xx')
+, linewidth_mplot double --matplotlib border line width
+, PRIMARY KEY(screenshort)
+);
 CREATE TABLE zz_capacity /*Data domain for capacity classes used by the plugin*/(
 capacity text NOT NULL --Water capacity (ex. in the range 1-6)
 , explanation text NOT NULL --Description of water capacity classes
@@ -141,6 +149,19 @@ obsid text NOT NULL --Obsid linked to obs_points.obsid
 , development text --Well development - Is the flushed water clear and free of suspended solids?
 , comment text --Comment
 , PRIMARY KEY (obsid, stratid)
+, FOREIGN KEY(obsid) REFERENCES obs_points(obsid)
+);
+CREATE TABLE screen /*Structured screen/filter intervals per obsid*/(
+SPATIALITE id INTEGER PRIMARY KEY AUTOINCREMENT
+POSTGIS id SERIAL PRIMARY KEY
+, obsid text NOT NULL --Obsid linked to obs_points.obsid
+, screenid integer NOT NULL --Screen sequence number per obsid
+, depthtop double --Top of the screen in m from ground surface
+, depthbot double --Bottom of the screen in m from ground surface
+, screenshort text --Short code used for legend label and style lookup
+, screen text --Full free-text description
+, comment text --Additional notes
+, UNIQUE (obsid, screenid)
 , FOREIGN KEY(obsid) REFERENCES obs_points(obsid)
 );
 CREATE TABLE w_qual_field /*Water quality from field measurements*/(

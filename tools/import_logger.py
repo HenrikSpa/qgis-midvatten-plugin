@@ -1178,7 +1178,13 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         existing_columns = db_utils.tables_columns(table="w_levels_logger")[
             "w_levels_logger"
         ]
-        if "source" in existing_columns:
+        series_table = db_utils.tables_columns(table="w_logger_series").get(
+            "w_logger_series"
+        )
+        # Show source edit for:
+        #   - Old/current schema: column w_levels_logger.source
+        #   - New schema: w_logger_series table exists; source lives on the series row
+        if "source" in existing_columns or series_table:
             self.add_row(get_line())
             self.source_row = RowEntry()
             self.source_label = QtWidgets.QLabel(
@@ -1601,6 +1607,62 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             common_utils.stop_waiting_cursor()
             return False
 
+        # Schema variant detection. In the new schema, source has moved to a
+        # w_logger_series row that groups all rows from one imported file.
+        # In older schemas, source is still a column on w_levels_logger. We
+        # keep supporting both so users don't have to migrate to keep using
+        # this importer.
+        wlogger_cols = db_utils.tables_columns(table="w_levels_logger").get(
+            "w_levels_logger", []
+        )
+        has_series_id = "series_id" in wlogger_cols
+        has_created_at = "created_at" in wlogger_cols
+        has_source_column = "source" in wlogger_cols
+
+        source_text = (
+            self.source_edit.text().strip() if self.source_edit is not None else ""
+        )
+
+        # New-schema import path: create one w_logger_series row per imported
+        # file and tag every row from that file with its new series_id and a
+        # single batch-level created_at.
+        if import_to_db and has_series_id:
+            source_for_series = source_text or None
+            batch_created_at = _datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            dbconn = db_utils.DbConnectionManager()
+            try:
+                ph = dbconn.placeholder()
+                for parsed_file in parsed_files_with_obsid:
+                    file_data = parsed_file[0]
+                    filename = parsed_file[1]
+                    obsid = filenames_obsid[filename]
+                    description = (
+                        os.path.basename(filename) if filename else None
+                    )
+                    dbconn.execute(
+                        f"INSERT INTO w_logger_series "
+                        f"(obsid, source, description) VALUES ({ph}, {ph}, {ph})",
+                        (obsid, source_for_series, description),
+                    )
+                    if dbconn.dbtype == "spatialite":
+                        series_id = dbconn.execute_and_fetchall(
+                            "SELECT last_insert_rowid()"
+                        )[0][0]
+                    else:
+                        series_id = dbconn.execute_and_fetchall(
+                            "SELECT lastval()"
+                        )[0][0]
+                    file_data[0].append("series_id")
+                    if has_created_at:
+                        file_data[0].append("created_at")
+                    for row in file_data[1:]:
+                        row.append(series_id)
+                        if has_created_at:
+                            row.append(batch_created_at)
+                dbconn.commit()
+            finally:
+                dbconn.closedb()
+
         file_to_import_to_db = [parsed_files_with_obsid[0][0][0]]
         file_to_import_to_db.extend(
             [
@@ -1625,12 +1687,18 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             common_utils.stop_waiting_cursor()
             return True
 
-        if self.source_edit is not None:
-            source = self.source_edit.text().strip()
-            if source:
-                file_to_import_to_db[0].append("source")
-                for row in file_to_import_to_db[1:]:
-                    row.append(source)
+        # Old-schema path: source is a column on w_levels_logger itself.
+        # Only append it if we are NOT on the new schema (the new path
+        # already put source on the w_logger_series row).
+        if (
+            source_text
+            and has_source_column
+            and not has_series_id
+            and self.source_edit is not None
+        ):
+            file_to_import_to_db[0].append("source")
+            for row in file_to_import_to_db[1:]:
+                row.append(source_text)
 
         if import_to_db:
             importer = import_data_to_db.MidvDataImporter()

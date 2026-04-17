@@ -633,7 +633,10 @@ class CalibrloggerPostgisMixin(CalibrloggerMixin):
 
         test = utils_for_tests.create_test_string(
             db_utils.sql_load_fr_db(
-                """SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, round(level_masl::numeric, 2), comment, source FROM w_levels_logger"""
+                "SELECT l.obsid, l.date_time, l.head_cm, l.temp_degc, l.cond_mscm,"
+                " round(l.level_masl::numeric, 2), l.comment, s.source"
+                " FROM w_levels_logger l"
+                " LEFT JOIN w_logger_series s ON s.id = l.series_id"
             )
         )
         ref = (
@@ -837,23 +840,56 @@ class CalibrloggerSpatialiteMixin(CalibrloggerMixin):
         db_utils.sql_alter_db(
             "INSERT INTO w_levels (obsid, date_time, level_masl) VALUES ('rb1', '2017-02-01 00:00', 100)"
         )
+        # New schema: source moved from w_levels_logger to w_logger_series.
+        # One series per (original) source value so loggereditor's source-based
+        # grouping still has distinct groups via the LEFT JOIN.
         db_utils.sql_alter_db(
-            "INSERT INTO w_levels_logger (obsid, date_time, head_cm, source) VALUES ('rb1', '2017-02-01 00:00', 100, 'source1')"
+            "INSERT INTO w_logger_series (obsid, source) VALUES"
+            " ('rb1', 'source1'), ('rb1', 'source2'),"
+            " ('rb1', ''), ('rb1', NULL),"
+            " ('rb1', ''), ('rb1', NULL)"
+        )
+        sid_s1 = db_utils.sql_load_fr_db(
+            "SELECT id FROM w_logger_series WHERE obsid='rb1' AND source='source1'"
+        )[1][0][0]
+        sid_s2 = db_utils.sql_load_fr_db(
+            "SELECT id FROM w_logger_series WHERE obsid='rb1' AND source='source2'"
+        )[1][0][0]
+        sid_empty = [
+            r[0]
+            for r in db_utils.sql_load_fr_db(
+                "SELECT id FROM w_logger_series WHERE obsid='rb1' AND source='' ORDER BY id"
+            )[1]
+        ]
+        sid_null = [
+            r[0]
+            for r in db_utils.sql_load_fr_db(
+                "SELECT id FROM w_logger_series WHERE obsid='rb1' AND source IS NULL ORDER BY id"
+            )[1]
+        ]
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, head_cm, series_id)"
+            f" VALUES ('rb1', '2017-02-01 00:00', 100, {sid_s1})"
         )
         db_utils.sql_alter_db(
-            "INSERT INTO w_levels_logger (obsid, date_time, head_cm, source) VALUES ('rb1', '2017-02-02 00:00', 101, 'source2')"
+            "INSERT INTO w_levels_logger (obsid, date_time, head_cm, series_id)"
+            f" VALUES ('rb1', '2017-02-02 00:00', 101, {sid_s2})"
         )
         db_utils.sql_alter_db(
-            "INSERT INTO w_levels_logger (obsid, date_time, head_cm, source) VALUES ('rb1', '2017-02-03 00:00', 102, '')"
+            "INSERT INTO w_levels_logger (obsid, date_time, head_cm, series_id)"
+            f" VALUES ('rb1', '2017-02-03 00:00', 102, {sid_empty[0]})"
         )
         db_utils.sql_alter_db(
-            "INSERT INTO w_levels_logger (obsid, date_time, head_cm, source) VALUES ('rb1', '2017-02-04 00:00', 103, NULL)"
+            "INSERT INTO w_levels_logger (obsid, date_time, head_cm, series_id)"
+            f" VALUES ('rb1', '2017-02-04 00:00', 103, {sid_null[0]})"
         )
         db_utils.sql_alter_db(
-            "INSERT INTO w_levels_logger (obsid, date_time, head_cm, source) VALUES ('rb1', '2017-02-05 00:00', 104, '')"
+            "INSERT INTO w_levels_logger (obsid, date_time, head_cm, series_id)"
+            f" VALUES ('rb1', '2017-02-05 00:00', 104, {sid_empty[1]})"
         )
         db_utils.sql_alter_db(
-            "INSERT INTO w_levels_logger (obsid, date_time, head_cm, source) VALUES ('rb1', '2017-02-06 00:00', 105, NULL)"
+            "INSERT INTO w_levels_logger (obsid, date_time, head_cm, series_id)"
+            f" VALUES ('rb1', '2017-02-06 00:00', 105, {sid_null[1]})"
         )
         calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
         calibrlogger.show()
@@ -870,7 +906,10 @@ class CalibrloggerSpatialiteMixin(CalibrloggerMixin):
 
         test = utils_for_tests.create_test_string(
             db_utils.sql_load_fr_db(
-                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, round(level_masl, 2), comment, source FROM w_levels_logger"
+                "SELECT l.obsid, l.date_time, l.head_cm, l.temp_degc, l.cond_mscm,"
+                " round(l.level_masl, 2), l.comment, s.source"
+                " FROM w_levels_logger l"
+                " LEFT JOIN w_logger_series s ON s.id = l.series_id"
             )
         )
         ref = (

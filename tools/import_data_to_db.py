@@ -930,6 +930,18 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 table=fk_table, dbconnection=dbconnection
             )[fk_table]
             column_headers_types = dict([(row[1], row[2]) for row in table_info])
+            # Skip auto-populate for tables that have NOT NULL columns outside
+            # the FK target columns. Those rows can't be synthesised from just
+            # the FK values (e.g., w_logger_series.obsid is required) — the
+            # caller is responsible for creating them up front.
+            required_outside_to_list = [
+                row[1] for row in table_info
+                if str(row[3]) == "1"
+                and row[1] not in to_list
+                and not row[4]
+            ]
+            if required_outside_to_list:
+                continue
 
             null_replacement_string = (
                 "NULL_NULL_NULL_NULL_NULL_NULL_NULL_NULL_NULL_NULL"

@@ -296,7 +296,7 @@ class ExportMixin:
         assert test_string == reference_string
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch("midvatten.tools.export_spatialite.ExportSpatialiteDialog")
+    @mock.patch("midvatten.tools.export_spatialite.NewSpatialiteDbDialog")
     @mock.patch(
         "midvatten.tools.utils.common_utils.get_selected_features_as_tuple",
         mock_selection.get_v,
@@ -435,7 +435,7 @@ class ExportMixin:
         assert test_string == reference_string
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch("midvatten.tools.export_spatialite.ExportSpatialiteDialog")
+    @mock.patch("midvatten.tools.export_spatialite.NewSpatialiteDbDialog")
     @mock.patch(
         "midvatten.tools.utils.common_utils.get_selected_features_as_tuple",
         mock_no_selection.get_v,
@@ -576,7 +576,7 @@ class ExportMixin:
         assert test_string == reference_string
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch("midvatten.tools.export_spatialite.ExportSpatialiteDialog")
+    @mock.patch("midvatten.tools.export_spatialite.NewSpatialiteDbDialog")
     @mock.patch("midvatten.tools.utils.common_utils.get_selected_features_as_tuple")
     @mock.patch(
         "midvatten.tools.utils.midvatten_utils.verify_msettings_loaded_and_layer_edit_mode",
@@ -655,7 +655,7 @@ class ExportMixin:
         assert test_string == reference_string
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch("midvatten.tools.export_spatialite.ExportSpatialiteDialog")
+    @mock.patch("midvatten.tools.export_spatialite.NewSpatialiteDbDialog")
     @mock.patch(
         "midvatten.tools.utils.common_utils.get_selected_features_as_tuple",
         mock_selection.get_v,
@@ -811,7 +811,7 @@ class ExportMixin:
         assert test_string == reference_string
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch("midvatten.tools.export_spatialite.ExportSpatialiteDialog")
+    @mock.patch("midvatten.tools.export_spatialite.NewSpatialiteDbDialog")
     @mock.patch(
         "midvatten.tools.utils.common_utils.get_selected_features_as_tuple",
         mock_selection.get_v,
@@ -931,7 +931,7 @@ class ExportMixin:
         assert test_string == reference_string
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch("midvatten.tools.export_spatialite.ExportSpatialiteDialog")
+    @mock.patch("midvatten.tools.export_spatialite.NewSpatialiteDbDialog")
     @mock.patch(
         "midvatten.tools.utils.common_utils.get_selected_features_as_tuple",
         mock_selection.get_v,

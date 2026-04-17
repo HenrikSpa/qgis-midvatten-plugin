@@ -3,7 +3,7 @@
 import logging
 
 from qgis.PyQt.QtCore import QCoreApplication
-from qgis.PyQt.QtWidgets import QDialog, QFileDialog, QWidget
+from qgis.PyQt.QtWidgets import QDialog
 
 from midvatten.tools.create_db import NewDb
 from midvatten.tools.create_db_dialogs import NewSpatialiteDbDialog
@@ -11,46 +11,6 @@ from midvatten.tools.export_data import ExportData
 from midvatten.tools.utils import common_utils, db_utils
 
 log = logging.getLogger(__name__)
-
-
-class ExportSpatialiteDialog(NewSpatialiteDbDialog):
-    """Variant of NewSpatialiteDbDialog for export: pre-fills values from source DB."""
-
-    _DEFAULT_PATH = "midv_export.sqlite"
-
-    def __init__(
-        self,
-        source_srid: int,
-        selected_all_text: str,
-        w_levels_logger_timezone: str = None,
-        w_levels_timezone: str = None,
-        parent: QWidget = None,
-    ):
-        super().__init__(parent)
-        self.setWindowTitle(
-            QCoreApplication.translate(
-                "ExportSpatialite",
-                "Export to SpatiaLite database ({})",
-            ).format(selected_all_text)
-        )
-        if source_srid:
-            self._epsg_spin.setValue(source_srid)
-        if w_levels_logger_timezone is not None:
-            idx = self._logger_tz_combo.findText(w_levels_logger_timezone)
-            self._logger_tz_combo.setCurrentIndex(max(0, idx))
-        if w_levels_timezone is not None:
-            idx = self._levels_tz_combo.findText(w_levels_timezone)
-            self._levels_tz_combo.setCurrentIndex(max(0, idx))
-
-    def _browse_path(self) -> None:
-        path, _ = QFileDialog.getSaveFileName(
-            self,
-            QCoreApplication.translate("ExportSpatialite", "Export database"),
-            self._path_edit.text() or self._DEFAULT_PATH,
-            "Spatialite (*.sqlite)",
-        )
-        if path:
-            self._path_edit.setText(path)
 
 
 class ExportSpatialite:
@@ -80,13 +40,22 @@ class ExportSpatialite:
             else QCoreApplication.translate("Midvatten", "all")
         )
 
-        dialog = ExportSpatialiteDialog(
-            source_srid=source_srid,
-            selected_all_text=selected_all,
-            w_levels_logger_timezone=w_levels_logger_timezone,
-            w_levels_timezone=w_levels_timezone,
-            parent=self._iface.mainWindow(),
+        dialog = NewSpatialiteDbDialog(parent=self._iface.mainWindow())
+        dialog.setWindowTitle(
+            QCoreApplication.translate(
+                "ExportSpatialite", "Export to SpatiaLite database ({})"
+            ).format(selected_all)
         )
+        dialog._path_edit.clear()
+        if source_srid:
+            dialog._epsg_spin.setValue(source_srid)
+        if w_levels_logger_timezone is not None:
+            idx = dialog._logger_tz_combo.findText(w_levels_logger_timezone)
+            dialog._logger_tz_combo.setCurrentIndex(max(0, idx))
+        if w_levels_timezone is not None:
+            idx = dialog._levels_tz_combo.findText(w_levels_timezone)
+            dialog._levels_tz_combo.setCurrentIndex(max(0, idx))
+
         if dialog.exec() != QDialog.Accepted:
             return
 

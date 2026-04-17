@@ -161,6 +161,25 @@ class TestDiverOfficeParser:
         _, _, _, _, serial_number = result
         assert serial_number is None
 
+    def test_parse_old_serial_number(self):
+        file_content = (
+            "Serial number=..00-R2717  214.\n"
+            "Location=rb1\n"
+            "Date/time,Water head[cm],Temperature[\u00b0C]\n"
+            "2016/03/15 10:30:00,1.0,10.0\n"
+            "2016/03/15 11:00:00,2.0,11.0\n"
+        )
+        with common_utils.tempinput(file_content, "utf-8") as f:
+            result = DiverOfficeParser.parse_old(
+                path=f,
+                charset="utf-8",
+                skip_rows_without_water_level=False,
+                begindate=None,
+                enddate=None,
+            )
+        _, _, _, _, serial_number = result
+        assert serial_number == "R2717"
+
 
 @pytest.mark.active
 class TestFilterDatesFromFiledata:

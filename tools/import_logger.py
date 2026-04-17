@@ -527,6 +527,7 @@ class DiverOfficeParser:
         filedata = []
         begin_extraction = False
         utc_offset = None
+        serial_number = None
 
         data_rows = []
         with open(path, encoding=str(charset)) as f:
@@ -543,6 +544,15 @@ class DiverOfficeParser:
                 if row.lower().startswith("Instrument number".lower()):
                     try:
                         utc_offset = row.split("=")[1].strip()
+                    except IndexError:
+                        pass
+                    continue
+
+                if row.lower().startswith("serial number"):
+                    try:
+                        serial_raw = row.split("=")[1].strip()
+                        _tail = serial_raw.split("-")[-1].split()
+                        serial_number = _tail[0] if _tail else None
                     except IndexError:
                         pass
                     continue
@@ -709,7 +719,7 @@ class DiverOfficeParser:
 
         filename = os.path.basename(path)
 
-        return filedata, filename, location, utc_offset
+        return filedata, filename, location, utc_offset, serial_number
 
 
 class LeveloggerParser:

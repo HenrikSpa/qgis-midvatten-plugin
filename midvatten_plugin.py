@@ -23,7 +23,6 @@ SQLite or PostgreSQL database.
 """
 
 import logging
-import os.path
 import shutil
 import traceback
 from dataclasses import dataclass, field
@@ -445,7 +444,7 @@ class Midvatten:
         matplotlib_replacements.perform_all_replacements()
         self.iface = iface
         # initialize plugin directory
-        self.plugin_dir = Path(os.path.dirname(__file__))
+        self.plugin_dir = Path(__file__).parent
 
         self.ms = MidvSettings()
         self.translator = get_translate("midvatten")
@@ -676,7 +675,6 @@ class Midvatten:
         self.iface.unregisterMainWindowAction(self.action_midvatten_settings)
 
     def about(self):
-        get_translate("midvatten")
         filename = self.plugin_dir / "metadata.txt"
         metadata = QSettings(str(filename), QSettings.Format.IniFormat)
         verno = metadata.value("version")

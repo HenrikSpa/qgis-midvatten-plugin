@@ -36,7 +36,7 @@ class ExportSpatialite:
 
         selected_all = (
             QCoreApplication.translate("Midvatten", "selected")
-            if any([obsid_p, obsid_l])
+            if obsid_p or obsid_l
             else QCoreApplication.translate("Midvatten", "all")
         )
 
@@ -79,7 +79,7 @@ class ExportSpatialite:
             locale=dialog.locale,
             dbpath=dialog.dbpath,
         )
-        common_utils.start_waiting_cursor()
+        common_utils.stop_waiting_cursor()
 
         if newdbinstance.db_settings:
             new_dbpath = db_utils.get_spatialite_db_path_from_dbsettings_string(

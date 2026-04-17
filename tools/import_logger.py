@@ -253,16 +253,21 @@ class DiverOfficeParser:
     """
 
     @staticmethod
+    def _extract_diver_serial(serial_raw: str) -> str | None:
+        _tail = serial_raw.split("-")[-1].split()
+        return _tail[0] if _tail else None
+
+    @staticmethod
     def parse(
         path: str,
         charset: str,
         skip_rows_without_water_level: bool = False,
         begindate: str | None = None,
         enddate: str | None = None,
-    ) -> tuple[list, str, str, str | None]:
+    ) -> tuple[list, str, str, str | None, str | None]:
         """Parse a Diver-Office .mon or .csv file.
 
-        Returns ``(filedata, filename, location, utc_offset)``.
+        Returns ``(filedata, filename, location, utc_offset, serial_number)``.
 
         Based on DiverofficeImport.parse_diveroffice_file() with the following
         changes:
@@ -316,6 +321,11 @@ class DiverOfficeParser:
             utc_offset = metadata.get("channel identification", {}).get(
                 "utc offset (hh:mm)", ""
             )
+
+        serial_raw = metadata.get("logger settings", {}).get("serial number", "")
+        if not serial_raw:
+            serial_raw = metadata.get("series settings", {}).get("serial number", "")
+        serial_number = DiverOfficeParser._extract_diver_serial(serial_raw)
 
         # Resolve location
         location = metadata.get("logger settings", {}).get("location", "")
@@ -428,7 +438,7 @@ class DiverOfficeParser:
 
         if not colnames:
             # Nothing to read — return empty result
-            return filedata, filename, location, utc_offset or None
+            return filedata, filename, location, utc_offset or None, serial_number
 
         df = pd.read_csv(
             path,
@@ -453,12 +463,12 @@ class DiverOfficeParser:
                 df = df.loc[df["date_time"] <= enddate, :]
 
             if df.empty:
-                return filedata, filename, location, utc_offset or None
+                return filedata, filename, location, utc_offset or None, serial_number
 
         if skip_rows_without_water_level:
             df = df.dropna(subset=["head_cm"])
             if df.empty:
-                return filedata, filename, location, utc_offset or None
+                return filedata, filename, location, utc_offset or None, serial_number
 
         df["date_time"] = df["date_time"].dt.strftime("%Y-%m-%d %H:%M:%S")
         # Replaces NaN with None
@@ -485,7 +495,7 @@ class DiverOfficeParser:
                 % path
             )
 
-        return filedata, filename, location, utc_offset or None
+        return filedata, filename, location, utc_offset or None, serial_number
 
     @staticmethod
     def parse_old(
@@ -494,14 +504,10 @@ class DiverOfficeParser:
         skip_rows_without_water_level: bool = False,
         begindate: str | None = None,
         enddate: str | None = None,
-    ) -> (
-        tuple[list[list[str]], str, str, str]
-        | str
-        | tuple[list[list[str]], str, str, None]
-    ):
+    ) -> tuple[list, str, str | None, str | None, str | None]:
         """Parse a legacy Diver-Office CSV file.
 
-        Returns ``(filedata, filename, location, utc_offset)``.
+        Returns ``(filedata, filename, location, utc_offset, serial_number)``.
 
         Copied verbatim from DiverofficeImport.parse_diveroffice_file_old().
         """
@@ -521,6 +527,7 @@ class DiverOfficeParser:
         filedata = []
         begin_extraction = False
         utc_offset = None
+        serial_number = None
 
         data_rows = []
         with open(path, encoding=str(charset)) as f:
@@ -537,6 +544,16 @@ class DiverOfficeParser:
                 if row.lower().startswith("Instrument number".lower()):
                     try:
                         utc_offset = row.split("=")[1].strip()
+                    except IndexError:
+                        pass
+                    continue
+
+                if row.lower().startswith("serial number"):
+                    try:
+                        serial_raw = row.split("=")[1].strip()
+                        serial_number = DiverOfficeParser._extract_diver_serial(
+                            serial_raw
+                        )
                     except IndexError:
                         pass
                     continue
@@ -703,11 +720,23 @@ class DiverOfficeParser:
 
         filename = os.path.basename(path)
 
-        return filedata, filename, location, utc_offset
+        return filedata, filename, location, utc_offset, serial_number
 
 
 class LeveloggerParser:
     """Parser for Levelogger data wizard CSV files."""
+
+    @staticmethod
+    def _col1_value(col1: list[str], key: str) -> str | None:
+        try:
+            idx = col1.index(key)
+            return col1[idx + 1].strip() or None
+        except ValueError:
+            pass
+        for cell in col1:
+            if cell.startswith(key):
+                return cell[len(key) :].strip() or None
+        return None
 
     @staticmethod
     def parse(
@@ -716,11 +745,11 @@ class LeveloggerParser:
         skip_rows_without_water_level: bool = False,
         begindate: str | None = None,
         enddate: str | None = None,
-    ) -> tuple[list, str, str | None, None]:
+    ) -> tuple[list, str, str | None, None, str | None]:
         """Parse a Levelogger CSV file.
 
-        Returns ``(filedata, filename, location, timezone)`` where timezone is
-        always ``None``.
+        Returns ``(filedata, filename, location, timezone, serial_number)`` where
+        timezone is always ``None``.
 
         Copied verbatim from LeveloggerImport.parse_levelogger_file() with the
         addition of a fallback for ``Location: value`` on the same line (the
@@ -729,6 +758,7 @@ class LeveloggerParser:
         filedata = []
         location = None
         timezone = None
+        serial_number = None
         level_unit_factor_to_cm = 100
         spec_cond_factor_to_mscm = 0.001
         filename = os.path.basename(path)
@@ -753,7 +783,7 @@ class LeveloggerParser:
                 )
                 % filename
             )
-            return [], filename, location, timezone
+            return [], filename, location, timezone, serial_number
 
         delimiter = common_utils.get_delimiter_from_file_rows(
             rows_unsplit[data_header_idx:],
@@ -763,7 +793,7 @@ class LeveloggerParser:
         )
 
         if delimiter is None:
-            return [], filename, location, timezone
+            return [], filename, location, timezone, serial_number
 
         rows = [row.split(";") for row in rows_unsplit]
         lens = set([len(row) for row in rows[data_header_idx:]])
@@ -773,20 +803,8 @@ class LeveloggerParser:
 
         col1 = [row[0] for row in rows]
 
-        # Original parser: location is on the line AFTER "Location:"
-        try:
-            location_idx = col1.index("Location:")
-        except ValueError:
-            location_idx = None
-
-        if location_idx is not None:
-            location = col1[location_idx + 1]
-        else:
-            # Fallback: handle "Location: value" on the same line
-            for cell in col1:
-                if cell.startswith("Location:"):
-                    location = cell[len("Location:") :].strip()
-                    break
+        location = LeveloggerParser._col1_value(col1, "Location:")
+        serial_number = LeveloggerParser._col1_value(col1, "Serial_number:")
 
         try:
             level_unit_idx = col1.index("LEVEL")
@@ -848,7 +866,7 @@ class LeveloggerParser:
                 )
                 % filename
             )
-            return [], filename, location, timezone
+            return [], filename, location, timezone, serial_number
         else:
             date_str = " ".join(
                 [first_data_row[date_colnr], first_data_row[time_colnr]]
@@ -862,7 +880,7 @@ class LeveloggerParser:
                     )
                     % filename
                 )
-                return [], filename, location, timezone
+                return [], filename, location, timezone, serial_number
 
         for row in rows[data_header_idx + 1 :]:
             date_str = " ".join([row[date_colnr], row[time_colnr]])
@@ -917,7 +935,7 @@ class LeveloggerParser:
 
         filedata = [row for row in filedata if any(row[1:])]
 
-        return filedata, filename, location, timezone
+        return filedata, filename, location, timezone, serial_number
 
 
 class HoboParser:
@@ -930,21 +948,22 @@ class HoboParser:
         tz_converter: TzConverter | None = None,
         begindate: str | None = None,
         enddate: str | None = None,
-    ) -> tuple[list, str, str | None, None]:
+    ) -> tuple[list, str, str | None, None, str | None]:
         """Parse a HOBO temperature logger CSV file.
 
-        Returns ``(filedata, filename, location, None)`` — always a 4-tuple.
+        Returns ``(filedata, filename, location, None, serial_number)`` — always a 5-tuple.
 
         BUG FIX: The original HobologgerImport.parse_hobologger_file() returned
         a 3-tuple which silently broke all Hobo imports when the caller unpacked
-        4 values. All four return sites now add ``None`` as the fourth element.
+        4 values. All return sites now produce a 5-tuple.
 
         Copied verbatim from HobologgerImport.parse_hobologger_file() with:
         - ``self.tz_converter`` replaced by the ``tz_converter`` parameter.
-        - All return statements changed to 4-tuple (add ``None``).
+        - All return statements changed to 5-tuple (add ``None`` for utc_offset, serial_number).
         """
         filedata = []
         location = None
+        serial_number = None
         filename = os.path.basename(path)
         if begindate is not None:
             begindate = date_utils.datestring_to_date(begindate)
@@ -968,8 +987,7 @@ class HoboParser:
                 )
                 % filename
             )
-            return [], filename, location, None  # 4-tuple fix
-
+            return [], filename, location, None, serial_number
         date_colnr = [idx for idx, col in enumerate(rows[1]) if "Date Time" in col]
         if not date_colnr:
             raise Exception(
@@ -1007,6 +1025,9 @@ class HoboParser:
         else:
             location = match.group(1)
 
+        sn_match = re.search(r"LGR S/N:\s*(\w+)", rows[data_header_idx][temp_colnr])
+        serial_number = sn_match.group(1) if sn_match else None
+
         new_header = ["date_time", "head_cm", "temp_degc", "cond_mscm"]
         filedata.append(new_header)
 
@@ -1019,7 +1040,7 @@ class HoboParser:
                 )
                 % filename
             )
-            return [], filename, location, None  # 4-tuple fix
+            return [], filename, location, None, serial_number
         else:
             dt = first_data_row[date_colnr]
             date_format = date_utils.find_date_format(dt, suppress_error_msg=True)
@@ -1034,8 +1055,7 @@ class HoboParser:
                         )
                         % filename
                     )
-                    return [], filename, location, None  # 4-tuple fix
-
+                    return [], filename, location, None, serial_number
         for row in rows[data_header_idx + 1 :]:
             dt = fix_date(row[date_colnr], filename, tz_converter)
             if begindate is not None and dt < begindate:
@@ -1061,7 +1081,7 @@ class HoboParser:
 
         filedata = [row for row in filedata if any(row[1:])]
 
-        return filedata, filename, location, None  # 4-tuple fix
+        return filedata, filename, location, None, serial_number
 
 
 # ── Dialog class ──────────────────────────────────────────────────────────────
@@ -1469,7 +1489,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                 continue
 
             try:
-                file_data, filename, location, file_utc_offset = res
+                file_data, filename, location, file_utc_offset, serial_number = res
             except Exception as e:
                 common_utils.MessagebarAndLog.warning(
                     bar_msg=QCoreApplication.translate(
@@ -1529,7 +1549,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                             file_data[0].extend(df.columns.tolist())
                             file_data.extend([list(row) for row in df.itertuples()])
 
-            parsed_files.append((file_data, filename, location))
+            parsed_files.append((file_data, filename, location, serial_number))
 
         if len(parsed_files) == 0:
             common_utils.MessagebarAndLog.critical(
@@ -1575,7 +1595,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         filenames_obsid = {x[0]: x[2] for x in filename_location_obsid[1:]}
 
         parsed_files_with_obsid = []
-        for file_data, filename, location in parsed_files:
+        for file_data, filename, location, serial_number in parsed_files:
             if not file_data:
                 common_utils.MessagebarAndLog.warning(
                     bar_msg=QCoreApplication.translate(
@@ -1596,7 +1616,9 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                 file_data[0].append("obsid")
                 for row in file_data[1:]:
                     row.append(obsid)
-                parsed_files_with_obsid.append([file_data, filename, location])
+                parsed_files_with_obsid.append(
+                    [file_data, filename, location, serial_number]
+                )
 
         if not parsed_files_with_obsid:
             common_utils.MessagebarAndLog.warning(
@@ -1632,17 +1654,18 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             dbconn = db_utils.DbConnectionManager()
             try:
                 ph = dbconn.placeholder()
-                for parsed_file in parsed_files_with_obsid:
-                    file_data = parsed_file[0]
-                    filename = parsed_file[1]
+                for (
+                    file_data,
+                    filename,
+                    location,
+                    serial_number,
+                ) in parsed_files_with_obsid:
                     obsid = filenames_obsid[filename]
-                    description = (
-                        os.path.basename(filename) if filename else None
-                    )
+                    description = os.path.basename(filename) if filename else None
                     dbconn.execute(
                         f"INSERT INTO w_logger_series "
-                        f"(obsid, source, description) VALUES ({ph}, {ph}, {ph})",
-                        (obsid, source_for_series, description),
+                        f"(obsid, source, description, instrument) VALUES ({ph}, {ph}, {ph}, {ph})",
+                        (obsid, source_for_series, description, serial_number),
                     )
                     series_id = db_utils.get_last_insert_id(dbconn)
                     file_data[0].append("series_id")

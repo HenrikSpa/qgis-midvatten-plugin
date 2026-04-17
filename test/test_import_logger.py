@@ -49,7 +49,7 @@ class TestDiverOfficeParser:
                 begindate=None,
                 enddate=None,
             )
-        filedata, filename, location, utc_offset = result
+        filedata, filename, location, utc_offset, serial_number = result
         assert location == "rb1"
         assert utc_offset == "+01:00"
         assert filedata[0] == ["date_time", "head_cm", "temp_degc", "cond_mscm"]
@@ -74,7 +74,7 @@ class TestDiverOfficeParser:
                 begindate=None,
                 enddate=None,
             )
-        filedata, filename, location, utc_offset = result
+        filedata, filename, location, utc_offset, serial_number = result
         assert location == "rb1"
         assert len(filedata) == 2  # header + 1 data row
 
@@ -96,7 +96,7 @@ class TestDiverOfficeParser:
                 begindate=None,
                 enddate=None,
             )
-        filedata, filename, location, utc_offset = result
+        filedata, filename, location, utc_offset, serial_number = result
         assert location == "rb1"
         assert mock_messagebar.warning.called
 
@@ -119,8 +119,66 @@ class TestDiverOfficeParser:
                 begindate=None,
                 enddate=None,
             )
-        _, _, _, utc_offset = result
+        _, _, _, utc_offset, _ = result
         assert utc_offset == "+02:00"
+
+    def test_parse_serial_number(self):
+        file_content = (
+            "[Logger settings]\n"
+            "Serial number=..00-R2717  214.\n"
+            "Location=rb1\n"
+            "[data]\n"
+            "Date/time;Water head[cm];Temperature[\u00b0C]\n"
+            "2016/03/15 10:30:00;1.0;10.0\n"
+        )
+        with common_utils.tempinput(file_content, "utf-8") as f:
+            result = DiverOfficeParser.parse(
+                path=f,
+                charset="utf-8",
+                skip_rows_without_water_level=False,
+                begindate=None,
+                enddate=None,
+            )
+        _, _, _, _, serial_number = result
+        assert serial_number == "R2717"
+
+    def test_parse_serial_number_absent(self):
+        file_content = (
+            "[Logger settings]\n"
+            "Location=rb1\n"
+            "[data]\n"
+            "Date/time;Water head[cm]\n"
+            "2016/03/15 10:30:00;1.0\n"
+        )
+        with common_utils.tempinput(file_content, "utf-8") as f:
+            result = DiverOfficeParser.parse(
+                path=f,
+                charset="utf-8",
+                skip_rows_without_water_level=False,
+                begindate=None,
+                enddate=None,
+            )
+        _, _, _, _, serial_number = result
+        assert serial_number is None
+
+    def test_parse_old_serial_number(self):
+        file_content = (
+            "Serial number=..00-R2717  214.\n"
+            "Location=rb1\n"
+            "Date/time,Water head[cm],Temperature[\u00b0C]\n"
+            "2016/03/15 10:30:00,1.0,10.0\n"
+            "2016/03/15 11:00:00,2.0,11.0\n"
+        )
+        with common_utils.tempinput(file_content, "utf-8") as f:
+            result = DiverOfficeParser.parse_old(
+                path=f,
+                charset="utf-8",
+                skip_rows_without_water_level=False,
+                begindate=None,
+                enddate=None,
+            )
+        _, _, _, _, serial_number = result
+        assert serial_number == "R2717"
 
 
 @pytest.mark.active
@@ -166,7 +224,7 @@ class TestLeveloggerParser:
                 begindate=None,
                 enddate=None,
             )
-        filedata, filename, location, timezone = result
+        filedata, filename, location, timezone, serial_number = result
         assert location == "rb1"
         assert timezone is None
         assert filedata[0] == ["date_time", "head_cm", "temp_degc", "cond_mscm"]
@@ -191,11 +249,11 @@ class TestLeveloggerParser:
                 begindate=None,
                 enddate=None,
             )
-        filedata, _, _, _ = result
+        filedata, _, _, _, _ = result
         assert float(filedata[1][1]) == pytest.approx(1.0)
 
-    def test_returns_4_tuple(self):
-        """LeveloggerParser.parse must always return a 4-tuple."""
+    def test_returns_5_tuple(self):
+        """LeveloggerParser.parse must always return a 5-tuple."""
         file_content = "Date;Time\n"
         with common_utils.tempinput(file_content, "utf-8") as f:
             result = LeveloggerParser.parse(
@@ -205,9 +263,53 @@ class TestLeveloggerParser:
                 begindate=None,
                 enddate=None,
             )
-        assert len(result) == 4
+        assert len(result) == 5
         assert result[0] == []
         assert result[3] is None
+        assert result[4] is None
+
+    def test_parse_serial_number_next_line(self):
+        """Serial_number: on its own line, value on the next line."""
+        file_content = (
+            "Serial_number:\n"
+            "12345\n"
+            "Location: rb1\n"
+            "LEVEL\n"
+            "UNIT: cm\n"
+            "Date;Time;ms;LEVEL\n"
+            "2016-03-15;10:30:00;0;1\n"
+        )
+        with common_utils.tempinput(file_content, "utf-8") as f:
+            result = LeveloggerParser.parse(
+                path=f,
+                charset="utf-8",
+                skip_rows_without_water_level=False,
+                begindate=None,
+                enddate=None,
+            )
+        _, _, _, _, serial_number = result
+        assert serial_number == "12345"
+
+    def test_parse_serial_number_same_line(self):
+        """Serial_number: value on the same line."""
+        file_content = (
+            "Serial_number: 12345\n"
+            "Location: rb1\n"
+            "LEVEL\n"
+            "UNIT: cm\n"
+            "Date;Time;ms;LEVEL\n"
+            "2016-03-15;10:30:00;0;1\n"
+        )
+        with common_utils.tempinput(file_content, "utf-8") as f:
+            result = LeveloggerParser.parse(
+                path=f,
+                charset="utf-8",
+                skip_rows_without_water_level=False,
+                begindate=None,
+                enddate=None,
+            )
+        _, _, _, _, serial_number = result
+        assert serial_number == "12345"
 
 
 @pytest.mark.active
@@ -231,7 +333,9 @@ class TestHoboParser:
                 begindate=None,
                 enddate=None,
             )
-        filedata, filename, location, utc_offset = result  # must be 4-tuple
+        filedata, filename, location, utc_offset, serial_number = (
+            result  # must be 5-tuple
+        )
         assert location == "Rb1"
         assert utc_offset is None
         assert filedata[0] == ["date_time", "head_cm", "temp_degc", "cond_mscm"]
@@ -256,12 +360,12 @@ class TestHoboParser:
                 begindate=None,
                 enddate=None,
             )
-        filedata, _, _, _ = result
+        filedata, _, _, _, _ = result
         assert filedata[1][0] == "2018-07-19 08:00:00"
 
     @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
-    def test_parse_always_returns_4_tuple(self, mock_messagebar):
-        """HoboParser must return a 4-tuple even on parse failure."""
+    def test_parse_always_returns_5_tuple(self, mock_messagebar):
+        """HoboParser must return a 5-tuple even on parse failure."""
         file_content = '"Plot Title: temp"\n'
         tz_converter = TzConverter()
         with common_utils.tempinput(file_content, "utf-8") as f:
@@ -272,8 +376,28 @@ class TestHoboParser:
                 begindate=None,
                 enddate=None,
             )
-        assert len(result) == 4
+        assert len(result) == 5
         assert result[3] is None
+        assert result[4] is None
+
+    @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+    def test_parse_serial_number(self, mock_messagebar):
+        file_content = (
+            '"Plot Title: temp"\n'
+            '"#","Date Time, GMT+01:00","Temp, \u00b0C (LGR S/N: 5678, SEN S/N: 5678, LBL: Rb1)"\n'
+            '1,"07/19/18 10:00:00 fm",4.558\n'
+        )
+        tz_converter = TzConverter()
+        with common_utils.tempinput(file_content, "utf-8") as f:
+            result = HoboParser.parse(
+                path=f,
+                charset="utf-8",
+                tz_converter=tz_converter,
+                begindate=None,
+                enddate=None,
+            )
+        _, _, _, _, serial_number = result
+        assert serial_number == "5678"
 
 
 @pytest.mark.spatialite
@@ -373,6 +497,67 @@ class TestLoggerImportDiverOfficeSpatialite(
             r"(rb1, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None)])"
         )
         assert test_string == reference_string
+
+    def test_diveroffice_import_instrument_serial(self):
+        """Serial number extracted from file is stored in w_logger_series.instrument."""
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        file_content = "\n".join(
+            [
+                "[Logger settings]",
+                "Serial number=..00-R2717  214.",
+                "Location=rb1",
+                "[data]",
+                "Date/time;Water head[cm];Temperature[\u00b0C]",
+                "2016/03/15 10:30:00;1.0;10.0",
+            ]
+        )
+        with common_utils.tempinput(file_content, "utf-8") as f:
+
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
+            )
+            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("qgis.utils.iface", autospec=True)
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
+            @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
+            def _run(
+                self,
+                filename,
+                mock_select_files,
+                mock_popup,
+                mock_iface,
+                mock_askuser,
+                mock_notfound,
+            ):
+                mock_notfound.return_value.answer = "ok"
+                mock_notfound.return_value.value = "rb1"
+                mock_notfound.return_value.reuse_column = "location"
+                mock_select_files.return_value = [filename]
+
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = LoggerImport(self.iface, ms)
+                importer.load_gui()
+                importer.format_combo.setCurrentText(LoggerImport.FORMAT_DIVEROFFICE)
+                importer.select_files()
+                importer.start_import(
+                    files=importer.files,
+                    skip_rows_without_water_level=importer.skip_rows.checked,
+                    confirm_names=importer.confirm_names.checked,
+                    import_all_data=importer.import_all_data.checked,
+                )
+
+            _run(self, f)
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT instrument FROM w_logger_series WHERE obsid='rb1'"
+            )
+        )
+        assert test_string == "(True, [(R2717)])"
 
     def test_filter_dates_diveroffice(self):
         """When import_all_data is False, only data newer than last DB date is imported."""

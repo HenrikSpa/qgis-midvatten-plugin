@@ -185,3 +185,17 @@ class TestObsidAssignmentDialogShell:
             assert dialog.editor_rows[0].skipped is False
         finally:
             dialog.deleteLater()
+
+    def test_reload_obsids_refreshes_completer(self):
+        rows = [EditorRow("Br1", "Brunn 1", "", ["L1"])]
+        dialog = ObsidAssignmentDialog(
+            rows,
+            existing_obsids=["Br1"],
+            reload_callback=lambda: ["Br1", "Br2", "BrNEW"],
+        )
+        try:
+            dialog.reload_obsids_button.click()
+            assert "BrNEW" in dialog.existing_obsids
+            assert dialog.fill_combo.findText("BrNEW") >= 0
+        finally:
+            dialog.deleteLater()

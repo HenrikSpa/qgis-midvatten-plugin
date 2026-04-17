@@ -156,12 +156,17 @@ class ObsidAssignmentDialog(QDialog):
     """Bulk obsid-assignment editor. Reusable; no Interlab4-specific imports."""
 
     def __init__(
-        self, editor_rows: list[EditorRow], existing_obsids: list[str], parent=None
+        self,
+        editor_rows: list[EditorRow],
+        existing_obsids: list[str],
+        reload_callback=None,
+        parent=None,
     ):
         super().__init__(parent)
         self.setWindowTitle(_tr("Assign obsids"))
         self.editor_rows = list(editor_rows)
         self.existing_obsids = list(existing_obsids)
+        self._reload_callback = reload_callback
         self._build_ui()
         self._populate_table()
 
@@ -209,6 +214,10 @@ class ObsidAssignmentDialog(QDialog):
             lambda: self._set_skipped_for_selection(False)
         )
         bulk_row.addWidget(self.unskip_selection_button)
+        self.reload_obsids_button = QPushButton(_tr("Reload obsids"), self)
+        self.reload_obsids_button.setEnabled(self._reload_callback is not None)
+        self.reload_obsids_button.clicked.connect(self._reload_obsids)
+        bulk_row.addWidget(self.reload_obsids_button)
         bulk_row.addStretch(1)
         layout.addLayout(bulk_row)
         layout.addWidget(self.table)
@@ -329,3 +338,15 @@ class ObsidAssignmentDialog(QDialog):
         row_idx = item.row()
         self.editor_rows[row_idx].obsid = item.text()
         self._paint_obsid_cell(row_idx)
+
+    def _reload_obsids(self):
+        if self._reload_callback is None:
+            return
+        self.existing_obsids = list(self._reload_callback())
+        self.obsid_delegate.set_existing_obsids(self.existing_obsids)
+        current_text = self.fill_combo.currentText()
+        self.fill_combo.clear()
+        self.fill_combo.addItems(self.existing_obsids)
+        self.fill_combo.setEditText(current_text)
+        for row_idx in range(self.table.rowCount()):
+            self._paint_obsid_cell(row_idx)

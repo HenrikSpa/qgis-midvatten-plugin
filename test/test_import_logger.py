@@ -49,7 +49,7 @@ class TestDiverOfficeParser:
                 begindate=None,
                 enddate=None,
             )
-        filedata, filename, location, utc_offset = result
+        filedata, filename, location, utc_offset, serial_number = result
         assert location == "rb1"
         assert utc_offset == "+01:00"
         assert filedata[0] == ["date_time", "head_cm", "temp_degc", "cond_mscm"]
@@ -74,7 +74,7 @@ class TestDiverOfficeParser:
                 begindate=None,
                 enddate=None,
             )
-        filedata, filename, location, utc_offset = result
+        filedata, filename, location, utc_offset, serial_number = result
         assert location == "rb1"
         assert len(filedata) == 2  # header + 1 data row
 
@@ -96,7 +96,7 @@ class TestDiverOfficeParser:
                 begindate=None,
                 enddate=None,
             )
-        filedata, filename, location, utc_offset = result
+        filedata, filename, location, utc_offset, serial_number = result
         assert location == "rb1"
         assert mock_messagebar.warning.called
 
@@ -119,8 +119,47 @@ class TestDiverOfficeParser:
                 begindate=None,
                 enddate=None,
             )
-        _, _, _, utc_offset = result
+        _, _, _, utc_offset, _ = result
         assert utc_offset == "+02:00"
+
+    def test_parse_serial_number(self):
+        file_content = (
+            "[Logger settings]\n"
+            "Serial number=..00-R2717  214.\n"
+            "Location=rb1\n"
+            "[data]\n"
+            "Date/time;Water head[cm];Temperature[\u00b0C]\n"
+            "2016/03/15 10:30:00;1.0;10.0\n"
+        )
+        with common_utils.tempinput(file_content, "utf-8") as f:
+            result = DiverOfficeParser.parse(
+                path=f,
+                charset="utf-8",
+                skip_rows_without_water_level=False,
+                begindate=None,
+                enddate=None,
+            )
+        _, _, _, _, serial_number = result
+        assert serial_number == "R2717"
+
+    def test_parse_serial_number_absent(self):
+        file_content = (
+            "[Logger settings]\n"
+            "Location=rb1\n"
+            "[data]\n"
+            "Date/time;Water head[cm]\n"
+            "2016/03/15 10:30:00;1.0\n"
+        )
+        with common_utils.tempinput(file_content, "utf-8") as f:
+            result = DiverOfficeParser.parse(
+                path=f,
+                charset="utf-8",
+                skip_rows_without_water_level=False,
+                begindate=None,
+                enddate=None,
+            )
+        _, _, _, _, serial_number = result
+        assert serial_number is None
 
 
 @pytest.mark.active

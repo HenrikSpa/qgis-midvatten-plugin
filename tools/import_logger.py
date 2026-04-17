@@ -259,10 +259,10 @@ class DiverOfficeParser:
         skip_rows_without_water_level: bool = False,
         begindate: str | None = None,
         enddate: str | None = None,
-    ) -> tuple[list, str, str, str | None]:
+    ) -> tuple[list, str, str, str | None, str | None]:
         """Parse a Diver-Office .mon or .csv file.
 
-        Returns ``(filedata, filename, location, utc_offset)``.
+        Returns ``(filedata, filename, location, utc_offset, serial_number)``.
 
         Based on DiverofficeImport.parse_diveroffice_file() with the following
         changes:
@@ -316,6 +316,13 @@ class DiverOfficeParser:
             utc_offset = metadata.get("channel identification", {}).get(
                 "utc offset (hh:mm)", ""
             )
+
+        serial_raw = metadata.get("logger settings", {}).get("serial number", "")
+        if not serial_raw:
+            serial_raw = metadata.get("series settings", {}).get("serial number", "")
+        serial_number = (
+            serial_raw.split("-")[-1].split()[0] if serial_raw.strip() else None
+        )
 
         # Resolve location
         location = metadata.get("logger settings", {}).get("location", "")
@@ -428,7 +435,7 @@ class DiverOfficeParser:
 
         if not colnames:
             # Nothing to read — return empty result
-            return filedata, filename, location, utc_offset or None
+            return filedata, filename, location, utc_offset or None, serial_number
 
         df = pd.read_csv(
             path,
@@ -453,12 +460,12 @@ class DiverOfficeParser:
                 df = df.loc[df["date_time"] <= enddate, :]
 
             if df.empty:
-                return filedata, filename, location, utc_offset or None
+                return filedata, filename, location, utc_offset or None, serial_number
 
         if skip_rows_without_water_level:
             df = df.dropna(subset=["head_cm"])
             if df.empty:
-                return filedata, filename, location, utc_offset or None
+                return filedata, filename, location, utc_offset or None, serial_number
 
         df["date_time"] = df["date_time"].dt.strftime("%Y-%m-%d %H:%M:%S")
         # Replaces NaN with None
@@ -485,7 +492,7 @@ class DiverOfficeParser:
                 % path
             )
 
-        return filedata, filename, location, utc_offset or None
+        return filedata, filename, location, utc_offset or None, serial_number
 
     @staticmethod
     def parse_old(
@@ -1636,9 +1643,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                     file_data = parsed_file[0]
                     filename = parsed_file[1]
                     obsid = filenames_obsid[filename]
-                    description = (
-                        os.path.basename(filename) if filename else None
-                    )
+                    description = os.path.basename(filename) if filename else None
                     dbconn.execute(
                         f"INSERT INTO w_logger_series "
                         f"(obsid, source, description) VALUES ({ph}, {ph}, {ph})",

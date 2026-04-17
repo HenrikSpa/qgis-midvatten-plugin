@@ -98,3 +98,12 @@ class TestObsidAssignmentDialogShell:
             assert dialog.table.item(0, 3).text() == "2"  # #lablitteras column
         finally:
             dialog.deleteLater()
+
+    def test_invalid_obsid_paints_cell_red(self):
+        rows = [EditorRow("Br1", "Brunn 1", "", ["L1"])]
+        dialog = ObsidAssignmentDialog(rows, existing_obsids=["Br1", "Br2"])
+        try:
+            dialog.set_obsid_value(0, "not_in_obs_points")
+            assert dialog.row_has_invalid_obsid(0)
+        finally:
+            dialog.deleteLater()

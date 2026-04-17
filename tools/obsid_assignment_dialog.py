@@ -8,12 +8,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from qgis.PyQt.QtCore import QCoreApplication
+from qgis.PyQt.QtCore import Qt, QCoreApplication
+from qgis.PyQt.QtGui import QBrush, QColor
 from qgis.PyQt.QtWidgets import (
     QAbstractItemView,
+    QCompleter,
     QDialog,
     QDialogButtonBox,
     QHeaderView,
+    QLineEdit,
+    QStyledItemDelegate,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -122,6 +126,26 @@ _COLUMN_HEADERS = (
     "obsid",
 )
 
+_INVALID_BRUSH = QBrush(QColor(255, 200, 200))
+_DEFAULT_BRUSH = QBrush(Qt.white)
+
+
+class _ObsidDelegate(QStyledItemDelegate):
+    def __init__(self, existing_obsids: list[str], parent=None):
+        super().__init__(parent)
+        self._existing_obsids = list(existing_obsids)
+
+    def set_existing_obsids(self, obsids: list[str]):
+        self._existing_obsids = list(obsids)
+
+    def createEditor(self, parent, option, index):  # noqa: N802
+        editor = QLineEdit(parent)
+        completer = QCompleter(self._existing_obsids, editor)
+        completer.setCaseSensitivity(Qt.CaseInsensitive)
+        completer.setFilterMode(Qt.MatchContains)
+        editor.setCompleter(completer)
+        return editor
+
 
 class ObsidAssignmentDialog(QDialog):
     """Bulk obsid-assignment editor. Reusable; no Interlab4-specific imports."""
@@ -149,6 +173,10 @@ class ObsidAssignmentDialog(QDialog):
         self.buttons = QDialogButtonBox()
         layout.addWidget(self.buttons)
 
+        self.obsid_delegate = _ObsidDelegate(self.existing_obsids, self)
+        self.table.setItemDelegateForColumn(_COL_OBSID, self.obsid_delegate)
+        self.table.itemChanged.connect(self._on_item_changed)
+
     def _populate_table(self):
         self.table.setSortingEnabled(False)
         self.table.setRowCount(len(self.editor_rows))
@@ -164,3 +192,31 @@ class ObsidAssignmentDialog(QDialog):
                 row_idx, _COL_NLAB, QTableWidgetItem(str(len(row.lablitteras)))
             )
             self.table.setItem(row_idx, _COL_OBSID, QTableWidgetItem(row.obsid))
+
+    def set_obsid_value(self, row_idx: int, obsid: str):
+        item = self.table.item(row_idx, _COL_OBSID)
+        if item is None:
+            item = QTableWidgetItem()
+            self.table.setItem(row_idx, _COL_OBSID, item)
+        item.setText(obsid)
+        self.editor_rows[row_idx].obsid = obsid
+        self._paint_obsid_cell(row_idx)
+
+    def row_has_invalid_obsid(self, row_idx: int) -> bool:
+        obsid = self.editor_rows[row_idx].obsid
+        return bool(obsid) and obsid not in self.existing_obsids
+
+    def _paint_obsid_cell(self, row_idx: int):
+        item = self.table.item(row_idx, _COL_OBSID)
+        if item is None:
+            return
+        item.setBackground(
+            _INVALID_BRUSH if self.row_has_invalid_obsid(row_idx) else _DEFAULT_BRUSH
+        )
+
+    def _on_item_changed(self, item):
+        if item.column() != _COL_OBSID:
+            return
+        row_idx = item.row()
+        self.editor_rows[row_idx].obsid = item.text()
+        self._paint_obsid_cell(row_idx)

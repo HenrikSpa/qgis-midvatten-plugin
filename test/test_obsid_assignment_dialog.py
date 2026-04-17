@@ -107,3 +107,23 @@ class TestObsidAssignmentDialogShell:
             assert dialog.row_has_invalid_obsid(0)
         finally:
             dialog.deleteLater()
+
+    def test_search_filters_rows_by_any_column(self):
+        rows = [
+            EditorRow("Br1", "Brunn 1", "", ["L1"]),
+            EditorRow("Br2", "Brunn 2", "", ["L2"]),
+            EditorRow("Br10", "Brunn 10", "", ["L3"]),
+        ]
+        dialog = ObsidAssignmentDialog(rows, existing_obsids=["Br1", "Br2", "Br10"])
+        try:
+            dialog.search_input.setText("Br1")
+            # Both Br1 and Br10 contain "Br1"
+            visible = [
+                r
+                for r in range(dialog.table.rowCount())
+                if not dialog.table.isRowHidden(r)
+            ]
+            assert len(visible) == 2
+            assert dialog.row_count_label.text() == "2 / 3"
+        finally:
+            dialog.deleteLater()

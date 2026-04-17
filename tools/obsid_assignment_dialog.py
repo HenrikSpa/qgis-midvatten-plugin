@@ -15,7 +15,9 @@ from qgis.PyQt.QtWidgets import (
     QCompleter,
     QDialog,
     QDialogButtonBox,
+    QHBoxLayout,
     QHeaderView,
+    QLabel,
     QLineEdit,
     QStyledItemDelegate,
     QTableWidget,
@@ -168,6 +170,15 @@ class ObsidAssignmentDialog(QDialog):
         self.table.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.table.setSortingEnabled(True)
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
+        search_row = QHBoxLayout()
+        search_row.addWidget(QLabel(_tr("Search:")))
+        self.search_input = QLineEdit(self)
+        self.search_input.setPlaceholderText(_tr("filter any column..."))
+        self.search_input.textChanged.connect(self._apply_filters)
+        search_row.addWidget(self.search_input)
+        self.row_count_label = QLabel("0 / 0", self)
+        search_row.addWidget(self.row_count_label)
+        layout.addLayout(search_row)
         layout.addWidget(self.table)
 
         self.buttons = QDialogButtonBox()
@@ -192,6 +203,7 @@ class ObsidAssignmentDialog(QDialog):
                 row_idx, _COL_NLAB, QTableWidgetItem(str(len(row.lablitteras)))
             )
             self.table.setItem(row_idx, _COL_OBSID, QTableWidgetItem(row.obsid))
+        self._apply_filters()
 
     def set_obsid_value(self, row_idx: int, obsid: str):
         item = self.table.item(row_idx, _COL_OBSID)
@@ -213,6 +225,24 @@ class ObsidAssignmentDialog(QDialog):
         item.setBackground(
             _INVALID_BRUSH if self.row_has_invalid_obsid(row_idx) else _DEFAULT_BRUSH
         )
+
+    def _apply_filters(self):
+        needle = self.search_input.text().strip().lower()
+        visible = 0
+        for row_idx in range(self.table.rowCount()):
+            if not needle:
+                match = True
+            else:
+                match = False
+                for col in (_COL_SPEC, _COL_NAMN, _COL_ORSAK, _COL_OBSID):
+                    item = self.table.item(row_idx, col)
+                    if item and needle in item.text().lower():
+                        match = True
+                        break
+            self.table.setRowHidden(row_idx, not match)
+            if match:
+                visible += 1
+        self.row_count_label.setText(f"{visible} / {self.table.rowCount()}")
 
     def _on_item_changed(self, item):
         if item.column() != _COL_OBSID:

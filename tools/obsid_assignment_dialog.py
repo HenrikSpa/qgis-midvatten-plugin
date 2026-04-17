@@ -121,6 +121,15 @@ def group_editor_rows(
     return list(clean_groups.values()) + override_rows
 
 
+def ask_obsid_rows_as_dicts(ask_obsid_table: list[list]) -> list[dict]:
+    """Turn the Interlab4 ask_obsid_table (list-of-lists with a header row)
+    into a list of dicts with lowercase keys, which is what group_editor_rows
+    expects.
+    """
+    header = [str(h).strip().lower() for h in ask_obsid_table[0]]
+    return [dict(zip(header, row)) for row in ask_obsid_table[1:]]
+
+
 def _tr(text: str) -> str:
     return QCoreApplication.translate("Interlab4ObsidDialog", text)
 

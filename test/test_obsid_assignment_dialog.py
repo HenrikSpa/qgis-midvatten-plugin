@@ -236,3 +236,17 @@ class TestObsidAssignmentDialogShell:
             assert warnings == [1]
         finally:
             dialog.deleteLater()
+
+
+def test_ask_obsid_rows_as_dicts_handles_lowercase_headers():
+    from midvatten.tools.obsid_assignment_dialog import ask_obsid_rows_as_dicts
+
+    ask_obsid_table = [
+        ["Lablittera", "Specifik Provplats", "Provplatsnamn", "Provtagningsorsak"],
+        ["L1", "Br1", "Brunn 1", ""],
+        ["L2", "Br1", "Brunn 1", "egentl. Br3"],
+    ]
+    rows = ask_obsid_rows_as_dicts(ask_obsid_table)
+    assert rows[0]["lablittera"] == "L1"
+    assert rows[0]["specifik provplats"] == "Br1"
+    assert rows[1]["provtagningsorsak"] == "egentl. Br3"

@@ -320,9 +320,8 @@ class DiverOfficeParser:
         serial_raw = metadata.get("logger settings", {}).get("serial number", "")
         if not serial_raw:
             serial_raw = metadata.get("series settings", {}).get("serial number", "")
-        serial_number = (
-            serial_raw.split("-")[-1].split()[0] if serial_raw.strip() else None
-        )
+        _tail = serial_raw.split("-")[-1].split()
+        serial_number = _tail[0] if _tail else None
 
         # Resolve location
         location = metadata.get("logger settings", {}).get("location", "")

@@ -104,7 +104,7 @@ obsid text NOT NULL --Obsid linked to obs_points.obsid
 , level_masl double --Water level elevation (masl) calculated from measuring point and distance from measuring point to water level
 , comment text --Comment
 , PRIMARY KEY (obsid, date_time)
-, FOREIGN KEY(obsid) REFERENCES obs_points(obsid)
+, FOREIGN KEY(obsid) REFERENCES obs_points(obsid) ON UPDATE CASCADE ON DELETE CASCADE
 );
 CREATE TABLE w_logger_series /*Logger deployment series. Groups rows in w_levels_logger (and w_qual_logger in a follow-up plan) that belong together, so batch-level metadata is stored once and a whole batch can be reverted by deleting the series row.*/(
 SPATIALITE id INTEGER PRIMARY KEY AUTOINCREMENT
@@ -114,7 +114,7 @@ POSTGIS id SERIAL PRIMARY KEY
 , instrument text --Optional instrument description or serial
 , description text --Short description, e.g. filename or logger position
 , comment text --Longer free-form notes
-, FOREIGN KEY(obsid) REFERENCES obs_points(obsid) ON UPDATE CASCADE
+, FOREIGN KEY(obsid) REFERENCES obs_points(obsid) ON UPDATE CASCADE ON DELETE CASCADE
 );
 CREATE TABLE w_levels_logger /*Automatic water level readings*/(
 obsid text NOT NULL --Obsid linked to obs_points.obsid
@@ -127,7 +127,7 @@ obsid text NOT NULL --Obsid linked to obs_points.obsid
 , series_id integer --Links to w_logger_series.id. Nullable so direct SQL inserts without a series still work. Plugin imports set it to group rows for revert.
 , created_at text NOT NULL DEFAULT CURRENT_TIMESTAMP --Timestamp for when the row entered the database. Set by Python to a single batch timestamp on plugin imports. Falls back to the column default for direct SQL inserts.
 , PRIMARY KEY (obsid, date_time)
-, FOREIGN KEY(obsid) REFERENCES obs_points(obsid)
+, FOREIGN KEY(obsid) REFERENCES obs_points(obsid) ON UPDATE CASCADE ON DELETE CASCADE
 , FOREIGN KEY(series_id) REFERENCES w_logger_series(id) ON DELETE CASCADE
 );
 CREATE TABLE stratigraphy /*Stratigraphy information from drillings*/(
@@ -141,7 +141,7 @@ obsid text NOT NULL --Obsid linked to obs_points.obsid
 , development text --Well development - Is the flushed water clear and free of suspended solids?
 , comment text --Comment
 , PRIMARY KEY (obsid, stratid)
-, FOREIGN KEY(obsid) REFERENCES obs_points(obsid)
+, FOREIGN KEY(obsid) REFERENCES obs_points(obsid) ON UPDATE CASCADE ON DELETE CASCADE
 );
 CREATE TABLE w_qual_field /*Water quality from field measurements*/(
 obsid text NOT NULL --Obsid linked to obs_points.obsid
@@ -155,7 +155,7 @@ obsid text NOT NULL --Obsid linked to obs_points.obsid
 , depth double --The depth at which the measurement was done
 , comment text --Comment
 , PRIMARY KEY(obsid, date_time, parameter, unit)
-, FOREIGN KEY(obsid) REFERENCES obs_points(obsid)
+, FOREIGN KEY(obsid) REFERENCES obs_points(obsid) ON UPDATE CASCADE ON DELETE CASCADE
 );
 CREATE UNIQUE INDEX w_qual_field_unit_unique_index_null ON w_qual_field /* Index to stop duplicate values where unit is null */ (
 obsid, date_time, parameter, COALESCE(unit, '<NULL>')
@@ -174,7 +174,7 @@ obsid text NOT NULL --Obsid linked to obs_points.obsid
 , unit text --Unit
 , comment text --Comment
 , PRIMARY KEY(report, parameter)
-, FOREIGN KEY(obsid) REFERENCES obs_points(obsid)
+, FOREIGN KEY(obsid) REFERENCES obs_points(obsid) ON UPDATE CASCADE ON DELETE CASCADE
 );
 CREATE TABLE w_flow /*Water flow*/(
 obsid text NOT NULL --Obsid linked to obs_points.obsid
@@ -185,7 +185,7 @@ obsid text NOT NULL --Obsid linked to obs_points.obsid
 , unit text --Unit corresponding to the value reading
 , comment text --Comment
 , PRIMARY KEY (obsid, instrumentid, flowtype, date_time)
-, FOREIGN KEY(obsid) REFERENCES obs_points(obsid), FOREIGN KEY (flowtype) REFERENCES zz_flowtype(type)
+, FOREIGN KEY(obsid) REFERENCES obs_points(obsid) ON UPDATE CASCADE ON DELETE CASCADE, FOREIGN KEY (flowtype) REFERENCES zz_flowtype(type)
 );
 CREATE TABLE meteo /*meteorological observations*/(
 obsid text NOT NULL --Obsid linked to obs_points.obsid
@@ -197,7 +197,7 @@ obsid text NOT NULL --Obsid linked to obs_points.obsid
 , unit text --Unit corresponding to the value reading
 , comment text --Comment
 , PRIMARY KEY (obsid, instrumentid, parameter, date_time)
-, FOREIGN KEY(obsid) REFERENCES obs_points(obsid), FOREIGN KEY (parameter) REFERENCES zz_meteoparam(parameter)
+, FOREIGN KEY(obsid) REFERENCES obs_points(obsid) ON UPDATE CASCADE ON DELETE CASCADE, FOREIGN KEY (parameter) REFERENCES zz_meteoparam(parameter)
 );
 CREATE TABLE seismic_data /*Interpreted data from seismic measurements*/(
 obsid text NOT NULL --Obsid linked to obs_lines.obsid
@@ -207,7 +207,7 @@ obsid text NOT NULL --Obsid linked to obs_lines.obsid
 , gw_table double --Interpreted level for limit between unsaturated/saturated conditions
 , comment text --Additional info
 , PRIMARY KEY (obsid, length)
-, FOREIGN KEY (obsid) REFERENCES obs_lines(obsid)
+, FOREIGN KEY (obsid) REFERENCES obs_lines(obsid) ON UPDATE CASCADE ON DELETE CASCADE
 );
 CREATE TABLE vlf_data /*Raw data from VLF measurements*/(
 obsid text NOT NULL --Obsid linked to obs_lines.obsid
@@ -216,7 +216,7 @@ obsid text NOT NULL --Obsid linked to obs_lines.obsid
 , imag_comp double --Raw data imaginary component
 , comment text --Additional info
 , PRIMARY KEY (obsid, length)
-, FOREIGN KEY (obsid) REFERENCES obs_lines(obsid)
+, FOREIGN KEY (obsid) REFERENCES obs_lines(obsid) ON UPDATE CASCADE ON DELETE CASCADE
 );
 CREATE TABLE tem_data /*Raw data from TEM2Go Inversion Models*/(
 SPATIALITE id INTEGER PRIMARY KEY AUTOINCREMENT
@@ -231,7 +231,7 @@ POSTGIS id SERIAL PRIMARY KEY
 , resistivity TEXT -- String list with resistivity of the layers, ex for inversion with 3 layers: [29.5, 150.4, 1001.6]
 , comment text --Additional info
 , UNIQUE (obsid, inversion_name, length)
-, FOREIGN KEY (obsid) REFERENCES obs_lines(obsid)
+, FOREIGN KEY (obsid) REFERENCES obs_lines(obsid) ON UPDATE CASCADE ON DELETE CASCADE
 );
 CREATE TABLE profile_images /*Image files linked to obs_lines*/(
 SPATIALITE id INTEGER PRIMARY KEY AUTOINCREMENT
@@ -244,7 +244,7 @@ POSTGIS id SERIAL PRIMARY KEY
 , source TEXT -- Reference for the image (consultancy report or similar)
 , comment text --Additional info
 , UNIQUE (obsid, alias)
-, FOREIGN KEY (obsid) REFERENCES obs_lines(obsid)
+, FOREIGN KEY (obsid) REFERENCES obs_lines(obsid) ON UPDATE CASCADE ON DELETE CASCADE
 );
 CREATE TABLE comments /*Comments connected to obsids*/(
 obsid text NOT NULL --Obsid linked to obs_points.obsid
@@ -253,14 +253,14 @@ obsid text NOT NULL --Obsid linked to obs_points.obsid
 , staff text NOT NULL --Staff who made the comment
 , type text --Can be used to distinguish different types of comments
 , PRIMARY KEY(obsid, date_time)
-, FOREIGN KEY(obsid) REFERENCES obs_points(obsid)
+, FOREIGN KEY(obsid) REFERENCES obs_points(obsid) ON UPDATE CASCADE ON DELETE CASCADE
 );
 CREATE TABLE zz_interlab4_obsid_assignment /*Assign obsids automatically during interlab4 import*/(
 specifik_provplats text NOT NULL --The attribute Specifik Provplats from interlab4 file format.
 , provplatsnamn text NOT NULL --The attribute Provplatsnamn from interlab4 file format.
 , obsid text NOT NULL --Obsid linked to obs_points.obsid
 , PRIMARY KEY(specifik_provplats, provplatsnamn)
-, FOREIGN KEY(obsid) REFERENCES obs_points(obsid)
+, FOREIGN KEY(obsid) REFERENCES obs_points(obsid) ON UPDATE CASCADE ON DELETE CASCADE
 );
 CREATE TABLE s_qual_lab /*Soil quality data*/(
 obsid text not null
@@ -276,7 +276,7 @@ obsid text not null
 , unit text
 , comment text
 , primary key(report, parameter)
-, foreign key(obsid) references obs_points(obsid)
+, foreign key(obsid) references obs_points(obsid) ON UPDATE CASCADE ON DELETE CASCADE
 );
 CREATE TABLE w_qual_logger /*Water quality from logger measurements*/(
  obsid text NOT NULL /*Obsid linked to obs_points.obsid*/
@@ -287,7 +287,7 @@ CREATE TABLE w_qual_logger /*Water quality from logger measurements*/(
  , unit text /*Unit*/
  , comment text /*Comment*/
  , PRIMARY KEY(obsid, date_time, instrument, parameter, unit)
- , FOREIGN KEY(obsid) REFERENCES obs_points(obsid)
+ , FOREIGN KEY(obsid) REFERENCES obs_points(obsid) ON UPDATE CASCADE ON DELETE CASCADE
  );
 CREATE UNIQUE INDEX w_qual_logger_unit_unique_index_null ON w_qual_logger /* Index to stop duplicate values where unit is null */ (
 obsid
@@ -312,7 +312,7 @@ POSTGIS id SERIAL PRIMARY KEY
 , h_syst text /*Reference system for elevation*/
 , h_source text /*Source for the measuring point elevation (consultancy report or similar)*/
 , valid BOOLEAN /*Specifies if this spatial entry is still valid. Set to False if a new measurement has made the entry not longer valid.*/
-, FOREIGN KEY (obsid) REFERENCES obs_points (obsid) ON DELETE CASCADE
+, FOREIGN KEY (obsid) REFERENCES obs_points (obsid) ON UPDATE CASCADE ON DELETE CASCADE
 );
 SPATIALITE CREATE VIEW obs_p_w_qual_field AS SELECT DISTINCT a.rowid AS rowid, a.obsid AS obsid, a.geometry AS geometry FROM obs_points AS a JOIN w_qual_field AS b using (obsid);
 SPATIALITE CREATE VIEW obs_p_w_qual_lab AS SELECT DISTINCT a.rowid AS rowid, a.obsid AS obsid, a.geometry AS geometry FROM obs_points AS a JOIN w_qual_lab AS b using (obsid);

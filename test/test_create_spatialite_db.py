@@ -693,3 +693,93 @@ class TestSqls(utils_for_tests.MidvattenTestSpatialiteDbSv):
         print(f"{mock_messagebar.mock_calls=}")
         print(test_string)
         assert test_string == reference_string
+
+
+@pytest.mark.spatialite
+class TestObsidCascade(utils_for_tests.MidvattenTestSpatialiteDbSv):
+    """Tests that ON UPDATE CASCADE / ON DELETE CASCADE work for obsid FK references."""
+
+    def _run_with_fk(self, sql: str) -> None:
+        dbconn = db_utils.DbConnectionManager()
+        try:
+            dbconn.execute("PRAGMA foreign_keys = ON")
+            dbconn.execute(sql)
+            dbconn.commit()
+        finally:
+            dbconn.closedb()
+
+    def test_rename_obsid_cascades_to_w_levels(self) -> None:
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('obs1')")
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels (obsid, date_time, meas) VALUES ('obs1', '2024-01-01 00:00', 1.0)"
+        )
+
+        self._run_with_fk("UPDATE obs_points SET obsid = 'obs1_renamed' WHERE obsid = 'obs1'")
+
+        result = db_utils.sql_load_fr_db("SELECT obsid FROM w_levels")
+        assert result == (True, [("obs1_renamed",)])
+
+    def test_rename_obsid_cascades_to_stratigraphy(self) -> None:
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('obs1')")
+        db_utils.sql_alter_db(
+            "INSERT INTO stratigraphy (obsid, stratid, depthtop, depthbot) VALUES ('obs1', 1, 0.0, 1.0)"
+        )
+
+        self._run_with_fk("UPDATE obs_points SET obsid = 'obs1_renamed' WHERE obsid = 'obs1'")
+
+        result = db_utils.sql_load_fr_db("SELECT obsid FROM stratigraphy")
+        assert result == (True, [("obs1_renamed",)])
+
+    def test_rename_obsid_cascades_to_comments(self) -> None:
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('obs1')")
+        db_utils.sql_alter_db(
+            "INSERT INTO comments (obsid, date_time, comment, staff) VALUES ('obs1', '2024-01-01 00:00', 'test', 'tester')"
+        )
+
+        self._run_with_fk("UPDATE obs_points SET obsid = 'obs1_renamed' WHERE obsid = 'obs1'")
+
+        result = db_utils.sql_load_fr_db("SELECT obsid FROM comments")
+        assert result == (True, [("obs1_renamed",)])
+
+    def test_delete_obsid_cascades_to_child_tables(self) -> None:
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('obs1')")
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels (obsid, date_time, meas) VALUES ('obs1', '2024-01-01 00:00', 1.0)"
+        )
+        db_utils.sql_alter_db(
+            "INSERT INTO stratigraphy (obsid, stratid, depthtop, depthbot) VALUES ('obs1', 1, 0.0, 1.0)"
+        )
+        db_utils.sql_alter_db(
+            "INSERT INTO comments (obsid, date_time, comment, staff) VALUES ('obs1', '2024-01-01 00:00', 'test', 'tester')"
+        )
+
+        self._run_with_fk("DELETE FROM obs_points WHERE obsid = 'obs1'")
+
+        assert db_utils.sql_load_fr_db("SELECT obsid FROM w_levels") == (True, [])
+        assert db_utils.sql_load_fr_db("SELECT obsid FROM stratigraphy") == (True, [])
+        assert db_utils.sql_load_fr_db("SELECT obsid FROM comments") == (True, [])
+
+    def test_rename_obs_lines_obsid_cascades_to_seismic_data(self) -> None:
+        db_utils.sql_alter_db("INSERT INTO obs_lines (obsid) VALUES ('line1')")
+        db_utils.sql_alter_db(
+            "INSERT INTO seismic_data (obsid, length) VALUES ('line1', 10.0)"
+        )
+
+        self._run_with_fk("UPDATE obs_lines SET obsid = 'line1_renamed' WHERE obsid = 'line1'")
+
+        result = db_utils.sql_load_fr_db("SELECT obsid FROM seismic_data")
+        assert result == (True, [("line1_renamed",)])
+
+    def test_delete_obs_lines_obsid_cascades_to_child_tables(self) -> None:
+        db_utils.sql_alter_db("INSERT INTO obs_lines (obsid) VALUES ('line1')")
+        db_utils.sql_alter_db(
+            "INSERT INTO seismic_data (obsid, length) VALUES ('line1', 10.0)"
+        )
+        db_utils.sql_alter_db(
+            "INSERT INTO vlf_data (obsid, length) VALUES ('line1', 10.0)"
+        )
+
+        self._run_with_fk("DELETE FROM obs_lines WHERE obsid = 'line1'")
+
+        assert db_utils.sql_load_fr_db("SELECT obsid FROM seismic_data") == (True, [])
+        assert db_utils.sql_load_fr_db("SELECT obsid FROM vlf_data") == (True, [])

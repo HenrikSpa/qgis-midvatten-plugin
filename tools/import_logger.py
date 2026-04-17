@@ -958,21 +958,22 @@ class HoboParser:
         tz_converter: TzConverter | None = None,
         begindate: str | None = None,
         enddate: str | None = None,
-    ) -> tuple[list, str, str | None, None]:
+    ) -> tuple[list, str, str | None, None, str | None]:
         """Parse a HOBO temperature logger CSV file.
 
-        Returns ``(filedata, filename, location, None)`` — always a 4-tuple.
+        Returns ``(filedata, filename, location, None, serial_number)`` — always a 5-tuple.
 
         BUG FIX: The original HobologgerImport.parse_hobologger_file() returned
         a 3-tuple which silently broke all Hobo imports when the caller unpacked
-        4 values. All four return sites now add ``None`` as the fourth element.
+        4 values. All return sites now produce a 5-tuple.
 
         Copied verbatim from HobologgerImport.parse_hobologger_file() with:
         - ``self.tz_converter`` replaced by the ``tz_converter`` parameter.
-        - All return statements changed to 4-tuple (add ``None``).
+        - All return statements changed to 5-tuple (add ``None`` for utc_offset, serial_number).
         """
         filedata = []
         location = None
+        serial_number = None
         filename = os.path.basename(path)
         if begindate is not None:
             begindate = date_utils.datestring_to_date(begindate)
@@ -996,7 +997,7 @@ class HoboParser:
                 )
                 % filename
             )
-            return [], filename, location, None  # 4-tuple fix
+            return [], filename, location, None, serial_number  # 5-tuple fix
 
         date_colnr = [idx for idx, col in enumerate(rows[1]) if "Date Time" in col]
         if not date_colnr:
@@ -1035,6 +1036,9 @@ class HoboParser:
         else:
             location = match.group(1)
 
+        sn_match = re.search(r"LGR S/N:\s*(\w+)", rows[data_header_idx][temp_colnr])
+        serial_number = sn_match.group(1) if sn_match else None
+
         new_header = ["date_time", "head_cm", "temp_degc", "cond_mscm"]
         filedata.append(new_header)
 
@@ -1047,7 +1051,7 @@ class HoboParser:
                 )
                 % filename
             )
-            return [], filename, location, None  # 4-tuple fix
+            return [], filename, location, None, serial_number  # 5-tuple fix
         else:
             dt = first_data_row[date_colnr]
             date_format = date_utils.find_date_format(dt, suppress_error_msg=True)
@@ -1062,7 +1066,7 @@ class HoboParser:
                         )
                         % filename
                     )
-                    return [], filename, location, None  # 4-tuple fix
+                    return [], filename, location, None, serial_number  # 5-tuple fix
 
         for row in rows[data_header_idx + 1 :]:
             dt = fix_date(row[date_colnr], filename, tz_converter)
@@ -1089,7 +1093,7 @@ class HoboParser:
 
         filedata = [row for row in filedata if any(row[1:])]
 
-        return filedata, filename, location, None  # 4-tuple fix
+        return filedata, filename, location, None, serial_number  # 5-tuple fix
 
 
 # ── Dialog class ──────────────────────────────────────────────────────────────

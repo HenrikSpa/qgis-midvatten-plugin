@@ -333,7 +333,9 @@ class TestHoboParser:
                 begindate=None,
                 enddate=None,
             )
-        filedata, filename, location, utc_offset = result  # must be 4-tuple
+        filedata, filename, location, utc_offset, serial_number = (
+            result  # must be 5-tuple
+        )
         assert location == "Rb1"
         assert utc_offset is None
         assert filedata[0] == ["date_time", "head_cm", "temp_degc", "cond_mscm"]
@@ -358,12 +360,12 @@ class TestHoboParser:
                 begindate=None,
                 enddate=None,
             )
-        filedata, _, _, _ = result
+        filedata, _, _, _, _ = result
         assert filedata[1][0] == "2018-07-19 08:00:00"
 
     @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
-    def test_parse_always_returns_4_tuple(self, mock_messagebar):
-        """HoboParser must return a 4-tuple even on parse failure."""
+    def test_parse_always_returns_5_tuple(self, mock_messagebar):
+        """HoboParser must return a 5-tuple even on parse failure."""
         file_content = '"Plot Title: temp"\n'
         tz_converter = TzConverter()
         with common_utils.tempinput(file_content, "utf-8") as f:
@@ -374,8 +376,28 @@ class TestHoboParser:
                 begindate=None,
                 enddate=None,
             )
-        assert len(result) == 4
+        assert len(result) == 5
         assert result[3] is None
+        assert result[4] is None
+
+    @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+    def test_parse_serial_number(self, mock_messagebar):
+        file_content = (
+            '"Plot Title: temp"\n'
+            '"#","Date Time, GMT+01:00","Temp, \u00b0C (LGR S/N: 5678, SEN S/N: 5678, LBL: Rb1)"\n'
+            '1,"07/19/18 10:00:00 fm",4.558\n'
+        )
+        tz_converter = TzConverter()
+        with common_utils.tempinput(file_content, "utf-8") as f:
+            result = HoboParser.parse(
+                path=f,
+                charset="utf-8",
+                tz_converter=tz_converter,
+                begindate=None,
+                enddate=None,
+            )
+        _, _, _, _, serial_number = result
+        assert serial_number == "5678"
 
 
 @pytest.mark.spatialite

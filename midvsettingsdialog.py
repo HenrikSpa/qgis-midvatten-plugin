@@ -878,6 +878,7 @@ class PostgisSettings(gui_utils.RowEntryGrid):
     def __init__(self, midvsettingsdialogdock: MidvattenSettingsDock, label_width: int):
         super().__init__()
         self.midvsettingsdialogdock = midvsettingsdialogdock
+        self._updating_schema = False
 
         postgis_connections = db_utils.get_postgis_connections()
 
@@ -904,8 +905,21 @@ class PostgisSettings(gui_utils.RowEntryGrid):
 
         self._connection.currentIndexChanged.connect(self.set_db)
 
+        self.schema_label = qgis.PyQt.QtWidgets.QLabel(
+            QCoreApplication.translate("PostgisSettings", "Schema")
+        )
+        if label_width is not None:
+            self.schema_label.setFixedWidth(label_width)
+        self._schema_combo = qgis.PyQt.QtWidgets.QComboBox()
+        self._schema_combo.setEditable(True)
+        self._schema_combo.addItem("public")
+        self._schema_combo.setCurrentText("public")
+        self._schema_combo.currentTextChanged.connect(self._on_schema_changed)
+
         self.layout.addWidget(self.label, 0, 0)
         self.layout.addWidget(self._connection, 0, 1)
+        self.layout.addWidget(self.schema_label, 1, 0)
+        self.layout.addWidget(self._schema_combo, 1, 1)
 
     @property
     def connection(self):
@@ -917,13 +931,68 @@ class PostgisSettings(gui_utils.RowEntryGrid):
         if index != -1:
             self._connection.setCurrentIndex(index)
 
-    def set_db(self):
+    @property
+    def schema(self) -> str:
+        return self._schema_combo.currentText() or "public"
+
+    @schema.setter
+    def schema(self, value: str) -> None:
+        self._updating_schema = True
+        try:
+            idx = self._schema_combo.findText(value)
+            if idx != -1:
+                self._schema_combo.setCurrentIndex(idx)
+            else:
+                self._schema_combo.setCurrentText(value)
+        finally:
+            self._updating_schema = False
+
+    def _populate_schema_dropdown(self, current_schema: str = "public") -> None:
+        """Populate schema dropdown from the live database connection."""
+        self._updating_schema = True
+        try:
+            self._schema_combo.clear()
+            schemas = ["public"]
+            try:
+                tmp_conn = db_utils.DbConnectionManager(
+                    self.midvsettingsdialogdock.ms.settingsdict["database"]
+                )
+                try:
+                    schemas = db_utils.get_available_schemas(tmp_conn) or ["public"]
+                finally:
+                    tmp_conn.closedb()
+            except Exception:
+                log.debug("Could not fetch schemas from database", exc_info=True)
+            self._schema_combo.addItems(schemas)
+            idx = self._schema_combo.findText(current_schema)
+            if idx != -1:
+                self._schema_combo.setCurrentIndex(idx)
+            else:
+                self._schema_combo.setCurrentText(current_schema)
+        finally:
+            self._updating_schema = False
+
+    def _on_schema_changed(self, _text: str) -> None:
+        if self._updating_schema:
+            return
+        self._save_db_settings()
+
+    def _save_db_settings(self) -> None:
         if self.connection:
             self.midvsettingsdialogdock.ms.settingsdict["database"] = (
                 common_utils.anything_to_string_representation(
-                    {"postgis": {"connection": self.connection}}
+                    {"postgis": {"connection": self.connection, "schema": self.schema}}
                 )
             )
             self.midvsettingsdialogdock.ms.save_settings("database")
+
+    def set_db(self):
+        if self.connection:
+            # Save with current schema first so the connection string is ready
+            self._save_db_settings()
+            # Repopulate schema dropdown from the newly selected connection
+            self._populate_schema_dropdown(current_schema=self.schema)
+            # Re-save with potentially updated schema after dropdown refresh
+            self._save_db_settings()
             self.midvsettingsdialogdock.load_plot_settings()
             warn_about_old_database()

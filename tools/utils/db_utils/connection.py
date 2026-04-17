@@ -66,8 +66,10 @@ def create_backend(db_settings: Optional[str] = None) -> Backend:
     if dbtype == "spatialite":
         return SQLiteBackend(dbpath=connection_settings["dbpath"])
     if dbtype == "postgis":
+        schema = connection_settings.get("schema", "public")
         return PostgreSQLBackend(
             connection_name=connection_settings["connection"].split("/")[0],
+            schema=schema,
         )
     raise UsageError(
         QCoreApplication.translate(
@@ -95,7 +97,14 @@ class DbConnectionManager:
         self.dbpath = getattr(self._backend, "dbpath", None)
         self.uri = getattr(self._backend, "uri", None)
         self.postgis_settings = getattr(self._backend, "postgis_settings", None)
-        self.schema = self._backend.schema
+
+    @property
+    def schema(self) -> str:
+        return self._backend.schema
+
+    @schema.setter
+    def schema(self, value: str) -> None:
+        self._backend.schema = value
 
     @property
     def conn(self):

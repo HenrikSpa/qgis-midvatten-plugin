@@ -24,9 +24,6 @@ class Backend(ABC):
     # One of "spatialite", "postgis".
     dbtype: str
 
-    schema: str = "public"
-    """Schema name. Override as a class attribute in subclasses that use a different schema."""
-
     # Subclasses must assign self._conn and self._cursor in __init__.
     @property
     def conn(self):  # sqlite3.Connection or psycopg2 connection
@@ -35,6 +32,15 @@ class Backend(ABC):
     @property
     def cursor(self):  # cursor
         return self._cursor
+
+    @property
+    def schema(self) -> str:
+        return "public"
+
+    @schema.setter
+    def schema(self, value: str) -> None:
+        """No-op for backends without schema support (e.g. SQLite)."""
+        pass
 
     # --- Execution (single sql string, args optional) ---
 

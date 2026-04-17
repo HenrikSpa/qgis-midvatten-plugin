@@ -281,8 +281,7 @@ class NewDb:
                 "Database type postgis not selected, check Midvatten settings!"
             )
 
-        dbconnection.execute("SET search_path = public;")
-        dbconnection.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
+        dbconnection.execute("CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA public;")
 
         # Prefer PostGIS_Version(); PostGIS_Full_Version() can fail when it calls
         # internal helpers (postgis_proj_version, postgis_geos_version) that may
@@ -376,7 +375,10 @@ class NewDb:
             for stmt in " ".join(sql_lines).split(";")
             if stmt.strip()
         ]
-        dbconnection.execute("SET search_path = public;")
+        # Create schema if needed (safe no-op if it already exists)
+        dbconnection.execute(
+            f"CREATE SCHEMA IF NOT EXISTS {dbconnection.ident(dbconnection.schema)}"
+        )
         for linenr, line in enumerate(sql_lines):
             sql = self.replace_words(line, replace_word_replace_with)
             try:

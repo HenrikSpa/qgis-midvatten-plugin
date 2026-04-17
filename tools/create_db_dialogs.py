@@ -23,6 +23,13 @@ from qgis.PyQt.QtWidgets import (
 from midvatten.tools.utils.common_utils import format_timezone_string
 from midvatten.tools.utils.date_utils import get_pytz_timezones
 
+# Locale-specific defaults applied when the user picks a locale.
+_LOCALE_DEFAULTS: dict[str, dict] = {
+    "sv_se": {"epsg": 3006, "logger_tz": "UTC+1", "levels_tz": "Europe/Stockholm"},
+    "en_us": {"epsg": 4326, "logger_tz": "", "levels_tz": ""},
+}
+_DEFAULT_LOCALE_FALLBACK = _LOCALE_DEFAULTS["en_us"]
+
 
 def _locale_options() -> list:
     locales = [
@@ -44,16 +51,12 @@ def _levels_tz_options() -> list:
     return [""] + list(get_pytz_timezones())
 
 
-class NewSpatialiteDbDialog(QDialog):
-    """Single dialog collecting all settings for a new SpatiaLite database."""
+class _BaseNewDbDialog(QDialog):
+    """Shared base for new-database dialogs: locale, EPSG, and timezone rows."""
 
-    def __init__(self, parent: QWidget = None):
+    def __init__(self, title: str, parent: QWidget = None):
         super().__init__(parent)
-        self.setWindowTitle(
-            QCoreApplication.translate(
-                "NewDb", "Create new Midvatten SpatiaLite database"
-            )
-        )
+        self.setWindowTitle(title)
         self._build_ui()
         self._connect_signals()
         sys_locale = locale_module.getlocale()[0] or ""
@@ -63,10 +66,7 @@ class NewSpatialiteDbDialog(QDialog):
             self._locale_combo.setCurrentIndex(idx)
         self._on_locale_changed(self._locale_combo.currentText())
 
-    def _build_ui(self) -> None:
-        layout = QVBoxLayout(self)
-        form = QFormLayout()
-
+    def _build_common_form(self, form: QFormLayout) -> None:
         self._locale_combo = QComboBox()
         self._locale_combo.addItems(_locale_options())
         form.addRow(QCoreApplication.translate("NewDb", "Locale:"), self._locale_combo)
@@ -89,6 +89,60 @@ class NewSpatialiteDbDialog(QDialog):
             QCoreApplication.translate("NewDb", "Levels timezone (w_levels):"),
             self._levels_tz_combo,
         )
+
+    def _build_ui(self) -> None:
+        layout = QVBoxLayout(self)
+        form = QFormLayout()
+        self._build_common_form(form)
+        layout.addLayout(form)
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+
+    def _connect_signals(self) -> None:
+        self._locale_combo.currentTextChanged.connect(self._on_locale_changed)
+
+    def _on_locale_changed(self, locale_str: str) -> None:
+        defaults = _LOCALE_DEFAULTS.get(locale_str.lower(), _DEFAULT_LOCALE_FALLBACK)
+        self._epsg_spin.setValue(defaults["epsg"])
+        idx = self._logger_tz_combo.findText(defaults["logger_tz"])
+        self._logger_tz_combo.setCurrentIndex(max(0, idx))
+        idx = self._levels_tz_combo.findText(defaults["levels_tz"])
+        self._levels_tz_combo.setCurrentIndex(max(0, idx))
+
+    @property
+    def locale(self) -> str:
+        return self._locale_combo.currentText()
+
+    @property
+    def epsg_code(self) -> int:
+        return self._epsg_spin.value()
+
+    @property
+    def w_levels_logger_timezone(self) -> str:
+        return self._logger_tz_combo.currentText()
+
+    @property
+    def w_levels_timezone(self) -> str:
+        return self._levels_tz_combo.currentText()
+
+
+class NewSpatialiteDbDialog(_BaseNewDbDialog):
+    """Single dialog collecting all settings for a new SpatiaLite database."""
+
+    def __init__(self, parent: QWidget = None):
+        super().__init__(
+            QCoreApplication.translate(
+                "NewDb", "Create new Midvatten SpatiaLite database"
+            ),
+            parent,
+        )
+
+    def _build_ui(self) -> None:
+        layout = QVBoxLayout(self)
+        form = QFormLayout()
+        self._build_common_form(form)
 
         path_row = QHBoxLayout()
         self._path_edit = QLineEdit("midv_obsdb.sqlite")
@@ -102,29 +156,14 @@ class NewSpatialiteDbDialog(QDialog):
         form.addRow(QCoreApplication.translate("NewDb", "Database path:"), path_widget)
 
         layout.addLayout(form)
-
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
 
     def _connect_signals(self) -> None:
-        self._locale_combo.currentTextChanged.connect(self._on_locale_changed)
+        super()._connect_signals()
         self._browse_btn.clicked.connect(self._browse_path)
-
-    def _on_locale_changed(self, locale_str: str) -> None:
-        if locale_str.lower() == "sv_se":
-            self._epsg_spin.setValue(3006)
-            idx = self._logger_tz_combo.findText("UTC+1")
-            if idx >= 0:
-                self._logger_tz_combo.setCurrentIndex(idx)
-            idx = self._levels_tz_combo.findText("Europe/Stockholm")
-            if idx >= 0:
-                self._levels_tz_combo.setCurrentIndex(idx)
-        else:
-            self._epsg_spin.setValue(4326)
-            self._logger_tz_combo.setCurrentIndex(0)
-            self._levels_tz_combo.setCurrentIndex(0)
 
     def _browse_path(self) -> None:
         path, _ = QFileDialog.getSaveFileName(
@@ -137,106 +176,17 @@ class NewSpatialiteDbDialog(QDialog):
             self._path_edit.setText(path)
 
     @property
-    def locale(self) -> str:
-        return self._locale_combo.currentText()
-
-    @property
-    def epsg_code(self) -> int:
-        return self._epsg_spin.value()
-
-    @property
-    def w_levels_logger_timezone(self) -> str:
-        return self._logger_tz_combo.currentText()
-
-    @property
-    def w_levels_timezone(self) -> str:
-        return self._levels_tz_combo.currentText()
-
-    @property
     def dbpath(self) -> str:
         return self._path_edit.text()
 
 
-class NewPostgisDbDialog(QDialog):
+class NewPostgisDbDialog(_BaseNewDbDialog):
     """Single dialog collecting all settings for a new PostGIS database."""
 
     def __init__(self, parent: QWidget = None):
-        super().__init__(parent)
-        self.setWindowTitle(
-            QCoreApplication.translate("NewDb", "Create new Midvatten PostGIS database")
+        super().__init__(
+            QCoreApplication.translate(
+                "NewDb", "Create new Midvatten PostGIS database"
+            ),
+            parent,
         )
-        self._build_ui()
-        self._connect_signals()
-        sys_locale = locale_module.getlocale()[0] or ""
-        initial = "sv_SE" if sys_locale.lower().startswith("sv") else "en_US"
-        idx = self._locale_combo.findText(initial)
-        if idx >= 0:
-            self._locale_combo.setCurrentIndex(idx)
-        self._on_locale_changed(self._locale_combo.currentText())
-
-    def _build_ui(self) -> None:
-        layout = QVBoxLayout(self)
-        form = QFormLayout()
-
-        self._locale_combo = QComboBox()
-        self._locale_combo.addItems(_locale_options())
-        form.addRow(QCoreApplication.translate("NewDb", "Locale:"), self._locale_combo)
-
-        self._epsg_spin = QSpinBox()
-        self._epsg_spin.setRange(1, 999999)
-        self._epsg_spin.setValue(4326)
-        form.addRow(QCoreApplication.translate("NewDb", "EPSG code:"), self._epsg_spin)
-
-        self._logger_tz_combo = QComboBox()
-        self._logger_tz_combo.addItems(_logger_tz_options())
-        form.addRow(
-            QCoreApplication.translate("NewDb", "Logger timezone (w_levels_logger):"),
-            self._logger_tz_combo,
-        )
-
-        self._levels_tz_combo = QComboBox()
-        self._levels_tz_combo.addItems(_levels_tz_options())
-        form.addRow(
-            QCoreApplication.translate("NewDb", "Levels timezone (w_levels):"),
-            self._levels_tz_combo,
-        )
-
-        layout.addLayout(form)
-
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
-
-    def _connect_signals(self) -> None:
-        self._locale_combo.currentTextChanged.connect(self._on_locale_changed)
-
-    def _on_locale_changed(self, locale_str: str) -> None:
-        if locale_str.lower() == "sv_se":
-            self._epsg_spin.setValue(3006)
-            idx = self._logger_tz_combo.findText("UTC+1")
-            if idx >= 0:
-                self._logger_tz_combo.setCurrentIndex(idx)
-            idx = self._levels_tz_combo.findText("Europe/Stockholm")
-            if idx >= 0:
-                self._levels_tz_combo.setCurrentIndex(idx)
-        else:
-            self._epsg_spin.setValue(4326)
-            self._logger_tz_combo.setCurrentIndex(0)
-            self._levels_tz_combo.setCurrentIndex(0)
-
-    @property
-    def locale(self) -> str:
-        return self._locale_combo.currentText()
-
-    @property
-    def epsg_code(self) -> int:
-        return self._epsg_spin.value()
-
-    @property
-    def w_levels_logger_timezone(self) -> str:
-        return self._logger_tz_combo.currentText()
-
-    @property
-    def w_levels_timezone(self) -> str:
-        return self._levels_tz_combo.currentText()

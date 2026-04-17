@@ -296,9 +296,7 @@ class ExportMixin:
         assert test_string == reference_string
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch("midvatten.tools.utils.midvatten_utils.QtWidgets.QInputDialog.getText")
-    @mock.patch("midvatten.tools.create_db.common_utils.NotFoundQuestion")
-    @mock.patch("midvatten.tools.utils.common_utils.Askuser", answer_yes.get_v)
+    @mock.patch("midvatten.tools.export_spatialite.NewSpatialiteDbDialog")
     @mock.patch(
         "midvatten.tools.utils.common_utils.get_selected_features_as_tuple",
         mock_selection.get_v,
@@ -307,7 +305,6 @@ class ExportMixin:
         "midvatten.tools.utils.midvatten_utils.verify_msettings_loaded_and_layer_edit_mode",
         autospec=True,
     )
-    @mock.patch("qgis.PyQt.QtWidgets.QFileDialog.getSaveFileName")
     @mock.patch("midvatten.tools.utils.midvatten_utils.find_layer", autospec=True)
     @mock.patch("qgis.utils.iface", autospec=True)
     @mock.patch("midvatten.tools.export_data.common_utils.pop_up_info", autospec=True)
@@ -316,18 +313,22 @@ class ExportMixin:
         mock_skip_popup,
         mock_iface,
         mock_find_layer,
-        mock_newdbpath,
         mock_verify,
-        mock_locale,
-        mock_createdb_crs_question,
+        mock_dialog_cls,
         mock_messagebar,
     ):
         mock_find_layer.return_value.crs.return_value.authid.return_value = "EPSG:3006"
-        mock_createdb_crs_question.return_value = [3006, True]
+        mock_verify.return_value = 0
         dbconnection = db_utils.DbConnectionManager()
         export_path = _unique_export_path(self)
-        mock_newdbpath.return_value = (export_path, "")
-        mock_verify.return_value = 0
+        mock_dlg = mock.MagicMock()
+        mock_dialog_cls.return_value = mock_dlg
+        mock_dlg.exec.return_value = 1
+        mock_dlg.locale = "sv_SE"
+        mock_dlg.epsg_code = 3006
+        mock_dlg.w_levels_logger_timezone = ""
+        mock_dlg.w_levels_timezone = ""
+        mock_dlg.dbpath = export_path
 
         db_utils.sql_alter_db(
             """INSERT INTO obs_points (obsid, geometry) VALUES ('P1', ST_GeomFromText('POINT(633466 711659)', 3006))""",
@@ -374,8 +375,6 @@ class ExportMixin:
 
         dbconnection.commit_and_closedb()
 
-        mock_locale.return_value.answer = "ok"
-        mock_locale.return_value.value = "sv_SE"
         ExportSpatialite(self.iface, self.midvatten.ms).show()
 
         conn = db_utils.connect_with_spatialite_connect(export_path)
@@ -436,9 +435,7 @@ class ExportMixin:
         assert test_string == reference_string
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch("midvatten.tools.utils.midvatten_utils.QtWidgets.QInputDialog.getText")
-    @mock.patch("midvatten.tools.create_db.common_utils.NotFoundQuestion")
-    @mock.patch("midvatten.tools.utils.common_utils.Askuser", answer_yes.get_v)
+    @mock.patch("midvatten.tools.export_spatialite.NewSpatialiteDbDialog")
     @mock.patch(
         "midvatten.tools.utils.common_utils.get_selected_features_as_tuple",
         mock_no_selection.get_v,
@@ -447,7 +444,6 @@ class ExportMixin:
         "midvatten.tools.utils.midvatten_utils.verify_msettings_loaded_and_layer_edit_mode",
         autospec=True,
     )
-    @mock.patch("qgis.PyQt.QtWidgets.QFileDialog.getSaveFileName")
     @mock.patch("midvatten.tools.utils.midvatten_utils.find_layer", autospec=True)
     @mock.patch("qgis.utils.iface", autospec=True)
     @mock.patch("midvatten.tools.export_data.common_utils.pop_up_info", autospec=True)
@@ -456,17 +452,22 @@ class ExportMixin:
         mock_skip_popup,
         mock_iface,
         mock_find_layer,
-        mock_newdbpath,
         mock_verify,
-        mock_locale,
-        mock_createdb_crs_question,
+        mock_dialog_cls,
         mock_messagebar,
     ):
         mock_find_layer.return_value.crs.return_value.authid.return_value = "EPSG:3006"
-        mock_createdb_crs_question.return_value = [3006, True]
-        dbconnection = db_utils.DbConnectionManager()
-        mock_newdbpath.return_value = (EXPORT_DB_PATH, "")
         mock_verify.return_value = 0
+        dbconnection = db_utils.DbConnectionManager()
+        export_path = _unique_export_path(self)
+        mock_dlg = mock.MagicMock()
+        mock_dialog_cls.return_value = mock_dlg
+        mock_dlg.exec.return_value = 1
+        mock_dlg.locale = "sv_SE"
+        mock_dlg.epsg_code = 3006
+        mock_dlg.w_levels_logger_timezone = ""
+        mock_dlg.w_levels_timezone = ""
+        mock_dlg.dbpath = export_path
 
         db_utils.sql_alter_db(
             """INSERT INTO obs_points (obsid, geometry) VALUES ('P1', ST_GeomFromText('POINT(633466 711659)', 3006))""",
@@ -516,8 +517,6 @@ class ExportMixin:
 
         dbconnection.commit_and_closedb()
 
-        mock_locale.return_value.answer = "ok"
-        mock_locale.return_value.value = "sv_SE"
         ExportSpatialite(self.iface, self.midvatten.ms).show()
 
         sql_list = [
@@ -534,7 +533,7 @@ class ExportMixin:
             """select obsid, instrumentid, parameter, date_time from meteo""",
         ]
 
-        conn = db_utils.connect_with_spatialite_connect(EXPORT_DB_PATH)
+        conn = db_utils.connect_with_spatialite_connect(export_path)
         curs = conn.cursor()
 
         test_list = []
@@ -577,15 +576,12 @@ class ExportMixin:
         assert test_string == reference_string
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch("midvatten.tools.utils.midvatten_utils.QtWidgets.QInputDialog.getText")
-    @mock.patch("midvatten.tools.create_db.common_utils.NotFoundQuestion")
-    @mock.patch("midvatten.tools.utils.common_utils.Askuser", answer_yes.get_v)
+    @mock.patch("midvatten.tools.export_spatialite.NewSpatialiteDbDialog")
     @mock.patch("midvatten.tools.utils.common_utils.get_selected_features_as_tuple")
     @mock.patch(
         "midvatten.tools.utils.midvatten_utils.verify_msettings_loaded_and_layer_edit_mode",
         autospec=True,
     )
-    @mock.patch("qgis.PyQt.QtWidgets.QFileDialog.getSaveFileName")
     @mock.patch("midvatten.tools.utils.midvatten_utils.find_layer", autospec=True)
     @mock.patch("qgis.utils.iface", autospec=True)
     @mock.patch("midvatten.tools.export_data.common_utils.pop_up_info", autospec=True)
@@ -594,19 +590,23 @@ class ExportMixin:
         mock_skip_popup,
         mock_iface,
         mock_find_layer,
-        mock_newdbpath,
         mock_verify,
         mock_selection,
-        mock_locale,
-        mock_createdb_crs_question,
+        mock_dialog_cls,
         mock_messagebar,
     ):
         mock_selection.return_value = ("åäö",)
         mock_find_layer.return_value.crs.return_value.authid.return_value = "EPSG:3006"
-        mock_createdb_crs_question.return_value = [3006, True]
-
-        mock_newdbpath.return_value = (EXPORT_DB_PATH, "")
         mock_verify.return_value = 0
+        export_path = _unique_export_path(self)
+        mock_dlg = mock.MagicMock()
+        mock_dialog_cls.return_value = mock_dlg
+        mock_dlg.exec.return_value = 1
+        mock_dlg.locale = "sv_SE"
+        mock_dlg.epsg_code = 3006
+        mock_dlg.w_levels_logger_timezone = ""
+        mock_dlg.w_levels_timezone = ""
+        mock_dlg.dbpath = export_path
 
         db_utils.sql_alter_db(
             """INSERT INTO obs_points (obsid, geometry) VALUES ('åäö', ST_GeomFromText('POINT(633466 711659)', 3006))"""
@@ -616,8 +616,6 @@ class ExportMixin:
             """INSERT INTO comments (obsid, date_time, staff, comment) VALUES ('åäö', '2015-01-01 00:00:00', 's1', 'comment1')"""
         )
 
-        mock_locale.return_value.answer = "ok"
-        mock_locale.return_value.value = "sv_SE"
         ExportSpatialite(self.iface, self.midvatten.ms).show()
 
         sql_list = [
@@ -626,7 +624,7 @@ class ExportMixin:
             """select obsid, date_time, staff, comment from comments""",
         ]
 
-        conn = db_utils.connect_with_spatialite_connect(EXPORT_DB_PATH)
+        conn = db_utils.connect_with_spatialite_connect(export_path)
         curs = conn.cursor()
 
         test_list = []
@@ -657,9 +655,7 @@ class ExportMixin:
         assert test_string == reference_string
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch("midvatten.tools.utils.midvatten_utils.QtWidgets.QInputDialog.getText")
-    @mock.patch("midvatten.tools.create_db.common_utils.NotFoundQuestion")
-    @mock.patch("midvatten.tools.utils.common_utils.Askuser", answer_yes.get_v)
+    @mock.patch("midvatten.tools.export_spatialite.NewSpatialiteDbDialog")
     @mock.patch(
         "midvatten.tools.utils.common_utils.get_selected_features_as_tuple",
         mock_selection.get_v,
@@ -668,7 +664,6 @@ class ExportMixin:
         "midvatten.tools.utils.midvatten_utils.verify_msettings_loaded_and_layer_edit_mode",
         autospec=True,
     )
-    @mock.patch("qgis.PyQt.QtWidgets.QFileDialog.getSaveFileName")
     @mock.patch("midvatten.tools.utils.midvatten_utils.find_layer", autospec=True)
     @mock.patch("qgis.utils.iface", autospec=True)
     @mock.patch("midvatten.tools.export_data.common_utils.pop_up_info", autospec=True)
@@ -677,20 +672,20 @@ class ExportMixin:
         mock_skip_popup,
         mock_iface,
         mock_find_layer,
-        mock_newdbpath,
         mock_verify,
-        mock_locale,
-        mock_createdb_crs_question,
+        mock_dialog_cls,
         mock_messagebar,
     ):
         mock_find_layer.return_value.crs.return_value.authid.return_value = "EPSG:3006"
-        mock_createdb_crs_question.return_value = [
-            3010,
-            True,
-        ]  # spatialite uses ["3010", True]
-
-        mock_newdbpath.return_value = (EXPORT_DB_PATH, "")
         mock_verify.return_value = 0
+        mock_dlg = mock.MagicMock()
+        mock_dialog_cls.return_value = mock_dlg
+        mock_dlg.exec.return_value = 1
+        mock_dlg.locale = "sv_SE"
+        mock_dlg.epsg_code = 3010
+        mock_dlg.w_levels_logger_timezone = ""
+        mock_dlg.w_levels_timezone = ""
+        mock_dlg.dbpath = EXPORT_DB_PATH
 
         db_utils.sql_alter_db(
             """INSERT INTO obs_points (obsid, geometry) VALUES ('P1', ST_GeomFromText('POINT(1 1)', 3006))"""
@@ -722,8 +717,6 @@ class ExportMixin:
             """INSERT INTO meteo (obsid, instrumentid, parameter, date_time) VALUES ('P1', 'meteoinst', 'precip', '2017-01-01 00:19:00')"""
         )
 
-        mock_locale.return_value.answer = "ok"
-        mock_locale.return_value.value = "sv_SE"
         ExportSpatialite(self.iface, self.midvatten.ms).show()
 
         sql_list = [
@@ -818,9 +811,7 @@ class ExportMixin:
         assert test_string == reference_string
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch("midvatten.tools.utils.midvatten_utils.QtWidgets.QInputDialog.getText")
-    @mock.patch("midvatten.tools.create_db.common_utils.NotFoundQuestion")
-    @mock.patch("midvatten.tools.utils.common_utils.Askuser", answer_yes.get_v)
+    @mock.patch("midvatten.tools.export_spatialite.NewSpatialiteDbDialog")
     @mock.patch(
         "midvatten.tools.utils.common_utils.get_selected_features_as_tuple",
         mock_selection.get_v,
@@ -829,10 +820,6 @@ class ExportMixin:
         "midvatten.tools.utils.midvatten_utils.verify_msettings_loaded_and_layer_edit_mode",
         autospec=True,
     )
-    @mock.patch(
-        "midvatten.tools.create_db.common_utils.get_save_file_name_no_extension"
-    )
-    @mock.patch("qgis.PyQt.QtWidgets.QFileDialog.getSaveFileName")
     @mock.patch("midvatten.tools.utils.midvatten_utils.find_layer", autospec=True)
     @mock.patch("qgis.utils.iface", autospec=True)
     @mock.patch("midvatten.tools.export_data.common_utils.pop_up_info", autospec=True)
@@ -841,15 +828,12 @@ class ExportMixin:
         mock_skip_popup,
         mock_iface,
         mock_find_layer,
-        mock_newdbpath,
-        mock_get_save_path,
         mock_verify,
-        mock_locale,
-        mock_createdb_crs_question,
+        mock_dialog_cls,
         mock_messagebar,
     ):
         mock_find_layer.return_value.crs.return_value.authid.return_value = "EPSG:3006"
-        mock_createdb_crs_question.return_value = [3006, True]
+        mock_verify.return_value = 0
         dbconnection = db_utils.DbConnectionManager()
         export_path = _unique_export_path(self)
         for suffix in ["", "-journal", "-wal", "-shm"]:
@@ -857,9 +841,14 @@ class ExportMixin:
                 os.remove(export_path + suffix)
             except OSError:
                 pass
-        mock_newdbpath.return_value = (export_path, "")
-        mock_get_save_path.return_value = export_path
-        mock_verify.return_value = 0
+        mock_dlg = mock.MagicMock()
+        mock_dialog_cls.return_value = mock_dlg
+        mock_dlg.exec.return_value = 1
+        mock_dlg.locale = "en_US"
+        mock_dlg.epsg_code = 3006
+        mock_dlg.w_levels_logger_timezone = ""
+        mock_dlg.w_levels_timezone = ""
+        mock_dlg.dbpath = export_path
 
         """
         insert into zz_strat(geoshort,strata) values('land fill','fyll');
@@ -907,9 +896,6 @@ class ExportMixin:
 
         dbconnection.commit_and_closedb()
 
-        mock_locale.return_value.answer = "ok"
-        mock_locale.return_value.value = "en_US"
-
         ExportSpatialite(self.iface, self.midvatten.ms).show()
 
         conn = db_utils.connect_with_spatialite_connect(export_path)
@@ -945,9 +931,7 @@ class ExportMixin:
         assert test_string == reference_string
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch("midvatten.tools.utils.midvatten_utils.QtWidgets.QInputDialog.getText")
-    @mock.patch("midvatten.tools.create_db.common_utils.NotFoundQuestion")
-    @mock.patch("midvatten.tools.utils.common_utils.Askuser", answer_yes.get_v)
+    @mock.patch("midvatten.tools.export_spatialite.NewSpatialiteDbDialog")
     @mock.patch(
         "midvatten.tools.utils.common_utils.get_selected_features_as_tuple",
         mock_selection.get_v,
@@ -956,7 +940,6 @@ class ExportMixin:
         "midvatten.tools.utils.midvatten_utils.verify_msettings_loaded_and_layer_edit_mode",
         autospec=True,
     )
-    @mock.patch("qgis.PyQt.QtWidgets.QFileDialog.getSaveFileName")
     @mock.patch("midvatten.tools.utils.midvatten_utils.find_layer", autospec=True)
     @mock.patch("qgis.utils.iface", autospec=True)
     @mock.patch("midvatten.tools.export_data.common_utils.pop_up_info", autospec=True)
@@ -965,17 +948,21 @@ class ExportMixin:
         mock_skip_popup,
         mock_iface,
         mock_find_layer,
-        mock_newdbpath,
         mock_verify,
-        mock_locale,
-        mock_createdb_crs_question,
+        mock_dialog_cls,
         mock_messagebar,
     ):
         mock_find_layer.return_value.crs.return_value.authid.return_value = "EPSG:3006"
-        mock_createdb_crs_question.return_value = [3006, True]
         dbconnection = db_utils.DbConnectionManager()
-        mock_newdbpath.return_value = (EXPORT_DB_PATH, "")
         mock_verify.return_value = 0
+        mock_dlg = mock.MagicMock()
+        mock_dialog_cls.return_value = mock_dlg
+        mock_dlg.exec.return_value = 1
+        mock_dlg.locale = "sv_SE"
+        mock_dlg.epsg_code = 3006
+        mock_dlg.w_levels_logger_timezone = ""
+        mock_dlg.w_levels_timezone = ""
+        mock_dlg.dbpath = EXPORT_DB_PATH
 
         db_utils.execute_sqlfile(
             db_defs.extra_datatables_sqlfile(), dbconnection, merge_newlines=True
@@ -1036,8 +1023,6 @@ class ExportMixin:
 
         print(str(db_utils.sql_load_fr_db("""select * From s_qual_lab""")))
 
-        mock_locale.return_value.answer = "ok"
-        mock_locale.return_value.value = "sv_SE"
         ExportSpatialite(self.iface, self.midvatten.ms).show()
 
         sql_list = [

@@ -33,7 +33,7 @@ from typing import Callable, Optional
 import qgis.PyQt.QtCore
 from qgis.PyQt.QtCore import QCoreApplication, QDir, QSettings, QUrl
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction, QMenu
+from qgis.PyQt.QtWidgets import QAction, QDialog, QMenu
 from qgis.core import QgsApplication
 
 import midvatten.midvsettingsdialog as midvsettingsdialog
@@ -43,6 +43,7 @@ from midvatten.tools.column_values_from_selected_features import (
     ValuesFromSelectedFeaturesGui,
 )
 from midvatten.tools.create_db import NewDb
+from midvatten.tools.create_db_dialogs import NewPostgisDbDialog, NewSpatialiteDbDialog
 from midvatten.tools.custom_drillreport import DrillreportUi
 from midvatten.tools.customplot import CustomPlot
 from midvatten.tools.drillreport import Drillreport
@@ -809,54 +810,47 @@ class Midvatten:
 
     @common_utils.general_exception_handler
     def new_db(self, *args):
-        sanity = common_utils.Askuser(
-            "YesNo",
-            QCoreApplication.translate(
-                "Midvatten",
-                """This will create a new empty\nMidvatten DB with predefined design.\n\nContinue?""",
-            ),
-            QCoreApplication.translate("Midvatten", "Are you sure?"),
+        dialog = NewSpatialiteDbDialog(self.iface.mainWindow())
+        if dialog.exec() != QDialog.Accepted:
+            return
+        newdbinstance = NewDb()
+        newdbinstance.create_new_spatialite_db(
+            newdbinstance._read_version(),
+            user_select_crs="n",
+            epsg_code=str(dialog.epsg_code),
+            delete_srids=True,
+            w_levels_logger_timezone=dialog.w_levels_logger_timezone,
+            w_levels_timezone=dialog.w_levels_timezone,
+            locale=dialog.locale,
+            dbpath=dialog.dbpath,
         )
-        if sanity.result == 1:
-            filenamepath = os.path.join(os.path.dirname(__file__), "metadata.txt")
-            ini_text = QSettings(filenamepath, QSettings.Format.IniFormat)
-            _verno = ini_text.value("version")
-            if isinstance(_verno, qgis.PyQt.QtCore.QVariant):
-                verno = _verno.toString()
-            else:
-                verno = str(_verno)
-            newdbinstance = NewDb()
-            newdbinstance.create_new_spatialite_db(verno)
-
-            if newdbinstance.db_settings:
-                self.ms.settingsdict["database"] = newdbinstance.db_settings
-                self.ms.save_settings("database")
-                try:
-                    self.midvsettingsdialog.select_last_settings()
-                except AttributeError:
-                    pass
+        if newdbinstance.db_settings:
+            self.ms.settingsdict["database"] = newdbinstance.db_settings
+            self.ms.save_settings("database")
+            try:
+                self.midvsettingsdialog.select_last_settings()
+            except AttributeError:
+                pass
 
     @db_utils.if_connection_ok
     @common_utils.general_exception_handler
     def new_postgis_db(self):
-        sanity = common_utils.Askuser(
-            "YesNo",
-            QCoreApplication.translate(
-                "Midvatten",
-                """This will update the selected postgis database to a \nMidvatten Postgis DB with predefined design.\n\nContinue?""",
-            ),
-            QCoreApplication.translate("Midvatten", "Are you sure?"),
+        dialog = NewPostgisDbDialog(self.iface.mainWindow())
+        if dialog.exec() != QDialog.Accepted:
+            return
+        newdbinstance = NewDb()
+        newdbinstance.populate_postgis_db(
+            newdbinstance._read_version(),
+            user_select_crs="n",
+            epsg_code=str(dialog.epsg_code),
+            w_levels_logger_timezone=dialog.w_levels_logger_timezone,
+            w_levels_timezone=dialog.w_levels_timezone,
+            locale=dialog.locale,
         )
-        if sanity.result == 1:
-            filenamepath = os.path.join(os.path.dirname(__file__), "metadata.txt")
-            ini_text = QSettings(filenamepath, QSettings.Format.IniFormat)
-            verno = str(ini_text.value("version"))
-            newdbinstance = NewDb()
-            newdbinstance.populate_postgis_db(verno)
-            if newdbinstance.db_settings:
-                self.ms.settingsdict["database"] = newdbinstance.db_settings
-                self.ms.save_settings("database")
-                try:
-                    self.midvsettingsdialog.select_last_settings()
-                except AttributeError:
-                    pass
+        if newdbinstance.db_settings:
+            self.ms.settingsdict["database"] = newdbinstance.db_settings
+            self.ms.save_settings("database")
+            try:
+                self.midvsettingsdialog.select_last_settings()
+            except AttributeError:
+                pass

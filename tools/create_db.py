@@ -62,12 +62,17 @@ class NewDb:
         delete_srids: bool = True,
         w_levels_logger_timezone: str = None,
         w_levels_timezone: str = None,
+        locale: str = None,
+        dbpath: str = None,
     ):  # CreateNewDB(self, verno):
         """Open a new DataBase (create an empty one if file doesn't exists) and set as default DB"""
 
-        common_utils.stop_waiting_cursor()
-        set_locale = self.ask_for_locale()
-        common_utils.start_waiting_cursor()
+        if locale is None:
+            common_utils.stop_waiting_cursor()
+            set_locale = self.ask_for_locale()
+            common_utils.start_waiting_cursor()
+        else:
+            set_locale = locale
         # print("Got locale " + str(set_locale))
 
         if user_select_crs == "y":
@@ -99,17 +104,20 @@ class NewDb:
             # print("Got timezone:" + str(w_levels_timezone))
             common_utils.start_waiting_cursor()
 
-        common_utils.stop_waiting_cursor()
-        dbpath = ru(
-            common_utils.get_save_file_name_no_extension(
-                parent=None,
-                caption="New DB",
-                directory="midv_obsdb.sqlite",
-                filter="Spatialite (*.sqlite)",
+        if dbpath is None:
+            common_utils.stop_waiting_cursor()
+            dbpath = ru(
+                common_utils.get_save_file_name_no_extension(
+                    parent=None,
+                    caption="New DB",
+                    directory="midv_obsdb.sqlite",
+                    filter="Spatialite (*.sqlite)",
+                )
             )
-        )
+            common_utils.start_waiting_cursor()
 
-        common_utils.start_waiting_cursor()
+        if not dbpath:
+            return
 
         if os.path.exists(dbpath):
             common_utils.MessagebarAndLog.critical(
@@ -257,6 +265,7 @@ class NewDb:
         epsg_code: str = "4326",
         w_levels_logger_timezone: str = None,
         w_levels_timezone: str = None,
+        locale: str = None,
     ):
 
         dbconnection = db_utils.DbConnectionManager()
@@ -290,9 +299,12 @@ class NewDb:
         if not versionstext:
             versionstext = "PostGIS (version unknown)"
 
-        common_utils.stop_waiting_cursor()
-        supplied_locale = self.ask_for_locale()
-        common_utils.start_waiting_cursor()
+        if locale is None:
+            common_utils.stop_waiting_cursor()
+            supplied_locale = self.ask_for_locale()
+            common_utils.start_waiting_cursor()
+        else:
+            supplied_locale = locale
 
         if user_select_crs == "y":
             common_utils.stop_waiting_cursor()

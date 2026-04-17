@@ -1,11 +1,12 @@
 """ExportSpatialite — exports the current Midvatten database to a new SpatiaLite file."""
 
 import logging
-import os
 
-from qgis.PyQt.QtCore import QCoreApplication, QSettings
+from qgis.PyQt.QtCore import QCoreApplication
+from qgis.PyQt.QtWidgets import QDialog
 
 from midvatten.tools.create_db import NewDb
+from midvatten.tools.create_db_dialogs import NewSpatialiteDbDialog
 from midvatten.tools.export_data import ExportData
 from midvatten.tools.utils import common_utils, db_utils
 
@@ -24,6 +25,13 @@ class ExportSpatialite:
         obsid_l = common_utils.get_selected_features_as_tuple("obs_lines")
         log.debug("Selected obs_points to export:%s", obsid_p)
         log.debug("Selected obs_lines to export:%s", obsid_l)
+
+        source_srid = db_utils.sql_load_fr_db(
+            """SELECT srid FROM geometry_columns WHERE f_table_name = 'obs_points';"""
+        )[1][0][0]
+        w_levels_logger_timezone = db_utils.get_timezone_from_db("w_levels_logger")
+        w_levels_timezone = db_utils.get_timezone_from_db("w_levels")
+
         common_utils.stop_waiting_cursor()
 
         selected_all = (
@@ -32,61 +40,64 @@ class ExportSpatialite:
             else QCoreApplication.translate("Midvatten", "all")
         )
 
-        sanity = common_utils.Askuser(
-            "YesNo",
+        dialog = NewSpatialiteDbDialog(parent=self._iface.mainWindow())
+        dialog.setWindowTitle(
             QCoreApplication.translate(
-                "Midvatten",
-                """This will create a new empty Midvatten DB with predefined design\nand fill the database with data from %s obs_points and obs_lines.\n\nContinue?""",
-            )
-            % selected_all,
-            QCoreApplication.translate("Midvatten", "Are you sure?"),
+                "ExportSpatialite", "Export to SpatiaLite database ({})"
+            ).format(selected_all)
         )
-        if sanity.result == 1:
-            common_utils.start_waiting_cursor()
-            source_srid = db_utils.sql_load_fr_db(
-                """SELECT srid FROM geometry_columns WHERE f_table_name = 'obs_points';"""
-            )[1][0][0]
-            w_levels_logger_timezone = db_utils.get_timezone_from_db("w_levels_logger")
-            w_levels_timezone = db_utils.get_timezone_from_db("w_levels")
-            common_utils.stop_waiting_cursor()
-            user_chosen_epsg_code = common_utils.ask_for_export_crs(source_srid)
-            common_utils.start_waiting_cursor()
+        dialog._path_edit.clear()
+        if source_srid:
+            dialog._epsg_spin.setValue(source_srid)
+        if w_levels_logger_timezone is not None:
+            idx = dialog._logger_tz_combo.findText(w_levels_logger_timezone)
+            dialog._logger_tz_combo.setCurrentIndex(max(0, idx))
+        if w_levels_timezone is not None:
+            idx = dialog._levels_tz_combo.findText(w_levels_timezone)
+            dialog._levels_tz_combo.setCurrentIndex(max(0, idx))
 
-            if not user_chosen_epsg_code:
-                common_utils.stop_waiting_cursor()
-                return None
+        if dialog.exec() != QDialog.Accepted:
+            return
 
-            filenamepath = os.path.join(os.path.dirname(__file__), "..", "metadata.txt")
-            ini_text = QSettings(filenamepath, QSettings.Format.IniFormat)
-            verno = str(ini_text.value("version"))
-
-            newdbinstance = NewDb()
-            newdbinstance.create_new_spatialite_db(
-                verno,
-                user_select_crs="n",
-                epsg_code=user_chosen_epsg_code,
-                delete_srids=False,
-                w_levels_logger_timezone=w_levels_logger_timezone,
-                w_levels_timezone=w_levels_timezone,
-            )
-            common_utils.start_waiting_cursor()
-            if newdbinstance.db_settings:
-                new_dbpath = db_utils.get_spatialite_db_path_from_dbsettings_string(
-                    newdbinstance.db_settings
+        if not dialog.dbpath:
+            common_utils.MessagebarAndLog.critical(
+                bar_msg=QCoreApplication.translate(
+                    "export_spatialite", "No destination path specified."
                 )
-                if not new_dbpath:
-                    common_utils.MessagebarAndLog.critical(
-                        bar_msg=QCoreApplication.translate(
-                            "export_spatialite",
-                            "Export to spatialite failed, see log message panel",
-                        ),
-                        button=True,
-                    )
-                    common_utils.stop_waiting_cursor()
-                    return
-                exportinstance = ExportData(self._iface, self._ms)
-                exportinstance.ID_obs_points = obsid_p
-                exportinstance.ID_obs_lines = obsid_l
-                exportinstance.export_2_splite(new_dbpath, user_chosen_epsg_code)
+            )
+            return
 
-            common_utils.stop_waiting_cursor()
+        newdbinstance = NewDb()
+        common_utils.start_waiting_cursor()
+        newdbinstance.create_new_spatialite_db(
+            newdbinstance._read_version(),
+            user_select_crs="n",
+            epsg_code=str(dialog.epsg_code),
+            delete_srids=False,
+            w_levels_logger_timezone=dialog.w_levels_logger_timezone,
+            w_levels_timezone=dialog.w_levels_timezone,
+            locale=dialog.locale,
+            dbpath=dialog.dbpath,
+        )
+        common_utils.start_waiting_cursor()
+
+        if newdbinstance.db_settings:
+            new_dbpath = db_utils.get_spatialite_db_path_from_dbsettings_string(
+                newdbinstance.db_settings
+            )
+            if not new_dbpath:
+                common_utils.MessagebarAndLog.critical(
+                    bar_msg=QCoreApplication.translate(
+                        "export_spatialite",
+                        "Export to spatialite failed, see log message panel",
+                    ),
+                    button=True,
+                )
+                common_utils.stop_waiting_cursor()
+                return
+            exportinstance = ExportData(self._iface, self._ms)
+            exportinstance.ID_obs_points = obsid_p
+            exportinstance.ID_obs_lines = obsid_l
+            exportinstance.export_2_splite(new_dbpath, str(dialog.epsg_code))
+
+        common_utils.stop_waiting_cursor()

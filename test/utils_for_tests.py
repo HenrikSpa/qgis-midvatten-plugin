@@ -235,35 +235,17 @@ class MidvattenTestSpatialiteDbSv(MidvattenTestSpatialiteNotCreated):
         mv.initGui()
         mv.setup()
 
-        def side_effect(*args, **kwargs):
-            mock_result = mock.MagicMock()
-            if kwargs.get("combobox_label", None) == "Locales":
-                mock_result.answer = "ok"
-                mock_result.value = "sv_SE"
-            elif kwargs.get("combobox_label", None) == "Timezone":
-                mock_result.answer = "ok"
-                mock_result.value = ""
-            return mock_result
-
-        with (
-            mock.patch(
-                "qgis.PyQt.QtWidgets.QFileDialog.getSaveFileName"
-            ) as mock_savefilename,
-            mock.patch(
-                "midvatten.tools.create_db.qgis.PyQt.QtWidgets.QInputDialog.getInt"
-            ) as mock_crs_question,
-            mock.patch("midvatten.tools.utils.common_utils.Askuser") as mock_answer_yes,
-            mock.patch(
-                "midvatten.tools.create_db.common_utils.NotFoundQuestion"
-            ) as mock_not_found,
-        ):
-            mock_not_found.side_effect = side_effect
-            mock_answer_yes.return_value.result = 1
-            mock_crs_question.return_value.__getitem__.return_value = 3006
-            mock_savefilename.return_value = (
-                cls._class_dbpath,
-                "Spatialite (*.sqlite)",
-            )
+        with mock.patch(
+            "midvatten.midvatten_plugin.NewSpatialiteDbDialog"
+        ) as mock_dialog_cls:
+            mock_dlg = mock.MagicMock()
+            mock_dialog_cls.return_value = mock_dlg
+            mock_dlg.exec.return_value = 1
+            mock_dlg.locale = "sv_SE"
+            mock_dlg.epsg_code = 3006
+            mock_dlg.w_levels_logger_timezone = ""
+            mock_dlg.w_levels_timezone = ""
+            mock_dlg.dbpath = cls._class_dbpath
             mv.new_db()
 
         cls._class_db_settings = mv.ms.settingsdict["database"]
@@ -354,35 +336,17 @@ class MidvattenTestSpatialiteDbEn(MidvattenTestSpatialiteNotCreated):
         mv.initGui()
         mv.setup()
 
-        def side_effect(*args, **kwargs):
-            mock_result = mock.MagicMock()
-            if kwargs.get("combobox_label", None) == "Locales":
-                mock_result.answer = "ok"
-                mock_result.value = "en_US"
-            elif kwargs.get("combobox_label", None) == "Timezone":
-                mock_result.answer = "ok"
-                mock_result.value = ""
-            return mock_result
-
-        with (
-            mock.patch(
-                "qgis.PyQt.QtWidgets.QFileDialog.getSaveFileName"
-            ) as mock_savefilename,
-            mock.patch(
-                "midvatten.tools.create_db.qgis.PyQt.QtWidgets.QInputDialog.getInt"
-            ) as mock_crs_question,
-            mock.patch("midvatten.tools.utils.common_utils.Askuser") as mock_answer_yes,
-            mock.patch(
-                "midvatten.tools.create_db.common_utils.NotFoundQuestion"
-            ) as mock_not_found,
-        ):
-            mock_not_found.side_effect = side_effect
-            mock_answer_yes.return_value.result = 1
-            mock_crs_question.return_value.__getitem__.return_value = 3006
-            mock_savefilename.return_value = (
-                cls._class_dbpath,
-                "Spatialite (*.sqlite)",
-            )
+        with mock.patch(
+            "midvatten.midvatten_plugin.NewSpatialiteDbDialog"
+        ) as mock_dialog_cls:
+            mock_dlg = mock.MagicMock()
+            mock_dialog_cls.return_value = mock_dlg
+            mock_dlg.exec.return_value = 1
+            mock_dlg.locale = "en_US"
+            mock_dlg.epsg_code = 3006
+            mock_dlg.w_levels_logger_timezone = ""
+            mock_dlg.w_levels_timezone = ""
+            mock_dlg.dbpath = cls._class_dbpath
             mv.new_db()
 
         cls._class_db_settings = mv.ms.settingsdict["database"]
@@ -600,28 +564,16 @@ class MidvattenTestPostgisDbSv(MidvattenTestPostgisNotCreated):
         mv.initGui()
         mv.setup()
 
-        def side_effect(*args, **kwargs):
-            mock_result = mock.MagicMock()
-            if kwargs.get("combobox_label", None) == "Locales":
-                mock_result.answer = "ok"
-                mock_result.value = "sv_SE"
-            elif kwargs.get("combobox_label", None) == "Timezone":
-                mock_result.answer = "ok"
-                mock_result.value = ""
-            return mock_result
-
-        with (
-            mock.patch(
-                "midvatten.tools.create_db.qgis.PyQt.QtWidgets.QInputDialog.getInt"
-            ) as mock_crs_question,
-            mock.patch("midvatten.tools.utils.common_utils.Askuser") as mock_answer_yes,
-            mock.patch(
-                "midvatten.tools.create_db.common_utils.NotFoundQuestion"
-            ) as mock_not_found,
-        ):
-            mock_not_found.side_effect = side_effect
-            mock_answer_yes.return_value.result = 1
-            mock_crs_question.return_value.__getitem__.return_value = 3006
+        with mock.patch(
+            "midvatten.midvatten_plugin.NewPostgisDbDialog"
+        ) as mock_dialog_cls:
+            mock_dlg = mock.MagicMock()
+            mock_dialog_cls.return_value = mock_dlg
+            mock_dlg.exec.return_value = 1
+            mock_dlg.locale = "sv_SE"
+            mock_dlg.epsg_code = 3006
+            mock_dlg.w_levels_logger_timezone = ""
+            mock_dlg.w_levels_timezone = ""
             mv.new_postgis_db()
 
         cls._class_db_settings = mv.ms.settingsdict["database"]
@@ -784,28 +736,16 @@ class MidvattenTestPostgisDbEn(MidvattenTestPostgisNotCreated):
         mv.initGui()
         mv.setup()
 
-        def side_effect(*args, **kwargs):
-            mock_result = mock.MagicMock()
-            if kwargs.get("combobox_label", None) == "Locales":
-                mock_result.answer = "ok"
-                mock_result.value = "en_US"
-            elif kwargs.get("combobox_label", None) == "Timezone":
-                mock_result.answer = "ok"
-                mock_result.value = ""
-            return mock_result
-
-        with (
-            mock.patch(
-                "midvatten.tools.create_db.qgis.PyQt.QtWidgets.QInputDialog.getInt"
-            ) as mock_crs_question,
-            mock.patch("midvatten.tools.utils.common_utils.Askuser") as mock_answer_yes,
-            mock.patch(
-                "midvatten.tools.create_db.common_utils.NotFoundQuestion"
-            ) as mock_not_found,
-        ):
-            mock_not_found.side_effect = side_effect
-            mock_answer_yes.return_value.result = 1
-            mock_crs_question.return_value.__getitem__.return_value = 3006
+        with mock.patch(
+            "midvatten.midvatten_plugin.NewPostgisDbDialog"
+        ) as mock_dialog_cls:
+            mock_dlg = mock.MagicMock()
+            mock_dialog_cls.return_value = mock_dlg
+            mock_dlg.exec.return_value = 1
+            mock_dlg.locale = "en_US"
+            mock_dlg.epsg_code = 3006
+            mock_dlg.w_levels_logger_timezone = ""
+            mock_dlg.w_levels_timezone = ""
             mv.new_postgis_db()
 
         cls._class_db_settings = mv.ms.settingsdict["database"]

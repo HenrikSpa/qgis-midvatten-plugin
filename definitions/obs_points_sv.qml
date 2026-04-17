@@ -980,6 +980,16 @@ def my_form_open(dialog, layer, feature):
         </attributeEditorField>
       </attributeEditorContainer>
     </attributeEditorContainer>
+    <attributeEditorContainer groupBox="0" collapsedExpressionEnabled="0" name="screens" collapsedExpression="" visibilityExpression="" columnCount="0" showLabel="1" collapsed="0" visibilityExpressionEnabled="0">
+      <labelStyle labelColor="0,0,0,255" overrideLabelFont="0" overrideLabelColor="0">
+        <labelFont italic="0" style="" underline="0" strikethrough="0" description="Sans Serif,9,-1,5,50,0,0,0,0,0" bold="0"/>
+      </labelStyle>
+      <attributeEditorRelation relation="obs_points_screen" label="" forceSuppressFormPopup="0" relationWidgetTypeId="relation_editor" nmRelationId="" buttons="AllButtons" name="screens_rel" showLabel="0">
+        <editor_configuration type="QVariantMap">
+          <Option name="show_first_feature" type="bool" value="true"/>
+        </editor_configuration>
+      </attributeEditorRelation>
+    </attributeEditorContainer>
   </attributeEditorForm>
   <editable>
     <field editable="1" name="capacity"/>

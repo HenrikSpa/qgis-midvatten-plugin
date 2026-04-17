@@ -107,6 +107,86 @@ def paint_bars(
             )
 
 
+def paint_screen_bars(
+    figure,
+    bars_dict: dict,
+    style_dict: dict,
+    width: float,
+    zorder: int = 3,
+    width_factor: float = 1.2,
+) -> None:
+    """Paint screen-interval bars with transparent fill, border, and hatch.
+
+    Each bar group is keyed by ``screenshort`` (lowercased).  Style is looked
+    up from *style_dict* with a ``'default'`` fallback.
+
+    Parameters
+    ----------
+    figure:
+        SectionPlotFigure instance.
+    bars_dict:
+        Mapping ``{screenshort: {"x": [...], "height": [...], "bottom": [...]}}``.
+    style_dict:
+        Mapping from screenshort (lowercased) to a dict with keys
+        ``facecolor``, ``edgecolor``, ``hatch``, ``linewidth``.
+    width:
+        Base bar width in axis units (same width the stratigraphy uses).
+    zorder:
+        Matplotlib z-order for the bars.  Use 1 for behind stratigraphy, 3 for
+        on top.
+    width_factor:
+        Multiplier applied to *width* when drawing screen bars so they can be
+        drawn slightly wider than the stratigraphy columns.
+    """
+    _default_style = {
+        "facecolor": "none",
+        "edgecolor": "black",
+        "hatch": "///",
+        "linewidth": 1.0,
+    }
+    fallback = style_dict.get("default", _default_style)
+
+    for screenshort, bar_data in bars_dict.items():
+        raw = style_dict.get(screenshort.lower(), fallback)
+        style = {
+            "facecolor": raw.get("facecolor") or "none",
+            "edgecolor": raw.get("edgecolor") or "black",
+            "hatch": raw.get("hatch") if raw.get("hatch") is not None else "",
+            "linewidth": raw.get("linewidth")
+            if raw.get("linewidth") is not None
+            else 1.0,
+        }
+        xs = bar_data["x"]
+        heights = bar_data["height"]
+        bottoms = bar_data["bottom"]
+        bar_width = width * width_factor
+        try:
+            figure.plot_handles.append(
+                figure.ax_main.bar(
+                    [x - bar_width / 2 for x in xs],
+                    heights,
+                    bottom=bottoms,
+                    width=bar_width,
+                    facecolor=style["facecolor"],
+                    edgecolor=style["edgecolor"],
+                    hatch=style["hatch"],
+                    linewidth=style["linewidth"],
+                    label=screenshort,
+                    zorder=zorder,
+                    align="edge",
+                )
+            )
+        except Exception:
+            common_utils.MessagebarAndLog.info(
+                bar_msg=QCoreApplication.translate(
+                    "Sectionplot",
+                    "Screen type %s could not be plotted. See message log",
+                )
+                % str(screenshort),
+                log_msg=traceback.format_exc(),
+            )
+
+
 def paint_drill_stop(
     figure,
     drillstops: list,

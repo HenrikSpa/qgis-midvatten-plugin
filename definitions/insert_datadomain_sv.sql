@@ -105,3 +105,7 @@ insert into zz_capacity_plots (capacity,color_qt) values('5+', 'darkCyan');
 insert into zz_capacity_plots (capacity,color_qt) values('6-', 'blue');
 insert into zz_capacity_plots (capacity,color_qt) values('6', 'blue');
 insert into zz_capacity_plots (capacity,color_qt) values('6+', 'darkBlue');
+insert into zz_screen_plots (screenshort,color_mplot,edgecolor_mplot,hatch_mplot,linewidth_mplot) values('default',   'none', 'black', '///', 1.0);
+insert into zz_screen_plots (screenshort,color_mplot,edgecolor_mplot,hatch_mplot,linewidth_mplot) values('JWS',       'none', 'black', '|||', 1.0);
+insert into zz_screen_plots (screenshort,color_mplot,edgecolor_mplot,hatch_mplot,linewidth_mplot) values('PVC solid', 'none', 'black', '',    1.5);
+insert into zz_screen_plots (screenshort,color_mplot,edgecolor_mplot,hatch_mplot,linewidth_mplot) values('stainless', 'none', 'black', 'xx',  1.0);

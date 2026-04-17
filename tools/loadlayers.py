@@ -21,7 +21,8 @@ import os
 import traceback
 
 import qgis.utils
-from qgis.core import QgsDataSourceUri, QgsProject, QgsVectorLayer
+from qgis.core import QgsDataSourceUri, QgsProject, QgsRelation, QgsVectorLayer
+from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.definitions import midvatten_defs as defs
 from midvatten.tools.utils import common_utils, db_utils, midvatten_utils
@@ -137,6 +138,33 @@ class LoadLayers:
                 canvas.setExtent(layer.extent())
             elif layer.name() in ("w_lvls_last_geom", "obs_p_w_lvl_logger"):
                 my_group.findLayer(layer).setItemVisibilityCheckedRecursive(False)
+
+        # Register obs_points ↔ screen relation (only for OBS_DB group with the
+        # screen table present — guarded for older DBs that lack the table).
+        if self.group_name == "Midvatten_OBS_DB" and db_utils.verify_table_exists(
+            "screen", dbconnection=dbconnection
+        ):
+            obs_points_layer = next(
+                (la for la in layer_list if la.name() == "obs_points"), None
+            )
+            screen_layer = next(
+                (la for la in layer_list if la.name() == "screen"), None
+            )
+            if obs_points_layer is not None and screen_layer is not None:
+                rel = QgsRelation()
+                rel.setId("obs_points_screen")
+                rel.setName(QCoreApplication.translate("LoadLayers", "Screens"))
+                rel.setReferencedLayer(obs_points_layer.id())
+                rel.setReferencingLayer(screen_layer.id())
+                rel.addFieldPair("obsid", "obsid")
+                rel.setStrength(QgsRelation.Association)
+                if rel.isValid():
+                    QgsProject.instance().relationManager().addRelation(rel)
+                else:
+                    common_utils.MessagebarAndLog.warning(
+                        bar_msg="Failed to create obs_points_screen relation",
+                        log_msg=str(rel.validationError()),
+                    )
 
         # finally refresh canvas
         dbconnection.closedb()

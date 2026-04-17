@@ -72,6 +72,7 @@ class ExportMixin:
             "w_flow.csv",
             "w_qual_lab.csv",
             "w_qual_field.csv",
+            "screen.csv",
             "stratigraphy.csv",
             "meteo.csv",
             "obs_lines.csv",
@@ -92,6 +93,7 @@ class ExportMixin:
             "w_flow.csv",
             "w_qual_lab.csv",
             "w_qual_field.csv",
+            "screen.csv",
             "stratigraphy.csv",
             "meteo.csv",
             "obs_lines.csv",
@@ -128,6 +130,9 @@ class ExportMixin:
         )
         db_utils.sql_alter_db(
             """INSERT INTO stratigraphy (obsid, stratid, depthtop, depthbot) VALUES ('P1', 1, 0, 10)"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO screen (obsid, screenid, depthtop, depthbot) VALUES ('P1', 1, 5, 8)"""
         )
         db_utils.sql_alter_db("""INSERT INTO obs_lines (obsid) VALUES ('L1')""")
         db_utils.sql_alter_db(
@@ -176,6 +181,9 @@ class ExportMixin:
                 "], w_qual_field.csv",
                 ", [obsid;staff;date_time;instrument;parameter;reading_num;reading_txt;unit;depth;comment",
                 ", P1;s1;2015-01-01 01:00:00;;labpar1;;;unit1;;",
+                "], screen.csv",
+                ", [id;obsid;screenid;depthtop;depthbot;screenshort;screen;comment",
+                ", 1;P1;1;5.0;8.0;;;",
                 "], stratigraphy.csv",
                 ", [obsid;stratid;depthtop;depthbot;geology;geoshort;capacity;development;comment",
                 ", P1;1;0.0;10.0;;;;;",
@@ -276,6 +284,8 @@ class ExportMixin:
                 "], w_qual_field.csv",
                 ", [obsid;staff;date_time;instrument;parameter;reading_num;reading_txt;unit;depth;comment",
                 ", P1;s1;2015-01-01 01:00:00;;labpar1;;;unit1;;",
+                "], screen.csv",
+                ", [id;obsid;screenid;depthtop;depthbot;screenshort;screen;comment",
                 "], stratigraphy.csv",
                 ", [obsid;stratid;depthtop;depthbot;geology;geoshort;capacity;development;comment",
                 ", P1;1;0.0;10.0;;;;;",
@@ -362,6 +372,10 @@ class ExportMixin:
             dbconnection=dbconnection,
         )
         db_utils.sql_alter_db(
+            """INSERT INTO screen (obsid, screenid, depthtop, depthbot) VALUES ('P1', 1, 5, 8)""",
+            dbconnection=dbconnection,
+        )
+        db_utils.sql_alter_db(
             """INSERT INTO obs_lines (obsid) VALUES ('L1')""", dbconnection=dbconnection
         )
         db_utils.sql_alter_db(
@@ -387,6 +401,7 @@ class ExportMixin:
             """select obsid, instrumentid, flowtype, date_time, unit from w_flow""",
             """select obsid, date_time, meas from w_levels""",
             """select obsid, stratid, depthtop, depthbot from stratigraphy""",
+            """select obsid, screenid, depthtop, depthbot from screen""",
             """select obsid from obs_lines""",
             """select obsid, length from seismic_data""",
             """select obsid, instrumentid, parameter, date_time from meteo""",
@@ -420,6 +435,8 @@ class ExportMixin:
             """, [(P1, 2015-01-02 00:00:01, 2.0)], """,
             """select obsid, stratid, depthtop, depthbot from stratigraphy""",
             """, [(P1, 1, 0.0, 10.0)], """,
+            """select obsid, screenid, depthtop, depthbot from screen""",
+            """, [(P1, 1, 5.0, 8.0)], """,
             """select obsid from obs_lines""",
             """, [(L1)], """,
             """select obsid, length from seismic_data""",

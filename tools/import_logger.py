@@ -858,7 +858,7 @@ class DiverOfficeBaroParser:
                 colnames.append("baro_cmh2o")
             elif "temp" in v_lower:
                 usecols.append(k)
-                colnames.append("temp_degc")
+                colnames.append("temperature")
 
         if not colnames:
             common_utils.MessagebarAndLog.warning(
@@ -901,7 +901,7 @@ class DiverOfficeBaroParser:
         df["date_time"] = df["date_time"].dt.strftime("%Y-%m-%d %H:%M:%S")
         df = df.astype(object).where(pd.notnull(df), None)
 
-        output_cols = ["date_time", "baro_cmh2o", "temp_degc"]
+        output_cols = ["date_time", "baro_cmh2o", "temperature"]
         for c in output_cols:
             if c not in df.columns:
                 df[c] = None
@@ -920,7 +920,7 @@ class DiverOfficeBaroParser:
 # Column → (meteo parameter, unit) mapping for baro imports
 _BARO_COL_TO_METEO: dict[str, tuple[str, str]] = {
     "baro_cmh2o": ("pressure", "cmH2O"),
-    "temp_degc": ("temp", "\u00b0C"),
+    "temperature": ("temp", "\u00b0C"),
 }
 
 # Parameters that must exist in zz_meteoparam for baro imports

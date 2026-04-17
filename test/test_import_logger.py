@@ -3566,7 +3566,7 @@ class TestDiverOfficeBaroParser:
         with common_utils.tempinput(self.MON_CONTENT, "utf-8", suffix=".mon") as f:
             result = DiverOfficeBaroParser.parse(path=f, charset="utf-8")
         filedata, filename, location, utc_offset, serial_number = result
-        assert filedata[0] == ["date_time", "baro_cmh2o", "temp_degc"]
+        assert filedata[0] == ["date_time", "baro_cmh2o", "temperature"]
         assert len(filedata) == 3  # header + 2 data rows
         assert filedata[1][0] == "2023-10-05 13:00:00"
         assert float(filedata[1][1]) == pytest.approx(978.667, rel=1e-3)
@@ -3576,7 +3576,7 @@ class TestDiverOfficeBaroParser:
         with common_utils.tempinput(self.CSV_CONTENT, "utf-8", suffix=".csv") as f:
             result = DiverOfficeBaroParser.parse(path=f, charset="utf-8")
         filedata, filename, location, utc_offset, serial_number = result
-        assert filedata[0] == ["date_time", "baro_cmh2o", "temp_degc"]
+        assert filedata[0] == ["date_time", "baro_cmh2o", "temperature"]
         assert len(filedata) == 3
         assert filedata[1][0] == "2023-10-05 13:00:00"
         assert float(filedata[1][1]) == pytest.approx(978.667, rel=1e-3)
@@ -3634,7 +3634,7 @@ class TestPivotBaroToMeteo:
 
     def test_pivots_both_channels(self):
         file_data = [
-            ["date_time", "baro_cmh2o", "temp_degc", "obsid"],
+            ["date_time", "baro_cmh2o", "temperature", "obsid"],
             ["2023-10-05 13:00:00", "978.667", "9.470", "Rb1Baro"],
         ]
         result = _pivot_baro_to_meteo(file_data, "DA123", "baro.mon")
@@ -3663,7 +3663,7 @@ class TestPivotBaroToMeteo:
 
     def test_skips_none_values(self):
         file_data = [
-            ["date_time", "baro_cmh2o", "temp_degc", "obsid"],
+            ["date_time", "baro_cmh2o", "temperature", "obsid"],
             ["2023-10-05 13:00:00", "978.667", None, "Rb1Baro"],
         ]
         result = _pivot_baro_to_meteo(file_data, "DA123", "baro.mon")

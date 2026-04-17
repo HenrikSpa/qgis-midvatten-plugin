@@ -41,9 +41,6 @@ from midvatten.tools.utils.date_utils import datestring_to_date, dateshift
 import midvatten.definitions.midvatten_defs as defs
 from midvatten.tools.utils.gui_utils import (
     SplitterWithHandel,
-    RowEntry,
-    RowEntryGrid,
-    VRowEntry,
     DateTimeFilter,
     set_combobox,
 )

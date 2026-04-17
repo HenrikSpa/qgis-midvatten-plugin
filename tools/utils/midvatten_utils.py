@@ -21,13 +21,11 @@
 import ast
 import copy
 import json
-import io
 import locale
 import logging
 import os
 import re
 import shutil
-import traceback
 import string
 from typing import List, Optional, Tuple, TYPE_CHECKING
 
@@ -47,14 +45,14 @@ if TYPE_CHECKING:
     from midvatten.tools.midvsettings import MidvSettings
 
 try:
-    import pandas as pd
+    pass
 except Exception:
     pandas_on = False
 else:
     pandas_on = True
 
 
-from midvatten.tools.utils.message_utils import MessagebarAndLog, sql_failed_msg
+from midvatten.tools.utils.message_utils import MessagebarAndLog
 from midvatten.tools.utils.layer_utils import find_layer
 from midvatten.tools.utils.string_utils import (
     returnunicode as ru,
@@ -151,11 +149,6 @@ def verify_msettings_loaded_and_layer_edit_mode(
 
 
 # These DB query helpers now live in db_utils; re-exported here for backward compatibility.
-from midvatten.tools.utils.db_utils.helpers import (
-    get_last_used_flow_instruments,
-    get_last_logger_dates,
-    get_quality_instruments,
-)
 
 
 def ask_for_charset(default_charset=None, msg=None):
@@ -262,9 +255,6 @@ def add_triggers_to_obs_points(filename: str):
     )
 
 
-from midvatten.tools.utils.db_utils.helpers import sql_to_parameters_units_tuple  # noqa: E402
-
-
 def getcurrentlocale(
     print_error_message_in_bar: bool = True, dbconnection=None
 ) -> List[str]:
@@ -339,7 +329,6 @@ def get_locale_from_db(
 
 
 from midvatten.tools.utils.db_utils.helpers import (  # noqa: E402
-    calculate_db_table_rows,
     list_of_lists_from_table,
 )
 

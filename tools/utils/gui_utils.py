@@ -37,7 +37,7 @@ from qgis.PyQt.QtWidgets import QComboBox
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.message_utils import MessagebarAndLog, sql_failed_msg
 from midvatten.tools.utils.date_utils import datestring_to_date
-from midvatten.tools.utils.db_utils import DbConnectionManager, sql_load_fr_db
+from midvatten.tools.utils.db_utils import DbConnectionManager
 
 # Qt6 uses scoped enums (Qt.WidgetAttribute.WA_DeleteOnClose),
 # Qt5 uses flat enums (Qt.WA_DeleteOnClose). Prefer Qt6; fall back to Qt5.
@@ -424,7 +424,11 @@ class ReverseSectionButton(NavigationButton):
                 self._toggle_reverse,
                 QCoreApplication.translate("SectionPlot", "Reverse x-axis"),
                 os.path.join(
-                    os.path.dirname(__file__), "..", "..", "icons", "reverse_section.png"
+                    os.path.dirname(__file__),
+                    "..",
+                    "..",
+                    "icons",
+                    "reverse_section.png",
                 ),
             )
         ]

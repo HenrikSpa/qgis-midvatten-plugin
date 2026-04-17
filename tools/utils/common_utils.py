@@ -35,52 +35,22 @@ import matplotlib as mpl
 import numpy as np
 from matplotlib.dates import num2date
 import qgis.utils
-from qgis.PyQt import QtWidgets
 from qgis.core import Qgis, QgsLogger
 
 from midvatten.tools.utils.dialog_utils import (
-    Askuser,
-    HtmlDialog,
     NotFoundQuestion,
-    ask_for_export_crs,
-    ask_user_about_stopping,
 )
 from midvatten.tools.utils.exceptions import UsageError, UserInterruptError
-from midvatten.tools.utils.file_utils import (
-    ask_for_delimiter,
-    get_delimiter,
-    get_delimiter_from_file_rows,
-    get_full_filename,
-    tempinput,
-    write_printlist_to_file,
-)
 from midvatten.tools.utils.layer_utils import (
-    find_layer,
-    get_qgis_vector_layers,
     get_active_layer,
-    get_selected_features_as_tuple,
-    get_selected_object_names,
-    selection_check,
-    strat_selection_check,
-    verify_layer_selection,
 )
 from midvatten.tools.utils.message_utils import (
     MessagebarAndLog,
-    pop_up_info,
-    show_message_log,
-    sql_failed_msg,
 )
 from midvatten.tools.utils.string_utils import (
     anything_to_string_representation,
-    isdate,
-    isfloat,
-    isinteger,
-    lists_to_string,
-    lstrip,
     returnunicode,
-    rstrip,
     tr,
-    unicode_2_utf8,
 )
 from cycler import Cycler
 from itertools import cycle

@@ -15,7 +15,6 @@ from midvatten.tools.utils.db_utils.execution import (
     sql_load_fr_db,
     use_or_create_connection,
 )
-from midvatten.tools.utils.db_utils.backends.sqlite import sqlite_internal_tables
 from midvatten.tools.utils.db_utils.backends.postgresql import postgis_internal_tables
 
 

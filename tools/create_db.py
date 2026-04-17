@@ -281,7 +281,9 @@ class NewDb:
                 "Database type postgis not selected, check Midvatten settings!"
             )
 
-        dbconnection.execute("CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA public;")
+        dbconnection.execute(
+            "CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA public;"
+        )
 
         # Prefer PostGIS_Version(); PostGIS_Full_Version() can fail when it calls
         # internal helpers (postgis_proj_version, postgis_geos_version) that may

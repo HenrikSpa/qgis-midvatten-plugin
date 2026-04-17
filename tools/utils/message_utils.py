@@ -7,7 +7,6 @@ from typing import Optional
 
 import qgis.utils
 from qgis.PyQt import QtWidgets
-from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import Qgis, QgsApplication
 
 from midvatten.tools.utils.string_utils import returnunicode, tr

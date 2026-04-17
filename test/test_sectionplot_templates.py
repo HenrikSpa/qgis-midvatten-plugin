@@ -20,7 +20,6 @@
 """
 
 import ast
-import io
 import os
 
 from unittest import mock

@@ -4,7 +4,7 @@ Supports SPATIALITE/POSTGIS and SQLITE/POSTGRESQL prefixes (Option B).
 """
 
 import re
-from typing import Callable, Optional
+from typing import Callable
 
 from midvatten.tools.utils.string_utils import lstrip, returnunicode as ru
 from midvatten.tools.utils.message_utils import MessagebarAndLog, sql_failed_msg

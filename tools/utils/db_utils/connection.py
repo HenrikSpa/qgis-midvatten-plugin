@@ -8,16 +8,12 @@ from typing import Any, Optional
 
 import qgis.core
 from qgis.PyQt.QtCore import QCoreApplication
-from qgis.core import QgsProject
 
-from midvatten.tools.utils.message_utils import MessagebarAndLog
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.exceptions import UsageError
 from midvatten.tools.utils.db_utils.backends.base import Backend
 from midvatten.tools.utils.db_utils.backends.postgresql import PostgreSQLBackend
 from midvatten.tools.utils.db_utils.backends.sqlite import SQLiteBackend
-from midvatten.tools.utils.db_utils.errors import DatabaseLockedError
-from midvatten.tools.utils.db_utils.settings import get_postgis_connections
 
 
 def _parse_db_settings(db_settings: Optional[str]) -> tuple:

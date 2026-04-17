@@ -11,7 +11,6 @@ from typing import Any, List, Optional, Type
 from collections.abc import Iterator
 
 import qgis.PyQt
-from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools.utils.exceptions import UserInterruptError
 from midvatten.tools.utils.message_utils import MessagebarAndLog

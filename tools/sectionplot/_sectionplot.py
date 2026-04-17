@@ -1628,6 +1628,8 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                 f"{dem_layername} {label}",
                 get_legend_items_labels(self.figure.plot_handles)[1],
             )
+            if not number_of_plots:
+                continue
             graded_plot_height = float(graded_depth_m) / float(number_of_plots)
             color = labels_colors_dict[label]
 
@@ -1981,8 +1983,20 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                     )
                     continue
 
-                alpha = alphas[0] if len(alphas) == 1 else alphas[idx]
-                zorder = zorders[0] if len(zorders) == 1 else zorders[idx]
+                alpha = (
+                    alphas[0]
+                    if len(alphas) <= 1
+                    else alphas[idx]
+                    if idx < len(alphas)
+                    else alphas[-1]
+                )
+                zorder = (
+                    zorders[0]
+                    if len(zorders) <= 1
+                    else zorders[idx]
+                    if idx < len(zorders)
+                    else zorders[-1]
+                )
 
                 left, right, top, bottom = ast.literal_eval(
                     extent_left_right_top_bottom
@@ -2003,13 +2017,14 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                     else:
                         # Calculate the full extent of the image
                         numrows, numcols, _ = im.shape
-                        dx = (right - left) / (clip_right - clip_left)
-                        left = -clip_left * dx + left
-                        right = (numcols - clip_right) * dx + right
-
-                        dy = (bottom - top) / (clip_bottom - clip_top)
-                        top = -clip_top * dy + top
-                        bottom = (numrows - clip_bottom) * dy + bottom
+                        if clip_right != clip_left:
+                            dx = (right - left) / (clip_right - clip_left)
+                            left = -clip_left * dx + left
+                            right = (numcols - clip_right) * dx + right
+                        if clip_bottom != clip_top:
+                            dy = (bottom - top) / (clip_bottom - clip_top)
+                            top = -clip_top * dy + top
+                            bottom = (numrows - clip_bottom) * dy + bottom
 
                 self.figure.ax_main.imshow(
                     im,

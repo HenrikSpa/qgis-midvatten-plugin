@@ -45,9 +45,7 @@ class WLoggerSeriesMixin:
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_insert_series_and_linked_logger_rows(self, mock_messagebar):
-        db_utils.sql_alter_db(
-            """INSERT INTO obs_points (obsid) VALUES ('rb1')"""
-        )
+        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb1')""")
         db_utils.sql_alter_db(
             """INSERT INTO w_logger_series (obsid, source, description)
                VALUES ('rb1', 'Diver file A', 'Test series')"""
@@ -154,9 +152,7 @@ class WLoggerSeriesMixin:
         finally:
             dbconn.closedb()
 
-        db_utils.sql_alter_db(
-            f"""DELETE FROM w_logger_series WHERE id = {series_id}"""
-        )
+        db_utils.sql_alter_db(f"""DELETE FROM w_logger_series WHERE id = {series_id}""")
 
         remaining = db_utils.sql_load_fr_db(
             """SELECT date_time, head_cm, series_id FROM w_levels_logger

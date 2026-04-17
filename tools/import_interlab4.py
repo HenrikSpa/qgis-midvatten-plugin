@@ -1381,16 +1381,16 @@ class MetadataFilter(VRowEntry):
         all_lab_results = {}
 
         headers = [
-            self.table.horizontalHeaderItem(colnr)
+            self.table.horizontalHeaderItem(colnr).text()
             for colnr in range(self.table.columnCount())
         ]
         lablittera_colnr = headers.index("lablittera")
 
         for rownr in range(self.table.rowCount()):
-            lablittera = self.table.item(rownr, lablittera_colnr)
+            lablittera = self.table.item(rownr, lablittera_colnr).text()
             all_lab_results.setdefault(lablittera, {})["metadata"] = dict(
                 [
-                    (headers[colnr], self.table.item(rownr, colnr))
+                    (headers[colnr], self.table.item(rownr, colnr).text())
                     for colnr in range(self.table.columnCount())
                 ]
             )

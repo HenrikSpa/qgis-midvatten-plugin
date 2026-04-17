@@ -27,7 +27,7 @@ import pytest
 from qgis.core import QgsProject, QgsVectorLayer
 
 from midvatten.test import utils_for_tests
-from midvatten.tools.sectionplot import SectionPlot, get_legend_items_labels
+from midvatten.tools.sectionplot import get_legend_items_labels
 from midvatten.tools.utils import db_utils, gui_utils
 
 

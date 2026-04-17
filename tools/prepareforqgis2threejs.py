@@ -21,7 +21,6 @@
 
 import logging
 import os
-import traceback
 
 import matplotlib as mpl
 import psycopg2.errors

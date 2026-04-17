@@ -17,7 +17,6 @@
  ***************************************************************************/
 """
 
-import io
 import os
 
 import cycler as _cycler_mod
@@ -184,7 +183,6 @@ def geocolorsymbols():
             "berg": ("DiagCrossPattern", "red"),
             "Berg": ("DiagCrossPattern", "red"),
             "BERG": ("DiagCrossPattern", "red"),
-            "BERG": ("DiagCrossPattern", "red"),
             "B": ("DiagCrossPattern", "red"),
             "Rock": ("DiagCrossPattern", "red"),
             "rock": ("DiagCrossPattern", "red"),
@@ -267,7 +265,6 @@ def geocolorsymbols():
             "Saf": ("Dense4Pattern", "darkYellow"),
             "saf": ("Dense4Pattern", "darkYellow"),
             "Fine Sand": ("Dense4Pattern", "darkYellow"),
-            "fine Sand": ("Dense4Pattern", "darkYellow"),
             "fine Sand": ("Dense4Pattern", "darkYellow"),
             "FSa": ("Dense4Pattern", "darkYellow"),
             "Fsa": ("Dense4Pattern", "darkYellow"),

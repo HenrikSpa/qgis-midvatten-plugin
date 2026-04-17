@@ -23,7 +23,6 @@
 import copy
 import csv
 import os
-import traceback
 from operator import itemgetter
 
 import qgis.PyQt

@@ -935,10 +935,9 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             # the FK values (e.g., w_logger_series.obsid is required) — the
             # caller is responsible for creating them up front.
             required_outside_to_list = [
-                row[1] for row in table_info
-                if str(row[3]) == "1"
-                and row[1] not in to_list
-                and not row[4]
+                row[1]
+                for row in table_info
+                if str(row[3]) == "1" and row[1] not in to_list and not row[4]
             ]
             if required_outside_to_list:
                 continue

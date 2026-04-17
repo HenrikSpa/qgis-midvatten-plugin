@@ -19,20 +19,16 @@
 """
 
 import matplotlib as mpl
-from itertools import chain
 
 # Import from mpl_compat so all files share the same class object — required for monkey-patching to take effect.
 from midvatten.tools.utils.mpl_compat import NavigationToolbar
 
-from matplotlib import cbook, cm, colors as mcolors, markers, image as mimage
-from matplotlib.backends.qt_compat import QtGui
-from matplotlib.backends.qt_editor import _formlayout
-from matplotlib.dates import DateConverter, num2date
+from matplotlib import markers
 
 
 from matplotlib import pyplot as plt
 from matplotlib import rcsetup
-from qgis.PyQt.QtCore import QCoreApplication, Qt, pyqtSignal, QObject
+from qgis.PyQt.QtCore import QCoreApplication, Qt
 import types
 
 import midvatten.definitions.midvatten_defs as defs

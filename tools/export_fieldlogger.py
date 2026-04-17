@@ -210,7 +210,11 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         self.iface = iface
 
         self.ms = ms
-        parent = iface.mainWindow() if iface is not None and hasattr(iface, "mainWindow") else None
+        parent = (
+            iface.mainWindow()
+            if iface is not None and hasattr(iface, "mainWindow")
+            else None
+        )
         QtWidgets.QMainWindow.__init__(self, parent)
         self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt

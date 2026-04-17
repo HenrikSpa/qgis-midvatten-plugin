@@ -22,7 +22,6 @@ import ast
 import codecs
 import json
 import os
-import traceback
 
 from collections import OrderedDict
 

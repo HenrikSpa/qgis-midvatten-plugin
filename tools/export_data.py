@@ -361,9 +361,7 @@ class ExportData:
         if replace:
             self.dest_dbconnection.execute("""PRAGMA foreign_keys = ON;""")
 
-    def _migrate_logger_source_to_series(
-        self, source_data: List[Any]
-    ) -> List[Any]:
+    def _migrate_logger_source_to_series(self, source_data: List[Any]) -> List[Any]:
         """Bridge Midv 1.x w_levels_logger.source -> new w_logger_series.
 
         When the source DB still has the old ``w_levels_logger.source``
@@ -387,9 +385,7 @@ class ExportData:
         if obsid_idx < 0:
             return source_data
 
-        dest_tables = db_utils.tables_columns(
-            dbconnection=self.dest_dbconnection
-        )
+        dest_tables = db_utils.tables_columns(dbconnection=self.dest_dbconnection)
         if "w_logger_series" not in dest_tables:
             return source_data
         if "series_id" not in dest_tables.get("w_levels_logger", []):

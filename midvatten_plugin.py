@@ -29,7 +29,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Optional
 
-import qgis.PyQt.QtCore
 from qgis.PyQt.QtCore import QCoreApplication, QDir, QSettings, QUrl
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QDialog, QMenu
@@ -684,7 +683,7 @@ class Midvatten:
 
         template_file = self.plugin_dir / "templates" / "about_template.htm"
         out_folder = Path(QDir.tempPath()) / "midvatten_about"
-        os.makedirs(out_folder, exist_ok=True)
+        out_folder.mkdir(parents=True, exist_ok=True)
 
         outname = out_folder / "about.htm"
         shutil.copy2(

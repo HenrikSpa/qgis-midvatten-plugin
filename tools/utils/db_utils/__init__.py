@@ -37,7 +37,7 @@ from midvatten.tools.utils.db_utils.execution import (
 )
 from midvatten.tools.utils.db_utils.schema import (
     db_tables_columns_info,
-    get_available_schemas,
+    get_available_schemas,  # noqa: F401
     get_foreign_keys,
     get_table_info,
     get_tables,

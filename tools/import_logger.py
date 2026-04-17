@@ -289,9 +289,11 @@ class DiverOfficeParser:
         when absent); defaults to water-level columns when not supplied.
         """
         _col_map = col_map if col_map is not None else _DIVEROFFICE_DEFAULT_COL_MAP
-        _output_cols = output_cols if output_cols is not None else [
-            "date_time", "head_cm", "temp_degc", "cond_mscm"
-        ]
+        _output_cols = (
+            output_cols
+            if output_cols is not None
+            else ["date_time", "head_cm", "temp_degc", "cond_mscm"]
+        )
         filedata = []
         filename = os.path.basename(path)
         section = None
@@ -542,7 +544,10 @@ class DiverOfficeParser:
 
                 # Try to get location
                 if row.startswith("Location"):
-                    location = row.split("=")[1].strip()
+                    try:
+                        location = row.split("=")[1].strip()
+                    except IndexError:
+                        pass
                     continue
 
                 if row.lower().startswith("Instrument number".lower()):
@@ -955,8 +960,12 @@ class LeveloggerParser:
 
         for row in rows[data_header_idx + 1 :]:
             date_str = " ".join([row[date_colnr], row[time_colnr]])
-            if skip_rows_without_water_level and not isinstance(
-                common_utils.to_float_or_none(row[level_colnr]), float
+            if (
+                skip_rows_without_water_level
+                and level_colnr is not None
+                and not isinstance(
+                    common_utils.to_float_or_none(row[level_colnr]), float
+                )
             ):
                 continue
             if begindate is not None or enddate is not None:
@@ -1394,7 +1403,9 @@ class LoggerImport(BaseImporter, import_ui_dialog):
 
         self.add_row(self._diveroffice_section)
 
-    def _build_diveroffice_baro_section(self, database_timezone: str | None = None) -> None:
+    def _build_diveroffice_baro_section(
+        self, database_timezone: str | None = None
+    ) -> None:
         """Build DiverOffice Baro section (help text + UTC offset). Imports to meteo table."""
         self._diveroffice_baro_section = QtWidgets.QWidget()
         _vl = QtWidgets.QVBoxLayout(self._diveroffice_baro_section)

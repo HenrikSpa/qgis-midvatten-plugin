@@ -8,7 +8,6 @@ import traceback
 from sqlite3 import Connection
 from typing import Any, Optional
 
-import qgis.core
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import QgsDataSourceUri
 from qgis.utils import spatialite_connect

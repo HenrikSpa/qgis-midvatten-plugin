@@ -10,7 +10,6 @@ from typing import Any, Optional
 import psycopg2
 import psycopg2.extensions
 import psycopg2.sql
-import qgis.core
 from qgis.PyQt.QtCore import QCoreApplication, QFile
 from qgis.core import QgsCredentials, QgsDataSourceUri
 

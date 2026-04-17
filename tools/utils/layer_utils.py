@@ -3,7 +3,6 @@ QGIS layer utilities for the Midvatten plugin.
 """
 
 import qgis.utils
-from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import QgsMapLayer, QgsProject
 
 from midvatten.tools.utils.exceptions import UsageError

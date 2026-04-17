@@ -714,7 +714,9 @@ class TestObsidCascade(utils_for_tests.MidvattenTestSpatialiteDbSv):
             "INSERT INTO w_levels (obsid, date_time, meas) VALUES ('obs1', '2024-01-01 00:00', 1.0)"
         )
 
-        self._run_with_fk("UPDATE obs_points SET obsid = 'obs1_renamed' WHERE obsid = 'obs1'")
+        self._run_with_fk(
+            "UPDATE obs_points SET obsid = 'obs1_renamed' WHERE obsid = 'obs1'"
+        )
 
         result = db_utils.sql_load_fr_db("SELECT obsid FROM w_levels")
         assert result == (True, [("obs1_renamed",)])
@@ -725,7 +727,9 @@ class TestObsidCascade(utils_for_tests.MidvattenTestSpatialiteDbSv):
             "INSERT INTO stratigraphy (obsid, stratid, depthtop, depthbot) VALUES ('obs1', 1, 0.0, 1.0)"
         )
 
-        self._run_with_fk("UPDATE obs_points SET obsid = 'obs1_renamed' WHERE obsid = 'obs1'")
+        self._run_with_fk(
+            "UPDATE obs_points SET obsid = 'obs1_renamed' WHERE obsid = 'obs1'"
+        )
 
         result = db_utils.sql_load_fr_db("SELECT obsid FROM stratigraphy")
         assert result == (True, [("obs1_renamed",)])
@@ -736,7 +740,9 @@ class TestObsidCascade(utils_for_tests.MidvattenTestSpatialiteDbSv):
             "INSERT INTO comments (obsid, date_time, comment, staff) VALUES ('obs1', '2024-01-01 00:00', 'test', 'tester')"
         )
 
-        self._run_with_fk("UPDATE obs_points SET obsid = 'obs1_renamed' WHERE obsid = 'obs1'")
+        self._run_with_fk(
+            "UPDATE obs_points SET obsid = 'obs1_renamed' WHERE obsid = 'obs1'"
+        )
 
         result = db_utils.sql_load_fr_db("SELECT obsid FROM comments")
         assert result == (True, [("obs1_renamed",)])
@@ -765,7 +771,9 @@ class TestObsidCascade(utils_for_tests.MidvattenTestSpatialiteDbSv):
             "INSERT INTO seismic_data (obsid, length) VALUES ('line1', 10.0)"
         )
 
-        self._run_with_fk("UPDATE obs_lines SET obsid = 'line1_renamed' WHERE obsid = 'line1'")
+        self._run_with_fk(
+            "UPDATE obs_lines SET obsid = 'line1_renamed' WHERE obsid = 'line1'"
+        )
 
         result = db_utils.sql_load_fr_db("SELECT obsid FROM seismic_data")
         assert result == (True, [("line1_renamed",)])

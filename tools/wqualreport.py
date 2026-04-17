@@ -19,9 +19,7 @@
 
 import codecs
 import logging
-import os
 import time  # for debugging
-import traceback
 
 from qgis.PyQt.QtCore import QCoreApplication
 

@@ -5,7 +5,6 @@ These functions take numpy arrays / DataFrames and return transformed arrays.
 They have no knowledge of the Qt UI or the CustomPlot instance.
 """
 
-import datetime
 import logging
 
 import matplotlib as mpl

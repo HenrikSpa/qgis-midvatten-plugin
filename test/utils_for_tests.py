@@ -33,10 +33,6 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from unittest import mock
-import qgis
-import qgis.PyQt
-import qgis.core
-from qgis.PyQt import QtCore
 from qgis.PyQt.QtCore import QSettings
 from qgis.PyQt.QtWidgets import QWidget, QDialog
 from qgis.core import QgsApplication

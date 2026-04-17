@@ -28,7 +28,6 @@ from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtGui import QColor
 from qgis.core import (
-    QgsDataSourceUri,
     QgsProject,
     QgsGeometryGeneratorSymbolLayer,
     QgsVectorLayerSimpleLabeling,

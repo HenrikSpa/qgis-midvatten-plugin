@@ -22,7 +22,7 @@ import qgis.PyQt
 import logging
 
 from qgis.PyQt import uic, QtCore
-from qgis.PyQt.QtCore import QCoreApplication, Qt
+from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtWidgets import QDockWidget, QFileDialog
 from qgis.PyQt.QtWidgets import QGridLayout, QMainWindow
 

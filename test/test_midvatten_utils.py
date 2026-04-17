@@ -19,9 +19,6 @@
  ***************************************************************************/
 """
 
-import io
-
-
 from unittest import mock
 import numpy as np
 from cycler import cycler

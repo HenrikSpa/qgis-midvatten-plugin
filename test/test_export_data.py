@@ -19,13 +19,12 @@
  ***************************************************************************/
 """
 
-import io
 import os
 import tempfile
 from unittest import mock
 
 from midvatten.tools.export_spatialite import ExportSpatialite
-from midvatten.tools.utils import common_utils, db_utils
+from midvatten.tools.utils import db_utils
 from midvatten.test import utils_for_tests
 from midvatten.test.mocks_for_tests import MockUsingReturnValue, MockReturnUsingDictIn
 from midvatten.definitions import db_defs
@@ -1154,9 +1153,7 @@ class TestExportSpatialite(ExportMixin, utils_for_tests.MidvattenTestSpatialiteD
         w_logger_series row per distinct (obsid, source) pair, and every
         w_levels_logger row on the target linked to the right series.
         """
-        mock_find_layer.return_value.crs.return_value.authid.return_value = (
-            "EPSG:3006"
-        )
+        mock_find_layer.return_value.crs.return_value.authid.return_value = "EPSG:3006"
         mock_verify.return_value = 0
         export_path = _unique_export_path(self)
         mock_dlg = mock.MagicMock()
@@ -1207,9 +1204,7 @@ class TestExportSpatialite(ExportMixin, utils_for_tests.MidvattenTestSpatialiteD
                 "  level_masl, comment FROM w_levels_logger"
             )
             dbconn.execute("DROP TABLE w_levels_logger")
-            dbconn.execute(
-                "ALTER TABLE w_levels_logger_old RENAME TO w_levels_logger"
-            )
+            dbconn.execute("ALTER TABLE w_levels_logger_old RENAME TO w_levels_logger")
             # Recreate the obs_p_w_lvl_logger view that was dropped above.
             dbconn.execute(
                 "CREATE VIEW obs_p_w_lvl_logger AS"
@@ -1280,8 +1275,7 @@ class TestExportSpatialite(ExportMixin, utils_for_tests.MidvattenTestSpatialiteD
             " WHERE obsid='P1' AND date_time = '2015-01-02 00:00:00'"
         ).fetchone()[0]
         p2_sid = curs.execute(
-            "SELECT series_id FROM w_levels_logger"
-            " WHERE obsid='P2'"
+            "SELECT series_id FROM w_levels_logger WHERE obsid='P2'"
         ).fetchone()[0]
         conn.close()
 

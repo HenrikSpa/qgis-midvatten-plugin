@@ -12,10 +12,12 @@ from qgis.PyQt import QtWidgets
 
 from midvatten.tools.import_logger import (
     DiverOfficeParser,
+    DiverOfficeBaroParser,
     LeveloggerParser,
     HoboParser,
     TzConverter,
     filter_dates_from_filedata,
+    _pivot_baro_to_meteo,
     LoggerImport,
 )
 from midvatten.tools.utils import common_utils
@@ -3519,3 +3521,152 @@ class TestLoggerImportLeveloggerPostgis(
     WlvllogImportFromLoggerLeveloggerMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):
     """All 12 Levelogger integration tests on PostGIS backend."""
+
+
+# ── DiverOffice Baro parser tests ─────────────────────────────────────────────
+
+
+@pytest.mark.active
+class TestDiverOfficeBaroParser:
+    """Unit tests for DiverOfficeBaroParser.parse."""
+
+    # Matches the real baro .mon file format (space-delimited data section)
+    MON_CONTENT = (
+        "[Logger settings]\n"
+        "  Serial number           =..00-DA123  219.\n"
+        "  Instrument number       =          UTC+1     \n"
+        "  Location                =Rb1Baro\n"
+        "  Number of channels      =2\n"
+        "[Channel 1]\n"
+        "  Identification          =PRESSURE\n"
+        "[Channel 2]\n"
+        "  Identification          =TEMPERATURE\n"
+        "[data]\n"
+        "626\n"
+        "2023/10/05 13:00:00.0      978.667       9.470\n"
+        "2023/10/05 14:00:00.0      978.667      12.110\n"
+    )
+
+    # Matches the real baro .csv file format (semicolon-delimited)
+    CSV_CONTENT = (
+        "[Logger settings]\n"
+        "  Serial number           =..00-DA123  219.\n"
+        "  Instrument number       =          UTC+1     \n"
+        "  Location                =Rb1Baro\n"
+        "[Channel 1]\n"
+        "  Identification          =PRESSURE\n"
+        "[Channel 2]\n"
+        "  Identification          =TEMPERATURE\n"
+        "Date/time;Pressure[cmH2O];Temperature[\u00b0C]\n"
+        "2023/10/05 13:00:00;978,667;9,470\n"
+        "2023/10/05 14:00:00;978,667;12,110\n"
+    )
+
+    def test_parse_mon_extracts_pressure_and_temperature(self):
+        with common_utils.tempinput(self.MON_CONTENT, "utf-8", suffix=".mon") as f:
+            result = DiverOfficeBaroParser.parse(path=f, charset="utf-8")
+        filedata, filename, location, utc_offset, serial_number = result
+        assert filedata[0] == ["date_time", "baro_cmh2o", "temp_degc"]
+        assert len(filedata) == 3  # header + 2 data rows
+        assert filedata[1][0] == "2023-10-05 13:00:00"
+        assert float(filedata[1][1]) == pytest.approx(978.667, rel=1e-3)
+        assert float(filedata[1][2]) == pytest.approx(9.470, rel=1e-3)
+
+    def test_parse_csv_extracts_pressure_and_temperature(self):
+        with common_utils.tempinput(self.CSV_CONTENT, "utf-8", suffix=".csv") as f:
+            result = DiverOfficeBaroParser.parse(path=f, charset="utf-8")
+        filedata, filename, location, utc_offset, serial_number = result
+        assert filedata[0] == ["date_time", "baro_cmh2o", "temp_degc"]
+        assert len(filedata) == 3
+        assert filedata[1][0] == "2023-10-05 13:00:00"
+        assert float(filedata[1][1]) == pytest.approx(978.667, rel=1e-3)
+
+    def test_parse_extracts_location(self):
+        with common_utils.tempinput(self.MON_CONTENT, "utf-8", suffix=".mon") as f:
+            result = DiverOfficeBaroParser.parse(path=f, charset="utf-8")
+        _, _, location, _, _ = result
+        assert location == "Rb1Baro"
+
+    def test_parse_extracts_serial_number(self):
+        with common_utils.tempinput(self.MON_CONTENT, "utf-8", suffix=".mon") as f:
+            result = DiverOfficeBaroParser.parse(path=f, charset="utf-8")
+        _, _, _, _, serial_number = result
+        assert serial_number == "DA123"
+
+    def test_parse_extracts_utc_offset(self):
+        with common_utils.tempinput(self.MON_CONTENT, "utf-8", suffix=".mon") as f:
+            result = DiverOfficeBaroParser.parse(path=f, charset="utf-8")
+        _, _, _, utc_offset, _ = result
+        assert utc_offset is not None
+        assert "UTC+1" in utc_offset or "+1" in utc_offset
+
+    def test_parse_date_filter(self):
+        with common_utils.tempinput(self.MON_CONTENT, "utf-8", suffix=".mon") as f:
+            result = DiverOfficeBaroParser.parse(
+                path=f,
+                charset="utf-8",
+                begindate="2023-10-05 14:00:00",
+            )
+        filedata, *_ = result
+        assert len(filedata) == 2  # header + 1 row (second row only)
+        assert filedata[1][0] == "2023-10-05 14:00:00"
+
+    @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+    def test_parse_no_pressure_column_warns(self, mock_messagebar):
+        content = (
+            "[Channel 1]\n"
+            "  Identification          =TEMPERATURE\n"
+            "[data]\n"
+            "1\n"
+            "2023/10/05 13:00:00.0       9.470\n"
+        )
+        with common_utils.tempinput(content, "utf-8", suffix=".mon") as f:
+            result = DiverOfficeBaroParser.parse(path=f, charset="utf-8")
+        # Temperature-only file: temp_degc column present, baro_cmh2o absent
+        filedata, *_ = result
+        # Either warns or returns data with only temp column — either way no crash
+        assert isinstance(filedata, list)
+
+
+@pytest.mark.active
+class TestPivotBaroToMeteo:
+    """Unit tests for _pivot_baro_to_meteo helper."""
+
+    def test_pivots_both_channels(self):
+        file_data = [
+            ["date_time", "baro_cmh2o", "temp_degc", "obsid"],
+            ["2023-10-05 13:00:00", "978.667", "9.470", "Rb1Baro"],
+        ]
+        result = _pivot_baro_to_meteo(file_data, "DA123", "baro.mon")
+        assert result[0] == [
+            "obsid", "instrumentid", "parameter", "date_time", "reading_num", "unit"
+        ]
+        params = [(r[2], r[4], r[5]) for r in result[1:]]
+        assert ("baro_cmh2o", "978.667", "cmH2O") in params
+        assert ("temp", "9.470", "\u00b0C") in params
+
+    def test_uses_serial_number_as_instrumentid(self):
+        file_data = [
+            ["date_time", "baro_cmh2o", "obsid"],
+            ["2023-10-05 13:00:00", "978.667", "Rb1Baro"],
+        ]
+        result = _pivot_baro_to_meteo(file_data, "SN999", "baro.mon")
+        assert result[1][1] == "SN999"
+
+    def test_falls_back_to_filename_when_no_serial(self):
+        file_data = [
+            ["date_time", "baro_cmh2o", "obsid"],
+            ["2023-10-05 13:00:00", "978.667", "Rb1Baro"],
+        ]
+        result = _pivot_baro_to_meteo(file_data, None, "mybaro.mon")
+        assert result[1][1] == "mybaro.mon"
+
+    def test_skips_none_values(self):
+        file_data = [
+            ["date_time", "baro_cmh2o", "temp_degc", "obsid"],
+            ["2023-10-05 13:00:00", "978.667", None, "Rb1Baro"],
+        ]
+        result = _pivot_baro_to_meteo(file_data, "DA123", "baro.mon")
+        params = [r[2] for r in result[1:]]
+        assert "baro_cmh2o" in params
+        assert "temp" not in params

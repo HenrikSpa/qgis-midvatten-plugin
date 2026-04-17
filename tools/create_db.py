@@ -30,7 +30,7 @@ from qgis.PyQt.QtCore import QCoreApplication, QSettings
 from qgis.core import Qgis
 
 from midvatten.tools.utils import common_utils, db_utils
-from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils.string_utils import returnunicode as ru, lstrip
 from midvatten.tools.utils.file_utils import get_full_filename
 from midvatten.tools.utils.common_utils import format_timezone_string
 from midvatten.tools.utils.date_utils import get_pytz_timezones
@@ -195,7 +195,7 @@ class NewDb:
             lines = [ru(line) for line in f]
 
         sql_lines = [
-            common_utils.lstrip("SPATIALITE", line)
+            lstrip("SPATIALITE", line)
             for line in lines
             if all(
                 [
@@ -359,7 +359,7 @@ class NewDb:
             f.readline()  # first line is encoding info....
             lines = [ru(line) for line in f]
         sql_lines = [
-            common_utils.lstrip("POSTGIS", line).lstrip()
+            lstrip("POSTGIS", line).lstrip()
             for line in lines
             if all(
                 [

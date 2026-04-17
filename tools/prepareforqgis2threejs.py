@@ -30,7 +30,7 @@ from qgis.core import QgsProject
 
 from midvatten.definitions import midvatten_defs as defs
 from midvatten.tools.utils import common_utils, db_utils, midvatten_utils
-from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils.string_utils import returnunicode as ru, lstrip
 
 log = logging.getLogger(__name__)
 
@@ -197,7 +197,7 @@ class PrepareForQgis2Threejs:
                         continue
                     if not line.startswith(self.dbconnection.dbtype.upper()):
                         continue
-                    line = common_utils.lstrip(self.dbconnection.dbtype.upper(), line)
+                    line = lstrip(self.dbconnection.dbtype.upper(), line)
                     if self.strat_layers_dict[key] is None:
                         params = tuple(
                             [

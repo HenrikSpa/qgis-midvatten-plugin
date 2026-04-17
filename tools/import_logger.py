@@ -732,11 +732,11 @@ class LeveloggerParser:
         skip_rows_without_water_level: bool = False,
         begindate: str | None = None,
         enddate: str | None = None,
-    ) -> tuple[list, str, str | None, None]:
+    ) -> tuple[list, str, str | None, None, str | None]:
         """Parse a Levelogger CSV file.
 
-        Returns ``(filedata, filename, location, timezone)`` where timezone is
-        always ``None``.
+        Returns ``(filedata, filename, location, timezone, serial_number)`` where
+        timezone is always ``None``.
 
         Copied verbatim from LeveloggerImport.parse_levelogger_file() with the
         addition of a fallback for ``Location: value`` on the same line (the
@@ -769,7 +769,7 @@ class LeveloggerParser:
                 )
                 % filename
             )
-            return [], filename, location, timezone
+            return [], filename, location, timezone, None
 
         delimiter = common_utils.get_delimiter_from_file_rows(
             rows_unsplit[data_header_idx:],
@@ -779,7 +779,7 @@ class LeveloggerParser:
         )
 
         if delimiter is None:
-            return [], filename, location, timezone
+            return [], filename, location, timezone, None
 
         rows = [row.split(";") for row in rows_unsplit]
         lens = set([len(row) for row in rows[data_header_idx:]])
@@ -802,6 +802,17 @@ class LeveloggerParser:
             for cell in col1:
                 if cell.startswith("Location:"):
                     location = cell[len("Location:") :].strip()
+                    break
+
+        try:
+            sn_idx = col1.index("Serial_number:")
+            serial_number = col1[sn_idx + 1].strip() or None
+        except ValueError:
+            serial_number = None
+            for cell in col1:
+                if cell.startswith("Serial_number:"):
+                    v = cell[len("Serial_number:") :].strip()
+                    serial_number = v or None
                     break
 
         try:
@@ -864,7 +875,7 @@ class LeveloggerParser:
                 )
                 % filename
             )
-            return [], filename, location, timezone
+            return [], filename, location, timezone, serial_number
         else:
             date_str = " ".join(
                 [first_data_row[date_colnr], first_data_row[time_colnr]]
@@ -878,7 +889,7 @@ class LeveloggerParser:
                     )
                     % filename
                 )
-                return [], filename, location, timezone
+                return [], filename, location, timezone, serial_number
 
         for row in rows[data_header_idx + 1 :]:
             date_str = " ".join([row[date_colnr], row[time_colnr]])
@@ -933,7 +944,7 @@ class LeveloggerParser:
 
         filedata = [row for row in filedata if any(row[1:])]
 
-        return filedata, filename, location, timezone
+        return filedata, filename, location, timezone, serial_number
 
 
 class HoboParser:

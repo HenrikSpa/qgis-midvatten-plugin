@@ -224,7 +224,7 @@ class TestLeveloggerParser:
                 begindate=None,
                 enddate=None,
             )
-        filedata, filename, location, timezone = result
+        filedata, filename, location, timezone, serial_number = result
         assert location == "rb1"
         assert timezone is None
         assert filedata[0] == ["date_time", "head_cm", "temp_degc", "cond_mscm"]
@@ -249,11 +249,11 @@ class TestLeveloggerParser:
                 begindate=None,
                 enddate=None,
             )
-        filedata, _, _, _ = result
+        filedata, _, _, _, _ = result
         assert float(filedata[1][1]) == pytest.approx(1.0)
 
-    def test_returns_4_tuple(self):
-        """LeveloggerParser.parse must always return a 4-tuple."""
+    def test_returns_5_tuple(self):
+        """LeveloggerParser.parse must always return a 5-tuple."""
         file_content = "Date;Time\n"
         with common_utils.tempinput(file_content, "utf-8") as f:
             result = LeveloggerParser.parse(
@@ -263,9 +263,53 @@ class TestLeveloggerParser:
                 begindate=None,
                 enddate=None,
             )
-        assert len(result) == 4
+        assert len(result) == 5
         assert result[0] == []
         assert result[3] is None
+        assert result[4] is None
+
+    def test_parse_serial_number_next_line(self):
+        """Serial_number: on its own line, value on the next line."""
+        file_content = (
+            "Serial_number:\n"
+            "12345\n"
+            "Location: rb1\n"
+            "LEVEL\n"
+            "UNIT: cm\n"
+            "Date;Time;ms;LEVEL\n"
+            "2016-03-15;10:30:00;0;1\n"
+        )
+        with common_utils.tempinput(file_content, "utf-8") as f:
+            result = LeveloggerParser.parse(
+                path=f,
+                charset="utf-8",
+                skip_rows_without_water_level=False,
+                begindate=None,
+                enddate=None,
+            )
+        _, _, _, _, serial_number = result
+        assert serial_number == "12345"
+
+    def test_parse_serial_number_same_line(self):
+        """Serial_number: value on the same line."""
+        file_content = (
+            "Serial_number: 12345\n"
+            "Location: rb1\n"
+            "LEVEL\n"
+            "UNIT: cm\n"
+            "Date;Time;ms;LEVEL\n"
+            "2016-03-15;10:30:00;0;1\n"
+        )
+        with common_utils.tempinput(file_content, "utf-8") as f:
+            result = LeveloggerParser.parse(
+                path=f,
+                charset="utf-8",
+                skip_rows_without_water_level=False,
+                begindate=None,
+                enddate=None,
+            )
+        _, _, _, _, serial_number = result
+        assert serial_number == "12345"
 
 
 @pytest.mark.active

@@ -283,15 +283,14 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
 
             filled, skipped, cache_rows = fan_out_filled_rows(dialog.editor_rows)
 
-            # INSERT OR REPLACE because the user may have edited a cached row
-            # via the "Show matched rows" toggle.  Override rows are excluded
-            # by fan_out_filled_rows itself.
+            # cache_rows contains only new (non-cached) rows from fan_out_filled_rows,
+            # so plain INSERT is safe.  Override rows are excluded by fan_out_filled_rows.
             if cache_rows and self.use_obsid_assignment_table.isChecked():
                 dbconnection = db_utils.DbConnectionManager()
                 try:
                     ph = dbconnection.placeholder()
                     sql = dbconnection.sql_ident(
-                        f"INSERT OR REPLACE INTO {{t}} ({{c1}}, {{c2}}, obsid) VALUES ({ph}, {ph}, {ph})",
+                        f"INSERT INTO {{t}} ({{c1}}, {{c2}}, obsid) VALUES ({ph}, {ph}, {ph})",
                         t=self.obsid_assignment_table,
                         c1=connection_columns[0].replace(" ", "_"),
                         c2=connection_columns[1],
@@ -385,7 +384,7 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
                             try:
                                 ph = dbconnection.placeholder()
                                 sql = dbconnection.sql_ident(
-                                    f"INSERT OR REPLACE INTO {{t}} ({{c1}}, {{c2}}, obsid) VALUES ({ph}, {ph}, {ph})",
+                                    f"INSERT INTO {{t}} ({{c1}}, {{c2}}, obsid) VALUES ({ph}, {ph}, {ph})",
                                     t=self.obsid_assignment_table,
                                     c1=connection_columns[0].replace(" ", "_"),
                                     c2=connection_columns[1],

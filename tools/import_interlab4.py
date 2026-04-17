@@ -959,7 +959,16 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
             ),
         )
         if answer == qgis.PyQt.QtWidgets.QMessageBox.Yes:
-            self._create_s_qual_lab()
+            try:
+                self._create_s_qual_lab()
+            except Exception as e:
+                common_utils.MessagebarAndLog.critical(
+                    bar_msg=QCoreApplication.translate(
+                        "Interlab4Import", "Could not create s_qual_lab, see log."
+                    ),
+                    log_msg=str(e),
+                )
+                self.radio_w_qual_lab.setChecked(True)
         else:
             self.radio_w_qual_lab.setChecked(True)
 
@@ -970,6 +979,8 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
         ddl = self._extract_create_table(sql_text, "s_qual_lab")
         dbconnection = db_utils.DbConnectionManager()
         try:
+            if dbconnection.dbtype == "postgis":
+                ddl = ddl.replace("double", "double precision")
             dbconnection.execute(ddl)
             dbconnection.commit()
         finally:

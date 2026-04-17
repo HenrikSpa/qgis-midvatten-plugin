@@ -162,7 +162,10 @@ class LoadLayers:
                     QgsProject.instance().relationManager().addRelation(rel)
                 else:
                     common_utils.MessagebarAndLog.warning(
-                        bar_msg="Failed to create obs_points_screen relation",
+                        bar_msg=QCoreApplication.translate(
+                            "LoadLayers",
+                            "Failed to create obs_points_screen relation",
+                        ),
                         log_msg=str(rel.validationError()),
                     )
 

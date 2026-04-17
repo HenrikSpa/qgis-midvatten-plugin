@@ -770,6 +770,19 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
         print(str(result_string))
         assert result_string == reference_string
 
+    @mock.patch("midvatten.tools.import_interlab4.tables_columns")
+    def test_dest_table_defaults_to_w_qual_lab(self, mock_tables_columns):
+        mock_tables_columns.return_value = {}
+        self.importinstance.init_gui()
+        assert self.importinstance.dest_table == "w_qual_lab"
+
+    @mock.patch("midvatten.tools.import_interlab4.tables_columns")
+    def test_dest_table_returns_s_qual_lab_when_selected(self, mock_tables_columns):
+        mock_tables_columns.return_value = {}
+        self.importinstance.init_gui()
+        self.importinstance.radio_s_qual_lab.setChecked(True)
+        assert self.importinstance.dest_table == "s_qual_lab"
+
 
 class TestExtractCreateTable:
     def test_extracts_block(self):
@@ -789,4 +802,6 @@ class TestExtractCreateTable:
 
     def test_raises_if_not_found(self):
         with pytest.raises(ValueError, match="CREATE TABLE missing"):
-            Interlab4Import._extract_create_table("CREATE TABLE foo (id text);", "missing")
+            Interlab4Import._extract_create_table(
+                "CREATE TABLE foo (id text);", "missing"
+            )

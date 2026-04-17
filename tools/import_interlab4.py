@@ -61,7 +61,7 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
         super().__init__(iface, ms)
         self.setWindowTitle(
             QCoreApplication.translate(
-                "Interlab4Import", "Import interlab4 data to w_qual_lab table"
+                "Interlab4Import", "Import interlab4 data"
             )
         )
 
@@ -69,6 +69,10 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
         self.init_gui()
         super().show()
         self.activateWindow()
+
+    @property
+    def dest_table(self) -> str:
+        return "s_qual_lab" if self.radio_s_qual_lab.isChecked() else "w_qual_lab"
 
     def init_gui(self):
         splitter = SplitterWithHandel(qgis.PyQt.QtCore.Qt.Vertical)
@@ -178,15 +182,37 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
             )
             self.use_obsid_assignment_table.setChecked(True)
 
-        self.grid_layout_buttons.addWidget(self.skip_imported_reports, 0, 0)
-        self.grid_layout_buttons.addWidget(self.select_files_button, 1, 0)
-        self.grid_layout_buttons.addWidget(get_line(), 2, 0)
-        self.grid_layout_buttons.addWidget(self.close_after_import, 3, 0)
-        self.grid_layout_buttons.addWidget(self.dump_2_temptable, 4, 0)
-        self.grid_layout_buttons.addWidget(self.use_obsid_assignment_table, 5, 0)
-        self.grid_layout_buttons.addWidget(self.start_import_button, 6, 0)
-        self.grid_layout_buttons.addWidget(self.help_label, 7, 0)
-        self.grid_layout_buttons.setRowStretch(8, 1)
+        dest_table_group = qgis.PyQt.QtWidgets.QGroupBox(
+            QCoreApplication.translate("Interlab4Import", "Destination table")
+        )
+        dest_table_group.setLayout(qgis.PyQt.QtWidgets.QVBoxLayout())
+
+        self.radio_w_qual_lab = qgis.PyQt.QtWidgets.QRadioButton("w_qual_lab")
+        self.radio_w_qual_lab.setChecked(True)
+        self.radio_w_qual_lab.setToolTip(
+            QCoreApplication.translate("Interlab4Import", "Water sample analyses")
+        )
+
+        self.radio_s_qual_lab = qgis.PyQt.QtWidgets.QRadioButton("s_qual_lab")
+        self.radio_s_qual_lab.setChecked(False)
+        self.radio_s_qual_lab.setToolTip(
+            QCoreApplication.translate("Interlab4Import", "Soil sample analyses")
+        )
+        self.radio_s_qual_lab.toggled.connect(self._on_dest_table_changed)
+
+        dest_table_group.layout().addWidget(self.radio_w_qual_lab)
+        dest_table_group.layout().addWidget(self.radio_s_qual_lab)
+
+        self.grid_layout_buttons.addWidget(dest_table_group, 0, 0)
+        self.grid_layout_buttons.addWidget(self.skip_imported_reports, 1, 0)
+        self.grid_layout_buttons.addWidget(self.select_files_button, 2, 0)
+        self.grid_layout_buttons.addWidget(get_line(), 3, 0)
+        self.grid_layout_buttons.addWidget(self.close_after_import, 4, 0)
+        self.grid_layout_buttons.addWidget(self.dump_2_temptable, 5, 0)
+        self.grid_layout_buttons.addWidget(self.use_obsid_assignment_table, 6, 0)
+        self.grid_layout_buttons.addWidget(self.start_import_button, 7, 0)
+        self.grid_layout_buttons.addWidget(self.help_label, 8, 0)
+        self.grid_layout_buttons.setRowStretch(9, 1)
 
         self.start_import_button.clicked.connect(
             lambda: self.start_import(
@@ -917,6 +943,9 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
                 log_msg=QCoreApplication.translate("handle_save", "No file selected!")
             )
             raise common_utils.UserInterruptError()
+
+    def _on_dest_table_changed(self, checked: bool = True) -> None:
+        pass
 
     def unitconversion_factor(self, unit):
         unit_conversion = {

@@ -19,7 +19,11 @@ from qgis.PyQt.QtWidgets import (
 )
 
 from midvatten.tools.create_db import NewDb
-from midvatten.tools.create_db_dialogs import _locale_options
+from midvatten.tools.create_db_dialogs import (
+    _levels_tz_options,
+    _locale_options,
+    _logger_tz_options,
+)
 from midvatten.tools.export_data import ExportData
 from midvatten.tools.utils import common_utils, db_utils
 
@@ -27,12 +31,14 @@ log = logging.getLogger(__name__)
 
 
 class ExportSpatialiteDialog(QDialog):
-    """Single dialog collecting destination locale, CRS, and file path for export."""
+    """Single dialog collecting destination locale, CRS, timezones, and file path for export."""
 
     def __init__(
         self,
         source_srid: int,
         selected_all_text: str,
+        w_levels_logger_timezone: str = None,
+        w_levels_timezone: str = None,
         parent: QWidget = None,
     ):
         super().__init__(parent)
@@ -42,6 +48,8 @@ class ExportSpatialiteDialog(QDialog):
             )
         )
         self._source_srid = source_srid
+        self._w_levels_logger_timezone = w_levels_logger_timezone or ""
+        self._w_levels_timezone = w_levels_timezone or ""
         self._build_ui(selected_all_text)
         self._connect_signals()
 
@@ -71,6 +79,28 @@ class ExportSpatialiteDialog(QDialog):
         form.addRow(
             QCoreApplication.translate("ExportSpatialite", "Destination CRS (EPSG):"),
             self._epsg_spin,
+        )
+
+        self._logger_tz_combo = QComboBox()
+        self._logger_tz_combo.addItems(_logger_tz_options())
+        idx = self._logger_tz_combo.findText(self._w_levels_logger_timezone)
+        self._logger_tz_combo.setCurrentIndex(max(0, idx))
+        form.addRow(
+            QCoreApplication.translate(
+                "ExportSpatialite", "Logger timezone (w_levels_logger):"
+            ),
+            self._logger_tz_combo,
+        )
+
+        self._levels_tz_combo = QComboBox()
+        self._levels_tz_combo.addItems(_levels_tz_options())
+        idx = self._levels_tz_combo.findText(self._w_levels_timezone)
+        self._levels_tz_combo.setCurrentIndex(max(0, idx))
+        form.addRow(
+            QCoreApplication.translate(
+                "ExportSpatialite", "Levels timezone (w_levels):"
+            ),
+            self._levels_tz_combo,
         )
 
         path_row = QHBoxLayout()
@@ -116,6 +146,14 @@ class ExportSpatialiteDialog(QDialog):
         return self._epsg_spin.value()
 
     @property
+    def w_levels_logger_timezone(self) -> str:
+        return self._logger_tz_combo.currentText()
+
+    @property
+    def w_levels_timezone(self) -> str:
+        return self._levels_tz_combo.currentText()
+
+    @property
     def dbpath(self) -> str:
         return self._path_edit.text()
 
@@ -150,6 +188,8 @@ class ExportSpatialite:
         dialog = ExportSpatialiteDialog(
             source_srid=source_srid,
             selected_all_text=selected_all,
+            w_levels_logger_timezone=w_levels_logger_timezone,
+            w_levels_timezone=w_levels_timezone,
             parent=self._iface.mainWindow(),
         )
         if dialog.exec() != QDialog.Accepted:
@@ -170,8 +210,8 @@ class ExportSpatialite:
             user_select_crs="n",
             epsg_code=str(dialog.epsg_code),
             delete_srids=False,
-            w_levels_logger_timezone=w_levels_logger_timezone,
-            w_levels_timezone=w_levels_timezone,
+            w_levels_logger_timezone=dialog.w_levels_logger_timezone,
+            w_levels_timezone=dialog.w_levels_timezone,
             locale=dialog.locale,
             dbpath=dialog.dbpath,
         )

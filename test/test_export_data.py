@@ -326,6 +326,8 @@ class ExportMixin:
         mock_dlg.exec.return_value = 1
         mock_dlg.locale = "sv_SE"
         mock_dlg.epsg_code = 3006
+        mock_dlg.w_levels_logger_timezone = ""
+        mock_dlg.w_levels_timezone = ""
         mock_dlg.dbpath = export_path
 
         db_utils.sql_alter_db(
@@ -463,6 +465,8 @@ class ExportMixin:
         mock_dlg.exec.return_value = 1
         mock_dlg.locale = "sv_SE"
         mock_dlg.epsg_code = 3006
+        mock_dlg.w_levels_logger_timezone = ""
+        mock_dlg.w_levels_timezone = ""
         mock_dlg.dbpath = export_path
 
         db_utils.sql_alter_db(
@@ -600,6 +604,8 @@ class ExportMixin:
         mock_dlg.exec.return_value = 1
         mock_dlg.locale = "sv_SE"
         mock_dlg.epsg_code = 3006
+        mock_dlg.w_levels_logger_timezone = ""
+        mock_dlg.w_levels_timezone = ""
         mock_dlg.dbpath = export_path
 
         db_utils.sql_alter_db(
@@ -677,6 +683,8 @@ class ExportMixin:
         mock_dlg.exec.return_value = 1
         mock_dlg.locale = "sv_SE"
         mock_dlg.epsg_code = 3010
+        mock_dlg.w_levels_logger_timezone = ""
+        mock_dlg.w_levels_timezone = ""
         mock_dlg.dbpath = EXPORT_DB_PATH
 
         db_utils.sql_alter_db(
@@ -838,6 +846,8 @@ class ExportMixin:
         mock_dlg.exec.return_value = 1
         mock_dlg.locale = "en_US"
         mock_dlg.epsg_code = 3006
+        mock_dlg.w_levels_logger_timezone = ""
+        mock_dlg.w_levels_timezone = ""
         mock_dlg.dbpath = export_path
 
         """
@@ -950,6 +960,8 @@ class ExportMixin:
         mock_dlg.exec.return_value = 1
         mock_dlg.locale = "sv_SE"
         mock_dlg.epsg_code = 3006
+        mock_dlg.w_levels_logger_timezone = ""
+        mock_dlg.w_levels_timezone = ""
         mock_dlg.dbpath = EXPORT_DB_PATH
 
         db_utils.execute_sqlfile(

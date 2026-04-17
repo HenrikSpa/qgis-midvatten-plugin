@@ -413,3 +413,23 @@ class DetachFigureButton(NavigationButton):
                 except AttributeError:
                     log.debug(f"Error, {e}, followup:\n{traceback.format_exc()}")
         self.fig.show()
+
+
+class ReverseSectionButton(NavigationButton):
+    def __init__(self, fig, parent=None):
+        super().__init__(parent, fig)
+        self._button_setup = [
+            (
+                "reverse section",
+                self._toggle_reverse,
+                QCoreApplication.translate("SectionPlot", "Reverse x-axis"),
+                os.path.join(
+                    os.path.dirname(__file__), "..", "..", "icons", "reverse_section.png"
+                ),
+            )
+        ]
+        self.connect_toolbar()
+
+    def _toggle_reverse(self):
+        self.fig.ax_main.invert_xaxis()
+        self.fig.canvas.draw_idle()

@@ -64,7 +64,7 @@ from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.exceptions import UsageError
 from midvatten.tools.utils.midvatten_utils import PlotTemplates
-from midvatten.tools.utils.gui_utils import DetachFigureButton
+from midvatten.tools.utils.gui_utils import DetachFigureButton, ReverseSectionButton
 import midvatten.definitions.midvatten_defs as defs
 from midvatten.tools.utils import matplotlib_replacements
 from midvatten.tools.utils.sampledem import qchain, sampling
@@ -1366,6 +1366,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         self.figure.detach_figure_button = DetachFigureButton(
             self.figure, callback=self.detach_figure
         )
+        self.figure.reverse_section_button = ReverseSectionButton(self.figure)
 
     def plot_dems(self):
         try:

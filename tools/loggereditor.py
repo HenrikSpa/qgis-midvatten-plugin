@@ -1,13 +1,24 @@
 import datetime
+import json
 import logging
 import math
 import os
 
 import numpy as np
+import pandas as pd
 import qgis.PyQt
 from qgis.PyQt.QtCore import QCoreApplication, Qt
+from qgis.PyQt.QtWidgets import (
+    QDockWidget,
+    QHBoxLayout,
+    QListWidget,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 from matplotlib import pyplot as plt, ticker as tick
 from matplotlib.backend_bases import PickEvent, MouseButton
+from matplotlib.gridspec import GridSpec
 
 from midvatten.tools.utils.mpl_compat import FigureCanvas, NavigationToolbar
 from matplotlib.dates import num2date, datestr2num
@@ -16,6 +27,8 @@ from matplotlib.widgets import RectangleSelector
 from qgis.PyQt import uic
 from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.common_utils import fn_timer
+from midvatten.tools.utils.db_utils.dialect import ident
+from midvatten.tools.utils.db_utils.execution import use_or_create_connection
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.date_utils import (
     change_timezone,
@@ -24,6 +37,7 @@ from midvatten.tools.utils.date_utils import (
     long_dateformat,
 )
 from midvatten.tools.utils.gui_utils import NavigationButton, WA_DeleteOnClose
+from midvatten.tools.loggereditor_refseries import RefSeriesDialog
 
 log = logging.getLogger(__name__)
 
@@ -39,6 +53,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     def __init__(self, iface, ms):
         qgis.PyQt.QtWidgets.QMainWindow.__init__(self, iface.mainWindow())
         self._iface = iface
+        self._ms = ms
         self.settingsdict = ms.settingsdict
         self.setAttribute(WA_DeleteOnClose)
         self.setupUi(self)  # Required by Qt4 to initialize the UI
@@ -117,9 +132,15 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
     def show(self) -> None:
         if not hasattr(self, "calibrplotfigure"):
-            # Create a plot window with one single subplot
             self.calibrplotfigure = plt.figure()
-            self.axes = self.calibrplotfigure.add_subplot(111)
+            self._ref_gs = GridSpec(
+                2, 1, figure=self.calibrplotfigure, height_ratios=[3, 1], hspace=0.12
+            )
+            self.axes = self.calibrplotfigure.add_subplot(self._ref_gs[0])
+            self.ref_axes = self.calibrplotfigure.add_subplot(
+                self._ref_gs[1], sharex=self.axes
+            )
+            self.ref_axes.set_visible(False)
             self.canvas = FigureCanvas(self.calibrplotfigure)
             self.mpltoolbar = NavigationToolbar(self.canvas, self.widget_plot)
             self.layoutplot.addWidget(self.canvas)
@@ -171,6 +192,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self.w_levels_logger_tz = db_utils.get_timezone_from_db("w_levels_logger")
             self.w_levels_tz = db_utils.get_timezone_from_db("w_levels")
 
+            self._setup_ref_dock()
+
         super().show()
         self.activateWindow()
 
@@ -202,7 +225,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                     "" if obsid is None else f" WHERE obsid = {ph}"
                 )
             else:
-                sql = """SELECT obsid FROM 
+                sql = """SELECT obsid FROM
                         (SELECT DISTINCT ON (obsid) obsid, level_masl, head_cm
                         FROM w_levels_logger
                         {}
@@ -320,9 +343,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             "w_levels_logger", []
         )
         has_series_id = "series_id" in existing_columns
-        has_series_table = bool(
-            db_utils.tables_columns(table="w_logger_series")
-        )
+        has_series_table = bool(db_utils.tables_columns(table="w_logger_series"))
         if has_series_id and has_series_table:
             head_level_masl_sql = (
                 f"SELECT l.date_time, l.head_cm / 100, l.level_masl,"
@@ -606,6 +627,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self.toggle_move_nodes(self.move_nodes_button.button().isChecked())
         self.toggle_select_nodes(self.select_nodes_button.button().isChecked())
 
+        self._draw_reference_subplot()
+
     def _draw_series(self):
         """Draw measurement and logger time series onto self.axes. Return (handles, labels)."""
         obsid = self.obsid
@@ -770,6 +793,178 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self.canvas.draw()
         # plt.close(self.calibrplotfigure)#this closes reference to self.calibrplotfigure
         self.statusbar.clearMessage()
+
+    # ------------------------------------------------------------------ #
+    #  Reference subplot                                                   #
+    # ------------------------------------------------------------------ #
+
+    def _setup_ref_dock(self) -> None:
+        self._ref_series: list[dict] = []
+        dock = QDockWidget(
+            QCoreApplication.translate("Calibrlogger", "Reference series"), self
+        )
+        dock.setObjectName("ref_series_dock")
+        container = QWidget()
+        vbox = QVBoxLayout(container)
+        btn_row = QHBoxLayout()
+        self._ref_list = QListWidget()
+        self._ref_add_btn = QPushButton(
+            QCoreApplication.translate("Calibrlogger", "+ Add")
+        )
+        self._ref_edit_btn = QPushButton(
+            QCoreApplication.translate("Calibrlogger", "Edit")
+        )
+        self._ref_remove_btn = QPushButton(
+            QCoreApplication.translate("Calibrlogger", "Remove")
+        )
+        btn_row.addWidget(self._ref_add_btn)
+        btn_row.addWidget(self._ref_edit_btn)
+        btn_row.addWidget(self._ref_remove_btn)
+        vbox.addLayout(btn_row)
+        vbox.addWidget(self._ref_list)
+        dock.setWidget(container)
+        self.addDockWidget(Qt.RightDockWidgetArea, dock)
+        self._ref_add_btn.clicked.connect(self._on_add_ref_series)
+        self._ref_edit_btn.clicked.connect(self._on_edit_ref_series)
+        self._ref_remove_btn.clicked.connect(self._on_remove_ref_series)
+        self._load_ref_series()
+
+    def _load_ref_series(self) -> None:
+        raw = self._ms.settingsdict.get("loggered_ref_series", "[]")
+        try:
+            self._ref_series = json.loads(raw)
+        except (json.JSONDecodeError, TypeError):
+            self._ref_series = []
+        self._refresh_ref_list_widget()
+
+    def _save_ref_series(self) -> None:
+        self._ms.settingsdict["loggered_ref_series"] = json.dumps(self._ref_series)
+        self._ms.save_settings("loggered_ref_series")
+
+    def _refresh_ref_list_widget(self) -> None:
+        self._ref_list.clear()
+        for s in self._ref_series:
+            filter_str = ", ".join(
+                f"{f['col']}={'+'.join(str(v) for v in f['values'])}"
+                for f in s.get("filters", [])
+                if f.get("values")
+            )
+            summary = f"{s.get('table', '?')} · {s.get('y_col', '?')}"
+            if filter_str:
+                summary += f" · {filter_str}"
+            summary += f" · {s.get('style', 'line')}"
+            if s.get("resample"):
+                summary += f" · {s['resample']} {s.get('resample_agg', '')}"
+            self._ref_list.addItem(summary)
+
+    def _on_add_ref_series(self) -> None:
+        dlg = RefSeriesDialog(parent=self)
+        if dlg.exec() == dlg.Accepted:
+            self._ref_series.append(dlg.to_dict())
+            self._save_ref_series()
+            self._refresh_ref_list_widget()
+            self._draw_reference_subplot()
+
+    def _on_edit_ref_series(self) -> None:
+        idx = self._ref_list.currentRow()
+        if idx < 0:
+            return
+        dlg = RefSeriesDialog.from_dict(self._ref_series[idx], parent=self)
+        if dlg.exec() == dlg.Accepted:
+            self._ref_series[idx] = dlg.to_dict()
+            self._save_ref_series()
+            self._refresh_ref_list_widget()
+            self._draw_reference_subplot()
+
+    def _on_remove_ref_series(self) -> None:
+        idx = self._ref_list.currentRow()
+        if idx < 0:
+            return
+        del self._ref_series[idx]
+        self._save_ref_series()
+        self._refresh_ref_list_widget()
+        self._draw_reference_subplot()
+
+    def _draw_reference_subplot(self) -> None:
+        self.ref_axes.cla()
+        if not self._ref_series:
+            self.ref_axes.set_visible(False)
+            self.canvas.draw()
+            return
+        self.ref_axes.set_visible(True)
+        with use_or_create_connection(None) as conn:
+            for s in self._ref_series:
+                self._plot_ref_series(conn, s)
+        self.ref_axes.legend(fontsize="small", loc="best")
+        self.ref_axes.grid(True)
+        self.ref_axes.yaxis.set_major_formatter(
+            tick.ScalarFormatter(useOffset=False, useMathText=False)
+        )
+        for label in self.ref_axes.xaxis.get_ticklabels():
+            label.set_fontsize(8)
+        for label in self.ref_axes.yaxis.get_ticklabels():
+            label.set_fontsize(8)
+        self.calibrplotfigure.tight_layout()
+        self.canvas.draw()
+
+    def _plot_ref_series(self, conn, s: dict) -> None:
+        sql, params = self._build_ref_query(conn, s)
+        rows = conn.execute_and_fetchall(sql, params)
+        if not rows:
+            return
+        df = pd.DataFrame(rows, columns=["x", "y"])
+        df["x"] = pd.to_datetime(df["x"], errors="coerce")
+        df = df.dropna(subset=["x", "y"]).set_index("x").sort_index()["y"]
+        if df.empty:
+            return
+        if s.get("resample"):
+            df = getattr(df.resample(s["resample"]), s.get("resample_agg", "mean"))()
+        if s.get("interpolate"):
+            df = df.interpolate(method="time")
+        norm = s.get("normalize", "")
+        if norm == "date" and s.get("normalize_date"):
+            ref_val = df.asof(pd.Timestamp(s["normalize_date"]))
+            if pd.notna(ref_val):
+                df = df - ref_val
+        elif norm == "mean":
+            df = df - df.mean()
+        elif norm == "zscore":
+            std = df.std()
+            if std > 0:
+                df = (df - df.mean()) / std
+        df = df * s.get("scale", 1.0)
+        if df.empty:
+            return
+        label = s.get("label") or _ref_series_auto_label(s)
+        _ref_series_plot_style(
+            self.ref_axes,
+            df.index.to_pydatetime(),
+            df.values,
+            s.get("style", "line"),
+            label,
+        )
+
+    def _build_ref_query(self, conn, s: dict) -> tuple:
+        ph = conn.placeholder()
+        sql = (
+            f"SELECT {ident(s['x_col'])}, {ident(s['y_col'])} FROM {ident(s['table'])}"
+        )
+        where_parts: list[str] = []
+        params: list = []
+        for f in s.get("filters", []):
+            if not f.get("values"):
+                continue
+            placeholders = ", ".join([ph] * len(f["values"]))
+            where_parts.append(f"{ident(f['col'])} IN ({placeholders})")
+            params.extend(f["values"])
+        if where_parts:
+            sql += " WHERE " + " AND ".join(where_parts)
+        sql += f" ORDER BY {ident(s['x_col'])}"
+        return sql, params
+
+    # ------------------------------------------------------------------ #
+    #  End reference subplot                                               #
+    # ------------------------------------------------------------------ #
 
     @fn_timer
     def plot_recarray(self, axes, a_recarray, label, time_list=None, style=None):
@@ -1455,3 +1650,29 @@ class MoveNodesButton(NavigationButton):
         if not self.button().isChecked():
             self.parent.reset_cid()
         self.parent.toggle_move_nodes(self.button().isChecked())
+
+
+def _ref_series_auto_label(s: dict) -> str:
+    filter_str = ", ".join(
+        f"{f['col']}={'+'.join(str(v) for v in f['values'])}"
+        for f in s.get("filters", [])
+        if f.get("values")
+    )
+    base = f"{s.get('table', '?')}.{s.get('y_col', '?')}"
+    return f"{base} [{filter_str}]" if filter_str else base
+
+
+def _ref_series_plot_style(ax, x, y, style: str, label: str) -> None:
+    kw: dict = {"label": label}
+    if style == "line":
+        ax.plot(x, y, **kw)
+    elif style == "marker":
+        ax.plot(x, y, linestyle="none", marker="o", markersize=3, **kw)
+    elif style == "line+marker":
+        ax.plot(x, y, marker="o", markersize=3, **kw)
+    elif style == "step-pre":
+        ax.step(x, y, where="pre", **kw)
+    elif style == "step-post":
+        ax.step(x, y, where="post", **kw)
+    else:
+        ax.plot(x, y, **kw)

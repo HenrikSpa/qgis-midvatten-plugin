@@ -136,6 +136,7 @@ def settingsdict():  # These are the default settings, they shall not be changed
         "custplot_plottype3": "line",
         "custplot_last_used_template": "",
         "custplot_regular_xaxis_interval": 1,
+        "loggered_ref_series": "[]",
         "customdrillreportstoredsettings": "",
         "piper_cl": "Klorid, Cl",
         "piper_hco3": "Alkalinitet, HCO3",

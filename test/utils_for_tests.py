@@ -56,6 +56,7 @@ _DATA_TABLES = (
     "obs_lines",
     "w_levels",
     "w_levels_logger",
+    "w_logger_series",
     "stratigraphy",
     "w_qual_field",
     "w_qual_lab",

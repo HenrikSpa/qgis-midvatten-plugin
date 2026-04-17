@@ -217,11 +217,12 @@ class ObsidAssignmentDialog(QDialog):
         self.table.setHorizontalHeaderLabels([_tr(h) for h in _COLUMN_HEADERS])
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        # Sorting is intentionally disabled: _on_item_changed and bulk actions
-        # index editor_rows by the table's visual row, which would drift under
-        # a user-initiated sort. Can be enabled later by storing the list index
-        # in Qt.UserRole and routing through it.
-        self.table.setSortingEnabled(False)
+        # Click-to-sort is enabled; _editor_index_at() translates the
+        # sort-affected visual row back to the stable editor_rows index via
+        # Qt.UserRole set on column 0. We pin the indicator to column 0 ASC
+        # so the initial display matches insertion order.
+        self.table.setSortingEnabled(True)
+        self.table.horizontalHeader().setSortIndicator(0, Qt.AscendingOrder)
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
         search_row = QHBoxLayout()
         search_row.addWidget(QLabel(_tr("Search:")))
@@ -285,13 +286,16 @@ class ObsidAssignmentDialog(QDialog):
         self.table.itemChanged.connect(self._on_item_changed)
 
     def _populate_table(self):
+        # Disable sorting during bulk insertion; re-enable at the end so
+        # the initial row order matches editor_rows.
+        self.table.setSortingEnabled(False)
         self.table.blockSignals(True)
         try:
             self.table.setRowCount(len(self.editor_rows))
             for row_idx, row in enumerate(self.editor_rows):
-                self.table.setItem(
-                    row_idx, _COL_SPEC, QTableWidgetItem(row.specifik_provplats)
-                )
+                spec_item = QTableWidgetItem(row.specifik_provplats)
+                spec_item.setData(Qt.UserRole, row_idx)
+                self.table.setItem(row_idx, _COL_SPEC, spec_item)
                 self.table.setItem(
                     row_idx, _COL_NAMN, QTableWidgetItem(row.provplatsnamn)
                 )
@@ -309,50 +313,59 @@ class ObsidAssignmentDialog(QDialog):
                             item.setForeground(QBrush(QColor(120, 120, 120)))
         finally:
             self.table.blockSignals(False)
+        self.table.setSortingEnabled(True)
         self._apply_filters()
 
-    def set_obsid_value(self, row_idx: int, obsid: str):
-        item = self.table.item(row_idx, _COL_OBSID)
+    def _editor_index_at(self, visual_row: int) -> int:
+        """Map a table visual row back to its stable editor_rows index."""
+        spec_item = self.table.item(visual_row, _COL_SPEC)
+        if spec_item is None:
+            return visual_row
+        stored = spec_item.data(Qt.UserRole)
+        return int(stored) if stored is not None else visual_row
+
+    def set_obsid_value(self, visual_row: int, obsid: str):
+        item = self.table.item(visual_row, _COL_OBSID)
         if item is None:
             item = QTableWidgetItem()
-            self.table.setItem(row_idx, _COL_OBSID, item)
+            self.table.setItem(visual_row, _COL_OBSID, item)
         item.setText(obsid)
-        self.editor_rows[row_idx].obsid = obsid
-        self._paint_obsid_cell(row_idx)
+        self.editor_rows[self._editor_index_at(visual_row)].obsid = obsid
+        self._paint_obsid_cell(visual_row)
 
-    def row_has_invalid_obsid(self, row_idx: int) -> bool:
-        row = self.editor_rows[row_idx]
+    def row_has_invalid_obsid(self, visual_row: int) -> bool:
+        row = self.editor_rows[self._editor_index_at(visual_row)]
         if row.skipped:
             return False
         return bool(row.obsid) and row.obsid not in self.existing_obsids
 
-    def _paint_obsid_cell(self, row_idx: int):
-        item = self.table.item(row_idx, _COL_OBSID)
+    def _paint_obsid_cell(self, visual_row: int):
+        item = self.table.item(visual_row, _COL_OBSID)
         if item is None:
             return
         item.setBackground(
-            _INVALID_BRUSH if self.row_has_invalid_obsid(row_idx) else _DEFAULT_BRUSH
+            _INVALID_BRUSH if self.row_has_invalid_obsid(visual_row) else _DEFAULT_BRUSH
         )
 
     def _apply_filters(self):
         needle = self.search_input.text().strip().lower()
         show_matched = self.show_matched_checkbox.isChecked()
         visible = 0
-        for row_idx in range(self.table.rowCount()):
-            row = self.editor_rows[row_idx]
+        for visual_row in range(self.table.rowCount()):
+            row = self.editor_rows[self._editor_index_at(visual_row)]
             if not show_matched and row.cached:
-                self.table.setRowHidden(row_idx, True)
+                self.table.setRowHidden(visual_row, True)
                 continue
             if needle:
                 match = False
                 for col in (_COL_SPEC, _COL_NAMN, _COL_ORSAK, _COL_OBSID):
-                    item = self.table.item(row_idx, col)
+                    item = self.table.item(visual_row, col)
                     if item and needle in item.text().lower():
                         match = True
                         break
             else:
                 match = True
-            self.table.setRowHidden(row_idx, not match)
+            self.table.setRowHidden(visual_row, not match)
             if match:
                 visible += 1
         self.row_count_label.setText(f"{visible} / {self.table.rowCount()}")
@@ -366,38 +379,33 @@ class ObsidAssignmentDialog(QDialog):
             self.set_obsid_value(row_idx, obsid)
 
     def _set_skipped_for_selection(self, skipped: bool):
-        for row_idx in self._selected_row_indices():
-            self.editor_rows[row_idx].skipped = skipped
-            item = self.table.item(row_idx, _COL_OBSID)
+        for visual_row in self._selected_row_indices():
+            editor_row = self.editor_rows[self._editor_index_at(visual_row)]
+            editor_row.skipped = skipped
+            item = self.table.item(visual_row, _COL_OBSID)
             if item is None:
                 item = QTableWidgetItem()
-                self.table.setItem(row_idx, _COL_OBSID, item)
+                self.table.setItem(visual_row, _COL_OBSID, item)
             if skipped:
                 item.setText("[skipped]")
                 item.setFlags(item.flags() & ~Qt.ItemIsEditable)
-                for col in range(self.table.columnCount()):
-                    cell = self.table.item(row_idx, col)
-                    if cell is not None:
-                        font = cell.font()
-                        font.setStrikeOut(True)
-                        cell.setFont(font)
             else:
-                item.setText(self.editor_rows[row_idx].obsid)
+                item.setText(editor_row.obsid)
                 item.setFlags(item.flags() | Qt.ItemIsEditable)
-                for col in range(self.table.columnCount()):
-                    cell = self.table.item(row_idx, col)
-                    if cell is not None:
-                        font = cell.font()
-                        font.setStrikeOut(False)
-                        cell.setFont(font)
-            self._paint_obsid_cell(row_idx)
+            for col in range(self.table.columnCount()):
+                cell = self.table.item(visual_row, col)
+                if cell is not None:
+                    font = cell.font()
+                    font.setStrikeOut(skipped)
+                    cell.setFont(font)
+            self._paint_obsid_cell(visual_row)
 
     def _on_item_changed(self, item):
         if item.column() != _COL_OBSID:
             return
-        row_idx = item.row()
-        self.editor_rows[row_idx].obsid = item.text()
-        self._paint_obsid_cell(row_idx)
+        visual_row = item.row()
+        self.editor_rows[self._editor_index_at(visual_row)].obsid = item.text()
+        self._paint_obsid_cell(visual_row)
 
     def _reload_obsids(self):
         if self._reload_callback is None:

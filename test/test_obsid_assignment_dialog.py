@@ -237,6 +237,30 @@ class TestObsidAssignmentDialogShell:
         finally:
             dialog.deleteLater()
 
+    def test_fill_after_sort_writes_to_correct_editor_row(self):
+        """After the user clicks a header to sort, the visual row index no
+        longer matches editor_rows. Filling an obsid cell must update the
+        EditorRow that is actually shown at the visual row, not the list
+        element at that index."""
+        from qgis.PyQt.QtCore import Qt
+
+        rows = [
+            EditorRow("Br1", "Brunn 1", "", ["L1"]),
+            EditorRow("Br2", "Brunn 2", "", ["L2"]),
+            EditorRow("Br3", "Brunn 3", "", ["L3"]),
+        ]
+        dialog = ObsidAssignmentDialog(rows, existing_obsids=["Br1", "Br2", "Br3"])
+        try:
+            # Sort spec_provplats descending: visual order becomes Br3, Br2, Br1
+            dialog.table.sortByColumn(0, Qt.DescendingOrder)
+            # Top visual row is now the EditorRow originally at index 2 (Br3).
+            dialog.set_obsid_value(0, "Br3")
+            assert dialog.editor_rows[2].obsid == "Br3"
+            assert dialog.editor_rows[0].obsid == ""
+            assert dialog.editor_rows[1].obsid == ""
+        finally:
+            dialog.deleteLater()
+
 
 def test_ask_obsid_rows_as_dicts_handles_lowercase_headers():
     from midvatten.tools.obsid_assignment_dialog import ask_obsid_rows_as_dicts

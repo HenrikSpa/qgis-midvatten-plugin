@@ -385,6 +385,7 @@ def get_subset_of_tables_fr_db(category="obs_points"):
             "w_levels_logger",
             "w_flow",
             "w_qual_lab",
+            "s_qual_lab",
             "w_qual_field",
             "screen",
             "stratigraphy",

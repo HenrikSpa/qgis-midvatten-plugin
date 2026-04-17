@@ -40,6 +40,8 @@ from midvatten.tools.utils import common_utils, db_utils, midvatten_utils
 from midvatten.tools.utils.common_utils import Cancel
 from midvatten.tools.utils.date_utils import datestring_to_date
 from midvatten.tools.utils.db_utils import sql_load_fr_db, tables_columns
+from midvatten.tools.utils.db_utils.dialect import ident
+from midvatten.tools.utils.file_utils import get_full_filename
 from midvatten.tools.utils.gui_utils import (
     ExtendedQPlainTextEdit,
     RowEntry,
@@ -60,15 +62,17 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
         self.obsid_assignment_table = "zz_interlab4_obsid_assignment"
         super().__init__(iface, ms)
         self.setWindowTitle(
-            QCoreApplication.translate(
-                "Interlab4Import", "Import interlab4 data to w_qual_lab table"
-            )
+            QCoreApplication.translate("Interlab4Import", "Import interlab4 data")
         )
 
     def show(self) -> None:
         self.init_gui()
         super().show()
         self.activateWindow()
+
+    @property
+    def dest_table(self) -> str:
+        return "s_qual_lab" if self.radio_s_qual_lab.isChecked() else "w_qual_lab"
 
     def init_gui(self):
         splitter = SplitterWithHandel(qgis.PyQt.QtCore.Qt.Vertical)
@@ -178,15 +182,37 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
             )
             self.use_obsid_assignment_table.setChecked(True)
 
-        self.grid_layout_buttons.addWidget(self.skip_imported_reports, 0, 0)
-        self.grid_layout_buttons.addWidget(self.select_files_button, 1, 0)
-        self.grid_layout_buttons.addWidget(get_line(), 2, 0)
-        self.grid_layout_buttons.addWidget(self.close_after_import, 3, 0)
-        self.grid_layout_buttons.addWidget(self.dump_2_temptable, 4, 0)
-        self.grid_layout_buttons.addWidget(self.use_obsid_assignment_table, 5, 0)
-        self.grid_layout_buttons.addWidget(self.start_import_button, 6, 0)
-        self.grid_layout_buttons.addWidget(self.help_label, 7, 0)
-        self.grid_layout_buttons.setRowStretch(8, 1)
+        dest_table_group = qgis.PyQt.QtWidgets.QGroupBox(
+            QCoreApplication.translate("Interlab4Import", "Destination table")
+        )
+        dest_table_group.setLayout(qgis.PyQt.QtWidgets.QVBoxLayout())
+
+        self.radio_w_qual_lab = qgis.PyQt.QtWidgets.QRadioButton("w_qual_lab")
+        self.radio_w_qual_lab.setChecked(True)
+        self.radio_w_qual_lab.setToolTip(
+            QCoreApplication.translate("Interlab4Import", "Water sample analyses")
+        )
+
+        self.radio_s_qual_lab = qgis.PyQt.QtWidgets.QRadioButton("s_qual_lab")
+        self.radio_s_qual_lab.setChecked(False)
+        self.radio_s_qual_lab.setToolTip(
+            QCoreApplication.translate("Interlab4Import", "Soil sample analyses")
+        )
+        self.radio_s_qual_lab.toggled.connect(self._on_dest_table_changed)
+
+        dest_table_group.layout().addWidget(self.radio_w_qual_lab)
+        dest_table_group.layout().addWidget(self.radio_s_qual_lab)
+
+        self.grid_layout_buttons.addWidget(dest_table_group, 0, 0)
+        self.grid_layout_buttons.addWidget(self.skip_imported_reports, 1, 0)
+        self.grid_layout_buttons.addWidget(self.select_files_button, 2, 0)
+        self.grid_layout_buttons.addWidget(get_line(), 3, 0)
+        self.grid_layout_buttons.addWidget(self.close_after_import, 4, 0)
+        self.grid_layout_buttons.addWidget(self.dump_2_temptable, 5, 0)
+        self.grid_layout_buttons.addWidget(self.use_obsid_assignment_table, 6, 0)
+        self.grid_layout_buttons.addWidget(self.start_import_button, 7, 0)
+        self.grid_layout_buttons.addWidget(self.help_label, 8, 0)
+        self.grid_layout_buttons.setRowStretch(9, 1)
 
         self.start_import_button.clicked.connect(
             lambda: self.start_import(
@@ -203,11 +229,10 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
         )
 
         if self.skip_imported_reports.isChecked():
+            tbl = ident(self.dest_table, allowed=["w_qual_lab", "s_qual_lab"])
             skip_reports = [
                 str(x[0])
-                for x in sql_load_fr_db("""SELECT DISTINCT report FROM w_qual_lab;""")[
-                    1
-                ]
+                for x in sql_load_fr_db(f"SELECT DISTINCT report FROM {tbl};")[1]
             ]
         else:
             skip_reports = []
@@ -323,7 +348,7 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
         importer = import_data_to_db.MidvDataImporter()
 
         answer = importer.general_import(
-            dest_table="w_qual_lab",
+            dest_table=self.dest_table,
             file_data=self.wquallab_data_table,
             dump_temptable=self.dump_2_temptable.isChecked(),
         )
@@ -918,6 +943,47 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
             )
             raise common_utils.UserInterruptError()
 
+    def _on_dest_table_changed(self, checked: bool = True) -> None:
+        if not self.radio_s_qual_lab.isChecked():
+            return
+        if "s_qual_lab" in tables_columns():
+            return
+        answer = qgis.PyQt.QtWidgets.QMessageBox.question(
+            self,
+            QCoreApplication.translate("Interlab4Import", "Create table"),
+            QCoreApplication.translate(
+                "Interlab4Import",
+                "Table s_qual_lab does not exist. Create it now?",
+            ),
+        )
+        if answer == qgis.PyQt.QtWidgets.QMessageBox.Yes:
+            try:
+                self._create_s_qual_lab()
+            except Exception as e:
+                common_utils.MessagebarAndLog.critical(
+                    bar_msg=QCoreApplication.translate(
+                        "Interlab4Import", "Could not create s_qual_lab, see log."
+                    ),
+                    log_msg=str(e),
+                )
+                self.radio_w_qual_lab.setChecked(True)
+        else:
+            self.radio_w_qual_lab.setChecked(True)
+
+    def _create_s_qual_lab(self) -> None:
+        sql_path = get_full_filename("create_db.sql")
+        with open(sql_path, encoding="utf-8") as f:
+            sql_text = f.read()
+        ddl = self._extract_create_table(sql_text, "s_qual_lab")
+        dbconnection = db_utils.DbConnectionManager()
+        try:
+            if dbconnection.dbtype == "postgis":
+                ddl = ddl.replace("double", "double precision")
+            dbconnection.execute(ddl)
+            dbconnection.commit()
+        finally:
+            dbconnection.closedb()
+
     def unitconversion_factor(self, unit):
         unit_conversion = {
             "g/l": ("mg/l", 1000.0),
@@ -1072,6 +1138,24 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
             )
 
         return primary_data, duplicate_data
+
+    @staticmethod
+    def _extract_create_table(sql_text: str, table_name: str) -> str:
+        """Extract a single CREATE TABLE block from sql_text by table name."""
+        lines = sql_text.splitlines()
+        result = []
+        inside = False
+        prefix = f"CREATE TABLE {table_name.upper()}"
+        for line in lines:
+            if not inside and line.strip().upper().startswith(prefix):
+                inside = True
+            if inside:
+                result.append(line)
+                if line.strip() == ");":
+                    break
+        if not result:
+            raise ValueError(f"CREATE TABLE {table_name} not found in SQL text")
+        return "\n".join(result)
 
 
 class MetaFilterSelection(VRowEntry):

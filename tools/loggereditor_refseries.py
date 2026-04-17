@@ -76,15 +76,16 @@ class _FilterRow(QWidget):
         self._populate_columns(table)
         self.col_combo.currentTextChanged.connect(self._on_col_changed)
 
-    def _populate_columns(self, table: str) -> None:
+    def _populate_columns(self, table: str, col_info=None) -> None:
         prev = self.col_combo.currentText()
         self.col_combo.blockSignals(True)
         self.col_combo.clear()
         if table:
-            with use_or_create_connection(None) as conn:
-                info = get_table_info(table, dbconnection=conn)
-            if info:
-                for row in info:
+            if col_info is None:
+                with use_or_create_connection(None) as conn:
+                    col_info = get_table_info(table, dbconnection=conn)
+            if col_info:
+                for row in col_info:
                     self.col_combo.addItem(row[1])
         self.col_combo.blockSignals(False)
         idx = self.col_combo.findText(prev)
@@ -178,8 +179,7 @@ class RefSeriesDialog(QDialog):
 
         # Resample
         resample_form = QFormLayout()
-        resample_row = QWidget()
-        resample_hl = QHBoxLayout(resample_row)
+        resample_hl = QHBoxLayout()
         resample_hl.setContentsMargins(0, 0, 0, 0)
         self.resample_edit = QLineEdit()
         self.resample_edit.setPlaceholderText("e.g. 1D, 1h")
@@ -190,7 +190,7 @@ class RefSeriesDialog(QDialog):
         resample_hl.addWidget(self.resample_edit)
         resample_hl.addWidget(self.agg_combo)
         resample_hl.addStretch()
-        resample_form.addRow(_tr("Resample:"), resample_row)
+        resample_form.addRow(_tr("Resample:"), resample_hl)
         main_layout.addLayout(resample_form)
 
         # Interpolate
@@ -199,8 +199,7 @@ class RefSeriesDialog(QDialog):
 
         # Normalize
         norm_form = QFormLayout()
-        norm_row = QWidget()
-        norm_hl = QHBoxLayout(norm_row)
+        norm_hl = QHBoxLayout()
         norm_hl.setContentsMargins(0, 0, 0, 0)
         self.norm_combo = QComboBox()
         for label in [_tr("None"), _tr("To date"), _tr("Zero mean"), _tr("Z-score")]:
@@ -214,7 +213,7 @@ class RefSeriesDialog(QDialog):
         norm_hl.addWidget(self.norm_combo)
         norm_hl.addWidget(self.norm_date_edit)
         norm_hl.addStretch()
-        norm_form.addRow(_tr("Normalize:"), norm_row)
+        norm_form.addRow(_tr("Normalize:"), norm_hl)
         main_layout.addLayout(norm_form)
 
         # Scale, Style, Label
@@ -262,20 +261,17 @@ class RefSeriesDialog(QDialog):
         with use_or_create_connection(None) as conn:
             info = get_table_info(table, dbconnection=conn)
         if info:
-            for row in info:
-                self.ycol_combo.addItem(row[1])
+            first_numeric = None
             for i, row in enumerate(info):
-                col_type = (row[2] or "").lower()
-                if (
-                    "real" in col_type
-                    or "double" in col_type
-                    or "float" in col_type
-                    or "int" in col_type
-                ):
-                    self.ycol_combo.setCurrentIndex(i)
-                    break
+                self.ycol_combo.addItem(row[1])
+                if first_numeric is None:
+                    col_type = (row[2] or "").lower()
+                    if any(t in col_type for t in ("real", "double", "float", "int")):
+                        first_numeric = i
+            if first_numeric is not None:
+                self.ycol_combo.setCurrentIndex(first_numeric)
         for frow in self._filter_rows:
-            frow._populate_columns(table)
+            frow._populate_columns(table, col_info=info)
 
     def _on_norm_changed(self, idx: int) -> None:
         self.norm_date_edit.setVisible(_NORM_MODES[idx] == "date")

@@ -627,8 +627,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self.toggle_move_nodes(self.move_nodes_button.button().isChecked())
         self.toggle_select_nodes(self.select_nodes_button.button().isChecked())
 
-        self._draw_reference_subplot()
-
     def _draw_series(self):
         """Draw measurement and logger time series onto self.axes. Return (handles, labels)."""
         obsid = self.obsid
@@ -828,6 +826,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self._ref_edit_btn.clicked.connect(self._on_edit_ref_series)
         self._ref_remove_btn.clicked.connect(self._on_remove_ref_series)
         self._load_ref_series()
+        self._draw_reference_subplot()
 
     def _load_ref_series(self) -> None:
         raw = self._ms.settingsdict.get("loggered_ref_series", "[]")
@@ -844,11 +843,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     def _refresh_ref_list_widget(self) -> None:
         self._ref_list.clear()
         for s in self._ref_series:
-            filter_str = ", ".join(
-                f"{f['col']}={'+'.join(str(v) for v in f['values'])}"
-                for f in s.get("filters", [])
-                if f.get("values")
-            )
+            filter_str = _ref_series_filter_str(s)
             summary = f"{s.get('table', '?')} · {s.get('y_col', '?')}"
             if filter_str:
                 summary += f" · {filter_str}"
@@ -1652,13 +1647,17 @@ class MoveNodesButton(NavigationButton):
         self.parent.toggle_move_nodes(self.button().isChecked())
 
 
-def _ref_series_auto_label(s: dict) -> str:
-    filter_str = ", ".join(
+def _ref_series_filter_str(s: dict) -> str:
+    return ", ".join(
         f"{f['col']}={'+'.join(str(v) for v in f['values'])}"
         for f in s.get("filters", [])
         if f.get("values")
     )
+
+
+def _ref_series_auto_label(s: dict) -> str:
     base = f"{s.get('table', '?')}.{s.get('y_col', '?')}"
+    filter_str = _ref_series_filter_str(s)
     return f"{base} [{filter_str}]" if filter_str else base
 
 

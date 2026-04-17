@@ -778,10 +778,35 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
 
     @mock.patch("midvatten.tools.import_interlab4.tables_columns")
     def test_dest_table_returns_s_qual_lab_when_selected(self, mock_tables_columns):
-        mock_tables_columns.return_value = {}
+        mock_tables_columns.return_value = {"s_qual_lab": []}
         self.importinstance.init_gui()
         self.importinstance.radio_s_qual_lab.setChecked(True)
         assert self.importinstance.dest_table == "s_qual_lab"
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch(
+        "midvatten.tools.import_interlab4.midvatten_utils.select_files",
+        return_value=[],
+    )
+    @mock.patch(
+        "midvatten.tools.import_interlab4.sql_load_fr_db",
+        return_value=(True, []),
+    )
+    @mock.patch(
+        "midvatten.tools.import_interlab4.tables_columns",
+        return_value={"s_qual_lab": [], "w_qual_lab": []},
+    )
+    def test_skip_reports_queries_dest_table(
+        self, mock_tables_columns, mock_sql_load, mock_select_files, mock_messagebar
+    ):
+        print(mock_messagebar.mock_calls)
+        self.importinstance.init_gui()
+        self.importinstance.skip_imported_reports.setChecked(True)
+        self.importinstance.radio_s_qual_lab.setChecked(True)
+        self.importinstance.load_files()
+        call_sql = mock_sql_load.call_args[0][0]
+        assert '"s_qual_lab"' in call_sql
+        assert '"w_qual_lab"' not in call_sql
 
 
 class TestExtractCreateTable:

@@ -40,6 +40,7 @@ from midvatten.tools.utils import common_utils, db_utils, midvatten_utils
 from midvatten.tools.utils.common_utils import Cancel
 from midvatten.tools.utils.date_utils import datestring_to_date
 from midvatten.tools.utils.db_utils import sql_load_fr_db, tables_columns
+from midvatten.tools.utils.db_utils.dialect import ident
 from midvatten.tools.utils.file_utils import get_full_filename
 from midvatten.tools.utils.gui_utils import (
     ExtendedQPlainTextEdit,
@@ -61,9 +62,7 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
         self.obsid_assignment_table = "zz_interlab4_obsid_assignment"
         super().__init__(iface, ms)
         self.setWindowTitle(
-            QCoreApplication.translate(
-                "Interlab4Import", "Import interlab4 data"
-            )
+            QCoreApplication.translate("Interlab4Import", "Import interlab4 data")
         )
 
     def show(self) -> None:
@@ -230,11 +229,10 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
         )
 
         if self.skip_imported_reports.isChecked():
+            tbl = ident(self.dest_table, allowed=["w_qual_lab", "s_qual_lab"])
             skip_reports = [
                 str(x[0])
-                for x in sql_load_fr_db("""SELECT DISTINCT report FROM w_qual_lab;""")[
-                    1
-                ]
+                for x in sql_load_fr_db(f"SELECT DISTINCT report FROM {tbl};")[1]
             ]
         else:
             skip_reports = []
@@ -350,7 +348,7 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
         importer = import_data_to_db.MidvDataImporter()
 
         answer = importer.general_import(
-            dest_table="w_qual_lab",
+            dest_table=self.dest_table,
             file_data=self.wquallab_data_table,
             dump_temptable=self.dump_2_temptable.isChecked(),
         )

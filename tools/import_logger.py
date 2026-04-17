@@ -745,6 +745,7 @@ class LeveloggerParser:
         filedata = []
         location = None
         timezone = None
+        serial_number = None
         level_unit_factor_to_cm = 100
         spec_cond_factor_to_mscm = 0.001
         filename = os.path.basename(path)
@@ -769,7 +770,7 @@ class LeveloggerParser:
                 )
                 % filename
             )
-            return [], filename, location, timezone, None
+            return [], filename, location, timezone, serial_number
 
         delimiter = common_utils.get_delimiter_from_file_rows(
             rows_unsplit[data_header_idx:],
@@ -779,7 +780,7 @@ class LeveloggerParser:
         )
 
         if delimiter is None:
-            return [], filename, location, timezone, None
+            return [], filename, location, timezone, serial_number
 
         rows = [row.split(";") for row in rows_unsplit]
         lens = set([len(row) for row in rows[data_header_idx:]])

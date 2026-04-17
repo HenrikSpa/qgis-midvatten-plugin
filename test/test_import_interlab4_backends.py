@@ -29,6 +29,23 @@ import pytest
 from midvatten.tools.utils import common_utils, gui_utils, db_utils
 from midvatten.test import mocks_for_tests, utils_for_tests
 from midvatten.tools.import_interlab4 import Interlab4Import
+from midvatten.tools.obsid_assignment_dialog import DialogOutcome
+
+
+def _make_passthrough_dialog(
+    editor_rows, existing_obsids, reload_callback=None, parent=None
+):
+    """Fake ObsidAssignmentDialog that returns APPLY without changing rows.
+
+    Cached rows already have their obsid pre-filled; uncached/override rows
+    keep obsid="" and fall through to the NotFoundQuestion fallback, preserving
+    the original test behaviour.
+    """
+    fake = mock.MagicMock()
+    fake.editor_rows = editor_rows
+    fake.outcome = DialogOutcome.APPLY
+    fake.exec_ = lambda: None
+    return fake
 
 
 #
@@ -61,6 +78,10 @@ class Interlab4ImporterDBMixin:
 
         with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as filename:
 
+            @mock.patch(
+                "midvatten.tools.import_interlab4.ObsidAssignmentDialog",
+                side_effect=_make_passthrough_dialog,
+            )
             @mock.patch("midvatten.tools.utils.common_utils.NotFoundQuestion")
             @mock.patch(
                 "midvatten.tools.import_data_to_db.common_utils.Askuser",
@@ -81,6 +102,7 @@ class Interlab4ImporterDBMixin:
                 mock_skippopup,
                 mock_iface,
                 mock_not_found_question,
+                mock_dialog,
             ):
                 mock_not_found_question.return_value.answer = "ok"
                 mock_not_found_question.return_value.value = "anobsid"
@@ -123,6 +145,10 @@ class Interlab4ImporterDBMixin:
 
         with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as filename:
 
+            @mock.patch(
+                "midvatten.tools.import_interlab4.ObsidAssignmentDialog",
+                side_effect=_make_passthrough_dialog,
+            )
             @mock.patch("midvatten.tools.utils.common_utils.NotFoundQuestion")
             @mock.patch(
                 "midvatten.tools.import_data_to_db.common_utils.Askuser",
@@ -143,6 +169,7 @@ class Interlab4ImporterDBMixin:
                 mock_skippopup,
                 mock_iface,
                 mock_not_found_question,
+                mock_dialog,
             ):
                 mock_not_found_question.return_value.answer = "ok"
                 mock_not_found_question.return_value.value = "anobsid"
@@ -194,6 +221,10 @@ class Interlab4ImporterDBMixin:
 
         with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as filename:
 
+            @mock.patch(
+                "midvatten.tools.import_interlab4.ObsidAssignmentDialog",
+                side_effect=_make_passthrough_dialog,
+            )
             @mock.patch("midvatten.tools.utils.common_utils.NotFoundQuestion")
             @mock.patch(
                 "midvatten.tools.import_data_to_db.common_utils.Askuser",
@@ -214,6 +245,7 @@ class Interlab4ImporterDBMixin:
                 mock_skippopup,
                 mock_iface,
                 mock_not_found_question,
+                mock_dialog,
             ):
                 # mock_not_found_question.return_value.answer = 'ok'
                 # mock_not_found_question.return_value.value = 'anobsid'
@@ -268,6 +300,10 @@ class Interlab4ImporterDBMixin:
 
         with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as filename:
 
+            @mock.patch(
+                "midvatten.tools.import_interlab4.ObsidAssignmentDialog",
+                side_effect=_make_passthrough_dialog,
+            )
             @mock.patch("midvatten.tools.utils.common_utils.NotFoundQuestion")
             @mock.patch(
                 "midvatten.tools.import_data_to_db.common_utils.Askuser",
@@ -288,6 +324,7 @@ class Interlab4ImporterDBMixin:
                 mock_skippopup,
                 mock_iface,
                 mock_not_found_question,
+                mock_dialog,
             ):
                 mock_not_found_question.return_value.answer = "ok"
                 mock_not_found_question.return_value.value = "anobsid"
@@ -339,6 +376,10 @@ class Interlab4ImporterDBMixin:
 
         with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as filename:
 
+            @mock.patch(
+                "midvatten.tools.import_interlab4.ObsidAssignmentDialog",
+                side_effect=_make_passthrough_dialog,
+            )
             @mock.patch("midvatten.tools.utils.common_utils.NotFoundQuestion")
             @mock.patch(
                 "midvatten.tools.import_data_to_db.common_utils.Askuser",
@@ -359,6 +400,7 @@ class Interlab4ImporterDBMixin:
                 mock_skippopup,
                 mock_iface,
                 mock_not_found_question,
+                mock_dialog,
             ):
                 mock_not_found_question.return_value.answer = "ok"
                 mock_not_found_question.return_value.value = "anobsid"
@@ -745,6 +787,10 @@ class Interlab4ImporterDBMixin:
 
         with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as filename:
 
+            @mock.patch(
+                "midvatten.tools.import_interlab4.ObsidAssignmentDialog",
+                side_effect=_make_passthrough_dialog,
+            )
             @mock.patch("midvatten.tools.utils.common_utils.NotFoundQuestion")
             @mock.patch(
                 "midvatten.tools.import_data_to_db.common_utils.Askuser",
@@ -765,6 +811,7 @@ class Interlab4ImporterDBMixin:
                 mock_skippopup,
                 mock_iface,
                 mock_not_found_question,
+                mock_dialog,
             ):
                 mock_not_found_question.return_value.answer = "ok"
                 mock_not_found_question.return_value.value = "anobsid"

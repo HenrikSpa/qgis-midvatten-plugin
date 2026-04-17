@@ -1,13 +1,23 @@
 """Bulk obsid assignment editor for Interlab4 (and reusable elsewhere).
 
-Pure-Python support code for the dialog lives at the top of this module so it
-can be imported and unit-tested without requiring a Qt event loop. The
-QWidget / QDialog classes live below, after the imports guard.
+Pure-Python support code (EditorRow, group_editor_rows) lives near the top;
+the QDialog subclass follows below.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+
+from qgis.PyQt.QtCore import QCoreApplication
+from qgis.PyQt.QtWidgets import (
+    QAbstractItemView,
+    QDialog,
+    QDialogButtonBox,
+    QHeaderView,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+)
 
 
 _OVERRIDE_FIELDS = ("provmärkning", "provtagningsorsak")
@@ -98,3 +108,62 @@ def group_editor_rows(
                 existing.lablitteras.append(lablittera)
 
     return list(clean_groups.values()) + override_rows
+
+
+def _tr(text: str) -> str:
+    return QCoreApplication.translate("Interlab4ObsidDialog", text)
+
+
+_COL_SPEC = 0
+_COL_NAMN = 1
+_COL_MARK = 2
+_COL_NLAB = 3
+_COL_OBSID = 4
+_COLUMN_HEADERS = (
+    "specifik provplats",
+    "provplatsnamn",
+    "provmärkning",
+    "#lablitteras",
+    "obsid",
+)
+
+
+class ObsidAssignmentDialog(QDialog):
+    """Bulk obsid-assignment editor. Reusable; no Interlab4-specific imports."""
+
+    def __init__(
+        self, editor_rows: list[EditorRow], existing_obsids: list[str], parent=None
+    ):
+        super().__init__(parent)
+        self.setWindowTitle(_tr("Assign obsids"))
+        self.editor_rows = list(editor_rows)
+        self.existing_obsids = list(existing_obsids)
+        self._build_ui()
+        self._populate_table()
+
+    def _build_ui(self):
+        layout = QVBoxLayout(self)
+        self.table = QTableWidget(0, len(_COLUMN_HEADERS), self)
+        self.table.setHorizontalHeaderLabels([_tr(h) for h in _COLUMN_HEADERS])
+        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.table.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.table.setSortingEnabled(True)
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
+        layout.addWidget(self.table)
+
+        self.buttons = QDialogButtonBox()
+        layout.addWidget(self.buttons)
+
+    def _populate_table(self):
+        self.table.setSortingEnabled(False)
+        self.table.setRowCount(len(self.editor_rows))
+        for row_idx, row in enumerate(self.editor_rows):
+            self.table.setItem(
+                row_idx, _COL_SPEC, QTableWidgetItem(row.specifik_provplats)
+            )
+            self.table.setItem(row_idx, _COL_NAMN, QTableWidgetItem(row.provplatsnamn))
+            self.table.setItem(row_idx, _COL_MARK, QTableWidgetItem(row.provmärkning))
+            self.table.setItem(
+                row_idx, _COL_NLAB, QTableWidgetItem(str(len(row.lablitteras)))
+            )
+            self.table.setItem(row_idx, _COL_OBSID, QTableWidgetItem(row.obsid))

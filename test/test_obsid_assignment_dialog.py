@@ -1,7 +1,10 @@
 """Tests for ObsidAssignmentDialog support code."""
 
+import gc
+
 from midvatten.tools.obsid_assignment_dialog import (
     EditorRow,
+    ObsidAssignmentDialog,
     group_editor_rows,
 )
 
@@ -87,3 +90,22 @@ class TestGroupEditorRows:
         assert len(editor_rows) == 1
         assert editor_rows[0].is_override is False
         assert editor_rows[0].lablitteras == ["L1", "L2"]
+
+
+class TestObsidAssignmentDialogShell:
+    def teardown_method(self):
+        gc.collect()
+
+    def test_dialog_shows_one_row_per_editor_row(self):
+        rows = [
+            EditorRow("Br1", "Brunn 1", "", "", ["L1", "L2"]),
+            EditorRow("Br2", "Brunn 2", "", "", ["L3"]),
+        ]
+        dialog = ObsidAssignmentDialog(rows, existing_obsids=["Br1", "Br2"])
+        try:
+            assert dialog.table.rowCount() == 2
+            assert dialog.table.item(0, 0).text() == "Br1"
+            assert dialog.table.item(0, 1).text() == "Brunn 1"
+            assert dialog.table.item(0, 3).text() == "2"  # #lablitteras column
+        finally:
+            dialog.deleteLater()

@@ -36,8 +36,10 @@ class EditorRow:
 def _has_override(row: dict) -> bool:
     for key in _OVERRIDE_FIELDS:
         value = (row.get(key) or "").strip()
-        # Match the existing provtagningsorsak sanitisation in import_interlab4.py
-        value = value.replace("-", "").replace("0", "").strip()
+        if key == "provtagningsorsak":
+            # Match the existing sanitisation in import_interlab4.py:
+            # "-" or "0" placeholders in provtagningsorsak mean "no reason".
+            value = value.replace("-", "").replace("0", "").strip()
         if value:
             return True
     return False

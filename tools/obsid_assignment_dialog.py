@@ -217,7 +217,11 @@ class ObsidAssignmentDialog(QDialog):
         self.table.setHorizontalHeaderLabels([_tr(h) for h in _COLUMN_HEADERS])
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.table.setSortingEnabled(True)
+        # Sorting is intentionally disabled: _on_item_changed and bulk actions
+        # index editor_rows by the table's visual row, which would drift under
+        # a user-initiated sort. Can be enabled later by storing the list index
+        # in Qt.UserRole and routing through it.
+        self.table.setSortingEnabled(False)
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
         search_row = QHBoxLayout()
         search_row.addWidget(QLabel(_tr("Search:")))
@@ -281,25 +285,30 @@ class ObsidAssignmentDialog(QDialog):
         self.table.itemChanged.connect(self._on_item_changed)
 
     def _populate_table(self):
-        self.table.setSortingEnabled(False)
-        self.table.setRowCount(len(self.editor_rows))
-        for row_idx, row in enumerate(self.editor_rows):
-            self.table.setItem(
-                row_idx, _COL_SPEC, QTableWidgetItem(row.specifik_provplats)
-            )
-            self.table.setItem(row_idx, _COL_NAMN, QTableWidgetItem(row.provplatsnamn))
-            self.table.setItem(
-                row_idx, _COL_ORSAK, QTableWidgetItem(row.provtagningsorsak)
-            )
-            self.table.setItem(
-                row_idx, _COL_NLAB, QTableWidgetItem(str(len(row.lablitteras)))
-            )
-            self.table.setItem(row_idx, _COL_OBSID, QTableWidgetItem(row.obsid))
-            if row.cached:
-                for col in range(self.table.columnCount()):
-                    item = self.table.item(row_idx, col)
-                    if item is not None:
-                        item.setForeground(QBrush(QColor(120, 120, 120)))
+        self.table.blockSignals(True)
+        try:
+            self.table.setRowCount(len(self.editor_rows))
+            for row_idx, row in enumerate(self.editor_rows):
+                self.table.setItem(
+                    row_idx, _COL_SPEC, QTableWidgetItem(row.specifik_provplats)
+                )
+                self.table.setItem(
+                    row_idx, _COL_NAMN, QTableWidgetItem(row.provplatsnamn)
+                )
+                self.table.setItem(
+                    row_idx, _COL_ORSAK, QTableWidgetItem(row.provtagningsorsak)
+                )
+                self.table.setItem(
+                    row_idx, _COL_NLAB, QTableWidgetItem(str(len(row.lablitteras)))
+                )
+                self.table.setItem(row_idx, _COL_OBSID, QTableWidgetItem(row.obsid))
+                if row.cached:
+                    for col in range(self.table.columnCount()):
+                        item = self.table.item(row_idx, col)
+                        if item is not None:
+                            item.setForeground(QBrush(QColor(120, 120, 120)))
+        finally:
+            self.table.blockSignals(False)
         self._apply_filters()
 
     def set_obsid_value(self, row_idx: int, obsid: str):
@@ -398,6 +407,10 @@ class ObsidAssignmentDialog(QDialog):
         current_text = self.fill_combo.currentText()
         self.fill_combo.clear()
         self.fill_combo.addItems(self.existing_obsids)
+        new_completer = QCompleter(self.existing_obsids, self.fill_combo)
+        new_completer.setCaseSensitivity(Qt.CaseInsensitive)
+        new_completer.setFilterMode(Qt.MatchContains)
+        self.fill_combo.setCompleter(new_completer)
         self.fill_combo.setEditText(current_text)
         for row_idx in range(self.table.rowCount()):
             self._paint_obsid_cell(row_idx)

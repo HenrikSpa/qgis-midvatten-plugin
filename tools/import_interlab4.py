@@ -40,6 +40,7 @@ from midvatten.tools.utils import common_utils, db_utils, midvatten_utils
 from midvatten.tools.utils.common_utils import Cancel
 from midvatten.tools.utils.date_utils import datestring_to_date
 from midvatten.tools.utils.db_utils import sql_load_fr_db, tables_columns
+from midvatten.tools.utils.file_utils import get_full_filename
 from midvatten.tools.utils.gui_utils import (
     ExtendedQPlainTextEdit,
     RowEntry,
@@ -945,7 +946,34 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
             raise common_utils.UserInterruptError()
 
     def _on_dest_table_changed(self, checked: bool = True) -> None:
-        pass
+        if not self.radio_s_qual_lab.isChecked():
+            return
+        if "s_qual_lab" in tables_columns():
+            return
+        answer = qgis.PyQt.QtWidgets.QMessageBox.question(
+            self,
+            QCoreApplication.translate("Interlab4Import", "Create table"),
+            QCoreApplication.translate(
+                "Interlab4Import",
+                "Table s_qual_lab does not exist. Create it now?",
+            ),
+        )
+        if answer == qgis.PyQt.QtWidgets.QMessageBox.Yes:
+            self._create_s_qual_lab()
+        else:
+            self.radio_w_qual_lab.setChecked(True)
+
+    def _create_s_qual_lab(self) -> None:
+        sql_path = get_full_filename("create_db.sql")
+        with open(sql_path, encoding="utf-8") as f:
+            sql_text = f.read()
+        ddl = self._extract_create_table(sql_text, "s_qual_lab")
+        dbconnection = db_utils.DbConnectionManager()
+        try:
+            dbconnection.execute(ddl)
+            dbconnection.commit()
+        finally:
+            dbconnection.closedb()
 
     def unitconversion_factor(self, unit):
         unit_conversion = {

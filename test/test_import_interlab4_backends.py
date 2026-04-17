@@ -25,6 +25,7 @@ import uuid
 from unittest import mock
 
 import pytest
+import qgis.PyQt.QtWidgets
 
 from midvatten.tools.utils import common_utils, gui_utils, db_utils
 from midvatten.test import mocks_for_tests, utils_for_tests
@@ -834,6 +835,37 @@ class Interlab4ImporterDBMixin:
         print(reference_string)
         print(test_string)
         assert test_string == reference_string
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch(
+        "qgis.PyQt.QtWidgets.QMessageBox.question",
+        return_value=qgis.PyQt.QtWidgets.QMessageBox.Yes,
+    )
+    def test_s_qual_lab_created_on_demand(self, mock_question, mock_messagebar):
+        print(mock_messagebar.mock_calls)
+        self.importinstance.init_gui()
+        db_utils.sql_alter_db("DROP TABLE IF EXISTS s_qual_lab")
+        assert "s_qual_lab" not in db_utils.tables_columns()
+        self.importinstance.radio_s_qual_lab.setChecked(True)
+        self.importinstance._on_dest_table_changed(checked=True)
+        assert "s_qual_lab" in db_utils.tables_columns()
+        assert self.importinstance.dest_table == "s_qual_lab"
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch(
+        "qgis.PyQt.QtWidgets.QMessageBox.question",
+        return_value=qgis.PyQt.QtWidgets.QMessageBox.No,
+    )
+    def test_s_qual_lab_reverts_when_creation_declined(
+        self, mock_question, mock_messagebar
+    ):
+        print(mock_messagebar.mock_calls)
+        self.importinstance.init_gui()
+        db_utils.sql_alter_db("DROP TABLE IF EXISTS s_qual_lab")
+        self.importinstance.radio_s_qual_lab.setChecked(True)
+        self.importinstance._on_dest_table_changed(checked=True)
+        assert "s_qual_lab" not in db_utils.tables_columns()
+        assert self.importinstance.dest_table == "w_qual_lab"
 
 
 @pytest.mark.postgis

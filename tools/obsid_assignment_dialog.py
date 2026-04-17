@@ -199,6 +199,16 @@ class ObsidAssignmentDialog(QDialog):
         self.fill_selection_button = QPushButton(_tr("Fill selection"), self)
         self.fill_selection_button.clicked.connect(self._fill_selection)
         bulk_row.addWidget(self.fill_selection_button)
+        self.skip_selection_button = QPushButton(_tr("Skip selection"), self)
+        self.skip_selection_button.clicked.connect(
+            lambda: self._set_skipped_for_selection(True)
+        )
+        bulk_row.addWidget(self.skip_selection_button)
+        self.unskip_selection_button = QPushButton(_tr("Unskip selection"), self)
+        self.unskip_selection_button.clicked.connect(
+            lambda: self._set_skipped_for_selection(False)
+        )
+        bulk_row.addWidget(self.unskip_selection_button)
         bulk_row.addStretch(1)
         layout.addLayout(bulk_row)
         layout.addWidget(self.table)
@@ -242,8 +252,10 @@ class ObsidAssignmentDialog(QDialog):
         self._paint_obsid_cell(row_idx)
 
     def row_has_invalid_obsid(self, row_idx: int) -> bool:
-        obsid = self.editor_rows[row_idx].obsid
-        return bool(obsid) and obsid not in self.existing_obsids
+        row = self.editor_rows[row_idx]
+        if row.skipped:
+            return False
+        return bool(row.obsid) and row.obsid not in self.existing_obsids
 
     def _paint_obsid_cell(self, row_idx: int):
         item = self.table.item(row_idx, _COL_OBSID)
@@ -283,6 +295,33 @@ class ObsidAssignmentDialog(QDialog):
         obsid = self.fill_combo.currentText().strip()
         for row_idx in self._selected_row_indices():
             self.set_obsid_value(row_idx, obsid)
+
+    def _set_skipped_for_selection(self, skipped: bool):
+        for row_idx in self._selected_row_indices():
+            self.editor_rows[row_idx].skipped = skipped
+            item = self.table.item(row_idx, _COL_OBSID)
+            if item is None:
+                item = QTableWidgetItem()
+                self.table.setItem(row_idx, _COL_OBSID, item)
+            if skipped:
+                item.setText("[skipped]")
+                item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+                for col in range(self.table.columnCount()):
+                    cell = self.table.item(row_idx, col)
+                    if cell is not None:
+                        font = cell.font()
+                        font.setStrikeOut(True)
+                        cell.setFont(font)
+            else:
+                item.setText(self.editor_rows[row_idx].obsid)
+                item.setFlags(item.flags() | Qt.ItemIsEditable)
+                for col in range(self.table.columnCount()):
+                    cell = self.table.item(row_idx, col)
+                    if cell is not None:
+                        font = cell.font()
+                        font.setStrikeOut(False)
+                        cell.setFont(font)
+            self._paint_obsid_cell(row_idx)
 
     def _on_item_changed(self, item):
         if item.column() != _COL_OBSID:

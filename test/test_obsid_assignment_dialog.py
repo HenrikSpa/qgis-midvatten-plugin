@@ -172,3 +172,16 @@ class TestObsidAssignmentDialogShell:
             assert dialog.editor_rows[2].obsid == ""
         finally:
             dialog.deleteLater()
+
+    def test_skip_and_unskip_selected_rows(self):
+        rows = [EditorRow("Br1", "Brunn 1", "", ["L1"])]
+        dialog = ObsidAssignmentDialog(rows, existing_obsids=["Br1"])
+        try:
+            dialog.table.selectRow(0)
+            dialog.skip_selection_button.click()
+            assert dialog.editor_rows[0].skipped is True
+            assert dialog.table.item(0, 4).text() == "[skipped]"
+            dialog.unskip_selection_button.click()
+            assert dialog.editor_rows[0].skipped is False
+        finally:
+            dialog.deleteLater()

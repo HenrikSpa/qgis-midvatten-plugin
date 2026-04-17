@@ -108,6 +108,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
 
         self.geo_bars = {}
         self.hydro_bars = {}
+        self.screen_bars = {}
         self.layer_texts = {}
         self.hydro_colors = defs.hydrocolors()
 
@@ -398,6 +399,11 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         self.layer_texts = self.get_plot_data_layer_texts(
             self.obsids_x_position, self.z_data, self.hydro_colors
         )
+        _screens_mode = self.ms.settingsdict.get("screensplotmode", "none")
+        if _screens_mode != "none":
+            self.screen_bars = self.get_screen_plot_data(self.obsids_x_position)
+        else:
+            self.screen_bars = {}
         if self.line_feature is not None:
             self.obs_lines_plot_data = self.get_plot_data_seismic(
                 self.line_layer, self.line_feature
@@ -437,6 +443,14 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
             self.text_align_edge.setChecked(True)
         if self.ms.settingsdict["secplot_apply_graded_dems"]:
             self.secplot_apply_graded_dems.setChecked(True)
+
+        _mode_map = {"none": "None", "behind": "Behind", "ontop": "On top"}
+        self.screens_mode_combo.setCurrentText(
+            _mode_map.get(self.ms.settingsdict.get("screensplotmode", "none"), "None")
+        )
+        self.screen_width_factor_spin.setValue(
+            float(self.ms.settingsdict.get("screenwidthfactor", 1.2))
+        )
 
     def fill_combo_boxes(self):
         self.textcol_combo_box.clear()
@@ -890,6 +904,43 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         common_utils.stop_waiting_cursor()  # now this long process is done and the cursor is back as normal
         return bars
 
+    def get_screen_plot_data(self, obsids_x_position: dict) -> dict:
+        """Fetch screen intervals grouped by screenshort for plotting.
+
+        Returns a dict ``{screenshort: {"x": [...], "height": [...], "bottom": [...]}}``
+        matching the shape produced by ``get_plot_data_bars()``.  Returns an empty
+        dict if the ``screen`` table doesn't exist (older DBs) or no rows match.
+        """
+        if not db_utils.verify_table_exists("screen", dbconnection=self.dbconnection):
+            return {}
+
+        bars: dict = {}
+        if not obsids_x_position:
+            return bars
+
+        ph = self.dbconnection.placeholder()
+        sql = f"SELECT depthtop, depthbot, screenshort FROM screen WHERE obsid = {ph} ORDER BY screenid"
+
+        for obs, x in obsids_x_position.items():
+            if obs not in self.z_data:
+                continue
+            recs = self.dbconnection.execute_and_fetchall(sql, args=(obs,))
+            if not recs:
+                continue
+            z = self.z_data[obs]["z"]
+            for row in recs:
+                depthtop, depthbot, screenshort = row[0], row[1], row[2]
+                if depthtop is None or depthbot is None:
+                    continue
+                key = str(screenshort).lower() if screenshort is not None else "default"
+                height = float(depthbot) - float(depthtop)
+                bottom = z - float(depthbot)
+                bars.setdefault(key, {}).setdefault("x", []).append(x)
+                bars.setdefault(key, {}).setdefault("height", []).append(height)
+                bars.setdefault(key, {}).setdefault("bottom", []).append(bottom)
+
+        return bars
+
     def get_plot_data_layer_texts(self, obsids_x_position, z_data, hydro_colors):
         bar_texts = {}
         common_utils.start_waiting_cursor()  # show the user this may take a long time...
@@ -1042,6 +1093,21 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                     xmax - xmin
                 )
 
+                _screens_mode = self.ms.settingsdict.get("screensplotmode", "none")
+                _screens_width_factor = float(
+                    self.ms.settingsdict.get("screenwidthfactor", 1.2)
+                )
+
+                if _screens_mode == "behind" and self.screen_bars:
+                    _painters.paint_screen_bars(
+                        self.figure,
+                        self.screen_bars,
+                        defs.screen_style_dict(),
+                        width=self.barwidth,
+                        zorder=1,
+                        width_factor=_screens_width_factor,
+                    )
+
                 if self.ms.settingsdict["stratigraphyplotted"]:
                     self.plot_bars(
                         self.geo_bars,
@@ -1064,6 +1130,16 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
                     )
                     if len(self.ms.settingsdict["secplottext"]) > 0:
                         self.write_layer_text()
+
+                if _screens_mode == "ontop" and self.screen_bars:
+                    _painters.paint_screen_bars(
+                        self.figure,
+                        self.screen_bars,
+                        defs.screen_style_dict(),
+                        width=self.barwidth,
+                        zorder=3,
+                        width_factor=_screens_width_factor,
+                    )
 
                 self.plot_water_level()
 
@@ -1145,6 +1221,13 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
         self.ms.settingsdict["stratigraphyplotted"] = self.plot_stratigraphy.isChecked()
         self.ms.settingsdict["secplothydrologyplotted"] = (
             self.hydrology_radio_button.isChecked()
+        )
+        _mode_to_key = {"None": "none", "Behind": "behind", "On top": "ontop"}
+        self.ms.settingsdict["screensplotmode"] = _mode_to_key.get(
+            self.screens_mode_combo.currentText(), "none"
+        )
+        self.ms.settingsdict["screenwidthfactor"] = float(
+            self.screen_width_factor_spin.value()
         )
         self.ms.settingsdict["secplotlabelsplotted"] = self.labels_check_box.isChecked()
         self.ms.settingsdict["secplotlegendplotted"] = self.create_legend.isChecked()

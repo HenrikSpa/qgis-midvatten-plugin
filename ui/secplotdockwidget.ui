@@ -957,6 +957,86 @@ p, li { white-space: pre-wrap; }
                               </property>
                              </widget>
                             </item>
+                            <item row="5" column="0">
+                             <widget class="QLabel" name="label_screens">
+                              <property name="font">
+                               <font>
+                                <pointsize>9</pointsize>
+                                <weight>50</weight>
+                                <bold>false</bold>
+                               </font>
+                              </property>
+                              <property name="text">
+                               <string>Screens:</string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="5" column="1" colspan="3">
+                             <widget class="QComboBox" name="screens_mode_combo">
+                              <property name="font">
+                               <font>
+                                <pointsize>9</pointsize>
+                                <weight>50</weight>
+                                <bold>false</bold>
+                               </font>
+                              </property>
+                              <item>
+                               <property name="text">
+                                <string>None</string>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>Behind</string>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>On top</string>
+                               </property>
+                              </item>
+                             </widget>
+                            </item>
+                            <item row="6" column="0">
+                             <widget class="QLabel" name="label_screen_width_factor">
+                              <property name="font">
+                               <font>
+                                <pointsize>9</pointsize>
+                                <weight>50</weight>
+                                <bold>false</bold>
+                               </font>
+                              </property>
+                              <property name="text">
+                               <string>Screen width factor:</string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="6" column="1" colspan="3">
+                             <widget class="QDoubleSpinBox" name="screen_width_factor_spin">
+                              <property name="font">
+                               <font>
+                                <pointsize>9</pointsize>
+                                <weight>50</weight>
+                                <bold>false</bold>
+                               </font>
+                              </property>
+                              <property name="minimum">
+                               <double>0.100000000000000</double>
+                              </property>
+                              <property name="maximum">
+                               <double>2.000000000000000</double>
+                              </property>
+                              <property name="singleStep">
+                               <double>0.100000000000000</double>
+                              </property>
+                              <property name="decimals">
+                               <number>1</number>
+                              </property>
+                              <property name="value">
+                               <double>1.200000000000000</double>
+                              </property>
+                             </widget>
+                            </item>
                            </layout>
                           </widget>
                          </item>

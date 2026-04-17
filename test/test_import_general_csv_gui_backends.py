@@ -1449,6 +1449,124 @@ class GeneralCsvGuiMixin:
             print(str(test_string))
             assert test_string == reference_string
 
+    def test_import_w_levels_logger_with_source_routes_to_series(self):
+        """CSV with source column into w_levels_logger creates one
+        w_logger_series row per distinct (obsid, source) group and tags
+        each imported row with the matching series_id.
+        """
+        file = [
+            "obsid,date_time,head_cm,source",
+            "rb1,2016-03-15 10:30:00,100.0,fileA",
+            "rb1,2016-03-15 11:00:00,101.0,fileA",
+            "rb1,2016-03-15 12:00:00,102.0,fileB",
+            "rb2,2016-03-15 10:30:00,200.0,fileA",
+        ]
+
+        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb1')""")
+        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb2')""")
+
+        with common_utils.tempinput("\n".join(file), "utf-8") as filename:
+
+            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("qgis.utils.iface", autospec=True)
+            @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
+            @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
+            def _test(
+                self,
+                filename,
+                mock_filename,
+                mock_skippopup,
+                mock_encoding,
+                mock_iface,
+                mock_askuser,
+            ):
+                mock_filename.return_value = [filename]
+                mock_encoding.return_value = ["utf-8", True]
+
+                def side_effect(*args, **kwargs):
+                    mock_result = mock.MagicMock()
+                    if "msg" in kwargs and kwargs["msg"].startswith(
+                        "Does the file contain a header?"
+                    ):
+                        mock_result.result = 1
+                        return mock_result
+                    if len(args) > 1:
+                        if args[1].startswith("Do you want to confirm"):
+                            mock_result.result = 0
+                            return mock_result
+                        elif args[1].startswith("Do you want to import all"):
+                            mock_result.result = 0
+                            return mock_result
+                        elif args[1].startswith("Note:\nForeign keys"):
+                            mock_result.result = 1
+                            return mock_result
+                        elif args[1].startswith("Please note!\nThere are"):
+                            mock_result.result = 1
+                            return mock_result
+                        elif args[1].startswith("It is a strong recommendation"):
+                            mock_result.result = 0
+                            return mock_result
+
+                mock_askuser.side_effect = side_effect
+
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = GeneralCsvImportGui(self.iface, ms)
+                importer.load_gui()
+                importer.load_files()
+                importer.table_chooser.import_method = "w_levels_logger"
+
+                for column in importer.table_chooser.columns:
+                    names = {
+                        "obsid": "obsid",
+                        "date_time": "date_time",
+                        "head_cm": "head_cm",
+                        "source": "source",
+                    }
+                    if column.db_column in names:
+                        column.file_column_name = names[column.db_column]
+
+                importer.start_import()
+
+            _test(self, filename)
+
+            series_rows = db_utils.sql_load_fr_db(
+                "SELECT obsid, source FROM w_logger_series ORDER BY obsid, source"
+            )[1]
+            # Three distinct (obsid, source) groups: (rb1, fileA), (rb1, fileB), (rb2, fileA)
+            assert [tuple(r) for r in series_rows] == [
+                ("rb1", "fileA"),
+                ("rb1", "fileB"),
+                ("rb2", "fileA"),
+            ]
+
+            # Every imported w_levels_logger row has a series_id.
+            rows = db_utils.sql_load_fr_db(
+                "SELECT l.obsid, l.date_time, l.head_cm, s.source"
+                " FROM w_levels_logger l"
+                " LEFT JOIN w_logger_series s ON s.id = l.series_id"
+                " ORDER BY l.obsid, l.date_time"
+            )[1]
+            assert [tuple(r) for r in rows] == [
+                ("rb1", "2016-03-15 10:30:00", 100.0, "fileA"),
+                ("rb1", "2016-03-15 11:00:00", 101.0, "fileA"),
+                ("rb1", "2016-03-15 12:00:00", 102.0, "fileB"),
+                ("rb2", "2016-03-15 10:30:00", 200.0, "fileA"),
+            ]
+
+            # The two rows in (rb1, fileA) share one series_id; the rb1/fileB
+            # row has a different one.
+            sids = db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, series_id FROM w_levels_logger"
+                " WHERE obsid = 'rb1' ORDER BY date_time"
+            )[1]
+            assert sids[0][2] == sids[1][2]  # both rb1 fileA rows
+            assert sids[0][2] != sids[2][2]  # rb1 fileA vs rb1 fileB
+
 
 class GeneralCsvGuiFromLayerMixin:
     """Test to make sure wlvllogg_import goes all the way to the end without errors"""

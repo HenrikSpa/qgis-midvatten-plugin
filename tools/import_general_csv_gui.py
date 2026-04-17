@@ -41,7 +41,7 @@ from midvatten.tools.utils.gui_utils import (
     RowEntryGrid,
     DistinctValuesBrowser,
 )
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import_ui_dialog = qgis.PyQt.uic.loadUiType(
     os.path.join(os.path.dirname(__file__), "..", "ui", "import_fieldlogger.ui")
@@ -77,6 +77,19 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
             ).items()
             if not k.endswith("_geom")
         }
+        # On the new schema, source has moved from w_levels_logger to
+        # w_logger_series. Expose a virtual "source" column on
+        # w_levels_logger in the table chooser so users can still map their
+        # CSV "source" column to w_levels_logger imports. start_import
+        # intercepts and creates one w_logger_series row per distinct
+        # (obsid, source) group, replacing the virtual source column with
+        # the real series_id before the insert.
+        wll_cols = list(self.tables_columns_info.get("w_levels_logger", []))
+        has_series_id = any(col[1] == "series_id" for col in wll_cols)
+        if has_series_id and "w_logger_series" in self.tables_columns_info:
+            next_idx = (max([col[0] for col in wll_cols]) + 1) if wll_cols else 0
+            wll_cols.append((next_idx, "source", "TEXT", 0, None, 0))
+            self.tables_columns_info["w_levels_logger"] = wll_cols
         self.table_chooser = ImportTableChooser(
             self.tables_columns_info, file_header=None
         )
@@ -392,6 +405,9 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
 
         file_data = self.reformat_date_time(file_data)
 
+        if dest_table == "w_levels_logger":
+            file_data = self._route_source_to_logger_series(file_data)
+
         importer = import_data_to_db.MidvDataImporter()
         answer = importer.general_import(
             dest_table=dest_table,
@@ -403,6 +419,127 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
 
         if self.close_after_import.isChecked():
             self.close()
+
+    def _route_source_to_logger_series(
+        self, file_data: List[List[Any]]
+    ) -> List[List[Any]]:
+        """For w_levels_logger imports on the new schema, turn ``source`` into
+        ``series_id`` by creating one fresh ``w_logger_series`` row per
+        distinct ``(obsid, source)`` group.
+
+        Always creates new series rows, never matches existing ones, because
+        ``source`` is free-form text that different batches may intentionally
+        reuse. Dropping a ``series_id`` column from the CSV (with a warning)
+        is also handled here: cross-DB integer ids don't translate, so
+        letting them pass would silently link imported rows to the wrong
+        series on the target database.
+        """
+        if not file_data or len(file_data) < 2:
+            return file_data
+
+        header = list(file_data[0])
+        rows = [list(r) for r in file_data[1:]]
+
+        if "series_id" in header:
+            idx = header.index("series_id")
+            header.pop(idx)
+            for row in rows:
+                if idx < len(row):
+                    row.pop(idx)
+            common_utils.MessagebarAndLog.warning(
+                log_msg=QCoreApplication.translate(
+                    "GeneralCsvImportGui",
+                    "Ignoring 'series_id' column from CSV on import to"
+                    " w_levels_logger: cross-database ids do not translate."
+                    " Use the 'source' column to group rows into new series"
+                    " instead.",
+                )
+            )
+
+        if "source" not in header:
+            return [header] + rows
+
+        existing_tables = db_utils.tables_columns(dbconnection=self.dbconnection)
+        if "w_logger_series" not in existing_tables:
+            return [header] + rows
+        if "series_id" not in existing_tables.get("w_levels_logger", []):
+            return [header] + rows
+        if "obsid" not in header:
+            common_utils.MessagebarAndLog.warning(
+                log_msg=QCoreApplication.translate(
+                    "GeneralCsvImportGui",
+                    "CSV has a 'source' column but no 'obsid' column; cannot"
+                    " create w_logger_series rows. Source values will be"
+                    " dropped.",
+                )
+            )
+            src_idx = header.index("source")
+            header.pop(src_idx)
+            for row in rows:
+                if src_idx < len(row):
+                    row.pop(src_idx)
+            return [header] + rows
+
+        src_idx = header.index("source")
+        obsid_idx = header.index("obsid")
+
+        dbconn = (
+            self.dbconnection
+            if self.dbconnection is not None
+            else db_utils.DbConnectionManager()
+        )
+        close_dbconn = self.dbconnection is None
+        description = QCoreApplication.translate(
+            "GeneralCsvImportGui", "Imported from general CSV"
+        )
+        try:
+            ph = dbconn.placeholder()
+            key_to_sid: Dict[Tuple[Any, Optional[str]], int] = {}
+            for row in rows:
+                obsid = row[obsid_idx] if obsid_idx < len(row) else None
+                source_raw = row[src_idx] if src_idx < len(row) else None
+                source_val = source_raw if source_raw not in ("", None) else None
+                if not obsid:
+                    continue
+                key = (obsid, source_val)
+                if key in key_to_sid:
+                    continue
+                dbconn.execute(
+                    f"INSERT INTO w_logger_series"
+                    f" (obsid, source, description)"
+                    f" VALUES ({ph}, {ph}, {ph})",
+                    (obsid, source_val, description),
+                )
+                if dbconn.dbtype == "spatialite":
+                    sid = dbconn.execute_and_fetchall(
+                        "SELECT last_insert_rowid()"
+                    )[0][0]
+                else:
+                    sid = dbconn.execute_and_fetchall(
+                        "SELECT lastval()"
+                    )[0][0]
+                key_to_sid[key] = sid
+            dbconn.commit()
+        finally:
+            if close_dbconn:
+                dbconn.closedb()
+
+        new_header = list(header)
+        new_header[src_idx] = "series_id"
+        new_rows = []
+        for row in rows:
+            new_row = list(row)
+            if len(new_row) <= src_idx:
+                new_row.extend([None] * (src_idx + 1 - len(new_row)))
+            obsid = new_row[obsid_idx] if obsid_idx < len(new_row) else None
+            source_raw = new_row[src_idx] if src_idx < len(new_row) else None
+            source_val = source_raw if source_raw not in ("", None) else None
+            if obsid and (obsid, source_val) in key_to_sid:
+                new_row[src_idx] = key_to_sid[(obsid, source_val)]
+            else:
+                new_row[src_idx] = None
+            new_rows.append(new_row)
+        return [new_header] + new_rows
 
     @staticmethod
     def translate_and_reorder_file_data(
@@ -723,7 +860,11 @@ class ColumnEntry:
 
         self.db_column = tables_columns_info[1]
         self.column_type = tables_columns_info[2]
-        self.notnull = int(tables_columns_info[3])
+        # Required means NOT NULL AND no column default. A column with a
+        # default (e.g. ``created_at DEFAULT CURRENT_TIMESTAMP``) does not
+        # need to be supplied by the CSV - the DB fills it in.
+        _has_default = tables_columns_info[4] not in (None, "")
+        self.notnull = int(tables_columns_info[3]) and not _has_default
         pk = int(tables_columns_info[5])
         concatted_info = ", ".join(
             [

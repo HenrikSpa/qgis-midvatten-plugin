@@ -7,6 +7,7 @@ the QDialog subclass follows below.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from enum import Enum
 
 from qgis.PyQt.QtCore import Qt, QCoreApplication
 from qgis.PyQt.QtGui import QBrush, QColor
@@ -16,17 +17,23 @@ from qgis.PyQt.QtWidgets import (
     QComboBox,
     QCompleter,
     QDialog,
-    QDialogButtonBox,
     QHBoxLayout,
     QHeaderView,
     QLabel,
     QLineEdit,
+    QMessageBox,
     QPushButton,
     QStyledItemDelegate,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
 )
+
+
+class DialogOutcome(Enum):
+    APPLY = "apply"
+    SAVE_DRAFT = "save_draft"
+    CANCEL = "cancel"
 
 
 @dataclass
@@ -167,6 +174,7 @@ class ObsidAssignmentDialog(QDialog):
         self.editor_rows = list(editor_rows)
         self.existing_obsids = list(existing_obsids)
         self._reload_callback = reload_callback
+        self.outcome = None
         self._build_ui()
         self._populate_table()
 
@@ -222,8 +230,18 @@ class ObsidAssignmentDialog(QDialog):
         layout.addLayout(bulk_row)
         layout.addWidget(self.table)
 
-        self.buttons = QDialogButtonBox()
-        layout.addWidget(self.buttons)
+        footer = QHBoxLayout()
+        footer.addStretch(1)
+        self.save_draft_button = QPushButton(_tr("Save draft && close"), self)
+        self.apply_button = QPushButton(_tr("Apply && import"), self)
+        self.cancel_button = QPushButton(_tr("Cancel"), self)
+        self.save_draft_button.clicked.connect(self._on_save_draft)
+        self.apply_button.clicked.connect(self._on_apply)
+        self.cancel_button.clicked.connect(self._on_cancel)
+        footer.addWidget(self.save_draft_button)
+        footer.addWidget(self.apply_button)
+        footer.addWidget(self.cancel_button)
+        layout.addLayout(footer)
 
         self.obsid_delegate = _ObsidDelegate(self.existing_obsids, self)
         self.table.setItemDelegateForColumn(_COL_OBSID, self.obsid_delegate)
@@ -350,3 +368,70 @@ class ObsidAssignmentDialog(QDialog):
         self.fill_combo.setEditText(current_text)
         for row_idx in range(self.table.rowCount()):
             self._paint_obsid_cell(row_idx)
+
+    def _any_invalid_obsid(self) -> bool:
+        for row_idx, row in enumerate(self.editor_rows):
+            if row.skipped:
+                continue
+            if row.obsid and row.obsid not in self.existing_obsids:
+                return True
+        return False
+
+    def _warn_invalid_obsid(self):
+        QMessageBox.warning(
+            self,
+            _tr("Invalid obsid"),
+            _tr(
+                "Some rows contain obsids that are not in obs_points. "
+                "Fix, clear, or skip those rows before applying."
+            ),
+        )
+
+    def _on_save_draft(self):
+        if self._any_invalid_obsid():
+            self._warn_invalid_obsid()
+            return
+        self.outcome = DialogOutcome.SAVE_DRAFT
+        self.accept()
+
+    def _on_apply(self):
+        if self._any_invalid_obsid():
+            self._warn_invalid_obsid()
+            return
+        self.outcome = DialogOutcome.APPLY
+        self.accept()
+
+    def _on_cancel(self):
+        if self._has_unsaved_work():
+            box = QMessageBox(self)
+            box.setWindowTitle(_tr("Discard changes?"))
+            box.setText(
+                _tr(
+                    "You have filled %d rows that are not yet saved. Discard or save as draft?"
+                )
+                % self._unsaved_count()
+            )
+            discard_btn = box.addButton(_tr("Discard"), QMessageBox.DestructiveRole)
+            save_btn = box.addButton(_tr("Save draft"), QMessageBox.AcceptRole)
+            keep_btn = box.addButton(_tr("Keep editing"), QMessageBox.RejectRole)
+            box.exec_()
+            clicked = box.clickedButton()
+            if clicked is keep_btn:
+                return
+            if clicked is save_btn:
+                self._on_save_draft()
+                return
+        self.outcome = DialogOutcome.CANCEL
+        self.reject()
+
+    def _has_unsaved_work(self) -> bool:
+        return self._unsaved_count() > 0
+
+    def _unsaved_count(self) -> int:
+        count = 0
+        for row in self.editor_rows:
+            if row.skipped:
+                continue
+            if row.obsid and not row.cached:
+                count += 1
+        return count

@@ -199,3 +199,40 @@ class TestObsidAssignmentDialogShell:
             assert dialog.fill_combo.findText("BrNEW") >= 0
         finally:
             dialog.deleteLater()
+
+    def test_save_draft_produces_expected_result(self):
+        from midvatten.tools.obsid_assignment_dialog import DialogOutcome
+
+        rows = [EditorRow("Br1", "Brunn 1", "", ["L1"], obsid="Br1")]
+        dialog = ObsidAssignmentDialog(rows, existing_obsids=["Br1"])
+        try:
+            dialog.save_draft_button.click()
+            assert dialog.outcome == DialogOutcome.SAVE_DRAFT
+        finally:
+            dialog.deleteLater()
+
+    def test_apply_produces_expected_result(self):
+        from midvatten.tools.obsid_assignment_dialog import DialogOutcome
+
+        rows = [EditorRow("Br1", "Brunn 1", "", ["L1"], obsid="Br1")]
+        dialog = ObsidAssignmentDialog(rows, existing_obsids=["Br1"])
+        try:
+            dialog.apply_button.click()
+            assert dialog.outcome == DialogOutcome.APPLY
+        finally:
+            dialog.deleteLater()
+
+    def test_apply_blocked_on_invalid_obsid(self, monkeypatch):
+        rows = [EditorRow("Br1", "Brunn 1", "", ["L1"])]
+        dialog = ObsidAssignmentDialog(rows, existing_obsids=["Br1"])
+        try:
+            dialog.set_obsid_value(0, "not_a_real_obsid")
+            warnings = []
+            monkeypatch.setattr(
+                dialog, "_warn_invalid_obsid", lambda: warnings.append(1)
+            )
+            dialog.apply_button.click()
+            assert dialog.outcome is None
+            assert warnings == [1]
+        finally:
+            dialog.deleteLater()

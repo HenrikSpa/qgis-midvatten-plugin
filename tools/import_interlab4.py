@@ -27,22 +27,28 @@ import re
 from datetime import datetime
 
 import qgis.PyQt
-from qgis.PyQt.QtCore import QCoreApplication, QItemSelectionModel
-
 from midvatten.tools import import_data_to_db
 from midvatten.tools.base_importer import BaseImporter
-from midvatten.tools.utils import common_utils, midvatten_utils, db_utils
-from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.obsid_assignment_dialog import (
+    DialogOutcome,
+    ObsidAssignmentDialog,
+    ask_obsid_rows_as_dicts,
+    fan_out_filled_rows,
+    group_editor_rows,
+)
+from midvatten.tools.utils import common_utils, db_utils, midvatten_utils
 from midvatten.tools.utils.common_utils import Cancel
 from midvatten.tools.utils.date_utils import datestring_to_date
-from midvatten.tools.utils.db_utils import tables_columns, sql_load_fr_db
+from midvatten.tools.utils.db_utils import sql_load_fr_db, tables_columns
 from midvatten.tools.utils.gui_utils import (
-    SplitterWithHandel,
-    RowEntry,
-    VRowEntry,
     ExtendedQPlainTextEdit,
+    RowEntry,
+    SplitterWithHandel,
+    VRowEntry,
     get_line,
 )
+from midvatten.tools.utils.string_utils import returnunicode as ru
+from qgis.PyQt.QtCore import QCoreApplication, QItemSelectionModel
 
 import_fieldlogger_ui_dialog = qgis.PyQt.uic.loadUiType(
     os.path.join(os.path.dirname(__file__), "..", "ui", "import_interlab4.ui")
@@ -237,19 +243,88 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
         existing_obsids = db_utils.get_all_obsids()
 
         connection_columns = ("specifik provplats", "provplatsnamn")
-        if self.use_obsid_assignment_table.isChecked():
-            remaining_lablitteras_obsids, ask_obsid_table, add_to_table = (
-                self.obsid_assignment_using_table(
-                    ask_obsid_table,
-                    existing_obsids,
-                    connection_columns,
-                    ignore_provtagningsorsak,
-                )
-            )
-        else:
-            remaining_lablitteras_obsids = {}
+        remaining_lablitteras_obsids: dict[str, str] = {}
 
-        if ask_obsid_table:
+        # Query cache so all rows go to the bulk editor with pre-fills
+        cache_pair_map: dict[tuple[str, str], str] = {}
+        if self.use_obsid_assignment_table.isChecked():
+            dbconnection = db_utils.DbConnectionManager()
+            try:
+                sql = dbconnection.sql_ident(
+                    'SELECT {c1}, {c2}, "obsid" FROM {t}',
+                    t=self.obsid_assignment_table,
+                    c1=connection_columns[0].replace(" ", "_"),
+                    c2=connection_columns[1],
+                )
+                for spec, namn, obsid in dbconnection.execute_and_fetchall(sql):
+                    cache_pair_map[(spec, namn)] = obsid
+            finally:
+                dbconnection.closedb()
+
+        if ask_obsid_table and len(ask_obsid_table) > 1:
+            row_dicts = ask_obsid_rows_as_dicts(ask_obsid_table)
+            # When ignore_provtagningsorsak is set, treat provtagningsorsak as
+            # empty so override rows are grouped with clean rows and get cache
+            # lookups like any other row.
+            if ignore_provtagningsorsak:
+                for rd in row_dicts:
+                    rd["provtagningsorsak"] = ""
+            editor_rows = group_editor_rows(row_dicts, cache_matches=cache_pair_map)
+            dialog = ObsidAssignmentDialog(
+                editor_rows,
+                existing_obsids=existing_obsids,
+                reload_callback=db_utils.get_all_obsids,
+                parent=self,
+            )
+            dialog.exec_()
+            if dialog.outcome in (None, DialogOutcome.CANCEL):
+                self.status = True
+                return Cancel()
+
+            filled, skipped, cache_rows = fan_out_filled_rows(dialog.editor_rows)
+
+            # INSERT OR REPLACE because the user may have edited a cached row
+            # via the "Show matched rows" toggle.  Override rows are excluded
+            # by fan_out_filled_rows itself.
+            if cache_rows and self.use_obsid_assignment_table.isChecked():
+                dbconnection = db_utils.DbConnectionManager()
+                try:
+                    ph = dbconnection.placeholder()
+                    sql = dbconnection.sql_ident(
+                        f"INSERT OR REPLACE INTO {{t}} ({{c1}}, {{c2}}, obsid) VALUES ({ph}, {ph}, {ph})",
+                        t=self.obsid_assignment_table,
+                        c1=connection_columns[0].replace(" ", "_"),
+                        c2=connection_columns[1],
+                    )
+                    for cache_row in cache_rows:
+                        dbconnection.execute_and_commit(sql, all_args=[cache_row])
+                finally:
+                    dbconnection.closedb()
+                common_utils.MessagebarAndLog.info(
+                    bar_msg=QCoreApplication.translate(
+                        "Interlab4Import",
+                        "Obsid assignments added to table %s.",
+                    )
+                    % self.obsid_assignment_table
+                )
+
+            if dialog.outcome == DialogOutcome.SAVE_DRAFT:
+                # Cache written; do not run the import.
+                self.status = True
+                return Cancel()
+
+            # Apply path: merge filled lablitteras and drop skipped ones
+            remaining_lablitteras_obsids.update(filled)
+            header = ask_obsid_table[0]
+            lab_idx = [str(h).strip().lower() for h in header].index("lablittera")
+            ask_obsid_table = [header] + [
+                row
+                for row in ask_obsid_table[1:]
+                if row[lab_idx] not in filled and row[lab_idx] not in skipped
+            ]
+
+        # --- Existing NotFoundQuestion fallback for stragglers ---
+        if ask_obsid_table and len(ask_obsid_table) > 1:
             answer = common_utils.filter_nonexisting_values_and_ask(
                 ask_obsid_table,
                 "obsid",
@@ -274,53 +349,53 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
                     dict([(x[0], x[-1]) for x in answer[1:]])
                 )
 
-                if self.use_obsid_assignment_table.isChecked() and add_to_table:
-                    header = answer[0]
-                    handled = set()
-                    for row in answer[1:]:
-                        if not ignore_provtagningsorsak:
-                            try:
-                                idx = header.index("provtagningsorsak")
-                            except ValueError:
-                                pass
-                            else:
-                                provtagningsorsak = (
-                                    row[idx].replace("-", "").replace("0", "").strip()
+                # Cache NotFoundQuestion answers so future imports benefit.
+                # Skip rows with non-empty provtagningsorsak (override semantics).
+                if self.use_obsid_assignment_table.isChecked():
+                    header_answer = answer[0]
+                    try:
+                        spec_i = header_answer.index(connection_columns[0])
+                        namn_i = header_answer.index(connection_columns[1])
+                    except ValueError:
+                        spec_i = namn_i = None
+                    try:
+                        orsak_i = header_answer.index("provtagningsorsak")
+                    except ValueError:
+                        orsak_i = None
+                    if spec_i is not None and namn_i is not None:
+                        new_cache_rows: list[tuple[str, str, str]] = []
+                        handled: set[tuple[str, str]] = set()
+                        for row in answer[1:]:
+                            if orsak_i is not None:
+                                orsak = (
+                                    (row[orsak_i] or "")
+                                    .replace("-", "")
+                                    .replace("0", "")
+                                    .strip()
                                 )
-                                # If the field staff has made a comment on the bottles, do not set obsid automatically.
-                                if provtagningsorsak:
+                                if orsak and not ignore_provtagningsorsak:
                                     continue
-
-                        current = (
-                            row[header.index(connection_columns[0])],
-                            row[header.index(connection_columns[1])],
-                        )
-                        if current in add_to_table and current not in handled:
-                            obsid = row[-1]
-                            add_values = (current[0], current[1], obsid)
+                            pair = (row[spec_i], row[namn_i])
+                            if pair in handled:
+                                continue
+                            handled.add(pair)
+                            new_cache_rows.append((pair[0], pair[1], row[-1]))
+                        if new_cache_rows:
                             dbconnection = db_utils.DbConnectionManager()
                             try:
                                 ph = dbconnection.placeholder()
                                 sql = dbconnection.sql_ident(
-                                    f"INSERT INTO {{t}} ({{c1}}, {{c2}}, obsid) VALUES ({ph}, {ph}, {ph})",
+                                    f"INSERT OR REPLACE INTO {{t}} ({{c1}}, {{c2}}, obsid) VALUES ({ph}, {ph}, {ph})",
                                     t=self.obsid_assignment_table,
                                     c1=connection_columns[0].replace(" ", "_"),
                                     c2=connection_columns[1],
                                 )
-                                dbconnection.execute_and_commit(
-                                    sql, all_args=[add_values]
-                                )
+                                for new_cache_row in new_cache_rows:
+                                    dbconnection.execute_and_commit(
+                                        sql, all_args=[new_cache_row]
+                                    )
                             finally:
                                 dbconnection.closedb()
-                            handled.add(current)
-                    if handled:
-                        common_utils.MessagebarAndLog.info(
-                            bar_msg=QCoreApplication.translate(
-                                "Interlab4Import",
-                                "Obsid assignments added to table %s.",
-                            )
-                            % self.obsid_assignment_table
-                        )
 
         # Filter the remaining lablitteras and add an obsid field
         _all_lab_results = {}

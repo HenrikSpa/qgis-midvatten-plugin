@@ -21,7 +21,6 @@
 """
 
 import copy
-import os
 from queue import Queue
 from collections import OrderedDict
 from datetime import datetime
@@ -36,6 +35,7 @@ from qgis.PyQt.QtCore import QCoreApplication
 from midvatten.tools.base_importer import BaseImporter
 from midvatten.tools.utils import common_utils, midvatten_utils, db_utils
 import midvatten.tools.import_data_to_db as import_data_to_db
+from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.date_utils import datestring_to_date, dateshift
 import midvatten.definitions.midvatten_defs as defs
@@ -48,9 +48,7 @@ from qgis.PyQt.QtWidgets import QComboBox
 from typing import Dict, List, Union
 
 
-import_fieldlogger_ui_dialog = uic.loadUiType(
-    os.path.join(os.path.dirname(__file__), "..", "ui", "import_fieldlogger.ui")
-)[0]
+import_fieldlogger_ui_dialog = uic.loadUiType(ui_path("import_fieldlogger.ui"))[0]
 
 
 class FieldloggerImport(BaseImporter, import_fieldlogger_ui_dialog):

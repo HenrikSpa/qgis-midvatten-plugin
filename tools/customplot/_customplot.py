@@ -21,7 +21,6 @@ The PlotSQLite application version 0.2.6 was merged into Midvatten plugin at 201
  ***************************************************************************/
 """
 
-import os
 import traceback
 from functools import partial  # only to get combobox signals to work
 
@@ -40,6 +39,7 @@ import matplotlib.ticker as tick
 from qgis.PyQt.QtWidgets import QApplication
 
 from midvatten.tools.utils import common_utils, midvatten_utils, db_utils
+from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.common_utils import LEGEND_NCOL_KEY
 from midvatten.definitions import midvatten_defs as defs
@@ -58,10 +58,7 @@ from midvatten.tools.customplot.plot_object import (
     transform_values,
 )
 
-# The UI file lives two directories above this package: tools/ui/
-customplot_ui_class = uic.loadUiType(
-    os.path.join(os.path.dirname(__file__), "..", "..", "ui", "customplotdialog.ui")
-)[0]
+customplot_ui_class = uic.loadUiType(ui_path("customplotdialog.ui"))[0]
 
 
 class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):

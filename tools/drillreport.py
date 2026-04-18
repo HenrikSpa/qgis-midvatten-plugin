@@ -29,6 +29,7 @@ from qgis.PyQt.QtGui import QDesktopServices
 from midvatten.tools.calculate_statistics import get_statistics_for_single_obsid
 from midvatten.tools.drillreport_models import ObsPointsRow, StratigraphyRow
 from midvatten.tools.utils import common_utils, midvatten_utils, db_utils
+from midvatten.tools.utils.file_utils import templates_path
 from midvatten.tools.utils.string_utils import returnunicode as ru
 
 _EMPTY_VALS = ("", "NULL")
@@ -58,10 +59,8 @@ class Drillreport:  # general observation point info for the selected object
         if not os.path.exists(reportfolder):
             os.makedirs(reportfolder)
         reportpath = os.path.join(reportfolder, "drill_report.html")
-        logopath = os.path.join(
-            os.sep, os.path.dirname(__file__), "..", "templates", "midvatten_logga.png"
-        )
-        imgpath = os.path.join(os.sep, os.path.dirname(__file__), "..", "templates")
+        logopath = templates_path("midvatten_logga.png")
+        imgpath = templates_path()
 
         if len(obsids) == 0:
             common_utils.pop_up_info(

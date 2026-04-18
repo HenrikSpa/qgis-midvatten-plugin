@@ -25,7 +25,6 @@ import locale
 import logging
 import os
 import re
-import shutil
 import string
 from typing import List, Optional, Tuple, TYPE_CHECKING
 
@@ -35,7 +34,6 @@ from matplotlib import pyplot as plt
 from qgis.PyQt import QtWidgets, QtCore
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtGui import QDesktopServices
-from qgis.core import Qgis
 from qgis.core import QgsProject
 from qgis.core import QgsVectorLayer
 
@@ -60,7 +58,7 @@ from midvatten.tools.utils.string_utils import (
     anything_to_string_representation,
 )
 from midvatten.tools.utils.exceptions import UsageError, UserInterruptError
-from midvatten.tools.utils.file_utils import get_full_filename
+from midvatten.tools.utils.file_utils import definitions_path
 from midvatten.tools.utils.dialog_utils import Askuser
 from midvatten.tools.utils.common_utils import (
     transpose_lists_of_lists,
@@ -248,9 +246,7 @@ def add_triggers_to_obs_points(filename: str):
     :return:
     """
     db_utils.execute_sqlfile_using_func(
-        os.path.join(
-            os.sep, os.path.dirname(__file__), "../..", "definitions", filename
-        ),
+        definitions_path(filename),
         db_utils.sql_alter_db,
     )
 
@@ -529,7 +525,9 @@ def add_view_obs_points_obs_lines():
         dbconnection.execute(
             """DELETE FROM views_geometry_columns WHERE view_name IN ('view_obs_points', 'view_obs_lines');"""
         )
-        db_utils.execute_sqlfile(get_full_filename("qgis3_obsp_fix.sql"), dbconnection)
+        db_utils.execute_sqlfile(
+            definitions_path("qgis3_obsp_fix.sql"), dbconnection
+        )
         dbconnection.commit_and_closedb()
         MessagebarAndLog.info(
             bar_msg=QCoreApplication.translate(
@@ -548,7 +546,7 @@ def add_non_essential_tables(dbconnection=None):
     connection_ok = dbconnection.connect2db()
     if connection_ok:
         db_utils.execute_sqlfile(
-            get_full_filename("create_db_extra_data_tables.sql"),
+            definitions_path("create_db_extra_data_tables.sql"),
             dbconnection,
             merge_newlines=True,
         )

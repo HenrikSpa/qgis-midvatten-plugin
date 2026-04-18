@@ -2,7 +2,6 @@
 Dialog utilities for the Midvatten plugin.
 """
 
-import os
 
 import qgis.PyQt
 from qgis.PyQt import QtCore, QtWidgets, uic
@@ -13,12 +12,11 @@ except ImportError:
     from qgis.PyQt.QtWebEngineWidgets import QWebEngineView as QWebView
 
 from midvatten.tools.utils.exceptions import UserInterruptError
+from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.message_utils import pop_up_info
 from midvatten.tools.utils.string_utils import returnunicode, tr
 
-not_found_dialog = uic.loadUiType(
-    os.path.join(os.path.dirname(__file__), "../..", "ui", "not_found_gui.ui")
-)[0]
+not_found_dialog = uic.loadUiType(ui_path("not_found_gui.ui"))[0]
 
 
 class Askuser(QtWidgets.QDialog):

@@ -7,6 +7,7 @@ from qgis.core import QgsLayerTreeGroup, QgsProject, QgsRelation
 from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools.utils import common_utils, db_utils
+from midvatten.tools.utils.file_utils import definitions_path
 from midvatten.tools.utils.layer_build import build_layer, prime_feature_count
 from midvatten.tools.utils.layer_specs import GROUPS, GroupSpec, LayerSpec
 from midvatten.tools.utils.midvatten_utils import getcurrentlocale
@@ -61,9 +62,8 @@ class LoadLayers:
         self.iface.mapCanvas().refresh()
 
     def _apply_style(self, layer, spec: LayerSpec) -> None:
-        definitions = os.path.join(os.path.dirname(__file__), "..", "definitions")
-        style_sv = os.path.join(definitions, f"{spec.tablename}_sv.qml")
-        style_default = os.path.join(definitions, f"{spec.tablename}.qml")
+        style_sv = definitions_path(f"{spec.tablename}_sv.qml")
+        style_default = definitions_path(f"{spec.tablename}.qml")
         locale_is_swedish = getcurrentlocale()[0] == "sv_SE"
         candidates = []
         if locale_is_swedish and os.path.isfile(style_sv):

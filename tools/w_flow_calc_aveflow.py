@@ -18,7 +18,6 @@
  ***************************************************************************/
 """
 
-import os
 
 import pandas as pd
 import qgis.PyQt
@@ -28,10 +27,9 @@ from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools import import_data_to_db
 from midvatten.tools.utils import common_utils, db_utils
+from midvatten.tools.utils.file_utils import ui_path
 
-Calc_Ui_Dialog = uic.loadUiType(
-    os.path.join(os.path.dirname(__file__), "..", "ui", "calc_aveflow_dialog.ui")
-)[0]
+Calc_Ui_Dialog = uic.loadUiType(ui_path("calc_aveflow_dialog.ui"))[0]
 
 
 class CalculateAveflow(qgis.PyQt.QtWidgets.QDialog, Calc_Ui_Dialog):

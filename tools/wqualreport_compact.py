@@ -21,7 +21,6 @@ import ast
 import codecs
 import json
 import logging
-import os
 import traceback
 
 import numpy as np
@@ -31,6 +30,7 @@ import qgis.PyQt
 from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools.utils import common_utils, db_utils, gui_utils
+from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.common_utils import general_exception_handler
@@ -44,7 +44,7 @@ from midvatten.tools.wqualreport_core import (
 log = logging.getLogger(__name__)
 
 custom_drillreport_dialog = qgis.PyQt.uic.loadUiType(
-    os.path.join(os.path.dirname(__file__), "..", "ui", "compact_w_qual_report.ui")
+    ui_path("compact_w_qual_report.ui")
 )[0]
 
 

@@ -22,7 +22,6 @@
 
 import copy
 import csv
-import os
 import re
 from datetime import datetime
 
@@ -41,7 +40,7 @@ from midvatten.tools.utils.common_utils import Cancel
 from midvatten.tools.utils.date_utils import datestring_to_date
 from midvatten.tools.utils.db_utils import sql_load_fr_db, tables_columns
 from midvatten.tools.utils.db_utils.dialect import ident
-from midvatten.tools.utils.file_utils import get_full_filename
+from midvatten.tools.utils.file_utils import definitions_path, ui_path
 from midvatten.tools.utils.gui_utils import (
     ExtendedQPlainTextEdit,
     RowEntry,
@@ -53,7 +52,7 @@ from midvatten.tools.utils.string_utils import returnunicode as ru
 from qgis.PyQt.QtCore import QCoreApplication, QItemSelectionModel
 
 import_fieldlogger_ui_dialog = qgis.PyQt.uic.loadUiType(
-    os.path.join(os.path.dirname(__file__), "..", "ui", "import_interlab4.ui")
+    ui_path("import_interlab4.ui")
 )[0]
 
 
@@ -971,7 +970,7 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
             self.radio_w_qual_lab.setChecked(True)
 
     def _create_s_qual_lab(self) -> None:
-        sql_path = get_full_filename("create_db.sql")
+        sql_path = definitions_path("create_db.sql")
         with open(sql_path, encoding="utf-8") as f:
             sql_text = f.read()
         ddl = self._extract_create_table(sql_text, "s_qual_lab")

@@ -27,6 +27,7 @@ from midvatten.tools.utils.date_utils import (
     datestring_to_date,
     parse_timezone_to_timedelta,
 )
+from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.gui_utils import (
     VRowEntry,
     get_line,
@@ -37,9 +38,7 @@ from midvatten.tools.utils.gui_utils import (
 
 import pandas as pd  # pandas is a mandatory dependency of this plugin
 
-import_ui_dialog = qgis.PyQt.uic.loadUiType(
-    os.path.join(os.path.dirname(__file__), "..", "ui", "import_fieldlogger.ui")
-)[0]
+import_ui_dialog = qgis.PyQt.uic.loadUiType(ui_path("import_fieldlogger.ui"))[0]
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

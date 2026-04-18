@@ -50,7 +50,6 @@ from midvatten.tools.utils.file_utils import (
     ask_for_delimiter,  # noqa: F401
     get_delimiter,  # noqa: F401
     get_delimiter_from_file_rows,  # noqa: F401
-    get_full_filename,  # noqa: F401
     tempinput,  # noqa: F401
     write_printlist_to_file,  # noqa: F401
 )

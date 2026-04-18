@@ -166,7 +166,24 @@ def write_printlist_to_file(
     )
 
 
-def get_full_filename(filename: str) -> str:
-    return os.path.join(
-        os.sep, os.path.dirname(__file__), "../..", "definitions", filename
-    )
+_PLUGIN_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+def plugin_path(*parts: str) -> str:
+    """Absolute path under the plugin root (<plugin>/)."""
+    return os.path.join(_PLUGIN_ROOT, *parts)
+
+
+def definitions_path(*parts: str) -> str:
+    """Absolute path under <plugin>/definitions/."""
+    return os.path.join(_PLUGIN_ROOT, "definitions", *parts)
+
+
+def ui_path(*parts: str) -> str:
+    """Absolute path under <plugin>/ui/."""
+    return os.path.join(_PLUGIN_ROOT, "ui", *parts)
+
+
+def templates_path(*parts: str) -> str:
+    """Absolute path under <plugin>/templates/."""
+    return os.path.join(_PLUGIN_ROOT, "templates", *parts)

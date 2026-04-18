@@ -39,6 +39,7 @@ from qgis.gui import QgsMapLayerComboBox
 
 import midvatten.definitions.midvatten_defs as defs
 from midvatten.tools.utils import common_utils, db_utils, gui_utils
+from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.common_utils import start_waiting_cursor, stop_waiting_cursor
 from midvatten.tools.utils.gui_utils import (
@@ -53,12 +54,10 @@ from midvatten.tools.utils.gui_utils import (
 log = logging.getLogger(__name__)
 
 export_fieldlogger_ui_dialog = qgis.PyQt.uic.loadUiType(
-    os.path.join(os.path.dirname(__file__), "..", "ui", "import_fieldlogger.ui")
+    ui_path("import_fieldlogger.ui")
 )[0]
 parameter_browser_dialog = qgis.PyQt.uic.loadUiType(
-    os.path.join(
-        os.path.dirname(__file__), "..", "ui", "fieldlogger_parameter_browser.ui"
-    )
+    ui_path("fieldlogger_parameter_browser.ui")
 )[0]
 
 

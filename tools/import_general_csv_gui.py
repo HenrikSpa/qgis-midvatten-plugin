@@ -22,7 +22,6 @@
 
 import copy
 import csv
-import os
 from operator import itemgetter
 
 import qgis.PyQt
@@ -31,6 +30,7 @@ from qgis.PyQt.QtCore import QCoreApplication
 import midvatten.definitions.midvatten_defs as defs
 from midvatten.tools import import_data_to_db
 from midvatten.tools.utils import common_utils, midvatten_utils, db_utils, date_utils
+from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.gui_utils import (
     RowEntry,
@@ -42,9 +42,7 @@ from midvatten.tools.utils.gui_utils import (
 )
 from typing import Any, Dict, List, Optional, Tuple
 
-import_ui_dialog = qgis.PyQt.uic.loadUiType(
-    os.path.join(os.path.dirname(__file__), "..", "ui", "import_fieldlogger.ui")
-)[0]
+import_ui_dialog = qgis.PyQt.uic.loadUiType(ui_path("import_fieldlogger.ui"))[0]
 
 
 class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):

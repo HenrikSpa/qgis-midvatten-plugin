@@ -38,6 +38,7 @@ from qgis.core import (
 
 from midvatten.definitions import midvatten_defs as defs
 from midvatten.tools.utils import common_utils, db_utils, midvatten_utils
+from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
 from midvatten.tools.utils.layer_build import build_layer
 from midvatten.tools.utils.layer_specs import LayerSpec
@@ -45,9 +46,7 @@ from midvatten.tools.utils.string_utils import returnunicode as ru
 
 log = logging.getLogger(__name__)
 
-strat_symbology_dialog = uic.loadUiType(
-    os.path.join(os.path.dirname(__file__), "..", "ui", "strat_symbology_dialog.ui")
-)[0]
+strat_symbology_dialog = uic.loadUiType(ui_path("strat_symbology_dialog.ui"))[0]
 
 
 class StratSymbology(qgis.PyQt.QtWidgets.QDialog, strat_symbology_dialog):

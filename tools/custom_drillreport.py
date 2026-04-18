@@ -32,13 +32,14 @@ from qgis.PyQt.QtCore import QUrl, QDir
 from qgis.PyQt.QtGui import QDesktopServices
 
 from midvatten.tools.utils import common_utils, db_utils
+from midvatten.tools.utils.file_utils import templates_path, ui_path
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
 from midvatten.tools.utils.string_utils import returnunicode as ru
 
 _EMPTY_VALS = ("", "NULL")
 
 custom_drillreport_dialog = qgis.PyQt.uic.loadUiType(
-    os.path.join(os.path.dirname(__file__), "..", "ui", "custom_drillreport.ui")
+    ui_path("custom_drillreport.ui")
 )[0]
 
 
@@ -336,10 +337,8 @@ class Drillreport:  # general observation point info for the selected object
         if not os.path.exists(reportfolder):
             os.makedirs(reportfolder)
         reportpath = os.path.join(reportfolder, "drill_report.html")
-        logopath = os.path.join(
-            os.sep, os.path.dirname(__file__), "..", "templates", "midvatten_logga.png"
-        )
-        imgpath = os.path.join(os.sep, os.path.dirname(__file__), "..", "templates")
+        logopath = templates_path("midvatten_logga.png")
+        imgpath = templates_path()
 
         if len(obsids) == 0:
             common_utils.pop_up_info(

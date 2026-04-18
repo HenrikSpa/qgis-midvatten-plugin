@@ -17,7 +17,6 @@
  ***************************************************************************/
 """
 
-import os
 import traceback
 from typing import Any, Dict, List, Optional, Tuple, Union, TYPE_CHECKING
 
@@ -26,11 +25,12 @@ from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtWidgets import QMainWindow
 
 from midvatten.tools.utils import common_utils, gui_utils, db_utils
+from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
 from midvatten.tools.utils.string_utils import returnunicode as ru
 
 calculate_statistics_dialog = qgis.PyQt.uic.loadUiType(
-    os.path.join(os.path.dirname(__file__), "..", "ui", "calculate_statistics_ui.ui")
+    ui_path("calculate_statistics_ui.ui")
 )[0]
 
 if TYPE_CHECKING:

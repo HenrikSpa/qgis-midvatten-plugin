@@ -47,12 +47,11 @@ from qgis.core import (
     Qgis,
 )
 
+from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.gui_utils import set_combobox
 
 
-Ui_SecPlotDock = uic.loadUiType(
-    os.path.join(os.path.dirname(__file__), "..", "..", "ui", "secplotdockwidget.ui")
-)[0]
+Ui_SecPlotDock = uic.loadUiType(ui_path("secplotdockwidget.ui"))[0]
 
 from matplotlib.widgets import Slider
 from matplotlib.gridspec import GridSpec

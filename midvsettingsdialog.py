@@ -28,14 +28,13 @@ from qgis.PyQt.QtWidgets import QGridLayout, QMainWindow
 
 from midvatten.tools.midvsettings import MidvSettings
 from midvatten.tools.utils import common_utils, gui_utils, db_utils
+from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
 from midvatten.tools.utils.midvatten_utils import warn_about_old_database
 
 log = logging.getLogger(__name__)
 
-midvsettingsdock_ui_class = uic.loadUiType(
-    os.path.join(os.path.dirname(__file__), "ui", "midvsettingsdock.ui")
-)[0]
+midvsettingsdock_ui_class = uic.loadUiType(ui_path("midvsettingsdock.ui"))[0]
 
 
 class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):

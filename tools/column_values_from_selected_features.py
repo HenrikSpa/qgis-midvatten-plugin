@@ -17,7 +17,6 @@
  ***************************************************************************/
 """
 
-import os
 
 import qgis.PyQt
 from qgis.PyQt.QtCore import QCoreApplication, QVariant
@@ -25,10 +24,11 @@ from qgis.PyQt.QtWidgets import QApplication
 from qgis.core import QgsVectorLayer
 
 from midvatten.tools.utils import common_utils, db_utils, gui_utils
+from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
 
 selected_features_dialog = qgis.PyQt.uic.loadUiType(
-    os.path.join(os.path.dirname(__file__), "..", "ui", "selected_features.ui")
+    ui_path("selected_features.ui")
 )[0]
 
 

@@ -29,6 +29,7 @@ from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.common_utils import fn_timer
 from midvatten.tools.utils.db_utils.dialect import ident
 from midvatten.tools.utils.db_utils.execution import use_or_create_connection
+from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.date_utils import (
     change_timezone,
@@ -41,11 +42,7 @@ from midvatten.tools.loggereditor_refseries import RefSeriesDialog
 
 log = logging.getLogger(__name__)
 
-Calibr_Ui_Dialog = uic.loadUiType(
-    os.path.join(
-        os.path.dirname(__file__), "..", "ui", "calibr_logger_dialog_integrated.ui"
-    )
-)[0]
+Calibr_Ui_Dialog = uic.loadUiType(ui_path("calibr_logger_dialog_integrated.ui"))[0]
 
 
 class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):

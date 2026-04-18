@@ -31,7 +31,7 @@ from qgis.core import Qgis
 
 from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.string_utils import returnunicode as ru, lstrip
-from midvatten.tools.utils.file_utils import get_full_filename
+from midvatten.tools.utils.file_utils import definitions_path
 from midvatten.tools.utils.common_utils import format_timezone_string
 from midvatten.tools.utils.date_utils import get_pytz_timezones
 from midvatten.tools.utils.db_utils import DbConnectionManager, execute_sqlfile
@@ -174,11 +174,7 @@ class NewDb:
             common_utils.stop_waiting_cursor()
             return ""
 
-        filenamestring = "create_db.sql"
-
-        sql_file = os.path.join(
-            os.sep, os.path.dirname(__file__), "..", "definitions", filenamestring
-        )
+        sql_file = definitions_path("create_db.sql")
         # We want to store info about which qgis-version that created the db
         qgisverno = ru(Qgis.QGIS_VERSION).replace("'", "")
         replace_word_replace_with = [
@@ -226,10 +222,10 @@ class NewDb:
         self.insert_datadomains(set_locale, dbconnection)
 
         execute_sqlfile(
-            get_full_filename("insert_obs_points_triggers.sql"), dbconnection
+            definitions_path("insert_obs_points_triggers.sql"), dbconnection
         )
 
-        execute_sqlfile(get_full_filename("qgis3_obsp_fix.sql"), dbconnection)
+        execute_sqlfile(definitions_path("qgis3_obsp_fix.sql"), dbconnection)
 
         self.add_metadata_to_about_db(
             dbconnection,
@@ -335,11 +331,7 @@ class NewDb:
             # print("Got timezone:" + str(w_levels_timezone))
             common_utils.start_waiting_cursor()
 
-        filenamestring = "create_db.sql"
-
-        sql_file = os.path.join(
-            os.sep, os.path.dirname(__file__), "..", "definitions", filenamestring
-        )
+        sql_file = definitions_path("create_db.sql")
         # We want to store info about which qgis-version that created the db
         qgisverno = ru(Qgis.QGIS_VERSION).replace("'", "")
         replace_word_replace_with = [
@@ -405,27 +397,27 @@ class NewDb:
         self.insert_datadomains(supplied_locale, dbconnection)
 
         execute_sqlfile(
-            get_full_filename("insert_obs_points_triggers_postgis.sql"), dbconnection
+            definitions_path("insert_obs_points_triggers_postgis.sql"), dbconnection
         )
 
         pg_version = dbconnection.conn.server_version / 10000
         if pg_version > 17:
             try:
                 execute_sqlfile(
-                    get_full_filename("insert_functions_postgis_pg17.sql"), dbconnection
+                    definitions_path("insert_functions_postgis_pg17.sql"), dbconnection
                 )
             except Exception:
                 execute_sqlfile(
-                    get_full_filename("insert_functions_postgis.sql"), dbconnection
+                    definitions_path("insert_functions_postgis.sql"), dbconnection
                 )
         else:
             try:
                 execute_sqlfile(
-                    get_full_filename("insert_functions_postgis.sql"), dbconnection
+                    definitions_path("insert_functions_postgis.sql"), dbconnection
                 )
             except Exception:
                 execute_sqlfile(
-                    get_full_filename("insert_functions_postgis_pg17.sql"), dbconnection
+                    definitions_path("insert_functions_postgis_pg17.sql"), dbconnection
                 )
 
         self.add_metadata_to_about_db(
@@ -542,17 +534,12 @@ class NewDb:
         set_locale: str = "",
         dbconnection: Optional[DbConnectionManager] = None,
     ):
-        filenamestring = "insert_datadomain"
-        if set_locale == "sv_SE":
-            filenamestring += "_sv.sql"
-        else:
-            filenamestring += ".sql"
-        execute_sqlfile(
-            os.path.join(
-                os.sep, os.path.dirname(__file__), "..", "definitions", filenamestring
-            ),
-            dbconnection,
+        filenamestring = (
+            "insert_datadomain_sv.sql"
+            if set_locale == "sv_SE"
+            else "insert_datadomain.sql"
         )
+        execute_sqlfile(definitions_path(filenamestring), dbconnection)
 
     def add_metadata_to_about_db(
         self,
@@ -708,13 +695,7 @@ class AddLayerStyles:
         dbconnection.commit_and_closedb()
 
     def add_layer_styles_2_db(self, dbconnection):
-        sql_file = os.path.join(
-            os.sep,
-            os.path.dirname(__file__),
-            "..",
-            "definitions",
-            "add_layer_styles_2_db.sql",
-        )
+        sql_file = definitions_path("add_layer_styles_2_db.sql")
         datetimestring = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         f = open(sql_file)
         for linecounter, line in enumerate(f):
@@ -726,21 +707,13 @@ class AddLayerStyles:
                 )  # use tags to find and replace SRID and versioning info
 
     def style_from_file_into_db(self, layer, qml_file, sld_file, dbconnection):
-        with open(
-            os.path.join(
-                os.sep, os.path.dirname(__file__), "..", "definitions", qml_file
-            ),
-        ) as content_file:
+        with open(definitions_path(qml_file)) as content_file:
             content = content_file.read()
         dbconnection.execute(
             "update layer_styles set styleQML=? where f_table_name=?", (content, layer)
         )  # Use parameterized arguments to allow sqlite3 to escape the quotes for you. (It also helps prevent SQL injection.
         # "UPDATE posts SET html = ? WHERE id = ?", (html ,temp[i][1])
-        with open(
-            os.path.join(
-                os.sep, os.path.dirname(__file__), "..", "definitions", sld_file
-            ),
-        ) as content_file:
+        with open(definitions_path(sld_file)) as content_file:
             content = content_file.read()
         dbconnection.execute(
             "update layer_styles set styleSLD=? where f_table_name=?", (content, layer)

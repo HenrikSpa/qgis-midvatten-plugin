@@ -80,17 +80,17 @@ class DrillreportMixin:
             report = "".join(f.readlines())
         print(str(report))
 
-        # src="midvatten/tools/
-        # src='/home/henrik/Sync/pythoncode/henrikspa/midvatten/tools/
-        # src='/home/henrik/Sync/pythoncode/henrikspa/midvatten/tools/
+        # Normalize machine-specific absolute paths to the canonical form used in ref.
+        # templates_path() now returns an absolute path directly to <plugin>/templates/,
+        # so we strip everything up to and including the last /templates/ segment.
         report = re.sub(
-            r"""src="[^"]+midvatten/tools/""",
-            """src="midvatten/tools/""",
+            r"""src="[^"]+/templates/""",
+            """src="midvatten/tools/../templates/""",
             report,
         )
         report = re.sub(
-            r"""src='[^']+midvatten/tools/""",
-            """src='midvatten/tools/""",
+            r"""src='[^']+/templates/""",
+            """src='midvatten/tools/../templates/""",
             report,
         )
         print(str(report))

@@ -213,3 +213,116 @@ class TestExportEngine(MidvattenTestSpatialiteDbSv):
         finally:
             src.closedb()
             dest.closedb()
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_export_table_basic_copies_rows(self, mock_messagebar):
+        """Copies rows from source w_levels to dest; no geometry, no special cases."""
+        from midvatten.tools.export_engine import ExportEngine
+
+        conn = db_utils.DbConnectionManager(self._class_db_settings)
+        db_utils.sql_alter_db(
+            "INSERT INTO obs_points (obsid, geometry) VALUES "
+            "('P1', ST_GeomFromText('POINT(1 2)', 3006))",
+            dbconnection=conn,
+        )
+        db_utils.sql_alter_db(
+            "INSERT INTO zz_staff (staff) VALUES ('s1')",
+            dbconnection=conn,
+        )
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels (obsid, date_time, meas) VALUES "
+            "('P1', '2020-01-01 00:00:00', 1.5),"
+            "('P1', '2020-01-02 00:00:00', 2.5)",
+            dbconnection=conn,
+        )
+        conn.commit_and_closedb()
+
+        src = self._source_conn()
+        dest = self._dest_conn()
+        engine = ExportEngine()
+
+        progress_calls: list = []
+        cancel = threading.Event()
+        try:
+            # Insert obs_points in dest so FK constraint is satisfied
+            db_utils.sql_alter_db(
+                "INSERT INTO obs_points (obsid, geometry) VALUES "
+                "('P1', ST_GeomFromText('POINT(1 2)', 3006))",
+                dbconnection=dest,
+            )
+            dest.commit()
+            engine._export_table(
+                "w_levels",
+                src,
+                dest,
+                (),
+                "3006",
+                False,
+                lambda tname, written, total: progress_calls.append(
+                    (tname, written, total)
+                ),
+                cancel,
+            )
+            dest.commit()
+            rows = dest.execute_and_fetchall(
+                "SELECT obsid, date_time, meas FROM w_levels ORDER BY date_time"
+            )
+        finally:
+            src.closedb()
+            dest.closedb()
+
+        assert rows == [
+            ("P1", "2020-01-01 00:00:00", 1.5),
+            ("P1", "2020-01-02 00:00:00", 2.5),
+        ]
+        # progress_cb called with (tname, 0, total) first then (tname, n, total)
+        assert progress_calls[0] == ("w_levels", 0, 2)
+        assert progress_calls[-1][1] == 2
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_export_table_cancel_raises(self, mock_messagebar):
+        """ExportCancelledError raised when cancel flag is set."""
+        from midvatten.tools.export_engine import ExportEngine, ExportCancelledError
+
+        conn = db_utils.DbConnectionManager(self._class_db_settings)
+        db_utils.sql_alter_db(
+            "INSERT INTO obs_points (obsid, geometry) VALUES "
+            "('P1', ST_GeomFromText('POINT(1 2)', 3006))",
+            dbconnection=conn,
+        )
+        db_utils.sql_alter_db(
+            "INSERT INTO zz_staff (staff) VALUES ('s1')",
+            dbconnection=conn,
+        )
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels (obsid, date_time, meas) VALUES "
+            "('P1', '2020-01-01 00:00:00', 1.5)",
+            dbconnection=conn,
+        )
+        conn.commit_and_closedb()
+
+        src = self._source_conn()
+        dest = self._dest_conn()
+        cancel = threading.Event()
+        cancel.set()  # pre-cancelled
+        try:
+            db_utils.sql_alter_db(
+                "INSERT INTO obs_points (obsid, geometry) VALUES "
+                "('P1', ST_GeomFromText('POINT(1 2)', 3006))",
+                dbconnection=dest,
+            )
+            dest.commit()
+            with pytest.raises(ExportCancelledError):
+                ExportEngine()._export_table(
+                    "w_levels",
+                    src,
+                    dest,
+                    (),
+                    "3006",
+                    False,
+                    lambda *a: None,
+                    cancel,
+                )
+        finally:
+            src.closedb()
+            dest.closedb()

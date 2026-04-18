@@ -107,6 +107,96 @@ class ExportEngine:
             f"({col_list}) VALUES ({', '.join(value_exprs)})"
         )
 
+    def _export_table(
+        self,
+        tname: str,
+        source_conn: DbConnectionManager,
+        dest_conn: DbConnectionManager,
+        obsids: tuple[str, ...],
+        dest_srid: str,
+        replace: bool,
+        progress_cb: Callable[[str, int, int], None],
+        cancel_flag: threading.Event,
+    ) -> None:
+        is_migration = tname == "w_levels_logger" and self._needs_logger_migration(
+            source_conn, dest_conn
+        )
+        src_cols, dst_cols = self._get_exportable_columns(
+            tname, source_conn, dest_conn, is_migration=is_migration
+        )
+        if not src_cols:
+            log.warning("No exportable columns for table %s — skipping", tname)
+            return
+
+        total = self._count_source_rows(tname, source_conn, obsids)
+        progress_cb(tname, 0, total)
+
+        dest_snapshot: list[tuple] | None = None
+        snap_cols: list[str] | None = None
+        if replace:
+            dest_snapshot, snap_cols = self._snapshot_and_clear_dest_table(
+                tname, dest_conn
+            )
+
+        select_sql, select_args = self._build_select_sql(
+            tname, source_conn, src_cols, dest_srid, obsids
+        )
+        insert_sql = self._build_insert_sql(tname, dest_conn, dst_cols)
+
+        key_to_sid: dict[tuple, int] = {}
+        if select_args:
+            source_conn.cursor.execute(select_sql, select_args)
+        else:
+            source_conn.cursor.execute(select_sql)
+
+        rows_written = 0
+        while True:
+            if cancel_flag.is_set():
+                raise ExportCancelledError()
+            chunk = list(source_conn.cursor.fetchmany(self.CHUNK_SIZE))
+            if not chunk:
+                break
+            if is_migration:
+                chunk = self._migrate_logger_chunk(
+                    chunk, src_cols, dest_conn, key_to_sid
+                )
+            dest_conn.cursor.executemany(insert_sql, chunk)
+            rows_written += len(chunk)
+            progress_cb(tname, rows_written, total)
+
+        if replace and dest_snapshot is not None:
+            self._reinsert_dest_snapshot(tname, dest_conn, dest_snapshot, snap_cols)
+
+    # ---- Stubs (replaced in Tasks 6 and 7) ----
+
+    def _needs_logger_migration(
+        self, source_conn: DbConnectionManager, dest_conn: DbConnectionManager
+    ) -> bool:
+        return False
+
+    def _snapshot_and_clear_dest_table(
+        self, tname: str, dest_conn: DbConnectionManager
+    ) -> tuple[list[tuple], list[str]]:
+        return [], []
+
+    def _reinsert_dest_snapshot(
+        self,
+        tname: str,
+        dest_conn: DbConnectionManager,
+        snapshot: list[tuple],
+        snap_cols: list[str],
+    ) -> None:
+        pass
+
+    def _migrate_logger_chunk(
+        self,
+        chunk: list[tuple],
+        src_cols: list[str],
+        dest_conn: DbConnectionManager,
+        key_to_sid: dict,
+    ) -> list[tuple]:
+        return chunk
+
     def _count_source_rows(
         self,
         tname: str,

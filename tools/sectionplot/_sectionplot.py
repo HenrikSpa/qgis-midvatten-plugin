@@ -91,7 +91,10 @@ from midvatten.tools.sectionplot.data import (  # noqa: F401
     get_water_levels_from_df as _get_water_levels_from_df,
     get_length_map,
     fill_empty_columns,
-    get_slider_idx,
+    slider_val_to_idx,
+    SEISMIC_Y1_COLUMN,
+    SEISMIC_Y2_COLUMN,
+    SEISMIC_Y3_COLUMN,
 )
 
 _WLVL_EXCLUDED_TABLES = (
@@ -816,9 +819,9 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
     def get_plot_data_seismic(self, line_layer, line_feature):
         # Last step in get data - check if the line layer is obs_lines and if so, load seismic data if there are any
         # Set the column names used later by plot_obs_lines_data.
-        self.y1_column = "bedrock"
-        self.y2_column = "ground"
-        self.y3_column = "gw_table"
+        self.y1_column = SEISMIC_Y1_COLUMN
+        self.y2_column = SEISMIC_Y2_COLUMN
+        self.y3_column = SEISMIC_Y3_COLUMN
         return _get_plot_data_seismic(
             line_layer=line_layer,
             line_feature=line_feature,
@@ -1999,7 +2002,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
             df_idx_as_datetime(df, valinit), color="black", linewidth=2, linestyle="--"
         )
 
-        current_idx = get_slider_idx(self.figure.date_slider)
+        current_idx = slider_val_to_idx(self.figure.date_slider.val)
         x_wl, wl = self.get_water_levels_from_df(
             df, current_idx, self.obsids_x_position, self.figure
         )
@@ -2294,7 +2297,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
 
     def update_animation(self, fig, datevalue):
         if fig.waterlevel_lineplot is not None and fig.df is not None:
-            current_idx = get_slider_idx(fig.date_slider)
+            current_idx = slider_val_to_idx(fig.date_slider.val)
             x_wl, wl = self.get_water_levels_from_df(
                 fig.df, current_idx, fig.obsids_x_position, fig
             )
@@ -2388,13 +2391,15 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
             a.xy = (x, a.original_xy[1])
 
     def get_water_levels_from_df(self, df, idx, obsids_x_position, fig):
-        return _get_water_levels_from_df(
+        x_wl, wl, new_annotations = _get_water_levels_from_df(
             df=df,
             idx=idx,
             obsids_x_position=obsids_x_position,
-            fig=fig,
+            obsid_annotation=fig.obsid_annotation,
             settingsdict=self.ms.settingsdict,
         )
+        fig.obsid_annotation.update(new_annotations)
+        return x_wl, wl
 
     # ----- Tools used during creation of a new figure -----
     def waterlevel_lineplot(self, x_wl, wl, level_date, interactive_line=False):
@@ -2634,7 +2639,7 @@ def nan_helper(y):
     return np.isnan(y), lambda z: z.nonzero()[0]
 
 
-# get_slider_idx, get_length_map, fill_empty_columns are re-exported from data.py
+# slider_val_to_idx, get_length_map, fill_empty_columns are re-exported from data.py
 # via the import block near the top of this file.
 
 

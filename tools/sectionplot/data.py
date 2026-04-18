@@ -187,6 +187,9 @@ def get_plot_data_bars(
     This is called when the class is instantiated, collecting data specific for
     the profile line layer and the obs_points.
 
+    Also populates *obsid_annotation* with ``{obsid: (x, z)}`` entries for
+    obsids not already annotated.
+
     Returns a dict ``{type_name: {"x": [...], "height": [...], "bottom": [...]}}``.
     """
     common_utils.start_waiting_cursor()
@@ -364,6 +367,11 @@ def get_drillstops(
     return drillstops
 
 
+SEISMIC_Y1_COLUMN = "bedrock"
+SEISMIC_Y2_COLUMN = "ground"
+SEISMIC_Y3_COLUMN = "gw_table"
+
+
 def get_plot_data_seismic(line_layer, line_feature, dbconnection=None):
     """Load seismic data for an obs_lines layer feature.
 
@@ -378,9 +386,9 @@ def get_plot_data_seismic(line_layer, line_feature, dbconnection=None):
         ("obsline_y3", float),
     ]
     x = "length"
-    y1_column = "bedrock"
-    y2_column = "ground"
-    y3_column = "gw_table"
+    y1_column = SEISMIC_Y1_COLUMN
+    y2_column = SEISMIC_Y2_COLUMN
+    y3_column = SEISMIC_Y3_COLUMN
     table = "seismic_data"
     if line_layer and line_layer.name() == "obs_lines":
         sql = (
@@ -408,19 +416,20 @@ def get_water_levels_from_df(
     df,
     idx: int,
     obsids_x_position: dict,
-    fig,
+    obsid_annotation: dict,
     settingsdict: dict = None,
-):
+) -> tuple:
     """Extract water-level values for the given DataFrame row index.
 
-    Updates ``fig.obsid_annotation`` in-place when stratigraphy and hydrology
-    are both unplotted.
-
-    Returns ``(x_wl, wl)`` — parallel lists of x-positions and water-level
-    values.
+    Returns ``(x_wl, wl, new_annotations)`` where *x_wl* and *wl* are
+    parallel lists of x-positions and water-level values, and
+    *new_annotations* is a ``{obsid: (x, val)}`` dict of annotation entries
+    for obsids not yet annotated (to be merged into the caller's
+    ``obsid_annotation`` dict).
     """
     wl = []
     x_wl = []
+    new_annotations: dict = {}
     for obs, x in obsids_x_position.items():
         try:
             val = df.iloc[[idx]][obs]
@@ -429,7 +438,7 @@ def get_water_levels_from_df(
         except TypeError:
             try:
                 _obs = obs.encode("utf8").decode("utf8")
-            except Exception as e:
+            except Exception:
                 common_utils.MessagebarAndLog.info(
                     log_msg=QCoreApplication.translate(
                         "SectionPlot", "Encoding string failed for %s"
@@ -445,14 +454,14 @@ def get_water_levels_from_df(
 
         wl.append(val)
         x_wl.append(x)
-        if obs not in fig.obsid_annotation or not any(
+        if obs not in obsid_annotation or not any(
             [
                 settingsdict["stratigraphyplotted"],
                 settingsdict["secplothydrologyplotted"],
             ]
         ):
-            fig.obsid_annotation[obs] = (x, val)
-    return x_wl, wl
+            new_annotations[obs] = (x, val)
+    return x_wl, wl, new_annotations
 
 
 def get_length_map(length_series: pd.Series):
@@ -497,5 +506,5 @@ def fill_empty_columns(new_idx_map, min_column_width, X, Y):  # noqa: N803
         prev_idx = current_idx
 
 
-def get_slider_idx(slider) -> int:
-    return int(round(slider.val, 0))
+def slider_val_to_idx(val: float) -> int:
+    return int(round(val, 0))

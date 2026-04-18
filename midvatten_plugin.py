@@ -436,6 +436,16 @@ def _make_actions(plugin: "Midvatten") -> list[ActionSpec]:
             menu="db",
             callback=lambda: LoadLayers(iface, ms.settingsdict),
         ),
+        ActionSpec(
+            id="refresh_spatialite_stats",
+            label=QCoreApplication.translate(
+                "Midvatten",
+                "Fix 100-row attribute-table cap (refresh SpatiaLite layer statistics)",
+            ),
+            icon="calc_statistics.png",
+            menu="db",
+            callback=lambda: db_utils.refresh_spatialite_layer_statistics(),
+        ),
     ]
 
 

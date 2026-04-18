@@ -358,12 +358,6 @@ def create_layer(
     # For QgsVectorLayer, dbtype has to be postgres instead of postgis
     dbtype = db_utils.get_dbtype(dbtype)
 
-    if dbtype == "postgres":
-        # Don't trust pg_class.reltuples for feature count — it's 0/-1 before
-        # ANALYZE runs, which triggers the "only 100 rows in attribute table"
-        # bug by sizing the QgsVectorLayerCache as `featureCount() + 100`.
-        uri.setParam("estimatedmetadata", "false")
-
     uri.setDataSource(schema, tablename, geometrycolumn, sql, keycolumn)
     _name = tablename if layername is None else layername
     layer = QgsVectorLayer(uri.uri(), _name, dbtype)

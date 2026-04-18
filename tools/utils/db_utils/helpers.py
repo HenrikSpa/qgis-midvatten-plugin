@@ -454,6 +454,147 @@ def calculate_db_table_rows() -> None:
         )
 
 
+def refresh_spatialite_layer_statistics() -> None:
+    """Fix the "attribute table shows only 100 rows" symptom for SpatiaLite.
+
+    Root cause: some SpatiaLite DBs (notably migrated old ones, and Midvatten
+    DBs created by ``new_db()``) have a registered geometry column in
+    ``geometry_columns`` but no corresponding row in
+    ``geometry_columns_statistics``. QGIS's SpatiaLite provider returns
+    ``featureCount() = 0`` in that state, and
+    ``QgsVectorLayerCache::setFullCache(true)`` sizes its row cache as
+    ``featureCount() + 100`` — capping the attribute table at 100 rows.
+
+    Plain ``UpdateLayerStatistics()`` is not enough: if the stats row is
+    missing, it returns 1 but silently refuses to insert. We have to run
+    ``RecoverGeometryColumn`` first (which seeds the row) and then
+    ``UpdateLayerStatistics`` to populate row_count and extents.
+
+    No-op on PostgreSQL (PostGIS uses ANALYZE-driven statistics and is not
+    affected by this bug).
+    """
+    dbconnection = DbConnectionManager()
+    try:
+        if dbconnection.dbtype != "spatialite":
+            MessagebarAndLog.info(
+                bar_msg=QCoreApplication.translate(
+                    "refresh_spatialite_layer_statistics",
+                    "This fix only applies to SpatiaLite databases. No action taken.",
+                ),
+            )
+            return
+
+        try:
+            registered = dbconnection.execute_and_fetchall(
+                "SELECT f_table_name, f_geometry_column, geometry_type, "
+                "coord_dimension, srid FROM geometry_columns"
+            )
+        except Exception:
+            MessagebarAndLog.critical(
+                bar_msg=QCoreApplication.translate(
+                    "refresh_spatialite_layer_statistics",
+                    "Could not read geometry_columns — is this a SpatiaLite database?",
+                ),
+                log_msg=traceback.format_exc(),
+            )
+            return
+
+        recovered: list[str] = []
+        failed: list[str] = []
+        try:
+            for table, geom_col, geom_type_code, coord_dim, srid in registered:
+                type_name = _SPATIALITE_GEOMETRY_TYPES.get(geom_type_code)
+                dim_name = _SPATIALITE_DIMENSION_NAMES.get(coord_dim)
+                if type_name is None or dim_name is None:
+                    failed.append(
+                        f"{table}.{geom_col} "
+                        f"(unsupported geometry_type={geom_type_code!r} "
+                        f"coord_dimension={coord_dim!r})"
+                    )
+                    continue
+                ret = dbconnection.execute_and_fetchall(
+                    "SELECT RecoverGeometryColumn(?, ?, ?, ?, ?)",
+                    (table, geom_col, srid, type_name, dim_name),
+                )
+                if not ret or ret[0][0] != 1:
+                    failed.append(f"{table}.{geom_col} (RecoverGeometryColumn={ret})")
+                    continue
+                recovered.append(f"{table}.{geom_col}")
+            dbconnection.execute_and_fetchall("SELECT UpdateLayerStatistics()")
+            dbconnection.commit()
+        except Exception:
+            MessagebarAndLog.critical(
+                bar_msg=QCoreApplication.translate(
+                    "refresh_spatialite_layer_statistics",
+                    "Failed to refresh SpatiaLite layer statistics. The "
+                    "database may be locked by another writer — try again "
+                    "when no one else has the database open.",
+                ),
+                log_msg=traceback.format_exc(),
+            )
+            return
+    finally:
+        dbconnection.closedb()
+
+    log_lines = [
+        f"Recovered {len(recovered)} geometry columns: {', '.join(recovered) or '(none)'}"
+    ]
+    if failed:
+        log_lines.append(f"Failed on {len(failed)}: {', '.join(failed)}")
+
+    MessagebarAndLog.info(
+        bar_msg=QCoreApplication.translate(
+            "refresh_spatialite_layer_statistics",
+            "Layer statistics refreshed. Reload the default layers (or the "
+            "single layer) to see the full row count.",
+        ),
+        log_msg="\n".join(log_lines),
+    )
+
+
+# SpatiaLite geometry_type integer codes -> string names accepted by
+# RecoverGeometryColumn. See spatialite.org: the code is
+# `2000 * (dimension - 2) + class`, where class is 1..7 for the seven
+# primary geometry types. Midvatten only uses POINT (1) and LINESTRING (2),
+# but we map the full set so the fix isn't surprised by user-added tables.
+_SPATIALITE_GEOMETRY_TYPES: dict[int, str] = {
+    1: "POINT",
+    2: "LINESTRING",
+    3: "POLYGON",
+    4: "MULTIPOINT",
+    5: "MULTILINESTRING",
+    6: "MULTIPOLYGON",
+    7: "GEOMETRYCOLLECTION",
+    1001: "POINT",
+    1002: "LINESTRING",
+    1003: "POLYGON",
+    1004: "MULTIPOINT",
+    1005: "MULTILINESTRING",
+    1006: "MULTIPOLYGON",
+    1007: "GEOMETRYCOLLECTION",
+    2001: "POINT",
+    2002: "LINESTRING",
+    2003: "POLYGON",
+    2004: "MULTIPOINT",
+    2005: "MULTILINESTRING",
+    2006: "MULTIPOLYGON",
+    2007: "GEOMETRYCOLLECTION",
+    3001: "POINT",
+    3002: "LINESTRING",
+    3003: "POLYGON",
+    3004: "MULTIPOINT",
+    3005: "MULTILINESTRING",
+    3006: "MULTIPOLYGON",
+    3007: "GEOMETRYCOLLECTION",
+}
+
+_SPATIALITE_DIMENSION_NAMES: dict[int, str] = {
+    2: "XY",
+    3: "XYZ",
+    4: "XYZM",
+}
+
+
 def sql_to_parameters_units_tuple(sql: str) -> tuple:
     """Execute sql and return a sorted tuple of (parameter, (unit, ...)) pairs."""
     parameters_from_table = ru(sql_load_fr_db(sql)[1], True)

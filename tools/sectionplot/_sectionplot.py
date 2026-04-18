@@ -43,32 +43,32 @@ from midvatten.tools.utils.gui_utils import set_combobox
 
 Ui_SecPlotDock = uic.loadUiType(ui_path("secplotdockwidget.ui"))[0]
 
-from matplotlib.widgets import Slider
-from matplotlib.gridspec import GridSpec
-import datetime
-import matplotlib.dates as mdates
-from copy import deepcopy
+from matplotlib.widgets import Slider  # noqa: E402
+from matplotlib.gridspec import GridSpec  # noqa: E402
+import datetime  # noqa: E402
+import matplotlib.dates as mdates  # noqa: E402
+from copy import deepcopy  # noqa: E402
 
-from midvatten.tools.utils import common_utils, db_utils
-from midvatten.tools.utils.string_utils import returnunicode as ru
-from midvatten.tools.utils.midvatten_utils import PlotTemplates
-from midvatten.tools.utils.gui_utils import DetachFigureButton, ReverseSectionButton
-import midvatten.definitions.midvatten_defs as defs
-from midvatten.tools.utils import matplotlib_replacements
-from midvatten.tools.sectionplot.figure import SectionPlotFigure
-from midvatten.tools.sectionplot.legend import SectionPlotLegendManager
-from midvatten.tools.sectionplot import painters as _painters
-from midvatten.tools.sectionplot._utils import (  # noqa: F401
+from midvatten.tools.utils import common_utils, db_utils  # noqa: E402
+from midvatten.tools.utils.string_utils import returnunicode as ru  # noqa: E402
+from midvatten.tools.utils.midvatten_utils import PlotTemplates  # noqa: E402
+from midvatten.tools.utils.gui_utils import DetachFigureButton, ReverseSectionButton  # noqa: E402
+import midvatten.definitions.midvatten_defs as defs  # noqa: E402
+from midvatten.tools.utils import matplotlib_replacements  # noqa: E402
+from midvatten.tools.sectionplot.figure import SectionPlotFigure  # noqa: E402
+from midvatten.tools.sectionplot.legend import SectionPlotLegendManager  # noqa: E402
+from midvatten.tools.sectionplot import painters as _painters  # noqa: E402
+from midvatten.tools.sectionplot._utils import (  # noqa: E402, F401
     get_legend_items_labels,
     get_plot_label_name,
 )
-from midvatten.tools.sectionplot.ui_types import SecPlotUi
-from midvatten.tools.sectionplot.settings import (
+from midvatten.tools.sectionplot.ui_types import SecPlotUi  # noqa: E402
+from midvatten.tools.sectionplot.settings import (  # noqa: E402
     apply_settings_to_ui,
     collect_ui_to_settings,
     save_settings as _save_bound_settings,
 )
-from midvatten.tools.sectionplot.data import (
+from midvatten.tools.sectionplot.data import (  # noqa: E402
     prepare_obsid_positions as _prepare_obsid_positions,
     get_z_data as _get_z_data,
     get_plot_data_bars as _get_plot_data_bars,
@@ -84,7 +84,7 @@ from midvatten.tools.sectionplot.data import (
     SEISMIC_Y2_COLUMN,
     SEISMIC_Y3_COLUMN,
 )
-from midvatten.tools.sectionplot._ui_fill import (
+from midvatten.tools.sectionplot._ui_fill import (  # noqa: E402
     fill_tem as _fill_tem,
     fill_images as _fill_images,
     fill_dem_list as _fill_dem_list,

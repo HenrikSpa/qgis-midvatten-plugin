@@ -106,9 +106,9 @@ def fill_images(ui, ms, dbconnection, line_feature):
 
     tables = db_utils.get_tables()
     if "profile_images" not in tables:
-        ui.tem_model_name.addItem(
+        ui.images_images.addItem(
             QCoreApplication.translate(
-                "SectionPlot", "Table tem_data missing in database."
+                "SectionPlot", "Table profile_images missing in database."
             )
         )
         ui.images_images.setToolTip(

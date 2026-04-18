@@ -1,9 +1,16 @@
 """Typed specs for QGIS layers loaded by the Midvatten plugin."""
 
 from dataclasses import dataclass
+from enum import Enum
 from typing import Callable, Optional
 
 from midvatten.tools.utils.db_utils import DbConnectionManager
+
+
+class LayerGroupName(str, Enum):
+    OBS_DB = "Midvatten_OBS_DB"
+    DATA_DOMAINS = "Midvatten_data_domains"
+    DATA_TABLES = "Midvatten_data_tables"
 
 
 @dataclass(frozen=True)
@@ -57,16 +64,18 @@ def _data_domain_layers(db: DbConnectionManager) -> list[LayerSpec]:
 
 
 GROUPS: dict[str, GroupSpec] = {
-    "Midvatten_OBS_DB": GroupSpec(
-        name="Midvatten_OBS_DB", position_index=0, resolve_layers=_obs_db_layers
+    LayerGroupName.OBS_DB: GroupSpec(
+        name=LayerGroupName.OBS_DB.value,
+        position_index=0,
+        resolve_layers=_obs_db_layers,
     ),
-    "Midvatten_data_domains": GroupSpec(
-        name="Midvatten_data_domains",
+    LayerGroupName.DATA_DOMAINS: GroupSpec(
+        name=LayerGroupName.DATA_DOMAINS.value,
         position_index=1,
         resolve_layers=_data_domain_layers,
     ),
-    "Midvatten_data_tables": GroupSpec(
-        name="Midvatten_data_tables",
+    LayerGroupName.DATA_TABLES: GroupSpec(
+        name=LayerGroupName.DATA_TABLES.value,
         position_index=1,
         resolve_layers=_data_tables_layers,
     ),

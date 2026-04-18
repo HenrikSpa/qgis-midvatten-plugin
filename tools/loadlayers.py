@@ -9,12 +9,17 @@ from qgis.PyQt.QtCore import QCoreApplication
 from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.file_utils import definitions_path
 from midvatten.tools.utils.layer_build import build_layer, prime_feature_count
-from midvatten.tools.utils.layer_specs import GROUPS, GroupSpec, LayerSpec
+from midvatten.tools.utils.layer_specs import (
+    GROUPS,
+    GroupSpec,
+    LayerGroupName,
+    LayerSpec,
+)
 from midvatten.tools.utils.midvatten_utils import is_locale_swedish
 
 
 class LoadLayers:
-    def __init__(self, iface, settingsdict=None, group_name="Midvatten_OBS_DB"):
+    def __init__(self, iface, settingsdict=None, group_name=LayerGroupName.OBS_DB):
         if group_name not in GROUPS:
             raise ValueError(f"Unknown Midvatten layer group: {group_name!r}")
         self.iface = iface
@@ -82,7 +87,7 @@ class LoadLayers:
         screen_layer,
         dbconnection: db_utils.DbConnectionManager,
     ) -> None:
-        if self.group.name != "Midvatten_OBS_DB":
+        if self.group.name != LayerGroupName.OBS_DB.value:
             return
         if obs_points_layer is None or screen_layer is None:
             return

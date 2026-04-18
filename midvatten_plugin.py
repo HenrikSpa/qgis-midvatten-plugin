@@ -53,6 +53,7 @@ from midvatten.tools.import_general_csv_gui import GeneralCsvImportGui
 from midvatten.tools.import_interlab4 import Interlab4Import
 from midvatten.tools.import_logger import LoggerImport
 from midvatten.tools.loadlayers import LoadLayers
+from midvatten.tools.utils.layer_specs import LayerGroupName
 from midvatten.tools.loggereditor import LoggerEditor
 from midvatten.tools.midvsettings import MidvSettings
 from midvatten.tools.piper import PiperPlot
@@ -365,7 +366,7 @@ def _make_actions(plugin: "Midvatten") -> list[ActionSpec]:
             icon="loaddatadomains.png",
             menu="utils",
             callback=lambda: LoadLayers(
-                iface, ms.settingsdict, "Midvatten_data_domains"
+                iface, ms.settingsdict, LayerGroupName.DATA_DOMAINS
             ),
         ),
         ActionSpec(
@@ -374,7 +375,7 @@ def _make_actions(plugin: "Midvatten") -> list[ActionSpec]:
             icon="loaddatadomains.png",
             menu="utils",
             callback=lambda: LoadLayers(
-                iface, ms.settingsdict, "Midvatten_data_tables"
+                iface, ms.settingsdict, LayerGroupName.DATA_TABLES
             ),
         ),
         ActionSpec(

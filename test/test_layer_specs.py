@@ -1,6 +1,11 @@
 """Unit tests for midvatten.tools.utils.layer_specs."""
 
-from midvatten.tools.utils.layer_specs import GROUPS, GroupSpec, LayerSpec
+from midvatten.tools.utils.layer_specs import (
+    GROUPS,
+    GroupSpec,
+    LayerGroupName,
+    LayerSpec,
+)
 
 
 class TestLayerSpec:
@@ -26,11 +31,7 @@ class TestLayerSpec:
 
 class TestGroupSpec:
     def test_all_three_groups_registered(self):
-        assert set(GROUPS) == {
-            "Midvatten_OBS_DB",
-            "Midvatten_data_domains",
-            "Midvatten_data_tables",
-        }
+        assert set(GROUPS) == set(LayerGroupName)
 
     def test_each_group_is_a_group_spec(self):
         for name, group in GROUPS.items():
@@ -40,11 +41,26 @@ class TestGroupSpec:
             assert callable(group.resolve_layers)
 
     def test_obs_db_is_at_position_zero(self):
-        assert GROUPS["Midvatten_OBS_DB"].position_index == 0
+        assert GROUPS[LayerGroupName.OBS_DB].position_index == 0
 
     def test_other_groups_at_position_one(self):
-        assert GROUPS["Midvatten_data_domains"].position_index == 1
-        assert GROUPS["Midvatten_data_tables"].position_index == 1
+        assert GROUPS[LayerGroupName.DATA_DOMAINS].position_index == 1
+        assert GROUPS[LayerGroupName.DATA_TABLES].position_index == 1
+
+
+class TestLayerGroupName:
+    def test_string_values_stable(self):
+        # These strings are externally-visible layer-tree group names;
+        # breaking them would change user-facing behaviour.
+        assert LayerGroupName.OBS_DB.value == "Midvatten_OBS_DB"
+        assert LayerGroupName.DATA_DOMAINS.value == "Midvatten_data_domains"
+        assert LayerGroupName.DATA_TABLES.value == "Midvatten_data_tables"
+
+    def test_str_mixin_equality(self):
+        # str mixin means the enum compares equal to its value and works
+        # as a dict key equivalently to the raw string.
+        assert LayerGroupName.OBS_DB == "Midvatten_OBS_DB"
+        assert GROUPS["Midvatten_OBS_DB"] is GROUPS[LayerGroupName.OBS_DB]
 
 
 class TestDefinedLayerLists:

@@ -1,6 +1,6 @@
 # AUTO-GENERATED from secplotdockwidget.ui — do not edit manually.
 # Regenerate: python tools/sectionplot/generate_ui_types.py
-from qgis.PyQt import QtWidgets, QtCore
+from qgis.PyQt import QtWidgets
 
 
 class SecPlotUi:

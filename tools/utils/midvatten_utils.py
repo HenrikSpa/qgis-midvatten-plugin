@@ -1021,6 +1021,157 @@ def _sanitize_mplstyle_content(content: str) -> tuple[str, list[str]]:
     return "".join(lines), skipped
 
 
+class _FixStylesDialog(QtWidgets.QDialog):
+    """Dialog that lets the user inspect and fix .mplstyle files in the stylelib."""
+
+    def __init__(self, style_folder: str, style_extension: str, parent=None):
+        super().__init__(parent)
+        self.style_folder = style_folder
+        self.style_extension = style_extension
+        self.fixed_any = False
+        self._setup_ui()
+        self._scan()
+
+    def _setup_ui(self):
+        self.setWindowTitle(
+            QCoreApplication.translate("_FixStylesDialog", "Fix style files")
+        )
+        layout = QtWidgets.QVBoxLayout(self)
+
+        layout.addWidget(
+            QtWidgets.QLabel(
+                QCoreApplication.translate(
+                    "_FixStylesDialog",
+                    "Select style files to fix (unknown rcParams keys will be removed):",
+                )
+            )
+        )
+
+        self._list = QtWidgets.QListWidget()
+        self._list.itemChanged.connect(self._on_item_changed)
+        layout.addWidget(self._list)
+
+        sel_row = QtWidgets.QHBoxLayout()
+        btn_all = QtWidgets.QPushButton(
+            QCoreApplication.translate("_FixStylesDialog", "Select all")
+        )
+        btn_none = QtWidgets.QPushButton(
+            QCoreApplication.translate("_FixStylesDialog", "Deselect all")
+        )
+        btn_all.clicked.connect(lambda: self._set_all(True))
+        btn_none.clicked.connect(lambda: self._set_all(False))
+        sel_row.addWidget(btn_all)
+        sel_row.addWidget(btn_none)
+        sel_row.addStretch()
+        layout.addLayout(sel_row)
+
+        btn_row = QtWidgets.QHBoxLayout()
+        self._fix_btn = QtWidgets.QPushButton(
+            QCoreApplication.translate("_FixStylesDialog", "Fix selected")
+        )
+        close_btn = QtWidgets.QPushButton(
+            QCoreApplication.translate("_FixStylesDialog", "Close")
+        )
+        self._fix_btn.clicked.connect(self._fix_selected)
+        close_btn.clicked.connect(self.accept)
+        btn_row.addStretch()
+        btn_row.addWidget(self._fix_btn)
+        btn_row.addWidget(close_btn)
+        layout.addLayout(btn_row)
+
+        self.resize(520, 320)
+
+    def _scan(self):
+        self._list.blockSignals(True)
+        self._list.clear()
+        self._info: dict = {}
+
+        if os.path.isdir(self.style_folder):
+            for fname in sorted(os.listdir(self.style_folder)):
+                if not fname.endswith(self.style_extension):
+                    continue
+                fpath = os.path.join(self.style_folder, fname)
+                try:
+                    with open(fpath, encoding="utf-8") as f:
+                        raw = f.read()
+                    content, skipped = _sanitize_mplstyle_content(raw)
+                except Exception:
+                    content, skipped = "", []
+
+                style_name = os.path.splitext(fname)[0]
+                self._info[fname] = (fpath, content, skipped)
+
+                item = QtWidgets.QListWidgetItem()
+                if skipped:
+                    label = QCoreApplication.translate(
+                        "_FixStylesDialog", "%s  —  %d unknown key(s): %s"
+                    ) % (style_name, len(skipped), ", ".join(skipped))
+                    item.setCheckState(QtCore.Qt.Checked)
+                else:
+                    label = (
+                        QCoreApplication.translate("_FixStylesDialog", "%s  —  OK")
+                        % style_name
+                    )
+                    item.setCheckState(QtCore.Qt.Unchecked)
+                item.setText(label)
+                item.setData(QtCore.Qt.UserRole, fname)
+                self._list.addItem(item)
+
+        self._list.blockSignals(False)
+        self._update_fix_btn()
+
+    def _set_all(self, checked: bool):
+        state = QtCore.Qt.Checked if checked else QtCore.Qt.Unchecked
+        self._list.blockSignals(True)
+        for i in range(self._list.count()):
+            self._list.item(i).setCheckState(state)
+        self._list.blockSignals(False)
+        self._update_fix_btn()
+
+    def _on_item_changed(self, _item):
+        self._update_fix_btn()
+
+    def _update_fix_btn(self):
+        any_checked = any(
+            self._list.item(i).checkState() == QtCore.Qt.Checked
+            for i in range(self._list.count())
+        )
+        self._fix_btn.setEnabled(any_checked)
+
+    def _fix_selected(self):
+        fixed: list[str] = []
+        for i in range(self._list.count()):
+            item = self._list.item(i)
+            if item.checkState() != QtCore.Qt.Checked:
+                continue
+            fname = item.data(QtCore.Qt.UserRole)
+            fpath, content, skipped = self._info.get(fname, (None, "", []))
+            if not fpath or not skipped:
+                continue
+            try:
+                with open(fpath, "w", encoding="utf-8") as f:
+                    f.write(content)
+                fixed.append(os.path.splitext(fname)[0])
+                self.fixed_any = True
+            except Exception as e:
+                MessagebarAndLog.warning(
+                    bar_msg=QCoreApplication.translate(
+                        "_FixStylesDialog", "Failed to fix style file '%s'."
+                    )
+                    % fname,
+                    log_msg=str(e),
+                )
+        if fixed:
+            MessagebarAndLog.info(
+                bar_msg=QCoreApplication.translate(
+                    "_FixStylesDialog",
+                    "Fixed %d style file(s): %s",
+                )
+                % (len(fixed), ", ".join(fixed))
+            )
+            self._scan()
+
+
 class MatplotlibStyles:
     def __init__(
         self,
@@ -1030,6 +1181,7 @@ class MatplotlibStyles:
         open_folder_button,
         available_settings_button,
         save_as_button,
+        fix_styles_button,
         last_used_style_settingskey,
         defaultstyle_stylename,
         msettings=None,
@@ -1041,6 +1193,7 @@ class MatplotlibStyles:
         self.open_folder_button = open_folder_button
         self.available_settings_button = available_settings_button
         self.save_as_button = save_as_button
+        self.fix_styles_button = fix_styles_button
 
         self.style_extension = ".mplstyle"
         self.style_folder = os.path.join(mpl.get_configdir(), "stylelib")
@@ -1099,10 +1252,9 @@ class MatplotlibStyles:
 
         self.last_used_style_settingskey = last_used_style_settingskey
 
+        # Always write the Midvatten default so the installed copy stays current.
+        self.save_style_to_stylelib(self.defaultstyle_stylename)
         self.update_style_list()
-
-        if not os.path.isfile(self.filename_from_style(self.defaultstyle_stylename[1])):
-            self.save_style_to_stylelib(self.defaultstyle_stylename)
         try:
             last_used_style = self.ms.settingsdict[self.last_used_style_settingskey]
         except Exception:
@@ -1123,6 +1275,15 @@ class MatplotlibStyles:
             lambda x: self.available_settings_to_log()
         )
         self.save_as_button.clicked.connect(lambda x: self.save_as())
+        self.fix_styles_button.clicked.connect(lambda x: self.fix_styles())
+
+    @general_exception_handler
+    def fix_styles(self):
+        """Open a dialog where the user can select which style files to sanitize."""
+        dialog = _FixStylesDialog(self.style_folder, self.style_extension)
+        dialog.exec_()
+        if dialog.fixed_any:
+            self.update_style_list()
 
     def save_style_to_stylelib(self, stylestring_stylename):
         filename = self.filename_from_style(stylestring_stylename[1])
@@ -1160,7 +1321,6 @@ class MatplotlibStyles:
     @general_exception_handler
     def load(self, drawfunc, plot_widget_navigationtoolbar_name=None):
         # mpl.rcdefaults()
-        mpl.style.reload_library()
         fallback_style = "fallback_" + self.defaultstyle_stylename[1]
         self.save_style_to_stylelib([self.defaultstyle_stylename[0], fallback_style])
         styles = [

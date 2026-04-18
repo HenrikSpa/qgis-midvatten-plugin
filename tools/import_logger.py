@@ -303,7 +303,11 @@ class DiverOfficeParser:
             rows = [ru(rawrow).rstrip("\n").rstrip("\r").strip() for rawrow in f]
 
         for rownr, row in enumerate(rows):
-            if path.lower().endswith(".csv") and row.startswith("Date/time"):
+            if (
+                path.lower().endswith(".csv")
+                and "Date/time" in row
+                and not row.startswith("[")
+            ):
                 data_start_row = rownr + 1
                 break
 
@@ -326,6 +330,12 @@ class DiverOfficeParser:
                     metadata.setdefault(section, {})[kv[0].lower()] = (
                         kv[1] if len(kv) > 1 else ""
                     )
+            elif "=" in row and not row.startswith("["):
+                # Legacy flat CSV: bare key=value lines before Date/time header
+                kv = [x.strip() for x in row.split("=", 1)]
+                key = kv[0].lower()
+                if key in ("location", "instrument number", "serial number"):
+                    metadata.setdefault("flat", {})[key] = kv[1] if len(kv) > 1 else ""
 
         # Resolve UTC offset: classic format stores it as 'instrument number',
         # newer format uses 'utc offset (hh:mm)' in 'channel identification'.
@@ -338,10 +348,14 @@ class DiverOfficeParser:
             utc_offset = metadata.get("channel identification", {}).get(
                 "utc offset (hh:mm)", ""
             )
+        if not utc_offset:
+            utc_offset = metadata.get("flat", {}).get("instrument number", "")
 
         serial_raw = metadata.get("logger settings", {}).get("serial number", "")
         if not serial_raw:
             serial_raw = metadata.get("series settings", {}).get("serial number", "")
+        if not serial_raw:
+            serial_raw = metadata.get("flat", {}).get("serial number", "")
         serial_number = DiverOfficeParser._extract_diver_serial(serial_raw)
 
         # Resolve location
@@ -350,6 +364,8 @@ class DiverOfficeParser:
             location = metadata.get("series settings", {}).get("location", "")
         if not location:
             location = metadata.get("channel identification", {}).get("location", "")
+        if not location:
+            location = metadata.get("flat", {}).get("location", "")
 
         data_headers = {0: "date_time"}
         for section, data in metadata.items():
@@ -359,6 +375,21 @@ class DiverOfficeParser:
                 colname = data.get("identification", "")
                 if colname:
                     data_headers[int(secno)] = colname
+
+        if data_start_row is None:
+            common_utils.MessagebarAndLog.critical(
+                bar_msg=QCoreApplication.translate(
+                    "LoggerImport",
+                    "Diveroffice import warning. See log message panel",
+                ),
+                log_msg=QCoreApplication.translate(
+                    "LoggerImport",
+                    "Warning, the file %s \ndid not have Date/time as a "
+                    "header and will be skipped.",
+                )
+                % ru(path),
+            )
+            return filedata, filename, location, utc_offset or None, serial_number
 
         stop_row = None
         for inv_rownr, row in enumerate(rows[::-1]):
@@ -373,6 +404,7 @@ class DiverOfficeParser:
         else:
             skipfooter = 0
 
+        date_col_idx = 0  # .mon files: date/time is always at column index 0
         # When no [Channel N] sections found, derive column names from the header row
         if len(data_headers) == 1 and data_start_row is not None:
             # data_start_row points to the first data row; header is one row before
@@ -386,8 +418,14 @@ class DiverOfficeParser:
                 else:
                     hdr_delim = ","
                 header_cols = [c.strip() for c in header_row.split(hdr_delim)]
+                # legacy files may have Date/time at any column position
+                date_col_idx = next(
+                    (i for i, c in enumerate(header_cols) if c.lower() == "date/time"),
+                    0,
+                )
+                data_headers = {date_col_idx: "date_time"}
                 for colidx, colname in enumerate(header_cols):
-                    if colidx == 0:
+                    if colidx == date_col_idx:
                         continue
                     col_nospace = colname.lower().replace(" ", "")
                     for keyword in _col_map:
@@ -417,6 +455,8 @@ class DiverOfficeParser:
         colnames = []
         seen_outcols: set[str] = set()
         for k, v in sorted(data_headers.items()):
+            if v == "date_time":
+                continue
             v_nospace = v.lower().replace(" ", "")
             for keyword, outcol in _col_map.items():
                 if keyword in v_nospace and outcol not in seen_outcols:
@@ -427,7 +467,11 @@ class DiverOfficeParser:
 
         if colnames:
             colnames.insert(0, "date_time")
-            usecols.insert(0, 0)
+            usecols.insert(0, date_col_idx)
+            # pandas requires usecols sorted ascending
+            sorted_pairs = sorted(zip(usecols, colnames))
+            usecols = [p[0] for p in sorted_pairs]
+            colnames = [p[1] for p in sorted_pairs]
 
         if "head_cm" in _col_map.values() and "head_cm" not in colnames:
             common_utils.MessagebarAndLog.warning(
@@ -459,7 +503,9 @@ class DiverOfficeParser:
             parse_dates=["date_time"],
             engine="python",
         )
-        for col in df.columns[1:]:
+        for col in df.columns:
+            if col == "date_time":
+                continue
             df[col] = pd.to_numeric(
                 df[col].astype(str).str.replace(",", ".").str.strip(), errors="coerce"
             )
@@ -501,234 +547,6 @@ class DiverOfficeParser:
             )
 
         return filedata, filename, location, utc_offset or None, serial_number
-
-    @staticmethod
-    def parse_old(
-        path: str,
-        charset: str,
-        skip_rows_without_water_level: bool = False,
-        begindate: str | None = None,
-        enddate: str | None = None,
-    ) -> tuple[list, str, str | None, str | None, str | None]:
-        """Parse a legacy Diver-Office CSV file.
-
-        Returns ``(filedata, filename, location, utc_offset, serial_number)``.
-
-        Copied verbatim from DiverofficeImport.parse_diveroffice_file_old().
-        """
-        translation_dict_in_order = {
-            "Date/time": "date_time",
-            "Water head[cm]": "head_cm",
-            "Level[cm]": "head_cm",
-            "Temperature[°C]": "temp_degc",
-            "Conductivity[mS/cm]": "cond_mscm",
-            "1:Conductivity[mS/cm]": "cond_mscm",
-            "2:Spec.cond.[mS/cm]": "cond_mscm",
-            "Conductivity[ms/cm]": "cond_mscm",
-            "1:Conductivity[ms/cm]": "cond_mscm",
-            "2:Spec.cond.[ms/cm]": "cond_mscm",
-        }
-
-        filedata = []
-        begin_extraction = False
-        utc_offset = None
-        serial_number = None
-
-        data_rows = []
-        with open(path, encoding=str(charset)) as f:
-            location = None
-            for rawrow in f:
-                rawrow = ru(rawrow)
-                row = rawrow.rstrip("\n").rstrip("\r").lstrip()
-
-                # Try to get location
-                if row.startswith("Location"):
-                    try:
-                        location = row.split("=")[1].strip()
-                    except IndexError:
-                        pass
-                    continue
-
-                if row.lower().startswith("Instrument number".lower()):
-                    try:
-                        utc_offset = row.split("=")[1].strip()
-                    except IndexError:
-                        pass
-                    continue
-
-                if row.lower().startswith("serial number"):
-                    try:
-                        serial_raw = row.split("=")[1].strip()
-                        serial_number = DiverOfficeParser._extract_diver_serial(
-                            serial_raw
-                        )
-                    except IndexError:
-                        pass
-                    continue
-
-                # Parse header
-                if "Date/time" in row:
-                    begin_extraction = True
-
-                if begin_extraction:
-                    if row and "end of data" not in row.lower():
-                        data_rows.append(row)
-
-        if not begin_extraction:
-            common_utils.MessagebarAndLog.critical(
-                bar_msg=QCoreApplication.translate(
-                    "LoggerImport",
-                    "Diveroffice import warning. See log message panel",
-                ),
-                log_msg=QCoreApplication.translate(
-                    "LoggerImport",
-                    "Warning, the file %s \ndid not have Date/time as a "
-                    "header and will be skipped.\nSupported headers are %s",
-                )
-                % (ru(path), ", ".join(list(translation_dict_in_order.keys()))),
-            )
-            return "skip"
-
-        if len(data_rows[0].split(",")) > len(data_rows[0].split(";")):
-            delimiter = ","
-        else:
-            delimiter = ";"
-
-        file_header = data_rows[0].split(delimiter)
-        nr_of_cols = len(file_header)
-
-        if nr_of_cols < 2:
-            common_utils.MessagebarAndLog.warning(
-                bar_msg=QCoreApplication.translate(
-                    "LoggerImport",
-                    "Diveroffice import warning. See log message panel",
-                ),
-                log_msg=QCoreApplication.translate(
-                    "LoggerImport",
-                    "Delimiter could not be found for file %s or it "
-                    "contained only one column, skipping it.",
-                )
-                % path,
-            )
-            return "skip"
-
-        translated_header = [
-            translation_dict_in_order.get(col, None) for col in file_header
-        ]
-        if "head_cm" not in translated_header:
-            common_utils.MessagebarAndLog.warning(
-                bar_msg=QCoreApplication.translate(
-                    "LoggerImport",
-                    "Diveroffice import warning. See log message panel",
-                ),
-                log_msg=QCoreApplication.translate(
-                    "LoggerImport",
-                    "Warning, the file %s \ndid not have Water head[cm] "
-                    "as a header.\nMake sure its barocompensated!\n"
-                    "Supported headers are %s",
-                )
-                % (ru(path), ", ".join(list(translation_dict_in_order.keys()))),
-            )
-            if skip_rows_without_water_level:
-                return "skip"
-
-        new_header = ["date_time", "head_cm", "temp_degc", "cond_mscm"]
-        colnrs_to_import = [
-            translated_header.index(x) if x in translated_header else None
-            for x in new_header
-        ]
-        date_col = colnrs_to_import[0]
-        filedata.append(new_header)
-
-        errors = set()
-        skipped_rows = 0
-        for row in data_rows[1:]:
-            cols = row.split(delimiter)
-            if len(cols) != nr_of_cols:
-                return common_utils.ask_user_about_stopping(
-                    QCoreApplication.translate(
-                        "LoggerImport",
-                        "Failure: The number of data columns in file %s "
-                        "was not equal to the header.\nIs the decimal separator "
-                        "the same as the delimiter?\nDo you want to stop the "
-                        "import? (else it will continue with the next file)",
-                    )
-                    % path
-                )
-
-            dateformat = find_date_format(cols[date_col])
-
-            if dateformat is not None:
-                date = _datetime.strptime(cols[date_col], dateformat)
-
-                if begindate is not None:
-                    if date < begindate:
-                        continue
-                if enddate is not None:
-                    if date > enddate:
-                        continue
-
-                if skip_rows_without_water_level:
-                    try:
-                        float(
-                            cols[translated_header.index("head_cm")].replace(",", ".")
-                        )
-                    except Exception:
-                        skipped_rows += 1
-                        continue
-
-                printrow = [_datetime.strftime(date, "%Y-%m-%d %H:%M:%S")]
-
-                try:
-                    printrow.extend(
-                        [
-                            (
-                                (
-                                    str(float(cols[colnr].replace(",", ".")))
-                                    if cols[colnr]
-                                    else ""
-                                )
-                                if colnr is not None
-                                else ""
-                            )
-                            for colnr in colnrs_to_import
-                            if colnr != date_col
-                        ]
-                    )
-                except ValueError as e:
-                    errors.add(
-                        QCoreApplication.translate(
-                            "LoggerImport", "parse_diveroffice_file error: %s"
-                        )
-                        % str(e)
-                    )
-                    continue
-
-                if any(printrow[1:]):
-                    filedata.append(printrow)
-        if errors:
-            common_utils.MessagebarAndLog.warning(
-                log_msg=QCoreApplication.translate(
-                    "LoggerImport",
-                    'Error messages while parsing file "%s":\n%s',
-                )
-                % (path, "\n".join(errors))
-            )
-
-        if len(filedata) < 2:
-            return common_utils.ask_user_about_stopping(
-                QCoreApplication.translate(
-                    "LoggerImport",
-                    "Failure, parsing failed for file %s\n"
-                    "No valid data found!\nDo you want to stop the import?"
-                    " (else it will continue with the next file)",
-                )
-                % path
-            )
-
-        filename = os.path.basename(path)
-
-        return filedata, filename, location, utc_offset, serial_number
 
 
 class DiverOfficeBaroParser:
@@ -1579,11 +1397,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                 enddate=to_date,
             )
             if format_name == self.FORMAT_DIVEROFFICE:
-                parse_func = (
-                    DiverOfficeParser.parse_old
-                    if selected_file.endswith(".csv")
-                    else DiverOfficeParser.parse
-                )
+                parse_func = DiverOfficeParser.parse
                 parse_kwargs["skip_rows_without_water_level"] = (
                     skip_rows_without_water_level
                 )

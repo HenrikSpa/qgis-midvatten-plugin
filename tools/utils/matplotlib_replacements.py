@@ -83,15 +83,6 @@ def replace_matplotlib_backends_backend_qt5agg_NavigationToolbar2QT_functions():
         setattr(NavigationToolbar, new_name, getattr(NavigationToolbar, old_func))
         setattr(NavigationToolbar, old_func, apply_func(new_name))
 
-    _funcs = ["edit_parameters", "configure_subplots", "save_figure"]
-    for old_func in _funcs:
-        new_name = f"_midv_old_{old_func}"
-        if hasattr(NavigationToolbar, new_name):
-            continue
-        else:
-            setattr(NavigationToolbar, new_name, getattr(NavigationToolbar, old_func))
-            setattr(NavigationToolbar, old_func, apply_func(new_name))
-
 
 def _find_rcsetup_attr(name: str):
     """Return a validator from rcsetup, trying public then private name (names vary by matplotlib version)."""

@@ -100,6 +100,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             self.open_folder_button,
             self.available_settings_button,
             self.save_as_button,
+            self.fix_styles_button,
             self.custplot_last_used_style_settingskey,
             defs.custplot_default_style(),
             msettings=self.ms,

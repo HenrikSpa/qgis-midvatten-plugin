@@ -662,7 +662,7 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="2" column="0" rowspan="5" colspan="2">
+                   <item row="2" column="0" rowspan="6" colspan="2">
                     <widget class="QListWidget" name="template_list">
                      <property name="toolTip">
                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select style to be used for plotting.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -683,6 +683,16 @@
                      </property>
                      <property name="text">
                       <string>Save As...</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="7" column="2">
+                    <widget class="QPushButton" name="fix_styles_button">
+                     <property name="toolTip">
+                      <string>Inspect and fix style files: remove rcParams keys not supported by this matplotlib version.</string>
+                     </property>
+                     <property name="text">
+                      <string>Fix styles...</string>
                      </property>
                     </widget>
                    </item>

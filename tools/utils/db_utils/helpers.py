@@ -15,6 +15,7 @@ except ImportError:
 from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools.utils.message_utils import MessagebarAndLog, sql_failed_msg
+from midvatten.tools.utils.common_utils import waiting_cursor
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.db_utils.connection import DbConnectionManager
 from midvatten.tools.utils.db_utils.execution import (
@@ -454,6 +455,7 @@ def calculate_db_table_rows() -> None:
         )
 
 
+@waiting_cursor
 def refresh_spatialite_layer_statistics() -> None:
     """Fix the "attribute table shows only 100 rows" symptom for SpatiaLite.
 

@@ -62,7 +62,7 @@ class TimeSeriesPlot:
 
                 # Create a plot window with one single subplot
                 fig = (
-                    plt.figure()
+                    plt.figure(layout="constrained")
                 )  # causes conflict with plugins "statist" and "chartmaker"
                 ax = fig.add_subplot(111)
 

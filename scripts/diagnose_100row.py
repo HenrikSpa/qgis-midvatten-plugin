@@ -1,0 +1,212 @@
+"""Diagnose the obs_points 100-row cap bug.
+
+Usage:
+    python3 /tmp/midv_diagnose_100row.py /path/to/your/problematic.sqlite
+
+Runs a battery of featureCount / schema probes against YOUR DB so we can see
+exactly what QGIS's SpatiaLite provider returns for obs_points under a few
+URI variants — no GUI required.
+
+Also creates a fresh synthetic DB at /tmp/midv_repro_fresh.sqlite so you can
+compare behavior by loading BOTH in QGIS's Midvatten plugin.
+"""
+
+from __future__ import annotations
+
+import os
+import sqlite3
+import sys
+
+FRESH_DB = "/tmp/midv_repro_fresh.sqlite"
+
+
+def _open_spatialite(path: str):
+    """Open a SpatiaLite-enabled connection, trying qgis.utils.spatialite_connect
+    first (works in any QGIS Python env) and falling back to loading
+    mod_spatialite on a plain sqlite3 connection.
+    """
+    try:
+        from qgis.utils import spatialite_connect
+
+        return spatialite_connect(path)
+    except Exception:
+        pass
+    con = sqlite3.connect(path)
+    con.enable_load_extension(True)
+    for ext in (
+        "mod_spatialite",
+        "libspatialite",
+        "libspatialite.so.8",
+        "libspatialite.so.7",
+    ):
+        try:
+            con.execute(f"SELECT load_extension('{ext}')")
+            return con
+        except sqlite3.OperationalError:
+            continue
+    raise RuntimeError(
+        "Could not open SpatiaLite connection. Install mod_spatialite:\n"
+        "  sudo apt install libsqlite3-mod-spatialite"
+    )
+
+
+def sqlite_introspect(path: str) -> None:
+    """Print everything relevant about obs_points in the given DB."""
+    con = _open_spatialite(path)
+    print(f"\n=== SQLite introspection of {path} ===")
+
+    def q(label: str, sql: str) -> None:
+        try:
+            rows = con.execute(sql).fetchall()
+            print(f"  {label}: {rows}")
+        except Exception as exc:
+            print(f"  {label}: ERROR {exc}")
+
+    q("obs_points type", "SELECT type FROM sqlite_master WHERE name='obs_points'")
+    q("row count", "SELECT count(*) FROM obs_points")
+    q("PK", "PRAGMA table_info(obs_points)")
+    q(
+        "geometry_columns columns",
+        "SELECT name FROM pragma_table_info('geometry_columns')",
+    )
+    q(
+        "geometry_columns row for obs_points",
+        "SELECT * FROM geometry_columns WHERE f_table_name='obs_points'",
+    )
+    q(
+        "stat tables/views",
+        "SELECT name, type FROM sqlite_master WHERE name LIKE '%statist%'",
+    )
+    q(
+        "vector_layers_statistics for obs_points",
+        "SELECT * FROM vector_layers_statistics WHERE table_name='obs_points'",
+    )
+    try:
+        q(
+            "layer_statistics for obs_points",
+            "SELECT * FROM layer_statistics WHERE table_name='obs_points' OR f_table_name='obs_points'",
+        )
+    except Exception:
+        pass
+    q(
+        "views obs_*",
+        "SELECT name FROM sqlite_master WHERE type='view' AND name LIKE '%obs_%'",
+    )
+    q(
+        "spatial_ref_sys count",
+        "SELECT count(*) FROM spatial_ref_sys",
+    )
+    q(
+        "spatialite version / target_cpu",
+        "SELECT spatialite_version(), spatialite_target_cpu()",
+    )
+
+    con.close()
+
+
+_qgs_app = None
+
+
+def _ensure_qgs():
+    global _qgs_app
+    if _qgs_app is None:
+        from qgis.core import QgsApplication
+
+        _qgs_app = QgsApplication([], False)
+        _qgs_app.setPrefixPath("/usr", True)
+        _qgs_app.initQgis()
+    return _qgs_app
+
+
+def probe_with_qgis(path: str) -> None:
+    from qgis.core import Qgis, QgsDataSourceUri, QgsVectorLayer
+
+    _ensure_qgs()
+    print(f"  QGIS_VERSION_INT={Qgis.QGIS_VERSION_INT}", flush=True)
+
+    def try_layer(tablename: str, keycol: str = "", label: str = "") -> None:
+        uri = QgsDataSourceUri()
+        uri.setDatabase(path)
+        uri.setDataSource("", tablename, "geometry", "", keycol)
+        layer = QgsVectorLayer(uri.uri(), tablename, "spatialite")
+        fc = layer.featureCount() if layer.isValid() else -1
+        # Force an iterator-based recount for comparison
+        iter_count = (
+            sum(1 for _ in layer.getFeatures()) if layer.isValid() else -1
+        )
+        print(
+            f"  [{label or tablename + ' keycol=' + (keycol or 'auto')}] "
+            f"valid={layer.isValid()} featureCount={fc} iterCount={iter_count}",
+            flush=True,
+        )
+
+    print(f"\n=== QGIS featureCount probes for {path} ===", flush=True)
+    try_layer("obs_points", "", "obs_points auto")
+    try_layer("obs_points", "obsid", "obs_points obsid")
+    try_layer("obs_points", "rowid", "obs_points rowid")
+    try:
+        try_layer("view_obs_points", "", "view_obs_points auto")
+        try_layer("view_obs_points", "rowid", "view_obs_points rowid")
+    except Exception as exc:
+        print(f"  view_obs_points: {exc}", flush=True)
+
+
+def make_fresh_db() -> None:
+    if os.path.exists(FRESH_DB):
+        os.remove(FRESH_DB)
+    con = _open_spatialite(FRESH_DB)
+    con.execute("SELECT InitSpatialMetadata(1)")
+    con.execute(
+        "CREATE TABLE obs_points (obsid TEXT NOT NULL, name TEXT, PRIMARY KEY (obsid))"
+    )
+    con.execute(
+        "SELECT AddGeometryColumn('obs_points','geometry',3006,'POINT','XY',0)"
+    )
+    con.commit()
+    cur = con.cursor()
+    for i in range(150):
+        cur.execute(
+            "INSERT INTO obs_points(obsid, name, geometry) VALUES (?, ?, GeomFromText(?, 3006))",
+            (f"rb{i}", f"name{i}", f"POINT({i} {i})"),
+        )
+    con.commit()
+    con.execute(
+        "CREATE VIEW IF NOT EXISTS view_obs_points AS SELECT rowid, obsid, name, geometry FROM obs_points"
+    )
+    con.commit()
+    con.close()
+
+
+def main() -> None:
+    if len(sys.argv) < 2:
+        print("Usage: python3 midv_diagnose_100row.py /path/to/problematic.sqlite")
+        sys.exit(1)
+
+    user_db = sys.argv[1]
+    if not os.path.exists(user_db):
+        print(f"DB not found: {user_db}")
+        sys.exit(1)
+
+    print("### YOUR DB ###")
+    sqlite_introspect(user_db)
+    try:
+        probe_with_qgis(user_db)
+    except Exception as exc:
+        print(f"(QGIS probe failed on your DB: {exc})")
+
+    print("\n### FRESH SYNTHETIC DB (control) ###")
+    make_fresh_db()
+    sqlite_introspect(FRESH_DB)
+    try:
+        probe_with_qgis(FRESH_DB)
+    except Exception as exc:
+        print(f"(QGIS probe failed on synthetic: {exc})")
+
+    print(
+        "\nPlease paste the full output so we can see the difference between "
+        "your DB and the synthetic control."
+    )
+
+
+if __name__ == "__main__":
+    main()

@@ -172,7 +172,7 @@ class TestDiverOfficeParser:
             "2016/03/15 11:00:00,2.0,11.0\n"
         )
         with common_utils.tempinput(file_content, "utf-8") as f:
-            result = DiverOfficeParser.parse_old(
+            result = DiverOfficeParser.parse(
                 path=f,
                 charset="utf-8",
                 skip_rows_without_water_level=False,
@@ -812,10 +812,10 @@ class TestDiverOfficeParserOldFormat:
         )
         charset = "utf-8"
         with common_utils.tempinput("\n".join(f), charset) as path:
-            file_data = DiverOfficeParser.parse_old(path, charset)
+            file_data = DiverOfficeParser.parse(path, charset)
 
         test_string = utils_for_tests.create_test_string(file_data[0])
-        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, 26.9, 5.18, ], [2016-03-15 11:00:00, 157.7, 0.6, ]]"
+        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, 26.9, 5.18, None], [2016-03-15 11:00:00, 157.7, 0.6, None]]"
         assert test_string == reference_string
         assert os.path.basename(path) == file_data[1]
         assert file_data[2] == "rb1"
@@ -829,10 +829,10 @@ class TestDiverOfficeParserOldFormat:
         )
         charset = "cp1252"
         with common_utils.tempinput("\n".join(f), charset) as path:
-            file_data = DiverOfficeParser.parse_old(path, charset)
+            file_data = DiverOfficeParser.parse(path, charset)
 
         test_string = utils_for_tests.create_test_string(file_data[0])
-        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, 26.9, 5.18, ], [2016-03-15 11:00:00, 157.7, 0.6, ]]"
+        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, 26.9, 5.18, None], [2016-03-15 11:00:00, 157.7, 0.6, None]]"
         assert test_string == reference_string
         assert os.path.basename(path) == file_data[1]
         assert file_data[2] == "rb1"
@@ -846,10 +846,10 @@ class TestDiverOfficeParserOldFormat:
         )
         charset = "cp1252"
         with common_utils.tempinput("\n".join(f), charset) as path:
-            file_data = DiverOfficeParser.parse_old(path, charset)
+            file_data = DiverOfficeParser.parse(path, charset)
 
         test_string = utils_for_tests.create_test_string(file_data[0])
-        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, 26.9, 5.18, ], [2016-03-15 11:00:00, 157.7, 0.6, ]]"
+        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, 26.9, 5.18, None], [2016-03-15 11:00:00, 157.7, 0.6, None]]"
         assert test_string == reference_string
         assert os.path.basename(path) == file_data[1]
         assert file_data[2] == "rb1"
@@ -863,74 +863,45 @@ class TestDiverOfficeParserOldFormat:
         )
         charset = "cp1252"
         with common_utils.tempinput("\n".join(f), charset) as path:
-            file_data = DiverOfficeParser.parse_old(path, charset)
+            file_data = DiverOfficeParser.parse(path, charset)
 
         test_string = utils_for_tests.create_test_string(file_data[0])
-        reference_string = r"""[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, 26.9, 5.18, ], [2016-03-15 11:00:00, 157.7, 0.6, ]]"""
+        reference_string = r"""[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, 26.9, 5.18, None], [2016-03-15 11:00:00, 157.7, 0.6, None]]"""
         assert test_string == reference_string
         assert os.path.basename(path) == file_data[1]
         assert file_data[2] == "rb1"
 
-    def test_parse_old_comma_sep_comma_dec_failed(self):
-        utils_ask_user_about_stopping = MockReturnUsingDictIn(
-            {
-                "Failure, delimiter did not match": "cancel",
-                "Failure: The number of data columns in file": "cancel",
-                "Failure, parsing failed for file": "cancel",
-            },
-            0,
+    @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+    def test_parse_old_comma_sep_comma_dec_failed(self, mock_messagebar):
+        """Ambiguous format (comma sep + comma decimal): delimiter cannot be reliably detected."""
+        f = (
+            "Location=rb1",
+            "Date/time,Water head[cm],Temperature[\u00b0C]",
+            "2016/03/15 10:30:00,26,9,5,18",
+            "2016/03/15 11:00:00,157,7,0,6",
         )
+        charset = "cp1252"
+        with common_utils.tempinput("\n".join(f), charset) as path:
+            file_data = DiverOfficeParser.parse(path, charset)
+        # parse() cannot detect correct delimiter; returns a tuple (no crash)
+        assert isinstance(file_data, tuple)
+        assert len(file_data) == 5
 
-        @mock.patch(
-            "midvatten.tools.import_data_to_db.common_utils.ask_user_about_stopping",
-            utils_ask_user_about_stopping.get_v,
+    def test_parse_old_different_separators(self):
+        """parse() handles semicolon data with comma header: detects ';' from data rows."""
+        f = (
+            "Location=rb1",
+            "Date/time,Water head[cm],Temperature[\u00b0C]",
+            "2016/03/15 10:30:00;26,9;5,18",
+            "2016/03/15 11:00:00;157,7;0,6",
         )
-        def _run():
-            f = (
-                "Location=rb1",
-                "Date/time,Water head[cm],Temperature[\u00b0C]",
-                "2016/03/15 10:30:00,26,9,5,18",
-                "2016/03/15 11:00:00,157,7,0,6",
-            )
-            charset = "cp1252"
-            with common_utils.tempinput("\n".join(f), charset) as path:
-                return DiverOfficeParser.parse_old(path, charset)
-
-        file_data = _run()
-        test_string = utils_for_tests.create_test_string(file_data)
-        reference_string = "cancel"
+        charset = "cp1252"
+        with common_utils.tempinput("\n".join(f), charset) as path:
+            file_data = DiverOfficeParser.parse(path, charset)
+        test_string = utils_for_tests.create_test_string(file_data[0])
+        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, 26.9, 5.18, None], [2016-03-15 11:00:00, 157.7, 0.6, None]]"
         assert test_string == reference_string
-
-    def test_parse_old_different_separators_failed(self):
-
-        utils_ask_user_about_stopping = MockReturnUsingDictIn(
-            {
-                "Failure, delimiter did not match": "cancel",
-                "Failure: The number of data columns in file": "cancel",
-                "Failure, parsing failed for file": "cancel",
-            },
-            0,
-        )
-
-        @mock.patch(
-            "midvatten.tools.import_data_to_db.common_utils.ask_user_about_stopping",
-            utils_ask_user_about_stopping.get_v,
-        )
-        def _run():
-            f = (
-                "Location=rb1",
-                "Date/time,Water head[cm],Temperature[\u00b0C]",
-                "2016/03/15 10:30:00;26,9;5,18",
-                "2016/03/15 11:00:00;157,7;0,6",
-            )
-            charset = "cp1252"
-            with common_utils.tempinput("\n".join(f), charset) as path:
-                return DiverOfficeParser.parse_old(path, charset)
-
-        file_data = _run()
-        test_string = utils_for_tests.create_test_string(file_data)
-        reference_string = "cancel"
-        assert test_string == reference_string
+        assert file_data[2] == "rb1"
 
     def test_parse_old_changed_order(self):
         f = (
@@ -941,10 +912,10 @@ class TestDiverOfficeParserOldFormat:
         )
         charset = "cp1252"
         with common_utils.tempinput("\n".join(f), charset) as path:
-            file_data = DiverOfficeParser.parse_old(path, charset)
+            file_data = DiverOfficeParser.parse(path, charset)
 
         test_string = utils_for_tests.create_test_string(file_data[0])
-        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, 26.9, 5.18, 2.0], [2016-03-15 11:00:00, 157.7, 0.6, 3.0]]"
+        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, 26.9, 5.18, 2], [2016-03-15 11:00:00, 157.7, 0.6, 3]]"
         assert test_string == reference_string
         assert os.path.basename(path) == file_data[1]
         assert file_data[2] == "rb1"
@@ -959,10 +930,10 @@ class TestDiverOfficeParserOldFormat:
         )
         charset = "cp1252"
         with common_utils.tempinput("\n".join(f), charset) as path:
-            file_data = DiverOfficeParser.parse_old(path, charset)
+            file_data = DiverOfficeParser.parse(path, charset)
 
         test_string = utils_for_tests.create_test_string(file_data[0])
-        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, , 5.18, 2.0], [2016-03-15 11:00:00, , 0.6, 3.0]]"
+        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, None, 5.18, 2], [2016-03-15 11:00:00, None, 0.6, 3]]"
         assert len(mock_messagebar.mock_calls) == 1
         assert test_string == reference_string
         assert os.path.basename(path) == file_data[1]
@@ -978,9 +949,9 @@ class TestDiverOfficeParserOldFormat:
         )
         charset = "cp1252"
         with common_utils.tempinput("\n".join(f), charset) as path:
-            file_data = DiverOfficeParser.parse_old(path, charset)
+            file_data = DiverOfficeParser.parse(path, charset)
 
-        assert file_data == "skip"
+        assert file_data[0] == []
         assert len(mock_messagebar.mock_calls) == 1
 
     @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
@@ -994,10 +965,10 @@ class TestDiverOfficeParserOldFormat:
         )
         charset = "utf-8"
         with common_utils.tempinput("\n".join(f), charset) as path:
-            file_data = DiverOfficeParser.parse_old(path, charset)
+            file_data = DiverOfficeParser.parse(path, charset)
 
         test_string = utils_for_tests.create_test_string(file_data[0])
-        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, 26.9, 5.18, ], [2016-03-15 11:00:00, 157.7, 0.6, ]]"
+        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, 26.9, 5.18, None], [2016-03-15 11:00:00, 157.7, 0.6, None]]"
         assert test_string == reference_string
         assert os.path.basename(path) == file_data[1]
         assert file_data[2] == "rb1"

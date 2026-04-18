@@ -193,12 +193,22 @@ class ExportEngine:
         tname: str,
         dest_conn: DbConnectionManager,
     ) -> tuple[list[tuple], list[str]]:
-        """Read all dest rows, clear the table. Returns (rows, col_names)."""
+        """Read all dest rows, clear the table. Returns (rows, col_names).
+
+        FK constraints are disabled only for the DELETE step so that lookup
+        tables (zz_*) can be cleared even when referenced by data tables.
+        The snapshot is immediately re-inserted after the source rows are
+        written, so referential integrity is restored within the same export.
+        """
         dest_conn.execute_safe(f"SELECT * FROM {db_utils.ident(tname)}")
         cols = [x[0].lower() for x in dest_conn.cursor.description]
         rows = list(dest_conn.cursor.fetchall())
         if rows:
-            dest_conn.execute_safe(f"DELETE FROM {db_utils.ident(tname)}")
+            dest_conn.execute("PRAGMA foreign_keys = OFF")
+            try:
+                dest_conn.execute_safe(f"DELETE FROM {db_utils.ident(tname)}")
+            finally:
+                dest_conn.execute("PRAGMA foreign_keys = ON")
         return rows, cols
 
     def _reinsert_dest_snapshot(
@@ -264,31 +274,27 @@ class ExportEngine:
             ),
         ]
 
-        dest_conn.execute("PRAGMA foreign_keys = OFF")
-        try:
-            for tables, obsids, replace in table_groups:
-                for tname in tables:
-                    if not db_utils.verify_table_exists(
-                        tname, dbconnection=source_conn
-                    ):
-                        log.warning("Source table %s missing — skipping", tname)
-                        continue
-                    if not db_utils.verify_table_exists(tname, dbconnection=dest_conn):
-                        log.warning("Dest table %s missing — skipping", tname)
-                        continue
-                    self._export_table(
-                        tname,
-                        source_conn,
-                        dest_conn,
-                        obsids,
-                        dest_srid,
-                        replace,
-                        progress_cb,
-                        cancel_flag,
-                    )
-                    dest_conn.commit()
-        finally:
-            dest_conn.execute("PRAGMA foreign_keys = ON")
+        for tables, obsids, replace in table_groups:
+            for tname in tables:
+                if not db_utils.verify_table_exists(
+                    tname, dbconnection=source_conn
+                ):
+                    log.warning("Source table %s missing — skipping", tname)
+                    continue
+                if not db_utils.verify_table_exists(tname, dbconnection=dest_conn):
+                    log.warning("Dest table %s missing — skipping", tname)
+                    continue
+                self._export_table(
+                    tname,
+                    source_conn,
+                    dest_conn,
+                    obsids,
+                    dest_srid,
+                    replace,
+                    progress_cb,
+                    cancel_flag,
+                )
+                dest_conn.commit()
 
         db_utils.delete_srids(dest_conn, dest_srid)
         dest_conn.commit()

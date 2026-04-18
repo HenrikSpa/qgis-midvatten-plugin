@@ -41,6 +41,7 @@ from midvatten.tools.utils.dialog_utils import (
     NotFoundQuestion,
 )
 from midvatten.tools.utils.exceptions import UsageError, UserInterruptError
+from midvatten.tools.utils.file_utils import get_delimiter_from_file_rows, tempinput
 from midvatten.tools.utils.layer_utils import (
     get_active_layer,
 )

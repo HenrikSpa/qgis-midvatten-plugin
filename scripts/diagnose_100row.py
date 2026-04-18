@@ -151,6 +151,57 @@ def probe_with_qgis(path: str) -> None:
         print(f"  view_obs_points: {exc}", flush=True)
 
 
+def probe_fixes(path: str) -> None:
+    """Test each candidate fix IN PLACE against the given DB.
+
+    Reports featureCount() after each attempt so we can see which one
+    actually lifts the 100-row cap. The UpdateLayerStatistics and INSERT
+    attempts write to the DB — a backup is taken first.
+    """
+    import shutil
+
+    from qgis.core import QgsDataSourceUri, QgsVectorLayer
+
+    _ensure_qgs()
+
+    backup = path + ".diagnostic.bak"
+    shutil.copy2(path, backup)
+    print(f"\n=== Candidate-fix probes against {path} ===", flush=True)
+    print(f"  (backup copy: {backup})", flush=True)
+
+    def build_layer(estimated: str = "") -> "QgsVectorLayer":
+        uri = QgsDataSourceUri()
+        uri.setDatabase(path)
+        uri.setDataSource("", "obs_points", "geometry", "", "")
+        if estimated:
+            uri.setParam("estimatedmetadata", estimated)
+        return QgsVectorLayer(uri.uri(), "obs_points", "spatialite")
+
+    print(f"  [baseline]                                        fc={build_layer().featureCount()}", flush=True)
+    print(f"  [URI estimatedmetadata=false]                     fc={build_layer('false').featureCount()}", flush=True)
+    print(f"  [URI estimatedmetadata=true]                      fc={build_layer('true').featureCount()}", flush=True)
+
+    # After-build priming: reloadData + updateExtents(force=True) + featureCount
+    layer = build_layer()
+    layer.dataProvider().reloadData()
+    layer.updateExtents(force=True)
+    print(f"  [prime: reload+updateExtents(force=True)]         fc={layer.featureCount()}", flush=True)
+
+    # Apply SpatiaLite UpdateLayerStatistics() and retest
+    con = _open_spatialite(path)
+    try:
+        con.execute("SELECT UpdateLayerStatistics('obs_points','geometry')")
+        con.commit()
+    finally:
+        con.close()
+    print(f"  [after SELECT UpdateLayerStatistics('obs_points','geometry')] fc={build_layer().featureCount()}", flush=True)
+
+    # Restore the backup so we leave the DB untouched
+    shutil.copy2(backup, path)
+    os.remove(backup)
+    print(f"  (DB restored from backup; backup removed)", flush=True)
+
+
 def make_fresh_db() -> None:
     if os.path.exists(FRESH_DB):
         os.remove(FRESH_DB)
@@ -193,6 +244,13 @@ def main() -> None:
         probe_with_qgis(user_db)
     except Exception as exc:
         print(f"(QGIS probe failed on your DB: {exc})")
+    try:
+        probe_fixes(user_db)
+    except Exception:
+        import traceback
+
+        print("(Candidate-fix probe failed on your DB:)")
+        traceback.print_exc()
 
     print("\n### FRESH SYNTHETIC DB (control) ###")
     make_fresh_db()

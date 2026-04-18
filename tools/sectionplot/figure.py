@@ -6,7 +6,10 @@ Kept in its own module so that detached-figure callbacks can import it without
 pulling in the full QDockWidget dependency tree.
 """
 
+from __future__ import annotations
+
 import matplotlib as mpl
+from typing import TYPE_CHECKING
 
 try:
     import pandas as pd
@@ -14,6 +17,9 @@ except Exception:
     pd = None  # type: ignore[assignment]
 
 from midvatten.tools.utils.gui_utils import DetachFigureButton
+
+if TYPE_CHECKING:
+    from midvatten.tools.sectionplot.legend import SectionPlotLegendManager
 
 
 class SectionPlotFigure(mpl.figure.Figure):
@@ -53,5 +59,7 @@ class SectionPlotFigure(mpl.figure.Figure):
         self.detach_figure_button: DetachFigureButton | None = None
         self.date_slider = None
         self.axvline: mpl.lines.Line2D | None = None
+        # Legend manager — survives figure detach
+        self.legend_manager: SectionPlotLegendManager | None = None
         # Event connection ID for the legend-update draw callback
         self.update_legend_cid: int | None = None

@@ -23,6 +23,8 @@ import os
 import tempfile
 from unittest import mock
 
+import pytest
+
 from midvatten.tools.export_spatialite import ExportSpatialite
 from midvatten.tools.utils import db_utils
 from midvatten.test import utils_for_tests
@@ -42,7 +44,6 @@ def _unique_export_path(test_self):
 
 
 TEMP_DIR = "/tmp/"
-import pytest
 
 
 class ExportMixin:
@@ -769,8 +770,8 @@ class ExportMixin:
         #// I've made changes to the transformation so the above values no longer exists, but the previous issue probably does.
         # !!! No idea why
         # In Ubuntu 22.10, (1, 1) in 3006 turns into 'POINT(10.511265 0.000009)' in WGS84 and into POINT(-517888.39291 1.000667) in 3010!
-        # The problem must be rounding related. 
-        
+        # The problem must be rounding related.
+
         reference_string = ['''[''',
                             '''select obsid, ST_AsText(geometry) from obs_points''',
                             ''', [(P1, POINT(-517888.392089 1.000667))], ''',

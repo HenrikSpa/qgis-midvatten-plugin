@@ -159,7 +159,10 @@ class ExportEngine:
         # because every SpatiaLite database ships with SRID 4326 in
         # spatial_ref_sys, avoiding "unable to find destination SRID" errors
         # on the source connection.
-        source_srid = source_conn.get_srid(tname) if tname else None
+        geom_cols = set(
+            db_utils.get_geometry_types(tname, dbconnection=source_conn).keys()
+        )
+        source_srid = source_conn.get_srid(tname) if geom_cols else None
         wkb_srid = (
             dest_srid
             if source_srid is None or str(source_srid) == str(dest_srid)

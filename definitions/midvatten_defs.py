@@ -1440,7 +1440,6 @@ def custplot_default_template():
         "styles_marker": ["o", "+", "s", "x"],
         "styles_step-post": ["-", "--", "-.", ":"],
         "styles_step-pre": ["-", "--", "-.", ":"],
-        "tight_layout": False,
         "x_Axes_tick_param": {"axis": "x", "labelrotation": 45},
         "y_Axes_tick_param": {"axis": "y", "labelrotation": 0},
     }

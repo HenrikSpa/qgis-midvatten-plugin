@@ -85,7 +85,6 @@
         "--",
         "-.",
         ":"],
-    "tight_layout": False,
     "x_Axes_tick_param": {
         "axis": "x",
         "labelrotation": 20},

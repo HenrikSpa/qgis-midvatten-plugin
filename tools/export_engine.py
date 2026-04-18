@@ -112,12 +112,13 @@ class ExportEngine:
         tname: str,
         source_conn: DbConnectionManager,
         dest_conn: DbConnectionManager,
-        obsids: tuple[str, ...],
+        obsids: tuple[str, ...] | None,
         dest_srid: str,
         replace: bool,
         progress_cb: Callable[[str, int, int], None],
         cancel_flag: threading.Event,
     ) -> None:
+        obsids = obsids or ()
         is_migration = tname == "w_levels_logger" and self._needs_logger_migration(
             source_conn, dest_conn
         )
@@ -175,9 +176,17 @@ class ExportEngine:
         return False
 
     def _snapshot_and_clear_dest_table(
-        self, tname: str, dest_conn: DbConnectionManager
+        self,
+        tname: str,
+        dest_conn: DbConnectionManager,
     ) -> tuple[list[tuple], list[str]]:
-        return [], []
+        """Read all dest rows, clear the table. Returns (rows, col_names)."""
+        dest_conn.execute_safe(f"SELECT * FROM {db_utils.ident(tname)}")
+        cols = [x[0].lower() for x in dest_conn.cursor.description]
+        rows = list(dest_conn.cursor.fetchall())
+        if rows:
+            dest_conn.execute_safe(f"DELETE FROM {db_utils.ident(tname)}")
+        return rows, cols
 
     def _reinsert_dest_snapshot(
         self,
@@ -186,7 +195,11 @@ class ExportEngine:
         snapshot: list[tuple],
         snap_cols: list[str],
     ) -> None:
-        pass
+        """Re-insert the snapshot with INSERT OR IGNORE (source rows take priority)."""
+        if not snapshot:
+            return
+        insert_sql = self._build_insert_sql(tname, dest_conn, snap_cols)
+        dest_conn.cursor.executemany(insert_sql, snapshot)
 
     def _migrate_logger_chunk(
         self,

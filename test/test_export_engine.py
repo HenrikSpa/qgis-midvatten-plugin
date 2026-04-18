@@ -344,7 +344,14 @@ class TestExportEngine(MidvattenTestSpatialiteDbSv):
         dest = self._dest_conn(epsg_code="3006")
         try:
             ExportEngine()._export_table(
-                "obs_points", src, dest, (), "3006", False, lambda *a: None, threading.Event()
+                "obs_points",
+                src,
+                dest,
+                (),
+                "3006",
+                False,
+                lambda *a: None,
+                threading.Event(),
             )
             dest.commit()
             rows = dest.execute_and_fetchall(
@@ -359,3 +366,90 @@ class TestExportEngine(MidvattenTestSpatialiteDbSv):
         # Coordinates preserved
         assert "633466" in rows[0][1]
         assert "711659" in rows[0][1]
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_zz_merge_source_overrides_dest(self, mock_messagebar):
+        """Source row wins over matching dest row."""
+        from midvatten.tools.export_engine import ExportEngine
+
+        # Source DB has a customised zz_staff row
+        conn = db_utils.DbConnectionManager(self._class_db_settings)
+        conn.execute("DELETE FROM zz_staff")
+        conn.execute("INSERT INTO zz_staff (staff, name) VALUES ('s1', 'Source Name')")
+        conn.commit_and_closedb()
+
+        src = self._source_conn()
+        dest = self._dest_conn()
+        # Dest has a row with same PK but different name
+        dest.execute("DELETE FROM zz_staff")
+        dest.execute(
+            "INSERT INTO zz_staff (staff, name) VALUES ('s1', 'Old Dest Name')"
+        )
+        dest.commit()
+
+        try:
+            ExportEngine()._export_table(
+                "zz_staff",
+                src,
+                dest,
+                None,
+                "3006",
+                True,
+                lambda *a: None,
+                threading.Event(),
+            )
+            dest.commit()
+            rows = dest.execute_and_fetchall(
+                "SELECT staff, name FROM zz_staff WHERE staff = 's1'"
+            )
+        finally:
+            src.closedb()
+            dest.closedb()
+
+        # Source name wins
+        assert rows == [("s1", "Source Name")]
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_zz_merge_dest_only_row_survives(self, mock_messagebar):
+        """A dest-only row (not in source) is preserved after merge."""
+        from midvatten.tools.export_engine import ExportEngine
+
+        conn = db_utils.DbConnectionManager(self._class_db_settings)
+        conn.execute("DELETE FROM zz_staff")
+        conn.execute(
+            "INSERT INTO zz_staff (staff, name) VALUES ('src_only', 'Source Person')"
+        )
+        conn.commit_and_closedb()
+
+        src = self._source_conn()
+        dest = self._dest_conn()
+        dest.execute("DELETE FROM zz_staff")
+        dest.execute(
+            "INSERT INTO zz_staff (staff, name) VALUES ('src_only', 'Source Person')"
+        )
+        dest.execute(
+            "INSERT INTO zz_staff (staff, name) VALUES ('dest_only', 'Dest Person')"
+        )
+        dest.commit()
+
+        try:
+            ExportEngine()._export_table(
+                "zz_staff",
+                src,
+                dest,
+                None,
+                "3006",
+                True,
+                lambda *a: None,
+                threading.Event(),
+            )
+            dest.commit()
+            units = {
+                r[0] for r in dest.execute_and_fetchall("SELECT staff FROM zz_staff")
+            }
+        finally:
+            src.closedb()
+            dest.closedb()
+
+        assert "src_only" in units
+        assert "dest_only" in units

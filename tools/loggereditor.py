@@ -129,9 +129,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
     def show(self) -> None:
         if not hasattr(self, "calibrplotfigure"):
-            self.calibrplotfigure = plt.figure()
+            self.calibrplotfigure = plt.figure(layout="constrained")
             self._ref_gs = GridSpec(
-                2, 1, figure=self.calibrplotfigure, height_ratios=[3, 1], hspace=0.12
+                2, 1, figure=self.calibrplotfigure, height_ratios=[3, 1]
             )
             self.axes = self.calibrplotfigure.add_subplot(self._ref_gs[0])
             self.ref_axes = self.calibrplotfigure.add_subplot(
@@ -780,8 +780,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         for label in self.axes.yaxis.get_ticklabels():
             label.set_fontsize(8)
 
-        self.calibrplotfigure.tight_layout()
-
         if self.axes.legend_ is None:
             leg = self.axes.legend(handles, labels)
 
@@ -892,7 +890,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             label.set_fontsize(8)
         for label in self.ref_axes.yaxis.get_ticklabels():
             label.set_fontsize(8)
-        self.calibrplotfigure.tight_layout()
         self.canvas.draw()
 
     def _plot_ref_series(self, conn, s: dict) -> None:

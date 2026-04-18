@@ -453,3 +453,123 @@ class TestExportEngine(MidvattenTestSpatialiteDbSv):
 
         assert "src_only" in units
         assert "dest_only" in units
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_needs_logger_migration_same_schema(self, mock_messagebar):
+        """Returns False when source already has series_id (new schema)."""
+        from midvatten.tools.export_engine import ExportEngine
+
+        src = self._source_conn()
+        dest = self._dest_conn()
+        try:
+            result = ExportEngine()._needs_logger_migration(src, dest)
+        finally:
+            src.closedb()
+            dest.closedb()
+        assert result is False
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_logger_migration_creates_series_rows_and_maps_ids(self, mock_messagebar):
+        """Old-schema source (source col) → w_logger_series rows created, series_id mapped."""
+        from midvatten.tools.export_engine import ExportEngine
+
+        # Build old-schema source DB: w_levels_logger with 'source' text col instead of 'series_id'
+        conn = db_utils.DbConnectionManager(self._class_db_settings)
+        conn.execute("PRAGMA foreign_keys = OFF")
+        conn.execute("DROP INDEX IF EXISTS idx_wlvllogger_series")
+        conn.execute("DROP INDEX IF EXISTS idx_wlogger_series_obsid")
+        conn.execute("DROP VIEW IF EXISTS obs_p_w_lvl_logger")
+        conn.execute(
+            "DELETE FROM views_geometry_columns WHERE view_name = 'obs_p_w_lvl_logger'"
+        )
+        conn.execute("DROP TABLE IF EXISTS w_logger_series")
+        conn.execute(
+            "CREATE TABLE w_levels_logger_old ("
+            "obsid text NOT NULL, date_time text NOT NULL,"
+            " head_cm double, source text,"
+            " PRIMARY KEY (obsid, date_time),"
+            " FOREIGN KEY(obsid) REFERENCES obs_points(obsid))"
+        )
+        conn.execute(
+            "INSERT INTO w_levels_logger_old (obsid, date_time, head_cm)"
+            " SELECT obsid, date_time, head_cm FROM w_levels_logger"
+        )
+        conn.execute("DROP TABLE w_levels_logger")
+        conn.execute("ALTER TABLE w_levels_logger_old RENAME TO w_levels_logger")
+        conn.execute("PRAGMA foreign_keys = ON")
+        conn.execute(
+            "INSERT INTO obs_points (obsid, geometry) VALUES "
+            "('P1', ST_GeomFromText('POINT(1 2)', 3006)),"
+            "('P2', ST_GeomFromText('POINT(3 4)', 3006))"
+        )
+        conn.execute(
+            "INSERT INTO w_levels_logger (obsid, date_time, head_cm, source) VALUES "
+            "('P1', '2020-01-01 00:00:00', 100.0, 'fileA'),"
+            "('P1', '2020-01-01 01:00:00', 101.0, 'fileA'),"
+            "('P1', '2020-01-02 00:00:00', 102.0, 'fileB'),"
+            "('P2', '2020-01-01 00:00:00', 200.0, 'fileA')"
+        )
+        conn.commit_and_closedb()
+
+        src = self._source_conn()
+        dest = self._dest_conn()
+
+        try:
+            assert ExportEngine()._needs_logger_migration(src, dest) is True
+
+            # Export obs_points first (FK requirement)
+            ExportEngine()._export_table(
+                "obs_points",
+                src,
+                dest,
+                (),
+                "3006",
+                False,
+                lambda *a: None,
+                threading.Event(),
+            )
+            dest.commit()
+            ExportEngine()._export_table(
+                "w_levels_logger",
+                src,
+                dest,
+                (),
+                "3006",
+                False,
+                lambda *a: None,
+                threading.Event(),
+            )
+            dest.commit()
+
+            series_rows = dest.execute_and_fetchall(
+                "SELECT obsid, source FROM w_logger_series ORDER BY obsid, source"
+            )
+            logger_rows = dest.execute_and_fetchall(
+                "SELECT l.obsid, l.date_time, s.source"
+                " FROM w_levels_logger l"
+                " LEFT JOIN w_logger_series s ON s.id = l.series_id"
+                " ORDER BY l.obsid, l.date_time"
+            )
+            # P1/fileA rows share the same series_id
+            p1a_ids = dest.execute_and_fetchall(
+                "SELECT series_id FROM w_levels_logger"
+                " WHERE obsid='P1' AND date_time IN"
+                " ('2020-01-01 00:00:00', '2020-01-01 01:00:00')"
+                " ORDER BY date_time"
+            )
+        finally:
+            src.closedb()
+            dest.closedb()
+
+        assert series_rows == [
+            ("P1", "fileA"),
+            ("P1", "fileB"),
+            ("P2", "fileA"),
+        ]
+        assert logger_rows == [
+            ("P1", "2020-01-01 00:00:00", "fileA"),
+            ("P1", "2020-01-01 01:00:00", "fileA"),
+            ("P1", "2020-01-02 00:00:00", "fileB"),
+            ("P2", "2020-01-01 00:00:00", "fileA"),
+        ]
+        assert p1a_ids[0][0] == p1a_ids[1][0]  # same series_id for same (obsid, source)

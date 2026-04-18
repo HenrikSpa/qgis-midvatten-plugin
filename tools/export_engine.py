@@ -171,9 +171,22 @@ class ExportEngine:
     # ---- Stubs (replaced in Tasks 6 and 7) ----
 
     def _needs_logger_migration(
-        self, source_conn: DbConnectionManager, dest_conn: DbConnectionManager
+        self,
+        source_conn: DbConnectionManager,
+        dest_conn: DbConnectionManager,
     ) -> bool:
-        return False
+        """True when source has old 'source' column and dest has new series schema."""
+        if "w_levels_logger" not in db_utils.get_tables(source_conn, skip_views=True):
+            return False
+        src_cols = set(self._get_columns("w_levels_logger", source_conn))
+        if "source" not in src_cols:
+            return False
+        dest_tables = db_utils.tables_columns(dbconnection=dest_conn)
+        if "w_logger_series" not in dest_tables:
+            return False
+        if "series_id" not in dest_tables.get("w_levels_logger", []):
+            return False
+        return True
 
     def _snapshot_and_clear_dest_table(
         self,
@@ -206,9 +219,27 @@ class ExportEngine:
         chunk: list[tuple],
         src_cols: list[str],
         dest_conn: DbConnectionManager,
-        key_to_sid: dict,
+        key_to_sid: dict[tuple, int],
     ) -> list[tuple]:
-        return chunk
+        """Replace 'source' text values with w_logger_series.id integers in chunk."""
+        src_idx = src_cols.index("source")
+        obsid_idx = src_cols.index("obsid")
+
+        migrated: list[tuple] = []
+        for row in chunk:
+            row_list = list(row)
+            obsid = row_list[obsid_idx]
+            source_val = row_list[src_idx]
+            key = (obsid, source_val)
+            if key not in key_to_sid:
+                dest_conn.execute(
+                    "INSERT INTO w_logger_series (obsid, source) VALUES (?, ?)",
+                    (obsid, source_val),
+                )
+                key_to_sid[key] = db_utils.get_last_insert_id(dest_conn)
+            row_list[src_idx] = key_to_sid[key]
+            migrated.append(tuple(row_list))
+        return migrated
 
     def _count_source_rows(
         self,

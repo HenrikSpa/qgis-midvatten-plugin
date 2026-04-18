@@ -22,7 +22,7 @@ import traceback
 import os
 import os.path
 from qgis.PyQt.QtCore import QCoreApplication
-from qgis.PyQt.QtWidgets import QFileDialog
+from qgis.PyQt.QtWidgets import QApplication, QFileDialog
 
 from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.string_utils import returnunicode as ru
@@ -187,6 +187,7 @@ class ExportData:
         replace: bool = False,
     ):
         for tname in ptabs:
+            QApplication.processEvents()
             if not db_utils.verify_table_exists(
                 tname, dbconnection=self.source_dbconnection
             ):

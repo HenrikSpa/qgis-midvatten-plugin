@@ -2,8 +2,8 @@
 
 import logging
 
-from qgis.PyQt.QtCore import QCoreApplication
-from qgis.PyQt.QtWidgets import QDialog
+from qgis.PyQt.QtCore import QCoreApplication, Qt
+from qgis.PyQt.QtWidgets import QApplication, QDialog, QProgressDialog
 
 from midvatten.tools.create_db import NewDb
 from midvatten.tools.create_db_dialogs import NewSpatialiteDbDialog
@@ -68,36 +68,54 @@ class ExportSpatialite:
             return
 
         newdbinstance = NewDb()
-        common_utils.start_waiting_cursor()
-        newdbinstance.create_new_spatialite_db(
-            newdbinstance._read_version(),
-            user_select_crs="n",
-            epsg_code=str(dialog.epsg_code),
-            delete_srids=False,
-            w_levels_logger_timezone=dialog.w_levels_logger_timezone,
-            w_levels_timezone=dialog.w_levels_timezone,
-            locale=dialog.locale,
-            dbpath=dialog.dbpath,
+        progress = QProgressDialog(
+            QCoreApplication.translate(
+                "ExportSpatialite", "Creating new database, please wait..."
+            ),
+            None,
+            0,
+            0,
+            self._iface.mainWindow(),
         )
-        common_utils.stop_waiting_cursor()
-
-        if newdbinstance.db_settings:
-            new_dbpath = db_utils.get_spatialite_db_path_from_dbsettings_string(
-                newdbinstance.db_settings
+        progress.setWindowModality(Qt.WindowModal)
+        progress.setMinimumDuration(0)
+        progress.setCancelButton(None)
+        progress.show()
+        QApplication.processEvents()
+        try:
+            newdbinstance.create_new_spatialite_db(
+                newdbinstance._read_version(),
+                user_select_crs="n",
+                epsg_code=str(dialog.epsg_code),
+                delete_srids=False,
+                w_levels_logger_timezone=dialog.w_levels_logger_timezone,
+                w_levels_timezone=dialog.w_levels_timezone,
+                locale=dialog.locale,
+                dbpath=dialog.dbpath,
             )
-            if not new_dbpath:
-                common_utils.MessagebarAndLog.critical(
-                    bar_msg=QCoreApplication.translate(
-                        "export_spatialite",
-                        "Export to spatialite failed, see log message panel",
-                    ),
-                    button=True,
-                )
-                common_utils.stop_waiting_cursor()
-                return
-            exportinstance = ExportData(self._iface, self._ms)
-            exportinstance.ID_obs_points = obsid_p
-            exportinstance.ID_obs_lines = obsid_l
-            exportinstance.export_2_splite(new_dbpath, str(dialog.epsg_code))
 
-        common_utils.stop_waiting_cursor()
+            if newdbinstance.db_settings:
+                new_dbpath = db_utils.get_spatialite_db_path_from_dbsettings_string(
+                    newdbinstance.db_settings
+                )
+                if not new_dbpath:
+                    common_utils.MessagebarAndLog.critical(
+                        bar_msg=QCoreApplication.translate(
+                            "export_spatialite",
+                            "Export to spatialite failed, see log message panel",
+                        ),
+                        button=True,
+                    )
+                    return
+                progress.setLabelText(
+                    QCoreApplication.translate(
+                        "ExportSpatialite", "Exporting data, please wait..."
+                    )
+                )
+                QApplication.processEvents()
+                exportinstance = ExportData(self._iface, self._ms)
+                exportinstance.ID_obs_points = obsid_p
+                exportinstance.ID_obs_lines = obsid_l
+                exportinstance.export_2_splite(new_dbpath, str(dialog.epsg_code))
+        finally:
+            progress.close()

@@ -77,10 +77,21 @@ def sqlite_introspect(path: str) -> None:
         "stat tables/views",
         "SELECT name, type FROM sqlite_master WHERE name LIKE '%statist%'",
     )
-    q(
-        "vector_layers_statistics for obs_points",
-        "SELECT * FROM vector_layers_statistics WHERE table_name='obs_points'",
-    )
+    # Redact extents: vector_layers_statistics columns 5-8 are extent_min/max_x/y.
+    try:
+        rows = con.execute(
+            "SELECT * FROM vector_layers_statistics WHERE table_name='obs_points'"
+        ).fetchall()
+        redacted = []
+        for r in rows:
+            r = list(r)
+            for i in range(5, 9):
+                if i < len(r) and r[i] is not None:
+                    r[i] = "<redacted>"
+            redacted.append(tuple(r))
+        print(f"  vector_layers_statistics for obs_points: {redacted}")
+    except Exception as exc:
+        print(f"  vector_layers_statistics for obs_points: ERROR {exc}")
     try:
         q(
             "layer_statistics for obs_points",
@@ -175,6 +186,19 @@ def probe_fixes(path: str) -> None:
             uri.setParam("estimatedmetadata", estimated)
         return QgsVectorLayer(uri.uri(), tablename, "spatialite")
 
+    def _redact_extents(rows, extent_slice):
+        """Replace extent_min/max_x/y values with '<redacted>' so pasted
+        output doesn't leak real-world coordinates.
+        """
+        redacted = []
+        for row in rows:
+            row = list(row)
+            for i in extent_slice:
+                if i < len(row) and row[i] is not None:
+                    row[i] = "<redacted>"
+            redacted.append(tuple(row))
+        return redacted
+
     def show_stats(label: str) -> None:
         con = _open_spatialite(path)
         try:
@@ -192,6 +216,9 @@ def probe_fixes(path: str) -> None:
                 vgc = "(no views_geometry_columns)"
         finally:
             con.close()
+        # extent columns: cols 4-7 in geometry_columns_statistics; 5-8 in vector_layers_statistics
+        gcs = _redact_extents(gcs, range(4, 8))
+        vls = _redact_extents(vls, range(5, 9))
         print(f"  [{label}] geometry_columns_statistics={gcs}", flush=True)
         print(f"  [{label}] vector_layers_statistics={vls}", flush=True)
         print(f"  [{label}] views_geometry_columns={vgc}", flush=True)

@@ -980,7 +980,7 @@ def my_form_open(dialog, layer, feature):
         </attributeEditorField>
       </attributeEditorContainer>
     </attributeEditorContainer>
-    <attributeEditorContainer groupBox="0" collapsedExpressionEnabled="0" name="screens" collapsedExpression="" visibilityExpression="" columnCount="0" showLabel="1" collapsed="0" visibilityExpressionEnabled="0">
+    <attributeEditorContainer groupBox="0" collapsedExpressionEnabled="0" name="filter" collapsedExpression="" visibilityExpression="" columnCount="0" showLabel="1" collapsed="0" visibilityExpressionEnabled="0">
       <labelStyle labelColor="0,0,0,255" overrideLabelFont="0" overrideLabelColor="0">
         <labelFont italic="0" style="" underline="0" strikethrough="0" description="Sans Serif,9,-1,5,50,0,0,0,0,0" bold="0"/>
       </labelStyle>

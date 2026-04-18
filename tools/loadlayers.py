@@ -3,7 +3,13 @@
 import os
 import traceback
 
-from qgis.core import QgsLayerTreeGroup, QgsProject, QgsRelation
+from qgis.core import (
+    QgsAttributeEditorContainer,
+    QgsAttributeEditorHtmlElement,
+    QgsLayerTreeGroup,
+    QgsProject,
+    QgsRelation,
+)
 from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools.utils import common_utils, db_utils
@@ -89,9 +95,13 @@ class LoadLayers:
     ) -> None:
         if self.group.name != LayerGroupName.OBS_DB.value:
             return
-        if obs_points_layer is None or screen_layer is None:
+        if obs_points_layer is None:
             return
-        if not db_utils.verify_table_exists("screen", dbconnection=dbconnection):
+
+        if screen_layer is None or not db_utils.verify_table_exists(
+            "screen", dbconnection=dbconnection
+        ):
+            self._apply_screens_placeholder(obs_points_layer)
             return
 
         rel = QgsRelation()
@@ -111,3 +121,36 @@ class LoadLayers:
                 ),
                 log_msg=str(rel.validationError()),
             )
+
+    def _apply_screens_placeholder(self, obs_points_layer: "QgsVectorLayer") -> None:
+        locale_is_swedish = is_locale_swedish()
+        config = obs_points_layer.editFormConfig()
+        root = config.invisibleRootContainer()
+        tab_name = "filter" if locale_is_swedish else "screens"
+        for child in root.children():
+            if (
+                isinstance(child, QgsAttributeEditorContainer)
+                and child.name() == tab_name
+            ):
+                child.clear()
+                placeholder = QgsAttributeEditorHtmlElement(
+                    "screens_placeholder", child
+                )
+                if locale_is_swedish:
+                    html = (
+                        "<p><b>Filter (filterrör)</b></p>"
+                        "<p>Den här fliken visar filterrörens placering för varje observationspunkt.</p>"
+                        "<p>Filter-tabellen saknas i din databas. "
+                        "Uppgradera databasen för att aktivera den här funktionen.</p>"
+                    )
+                else:
+                    html = (
+                        "<p><b>Screens (filter intervals)</b></p>"
+                        "<p>This tab shows the screen/filter intervals for each observation point.</p>"
+                        "<p>The screen table is not present in your database. "
+                        "Please upgrade your database to enable this feature.</p>"
+                    )
+                placeholder.setHtmlCode(html)
+                child.addChildElement(placeholder)
+                break
+        obs_points_layer.setEditFormConfig(config)

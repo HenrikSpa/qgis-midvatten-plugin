@@ -62,8 +62,8 @@ class XYPlot:
                 ob = layer.getSelectedFeatures()
 
                 # Create a plot window with one single subplot
-                fig = (
-                    plt.figure()
+                fig = plt.figure(
+                    layout="constrained"
                 )  # causes conflict with plugins "statist" and "chartmaker"
                 ax = fig.add_subplot(111)
 

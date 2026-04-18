@@ -161,29 +161,32 @@ class ExportSpatialite:
         QApplication.processEvents()
 
         loop = QEventLoop()
-        stats_holder: list[str | None] = []
+        _stats: str | None = None
+        _signal_received = False
 
         def on_finished(stats: str) -> None:
-            stats_holder.append(stats)
+            nonlocal _stats, _signal_received
+            _stats = stats
+            _signal_received = True
             loop.quit()
 
         def on_error(msg: str) -> None:
+            nonlocal _signal_received
             log.error("Export error:\n%s", msg)
-            stats_holder.append(None)
+            _signal_received = True
             loop.quit()
+
+        def on_table_started(name: str, total: int) -> None:
+            progress.setLabelText(
+                QCoreApplication.translate("ExportSpatialite", "Exporting: {}").format(
+                    name
+                )
+            )
+            progress.setMaximum(total)
 
         worker.finished.connect(on_finished)
         worker.error.connect(on_error)
-        worker.table_started.connect(
-            lambda name, total: (
-                progress.setLabelText(
-                    QCoreApplication.translate(
-                        "ExportSpatialite", "Exporting: {}"
-                    ).format(name)
-                ),
-                progress.setMaximum(total),
-            )
-        )
+        worker.table_started.connect(on_table_started)
         worker.rows_written.connect(progress.setValue)
         progress.canceled.connect(worker.cancel)
 
@@ -192,17 +195,16 @@ class ExportSpatialite:
         thread.wait()
         progress.close()
 
-        if not stats_holder:
+        if not _signal_received:
             return
-        stats = stats_holder[0]
-        if stats is None:
+        if _stats is None:
             common_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
                     "ExportSpatialite", "Export failed, see log message panel"
                 ),
                 button=True,
             )
-        elif stats == "":
+        elif _stats == "":
             common_utils.MessagebarAndLog.info(
                 bar_msg=QCoreApplication.translate(
                     "ExportSpatialite", "Export cancelled."
@@ -217,5 +219,5 @@ class ExportSpatialite:
                 log_msg=QCoreApplication.translate(
                     "ExportData", "Tables with different number of rows:\n%s"
                 )
-                % stats,
+                % _stats,
             )

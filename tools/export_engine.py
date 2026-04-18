@@ -55,17 +55,9 @@ class ExportEngine:
         select_cols: list[str],
         wkb_srid: str,
         obsids: tuple[str, ...],
+        geom_cols: set[str],
     ) -> tuple[str, list]:
-        """Return (SELECT sql, args) that streams select_cols from source.
-
-        Geometry columns are wrapped in ST_AsBinary(ST_Transform(col, wkb_srid)).
-        wkb_srid is dest_srid when source and dest share the same CRS, otherwise
-        '4326' (WGS84 is always present in both databases' spatial_ref_sys).
-        """
-        geom_cols = set(
-            db_utils.get_geometry_types(tname, dbconnection=source_conn).keys()
-        )
-
+        """Return (SELECT sql, args) streaming select_cols from source."""
         exprs: list[str] = []
         for col in select_cols:
             if col in geom_cols:
@@ -153,12 +145,7 @@ class ExportEngine:
                 tname, dest_conn
             )
 
-        # Determine intermediate WKB SRID for geometry transfer.
-        # When source and destination share the same CRS, transform directly to
-        # dest_srid.  When they differ, use WGS84 (4326) as an intermediate
-        # because every SpatiaLite database ships with SRID 4326 in
-        # spatial_ref_sys, avoiding "unable to find destination SRID" errors
-        # on the source connection.
+        # Use WGS84 (4326) as intermediate when CRS differs: always present in both DBs' spatial_ref_sys.
         geom_cols = set(
             db_utils.get_geometry_types(tname, dbconnection=source_conn).keys()
         )
@@ -170,7 +157,7 @@ class ExportEngine:
         )
 
         select_sql, select_args = self._build_select_sql(
-            tname, source_conn, src_cols, wkb_srid, obsids
+            tname, source_conn, src_cols, wkb_srid, obsids, geom_cols
         )
         insert_sql = self._build_insert_sql(tname, dest_conn, dst_cols, wkb_srid)
 
@@ -198,23 +185,23 @@ class ExportEngine:
         if replace and dest_snapshot is not None:
             self._reinsert_dest_snapshot(tname, dest_conn, dest_snapshot, snap_cols)
 
-    # ---- Stubs (replaced in Tasks 6 and 7) ----
-
     def _needs_logger_migration(
         self,
         source_conn: DbConnectionManager,
         dest_conn: DbConnectionManager,
     ) -> bool:
         """True when source has old 'source' column and dest has new series schema."""
-        if "w_levels_logger" not in db_utils.get_tables(source_conn, skip_views=True):
+        if not db_utils.verify_table_exists(
+            "w_levels_logger", dbconnection=source_conn
+        ):
             return False
         src_cols = set(self._get_columns("w_levels_logger", source_conn))
         if "source" not in src_cols:
             return False
-        dest_tables = db_utils.tables_columns(dbconnection=dest_conn)
-        if "w_logger_series" not in dest_tables:
+        if not db_utils.verify_table_exists("w_logger_series", dbconnection=dest_conn):
             return False
-        if "series_id" not in dest_tables.get("w_levels_logger", []):
+        wll_info = db_utils.get_table_info("w_levels_logger", dbconnection=dest_conn)
+        if not wll_info or not any(col[1].lower() == "series_id" for col in wll_info):
             return False
         return True
 
@@ -346,7 +333,9 @@ class ExportEngine:
                     )[0][0]
                     results.setdefault(tname, {})[alias] = n
                 except Exception:
-                    pass
+                    log.debug(
+                        "Could not count rows in %s (%s)", tname, alias, exc_info=True
+                    )
 
         differing = [
             (tname, counts)
@@ -370,16 +359,7 @@ class ExportEngine:
         source_conn: DbConnectionManager,
         obsids: tuple[str, ...],
     ) -> int:
-        """Count rows in a table, optionally filtered by obsids.
-
-        Args:
-            tname: Table name to count rows from.
-            source_conn: Database connection to query.
-            obsids: Tuple of obsid values to filter by; empty tuple = no filter.
-
-        Returns:
-            Number of rows matching the filter (or all rows if obsids is empty).
-        """
+        """Count rows in tname, filtered by obsids if non-empty."""
         sql = f"SELECT count(*) FROM {db_utils.ident(tname)}"
         args: list = []
         if obsids:

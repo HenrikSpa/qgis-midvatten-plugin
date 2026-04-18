@@ -130,7 +130,7 @@ class TestExportEngine(MidvattenTestSpatialiteDbSv):
         src = self._source_conn()
         try:
             sql, args = ExportEngine()._build_select_sql(
-                "w_levels", src, ["obsid", "date_time", "meas"], "3006", ()
+                "w_levels", src, ["obsid", "date_time", "meas"], "3006", (), set()
             )
             assert "obsid" in sql
             assert "ST_AsBinary" not in sql
@@ -146,7 +146,7 @@ class TestExportEngine(MidvattenTestSpatialiteDbSv):
         src = self._source_conn()
         try:
             sql, args = ExportEngine()._build_select_sql(
-                "obs_points", src, ["obsid", "geometry"], "4326", ()
+                "obs_points", src, ["obsid", "geometry"], "4326", (), {"geometry"}
             )
             assert "ST_AsBinary" in sql
             assert "ST_Transform" in sql
@@ -161,7 +161,7 @@ class TestExportEngine(MidvattenTestSpatialiteDbSv):
         src = self._source_conn()
         try:
             sql, args = ExportEngine()._build_select_sql(
-                "w_levels", src, ["obsid", "date_time"], "3006", ("P1",)
+                "w_levels", src, ["obsid", "date_time"], "3006", ("P1",), set()
             )
             assert "WHERE" in sql.upper()
             assert len(args) == 1

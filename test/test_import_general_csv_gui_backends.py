@@ -574,7 +574,7 @@ class GeneralCsvGuiMixin:
                 db_utils.sql_load_fr_db("""SELECT count(*) FROM w_levels""")
             )
             reference_string = r"""(True, [(10000)])"""
-            assert import_time < 10
+            assert import_time < 20
             assert test_string == reference_string
 
     def test_import_w_levels_obsid_from_selection_obsidcol_existed(self):

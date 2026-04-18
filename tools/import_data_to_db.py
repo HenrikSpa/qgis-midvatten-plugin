@@ -628,16 +628,6 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 % str(numskipped),
             )
 
-        for colname in file_data[0]:
-            sql = dbconnection.sql_ident(
-                "UPDATE {t} SET {c} = NULL WHERE {c} = ''",
-                t=self.temptable_name,
-                c=colname,
-            )
-            dbconnection.execute_safe(sql)
-
-        # dbconnection.cursor.execute(f"""select * from {self.temptable_name}""")
-
     def list_to_table_using_pandas(
         self,
         dbconnection: DbConnectionManager,
@@ -666,8 +656,10 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 pass
             pass
 
-        # Replaces NaN with None
+        # Replaces NaN with None and empty strings with None so all insert paths
+        # treat missing values as SQL NULL without needing post-insert UPDATE queries.
         df = df.astype(object).where(pd.notnull(df), None)
+        df = df.replace("", None)
 
         if dbconnection.dbtype == "spatialite":
             sql = f"INSERT INTO {dbconnection.ident(temptable_name)} VALUES ({dbconnection.placeholders(len(df.columns))})"
@@ -678,7 +670,11 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             df.to_csv(csv_buffer, index=False, header=False, sep=";")
             csv_buffer.seek(0)
             try:
-                dbconnection.cursor.copy_from(csv_buffer, temptable_name, sep=";")
+                # null="" tells COPY to treat empty CSV fields as SQL NULL, consistent
+                # with df.replace("", None) above.
+                dbconnection.cursor.copy_from(
+                    csv_buffer, temptable_name, sep=";", null=""
+                )
             except psycopg2.errors.BadCopyFileFormat:
                 # This is probably due to the separator exists in the values.
                 data = list(df.itertuples(index=False))

@@ -131,7 +131,7 @@ class Drillreport:  # general observation point info for the selected object
     ):
         rpt += r"""<html><TABLE WIDTH=100% BORDER=0 CELLPADDING=1 CELLSPACING=1><TR VALIGN=TOP><TD WIDTH=15%><h3 style="font-family:'arial';font-size:18pt; font-weight:600">"""
         rpt += obsid
-        if midvatten_utils.getcurrentlocale()[0] == "sv_SE":
+        if midvatten_utils.is_locale_swedish():
             rpt += "".join(
                 [
                     r'''</h3><img src="''',
@@ -153,7 +153,7 @@ class Drillreport:  # general observation point info for the selected object
             # rpt += r"""</h3><img src="for_general_report.png" /><br><img src='"""
         rpt += logopath
         rpt += """' /></TD><TD WIDTH=85%><TABLE WIDTH=100% BORDER=1 CELLPADDING=4 CELLSPACING=3><TR VALIGN=TOP><TD WIDTH=50%><P><U><B>"""
-        if midvatten_utils.getcurrentlocale()[0] == "sv_SE":
+        if midvatten_utils.is_locale_swedish():
             rpt += "Allmän information"
         else:
             rpt += QCoreApplication.translate("Drillreport", "General information")
@@ -172,14 +172,14 @@ class Drillreport:  # general observation point info for the selected object
             crs = ru(result2)  # 1st we need crs
             result3 = db_utils.get_srid_name(result2)
             crs_name = ru(result3)  # and crs name
-            if midvatten_utils.getcurrentlocale()[0] == "sv_SE":
+            if midvatten_utils.is_locale_swedish():
                 reportdata_1 = self.rpt_upper_left_sv(general_data, crs, crs_name)
             else:
                 reportdata_1 = self.rpt_upper_left(general_data, crs, crs_name)
             f.write(reportdata_1)
 
             rpt = r"""</TABLE></TD><TD WIDTH=50%><P><U><B>"""
-            if midvatten_utils.getcurrentlocale()[0] == "sv_SE":
+            if midvatten_utils.is_locale_swedish():
                 rpt += "Lagerföljd"
             else:
                 rpt += QCoreApplication.translate("Drillreport", "Stratigraphy")
@@ -188,14 +188,14 @@ class Drillreport:  # general observation point info for the selected object
 
             # STRATIGRAPHY DATA UPPER RIGHT QUADRANT
             strat_data = self.get_data(obsid, "stratigraphy", "n")[1]  # MacOSX fix1
-            if midvatten_utils.getcurrentlocale()[0] == "sv_SE":
+            if midvatten_utils.is_locale_swedish():
                 reportdata_2 = self.rpt_upper_right_sv(strat_data)
             else:
                 reportdata_2 = self.rpt_upper_right(strat_data)
             f.write(reportdata_2)
 
             rpt = r"""</TABLE></TD></TR><TR VALIGN=TOP><TD WIDTH=50%><P><U><B>"""
-            if midvatten_utils.getcurrentlocale()[0] == "sv_SE":
+            if midvatten_utils.is_locale_swedish():
                 rpt += "Kommentarer"
             else:
                 rpt += QCoreApplication.translate("Drillreport", "Comments")
@@ -207,7 +207,7 @@ class Drillreport:  # general observation point info for the selected object
             f.write(reportdata_3)
 
             rpt = r"""</TD><TD WIDTH=50%><P><U><B>"""
-            if midvatten_utils.getcurrentlocale()[0] == "sv_SE":
+            if midvatten_utils.is_locale_swedish():
                 rpt += "Vattennivåer"
             else:
                 rpt += QCoreApplication.translate("Drillreport", "Water levels")
@@ -218,7 +218,7 @@ class Drillreport:  # general observation point info for the selected object
             meas_or_level_masl, statistics = get_statistics_for_single_obsid(
                 obsid
             )  # MacOSX fix1
-            if midvatten_utils.getcurrentlocale()[0] == "sv_SE":
+            if midvatten_utils.is_locale_swedish():
                 reportdata_4 = self.rpt_lower_right_sv(statistics, meas_or_level_masl)
             else:
                 reportdata_4 = self.rpt_lower_right(statistics, meas_or_level_masl)

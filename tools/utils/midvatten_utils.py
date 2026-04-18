@@ -283,6 +283,15 @@ def getcurrentlocale(
         return locale.getlocale()
 
 
+def is_locale_swedish(dbconnection=None) -> bool:
+    """True when the resolved locale (DB override + system fallback) is
+    Swedish. Use for branches that can't go through
+    QCoreApplication.translate — image-file picking, `_sv.qml` fallbacks,
+    and hardcoded strings in reports that pre-date i18n.
+    """
+    return getcurrentlocale(dbconnection=dbconnection)[0] == "sv_SE"
+
+
 def get_locale_from_db(
     print_error_message_in_bar: bool = True,
     dbconnection: Optional[DbConnectionManager] = None,

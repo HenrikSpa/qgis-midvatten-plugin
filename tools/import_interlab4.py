@@ -594,8 +594,7 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
                                 ):
                                     duplicate_translation = (
                                         "dubblett"
-                                        if midvatten_utils.getcurrentlocale()[0]
-                                        == "sv_SE"
+                                        if midvatten_utils.is_locale_swedish()
                                         else "duplicate"
                                     )
                                     duplicate_parname = "%s (%s %s)" % (

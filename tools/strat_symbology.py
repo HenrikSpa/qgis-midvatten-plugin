@@ -506,9 +506,7 @@ def apply_style(layer, stylename):
         "strat_symbology",
         f"{stylename}.qml",
     )
-    if midvatten_utils.getcurrentlocale()[0] == "sv_SE" and os.path.isfile(
-        stylefile_sv
-    ):  # swedish forms are loaded only if locale settings indicate sweden
+    if midvatten_utils.is_locale_swedish() and os.path.isfile(stylefile_sv):
         try:
             layer.loadNamedStyle(stylefile_sv)
         except Exception:

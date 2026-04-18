@@ -37,7 +37,7 @@ from midvatten.tools.utils.db_utils import (
     get_tables,
     get_table_info,
 )
-from midvatten.tools.utils.midvatten_utils import getcurrentlocale
+from midvatten.tools.utils.midvatten_utils import getcurrentlocale, is_locale_swedish
 from typing import Any, Dict
 
 
@@ -362,7 +362,7 @@ def geocolorsymbols():
 
 
 def bedrock_geoshort():
-    return "berg" if getcurrentlocale()[0] == "sv_SE" else "rock"
+    return "berg" if is_locale_swedish() else "rock"
 
 
 def get_subset_of_tables_fr_db(category="obs_points"):

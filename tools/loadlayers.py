@@ -10,7 +10,7 @@ from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.file_utils import definitions_path
 from midvatten.tools.utils.layer_build import build_layer, prime_feature_count
 from midvatten.tools.utils.layer_specs import GROUPS, GroupSpec, LayerSpec
-from midvatten.tools.utils.midvatten_utils import getcurrentlocale
+from midvatten.tools.utils.midvatten_utils import is_locale_swedish
 
 
 class LoadLayers:
@@ -64,7 +64,7 @@ class LoadLayers:
     def _apply_style(self, layer, spec: LayerSpec) -> None:
         style_sv = definitions_path(f"{spec.tablename}_sv.qml")
         style_default = definitions_path(f"{spec.tablename}.qml")
-        locale_is_swedish = getcurrentlocale()[0] == "sv_SE"
+        locale_is_swedish = is_locale_swedish()
         candidates = []
         if locale_is_swedish and os.path.isfile(style_sv):
             candidates.append(style_sv)

@@ -405,6 +405,12 @@ def _nan_helper(y):
     return np.isnan(y), lambda z: z.nonzero()[0]
 
 
+def _qgis_color_str_to_mpl(color_str: str) -> tuple:
+    """Convert QGIS 'r,g,b[,a]' color string to matplotlib (0..1) float tuple."""
+    parts = [int(x) / 255 for x in color_str.split(",")]
+    return tuple(parts)
+
+
 def _sample_polygon(poly_layer, sectionlinelayer, xarray, iface):
     """Sample polygon layer colors along section line.
 
@@ -474,13 +480,12 @@ def _sample_polygon(poly_layer, sectionlinelayer, xarray, iface):
                     symbol_layers = symbol.symbolLayers()
                     # Use the bottom layer color
                     _color = symbol_layers[0].properties()["color"]
-                    color_list = _color.split(",")
                     try:
-                        color = tuple([float(c) / float(255) for c in color_list])
+                        color = _qgis_color_str_to_mpl(_color)
                     except ValueError:
-                        if len(color_list) > 4:
-                            color = tuple(
-                                [float(c) / float(255) for c in color_list[:4]]
+                        if len(_color.split(",")) > 4:
+                            color = _qgis_color_str_to_mpl(
+                                ",".join(_color.split(",")[:4])
                             )
                         else:
                             raise
@@ -548,9 +553,7 @@ def paint_dems(
                 settings = template["dems_Axes_plot"][plotlable]
                 settings["label"] = settings.get("label", plotlable)
                 settings["picker"] = 2
-                (lineplot,) = figure.ax_main.plot(
-                    xarray, dem_data, **settings
-                )  # The comma is terribly annoying and also different from a bar plot, see http://stackoverflow.com/questions/11983024/matplotlib-legends-not-working and http://stackoverflow.com/questions/10422504/line-plotx-sinx-what-does-comma-stand-for?rq=1
+                (lineplot,) = figure.ax_main.plot(xarray, dem_data, **settings)
                 figure.plot_handles.append(lineplot)
 
                 if settingsdict["secplot_apply_graded_dems"]:
@@ -580,9 +583,6 @@ def paint_dems(
                             skip_labels=skip_labels,
                             iface=iface,
                         )
-                QgsProject.instance().removeMapLayer(temp_memorylayer.id())
-    except Exception:
-        raise
     finally:
         try:
             QgsProject.instance().removeMapLayer(temp_memorylayer.id())
@@ -674,7 +674,7 @@ def paint_graded_dems(
             (
                 (
                     labels_colors_dict[tuple(color)],
-                    [float(c) / 255.0 for c in color],
+                    tuple(float(c) / 255.0 for c in color),
                 )
                 if color is not None
                 else (None, None)
@@ -1315,7 +1315,6 @@ def configure_axes(
 def finish_plot(
     figure,
     template: dict,
-    settingsdict: dict,
     legend_manager,
 ) -> None:
     """Apply final matplotlib formatting (grid, labels, ticks, legend) to *figure*.
@@ -1330,9 +1329,6 @@ def finish_plot(
         SectionPlotFigure instance.
     template:
         ``secplot_templates.loaded_template`` dict.
-    settingsdict:
-        ``self.ms.settingsdict`` — currently unused in this function but kept
-        for interface consistency and future use.
     legend_manager:
         ``SectionPlotLegendManager`` instance (or ``None`` to skip legend).
     """
@@ -1406,7 +1402,7 @@ def finish_plot(
     if template["Figure_subplots_adjust"]:
         figure.subplots_adjust(**template["Figure_subplots_adjust"])
 
-    if legend_manager is not None and settingsdict.get("secplotlegendplotted"):
+    if legend_manager is not None:
         if getattr(figure, "ax_data_fit", None) is not None:
             leg_ax = figure.ax_data_fit
         else:

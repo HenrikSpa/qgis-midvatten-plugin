@@ -52,18 +52,6 @@ def fill_tem(ui, ms, dbconnection, line_feature=None):
         ms.settingsdict.get("secplot_tem_shading", "nearest"),
         add_if_not_exists=False,
     )
-    ui.tem_vmin.setText(ms.settingsdict.get("secplot_tem_vmin", ""))
-    ui.tem_vmax.setText(ms.settingsdict.get("secplot_tem_vmax", ""))
-    ui.tem_snap.setChecked(ms.settingsdict.get("secplot_tem_snap", False))
-    ui.tem_rasterized.setChecked(ms.settingsdict.get("secplot_tem_rasterized", False))
-    ui.tem_edgecolors.setText(ms.settingsdict.get("secplot_tem_edgecolors", ""))
-    ui.tem_alpha_above_doi.setValue(
-        float(ms.settingsdict.get("secplot_tem_alpha_above_doi", 1.0))
-    )
-    ui.tem_alpha_below_doi.setValue(
-        float(ms.settingsdict.get("secplot_tem_alpha_below_doi", 0.7))
-    )
-    ui.tem_data_fit.setChecked(ms.settingsdict.get("secplot_tem_data_fit", False))
     ui.tem_model_name.addItem("")
 
     if line_feature is None:

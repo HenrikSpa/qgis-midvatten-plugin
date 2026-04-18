@@ -241,7 +241,7 @@ def get_plot_data_bars(
 
             if obs not in obsid_annotation:
                 obsid_annotation[obs] = (x, z_data[obs]["z"])
-    common_utils.stop_waiting_cursor()  # now this long process is done and the cursor is back as normal
+    common_utils.stop_waiting_cursor()
     return bars
 
 
@@ -298,7 +298,7 @@ def get_plot_data_layer_texts(
     Returns a dict ``{column_name: {(x, z): text}}``.
     """
     bar_texts = {}
-    common_utils.start_waiting_cursor()  # show the user this may take a long time...
+    common_utils.start_waiting_cursor()
 
     for obs, x in obsids_x_position.items():
         sql = f"""SELECT depthtop, depthbot, geology, geoshort, capacity, development,
@@ -335,7 +335,7 @@ def get_plot_data_layer_texts(
         for k, v in bar_texts.items()
     }
 
-    common_utils.stop_waiting_cursor()  # now this long process is done and the cursor is back as normal
+    common_utils.stop_waiting_cursor()
     return bar_texts
 
 
@@ -406,9 +406,7 @@ def get_plot_data_seismic(line_layer, line_feature, dbconnection=None):
             sql, args=(line_feature.attribute("obsid"),)
         )
         table = np.array(recs, dtype=my_format)
-        obs_lines_plot_data = table.view(
-            np.recarray
-        )  # RECARRAY   Makes the two columns inte callable objects, i.e. write self.obs_lines_plot_data.values
+        obs_lines_plot_data = table.view(np.recarray)
         return obs_lines_plot_data
 
 

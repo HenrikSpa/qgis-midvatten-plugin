@@ -363,7 +363,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
         self.obsid_annotation = {}
         self.water_level_labels_duplicate_check = []
 
-        # show the user this may take a long time...
         common_utils.start_waiting_cursor()
         # settings must be recieved here since plot windows may stay open (hence sectionplot instance activated) while a new qgis project is opened or midv settings are changed.
         self.ms = msettings
@@ -476,10 +475,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
                 line_feature=self.line_feature,
                 dbconnection=self.dbconnection,
             )
-            # Store the seismic column names for paint_obs_lines_data.
-            self.y1_column = SEISMIC_Y1_COLUMN
-            self.y2_column = SEISMIC_Y2_COLUMN
-            self.y3_column = SEISMIC_Y3_COLUMN
 
         # Add annotation entries for obsids without stratigraphy.
         for obs, x in self.obsids_x_position.items():
@@ -538,19 +533,12 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
                 add_if_not_exists=False,
             )
 
-        if self.ms.settingsdict["secplotbw"] != 0:
-            self.barwidthdouble_spin_box.setValue(self.ms.settingsdict["secplotbw"])
-        else:
-            self.barwidthdouble_spin_box.setValue(2)
-
         drillstop = (
             self.ms.settingsdict["secplotdrillstop"]
             if self.ms.settingsdict["secplotdrillstop"]
             else f"%{defs.bedrock_geoshort()}%"
         )
         self.drillstop.setText(drillstop)
-        if self.ms.settingsdict["secplotincludeviews"]:
-            self.include_views_check_box.setChecked(True)
 
     def fill_dem_list(self, line_layer=None):
         self.dem_layers, self.rasterselection = _fill_dem_list(
@@ -610,7 +598,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
         self.init_figure()
 
         try:
-            common_utils.start_waiting_cursor()  # show the user this may take a long time...
+            common_utils.start_waiting_cursor()
 
             # Collect declaratively-bound widget values into settingsdict.
             collect_ui_to_settings(self, self.ms)
@@ -691,15 +679,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
                         hatch_dict=defs.plot_hatch_dict(),
                         barwidth=self.barwidth,
                     )
-                    if len(self.ms.settingsdict["secplottext"]) > 0:
-                        _painters.paint_layer_text(
-                            self.figure,
-                            self.layer_texts,
-                            self.ms.settingsdict["secplottext"],
-                            self.ms.settingsdict["secplotlayertextalignment"],
-                            self.barwidth,
-                            self.secplot_templates.loaded_template,
-                        )
 
                 if self.ms.settingsdict["secplothydrologyplotted"]:
                     hydro_color_dict = {k: v[1] for k, v in self.hydro_colors.items()}
@@ -712,15 +691,19 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
                         hatch_dict=None,
                         barwidth=self.barwidth,
                     )
-                    if len(self.ms.settingsdict["secplottext"]) > 0:
-                        _painters.paint_layer_text(
-                            self.figure,
-                            self.layer_texts,
-                            self.ms.settingsdict["secplottext"],
-                            self.ms.settingsdict["secplotlayertextalignment"],
-                            self.barwidth,
-                            self.secplot_templates.loaded_template,
-                        )
+
+                if (
+                    self.ms.settingsdict["stratigraphyplotted"]
+                    or self.ms.settingsdict["secplothydrologyplotted"]
+                ) and len(self.ms.settingsdict["secplottext"]) > 0:
+                    _painters.paint_layer_text(
+                        self.figure,
+                        self.layer_texts,
+                        self.ms.settingsdict["secplottext"],
+                        self.ms.settingsdict["secplotlayertextalignment"],
+                        self.barwidth,
+                        self.secplot_templates.loaded_template,
+                    )
 
                 _painters.paint_water_level(
                     self.figure,
@@ -770,18 +753,16 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
             else:
                 self.barwidth = 0.0
 
-            # if the line layer obs_lines is selected, then try to plot seismic data if there are any
             if self.figure.line_layer and self.figure.line_layer.name() == "obs_lines":
                 if len(self.obs_lines_plot_data) > 0:
                     _painters.paint_obs_lines_data(
                         self.figure,
                         self.obs_lines_plot_data,
-                        self.y1_column,
-                        self.y2_column,
-                        self.y3_column,
+                        SEISMIC_Y1_COLUMN,
+                        SEISMIC_Y2_COLUMN,
+                        SEISMIC_Y3_COLUMN,
                     )
 
-            # if there are any DEMs selected, try to plot them
             if len(self.ms.settingsdict["secplotselectedDEMs"]) > 0:
                 _painters.paint_dems(
                     self.figure,
@@ -798,7 +779,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
                 self.barwidth,
             )
 
-            # Build legend manager and assign to figure so detached callbacks can use it.
+            # Assigned to figure so detached-figure callbacks can rebuild the legend.
             legend_manager = SectionPlotLegendManager.from_template(
                 self.secplot_templates.loaded_template
             )
@@ -807,8 +788,9 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
             _painters.finish_plot(
                 self.figure,
                 self.secplot_templates.loaded_template,
-                self.ms.settingsdict,
-                legend_manager,
+                legend_manager
+                if self.ms.settingsdict.get("secplotlegendplotted")
+                else None,
             )
 
             if self.width_of_plot.isChecked():
@@ -869,7 +851,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
             self.dbconnection = None
             raise
         else:
-            common_utils.stop_waiting_cursor()  # now this long process is done and the cursor is back as normal
+            common_utils.stop_waiting_cursor()
 
     def remove_previous_figure(self):
         if self.figure is None:

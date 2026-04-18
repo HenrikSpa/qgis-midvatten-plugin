@@ -789,10 +789,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
     def _setup_ref_dock(self) -> None:
         self._ref_series: list[dict] = []
-        dock = QDockWidget(
+        self._ref_dock = QDockWidget(
             QCoreApplication.translate("Calibrlogger", "Reference series"), self
         )
-        dock.setObjectName("ref_series_dock")
+        self._ref_dock.setObjectName("ref_series_dock")
         container = QWidget()
         vbox = QVBoxLayout(container)
         btn_row = QHBoxLayout()
@@ -811,8 +811,12 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         btn_row.addWidget(self._ref_remove_btn)
         vbox.addLayout(btn_row)
         vbox.addWidget(self._ref_list)
-        dock.setWidget(container)
-        self.addDockWidget(Qt.RightDockWidgetArea, dock)
+        self._ref_dock.setWidget(container)
+        self.addDockWidget(Qt.RightDockWidgetArea, self._ref_dock)
+        view_menu = self.menuBar().addMenu(
+            QCoreApplication.translate("Calibrlogger", "&View")
+        )
+        view_menu.addAction(self._ref_dock.toggleViewAction())
         self._ref_add_btn.clicked.connect(self._on_add_ref_series)
         self._ref_edit_btn.clicked.connect(self._on_edit_ref_series)
         self._ref_remove_btn.clicked.connect(self._on_remove_ref_series)

@@ -524,10 +524,14 @@ class Midvatten:
 
         if spec.persistent:
             existing = self._open_tools.get(spec.id)
-            if existing is not None and existing.isVisible():
-                existing.raise_()
-                existing.activateWindow()
-                return
+            if existing is not None:
+                try:
+                    if existing.isVisible():
+                        existing.raise_()
+                        existing.activateWindow()
+                        return
+                except RuntimeError:
+                    del self._open_tools[spec.id]
 
         if spec.callback is not None:
             spec.callback()

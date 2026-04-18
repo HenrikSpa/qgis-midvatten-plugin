@@ -3,7 +3,7 @@
 Tests for the screen-interval plotting feature in SectionPlot.
 
 Covers:
-  - get_screen_plot_data(): correct bars dict shape, heights, bottoms
+  - data.get_screen_plot_data(): correct bars dict shape, heights, bottoms
   - graceful-skip when `screen` table is absent (older DBs)
 """
 
@@ -12,11 +12,12 @@ from unittest import mock
 import pytest
 
 from midvatten.test import utils_for_tests
+from midvatten.tools.sectionplot.data import get_screen_plot_data
 from midvatten.tools.utils import db_utils
 
 
 class GetScreenPlotDataMixin:
-    """Tests for SectionPlot.get_screen_plot_data()."""
+    """Tests for data.get_screen_plot_data()."""
 
     def _insert_obs_points(self):
         db_utils.sql_alter_db(
@@ -54,7 +55,9 @@ class GetScreenPlotDataMixin:
 
         secplot = self._make_secplot()
         try:
-            bars = secplot.get_screen_plot_data({"P1": 1.0})
+            bars = get_screen_plot_data(
+                {"P1": 1.0}, secplot.z_data, secplot.dbconnection
+            )
         finally:
             secplot.dbconnection.closedb()
 
@@ -81,7 +84,9 @@ class GetScreenPlotDataMixin:
         try:
             # Drop the screen table to simulate an older DB.
             secplot.dbconnection.execute("DROP TABLE screen")
-            bars = secplot.get_screen_plot_data({"P1": 1.0})
+            bars = get_screen_plot_data(
+                {"P1": 1.0}, secplot.z_data, secplot.dbconnection
+            )
         finally:
             secplot.dbconnection.closedb()
 
@@ -95,7 +100,7 @@ class GetScreenPlotDataMixin:
         """get_screen_plot_data returns {} for empty obsids_x_position."""
         secplot = self._make_secplot()
         try:
-            bars = secplot.get_screen_plot_data({})
+            bars = get_screen_plot_data({}, secplot.z_data, secplot.dbconnection)
         finally:
             secplot.dbconnection.closedb()
 
@@ -118,7 +123,9 @@ class GetScreenPlotDataMixin:
 
         secplot = self._make_secplot()
         try:
-            bars = secplot.get_screen_plot_data({"P1": 1.0})
+            bars = get_screen_plot_data(
+                {"P1": 1.0}, secplot.z_data, secplot.dbconnection
+            )
         finally:
             secplot.dbconnection.closedb()
 
@@ -140,7 +147,9 @@ class GetScreenPlotDataMixin:
         # Clear z_data so P1 is not present.
         secplot.z_data = {}
         try:
-            bars = secplot.get_screen_plot_data({"P1": 1.0})
+            bars = get_screen_plot_data(
+                {"P1": 1.0}, secplot.z_data, secplot.dbconnection
+            )
         finally:
             secplot.dbconnection.closedb()
 

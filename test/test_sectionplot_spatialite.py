@@ -89,6 +89,7 @@ class SectionPlotIntegrationMixin:
         QgsProject.instance().addMapLayer(self.vlayer)
         feature_ids = [f.id() for f in self.vlayer.getFeatures()]
         self.vlayer.selectByIds(feature_ids)
+        dbconnection.closedb()
 
     # ------------------------------------------------------------------
     # Tests

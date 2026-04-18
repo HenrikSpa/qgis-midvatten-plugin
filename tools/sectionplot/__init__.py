@@ -40,7 +40,6 @@ from midvatten.tools.sectionplot._sectionplot import (  # noqa: F401
     slider_val_to_idx,
     get_length_map,
     fill_empty_columns,
-    sample_polygon,
 )
 from midvatten.tools.sectionplot.figure import SectionPlotFigure  # noqa: F401
 from midvatten.tools.sectionplot.legend import SectionPlotLegendManager  # noqa: F401

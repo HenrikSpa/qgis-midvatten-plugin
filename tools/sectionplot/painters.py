@@ -11,35 +11,39 @@ SectionPlot QDockWidget.
 import ast
 import copy
 import json
+import logging
 import os
 import traceback
 
+import matplotlib.pyplot as plt
 import matplotlib.ticker as tick
 import numpy as np
+import pandas as pd
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import (
-    QgsMapLayer,
-    QgsVectorLayer,
-    QgsRuleBasedRenderer,
-    QgsRenderContext,
     QgsFeatureRequest,
     QgsGeometry,
+    QgsMapLayer,
+    QgsProject,
+    QgsRuleBasedRenderer,
+    QgsRenderContext,
+    QgsVectorLayer,
 )
 
-import matplotlib.pyplot as plt
-
-from midvatten.tools.utils import common_utils
+import midvatten.definitions.midvatten_defs as defs
+from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.sectionplot._utils import (
     get_legend_items_labels,
     get_plot_label_name,
 )
 from midvatten.tools.utils.exceptions import UsageError
 from midvatten.tools.utils.sampledem import qchain, sampling
-import midvatten.definitions.midvatten_defs as defs
 from midvatten.tools.sectionplot.data import (
     get_length_map,
     fill_empty_columns,
 )
+
+log = logging.getLogger(__name__)
 
 
 def paint_bars(
@@ -355,7 +359,6 @@ def paint_obs_lines_data(
         Legend label names for each of the three y-series (e.g.
         ``"bedrock"``, ``"ground"``, ``"gw_table"``).
     """
-    import numpy as np
 
     def remove_nones(xdata, ydata):
         x_y = [(xdata[idx], row) for idx, row in enumerate(ydata) if not np.isnan(row)]
@@ -416,13 +419,6 @@ def _sample_polygon(poly_layer, sectionlinelayer, xarray, iface):
     iface:
         QGIS iface reference (needed for render context).
     """
-    from qgis.core import (
-        QgsRuleBasedRenderer,
-        QgsRenderContext,
-        QgsFeatureRequest,
-        QgsGeometry,
-    )
-
     poly_provider = poly_layer.dataProvider()
     renderer = poly_layer.renderer()
     if not isinstance(renderer, QgsRuleBasedRenderer):
@@ -524,8 +520,6 @@ def paint_dems(
     iface:
         QGIS iface reference (needed for graded-DEM polygon sampling).
     """
-    from qgis.core import QgsProject
-
     try:
         if (
             settingsdict["secplotselectedDEMs"]
@@ -663,8 +657,10 @@ def paint_graded_dems(
         isinstance(color_layer, QgsVectorLayer)
         or color_layer.type() == QgsMapLayer.LayerType.VectorLayer
     ):
+        log.debug("Sampling as polygon")
         labels_colors = _sample_polygon(color_layer, sectionlinelayer, xarray, iface)
     else:
+        log.debug("Sampling as raster")
         labels_colors_dict = {}
         colors = sampling(
             temp_memorylayer, color_layer, extract_type="value", bands=(1, 2, 3)
@@ -782,9 +778,6 @@ def paint_tem(
     template:
         ``secplot_templates.loaded_template`` dict.
     """
-    import pandas as pd
-    from midvatten.tools.utils import db_utils
-
     if not settingsdict["secplot_tem_model_name"]:
         return
 
@@ -1018,8 +1011,6 @@ def paint_images(
     settingsdict:
         ``self.ms.settingsdict`` — used for image selection and display options.
     """
-    from midvatten.tools.utils import db_utils
-
     if not figure.line_layer:
         return
 
@@ -1110,7 +1101,7 @@ def paint_images(
 
             im = plt.imread(path)
 
-            clip = settingsdict.get("secplot_images_clip", False)
+            clip = settingsdict.get("secplot_images_clip", True)
             if clip_left_right_top_bottom:
                 clip_left_right_top_bottom = ast.literal_eval(
                     clip_left_right_top_bottom

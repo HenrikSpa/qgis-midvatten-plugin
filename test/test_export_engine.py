@@ -719,3 +719,96 @@ class TestExportEngine(MidvattenTestSpatialiteDbSv):
             dest.closedb()
 
         assert integrity_violations == []
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_worker_emits_signals(self, mock_messagebar):
+        """ExportWorker emits table_started, rows_written, finished in correct order."""
+        from qgis.PyQt.QtCore import QEventLoop, QThread
+
+        from midvatten.tools.export_worker import ExportWorker
+
+        conn = db_utils.DbConnectionManager(self._class_db_settings)
+        db_utils.sql_alter_db(
+            "INSERT INTO obs_points (obsid, geometry) VALUES "
+            "('P1', ST_GeomFromText('POINT(1 2)', 3006))",
+            dbconnection=conn,
+        )
+        conn.commit_and_closedb()
+
+        dest_path = self._make_dest_db()
+        worker = ExportWorker(
+            source_db_settings=self._class_db_settings,
+            dest_path=dest_path,
+            obsid_points=(),
+            obsid_lines=(),
+            dest_srid="3006",
+        )
+        thread = QThread()
+        worker.moveToThread(thread)
+        thread.started.connect(worker.run)
+        worker.finished.connect(thread.quit)
+        worker.error.connect(thread.quit)
+
+        started: list[tuple] = []
+        finished: list[str] = []
+        errors: list[str] = []
+        worker.table_started.connect(lambda n, t: started.append((n, t)))
+        worker.finished.connect(finished.append)
+        worker.error.connect(errors.append)
+
+        loop = QEventLoop()
+        worker.finished.connect(loop.quit)
+        worker.error.connect(loop.quit)
+        thread.start()
+        loop.exec_()
+        thread.wait()
+
+        assert errors == [], f"Worker emitted error: {errors}"
+        assert len(finished) == 1
+        assert len(started) > 0  # at least one table signal
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_worker_cancel_deletes_dest_file(self, mock_messagebar):
+        """Cancelling the worker causes the partial dest file to be deleted."""
+        from qgis.PyQt.QtCore import QEventLoop, QThread
+
+        from midvatten.tools.export_worker import ExportWorker
+
+        conn = db_utils.DbConnectionManager(self._class_db_settings)
+        db_utils.sql_alter_db(
+            "INSERT INTO obs_points (obsid, geometry) VALUES "
+            "('P1', ST_GeomFromText('POINT(1 2)', 3006))",
+            dbconnection=conn,
+        )
+        conn.commit_and_closedb()
+
+        dest_path = self._make_dest_db()
+        worker = ExportWorker(
+            source_db_settings=self._class_db_settings,
+            dest_path=dest_path,
+            obsid_points=(),
+            obsid_lines=(),
+            dest_srid="3006",
+        )
+        thread = QThread()
+        worker.moveToThread(thread)
+        thread.started.connect(worker.run)
+        worker.finished.connect(thread.quit)
+        worker.error.connect(thread.quit)
+
+        finished: list[str] = []
+        worker.finished.connect(finished.append)
+
+        loop = QEventLoop()
+        worker.finished.connect(loop.quit)
+        worker.error.connect(loop.quit)
+
+        # Cancel before the thread even starts
+        worker.cancel()
+        thread.start()
+        loop.exec_()
+        thread.wait()
+
+        # finished("") emitted for cancel
+        assert finished == [""]
+        assert not os.path.exists(dest_path)

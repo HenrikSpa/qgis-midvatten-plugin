@@ -53,12 +53,14 @@ class ExportEngine:
         tname: str,
         source_conn: DbConnectionManager,
         select_cols: list[str],
-        dest_srid: str,
+        wkb_srid: str,
         obsids: tuple[str, ...],
     ) -> tuple[str, list]:
         """Return (SELECT sql, args) that streams select_cols from source.
 
-        Geometry columns are wrapped in ST_AsBinary(ST_Transform(col, dest_srid)).
+        Geometry columns are wrapped in ST_AsBinary(ST_Transform(col, wkb_srid)).
+        wkb_srid is dest_srid when source and dest share the same CRS, otherwise
+        '4326' (WGS84 is always present in both databases' spatial_ref_sys).
         """
         geom_cols = set(
             db_utils.get_geometry_types(tname, dbconnection=source_conn).keys()
@@ -68,7 +70,7 @@ class ExportEngine:
         for col in select_cols:
             if col in geom_cols:
                 qcol = db_utils.ident(col)
-                exprs.append(f"ST_AsBinary(ST_Transform({qcol}, {dest_srid}))")
+                exprs.append(f"ST_AsBinary(ST_Transform({qcol}, {wkb_srid}))")
             else:
                 exprs.append(db_utils.ident(col))
 
@@ -84,8 +86,14 @@ class ExportEngine:
         tname: str,
         dest_conn: DbConnectionManager,
         dest_cols: list[str],
+        wkb_srid: str | None = None,
     ) -> str:
-        """Return INSERT OR IGNORE SQL for dest table (always SpatiaLite, ? placeholders)."""
+        """Return INSERT OR IGNORE SQL for dest table (always SpatiaLite, ? placeholders).
+
+        wkb_srid is the SRID of the incoming WKB bytes.  When it differs from the
+        destination table's SRID (cross-CRS export), an ST_Transform is added so
+        coordinates are re-projected before storing.
+        """
         geom_cols = set(
             db_utils.get_geometry_types(tname, dbconnection=dest_conn).keys()
         )
@@ -98,7 +106,13 @@ class ExportEngine:
         value_exprs: list[str] = []
         for col in dest_cols:
             if col in geom_cols and dest_srid is not None:
-                value_exprs.append(f"ST_GeomFromWKB(?, {dest_srid})")
+                effective_wkb_srid = wkb_srid if wkb_srid is not None else dest_srid
+                if str(effective_wkb_srid) != str(dest_srid):
+                    value_exprs.append(
+                        f"ST_Transform(ST_GeomFromWKB(?, {effective_wkb_srid}), {dest_srid})"
+                    )
+                else:
+                    value_exprs.append(f"ST_GeomFromWKB(?, {dest_srid})")
             else:
                 value_exprs.append("?")
 
@@ -139,10 +153,23 @@ class ExportEngine:
                 tname, dest_conn
             )
 
-        select_sql, select_args = self._build_select_sql(
-            tname, source_conn, src_cols, dest_srid, obsids
+        # Determine intermediate WKB SRID for geometry transfer.
+        # When source and destination share the same CRS, transform directly to
+        # dest_srid.  When they differ, use WGS84 (4326) as an intermediate
+        # because every SpatiaLite database ships with SRID 4326 in
+        # spatial_ref_sys, avoiding "unable to find destination SRID" errors
+        # on the source connection.
+        source_srid = source_conn.get_srid(tname) if tname else None
+        wkb_srid = (
+            dest_srid
+            if source_srid is None or str(source_srid) == str(dest_srid)
+            else "4326"
         )
-        insert_sql = self._build_insert_sql(tname, dest_conn, dst_cols)
+
+        select_sql, select_args = self._build_select_sql(
+            tname, source_conn, src_cols, wkb_srid, obsids
+        )
+        insert_sql = self._build_insert_sql(tname, dest_conn, dst_cols, wkb_srid)
 
         key_to_sid: dict[tuple, int] = {}
         if select_args:
@@ -243,8 +270,9 @@ class ExportEngine:
             key = (obsid, source_val)
             if key not in key_to_sid:
                 dest_conn.execute(
-                    "INSERT INTO w_logger_series (obsid, source) VALUES (?, ?)",
-                    (obsid, source_val),
+                    "INSERT INTO w_logger_series (obsid, source, description)"
+                    " VALUES (?, ?, ?)",
+                    (obsid, source_val, "Upgraded from Midv 1.x"),
                 )
                 key_to_sid[key] = db_utils.get_last_insert_id(dest_conn)
             row_list[src_idx] = key_to_sid[key]
@@ -276,9 +304,7 @@ class ExportEngine:
 
         for tables, obsids, replace in table_groups:
             for tname in tables:
-                if not db_utils.verify_table_exists(
-                    tname, dbconnection=source_conn
-                ):
+                if not db_utils.verify_table_exists(tname, dbconnection=source_conn):
                     log.warning("Source table %s missing — skipping", tname)
                     continue
                 if not db_utils.verify_table_exists(tname, dbconnection=dest_conn):

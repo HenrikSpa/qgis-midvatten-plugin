@@ -557,19 +557,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
             self, self.ms, line_layer
         )
 
-    def get_screen_plot_data(self, obsids_x_position: dict) -> dict:
-        """Fetch screen intervals grouped by screenshort for plotting.
-
-        Returns a dict ``{screenshort: {"x": [...], "height": [...], "bottom": [...]}}``
-        matching the shape produced by ``get_plot_data_bars()``.  Returns an empty
-        dict if the ``screen`` table doesn't exist (older DBs) or no rows match.
-        """
-        return _get_screen_plot_data(
-            obsids_x_position=obsids_x_position,
-            z_data=self.z_data,
-            dbconnection=self.dbconnection,
-        )
-
     def fill_wlvltable(self, include_views):
         self.ms.settingsdict["secplotincludeviews"] = include_views
         current_text = self.wlvltable.currentText()

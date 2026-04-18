@@ -1,4 +1,5 @@
 # test/test_export_engine.py
+import gc
 import os
 import tempfile
 import threading
@@ -6,7 +7,6 @@ from unittest import mock
 
 import pytest
 
-from midvatten.test import utils_for_tests
 from midvatten.test.utils_for_tests import MidvattenTestSpatialiteDbSv
 from midvatten.tools.utils import db_utils
 
@@ -26,6 +26,7 @@ class TestExportEngine(MidvattenTestSpatialiteDbSv):
                     os.remove(path + ending)
                 except OSError:
                     pass
+        gc.collect()
         super().teardown_method()
 
     def _make_dest_db(self, epsg_code: str = "3006", locale: str = "sv_SE") -> str:

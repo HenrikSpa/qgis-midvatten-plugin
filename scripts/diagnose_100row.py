@@ -152,11 +152,9 @@ def probe_with_qgis(path: str) -> None:
 
 
 def probe_fixes(path: str) -> None:
-    """Test each candidate fix IN PLACE against the given DB.
-
-    Reports featureCount() after each attempt so we can see which one
-    actually lifts the 100-row cap. The UpdateLayerStatistics and INSERT
-    attempts write to the DB — a backup is taken first.
+    """Test each candidate fix IN PLACE against the given DB. Writes are
+    made, then the DB is restored from a backup so the user's file is left
+    untouched.
     """
     import shutil
 
@@ -169,34 +167,109 @@ def probe_fixes(path: str) -> None:
     print(f"\n=== Candidate-fix probes against {path} ===", flush=True)
     print(f"  (backup copy: {backup})", flush=True)
 
-    def build_layer(estimated: str = "") -> "QgsVectorLayer":
+    def build_layer(estimated: str = "", tablename: str = "obs_points"):
         uri = QgsDataSourceUri()
         uri.setDatabase(path)
-        uri.setDataSource("", "obs_points", "geometry", "", "")
+        uri.setDataSource("", tablename, "geometry", "", "")
         if estimated:
             uri.setParam("estimatedmetadata", estimated)
-        return QgsVectorLayer(uri.uri(), "obs_points", "spatialite")
+        return QgsVectorLayer(uri.uri(), tablename, "spatialite")
 
-    print(f"  [baseline]                                        fc={build_layer().featureCount()}", flush=True)
-    print(f"  [URI estimatedmetadata=false]                     fc={build_layer('false').featureCount()}", flush=True)
-    print(f"  [URI estimatedmetadata=true]                      fc={build_layer('true').featureCount()}", flush=True)
+    def show_stats(label: str) -> None:
+        con = _open_spatialite(path)
+        try:
+            gcs = con.execute(
+                "SELECT f_table_name, f_geometry_column, last_verified, row_count, extent_min_x, extent_min_y, extent_max_x, extent_max_y FROM geometry_columns_statistics WHERE f_table_name='obs_points'"
+            ).fetchall()
+            vls = con.execute(
+                "SELECT * FROM vector_layers_statistics WHERE table_name='obs_points'"
+            ).fetchall()
+            try:
+                vgc = con.execute(
+                    "SELECT * FROM views_geometry_columns WHERE view_name LIKE 'obs_p%' OR view_name LIKE 'view_obs%'"
+                ).fetchall()
+            except Exception:
+                vgc = "(no views_geometry_columns)"
+        finally:
+            con.close()
+        print(f"  [{label}] geometry_columns_statistics={gcs}", flush=True)
+        print(f"  [{label}] vector_layers_statistics={vls}", flush=True)
+        print(f"  [{label}] views_geometry_columns={vgc}", flush=True)
 
-    # After-build priming: reloadData + updateExtents(force=True) + featureCount
-    layer = build_layer()
-    layer.dataProvider().reloadData()
-    layer.updateExtents(force=True)
-    print(f"  [prime: reload+updateExtents(force=True)]         fc={layer.featureCount()}", flush=True)
+    show_stats("initial")
 
-    # Apply SpatiaLite UpdateLayerStatistics() and retest
+    print(f"\n  [baseline obs_points]                            fc={build_layer().featureCount()}", flush=True)
+    print(f"  [baseline view_obs_points]                       fc={build_layer(tablename='view_obs_points').featureCount()}", flush=True)
+
+    # 1. Try explicit INSERT of stats row with the real count.
     con = _open_spatialite(path)
     try:
+        con.execute("DELETE FROM geometry_columns_statistics WHERE f_table_name='obs_points'")
+        con.execute(
+            "INSERT INTO geometry_columns_statistics (f_table_name, f_geometry_column, row_count) VALUES ('obs_points', 'geometry', 120)"
+        )
+        con.commit()
+    finally:
+        con.close()
+    show_stats("after explicit INSERT row_count=120")
+    print(f"  [after explicit INSERT]                          fc={build_layer().featureCount()}", flush=True)
+
+    # 2. Try UpdateLayerStatistics with (table, geom) and capture return value.
+    con = _open_spatialite(path)
+    try:
+        r = con.execute(
+            "SELECT UpdateLayerStatistics('obs_points','geometry')"
+        ).fetchone()
+        con.commit()
+    finally:
+        con.close()
+    show_stats("after UpdateLayerStatistics('obs_points','geometry')")
+    print(f"  UpdateLayerStatistics(obs_points,geometry) returned {r}", flush=True)
+    print(f"  [after arg'd UpdateLayerStatistics]              fc={build_layer().featureCount()}", flush=True)
+
+    # 3. Try UpdateLayerStatistics with NO args (updates all tables).
+    con = _open_spatialite(path)
+    try:
+        r2 = con.execute("SELECT UpdateLayerStatistics()").fetchone()
+        con.commit()
+    finally:
+        con.close()
+    show_stats("after UpdateLayerStatistics()")
+    print(f"  UpdateLayerStatistics() returned {r2}", flush=True)
+    print(f"  [after argless UpdateLayerStatistics]            fc={build_layer().featureCount()}", flush=True)
+
+    # 4. Try RecoverGeometryColumn to re-register the column.
+    con = _open_spatialite(path)
+    try:
+        r3 = con.execute(
+            "SELECT RecoverGeometryColumn('obs_points','geometry',3006,'POINT','XY')"
+        ).fetchone()
+        con.commit()
+    finally:
+        con.close()
+    show_stats("after RecoverGeometryColumn")
+    print(f"  RecoverGeometryColumn returned {r3}", flush=True)
+    print(f"  [after RecoverGeometryColumn]                    fc={build_layer().featureCount()}", flush=True)
+
+    # 5. Try CreateSpatialIndex + UpdateLayerStatistics.
+    con = _open_spatialite(path)
+    try:
+        try:
+            r4 = con.execute(
+                "SELECT CreateSpatialIndex('obs_points','geometry')"
+            ).fetchone()
+            con.commit()
+        except Exception as exc:
+            r4 = f"ERR {exc}"
         con.execute("SELECT UpdateLayerStatistics('obs_points','geometry')")
         con.commit()
     finally:
         con.close()
-    print(f"  [after SELECT UpdateLayerStatistics('obs_points','geometry')] fc={build_layer().featureCount()}", flush=True)
+    show_stats("after CreateSpatialIndex + UpdateLayerStatistics")
+    print(f"  CreateSpatialIndex returned {r4}", flush=True)
+    print(f"  [after CreateSpatialIndex + UpdateStats]         fc={build_layer().featureCount()}", flush=True)
 
-    # Restore the backup so we leave the DB untouched
+    # Restore the backup so we leave the DB untouched.
     shutil.copy2(backup, path)
     os.remove(backup)
     print(f"  (DB restored from backup; backup removed)", flush=True)

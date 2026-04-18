@@ -29,7 +29,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from qgis.PyQt.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDoubleSpinBox,
+    QGroupBox,
+    QLineEdit,
+    QSpinBox,
+)
+
 from midvatten.definitions.midvatten_defs import settingsdict as _defs
+from midvatten.tools.utils.gui_utils import set_combobox
 
 _defaults = _defs()
 
@@ -56,6 +66,7 @@ def _b(key: str, widget: str, type_: type) -> Bind:
 GENERAL_BINDINGS: dict[str, Bind] = {
     "secplotwlvltab": _b("secplotwlvltab", "wlvltable", str),
     "secplottext": _b("secplottext", "textcol_combo_box", str),
+    # default is int 2 in defs; QDoubleSpinBox.value() always returns float
     "secplotbw": _b("secplotbw", "barwidthdouble_spin_box", float),
     "secplotdrillstop": _b("secplotdrillstop", "drillstop", str),
     "secplotincludeviews": _b("secplotincludeviews", "include_views_check_box", bool),
@@ -125,22 +136,11 @@ ALL_BINDINGS: dict[str, Bind] = {
 # ---------------------------------------------------------------------------
 
 
-def _set_widget(widget: Any, value: Any, type_: type) -> None:  # noqa: ARG001
+def _set_widget(widget: Any, value: Any, type_: type) -> None:  # noqa: ARG001 — type_ unused here; coercion done directly on value
     """Push *value* into *widget*, dispatching on widget type.
 
     Unknown widget types are silently skipped (no crash).
     """
-    from qgis.PyQt.QtWidgets import (
-        QCheckBox,
-        QComboBox,
-        QDoubleSpinBox,
-        QGroupBox,
-        QLineEdit,
-        QSpinBox,
-    )
-
-    from midvatten.tools.utils.gui_utils import set_combobox
-
     if isinstance(widget, QComboBox):
         set_combobox(widget, str(value), add_if_not_exists=False)
     elif isinstance(widget, QCheckBox):
@@ -160,15 +160,6 @@ def _set_widget(widget: Any, value: Any, type_: type) -> None:  # noqa: ARG001
 
 def _get_widget_value(widget: Any, type_: type) -> Any:
     """Read the current value from *widget*, returning *type_*'s zero-value as fallback."""
-    from qgis.PyQt.QtWidgets import (
-        QCheckBox,
-        QComboBox,
-        QDoubleSpinBox,
-        QGroupBox,
-        QLineEdit,
-        QSpinBox,
-    )
-
     if isinstance(widget, QComboBox):
         return widget.currentText()
     elif isinstance(widget, QCheckBox):
@@ -202,7 +193,7 @@ def apply_settings_to_ui(
 def collect_ui_to_settings(
     ui: Any, ms: Any, bindings: dict[str, Bind] = ALL_BINDINGS
 ) -> None:
-    """Widgets → settings.  Call before rendering to capture user edits."""
+    """Widgets → settings. Replaces _load_ui_settings() in Task 5 slimdown."""
     for key, b in bindings.items():
         ms.settingsdict[key] = _get_widget_value(getattr(ui, b.widget), b.type_)
 

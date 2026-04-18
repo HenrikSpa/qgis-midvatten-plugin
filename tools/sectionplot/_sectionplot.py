@@ -182,6 +182,9 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
         # Restore saved settings to widgets immediately so values are visible
         # when the dock opens before the first plot is drawn (bug fix: previously
         # fill_*() methods were only called from create_new_plot()).
+        # Restores saved values to widgets on dock open. TEM combo-box *choices* are
+        # not yet populated (that happens in fill_tem), so combo values are re-applied
+        # there. All other widget types (checkboxes, spinboxes, line edits) are set here.
         apply_settings_to_ui(self, self._ms)
 
     def show(self) -> None:

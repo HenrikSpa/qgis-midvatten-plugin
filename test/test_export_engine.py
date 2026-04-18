@@ -326,3 +326,36 @@ class TestExportEngine(MidvattenTestSpatialiteDbSv):
         finally:
             src.closedb()
             dest.closedb()
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_export_table_geometry_reprojected(self, mock_messagebar):
+        """obs_points geometry is exported correctly via ST_AsBinary/ST_GeomFromWKB."""
+        from midvatten.tools.export_engine import ExportEngine
+
+        conn = db_utils.DbConnectionManager(self._class_db_settings)
+        db_utils.sql_alter_db(
+            "INSERT INTO obs_points (obsid, geometry) VALUES "
+            "('P1', ST_GeomFromText('POINT(633466 711659)', 3006))",
+            dbconnection=conn,
+        )
+        conn.commit_and_closedb()
+
+        src = self._source_conn()
+        dest = self._dest_conn(epsg_code="3006")
+        try:
+            ExportEngine()._export_table(
+                "obs_points", src, dest, (), "3006", False, lambda *a: None, threading.Event()
+            )
+            dest.commit()
+            rows = dest.execute_and_fetchall(
+                "SELECT obsid, ST_AsText(geometry) FROM obs_points"
+            )
+        finally:
+            src.closedb()
+            dest.closedb()
+
+        assert len(rows) == 1
+        assert rows[0][0] == "P1"
+        # Coordinates preserved
+        assert "633466" in rows[0][1]
+        assert "711659" in rows[0][1]

@@ -78,6 +78,11 @@ Each feature is a standalone module. Major categories:
 - **`create_db.sql`** / `insert_datadomain.sql` — Schema and lookup data
 - **`*.qml`** — QGIS layer styling files
 
+## Workflow Requirements
+
+- Before starting any implementation task, always invoke the `superpowers:using-git-worktrees` skill to set up an isolated worktree.
+- After making any code changes, always invoke the `simplify` skill to review and clean up the changed code.
+
 ## Critical Rules
 
 ### SQL Safety

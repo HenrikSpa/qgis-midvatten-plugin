@@ -573,3 +573,149 @@ class TestExportEngine(MidvattenTestSpatialiteDbSv):
             ("P2", "2020-01-01 00:00:00", "fileA"),
         ]
         assert p1a_ids[0][0] == p1a_ids[1][0]  # same series_id for same (obsid, source)
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_export_full_round_trip(self, mock_messagebar):
+        """Full export: data in source appears in dest."""
+        from midvatten.tools.export_engine import ExportEngine
+
+        conn = db_utils.DbConnectionManager(self._class_db_settings)
+        db_utils.sql_alter_db(
+            "INSERT INTO obs_points (obsid, geometry) VALUES "
+            "('P1', ST_GeomFromText('POINT(633466 711659)', 3006))",
+            dbconnection=conn,
+        )
+        db_utils.sql_alter_db(
+            "INSERT INTO zz_staff (staff) VALUES ('s1')",
+            dbconnection=conn,
+        )
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels (obsid, date_time, meas) VALUES "
+            "('P1', '2020-01-01 00:00:00', 1.5)",
+            dbconnection=conn,
+        )
+        conn.commit_and_closedb()
+
+        dest_path = self._make_dest_db()
+        src = self._source_conn()
+        dest = db_utils.DbConnectionManager(dest_path)
+        dest.connect2db()
+
+        try:
+            stats = ExportEngine().export(
+                source_conn=src,
+                dest_conn=dest,
+                obsid_points=(),
+                obsid_lines=(),
+                dest_srid="3006",
+                progress_cb=lambda *a: None,
+                cancel_flag=threading.Event(),
+            )
+            obsids = dest.execute_and_fetchall("SELECT obsid FROM obs_points")
+            wlevel = dest.execute_and_fetchall(
+                "SELECT obsid, date_time, meas FROM w_levels"
+            )
+        finally:
+            src.closedb()
+            dest.closedb()
+
+        assert ("P1",) in obsids
+        assert ("P1", "2020-01-01 00:00:00", 1.5) in wlevel
+        assert isinstance(stats, str)
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_export_obsid_filter(self, mock_messagebar):
+        """Only selected obsids appear in dest."""
+        from midvatten.tools.export_engine import ExportEngine
+
+        conn = db_utils.DbConnectionManager(self._class_db_settings)
+        db_utils.sql_alter_db(
+            "INSERT INTO obs_points (obsid, geometry) VALUES "
+            "('P1', ST_GeomFromText('POINT(1 2)', 3006)),"
+            "('P2', ST_GeomFromText('POINT(3 4)', 3006))",
+            dbconnection=conn,
+        )
+        db_utils.sql_alter_db(
+            "INSERT INTO zz_staff (staff) VALUES ('s1')",
+            dbconnection=conn,
+        )
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels (obsid, date_time, meas) VALUES "
+            "('P1', '2020-01-01 00:00:00', 1.0),"
+            "('P2', '2020-01-01 00:00:00', 2.0)",
+            dbconnection=conn,
+        )
+        conn.commit_and_closedb()
+
+        dest_path = self._make_dest_db()
+        src = self._source_conn()
+        dest = db_utils.DbConnectionManager(dest_path)
+        dest.connect2db()
+
+        try:
+            ExportEngine().export(
+                source_conn=src,
+                dest_conn=dest,
+                obsid_points=("P1",),
+                obsid_lines=(),
+                dest_srid="3006",
+                progress_cb=lambda *a: None,
+                cancel_flag=threading.Event(),
+            )
+            obsids = {
+                r[0] for r in dest.execute_and_fetchall("SELECT obsid FROM obs_points")
+            }
+            wlevel_obsids = {
+                r[0] for r in dest.execute_and_fetchall("SELECT obsid FROM w_levels")
+            }
+        finally:
+            src.closedb()
+            dest.closedb()
+
+        assert obsids == {"P1"}
+        assert wlevel_obsids == {"P1"}
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_export_fk_order_no_violations(self, mock_messagebar):
+        """Full export with FK constraints ON produces no constraint violations."""
+        from midvatten.tools.export_engine import ExportEngine
+
+        conn = db_utils.DbConnectionManager(self._class_db_settings)
+        db_utils.sql_alter_db(
+            "INSERT INTO obs_points (obsid, geometry) VALUES "
+            "('P1', ST_GeomFromText('POINT(1 2)', 3006))",
+            dbconnection=conn,
+        )
+        db_utils.sql_alter_db(
+            "INSERT INTO zz_staff (staff) VALUES ('s1')",
+            dbconnection=conn,
+        )
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels (obsid, date_time, meas) VALUES "
+            "('P1', '2020-01-01 00:00:00', 1.0)",
+            dbconnection=conn,
+        )
+        conn.commit_and_closedb()
+
+        dest_path = self._make_dest_db()
+        src = self._source_conn()
+        dest = db_utils.DbConnectionManager(dest_path)
+        dest.connect2db()
+        dest.execute("PRAGMA foreign_keys = ON")
+
+        try:
+            ExportEngine().export(
+                source_conn=src,
+                dest_conn=dest,
+                obsid_points=(),
+                obsid_lines=(),
+                dest_srid="3006",
+                progress_cb=lambda *a: None,
+                cancel_flag=threading.Event(),
+            )
+            integrity_violations = dest.execute_and_fetchall("PRAGMA foreign_key_check")
+        finally:
+            src.closedb()
+            dest.closedb()
+
+        assert integrity_violations == []

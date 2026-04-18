@@ -241,6 +241,94 @@ class ExportEngine:
             migrated.append(tuple(row_list))
         return migrated
 
+    def export(
+        self,
+        source_conn: DbConnectionManager,
+        dest_conn: DbConnectionManager,
+        obsid_points: tuple[str, ...],
+        obsid_lines: tuple[str, ...],
+        dest_srid: str,
+        progress_cb: Callable[[str, int, int], None],
+        cancel_flag: threading.Event,
+    ) -> str:
+        """Run full export. Returns stats string. Raises ExportCancelledError if cancelled."""
+        table_groups: list[tuple[list[str], tuple[str, ...] | None, bool]] = [
+            (defs.get_subset_of_tables_fr_db("data_domains"), None, True),
+            (defs.get_subset_of_tables_fr_db("obs_points"), obsid_points, False),
+            (defs.get_subset_of_tables_fr_db("obs_lines"), obsid_lines, False),
+            (defs.get_subset_of_tables_fr_db("extra_data_tables"), obsid_points, False),
+            (
+                defs.get_subset_of_tables_fr_db("interlab4_import_table"),
+                obsid_points,
+                False,
+            ),
+        ]
+
+        dest_conn.execute("PRAGMA foreign_keys = OFF")
+        try:
+            for tables, obsids, replace in table_groups:
+                for tname in tables:
+                    if not db_utils.verify_table_exists(
+                        tname, dbconnection=source_conn
+                    ):
+                        log.warning("Source table %s missing — skipping", tname)
+                        continue
+                    if not db_utils.verify_table_exists(tname, dbconnection=dest_conn):
+                        log.warning("Dest table %s missing — skipping", tname)
+                        continue
+                    self._export_table(
+                        tname,
+                        source_conn,
+                        dest_conn,
+                        obsids,
+                        dest_srid,
+                        replace,
+                        progress_cb,
+                        cancel_flag,
+                    )
+                    dest_conn.commit()
+        finally:
+            dest_conn.execute("PRAGMA foreign_keys = ON")
+
+        db_utils.delete_srids(dest_conn, dest_srid)
+        dest_conn.commit()
+        dest_conn.vacuum()
+
+        return self._build_stats(source_conn, dest_conn)
+
+    def _build_stats(
+        self,
+        source_conn: DbConnectionManager,
+        dest_conn: DbConnectionManager,
+    ) -> str:
+        """Return human-readable diff of row counts between source and exported DB."""
+        results: dict[str, dict[str, int]] = {}
+        for alias, conn in [("source", source_conn), ("exported", dest_conn)]:
+            for tname in db_utils.get_tables(dbconnection=conn, skip_views=True):
+                try:
+                    n = conn.execute_and_fetchall(
+                        f"SELECT count(*) FROM {db_utils.ident(tname)}"
+                    )[0][0]
+                    results.setdefault(tname, {})[alias] = n
+                except Exception:
+                    pass
+
+        differing = [
+            (tname, counts)
+            for tname, counts in sorted(results.items())
+            if counts.get("source") != counts.get("exported")
+        ]
+
+        if not differing:
+            return "All exported tables have matching row counts."
+
+        header = f"{'table':40}{'exported':15}{'source':15}"
+        lines = [header] + [
+            f"{t:40}{str(c.get('exported', '?')):15}{str(c.get('source', '?')):15}"
+            for t, c in differing
+        ]
+        return "\n".join(lines)
+
     def _count_source_rows(
         self,
         tname: str,

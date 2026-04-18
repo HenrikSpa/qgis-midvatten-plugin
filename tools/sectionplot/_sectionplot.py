@@ -74,6 +74,7 @@ from midvatten.tools.sectionplot._utils import (  # noqa: F401
     get_legend_items_labels,
     get_plot_label_name,
 )
+from midvatten.tools.sectionplot.ui_types import SecPlotUi
 
 _WLVL_EXCLUDED_TABLES = (
     "comments",
@@ -101,7 +102,7 @@ _SCREEN_MODE_FROM_DISPLAY = {v: k for k, v in _SCREEN_MODE_TO_DISPLAY.items()}
 log = logging.getLogger(__name__)
 
 
-class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, Ui_SecPlotDock):
+class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
     def __init__(self, iface, ms):
         qgis.PyQt.QtWidgets.QDockWidget.__init__(self, iface.mainWindow())
 

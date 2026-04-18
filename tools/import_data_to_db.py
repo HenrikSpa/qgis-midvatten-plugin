@@ -301,9 +301,13 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         if "date_time" not in primary_keys:
             return remaining_rownumbers, import_messages
 
-        self.delete_existing_date_times_from_temptable(
+        rows_deleted = self.delete_existing_date_times_from_temptable(
             primary_keys, dest_table, dbconnection
         )
+        if rows_deleted == 0:
+            # Common case: no pre-existing data — skip the DB round-trip.
+            return remaining_rownumbers, import_messages
+
         remaining_rownumbers = get_remaining_rownumbers()
         if not remaining_rownumbers:
             common_utils.MessagebarAndLog.warning(
@@ -695,12 +699,12 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         primary_keys: List[str],
         dest_table: str,
         dbconnection: DbConnectionManager,
-    ):
+    ) -> int:
         """
         Deletes duplicate times
         :param primary_keys: a table like ['obsid', 'date_time', ...]
         :param dest_table: a string like 'w_levels'
-        :return: None. Alters the temptable self.temptableName
+        :return: number of rows deleted from the temp table
 
         If date 2016-01-01 00:00:00 exists for obsid1, then 2016-01-01 00:00 will not be imported for obsid1.
         (and 2016-01-01 00 will block 2016-01-01 00:00)
@@ -716,7 +720,6 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
 
         # TODO: Maybe the length should be checked so that the test is only made for 2016-01-01 00:00 and 2016-01-01 00:00:00?
 
-        # Delete records that have the same date_time but with :00 at the end. (2016-01-01 00:00 will not be imported if 2016-01-01 00:00:00 exists
         temp_ident = dbconnection.ident(self.temptable_name)
         dest_ident = (
             dbconnection.ident(f"{dbconnection.schema}.{dest_table}")
@@ -726,18 +729,15 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         pks_concat = " || ".join(dbconnection.ident(pk) for pk in pks)
         pks_concat_00 = pks_concat + " || ':00'"
 
+        # Both conditions combined: hh:mm blocked by hh:mm:ss AND hh:mm:xx blocked by hh:mm.
+        # Single DELETE avoids two sequential table scans.
         sql = (
-            f"DELETE FROM {temp_ident} WHERE {pks_concat_00} IN "
-            f"(SELECT {pks_concat} FROM {dest_ident})"
+            f"DELETE FROM {temp_ident} WHERE "
+            f"{pks_concat_00} IN (SELECT {pks_concat} FROM {dest_ident}) "
+            f"OR SUBSTR({pks_concat}, 1, length({pks_concat}) - 3) IN (SELECT {pks_concat} FROM {dest_ident})"
         )
         dbconnection.execute(sql)
-
-        # Delete records from temptable that have date_time yyyy-mm-dd HH:MM:XX when yyyy-mm-dd HH:MM exist.
-        sql = (
-            f"DELETE FROM {temp_ident} WHERE SUBSTR({pks_concat}, 1, "
-            f"length({pks_concat}) - 3) IN (SELECT {pks_concat} FROM {dest_ident})"
-        )
-        dbconnection.execute(sql)
+        return dbconnection.cursor.rowcount
 
     def create_geometry_sql(
         self,

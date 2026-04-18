@@ -1901,6 +1901,71 @@ class DeleteExistingDateTimesFromTemptableMixin:
         reference_string = r"""(True, [(obsid1, 2016-01-01 00:00, None, None, 123.0, None), (obsid1, 2016-01-01 00:02:00, None, None, 789.0, None)])"""
         assert test_string == reference_string
 
+    @mock.patch(
+        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
+    )
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_delete_existing_date_times_returns_count_when_rows_deleted(
+        self, mock_messagebar
+    ):
+        """delete_existing_date_times_from_temptable returns the count of rows it deleted."""
+        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('obsid1')""")
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels (obsid, date_time, level_masl) VALUES ('obsid1', '2016-01-01 00:00:00', '123.0')"""
+        )
+        file_data = [
+            ["obsid", "date_time", "level_masl"],
+            [
+                "obsid1",
+                "2016-01-01 00:00",
+                "456",
+            ],  # hh:mm matches hh:mm:ss in dest → deleted
+        ]
+        dbconnection = db_utils.DbConnectionManager()
+        try:
+            self.importinstance.list_to_table(
+                dbconnection, "w_levels", file_data, ["obsid", "date_time"]
+            )
+            rows_deleted = (
+                self.importinstance.delete_existing_date_times_from_temptable(
+                    ["obsid", "date_time"], "w_levels", dbconnection
+                )
+            )
+        finally:
+            dbconnection.closedb()
+
+        print(mock_messagebar.mock_calls)
+        assert rows_deleted == 1
+
+    @mock.patch(
+        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
+    )
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_delete_existing_date_times_returns_zero_when_no_duplicates(
+        self, mock_messagebar
+    ):
+        """delete_existing_date_times_from_temptable returns 0 when dest table has no matching rows."""
+        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('obsid1')""")
+        file_data = [
+            ["obsid", "date_time", "level_masl"],
+            ["obsid1", "2016-01-01 00:00", "456"],
+        ]
+        dbconnection = db_utils.DbConnectionManager()
+        try:
+            self.importinstance.list_to_table(
+                dbconnection, "w_levels", file_data, ["obsid", "date_time"]
+            )
+            rows_deleted = (
+                self.importinstance.delete_existing_date_times_from_temptable(
+                    ["obsid", "date_time"], "w_levels", dbconnection
+                )
+            )
+        finally:
+            dbconnection.closedb()
+
+        print(mock_messagebar.mock_calls)
+        assert rows_deleted == 0
+
 
 @pytest.mark.postgis
 class TestGeneralImportPostgis(

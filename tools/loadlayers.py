@@ -14,7 +14,7 @@ from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.file_utils import definitions_path
-from midvatten.tools.utils.layer_build import build_layer, prime_feature_count
+from midvatten.tools.utils.layer_build import build_layer
 from midvatten.tools.utils.layer_specs import (
     GROUPS,
     GroupSpec,
@@ -55,7 +55,6 @@ class LoadLayers:
                     continue
                 QgsProject.instance().addMapLayers([layer], False)
                 tree_layer = layer_group.insertLayer(0, layer)
-                prime_feature_count(layer)
                 self._apply_style(layer, spec)
                 if not spec.initially_visible and tree_layer is not None:
                     tree_layer.setItemVisibilityCheckedRecursive(False)

@@ -1,11 +1,4 @@
-"""Build QgsVectorLayer instances from LayerSpec descriptions.
-
-`prime_feature_count()` is the fix for the long-standing "attribute
-table only shows 100 rows" bug: QGIS sizes its attribute-table cache as
-`featureCount() + 100`, and a stale/zero `featureCount()` caps the cache
-at 100. Priming it on the QGIS provider's own connection before the
-dual-view observes the layer makes the cache open to the correct size.
-"""
+"""Build QgsVectorLayer instances from LayerSpec descriptions."""
 
 from typing import Optional
 
@@ -69,15 +62,3 @@ def build_layer(
         if layer.isValid():
             return layer
     return None
-
-
-def prime_feature_count(layer: QgsVectorLayer) -> None:
-    """Force the provider to compute `featureCount()` now, before any
-    attribute-table dual-view observes the layer. Without this, QGIS
-    sizes the attribute-table row cache as `featureCount() + 100` against
-    a stale zero count and caps the table at exactly 100 rows.
-    """
-    layer.dataProvider().reloadData()
-    if layer.isSpatial():
-        layer.updateExtents()
-    _ = layer.featureCount()

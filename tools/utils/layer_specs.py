@@ -1,9 +1,4 @@
-"""Typed specs for QGIS layers loaded by the Midvatten plugin.
-
-Replaces the parallel-array API of `add_layers_to_list` with a single
-`LayerSpec` per layer, letting spatial and non-spatial layers mix freely
-in one list.
-"""
+"""Typed specs for QGIS layers loaded by the Midvatten plugin."""
 
 from dataclasses import dataclass
 from typing import Callable, Optional
@@ -11,7 +6,7 @@ from typing import Callable, Optional
 from midvatten.tools.utils.db_utils import DbConnectionManager
 
 
-@dataclass
+@dataclass(frozen=True)
 class LayerSpec:
     """Declarative description of one QGIS layer to load.
 

@@ -35,7 +35,8 @@ class LoadLayers:
             layer_group = QgsLayerTreeGroup(name=self.group.name, checked=True)
             self.root.insertChildNode(self.group.position_index, layer_group)
 
-            layers_by_name: dict = {}
+            obs_points_layer = None
+            screen_layer = None
             for spec in self.group.resolve_layers(dbconnection):
                 layer = build_layer(spec, dbconnection, existing_tables)
                 if layer is None:
@@ -46,12 +47,14 @@ class LoadLayers:
                 self._apply_style(layer, spec)
                 if not spec.initially_visible and tree_layer is not None:
                     tree_layer.setItemVisibilityCheckedRecursive(False)
-                layers_by_name[layer.name()] = layer
+                if spec.tablename == "obs_points":
+                    obs_points_layer = layer
+                elif spec.tablename == "screen":
+                    screen_layer = layer
 
-            self._register_relations(layers_by_name, dbconnection)
-            obs_points = layers_by_name.get("obs_points")
-            if obs_points is not None:
-                self.iface.mapCanvas().setExtent(obs_points.extent())
+            self._register_relations(obs_points_layer, screen_layer, dbconnection)
+            if obs_points_layer is not None:
+                self.iface.mapCanvas().setExtent(obs_points_layer.extent())
         finally:
             dbconnection.closedb()
 
@@ -74,15 +77,16 @@ class LoadLayers:
                 common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
 
     def _register_relations(
-        self, layers_by_name: dict, dbconnection: db_utils.DbConnectionManager
+        self,
+        obs_points_layer,
+        screen_layer,
+        dbconnection: db_utils.DbConnectionManager,
     ) -> None:
         if self.group.name != "Midvatten_OBS_DB":
             return
-        if not db_utils.verify_table_exists("screen", dbconnection=dbconnection):
-            return
-        obs_points_layer = layers_by_name.get("obs_points")
-        screen_layer = layers_by_name.get("screen")
         if obs_points_layer is None or screen_layer is None:
+            return
+        if not db_utils.verify_table_exists("screen", dbconnection=dbconnection):
             return
 
         rel = QgsRelation()

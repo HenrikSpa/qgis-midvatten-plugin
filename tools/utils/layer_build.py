@@ -13,11 +13,7 @@ from qgis.core import Qgis, QgsVectorLayer
 
 from midvatten.tools.utils.db_utils import DbConnectionManager, get_tables
 from midvatten.tools.utils.layer_specs import LayerSpec
-from midvatten.tools.utils.midvatten_utils import (
-    compare_verson_lists,
-    create_layer,
-    version_comparison_list,
-)
+from midvatten.tools.utils.midvatten_utils import create_layer
 
 _KEY_COLUMN_FALLBACKS: tuple[Optional[str], ...] = (None, "obsid", "rowid")
 
@@ -31,11 +27,7 @@ def _legacy_view_name(tablename: str, existing_tables: list[str]) -> Optional[st
         return None
     if f"view_{tablename}" not in existing_tables:
         return None
-    is_old = compare_verson_lists(
-        version_comparison_list(Qgis.QGIS_VERSION),
-        version_comparison_list("3.16"),
-    )
-    if not is_old:
+    if Qgis.QGIS_VERSION_INT >= 31600:
         return None
     return f"view_{tablename}"
 
@@ -86,5 +78,6 @@ def prime_feature_count(layer: QgsVectorLayer) -> None:
     a stale zero count and caps the table at exactly 100 rows.
     """
     layer.dataProvider().reloadData()
-    layer.updateExtents()
+    if layer.isSpatial():
+        layer.updateExtents()
     _ = layer.featureCount()

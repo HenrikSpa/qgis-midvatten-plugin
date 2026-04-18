@@ -109,3 +109,107 @@ class TestExportEngine(MidvattenTestSpatialiteDbSv):
             assert n == 1
         finally:
             src.closedb()
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_get_columns(self, mock_messagebar):
+        from midvatten.tools.export_engine import ExportEngine
+
+        src = self._source_conn()
+        try:
+            cols = ExportEngine()._get_columns("obs_points", src)
+            assert "obsid" in cols
+            assert "geometry" in cols
+        finally:
+            src.closedb()
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_build_select_sql_non_geometry(self, mock_messagebar):
+        """Plain column refs for non-geometry tables."""
+        from midvatten.tools.export_engine import ExportEngine
+
+        src = self._source_conn()
+        try:
+            sql, args = ExportEngine()._build_select_sql(
+                "w_levels", src, ["obsid", "date_time", "meas"], "3006", ()
+            )
+            assert "obsid" in sql
+            assert "ST_AsBinary" not in sql
+            assert args == []
+        finally:
+            src.closedb()
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_build_select_sql_geometry(self, mock_messagebar):
+        """Geometry column wrapped in ST_AsBinary(ST_Transform(...))."""
+        from midvatten.tools.export_engine import ExportEngine
+
+        src = self._source_conn()
+        try:
+            sql, args = ExportEngine()._build_select_sql(
+                "obs_points", src, ["obsid", "geometry"], "4326", ()
+            )
+            assert "ST_AsBinary" in sql
+            assert "ST_Transform" in sql
+            assert "4326" in sql
+        finally:
+            src.closedb()
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_build_select_sql_with_obsid_filter(self, mock_messagebar):
+        from midvatten.tools.export_engine import ExportEngine
+
+        src = self._source_conn()
+        try:
+            sql, args = ExportEngine()._build_select_sql(
+                "w_levels", src, ["obsid", "date_time"], "3006", ("P1",)
+            )
+            assert "WHERE" in sql.upper()
+            assert len(args) == 1
+        finally:
+            src.closedb()
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_build_insert_sql_non_geometry(self, mock_messagebar):
+        from midvatten.tools.export_engine import ExportEngine
+
+        dest = self._dest_conn()
+        try:
+            sql = ExportEngine()._build_insert_sql(
+                "w_levels", dest, ["obsid", "date_time", "meas"]
+            )
+            assert sql.upper().startswith("INSERT OR IGNORE INTO")
+            assert "?" in sql
+            assert "ST_GeomFromWKB" not in sql
+        finally:
+            dest.closedb()
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_build_insert_sql_geometry(self, mock_messagebar):
+        from midvatten.tools.export_engine import ExportEngine
+
+        dest = self._dest_conn()
+        try:
+            sql = ExportEngine()._build_insert_sql(
+                "obs_points", dest, ["obsid", "geometry"]
+            )
+            assert "ST_GeomFromWKB" in sql
+            assert "3006" in sql
+        finally:
+            dest.closedb()
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_get_exportable_columns_same_schema(self, mock_messagebar):
+        """When schemas match, source and dest cols are identical."""
+        from midvatten.tools.export_engine import ExportEngine
+
+        src = self._source_conn()
+        dest = self._dest_conn()
+        try:
+            src_cols, dst_cols = ExportEngine()._get_exportable_columns(
+                "w_levels", src, dest, is_migration=False
+            )
+            assert src_cols == dst_cols
+            assert "obsid" in src_cols
+        finally:
+            src.closedb()
+            dest.closedb()

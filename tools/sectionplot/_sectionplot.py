@@ -75,6 +75,10 @@ from midvatten.tools.sectionplot._utils import (  # noqa: F401
     get_plot_label_name,
 )
 from midvatten.tools.sectionplot.ui_types import SecPlotUi
+from midvatten.tools.sectionplot.settings import (
+    apply_settings_to_ui,
+    save_settings as _save_bound_settings,
+)
 
 _WLVL_EXCLUDED_TABLES = (
     "comments",
@@ -174,6 +178,11 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
         self.resample_offset.setToolTip(defs.pandas_base_tooltip())
         self.resample_how.setText("mean")
         self.resample_how.setToolTip(defs.pandas_how_tooltip())
+
+        # Restore saved settings to widgets immediately so values are visible
+        # when the dock opens before the first plot is drawn (bug fix: previously
+        # fill_*() methods were only called from create_new_plot()).
+        apply_settings_to_ui(self, self._ms)
 
     def show(self) -> None:
         """Validate layers and trigger section plot.
@@ -1308,43 +1317,21 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
     def save_settings(
         self,
     ):  # This is a quick-fix, should use the midvsettings class instead.
-        self.ms.save_settings("secplotwlvltab")
+        # Persist all declaratively-bound settings keys via settings.py.
+        _save_bound_settings(self.ms)
+
+        # Manually-handled keys: not covered by the declarative bindings
+        # because they require special logic (lists, radio pairs, mapped combos,
+        # template serialisation, or are simply not simple widget values).
         self.ms.save_settings("secplotdates")
-        self.ms.save_settings("secplottext")
-        self.ms.save_settings("secplotdrillstop")
-        self.ms.save_settings("secplotbw")
         self.ms.save_settings("secplotlocation")
         self.ms.save_settings("secplotselectedDEMs")
-        self.ms.save_settings("secplotdem_sampling_distance")
         self.ms.save_settings("stratigraphyplotted")
         self.ms.save_settings("screensplotmode")
-        self.ms.save_settings("screenwidthfactor")
-        self.ms.save_settings("secplotlabelsplotted")
         self.ms.save_settings("secplotwidthofplot")
-        self.ms.save_settings("secplotincludeviews")
-        self.ms.save_settings("secplotlegendplotted")
         self.ms.save_settings("secplotlayertextalignment")
-        self.ms.save_settings("secplot_apply_graded_dems")
-        self.ms.save_settings("secplot_grading_depth")
-        self.ms.save_settings("secplot_grading_num_layers")
-        self.ms.save_settings("secplot_grading_max_opacity")
-        self.ms.save_settings("secplot_grading_min_opacity")
         self.ms.save_settings("secplot_tem_model_name")
-        self.ms.save_settings("secplot_tem_colormap")
-        self.ms.save_settings("secplot_tem_norm")
-        self.ms.save_settings("secplot_tem_shading")
-        self.ms.save_settings("secplot_tem_vmin")
-        self.ms.save_settings("secplot_tem_vmax")
-        self.ms.save_settings("secplot_tem_snap")
-        self.ms.save_settings("secplot_tem_data_fit")
-        self.ms.save_settings("secplot_tem_rasterized")
-        self.ms.save_settings("secplot_tem_edgecolors")
-        self.ms.save_settings("secplot_tem_alpha_above_doi")
-        self.ms.save_settings("secplot_tem_alpha_below_doi")
         self.ms.save_settings("secplot_images_images")
-        self.ms.save_settings("secplot_images_alpha")
-        self.ms.save_settings("secplot_images_zorder")
-        self.ms.save_settings("secplot_images_clip")
 
         loaded_template = copy.deepcopy(self.secplot_templates.loaded_template)
         # Don't save plot min/max for next plot. If a specific is to be used, it should be set in a saved template file. // Testing if

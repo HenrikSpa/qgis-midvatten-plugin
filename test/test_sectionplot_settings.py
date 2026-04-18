@@ -59,7 +59,7 @@ def test_apply_settings_checkbox():
     apply_settings_to_ui(
         ui, ms, {"secplotincludeviews": ALL_BINDINGS["secplotincludeviews"]}
     )
-    assert ui.include_views_check_box.isChecked() is True
+    assert ui.include_views_check_box.isChecked()
 
 
 def test_apply_settings_checkbox_false():
@@ -70,7 +70,7 @@ def test_apply_settings_checkbox_false():
     apply_settings_to_ui(
         ui, ms, {"secplotincludeviews": ALL_BINDINGS["secplotincludeviews"]}
     )
-    assert ui.include_views_check_box.isChecked() is False
+    assert not ui.include_views_check_box.isChecked()
 
 
 def test_apply_settings_double_spinbox():
@@ -119,7 +119,7 @@ def test_apply_settings_checkable_groupbox():
     apply_settings_to_ui(
         ui, ms, {"secplot_apply_graded_dems": ALL_BINDINGS["secplot_apply_graded_dems"]}
     )
-    assert gb.isChecked() is True
+    assert gb.isChecked()
 
 
 def test_apply_settings_non_checkable_groupbox_no_crash():
@@ -129,7 +129,6 @@ def test_apply_settings_non_checkable_groupbox_no_crash():
     gb.setCheckable(False)
     ui.secplot_apply_graded_dems = gb
     ms = make_ms({"secplot_apply_graded_dems": True})
-    # Must not raise.
     apply_settings_to_ui(
         ui, ms, {"secplot_apply_graded_dems": ALL_BINDINGS["secplot_apply_graded_dems"]}
     )
@@ -155,7 +154,6 @@ def test_apply_settings_combobox_missing_value_no_crash():
     cb.addItems(["viridis"])
     ui.tem_colormap = cb
     ms = make_ms({"secplot_tem_colormap": "nonexistent"})
-    # Must not raise.
     apply_settings_to_ui(
         ui, ms, {"secplot_tem_colormap": ALL_BINDINGS["secplot_tem_colormap"]}
     )
@@ -177,7 +175,7 @@ def test_collect_checkbox():
     collect_ui_to_settings(
         ui, ms, {"secplotlabelsplotted": ALL_BINDINGS["secplotlabelsplotted"]}
     )
-    assert ms.settingsdict["secplotlabelsplotted"] is True
+    assert ms.settingsdict["secplotlabelsplotted"]
 
 
 def test_collect_double_spinbox():
@@ -236,7 +234,7 @@ def test_collect_checkable_groupbox():
     collect_ui_to_settings(
         ui, ms, {"secplot_apply_graded_dems": ALL_BINDINGS["secplot_apply_graded_dems"]}
     )
-    assert ms.settingsdict["secplot_apply_graded_dems"] is True
+    assert ms.settingsdict["secplot_apply_graded_dems"]
 
 
 def test_collect_non_checkable_groupbox_fallback():
@@ -249,7 +247,7 @@ def test_collect_non_checkable_groupbox_fallback():
     collect_ui_to_settings(
         ui, ms, {"secplot_apply_graded_dems": ALL_BINDINGS["secplot_apply_graded_dems"]}
     )
-    assert ms.settingsdict["secplot_apply_graded_dems"] is False
+    assert not ms.settingsdict["secplot_apply_graded_dems"]
 
 
 # ---------------------------------------------------------------------------
@@ -348,9 +346,9 @@ def test_general_bindings_roundtrip():
 
     assert ms_out.settingsdict["secplotbw"] == pytest.approx(4.0)
     assert ms_out.settingsdict["secplotdrillstop"] == "%lera%"
-    assert ms_out.settingsdict["secplotincludeviews"] is True
-    assert ms_out.settingsdict["secplotlabelsplotted"] is False
-    assert ms_out.settingsdict["secplotlegendplotted"] is True
+    assert ms_out.settingsdict["secplotincludeviews"]
+    assert not ms_out.settingsdict["secplotlabelsplotted"]
+    assert ms_out.settingsdict["secplotlegendplotted"]
     assert ms_out.settingsdict["screenwidthfactor"] == pytest.approx(1.5)
 
 
@@ -405,9 +403,9 @@ def test_tem_bindings_non_combo_roundtrip():
     ms_out = make_ms({})
     collect_ui_to_settings(ui, ms_out, test_bindings)
 
-    assert ms_out.settingsdict["secplot_tem_data_fit"] is True
-    assert ms_out.settingsdict["secplot_tem_snap"] is True
-    assert ms_out.settingsdict["secplot_tem_rasterized"] is False
+    assert ms_out.settingsdict["secplot_tem_data_fit"]
+    assert ms_out.settingsdict["secplot_tem_snap"]
+    assert not ms_out.settingsdict["secplot_tem_rasterized"]
     assert ms_out.settingsdict["secplot_tem_vmin"] == "0.01"
     assert ms_out.settingsdict["secplot_tem_vmax"] == "100"
     assert ms_out.settingsdict["secplot_tem_edgecolors"] == "none"
@@ -461,7 +459,7 @@ def test_dem_bindings_roundtrip():
     collect_ui_to_settings(ui, ms_out, DEM_BINDINGS)
 
     assert ms_out.settingsdict["secplotdem_sampling_distance"] == pytest.approx(3.0)
-    assert ms_out.settingsdict["secplot_apply_graded_dems"] is True
+    assert ms_out.settingsdict["secplot_apply_graded_dems"]
     assert ms_out.settingsdict["secplot_grading_depth"] == pytest.approx(12.0)
     assert ms_out.settingsdict["secplot_grading_num_layers"] == 7
     assert isinstance(ms_out.settingsdict["secplot_grading_num_layers"], int)
@@ -496,7 +494,7 @@ def test_images_bindings_roundtrip():
 
     assert ms_out.settingsdict["secplot_images_alpha"] == "0.5"
     assert ms_out.settingsdict["secplot_images_zorder"] == "3"
-    assert ms_out.settingsdict["secplot_images_clip"] is False
+    assert not ms_out.settingsdict["secplot_images_clip"]
 
 
 # ---------------------------------------------------------------------------

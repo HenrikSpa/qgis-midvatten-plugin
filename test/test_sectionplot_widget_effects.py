@@ -32,6 +32,12 @@ from qgis.utils import spatialite_connect
 from midvatten.test import utils_for_tests
 from midvatten.tools.utils import db_utils, gui_utils
 
+_LEGEND_FILTER = frozenset(("frame", "_nolegend_", ""))
+
+
+def _non_frame_handles(secplot):
+    return [h for h in secplot.figure.plot_handles if h.get_label() not in _LEGEND_FILTER]
+
 
 # ---------------------------------------------------------------------------
 # Mixin that adds a vlayer and drives plot_section() with the three patches
@@ -160,7 +166,6 @@ class SectionPlotWidgetEffectsMixin:
         secplot.drillstop.setText("")
         secplot.draw_plot()
 
-        print(f"{mock_messagebar.mock_calls=}")
         assert not mock_messagebar.critical.called
         leg = secplot.figure.ax_main.get_legend()
         assert leg is not None, "Legend must be present when create_legend is checked"
@@ -174,7 +179,6 @@ class SectionPlotWidgetEffectsMixin:
         secplot.drillstop.setText("")
         secplot.draw_plot()
 
-        print(f"{mock_messagebar.mock_calls=}")
         assert not mock_messagebar.critical.called
         leg = secplot.figure.ax_main.get_legend()
         assert leg is None, "Legend must be absent when create_legend is unchecked"
@@ -188,7 +192,6 @@ class SectionPlotWidgetEffectsMixin:
         secplot.drillstop.setText("")
         secplot.draw_plot()
 
-        print(f"{mock_messagebar.mock_calls=}")
         assert not mock_messagebar.critical.called
         assert len(secplot.figure.plot_handles) > 0, (
             "plot_handles must be populated when stratigraphy is on"
@@ -214,16 +217,11 @@ class SectionPlotWidgetEffectsMixin:
         secplot.drillstop.setText("")
         secplot.draw_plot()
 
-        print(f"{mock_messagebar.mock_calls=}")
         assert not mock_messagebar.critical.called
         # With no stratigraphy, no w_levels date, and no hydrology, plot_handles
         # should have no geological or hydro bars.  (A "frame" handle may still
         # appear; filter to non-frame/non-nolegend entries only.)
-        non_frame_handles = [
-            h
-            for h in secplot.figure.plot_handles
-            if h.get_label() not in ("frame", "_nolegend_", "")
-        ]
+        non_frame_handles = _non_frame_handles(secplot)
         assert len(non_frame_handles) == 0, (
             f"Expected no non-frame plot handles, got: {[h.get_label() for h in non_frame_handles]}"
         )
@@ -237,7 +235,6 @@ class SectionPlotWidgetEffectsMixin:
         secplot.drillstop.setText("")
         secplot.draw_plot()
 
-        print(f"{mock_messagebar.mock_calls=}")
         assert not mock_messagebar.critical.called
         assert len(secplot.figure.plot_handles) > 0, (
             "plot_handles must be populated when hydrology is on"
@@ -257,7 +254,6 @@ class SectionPlotWidgetEffectsMixin:
         secplot.drillstop.setText("")
         secplot.draw_plot()
 
-        print(f"{mock_messagebar.mock_calls=}")
         assert not mock_messagebar.critical.called
         # Text annotations for obsid labels appear in ax_main.texts.
         label_texts = [t.get_text() for t in secplot.figure.ax_main.texts]
@@ -283,7 +279,6 @@ class SectionPlotWidgetEffectsMixin:
         secplot.drillstop.setText("")
         secplot.draw_plot()
 
-        print(f"{mock_messagebar.mock_calls=}")
         assert not mock_messagebar.critical.called
         # When labels are off, ax_main.texts should contain no obsid label annotations.
         label_texts = [t.get_text() for t in secplot.figure.ax_main.texts]
@@ -307,7 +302,6 @@ class SectionPlotWidgetEffectsMixin:
             abs(p.get_width()) for p in narrow_patches if p.get_width() != 0
         ]
 
-        print(f"{mock_messagebar.mock_calls=}")
         assert not mock_messagebar.critical.called
         assert narrow_widths, "Expected bar patches after stratigraphy draw"
 
@@ -340,7 +334,6 @@ class SectionPlotWidgetEffectsMixin:
         secplot.draw_plot()
         handles_with_screens = len(secplot.figure.plot_handles)
 
-        print(f"{mock_messagebar.mock_calls=}")
         assert not mock_messagebar.critical.called
         assert handles_with_screens > handles_without_screens, (
             f"Screen bars should add to plot_handles: "
@@ -357,14 +350,9 @@ class SectionPlotWidgetEffectsMixin:
         secplot.screens_mode_combo.setCurrentText("None")
         secplot.draw_plot()
 
-        print(f"{mock_messagebar.mock_calls=}")
         assert not mock_messagebar.critical.called
         # No stratigraphy, no hydrology, no screens → no non-frame handles.
-        non_frame_handles = [
-            h
-            for h in secplot.figure.plot_handles
-            if h.get_label() not in ("frame", "_nolegend_", "")
-        ]
+        non_frame_handles = _non_frame_handles(secplot)
         assert len(non_frame_handles) == 0, (
             f"Expected no screen bars when mode is None, got: "
             f"{[h.get_label() for h in non_frame_handles]}"
@@ -381,14 +369,9 @@ class SectionPlotWidgetEffectsMixin:
         secplot.datetime.append("2020-01-01")
         secplot.draw_plot()
 
-        print(f"{mock_messagebar.mock_calls=}")
         assert not mock_messagebar.critical.called
         # A water-level line should appear in plot_handles.
-        wlvl_handles = [
-            h
-            for h in secplot.figure.plot_handles
-            if h.get_label() not in ("frame", "_nolegend_", "")
-        ]
+        wlvl_handles = _non_frame_handles(secplot)
         assert len(wlvl_handles) >= 1, (
             "Expected at least one water-level handle in plot_handles"
         )
@@ -409,7 +392,6 @@ class SectionPlotWidgetEffectsMixin:
         secplot.drillstop.setText("%berg%")
         secplot.draw_plot()
 
-        print(f"{mock_messagebar.mock_calls=}")
         assert not mock_messagebar.critical.called
         drillstop_handles = [
             h
@@ -437,7 +419,6 @@ class SectionPlotWidgetEffectsMixin:
         secplot.drillstop.setText("")
         secplot.draw_plot()
 
-        print(f"{mock_messagebar.mock_calls=}")
         assert not mock_messagebar.critical.called
         drillstop_handles = [
             h
@@ -455,7 +436,6 @@ class SectionPlotWidgetEffectsMixin:
         secplot.include_views_check_box.setChecked(False)
         secplot.fill_wlvltable(include_views=False)
 
-        print(f"{mock_messagebar.mock_calls=}")
         assert not mock_messagebar.critical.called
         combo_items = [
             secplot.wlvltable.itemText(i) for i in range(secplot.wlvltable.count())
@@ -488,19 +468,20 @@ class SectionPlotWidgetEffectsMixin:
         secplot.barwidthdouble_spin_box.setValue(5.0)
 
         # Draw with a narrow screen width factor.
-        secplot.screen_width_factor_spin.setValue(0.2)
+        narrow_factor = 0.2
+        secplot.screen_width_factor_spin.setValue(narrow_factor)
         secplot.draw_plot()
         narrow_patches = list(secplot.figure.ax_main.patches)
         narrow_widths = sorted(
             [abs(p.get_width()) for p in narrow_patches if p.get_width() != 0]
         )
 
-        print(f"{mock_messagebar.mock_calls=}")
         assert not mock_messagebar.critical.called
         assert narrow_widths, "Expected screen bar patches with screens mode=Behind"
 
         # Draw with a wide screen width factor.
-        secplot.screen_width_factor_spin.setValue(5.0)
+        wide_factor = 5.0
+        secplot.screen_width_factor_spin.setValue(wide_factor)
         secplot.draw_plot()
         wide_patches = list(secplot.figure.ax_main.patches)
         wide_widths = sorted(
@@ -509,7 +490,7 @@ class SectionPlotWidgetEffectsMixin:
 
         assert wide_widths, "Expected screen bar patches after second draw"
         assert max(wide_widths) > max(narrow_widths), (
-            f"Larger width factor ({5.0}) should produce wider bars than smaller factor ({0.2}): "
+            f"Larger width factor ({wide_factor}) should produce wider bars than smaller factor ({narrow_factor}): "
             f"max_wide={max(wide_widths)}, max_narrow={max(narrow_widths)}"
         )
 

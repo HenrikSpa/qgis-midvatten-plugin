@@ -2,12 +2,13 @@
 
 import logging
 
-from qgis.PyQt.QtCore import QCoreApplication, Qt
+import qgis.core
+from qgis.PyQt.QtCore import QCoreApplication, QEventLoop, Qt, QThread
 from qgis.PyQt.QtWidgets import QApplication, QDialog, QProgressDialog
 
 from midvatten.tools.create_db import NewDb
 from midvatten.tools.create_db_dialogs import NewSpatialiteDbDialog
-from midvatten.tools.export_data import ExportData
+from midvatten.tools.export_worker import ExportWorker
 from midvatten.tools.utils import common_utils, db_utils
 
 log = logging.getLogger(__name__)
@@ -23,8 +24,8 @@ class ExportSpatialite:
 
         obsid_p = common_utils.get_selected_features_as_tuple("obs_points")
         obsid_l = common_utils.get_selected_features_as_tuple("obs_lines")
-        log.debug("Selected obs_points to export:%s", obsid_p)
-        log.debug("Selected obs_lines to export:%s", obsid_l)
+        log.debug("Selected obs_points to export: %s", obsid_p)
+        log.debug("Selected obs_lines to export: %s", obsid_l)
 
         source_srid = db_utils.sql_load_fr_db(
             """SELECT srid FROM geometry_columns WHERE f_table_name = 'obs_points';"""
@@ -93,29 +94,128 @@ class ExportSpatialite:
                 locale=dialog.locale,
                 dbpath=dialog.dbpath,
             )
-
-            if newdbinstance.db_settings:
-                new_dbpath = db_utils.get_spatialite_db_path_from_dbsettings_string(
-                    newdbinstance.db_settings
-                )
-                if not new_dbpath:
-                    common_utils.MessagebarAndLog.critical(
-                        bar_msg=QCoreApplication.translate(
-                            "export_spatialite",
-                            "Export to spatialite failed, see log message panel",
-                        ),
-                        button=True,
-                    )
-                    return
-                progress.setLabelText(
-                    QCoreApplication.translate(
-                        "ExportSpatialite", "Exporting data, please wait..."
-                    )
-                )
-                QApplication.processEvents()
-                exportinstance = ExportData(self._iface, self._ms)
-                exportinstance.ID_obs_points = obsid_p
-                exportinstance.ID_obs_lines = obsid_l
-                exportinstance.export_2_splite(new_dbpath, str(dialog.epsg_code))
         finally:
             progress.close()
+
+        if not newdbinstance.db_settings:
+            common_utils.MessagebarAndLog.critical(
+                bar_msg=QCoreApplication.translate(
+                    "export_spatialite",
+                    "Export to spatialite failed, see log message panel",
+                ),
+                button=True,
+            )
+            return
+
+        new_dbpath = db_utils.get_spatialite_db_path_from_dbsettings_string(
+            newdbinstance.db_settings
+        )
+        if not new_dbpath:
+            common_utils.MessagebarAndLog.critical(
+                bar_msg=QCoreApplication.translate(
+                    "export_spatialite",
+                    "Export to spatialite failed, see log message panel",
+                ),
+                button=True,
+            )
+            return
+
+        self._run_export_worker(new_dbpath, dialog, obsid_p, obsid_l)
+
+    def _run_export_worker(
+        self,
+        new_dbpath: str,
+        dialog,
+        obsid_p: tuple[str, ...],
+        obsid_l: tuple[str, ...],
+    ) -> None:
+        source_db_settings = qgis.core.QgsProject.instance().readEntry(
+            "Midvatten", "database"
+        )[0]
+
+        worker = ExportWorker(
+            source_db_settings=source_db_settings,
+            dest_path=new_dbpath,
+            obsid_points=obsid_p,
+            obsid_lines=obsid_l,
+            dest_srid=str(dialog.epsg_code),
+        )
+        thread = QThread()
+        worker.moveToThread(thread)
+        thread.started.connect(worker.run)
+        worker.finished.connect(thread.quit)
+        worker.error.connect(thread.quit)
+
+        progress = QProgressDialog(
+            QCoreApplication.translate(
+                "ExportSpatialite", "Exporting data, please wait..."
+            ),
+            QCoreApplication.translate("ExportSpatialite", "Cancel"),
+            0,
+            0,
+            self._iface.mainWindow(),
+        )
+        progress.setWindowModality(Qt.WindowModal)
+        progress.setMinimumDuration(0)
+        progress.show()
+        QApplication.processEvents()
+
+        loop = QEventLoop()
+        stats_holder: list[str | None] = []
+
+        def on_finished(stats: str) -> None:
+            stats_holder.append(stats)
+            loop.quit()
+
+        def on_error(msg: str) -> None:
+            log.error("Export error:\n%s", msg)
+            stats_holder.append(None)
+            loop.quit()
+
+        worker.finished.connect(on_finished)
+        worker.error.connect(on_error)
+        worker.table_started.connect(
+            lambda name, total: (
+                progress.setLabelText(
+                    QCoreApplication.translate(
+                        "ExportSpatialite", "Exporting: {}"
+                    ).format(name)
+                ),
+                progress.setMaximum(total),
+            )
+        )
+        worker.rows_written.connect(progress.setValue)
+        progress.canceled.connect(worker.cancel)
+
+        thread.start()
+        loop.exec_()
+        thread.wait()
+        progress.close()
+
+        if not stats_holder:
+            return
+        stats = stats_holder[0]
+        if stats is None:
+            common_utils.MessagebarAndLog.critical(
+                bar_msg=QCoreApplication.translate(
+                    "ExportSpatialite", "Export failed, see log message panel"
+                ),
+                button=True,
+            )
+        elif stats == "":
+            common_utils.MessagebarAndLog.info(
+                bar_msg=QCoreApplication.translate(
+                    "ExportSpatialite", "Export cancelled."
+                )
+            )
+        else:
+            common_utils.MessagebarAndLog.info(
+                bar_msg=QCoreApplication.translate(
+                    "ExportSpatialite",
+                    "Export done, see differences in log message panel",
+                ),
+                log_msg=QCoreApplication.translate(
+                    "ExportData", "Tables with different number of rows:\n%s"
+                )
+                % stats,
+            )

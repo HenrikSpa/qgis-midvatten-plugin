@@ -342,7 +342,7 @@ class PiperPlot:
         nosamples = len(self.obsrecarray.obsid)  # Determine number of samples in file
 
         with plt.style.context(piperplot2_style()):
-            fig = plt.figure()
+            fig = plt.figure(layout="constrained")
             ax = fig.add_subplot(111)
 
             self.side_length = 100

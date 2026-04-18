@@ -554,7 +554,7 @@ def plot_types_dict(international="no"):
                 "Getting strata and geoshort from zz_strat failed, fallback method using PlotTypesDict from code",
             )
         )
-        if international == "no" and getcurrentlocale() == "sv_SE":
+        if international == "no" and is_locale_swedish():
             """
             Dict = {"Okänt" : "not in ('berg','b','rock','ro','grovgrus','grg','coarse gravel','cgr','grus','gr','gravel','mellangrus','grm','medium gravel','mgr','fingrus','grf','fine gravel','fgr','grovsand','sag','coarse sand','csa','sand','sa','mellansand','sam','medium sand','msa','finsand','saf','fine sand','fsa','silt','si','lera','ler','le','clay','cl','morän','moran','mn','till','ti','torv','t','peat','pt','fyll','fyllning','f','made ground','mg','land fill')",
             "Berg"  : "in ('berg','b','rock','ro')",
@@ -659,9 +659,7 @@ def plot_colors_dict():
                 "Getting strata and color_mplot form zz_stratigraphy_plots failed, fallback method with PlotColorDict from code",
             )
         )
-        if (
-            getcurrentlocale() == "sv_SE"
-        ):  # swedish forms are loaded only if locale settings indicate sweden
+        if is_locale_swedish():  # swedish forms are loaded only if locale settings indicate sweden
             color_dict = {
                 "Okänt": "white",
                 "Berg": "red",
@@ -719,9 +717,7 @@ def plot_hatch_dict():
             )
         )
         # hatch patterns : ('-', '+', 'x', '\\', '*', 'o', 'O', '.','/')
-        if (
-            getcurrentlocale() == "sv_SE"
-        ):  # swedish forms are loaded only if locale settings indicate sweden
+        if is_locale_swedish():  # swedish forms are loaded only if locale settings indicate sweden
             hatch_dict = {
                 "Okänt": "",
                 "Berg": "x",

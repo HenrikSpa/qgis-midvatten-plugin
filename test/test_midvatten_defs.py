@@ -20,6 +20,7 @@
 """
 
 import pytest
+from unittest import mock
 
 from midvatten.tools.utils import common_utils
 from midvatten.tools.utils import db_utils
@@ -102,5 +103,132 @@ class TestGeocolorsymbolsPostgis(
 @pytest.mark.spatialite
 class TestGeocolorsymbolsSpatialite(
     GeocolorsymbolsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
+):
+    pass
+
+
+class PlotFallbackDictsMixin:
+    """Fallback dicts for Swedish/English locale fire when the DB reads fail."""
+
+    # ── plot_types_dict ──────────────────────────────────────────────────────
+
+    @mock.patch("midvatten.definitions.midvatten_defs.MessagebarAndLog")
+    @mock.patch(
+        "midvatten.definitions.midvatten_defs.is_locale_swedish", return_value=True
+    )
+    @mock.patch(
+        "midvatten.definitions.midvatten_defs.get_sql_result_as_dict",
+        return_value=(False, {}),
+    )
+    def test_plot_types_dict_fallback_swedish(
+        self, mock_db, mock_locale, mock_messagebar
+    ):
+        print(mock_messagebar.mock_calls)
+        result = midvatten_defs.plot_types_dict(international="no")
+        print(mock_messagebar.mock_calls)
+        assert "Berg" in result
+        assert "Okänt" in result
+        assert "Rock" not in result
+        assert "Unknown" not in result
+
+    @mock.patch("midvatten.definitions.midvatten_defs.MessagebarAndLog")
+    @mock.patch(
+        "midvatten.definitions.midvatten_defs.is_locale_swedish", return_value=False
+    )
+    @mock.patch(
+        "midvatten.definitions.midvatten_defs.get_sql_result_as_dict",
+        return_value=(False, {}),
+    )
+    def test_plot_types_dict_fallback_english(
+        self, mock_db, mock_locale, mock_messagebar
+    ):
+        print(mock_messagebar.mock_calls)
+        result = midvatten_defs.plot_types_dict(international="no")
+        print(mock_messagebar.mock_calls)
+        assert "Rock" in result
+        assert "Unknown" in result
+        assert "Berg" not in result
+        assert "Okänt" not in result
+
+    # ── plot_colors_dict ─────────────────────────────────────────────────────
+
+    @mock.patch("midvatten.definitions.midvatten_defs.MessagebarAndLog")
+    @mock.patch(
+        "midvatten.definitions.midvatten_defs.is_locale_swedish", return_value=True
+    )
+    @mock.patch(
+        "midvatten.definitions.midvatten_defs.create_dict_from_db_2_cols",
+        return_value=(False, {}),
+    )
+    def test_plot_colors_dict_fallback_swedish(
+        self, mock_db, mock_locale, mock_messagebar
+    ):
+        print(mock_messagebar.mock_calls)
+        result = midvatten_defs.plot_colors_dict()
+        print(mock_messagebar.mock_calls)
+        assert "berg" in result  # keys are lowercased by the function
+        assert "okänt" in result
+        assert "rock" not in result
+
+    @mock.patch("midvatten.definitions.midvatten_defs.MessagebarAndLog")
+    @mock.patch(
+        "midvatten.definitions.midvatten_defs.is_locale_swedish", return_value=False
+    )
+    @mock.patch(
+        "midvatten.definitions.midvatten_defs.create_dict_from_db_2_cols",
+        return_value=(False, {}),
+    )
+    def test_plot_colors_dict_fallback_english(
+        self, mock_db, mock_locale, mock_messagebar
+    ):
+        print(mock_messagebar.mock_calls)
+        result = midvatten_defs.plot_colors_dict()
+        print(mock_messagebar.mock_calls)
+        assert "rock" in result
+        assert "unknown" in result
+        assert "berg" not in result
+
+    # ── plot_hatches_dict ────────────────────────────────────────────────────
+
+    @mock.patch("midvatten.definitions.midvatten_defs.MessagebarAndLog")
+    @mock.patch(
+        "midvatten.definitions.midvatten_defs.is_locale_swedish", return_value=True
+    )
+    @mock.patch(
+        "midvatten.definitions.midvatten_defs.create_dict_from_db_2_cols",
+        return_value=(False, {}),
+    )
+    def test_plot_hatches_dict_fallback_swedish(
+        self, mock_db, mock_locale, mock_messagebar
+    ):
+        print(mock_messagebar.mock_calls)
+        result = midvatten_defs.plot_hatch_dict()
+        print(mock_messagebar.mock_calls)
+        assert "berg" in result
+        assert "okänt" in result
+        assert "rock" not in result
+
+    @mock.patch("midvatten.definitions.midvatten_defs.MessagebarAndLog")
+    @mock.patch(
+        "midvatten.definitions.midvatten_defs.is_locale_swedish", return_value=False
+    )
+    @mock.patch(
+        "midvatten.definitions.midvatten_defs.create_dict_from_db_2_cols",
+        return_value=(False, {}),
+    )
+    def test_plot_hatches_dict_fallback_english(
+        self, mock_db, mock_locale, mock_messagebar
+    ):
+        print(mock_messagebar.mock_calls)
+        result = midvatten_defs.plot_hatch_dict()
+        print(mock_messagebar.mock_calls)
+        assert "rock" in result
+        assert "unknown" in result
+        assert "berg" not in result
+
+
+@pytest.mark.spatialite
+class TestPlotFallbackDictsSpatialite(
+    PlotFallbackDictsMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass

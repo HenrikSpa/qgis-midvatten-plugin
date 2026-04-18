@@ -10,7 +10,6 @@
  ***************************************************************************/
 """
 
-import ast
 import copy
 import json
 import logging
@@ -19,30 +18,21 @@ import traceback
 import types
 from contextlib import contextmanager
 from functools import partial
-from operator import itemgetter
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import matplotlib.ticker as tick
 import numpy as np
 import pandas as pd
 import qgis.PyQt
 from matplotlib import container, patches
 
 from midvatten.tools.utils.mpl_compat import FigureCanvas, NavigationToolbar
-from psycopg2.sql import SQL, Identifier
 from qgis.PyQt import QtWidgets
 from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QCoreApplication, Qt
 from qgis.PyQt.QtWidgets import QApplication, QDockWidget, QSizePolicy
 from qgis.core import (
-    QgsProject,
     QgsVectorLayer,
-    QgsGeometry,
-    QgsFeatureRequest,
-    QgsMapLayer,
-    QgsRuleBasedRenderer,
-    QgsRenderContext,
     QgsWkbTypes,
     Qgis,
 )
@@ -61,12 +51,10 @@ from copy import deepcopy
 
 from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.string_utils import returnunicode as ru
-from midvatten.tools.utils.exceptions import UsageError
 from midvatten.tools.utils.midvatten_utils import PlotTemplates
 from midvatten.tools.utils.gui_utils import DetachFigureButton, ReverseSectionButton
 import midvatten.definitions.midvatten_defs as defs
 from midvatten.tools.utils import matplotlib_replacements
-from midvatten.tools.utils.sampledem import qchain, sampling
 from midvatten.tools.sectionplot.figure import SectionPlotFigure
 from midvatten.tools.sectionplot.legend import SectionPlotLegendManager
 from midvatten.tools.sectionplot import painters as _painters
@@ -77,11 +65,11 @@ from midvatten.tools.sectionplot._utils import (  # noqa: F401
 from midvatten.tools.sectionplot.ui_types import SecPlotUi
 from midvatten.tools.sectionplot.settings import (
     apply_settings_to_ui,
+    collect_ui_to_settings,
     save_settings as _save_bound_settings,
 )
-from midvatten.tools.sectionplot.data import (  # noqa: F401
+from midvatten.tools.sectionplot.data import (
     prepare_obsid_positions as _prepare_obsid_positions,
-    get_length_along as _get_length_along,
     get_z_data as _get_z_data,
     get_plot_data_bars as _get_plot_data_bars,
     get_screen_plot_data as _get_screen_plot_data,
@@ -89,12 +77,17 @@ from midvatten.tools.sectionplot.data import (  # noqa: F401
     get_drillstops as _get_drillstops,
     get_plot_data_seismic as _get_plot_data_seismic,
     get_water_levels_from_df as _get_water_levels_from_df,
-    get_length_map,
-    fill_empty_columns,
-    slider_val_to_idx,
+    get_length_map,  # noqa: F401 — re-exported via __init__.py
+    fill_empty_columns,  # noqa: F401 — re-exported via __init__.py
+    slider_val_to_idx,  # noqa: F401 — re-exported via __init__.py
     SEISMIC_Y1_COLUMN,
     SEISMIC_Y2_COLUMN,
     SEISMIC_Y3_COLUMN,
+)
+from midvatten.tools.sectionplot._ui_fill import (
+    fill_tem as _fill_tem,
+    fill_images as _fill_images,
+    fill_dem_list as _fill_dem_list,
 )
 
 _WLVL_EXCLUDED_TABLES = (
@@ -402,68 +395,20 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
 
         self.dbconnection = db_utils.DbConnectionManager()
 
-        self.fill_check_boxes()
         self.fill_combo_boxes()
-        self.fill_spinboxes()
         self.fill_tem(self.line_feature)
         self.fill_images(self.line_feature)
         self.fill_dem_list(self.line_layer)
-        super().show()
 
-        # Get plot data
-        self.obsids_x_position = self.prepare_line_and_obsid_positions(
-            selected_obspoints, self.line_layer, self.line_feature
+        # Re-apply all bound settings (including checkboxes, spinboxes).
+        apply_settings_to_ui(self, self.ms)
+        # Special-case: unbound settings not covered by the declarative bindings.
+        self.plot_stratigraphy.setChecked(
+            bool(self.ms.settingsdict["stratigraphyplotted"])
         )
-        self.z_data = self.get_z_data(self.obsids_x_position)
-        self.geo_bars = self.get_plot_data_bars(
-            defs.plot_types_dict(),
-            self.obsids_x_position,
-            self.obsid_annotation,
-            strat_key="geoshort",
+        self.hydrology_radio_button.setChecked(
+            bool(self.ms.settingsdict["secplothydrologyplotted"])
         )
-        hydro_subtypes = {k: f"IN ('{k}')" for k in self.hydro_colors.keys()}
-        self.hydro_bars = self.get_plot_data_bars(
-            hydro_subtypes,
-            self.obsids_x_position,
-            self.obsid_annotation,
-            strat_key="capacity",
-        )
-        self.layer_texts = self.get_plot_data_layer_texts(
-            self.obsids_x_position, self.z_data, self.hydro_colors
-        )
-        if self.ms.settingsdict["screensplotmode"] != "none":
-            self.screen_bars = self.get_screen_plot_data(self.obsids_x_position)
-        else:
-            self.screen_bars = {}
-        if self.line_feature is not None:
-            self.obs_lines_plot_data = self.get_plot_data_seismic(
-                self.line_layer, self.line_feature
-            )
-        self.add_missing_obsid_labels(self.obsids_x_position, self.obsid_annotation)
-        self.drillstops = self.get_drillstops(self.obsids_x_position, self.z_data)
-
-        self.draw_plot()
-        common_utils.stop_waiting_cursor()
-
-    def fill_check_boxes(self):  # sets checkboxes to last selection
-        if self.ms.settingsdict["secplotincludeviews"]:
-            self.include_views_check_box.setChecked(True)
-        if self.ms.settingsdict["stratigraphyplotted"]:
-            self.plot_stratigraphy.setChecked(True)
-        else:
-            self.plot_stratigraphy.setChecked(False)
-        if self.ms.settingsdict["secplothydrologyplotted"]:
-            self.hydrology_radio_button.setChecked(True)
-        else:
-            self.hydrology_radio_button.setChecked(False)
-        if self.ms.settingsdict["secplotlabelsplotted"]:
-            self.labels_check_box.setChecked(True)
-        else:
-            self.labels_check_box.setChecked(False)
-        if self.ms.settingsdict["secplotlegendplotted"]:
-            self.create_legend.setChecked(True)
-        else:
-            self.create_legend.setChecked(False)
         if self.ms.settingsdict["secplotwidthofplot"]:
             self.width_of_plot.setChecked(True)
         else:
@@ -472,15 +417,90 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
             self.text_align_center.setChecked(True)
         else:
             self.text_align_edge.setChecked(True)
-        if self.ms.settingsdict["secplot_apply_graded_dems"]:
-            self.secplot_apply_graded_dems.setChecked(True)
-
         self.screens_mode_combo.setCurrentText(
             _SCREEN_MODE_TO_DISPLAY.get(self.ms.settingsdict["screensplotmode"], "None")
         )
-        self.screen_width_factor_spin.setValue(
-            float(self.ms.settingsdict["screenwidthfactor"])
+
+        super().show()
+
+        # Upload line feature to DB temp table and compute obsid x-positions.
+        if self.line_layer is not None:
+            self.upload_qgis_vector_layer(self.line_layer, self.line_feature)
+        self.obsids_x_position = _prepare_obsid_positions(
+            line_feature=self.line_feature,
+            selected_obspoints=selected_obspoints,
+            line_layer=self.line_layer,
+            dbconnection=self.dbconnection,
+            temptable_name=self.temptable_name,
         )
+
+        # Fetch all data needed for plotting.
+        self.z_data = _get_z_data(
+            self.obsids_x_position,
+            dbconnection=self.dbconnection,
+        )
+        self.geo_bars = _get_plot_data_bars(
+            obsids_x_position=self.obsids_x_position,
+            z_data=self.z_data,
+            typ_subtypes=defs.plot_types_dict(),
+            obsid_annotation=self.obsid_annotation,
+            dbconnection=self.dbconnection,
+            strat_key="geoshort",
+        )
+        hydro_subtypes = {k: f"IN ('{k}')" for k in self.hydro_colors.keys()}
+        self.hydro_bars = _get_plot_data_bars(
+            obsids_x_position=self.obsids_x_position,
+            z_data=self.z_data,
+            typ_subtypes=hydro_subtypes,
+            obsid_annotation=self.obsid_annotation,
+            dbconnection=self.dbconnection,
+            strat_key="capacity",
+        )
+        self.layer_texts = _get_plot_data_layer_texts(
+            obsids_x_position=self.obsids_x_position,
+            z_data=self.z_data,
+            hydro_colors=self.hydro_colors,
+            dbconnection=self.dbconnection,
+        )
+        if self.ms.settingsdict["screensplotmode"] != "none":
+            self.screen_bars = _get_screen_plot_data(
+                obsids_x_position=self.obsids_x_position,
+                z_data=self.z_data,
+                dbconnection=self.dbconnection,
+            )
+        else:
+            self.screen_bars = {}
+        if self.line_feature is not None:
+            self.obs_lines_plot_data = _get_plot_data_seismic(
+                line_layer=self.line_layer,
+                line_feature=self.line_feature,
+                dbconnection=self.dbconnection,
+            )
+            # Store the seismic column names for paint_obs_lines_data.
+            self.y1_column = SEISMIC_Y1_COLUMN
+            self.y2_column = SEISMIC_Y2_COLUMN
+            self.y3_column = SEISMIC_Y3_COLUMN
+
+        # Add annotation entries for obsids without stratigraphy.
+        for obs, x in self.obsids_x_position.items():
+            if obs not in self.obsid_annotation and (
+                self.ms.settingsdict["stratigraphyplotted"]
+                or self.ms.settingsdict["secplothydrologyplotted"]
+            ):
+                self.obsid_annotation[obs] = (
+                    x,
+                    self.z_data[obs]["bottom"] + self.z_data[obs]["barheight"],
+                )
+
+        self.drillstops = _get_drillstops(
+            obsids_x_position=self.obsids_x_position,
+            z_data=self.z_data,
+            settingsdict=self.ms.settingsdict,
+            dbconnection=self.dbconnection,
+        )
+
+        self.draw_plot()
+        common_utils.stop_waiting_cursor()
 
     def fill_combo_boxes(self):
         self.textcol_combo_box.clear()
@@ -533,45 +553,22 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
             self.include_views_check_box.setChecked(True)
 
     def fill_dem_list(self, line_layer=None):
-        self.dem_list.clear()
-        if line_layer is None:
-            return
-        self.dem_layers = {}
-        line_crs = line_layer.crs()
+        self.dem_layers, self.rasterselection = _fill_dem_list(
+            self, self.ms, line_layer
+        )
 
-        msg = []
-        layers = [
-            QgsProject.instance().mapLayer(_id)
-            for _id in QgsProject.instance().mapLayers()
-        ]
-        for layer in layers:
-            if layer.type() == layer.RasterLayer:
-                if layer.bandCount() != 1:  # only single band raster layers
-                    msg.append(
-                        f'Sectionplot: Layer "{ru(layer.name())}" omitted due to more than one layer band.'
-                    )
-                elif (
-                    layer.crs().authid()[5:] != line_crs.authid()[5:]
-                ):  # only raster layer with crs corresponding to line layer
-                    msg.append(
-                        f'Sectionplot: Layer "{ru(layer.name())}" omitted due to wrong CRS ("{line_crs.authid()}" is required, was "{layer.crs().authid()}".'
-                    )
-                else:
-                    self.dem_layers[str(layer.name())] = layer
-                    self.dem_list.addItem(str(layer.name()))
-                    item = self.dem_list.item(self.dem_list.count() - 1)
-                    if item.text() in self.ms.settingsdict["secplotselectedDEMs"]:
-                        item.setSelected(True)
-        if msg:
-            common_utils.MessagebarAndLog.info(
-                bar_msg=QCoreApplication.translate(
-                    "SectionPlot",
-                    "One or more layers were omitted due to unfulfilled requirements, see log message panel.",
-                ),
-                log_msg="\n".join(msg),
-                duration=30,
-            )
-        self.get_dem_selection()
+    def get_screen_plot_data(self, obsids_x_position: dict) -> dict:
+        """Fetch screen intervals grouped by screenshort for plotting.
+
+        Returns a dict ``{screenshort: {"x": [...], "height": [...], "bottom": [...]}}``
+        matching the shape produced by ``get_plot_data_bars()``.  Returns an empty
+        dict if the ``screen`` table doesn't exist (older DBs) or no rows match.
+        """
+        return _get_screen_plot_data(
+            obsids_x_position=obsids_x_position,
+            z_data=self.z_data,
+            dbconnection=self.dbconnection,
+        )
 
     def fill_wlvltable(self, include_views):
         self.ms.settingsdict["secplotincludeviews"] = include_views
@@ -590,254 +587,11 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
             self.wlvltable.addItem(tabell)
         set_combobox(self.wlvltable, str(current_text), add_if_not_exists=False)
 
-    def fill_spinboxes(self):
-        if self.ms.settingsdict.get("secplotdem_sampling_distance", 0.0):
-            self.dem_sampling_distance.setValue(
-                float(self.ms.settingsdict["secplotdem_sampling_distance"])
-            )
-
-        if self.ms.settingsdict.get("secplot_grading_depth", 2.0):
-            self.secplot_grading_depth.setValue(
-                float(self.ms.settingsdict["secplot_grading_depth"])
-            )
-
-        if self.ms.settingsdict.get("secplot_grading_num_layers", 20):
-            self.secplot_grading_num_layers.setValue(
-                int(self.ms.settingsdict["secplot_grading_num_layers"])
-            )
-
-        if self.ms.settingsdict.get("secplot_grading_max_opacity", 0.8):
-            self.secplot_grading_max_opacity.setValue(
-                float(self.ms.settingsdict["secplot_grading_max_opacity"])
-            )
-
-        if self.ms.settingsdict.get("secplot_grading_min_opacity", 0.0):
-            self.secplot_grading_min_opacity.setValue(
-                float(self.ms.settingsdict["secplot_grading_min_opacity"])
-            )
-
     def fill_tem(self, line_feature=None):
-        self.tem_model_name.clear()
-        self.tem_colormap.clear()
-        self.tem_norm.clear()
-        self.tem_shading.clear()
-
-        self.tem_colormap.addItems(plt.colormaps())
-        self.tem_norm.addItems(["log", "linear"])  # mpl.scale.get_scale_names()
-        self.tem_shading.addItems(["nearest", "gouraud"])  #'flat' will not work.
-
-        set_combobox(
-            self.tem_colormap,
-            self.ms.settingsdict.get("secplot_tem_colormap", "jet"),
-            add_if_not_exists=False,
-        )
-        set_combobox(
-            self.tem_norm,
-            self.ms.settingsdict.get("secplot_tem_norm", "log"),
-            add_if_not_exists=False,
-        )
-        set_combobox(
-            self.tem_shading,
-            self.ms.settingsdict.get("secplot_tem_shading", "nearest"),
-            add_if_not_exists=False,
-        )
-        self.tem_vmin.setText(self.ms.settingsdict.get("secplot_tem_vmin", ""))
-        self.tem_vmax.setText(self.ms.settingsdict.get("secplot_tem_vmax", ""))
-        self.tem_snap.setChecked(self.ms.settingsdict.get("secplot_tem_snap", False))
-        self.tem_rasterized.setChecked(
-            self.ms.settingsdict.get("secplot_tem_rasterized", False)
-        )
-        self.tem_edgecolors.setText(
-            self.ms.settingsdict.get("secplot_tem_edgecolors", "")
-        )
-        self.tem_alpha_above_doi.setValue(
-            float(self.ms.settingsdict.get("secplot_tem_alpha_above_doi", 1.0))
-        )
-        self.tem_alpha_below_doi.setValue(
-            float(self.ms.settingsdict.get("secplot_tem_alpha_below_doi", 0.7))
-        )
-        self.tem_data_fit.setChecked(
-            self.ms.settingsdict.get("secplot_tem_data_fit", False)
-        )
-
-        self.tem_model_name.addItem("")
-
-        if line_feature is None:
-            return
-
-        tables = db_utils.get_tables()
-        if "tem_data" not in tables:
-            self.tem_model_name.setToolTip(
-                QCoreApplication.translate(
-                    "SectionPlot",
-                    "Upgrade (export) the database to add the table tem_data.",
-                )
-            )
-            return
-
-        obsid = line_feature.attribute("obsid")
-        res = self.dbconnection.execute_and_fetchall(
-            f"SELECT DISTINCT inversion_name FROM tem_data WHERE obsid = {self.dbconnection.placeholder()}",
-            args=(obsid,),
-        )
-        if res:
-            self.tem_model_name.addItems([x[0] for x in res])
-
-        set_combobox(
-            self.tem_model_name,
-            self.ms.settingsdict.get("secplot_tem_model_name", ""),
-            add_if_not_exists=False,
-        )
+        _fill_tem(self, self.ms, self.dbconnection, line_feature)
 
     def fill_images(self, line_feature):
-        self.images_images.clear()
-
-        self.images_alpha.setText(self.ms.settingsdict.get("secplot_images_alpha", ""))
-        self.images_zorder.setText(
-            self.ms.settingsdict.get("secplot_images_zorder", "")
-        )
-        self.images_clip.setChecked(
-            self.ms.settingsdict.get("secplot_images_clip", True)
-        )
-
-        if line_feature is None:
-            return
-
-        tables = db_utils.get_tables()
-        if "profile_images" not in tables:
-            self.tem_model_name.addItem(
-                QCoreApplication.translate(
-                    "SectionPlot", "Table tem_data missing in database."
-                )
-            )
-            self.images_images.setToolTip(
-                QCoreApplication.translate(
-                    "SectionPlot",
-                    "Upgrade (export) the database to add the table profile_images.",
-                )
-            )
-            return
-
-        obsid = line_feature.attribute("obsid")
-        res = self.dbconnection.execute_and_fetchall(
-            f"SELECT alias FROM profile_images WHERE obsid = {self.dbconnection.placeholder()}",
-            args=(obsid,),
-        )
-
-        if res:
-            self.images_images.addItems([x[0] for x in sorted(res)])
-
-        selected_images = self.ms.settingsdict.get("secplot_images_images", "[]")
-        if selected_images.strip():
-            try:
-                selected_images = json.loads(selected_images.strip())
-            except (json.JSONDecodeError, ValueError):
-                selected_images = ast.literal_eval(selected_images.strip())
-            for idx in range(self.images_images.count()):
-                item = self.images_images.item(idx)
-                if item.text() in selected_images:
-                    item.setSelected(True)
-
-    def prepare_line_and_obsid_positions(
-        self, selected_obspoints, line_layer=None, line_feature=None
-    ):
-        if line_layer is not None:
-            self.upload_qgis_vector_layer(line_layer, line_feature)
-        return _prepare_obsid_positions(
-            line_feature=line_feature,
-            selected_obspoints=selected_obspoints,
-            line_layer=line_layer,
-            dbconnection=self.dbconnection,
-            temptable_name=self.temptable_name,
-        )
-
-    def get_dem_selection(self):
-        self.rasterselection = []
-        for item in self.dem_list.selectedItems():
-            self.rasterselection.append(item.text())
-
-    def get_length_along(self, obsidtuple):
-        return _get_length_along(
-            obsidtuple,
-            dbconnection=self.dbconnection,
-            temptable_name=self.temptable_name,
-        )
-
-    def get_z_data(self, obsids_x_position):
-        return _get_z_data(
-            obsids_x_position,
-            dbconnection=self.dbconnection,
-        )
-
-    def get_plot_data_bars(
-        self,
-        typ_subtypes,
-        obsids_x_position,
-        obsid_annotation,
-        strat_key="geoshort",
-    ):
-        """This is called when class is instantiated, collecting data specific for
-        the profile line layer and the obs_points"""
-        return _get_plot_data_bars(
-            obsids_x_position=obsids_x_position,
-            z_data=self.z_data,
-            typ_subtypes=typ_subtypes,
-            obsid_annotation=obsid_annotation,
-            dbconnection=self.dbconnection,
-            strat_key=strat_key,
-        )
-
-    def get_screen_plot_data(self, obsids_x_position: dict) -> dict:
-        """Fetch screen intervals grouped by screenshort for plotting.
-
-        Returns a dict ``{screenshort: {"x": [...], "height": [...], "bottom": [...]}}``
-        matching the shape produced by ``get_plot_data_bars()``.  Returns an empty
-        dict if the ``screen`` table doesn't exist (older DBs) or no rows match.
-        """
-        return _get_screen_plot_data(
-            obsids_x_position=obsids_x_position,
-            z_data=self.z_data,
-            dbconnection=self.dbconnection,
-        )
-
-    def get_plot_data_layer_texts(self, obsids_x_position, z_data, hydro_colors):
-        return _get_plot_data_layer_texts(
-            obsids_x_position=obsids_x_position,
-            z_data=z_data,
-            hydro_colors=hydro_colors,
-            dbconnection=self.dbconnection,
-        )
-
-    def get_drillstops(self, obsids_x_position, z_data):
-        return _get_drillstops(
-            obsids_x_position=obsids_x_position,
-            z_data=z_data,
-            settingsdict=self.ms.settingsdict,
-            dbconnection=self.dbconnection,
-        )
-
-    def get_plot_data_seismic(self, line_layer, line_feature):
-        # Last step in get data - check if the line layer is obs_lines and if so, load seismic data if there are any
-        # Set the column names used later by plot_obs_lines_data.
-        self.y1_column = SEISMIC_Y1_COLUMN
-        self.y2_column = SEISMIC_Y2_COLUMN
-        self.y3_column = SEISMIC_Y3_COLUMN
-        return _get_plot_data_seismic(
-            line_layer=line_layer,
-            line_feature=line_feature,
-            dbconnection=self.dbconnection,
-        )
-
-    def add_missing_obsid_labels(self, obsids_x_position, obsid_annotation):
-        for obs, x in obsids_x_position.items():
-            if obs not in obsid_annotation and (
-                self.ms.settingsdict["stratigraphyplotted"]
-                or self.ms.settingsdict["secplothydrologyplotted"]
-            ):
-                obsid_annotation[obs] = (
-                    x,
-                    self.z_data[obs]["bottom"] + self.z_data[obs]["barheight"],
-                )
+        _fill_images(self, self.ms, self.dbconnection, line_feature)
 
     def draw_plot(self):
         self.water_level_labels_duplicate_check = []
@@ -870,11 +624,55 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
 
         try:
             common_utils.start_waiting_cursor()  # show the user this may take a long time...
-            # load user settings from the ui
-            self._load_ui_settings()
 
-            self.plot_tem()
-            self.plot_images()
+            # Collect declaratively-bound widget values into settingsdict.
+            collect_ui_to_settings(self, self.ms)
+            # Special-case: settings not covered by the declarative bindings.
+            temporarystring = ru(self.datetime.toPlainText())
+            try:
+                self.ms.settingsdict["secplotdates"] = [
+                    x
+                    for x in temporarystring.replace("\r", "").split("\n")
+                    if x.strip()
+                ]
+            except TypeError:
+                self.ms.settingsdict["secplotdates"] = ""
+            self.ms.settingsdict["stratigraphyplotted"] = (
+                self.plot_stratigraphy.isChecked()
+            )
+            self.ms.settingsdict["secplothydrologyplotted"] = (
+                self.hydrology_radio_button.isChecked()
+            )
+            self.ms.settingsdict["screensplotmode"] = _SCREEN_MODE_FROM_DISPLAY.get(
+                self.screens_mode_combo.currentText(), "none"
+            )
+            # Collect selected DEM raster layers.
+            self.rasterselection = [
+                item.text() for item in self.dem_list.selectedItems()
+            ]
+            self.ms.settingsdict["secplotselectedDEMs"] = self.rasterselection
+            self.ms.settingsdict["secplot_tem_model_name"] = (
+                self.tem_model_name.currentText()
+            )
+            self.ms.settingsdict["secplot_images_images"] = json.dumps(
+                [item.text() for item in self.images_images.selectedItems()]
+            )
+            if self.text_align_center.isChecked():
+                self.ms.settingsdict["secplotlayertextalignment"] = "center"
+            else:
+                self.ms.settingsdict["secplotlayertextalignment"] = "edge"
+
+            _painters.paint_tem(
+                self.figure,
+                self.dbconnection,
+                self.ms.settingsdict,
+                self.secplot_templates.loaded_template,
+            )
+            _painters.paint_images(
+                self.figure,
+                self.dbconnection,
+                self.ms.settingsdict,
+            )
 
             if self.obsids_x_position:
                 xmax, xmin = (
@@ -897,32 +695,70 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
                     )
 
                 if self.ms.settingsdict["stratigraphyplotted"]:
-                    self.plot_bars(
+                    _painters.paint_bars(
+                        self.figure,
                         self.geo_bars,
+                        self.secplot_templates.loaded_template,
                         color_dict=defs.plot_colors_dict(),
                         color_key="color",
                         hatch_dict=defs.plot_hatch_dict(),
                         barwidth=self.barwidth,
                     )
                     if len(self.ms.settingsdict["secplottext"]) > 0:
-                        self.write_layer_text()
+                        _painters.paint_layer_text(
+                            self.figure,
+                            self.layer_texts,
+                            self.ms.settingsdict["secplottext"],
+                            self.ms.settingsdict["secplotlayertextalignment"],
+                            self.barwidth,
+                            self.secplot_templates.loaded_template,
+                        )
 
                 if self.ms.settingsdict["secplothydrologyplotted"]:
                     hydro_color_dict = {k: v[1] for k, v in self.hydro_colors.items()}
-                    self.plot_bars(
+                    _painters.paint_bars(
+                        self.figure,
                         self.hydro_bars,
+                        self.secplot_templates.loaded_template,
                         color_dict=hydro_color_dict,
                         color_key="color_qt",
                         hatch_dict=None,
                         barwidth=self.barwidth,
                     )
                     if len(self.ms.settingsdict["secplottext"]) > 0:
-                        self.write_layer_text()
+                        _painters.paint_layer_text(
+                            self.figure,
+                            self.layer_texts,
+                            self.ms.settingsdict["secplottext"],
+                            self.ms.settingsdict["secplotlayertextalignment"],
+                            self.barwidth,
+                            self.secplot_templates.loaded_template,
+                        )
 
-                self.plot_water_level()
+                _painters.paint_water_level(
+                    self.figure,
+                    self.dbconnection,
+                    self.ms.settingsdict,
+                    self.obsids_x_position,
+                    self.waterlevel_lineplot,
+                    plot_specific_dates=self.specific_dates_groupbox.isChecked(),
+                )
+                if self.interactive_groupbox.isChecked():
+                    self.plot_water_level_interactive()
 
                 if self.ms.settingsdict["secplotdrillstop"] != "" and self.drillstops:
-                    self.plot_drill_stop()
+                    drillstop_label = (
+                        self.secplot_templates.loaded_template[
+                            "drillstop_Axes_plot"
+                        ].get("label")
+                        or "drillstop like " + self.ms.settingsdict["secplotdrillstop"]
+                    )
+                    _painters.paint_drill_stop(
+                        self.figure,
+                        self.drillstops,
+                        self.secplot_templates.loaded_template,
+                        drillstop_label,
+                    )
 
                 # write obsid at top of each stratigraphy floating bar plot, also plot empty bars to show drillings without stratigraphy data
                 if (
@@ -933,7 +769,16 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
                         and len(self.ms.settingsdict["secplotdates"]) > 0
                     )
                 ):
-                    self.write_obsid(self.ms.settingsdict["secplotlabelsplotted"])
+                    _painters.paint_obsids(
+                        self.figure,
+                        self.z_data,
+                        self.obsids_x_position,
+                        self.secplot_templates.loaded_template,
+                        self.barwidth,
+                        plot_stratigraphy=self.ms.settingsdict["stratigraphyplotted"],
+                        plot_hydrology=self.ms.settingsdict["secplothydrologyplotted"],
+                        plot_labels=self.ms.settingsdict["secplotlabelsplotted"],
+                    )
 
             else:
                 self.barwidth = 0.0
@@ -941,20 +786,76 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
             # if the line layer obs_lines is selected, then try to plot seismic data if there are any
             if self.figure.line_layer and self.figure.line_layer.name() == "obs_lines":
                 if len(self.obs_lines_plot_data) > 0:
-                    self.plot_obs_lines_data()
+                    _painters.paint_obs_lines_data(
+                        self.figure,
+                        self.obs_lines_plot_data,
+                        self.y1_column,
+                        self.y2_column,
+                        self.y3_column,
+                    )
 
             # if there are any DEMs selected, try to plot them
             if len(self.ms.settingsdict["secplotselectedDEMs"]) > 0:
-                self.plot_dems()
+                _painters.paint_dems(
+                    self.figure,
+                    self.dem_layers,
+                    self.ms.settingsdict,
+                    self.secplot_templates.loaded_template,
+                    self.barwidth,
+                    iface=self.iface,
+                )
 
-            self._configure_axes()
+            _painters.configure_axes(
+                self.figure,
+                self.secplot_templates.loaded_template,
+                self.barwidth,
+            )
 
-            # labels, grid, legend etc.
-            self.finish_plot()
-            self.save_settings()
+            # Build legend manager and assign to figure so detached callbacks can use it.
+            legend_manager = SectionPlotLegendManager.from_template(
+                self.secplot_templates.loaded_template
+            )
+            self.figure.legend_manager = legend_manager
+
+            _painters.finish_plot(
+                self.figure,
+                self.secplot_templates.loaded_template,
+                self.ms.settingsdict,
+                legend_manager,
+            )
+
+            if self.width_of_plot.isChecked():
+                self.ms.settingsdict["secplotwidthofplot"] = True
+                self.update_barwidths_from_plot(self.figure.ax_main)
+            else:
+                self.ms.settingsdict["secplotwidthofplot"] = False
+
+            self.update_plot_size()
+            self.attach_signals(self.figure)
+            self.figure.canvas.draw_idle()
+            self.tab_widget.setCurrentIndex(0)
+            plt.close(self.figure)
+
+            # Persist all settings.
+            _save_bound_settings(self.ms)
+            self.ms.save_settings("secplotdates")
+            self.ms.save_settings("secplotlocation")
+            self.ms.save_settings("secplotselectedDEMs")
+            self.ms.save_settings("stratigraphyplotted")
+            self.ms.save_settings("screensplotmode")
+            self.ms.save_settings("secplotwidthofplot")
+            self.ms.save_settings("secplotlayertextalignment")
+            self.ms.save_settings("secplot_tem_model_name")
+            self.ms.save_settings("secplot_images_images")
+            loaded_template = copy.deepcopy(self.secplot_templates.loaded_template)
+            common_utils.save_stored_settings(
+                self.ms, loaded_template, "secplot_loaded_template"
+            )
+            self.ms.save_settings("secplot_templates")
+
             self.dbconnection.closedb()
             self.dbconnection = None
-        except KeyError as e:
+        except KeyError:
             common_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
                     "SectionPlot",
@@ -983,125 +884,9 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
         else:
             common_utils.stop_waiting_cursor()  # now this long process is done and the cursor is back as normal
 
-    def _load_ui_settings(self):
-        """Read all UI widget values into self.ms.settingsdict."""
-        self.ms.settingsdict["secplotwlvltab"] = str(self.wlvltable.currentText())
-        temporarystring = ru(self.datetime.toPlainText())  # this needs some cleanup
-        try:
-            self.ms.settingsdict["secplotdates"] = [
-                x for x in temporarystring.replace("\r", "").split("\n") if x.strip()
-            ]
-        except TypeError as e:
-            self.ms.settingsdict["secplotdates"] = ""
-        self.ms.settingsdict["secplottext"] = self.textcol_combo_box.currentText()
-        self.ms.settingsdict["secplotbw"] = self.barwidthdouble_spin_box.value()
-        self.ms.settingsdict["secplotdrillstop"] = self.drillstop.text()
-        self.ms.settingsdict["stratigraphyplotted"] = self.plot_stratigraphy.isChecked()
-        self.ms.settingsdict["secplothydrologyplotted"] = (
-            self.hydrology_radio_button.isChecked()
-        )
-        self.ms.settingsdict["screensplotmode"] = _SCREEN_MODE_FROM_DISPLAY.get(
-            self.screens_mode_combo.currentText(), "none"
-        )
-        self.ms.settingsdict["screenwidthfactor"] = float(
-            self.screen_width_factor_spin.value()
-        )
-        self.ms.settingsdict["secplotlabelsplotted"] = self.labels_check_box.isChecked()
-        self.ms.settingsdict["secplotlegendplotted"] = self.create_legend.isChecked()
-        self.get_dem_selection()
-        self.ms.settingsdict["secplotselectedDEMs"] = self.rasterselection
-        self.ms.settingsdict["secplotdem_sampling_distance"] = (
-            self.dem_sampling_distance.value()
-        )
-        self.ms.settingsdict["secplot_apply_graded_dems"] = (
-            self.secplot_apply_graded_dems.isChecked()
-        )
-        self.ms.settingsdict["secplot_grading_depth"] = (
-            self.secplot_grading_depth.value()
-        )
-        self.ms.settingsdict["secplot_grading_num_layers"] = (
-            self.secplot_grading_num_layers.value()
-        )
-        self.ms.settingsdict["secplot_grading_max_opacity"] = (
-            self.secplot_grading_max_opacity.value()
-        )
-        self.ms.settingsdict["secplot_grading_min_opacity"] = (
-            self.secplot_grading_min_opacity.value()
-        )
-        self.ms.settingsdict["secplot_tem_model_name"] = (
-            self.tem_model_name.currentText()
-        )
-        self.ms.settingsdict["secplot_tem_colormap"] = self.tem_colormap.currentText()
-        self.ms.settingsdict["secplot_tem_norm"] = self.tem_norm.currentText()
-        self.ms.settingsdict["secplot_tem_shading"] = self.tem_shading.currentText()
-        self.ms.settingsdict["secplot_tem_vmin"] = self.tem_vmin.text()
-        self.ms.settingsdict["secplot_tem_vmax"] = self.tem_vmax.text()
-        self.ms.settingsdict["secplot_tem_snap"] = self.tem_snap.isChecked()
-        self.ms.settingsdict["secplot_tem_data_fit"] = self.tem_data_fit.isChecked()
-        self.ms.settingsdict["secplot_tem_rasterized"] = self.tem_rasterized.isChecked()
-        self.ms.settingsdict["secplot_tem_edgecolors"] = self.tem_edgecolors.text()
-        self.ms.settingsdict["secplot_tem_alpha_above_doi"] = (
-            self.tem_alpha_above_doi.value()
-        )
-        self.ms.settingsdict["secplot_tem_alpha_below_doi"] = (
-            self.tem_alpha_below_doi.value()
-        )
-        self.ms.settingsdict["secplot_images_images"] = json.dumps(
-            [item.text() for item in self.images_images.selectedItems()]
-        )
-        self.ms.settingsdict["secplot_images_alpha"] = self.images_alpha.text()
-        self.ms.settingsdict["secplot_images_zorder"] = self.images_zorder.text()
-        self.ms.settingsdict["secplot_images_clip"] = self.images_clip.isChecked()
-        if self.text_align_center.isChecked():
-            self.ms.settingsdict["secplotlayertextalignment"] = "center"
-        else:
-            self.ms.settingsdict["secplotlayertextalignment"] = "edge"
-
-    def _configure_axes(self):
-        """Set xlim and ylim on the main axes from template or auto-calculated values."""
-        _painters.configure_axes(
-            self.figure,
-            self.secplot_templates.loaded_template,
-            self.barwidth,
-        )
-
-    def save_settings(
-        self,
-    ):  # This is a quick-fix, should use the midvsettings class instead.
-        # Persist all declaratively-bound settings keys via settings.py.
-        _save_bound_settings(self.ms)
-
-        # Manually-handled keys: not covered by the declarative bindings
-        # because they require special logic (lists, radio pairs, mapped combos,
-        # template serialisation, or are simply not simple widget values).
-        self.ms.save_settings("secplotdates")
-        self.ms.save_settings("secplotlocation")
-        self.ms.save_settings("secplotselectedDEMs")
-        self.ms.save_settings("stratigraphyplotted")
-        self.ms.save_settings("screensplotmode")
-        self.ms.save_settings("secplotwidthofplot")
-        self.ms.save_settings("secplotlayertextalignment")
-        self.ms.save_settings("secplot_tem_model_name")
-        self.ms.save_settings("secplot_images_images")
-
-        loaded_template = copy.deepcopy(self.secplot_templates.loaded_template)
-        # Don't save plot min/max for next plot. If a specific is to be used, it should be set in a saved template file. // Testing if
-        # loaded_template["Axes_set_xlim"] = None
-        # loaded_template["Axes_set_ylim"] = None
-        common_utils.save_stored_settings(
-            self.ms, loaded_template, "secplot_loaded_template"
-        )
-        self.ms.save_settings("secplot_templates")
-
     def remove_previous_figure(self):
         if self.figure is None:
             return
-        # try:
-        #    self.previous_title = self.figure.ax_main.axes.get_title()
-        #    self.previous_xaxis_label = self.figure.ax_main.axes.get_xlabel()
-        #    self.previous_yaxis_label = self.figure.ax_main.axes.get_ylabel()
-        # except Exception:
-        #    pass
 
         previous_canvas = self.figure.canvas
         previous_toolbar = previous_canvas.toolbar
@@ -1176,265 +961,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
             self.figure, callback=self.detach_figure
         )
         self.figure.reverse_section_button = ReverseSectionButton(self.figure)
-
-    def plot_dems(self):
-        _painters.paint_dems(
-            self.figure,
-            self.dem_layers,
-            self.ms.settingsdict,
-            self.secplot_templates.loaded_template,
-            self.barwidth,
-            iface=self.iface,
-        )
-
-    def plot_graded_dems(
-        self,
-        temp_memorylayer,
-        sectionlinelayer,
-        xarray,
-        dem_data,
-        layername,
-        dem_layername,
-        alpha_max=0.5,
-        alpha_min=0,
-        number_of_plots=20,
-        graded_depth_m=2,
-        skip_labels=None,
-    ):
-        _painters.paint_graded_dems(
-            self.figure,
-            temp_memorylayer,
-            sectionlinelayer,
-            xarray,
-            dem_data,
-            layername,
-            dem_layername,
-            alpha_max=alpha_max,
-            alpha_min=alpha_min,
-            number_of_plots=number_of_plots,
-            graded_depth_m=graded_depth_m,
-            skip_labels=skip_labels,
-            iface=self.iface,
-        )
-
-    def plot_drill_stop(self):
-        drillstop_label = (
-            self.secplot_templates.loaded_template["drillstop_Axes_plot"].get("label")
-            or "drillstop like " + self.ms.settingsdict["secplotdrillstop"]
-        )
-        _painters.paint_drill_stop(
-            self.figure,
-            self.drillstops,
-            self.secplot_templates.loaded_template,
-            drillstop_label,
-        )
-
-    def plot_tem(self):
-        _painters.paint_tem(
-            self.figure,
-            self.dbconnection,
-            self.ms.settingsdict,
-            self.secplot_templates.loaded_template,
-        )
-
-    def plot_images(self):
-        _painters.paint_images(
-            self.figure,
-            self.dbconnection,
-            self.ms.settingsdict,
-        )
-
-    def plot_bars(
-        self, bars_dict, color_dict, color_key="color", hatch_dict=None, barwidth=1
-    ):
-        _painters.paint_bars(
-            self.figure,
-            bars_dict,
-            self.secplot_templates.loaded_template,
-            color_dict,
-            color_key=color_key,
-            hatch_dict=hatch_dict,
-            barwidth=barwidth,
-        )
-
-    def plot_specific_water_level(self):
-        _painters.paint_specific_water_level(
-            self.figure,
-            self.dbconnection,
-            self.ms.settingsdict,
-            self.obsids_x_position,
-            self.waterlevel_lineplot,
-        )
-
-    def plot_obs_lines_data(self):
-        _painters.paint_obs_lines_data(
-            self.figure,
-            self.obs_lines_plot_data,
-            self.y1_column,
-            self.y2_column,
-            self.y3_column,
-        )
-
-    def plot_water_level(self):
-        _painters.paint_water_level(
-            self.figure,
-            self.dbconnection,
-            self.ms.settingsdict,
-            self.obsids_x_position,
-            self.waterlevel_lineplot,
-            plot_specific_dates=self.specific_dates_groupbox.isChecked(),
-        )
-        if self.interactive_groupbox.isChecked():
-            self.plot_water_level_interactive()
-
-    def plot_water_level_interactive(self):
-        placeholders = self.dbconnection.placeholders(len(self.obsids_x_position))
-        sql = self.dbconnection.sql_ident(
-            f"SELECT date_time, level_masl, obsid FROM {{t}} WHERE obsid IN ({placeholders})",
-            t=self.ms.settingsdict["secplotwlvltab"],
-        )
-        df = pd.read_sql(
-            sql,
-            self.dbconnection.conn,
-            index_col="date_time",
-            coerce_float=True,
-            params=tuple(self.obsids_x_position.keys()),
-            parse_dates={"date_time": {"format": "mixed"}},
-            columns=None,
-            chunksize=None,
-        )
-        if df.empty:
-            common_utils.MessagebarAndLog.info(
-                log_msg=QCoreApplication.translate(
-                    "SectionPlot",
-                    "Interactive plot: No waterlevels found for chosen obsids in %s.",
-                )
-                % self.ms.settingsdict["secplotwlvltab"]
-            )
-            return
-        if isinstance(df, pd.Series):
-            df = df.to_frame()
-
-        resample_kwargs = {"how": self.resample_how.text()}
-        if self.resample_offset.text():
-            if pd.__version__ < "1.1.0":
-                resample_kwargs["base"] = int(self.resample_offset.text())
-            else:
-                resample_kwargs["offset"] = self.resample_offset.text()
-
-        # First resample each obsid to overcome duplicate date_times
-        df = resample(
-            df.groupby(by=["obsid"]),
-            "level_masl",
-            self.resample_rule.text(),
-            resample_kwargs,
-        )
-        df = df.apply(lambda x: x)
-
-        # Then pivot and resample to get a complete date_time index without missing datetimes.
-        df = df.reset_index()
-        df = df.pivot(index="date_time", columns="obsid", values="level_masl")
-        df = resample(df, None, self.resample_rule.text(), resample_kwargs)
-
-        if self.skip_nan.isChecked():
-            df = df.dropna()
-        self.figure.df = df
-
-        # The slider should update after user pan.
-        valuemin = 0
-        valuemax = len(df) - 1
-        valinit = valuemin
-        # valstep = 1
-        self.figure.ax_wlvl = self.figure.add_subplot(self.gridspec[0:1, 1:2])
-        self.figure.ax_wlvl.midv_axes_name = "wlvl_axes"
-        color_styles = set()
-        linestyles = ["-", "--", "-.", ":"]
-        df.plot(ax=self.figure.ax_wlvl, picker=2)
-        for line in self.figure.ax_wlvl.lines:
-            k = (line.get_color(), line.get_linestyle())
-
-            for ls in linestyles:
-                if k in color_styles:
-                    k = (line.get_color(), ls)
-                else:
-                    line.set_color(k[0])
-                    line.set_linestyle(k[1])
-                    color_styles.add(k)
-                    break
-        self.figure.ax_wlvl.legend()
-
-        self.figure.ax_wlvl.set_xlabel("")
-        self.figure.ax_wlvl.set_ylabel("")
-
-        for label in self.figure.ax_wlvl.yaxis.get_ticklabels():
-            label.set_fontsize(
-                **self.secplot_templates.loaded_template["ticklabels_Text_set_fontsize"]
-            )
-
-        for label in self.figure.ax_wlvl.xaxis.get_ticklabels():
-            label.set_fontsize(
-                **self.secplot_templates.loaded_template["ticklabels_Text_set_fontsize"]
-            )
-
-        self.figure.ax_slider = self.figure.add_subplot(self.gridspec[1:2, 1:2])
-        self.figure.ax_slider.midv_axes_name = "sliderax"
-        self.figure.date_slider = Slider(
-            self.figure.ax_slider,
-            "Date",
-            valuemin,
-            valuemax,
-            valinit=valinit,
-            valfmt="%1.0f",
-        )
-
-        self.figure.axvline = self.figure.ax_wlvl.axvline(
-            df_idx_as_datetime(df, valinit), color="black", linewidth=2, linestyle="--"
-        )
-
-        current_idx = slider_val_to_idx(self.figure.date_slider.val)
-        x_wl, wl = self.get_water_levels_from_df(
-            df, current_idx, self.obsids_x_position, self.figure
-        )
-        self.waterlevel_lineplot(
-            x_wl,
-            wl,
-            longdateformat(df_idx_as_datetime(df, current_idx)),
-            interactive_line=True,
-        )
-
-    def finish_plot(self):
-        # Build legend manager and assign to figure so detached callbacks can use it
-        legend_manager = SectionPlotLegendManager.from_template(
-            self.secplot_templates.loaded_template
-        )
-        self.figure.legend_manager = legend_manager
-
-        _painters.finish_plot(
-            self.figure,
-            self.secplot_templates.loaded_template,
-            self.ms.settingsdict,
-            legend_manager,
-        )
-
-        if self.width_of_plot.isChecked():
-            self.ms.settingsdict["secplotwidthofplot"] = True
-            self.update_barwidths_from_plot(self.figure.ax_main)
-        else:
-            self.ms.settingsdict["secplotwidthofplot"] = False
-
-        self.update_plot_size()
-        self.attach_signals(self.figure)
-        self.figure.canvas.draw_idle()
-        self.tab_widget.setCurrentIndex(0)
-
-        """
-        The plot is shown in the canvas.
-        Now close the figure to prevent it from being plotted again by plt.show() when choosing tsplot or xyplot
-        The plt.close(self.secfig) closes reference to self.secfig
-        and it will not be plotted by plt.show() - but the plot exists in the canvas
-        Please note, this do not work completely as expected under windows.
-        """
-        plt.close(self.figure)  # this closes reference to self.secfig
 
     # ----- Methods used by the gui -----
     def detach_figure(self, button):
@@ -1566,8 +1092,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
         event.accept()
 
     def set_location(self):  # not ready
-        dockarea = self.parent.dockWidgetArea(self)
-        self.ms.settingsdict["secplotlocation"] = dockarea
+        self.ms.settingsdict["secplotlocation"] = self.parent.dockWidgetArea(self)
 
     # ----- Methods used by each figure instance as long as the figure is live -----
     def flash_section_line_position(self, event):
@@ -1657,13 +1182,9 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
                 self.secplot_templates.loaded_template
             )
             legend_manager.rebuild(leg_ax, fig.plot_handles)
-            # if from_navbar:
-            #    with self.temporary_deactivate_update_legend(fig): # See docstring for self.temporary_deactivate_update_legend
-            #        fig.canvas.draw()
-            #    #pass
 
     def update_barwidths_from_plot(self, event):
-        if not self.width_of_plot.isChecked():  # , self.figure.obsids_x_position)):
+        if not self.width_of_plot.isChecked():
             return
 
         try:
@@ -1728,20 +1249,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
         self.figure.plot_handles.append(lineplot)
 
     def upload_qgis_vector_layer(self, line_layer, line_feature):
-        """Upload layer (QgsMapLayer) (optionaly only selected values ) into current DB,
-        in self.temptable_name (string) with desired SRID (default layer srid if None) - user can desactivate mapinfo compatibility Date importation. Return True if operation succesfull or false in all other cases
-        """
-
-        # Upload a selected feature into a table. If spatialite, make it a memory table, if postgis make it temporary.
-        # upload two fields only, one id field set to dummy and one geometry field.
-        """
-        qgis geometry types:
-        0 = MULTIPOINT,
-        1 = MULTILINESTRING,
-        2 = MULTIPOLYGON,
-        3 = UnknownGeometry,
-        4 = ?
-        """
+        """Upload a selected line feature into a temporary DB table."""
         srid = line_layer.crs().postgisSrid()
         self.temptable_name = self.dbconnection.create_temporary_table_for_import(
             self.temptable_name, ["dummyfield TEXT"], ["geometry", "LINESTRING", srid]
@@ -1760,28 +1268,118 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
         )
         self.dbconnection.execute(sql, all_args=[(geom_linestring.asWkt(), srid)])
 
-    def write_layer_text(self):
-        _painters.paint_layer_text(
-            self.figure,
-            self.layer_texts,
-            self.ms.settingsdict["secplottext"],
-            self.ms.settingsdict["secplotlayertextalignment"],
-            self.barwidth,
-            self.secplot_templates.loaded_template,
+    def plot_water_level_interactive(self):
+        placeholders = self.dbconnection.placeholders(len(self.obsids_x_position))
+        sql = self.dbconnection.sql_ident(
+            f"SELECT date_time, level_masl, obsid FROM {{t}} WHERE obsid IN ({placeholders})",
+            t=self.ms.settingsdict["secplotwlvltab"],
+        )
+        df = pd.read_sql(
+            sql,
+            self.dbconnection.conn,
+            index_col="date_time",
+            coerce_float=True,
+            params=tuple(self.obsids_x_position.keys()),
+            parse_dates={"date_time": {"format": "mixed"}},
+            columns=None,
+            chunksize=None,
+        )
+        if df.empty:
+            common_utils.MessagebarAndLog.info(
+                log_msg=QCoreApplication.translate(
+                    "SectionPlot",
+                    "Interactive plot: No waterlevels found for chosen obsids in %s.",
+                )
+                % self.ms.settingsdict["secplotwlvltab"]
+            )
+            return
+        if isinstance(df, pd.Series):
+            df = df.to_frame()
+
+        resample_kwargs = {"how": self.resample_how.text()}
+        if self.resample_offset.text():
+            if pd.__version__ < "1.1.0":
+                resample_kwargs["base"] = int(self.resample_offset.text())
+            else:
+                resample_kwargs["offset"] = self.resample_offset.text()
+
+        # First resample each obsid to overcome duplicate date_times
+        df = resample(
+            df.groupby(by=["obsid"]),
+            "level_masl",
+            self.resample_rule.text(),
+            resample_kwargs,
+        )
+        df = df.apply(lambda x: x)
+
+        # Then pivot and resample to get a complete date_time index without missing datetimes.
+        df = df.reset_index()
+        df = df.pivot(index="date_time", columns="obsid", values="level_masl")
+        df = resample(df, None, self.resample_rule.text(), resample_kwargs)
+
+        if self.skip_nan.isChecked():
+            df = df.dropna()
+        self.figure.df = df
+
+        # The slider should update after user pan.
+        valuemin = 0
+        valuemax = len(df) - 1
+        valinit = valuemin
+        self.figure.ax_wlvl = self.figure.add_subplot(self.gridspec[0:1, 1:2])
+        self.figure.ax_wlvl.midv_axes_name = "wlvl_axes"
+        color_styles = set()
+        linestyles = ["-", "--", "-.", ":"]
+        df.plot(ax=self.figure.ax_wlvl, picker=2)
+        for line in self.figure.ax_wlvl.lines:
+            k = (line.get_color(), line.get_linestyle())
+
+            for ls in linestyles:
+                if k in color_styles:
+                    k = (line.get_color(), ls)
+                else:
+                    line.set_color(k[0])
+                    line.set_linestyle(k[1])
+                    color_styles.add(k)
+                    break
+        self.figure.ax_wlvl.legend()
+
+        self.figure.ax_wlvl.set_xlabel("")
+        self.figure.ax_wlvl.set_ylabel("")
+
+        for label in self.figure.ax_wlvl.yaxis.get_ticklabels():
+            label.set_fontsize(
+                **self.secplot_templates.loaded_template["ticklabels_Text_set_fontsize"]
+            )
+
+        for label in self.figure.ax_wlvl.xaxis.get_ticklabels():
+            label.set_fontsize(
+                **self.secplot_templates.loaded_template["ticklabels_Text_set_fontsize"]
+            )
+
+        self.figure.ax_slider = self.figure.add_subplot(self.gridspec[1:2, 1:2])
+        self.figure.ax_slider.midv_axes_name = "sliderax"
+        self.figure.date_slider = Slider(
+            self.figure.ax_slider,
+            "Date",
+            valuemin,
+            valuemax,
+            valinit=valinit,
+            valfmt="%1.0f",
         )
 
-    def write_obsid(
-        self, plot_labels=True
-    ):  # annotation, and also empty bars to show drillings without stratigraphy data
-        _painters.paint_obsids(
-            self.figure,
-            self.z_data,
-            self.obsids_x_position,
-            self.secplot_templates.loaded_template,
-            self.barwidth,
-            plot_stratigraphy=self.ms.settingsdict["stratigraphyplotted"],
-            plot_hydrology=self.ms.settingsdict["secplothydrologyplotted"],
-            plot_labels=plot_labels,
+        self.figure.axvline = self.figure.ax_wlvl.axvline(
+            df_idx_as_datetime(df, valinit), color="black", linewidth=2, linestyle="--"
+        )
+
+        current_idx = slider_val_to_idx(self.figure.date_slider.val)
+        x_wl, wl = self.get_water_levels_from_df(
+            df, current_idx, self.obsids_x_position, self.figure
+        )
+        self.waterlevel_lineplot(
+            x_wl,
+            wl,
+            longdateformat(df_idx_as_datetime(df, current_idx)),
+            interactive_line=True,
         )
 
     def attach_signals(self, fig):
@@ -1796,13 +1394,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
         fig.update_legend_cid = fig.canvas.mpl_connect(
             "draw_event", lambda x: self.update_legend(True, fig)
         )
-        # Connecting to draw_event instead, but if it's too slow this one also works:
-        # try:
-        #    fig.canvas.toolbar._actions['edit_parameters'].triggered.connect(lambda x: self.update_legend(True, fig))
-        #    pass
-        # except Exception:
-        #    common_utils.MessagebarAndLog.info(log_msg=ru(
-        #        QCoreApplication.translate('SectionPlot', 'Programming error: Connection to qaction edit_parameters failed: %s')) % str(traceback.format_exc()))
 
     @contextmanager
     def temporary_deactivate_update_legend(self, fig):
@@ -1866,10 +1457,6 @@ def nan_helper(y):
     return np.isnan(y), lambda z: z.nonzero()[0]
 
 
-# slider_val_to_idx, get_length_map, fill_empty_columns are re-exported from data.py
-# via the import block near the top of this file.
-
-
 def tabwidget_resize(tabwidget):
     current_index = tabwidget.currentIndex()
     for tabnr in range(tabwidget.count()):
@@ -1880,7 +1467,3 @@ def tabwidget_resize(tabwidget):
     tab = tabwidget.currentWidget()
     tab.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
     tab.adjustSize()
-
-
-# get_length_map and fill_empty_columns are re-exported from data.py
-# via the import block near the top of this file.

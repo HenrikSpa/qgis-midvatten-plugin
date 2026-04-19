@@ -65,6 +65,7 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
 
         dbconnection = db_utils.DbConnectionManager()
 
+        report_data = None
         for feature in observations:
             attributes = feature.attributes()
             obsid = attributes[kolumnindex]
@@ -294,6 +295,6 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
                     rpt += '    </td><td align="right">'.join([ru(x) for x in sublist])
                     rpt += "  </td></tr>\n"
             except Exception:
-                log.warning("here was an error: %s" % sublist)
+                log.warning("here was an error: %s", sublist)
             f.write(rpt)
         f.write("\n</table><p></p><p></p>")

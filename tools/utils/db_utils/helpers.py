@@ -284,17 +284,16 @@ def calculate_median_value(
         ph = dbconnection.placeholder()
         col_ident = dbconnection.ident(column)
         table_ident = dbconnection.ident(table)
-        sql, arg_count = dbconnection.median_sql(col_ident, table_ident, ph)
+        sql, execute_args = dbconnection.median_sql(col_ident, table_ident, ph, obsid)
         # PostgreSQL's median aggregate requires at least one non-null value to exist
         # (the AVG-based subquery SQLite uses handles empty sets natively).
-        if arg_count == 1:
+        if dbconnection.is_postgresql():
             if not sql_load_fr_db(
                 f"SELECT {col_ident} FROM {table_ident} WHERE obsid = {ph} AND {col_ident} IS NOT NULL LIMIT 1",
                 dbconnection,
                 execute_args=(obsid,),
             )[1]:
                 return None
-        execute_args = tuple([obsid] * arg_count)
         connection_ok, median_value = sql_load_fr_db(
             sql, dbconnection=dbconnection, execute_args=execute_args
         )

@@ -398,9 +398,9 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
                 c1=connection_columns[0].replace(" ", "_"),
                 c2=connection_columns[1],
             )
-            for cache_row in cache_rows:
-                dbconnection.execute(sql, args=cache_row)
-            dbconnection.commit()
+            with dbconnection.transaction():
+                for cache_row in cache_rows:
+                    dbconnection.execute(sql, args=cache_row)
         finally:
             dbconnection.closedb()
         common_utils.MessagebarAndLog.info(

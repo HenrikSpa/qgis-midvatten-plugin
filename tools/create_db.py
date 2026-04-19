@@ -208,34 +208,35 @@ class NewDb:
             for stmt in " ".join(sql_lines).split(";")
             if stmt.strip()
         ]
-        for line in sql_lines:
-            sql = self.replace_words(line, replace_word_replace_with)
-            try:
-                dbconnection.execute(sql)
-            except Exception:
-                log.debug(str(sql))
-                raise
+        # VACUUM must run outside the transaction block.
+        with dbconnection.transaction():
+            for line in sql_lines:
+                sql = self.replace_words(line, replace_word_replace_with)
+                try:
+                    dbconnection.execute(sql)
+                except Exception:
+                    log.debug(str(sql))
+                    raise
 
-        if delete_srids:
-            db_utils.delete_srids(dbconnection, epsg_id)
+            if delete_srids:
+                db_utils.delete_srids(dbconnection, epsg_id)
 
-        self.insert_datadomains(set_locale, dbconnection)
+            self.insert_datadomains(set_locale, dbconnection)
 
-        execute_sqlfile(
-            definitions_path("insert_obs_points_triggers.sql"), dbconnection
-        )
+            execute_sqlfile(
+                definitions_path("insert_obs_points_triggers.sql"), dbconnection
+            )
 
-        execute_sqlfile(definitions_path("qgis3_obsp_fix.sql"), dbconnection)
+            execute_sqlfile(definitions_path("qgis3_obsp_fix.sql"), dbconnection)
 
-        self.add_metadata_to_about_db(
-            dbconnection,
-            w_levels_logger_timezone=w_levels_logger_timezone,
-            w_levels_timezone=w_levels_timezone,
-        )
+            self.add_metadata_to_about_db(
+                dbconnection,
+                w_levels_logger_timezone=w_levels_logger_timezone,
+                w_levels_timezone=w_levels_timezone,
+            )
 
         # FINISHED WORKING WITH THE DATABASE, CLOSE CONNECTIONS
 
-        dbconnection.commit()
         dbconnection.vacuum()
         dbconnection.commit_and_closedb()
 

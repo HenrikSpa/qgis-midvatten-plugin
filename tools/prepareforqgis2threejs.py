@@ -62,9 +62,9 @@ class PrepareForQgis2Threejs:
             del self.symbolcolors_dict[key]
         self.root = QgsProject.instance().layerTreeRoot()
         self.remove_views()
-        self.drop_db_views()
-        self.create_db_views()
-        self.dbconnection.commit()
+        with self.dbconnection.transaction():
+            self.drop_db_views()
+            self.create_db_views()
         self.add_layers()
         self.dbconnection.closedb()
 

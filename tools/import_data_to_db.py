@@ -885,7 +885,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             t=temptable_name,
             c=column,
         )
-        dbconnection.execute_safe(sql)
+        dbconnection.execute(sql)
 
     def import_foreign_keys(
         self,

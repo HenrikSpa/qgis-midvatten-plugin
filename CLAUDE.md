@@ -47,7 +47,7 @@ ruff format .
 
 Strategy pattern with abstract base + concrete backends:
 
-- **`backends/base.py`** — `Backend` ABC: common interface (`execute`, `execute_and_fetchall`, `commit`, `closedb`, `execute_safe`)
+- **`backends/base.py`** — `Backend` ABC: common interface (`execute`, `execute_and_fetchall`, `commit`, `closedb`)
 - **`backends/sqlite.py`** — `SQLiteBackend` (SpatiaLite, `?` placeholders)
 - **`backends/postgresql.py`** — `PostgreSQLBackend` (PostGIS, `%s` placeholders, `psycopg2.sql.Composable` support)
 - **`connection.py`** — `DbConnectionManager` facade and `create_backend()` factory
@@ -90,7 +90,7 @@ Each feature is a standalone module. Major categories:
 Never build SQL queries with Python string concatenation. Always use:
 - `ident(name)` from `db_utils/dialect.py` to safely quote table/column identifiers
 - DB-API parameter binding (`?` for SQLite, `%s` for PostgreSQL) for values
-- `execute_safe()` which handles both `str` and `psycopg2.sql.Composable`
+- `execute()` which handles both `str` and `psycopg2.sql.Composable`
 
 ### Database Schema
 

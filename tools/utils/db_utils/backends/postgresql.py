@@ -145,6 +145,10 @@ class PostgreSQLBackend(Backend):
                     err = str(e)
                 finally:
                     _clear_ssl_temp_certs_if_any(new_expanded_conn_info)
+        # Cleanup fires twice on the retry path (inner finally per retry,
+        # then this outer one for the original info). Safe as long as each
+        # retry uses a distinct cert path; if they ever share, the outer
+        # cleanup could delete a cert still in use.
         finally:
             _clear_ssl_temp_certs_if_any(expanded_conn_info)
         if last_error:
@@ -223,11 +227,11 @@ class PostgreSQLBackend(Backend):
         return temptable_name
 
     def drop_temporary_table(self, temptable_name: str) -> None:
-        self.execute_safe(self.sql_ident("DROP TABLE IF EXISTS {t}", t=temptable_name))
+        self.execute(self.sql_ident("DROP TABLE IF EXISTS {t}", t=temptable_name))
 
     def drop_view(self, view_name: str) -> None:
         try:
-            self.execute_safe(
+            self.execute(
                 psycopg2.sql.SQL("DROP VIEW IF EXISTS {}").format(
                     psycopg2.sql.Identifier(view_name)
                 )
@@ -324,9 +328,11 @@ class PostgreSQLBackend(Backend):
         # PostgreSQL enforces foreign keys natively; this is a no-op.
         pass
 
-    def median_sql(self, col_ident: str, table_ident: str, ph: str) -> tuple:
+    def median_sql(
+        self, col_ident: str, table_ident: str, ph: str, obsid: Any
+    ) -> tuple[str, tuple]:
         sql = f"SELECT median({col_ident}) FROM {table_ident} t1 WHERE obsid = {ph};"
-        return sql, 1
+        return sql, (obsid,)
 
     def backup(self, dbconnection: Any) -> None:
         from midvatten.tools.utils.message_utils import MessagebarAndLog

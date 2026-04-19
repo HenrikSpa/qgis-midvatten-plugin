@@ -4,6 +4,7 @@ Connection factory and DbConnectionManager facade.
 
 import ast
 import os
+from contextlib import contextmanager
 from typing import Any, Optional
 
 import qgis.core
@@ -114,7 +115,7 @@ class DbConnectionManager:
         return self._backend.connect2db()
 
     def execute(
-        self, sql: str, args: Optional[Any] = None, all_args: Optional[Any] = None
+        self, sql: Any, args: Optional[Any] = None, all_args: Optional[Any] = None
     ) -> None:
         a = args if args is not None else all_args
         # One-row list: all_args=[(v1,..)] -> pass (v1,..); do not unwrap tuple ("P1",)
@@ -139,6 +140,42 @@ class DbConnectionManager:
 
     def commit_and_closedb(self) -> None:
         self._backend.commit_and_closedb()
+
+    @contextmanager
+    def transaction(self):
+        """Run a block of statements atomically.
+
+        PostgreSQL connections run in AUTOCOMMIT by default (preserves
+        VACUUM compatibility and avoids "idle in transaction" snapshots);
+        this context manager temporarily leaves AUTOCOMMIT so the block
+        becomes a single transaction.
+
+        Contract:
+          - Do NOT nest transaction() blocks.
+          - Do NOT call .commit() or .rollback() from inside the block.
+          - Do NOT run VACUUM or other non-transactional statements inside.
+        """
+        conn = self.conn
+        if self.is_postgresql():
+            # psycopg2 is optional; import lazily so SQLite-only installs work.
+            import psycopg2.extensions
+
+            conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_READ_COMMITTED)
+            try:
+                yield self
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                raise
+            finally:
+                conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+        else:
+            try:
+                yield self
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                raise
 
     def closedb(self) -> None:
         self._backend.closedb()
@@ -193,9 +230,6 @@ class DbConnectionManager:
     def in_clause(self, values: Any) -> tuple:
         return self._backend.in_clause(values)
 
-    def execute_safe(self, sql: Any, args: Optional[Any] = None) -> None:
-        self._backend.execute_safe(sql, args=args)
-
     def drop_view(self, view_name: str) -> None:
         self._backend.drop_view(view_name)
 
@@ -241,8 +275,10 @@ class DbConnectionManager:
     def activate_foreign_keys(self, activated: bool) -> None:
         self._backend.activate_foreign_keys(activated)
 
-    def median_sql(self, col_ident: str, table_ident: str, ph: str) -> tuple:
-        return self._backend.median_sql(col_ident, table_ident, ph)
+    def median_sql(
+        self, col_ident: str, table_ident: str, ph: str, obsid: Any
+    ) -> tuple[str, tuple]:
+        return self._backend.median_sql(col_ident, table_ident, ph, obsid)
 
     def backup(self) -> None:
         self._backend.backup(self)

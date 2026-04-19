@@ -4,9 +4,13 @@ SQLiteBackend and PostgreSQLBackend; callers use is_sqlite()/is_postgresql()
 or the common interface only.
 """
 
+import os
+import tempfile
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Sequence
 from typing import Any, Optional, Union
+
+from midvatten.tools.utils.file_utils import write_printlist_to_file
 
 # Optional to avoid hard dependency on psycopg2 at import
 try:
@@ -50,17 +54,22 @@ class Backend(ABC):
 
     # --- Execution (single sql string, args optional) ---
 
-    def execute(self, sql: str, args: Optional[Sequence[Any]] = None) -> None:
-        """Execute a single SQL statement. No commit."""
+    def execute(
+        self,
+        sql: Union[str, Composable],
+        args: Optional[Sequence[Any]] = None,
+    ) -> None:
+        """Execute a single SQL statement (string or, for PostgreSQL,
+        psycopg2.sql.Composable). No commit. Logs and re-raises on error."""
         if args is None:
             try:
-                self.cursor.execute(sql)
+                self.cursor.execute(sql)  # type: ignore[arg-type]
             except Exception as e:
                 Backend.log_execute_error(sql, None, e)
                 raise
         else:
             try:
-                self.cursor.execute(sql, list(args))
+                self.cursor.execute(sql, list(args))  # type: ignore[arg-type]
             except Exception as e:
                 Backend.log_execute_error(sql, args, e)
                 raise
@@ -96,17 +105,6 @@ class Backend(ABC):
     def closedb(self) -> None:
         """Close the database connection. Override in subclasses that need cleanup before close."""
         self._conn.close()
-
-    def execute_safe(
-        self,
-        sql: Union[str, Composable],
-        args: Optional[Sequence[Any]] = None,
-    ) -> None:
-        """Execute SQL (string or, for PostgreSQL, psycopg2.sql.Composable)."""
-        if args is None:
-            self.cursor.execute(sql)  # type: ignore[arg-type]
-        else:
-            self.cursor.execute(sql, list(args))  # type: ignore[arg-type]
 
     # --- Placeholders and identifiers ---
 
@@ -252,8 +250,14 @@ class Backend(ABC):
         pass
 
     @abstractmethod
-    def median_sql(self, col_ident: str, table_ident: str, ph: str) -> tuple:
-        """Return (sql, arg_count) for a median query over obsid."""
+    def median_sql(
+        self, col_ident: str, table_ident: str, ph: str, obsid: Any
+    ) -> tuple[str, tuple]:
+        """Return (sql, args) for a median query over obsid.
+
+        args is the tuple to pass directly to execute; the caller does not need
+        to know how many placeholders the SQL contains.
+        """
         pass
 
     @abstractmethod
@@ -264,22 +268,23 @@ class Backend(ABC):
     # --- Error logging (shared across backends) ---
 
     @staticmethod
-    def log_execute_error(sql: str, args: Any, e: Exception) -> None:
+    def log_execute_error(sql: Union[str, Composable], args: Any, e: Exception) -> None:
         """Log a DB execute error via MessagebarAndLog."""
         from midvatten.tools.utils.message_utils import MessagebarAndLog, sql_failed_msg
         from midvatten.tools.utils.string_utils import returnunicode as ru
         from qgis.PyQt.QtCore import QCoreApplication
 
+        sql_text = sql if isinstance(sql, str) else str(sql)
         if args is None:
             textstring = QCoreApplication.translate(
                 "sql_load_fr_db",
                 """DB error!\n SQL causing this error:%s\nMsg:\n%s""",
-            ) % (ru(sql), str(e))
+            ) % (ru(sql_text), str(e))
         else:
             textstring = QCoreApplication.translate(
                 "sql_load_fr_db",
                 """DB error!\n SQL causing this error:%s\nusing args %s\nMsg:\n%s""",
-            ) % (ru(sql), ru(args), str(e))
+            ) % (ru(sql_text), ru(args), str(e))
         MessagebarAndLog.warning(bar_msg=sql_failed_msg(), log_msg=textstring)
 
     def connect2db(self) -> bool:
@@ -289,13 +294,11 @@ class Backend(ABC):
 
     def dump_table_2_csv(self, table_name: Optional[str] = None) -> None:
         """Export table to a temp CSV file."""
-        import os
-        import tempfile
-        from midvatten.tools.utils.file_utils import write_printlist_to_file
-
         if table_name is None:
             raise ValueError("table_name is required")
-        self.execute_safe(self.sql_ident("SELECT * FROM {t}", t=table_name))
+        self.execute(self.sql_ident("SELECT * FROM {t}", t=table_name))
+        if self.cursor.description is None:
+            raise ValueError(f"dump_table_2_csv: no result set for {table_name!r}")
         header = [col[0] for col in self.cursor.description]
         rows = self.cursor.fetchall()
         if rows:

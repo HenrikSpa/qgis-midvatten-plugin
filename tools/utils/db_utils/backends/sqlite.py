@@ -4,6 +4,7 @@ SQLite (Spatialite) backend. Connection via spatialite_connect.
 
 import ast
 import os
+import re
 import traceback
 from sqlite3 import Connection
 from typing import Any, Optional
@@ -179,7 +180,7 @@ class SQLiteBackend(Backend):
         return temptable_name
 
     def drop_temporary_table(self, temptable_name: str) -> None:
-        self.execute_safe(self.sql_ident("DROP TABLE {t}", t=temptable_name))
+        self.execute(self.sql_ident("DROP TABLE {t}", t=temptable_name))
 
     def drop_view(self, view_name: str) -> None:
         try:
@@ -187,7 +188,7 @@ class SQLiteBackend(Backend):
                 "DELETE FROM views_geometry_columns WHERE view_name = ?",
                 (view_name,),
             )
-            self.execute_safe(self.sql_ident("DROP VIEW IF EXISTS {v}", v=view_name))
+            self.execute(self.sql_ident("DROP VIEW IF EXISTS {v}", v=view_name))
         except Exception:
             MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
@@ -211,7 +212,7 @@ class SQLiteBackend(Backend):
         self._conn.isolation_level = ""  # reset to default (deferred)
 
     def add_insert_or_ignore_to_sql(self, sql: str) -> str:
-        return sql.replace("INSERT", "INSERT OR IGNORE")
+        return re.sub(r"^(\s*)INSERT\b", r"\1INSERT OR IGNORE", sql, count=1)
 
     def cast_date_time_as_epoch(self, date_time: Optional[str] = None) -> str:
         if date_time is None:
@@ -258,7 +259,9 @@ class SQLiteBackend(Backend):
         else:
             self.execute("PRAGMA foreign_keys = OFF")
 
-    def median_sql(self, col_ident: str, table_ident: str, ph: str) -> tuple:
+    def median_sql(
+        self, col_ident: str, table_ident: str, ph: str, obsid: Any
+    ) -> tuple[str, tuple]:
         sql = (
             f"SELECT AVG({col_ident}) "
             f"FROM (SELECT {col_ident} "
@@ -268,7 +271,7 @@ class SQLiteBackend(Backend):
             f"      LIMIT 2 - (SELECT COUNT(*) FROM {table_ident} WHERE obsid = {ph}) % 2 "
             f"      OFFSET (SELECT (COUNT(*) - 1) / 2 FROM {table_ident} WHERE obsid = {ph}))"
         )
-        return sql, 3
+        return sql, (obsid, obsid, obsid)
 
     def backup(self, dbconnection: Any) -> None:
         import datetime

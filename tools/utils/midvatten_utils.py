@@ -546,12 +546,12 @@ def add_non_essential_tables(dbconnection=None):
 
     connection_ok = dbconnection.connect2db()
     if connection_ok:
-        db_utils.execute_sqlfile(
-            definitions_path("create_db_extra_data_tables.sql"),
-            dbconnection,
-            merge_newlines=True,
-        )
-        dbconnection.commit()
+        with dbconnection.transaction():
+            db_utils.execute_sqlfile(
+                definitions_path("create_db_extra_data_tables.sql"),
+                dbconnection,
+                merge_newlines=True,
+            )
         MessagebarAndLog.info(
             bar_msg=QCoreApplication.translate(
                 "Midvatten",

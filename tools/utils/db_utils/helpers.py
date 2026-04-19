@@ -41,7 +41,7 @@ def get_last_insert_id(dbconnection: DbConnectionManager) -> int:
     Both are connection-scoped, so callers must use the same dbconnection that
     performed the INSERT without committing / closing in between.
     """
-    if dbconnection.dbtype == "spatialite":
+    if dbconnection.is_sqlite():
         sql = "SELECT last_insert_rowid()"
     else:
         sql = "SELECT lastval()"
@@ -477,7 +477,7 @@ def refresh_spatialite_layer_statistics() -> None:
     """
     dbconnection = DbConnectionManager()
     try:
-        if dbconnection.dbtype != "spatialite":
+        if not dbconnection.is_sqlite():
             MessagebarAndLog.info(
                 bar_msg=QCoreApplication.translate(
                     "refresh_spatialite_layer_statistics",

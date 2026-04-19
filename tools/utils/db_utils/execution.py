@@ -63,7 +63,7 @@ def sql_alter_db(
     if isinstance(all_args, (list, tuple)) and len(all_args) == 1:
         args = all_args[0]
     with use_or_create_connection(dbconnection) as dbconnection:
-        if dbconnection.dbtype == "spatialite":
+        if dbconnection.is_sqlite():
             try:
                 dbconnection.execute("PRAGMA foreign_keys = ON")
             except Exception:

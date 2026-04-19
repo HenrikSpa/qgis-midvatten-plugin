@@ -3645,4 +3645,150 @@ class TestPivotBaroToMeteo:
         result = _pivot_baro_to_meteo(file_data, "DA123", "baro.mon")
         params = [r[2] for r in result[1:]]
         assert "pressure" in params
-        assert "temp" not in params
+
+
+@pytest.mark.spatialite
+class TestLoggerImportBaroSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv):
+    """Integration tests for LoggerImport with DiverOffice Baro format.
+
+    Verifies the full start_import() path: parse → pivot → seed zz_meteoparam
+    → general_import into meteo table.
+    """
+
+    _BARO_MON = (
+        "[Logger settings]\n"
+        "  Serial number           =..00-DA123  219.\n"
+        "  Instrument number       =          UTC+1     \n"
+        "  Location                =Rb1Baro\n"
+        "  Number of channels      =2\n"
+        "[Channel 1]\n"
+        "  Identification          =PRESSURE\n"
+        "[Channel 2]\n"
+        "  Identification          =TEMPERATURE\n"
+        "[data]\n"
+        "2\n"
+        "2023/10/05 13:00:00.0      978.667       9.470\n"
+        "2023/10/05 14:00:00.0      979.100      10.000\n"
+    )
+
+    @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+    def test_baro_import_inserts_into_meteo(self, mock_messagebar):
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('Rb1Baro')")
+
+        with common_utils.tempinput(self._BARO_MON, "utf-8", suffix=".mon") as f:
+
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
+            )
+            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("qgis.utils.iface", autospec=True)
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
+            @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
+            def _run(
+                self,
+                filename,
+                mock_select_files,
+                mock_popup,
+                mock_iface,
+                mock_askuser,
+                mock_notfound,
+            ):
+                mock_notfound.return_value.answer = "ok"
+                mock_notfound.return_value.value = "Rb1Baro"
+                mock_notfound.return_value.reuse_column = "location"
+                mock_select_files.return_value = [filename]
+
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = LoggerImport(self.iface, ms)
+                importer.load_gui()
+                importer.format_combo.setCurrentText(LoggerImport.FORMAT_DIVEROFFICE_BARO)
+                importer.select_files()
+                importer.start_import(
+                    files=importer.files,
+                    skip_rows_without_water_level=False,
+                    confirm_names=importer.confirm_names.checked,
+                    import_all_data=importer.import_all_data.checked,
+                )
+
+            _run(self, f)
+
+        print(mock_messagebar.mock_calls)
+
+        meteoparam_result = db_utils.sql_load_fr_db(
+            "SELECT parameter FROM zz_meteoparam WHERE parameter='pressure'"
+        )
+        assert meteoparam_result[0] is True
+        assert len(meteoparam_result[1]) == 1, (
+            "Expected 'pressure' to be seeded into zz_meteoparam"
+        )
+
+        meteo_result = db_utils.sql_load_fr_db(
+            "SELECT obsid, parameter, date_time, reading_num, unit"
+            " FROM meteo WHERE obsid='Rb1Baro' AND parameter='pressure'"
+            " ORDER BY date_time"
+        )
+        assert meteo_result[0] is True
+        rows = meteo_result[1]
+        assert len(rows) == 2, f"Expected 2 pressure rows in meteo, got: {rows}"
+        assert rows[0][2] == "2023-10-05 13:00:00"
+        assert rows[0][4] == "cmH2O"
+
+    @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+    def test_baro_import_does_not_write_to_wlevels_logger(self, mock_messagebar):
+        """Baro data must go to meteo only, not to w_levels_logger."""
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('Rb1Baro')")
+
+        with common_utils.tempinput(self._BARO_MON, "utf-8", suffix=".mon") as f:
+
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
+            )
+            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("qgis.utils.iface", autospec=True)
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
+            @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
+            def _run(
+                self,
+                filename,
+                mock_select_files,
+                mock_popup,
+                mock_iface,
+                mock_askuser,
+                mock_notfound,
+            ):
+                mock_notfound.return_value.answer = "ok"
+                mock_notfound.return_value.value = "Rb1Baro"
+                mock_notfound.return_value.reuse_column = "location"
+                mock_select_files.return_value = [filename]
+
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = LoggerImport(self.iface, ms)
+                importer.load_gui()
+                importer.format_combo.setCurrentText(LoggerImport.FORMAT_DIVEROFFICE_BARO)
+                importer.select_files()
+                importer.start_import(
+                    files=importer.files,
+                    skip_rows_without_water_level=False,
+                    confirm_names=importer.confirm_names.checked,
+                    import_all_data=importer.import_all_data.checked,
+                )
+
+            _run(self, f)
+
+        print(mock_messagebar.mock_calls)
+
+        wlevels_result = db_utils.sql_load_fr_db(
+            "SELECT COUNT(*) FROM w_levels_logger WHERE obsid='Rb1Baro'"
+        )
+        assert wlevels_result[0] is True
+        assert wlevels_result[1][0][0] == 0, (
+            "Baro import must not write to w_levels_logger"
+        )

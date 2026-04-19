@@ -18,7 +18,6 @@
  ***************************************************************************/
 """
 
-
 import pandas as pd
 import qgis.PyQt
 import qgis.utils

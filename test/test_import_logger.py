@@ -3705,7 +3705,9 @@ class TestLoggerImportBaroSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
                 ms.settingsdict = OrderedDict()
                 importer = LoggerImport(self.iface, ms)
                 importer.load_gui()
-                importer.format_combo.setCurrentText(LoggerImport.FORMAT_DIVEROFFICE_BARO)
+                importer.format_combo.setCurrentText(
+                    LoggerImport.FORMAT_DIVEROFFICE_BARO
+                )
                 importer.select_files()
                 importer.start_import(
                     files=importer.files,

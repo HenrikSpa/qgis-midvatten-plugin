@@ -2,7 +2,6 @@
 Dialog utilities for the Midvatten plugin.
 """
 
-
 import qgis.PyQt
 from qgis.PyQt import QtCore, QtWidgets, uic
 

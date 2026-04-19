@@ -15,9 +15,7 @@ from midvatten.tools.utils import db_utils
 
 
 @pytest.mark.spatialite
-class TestRefreshSpatialiteLayerStatistics(
-    utils_for_tests.MidvattenTestSpatialiteDbSv
-):
+class TestRefreshSpatialiteLayerStatistics(utils_for_tests.MidvattenTestSpatialiteDbSv):
     @mock.patch("midvatten.tools.utils.db_utils.helpers.MessagebarAndLog")
     def test_refresh_populates_stats_row_when_missing(self, mock_messagebar):
         """Deleting the stats row and calling refresh must put it back."""
@@ -38,9 +36,7 @@ class TestRefreshSpatialiteLayerStatistics(
                 "SELECT row_count FROM geometry_columns_statistics "
                 "WHERE f_table_name='obs_points'"
             )
-            assert rows_before == [], (
-                "precondition failed: stats row still present"
-            )
+            assert rows_before == [], "precondition failed: stats row still present"
         finally:
             dbconnection.closedb()
 
@@ -57,6 +53,4 @@ class TestRefreshSpatialiteLayerStatistics(
 
         print(f"{mock_messagebar.mock_calls=}")
         assert rows_after, "stats row was not repopulated"
-        assert rows_after[0][0] == 1, (
-            f"expected row_count=1, got {rows_after[0][0]}"
-        )
+        assert rows_after[0][0] == 1, f"expected row_count=1, got {rows_after[0][0]}"

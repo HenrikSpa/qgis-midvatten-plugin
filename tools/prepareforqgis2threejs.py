@@ -83,9 +83,7 @@ class PrepareForQgis2Threejs:
 
         colors = []
 
-        existing_tables = db_utils.get_tables(
-            self.dbconnection, skip_views=False
-        )
+        existing_tables = db_utils.get_tables(self.dbconnection, skip_views=False)
         layer_list = []
         for tablename in list_with_all_strat_layer:
             layer = build_layer(

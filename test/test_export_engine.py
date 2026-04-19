@@ -1031,8 +1031,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
                 cancel_flag=threading.Event(),
             )
             point_obsids = {
-                r[0]
-                for r in dest.execute_and_fetchall("SELECT obsid FROM obs_points")
+                r[0] for r in dest.execute_and_fetchall("SELECT obsid FROM obs_points")
             }
             line_obsids = {
                 r[0] for r in dest.execute_and_fetchall("SELECT obsid FROM obs_lines")

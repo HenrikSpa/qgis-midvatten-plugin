@@ -36,7 +36,9 @@ _LEGEND_FILTER = frozenset(("frame", "_nolegend_", ""))
 
 
 def _non_frame_handles(secplot):
-    return [h for h in secplot.figure.plot_handles if h.get_label() not in _LEGEND_FILTER]
+    return [
+        h for h in secplot.figure.plot_handles if h.get_label() not in _LEGEND_FILTER
+    ]
 
 
 # ---------------------------------------------------------------------------

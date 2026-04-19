@@ -51,9 +51,9 @@ from midvatten.tools.utils.gui_utils import (
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from qgis.PyQt.QtCore import QCoreApplication, QItemSelectionModel
 
-import_fieldlogger_ui_dialog = qgis.PyQt.uic.loadUiType(
-    ui_path("import_interlab4.ui")
-)[0]
+import_fieldlogger_ui_dialog = qgis.PyQt.uic.loadUiType(ui_path("import_interlab4.ui"))[
+    0
+]
 
 
 class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):

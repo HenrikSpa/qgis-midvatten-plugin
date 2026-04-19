@@ -528,9 +528,7 @@ def add_view_obs_points_obs_lines():
         dbconnection.execute(
             """DELETE FROM views_geometry_columns WHERE view_name IN ('view_obs_points', 'view_obs_lines');"""
         )
-        db_utils.execute_sqlfile(
-            definitions_path("qgis3_obsp_fix.sql"), dbconnection
-        )
+        db_utils.execute_sqlfile(definitions_path("qgis3_obsp_fix.sql"), dbconnection)
         dbconnection.commit_and_closedb()
         MessagebarAndLog.info(
             bar_msg=QCoreApplication.translate(

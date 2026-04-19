@@ -659,7 +659,9 @@ def plot_colors_dict():
                 "Getting strata and color_mplot form zz_stratigraphy_plots failed, fallback method with PlotColorDict from code",
             )
         )
-        if is_locale_swedish():  # swedish forms are loaded only if locale settings indicate sweden
+        if (
+            is_locale_swedish()
+        ):  # swedish forms are loaded only if locale settings indicate sweden
             color_dict = {
                 "Okänt": "white",
                 "Berg": "red",
@@ -717,7 +719,9 @@ def plot_hatch_dict():
             )
         )
         # hatch patterns : ('-', '+', 'x', '\\', '*', 'o', 'O', '.','/')
-        if is_locale_swedish():  # swedish forms are loaded only if locale settings indicate sweden
+        if (
+            is_locale_swedish()
+        ):  # swedish forms are loaded only if locale settings indicate sweden
             hatch_dict = {
                 "Okänt": "",
                 "Berg": "x",

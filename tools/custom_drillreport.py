@@ -38,9 +38,9 @@ from midvatten.tools.utils.string_utils import returnunicode as ru
 
 _EMPTY_VALS = ("", "NULL")
 
-custom_drillreport_dialog = qgis.PyQt.uic.loadUiType(
-    ui_path("custom_drillreport.ui")
-)[0]
+custom_drillreport_dialog = qgis.PyQt.uic.loadUiType(ui_path("custom_drillreport.ui"))[
+    0
+]
 
 
 class DrillreportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):

@@ -166,7 +166,9 @@ def write_printlist_to_file(
     )
 
 
-_PLUGIN_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_PLUGIN_ROOT = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
 
 
 def plugin_path(*parts: str) -> str:

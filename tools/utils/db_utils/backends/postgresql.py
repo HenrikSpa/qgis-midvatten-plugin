@@ -231,11 +231,11 @@ class PostgreSQLBackend(Backend):
         return temptable_name
 
     def drop_temporary_table(self, temptable_name: str) -> None:
-        self.execute_safe(self.sql_ident("DROP TABLE IF EXISTS {t}", t=temptable_name))
+        self.execute(self.sql_ident("DROP TABLE IF EXISTS {t}", t=temptable_name))
 
     def drop_view(self, view_name: str) -> None:
         try:
-            self.execute_safe(
+            self.execute(
                 psycopg2.sql.SQL("DROP VIEW IF EXISTS {}").format(
                     psycopg2.sql.Identifier(view_name)
                 )

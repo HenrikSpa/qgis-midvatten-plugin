@@ -114,7 +114,7 @@ class DbConnectionManager:
         return self._backend.connect2db()
 
     def execute(
-        self, sql: str, args: Optional[Any] = None, all_args: Optional[Any] = None
+        self, sql: Any, args: Optional[Any] = None, all_args: Optional[Any] = None
     ) -> None:
         a = args if args is not None else all_args
         # One-row list: all_args=[(v1,..)] -> pass (v1,..); do not unwrap tuple ("P1",)
@@ -192,9 +192,6 @@ class DbConnectionManager:
 
     def in_clause(self, values: Any) -> tuple:
         return self._backend.in_clause(values)
-
-    def execute_safe(self, sql: Any, args: Optional[Any] = None) -> None:
-        self._backend.execute_safe(sql, args=args)
 
     def drop_view(self, view_name: str) -> None:
         self._backend.drop_view(view_name)

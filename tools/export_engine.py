@@ -21,7 +21,7 @@ class ExportEngine:
 
     def _get_columns(self, tname: str, conn: DbConnectionManager) -> list[str]:
         """Return column names for a table, lowercased, in definition order."""
-        conn.execute_safe(f"SELECT * FROM {db_utils.ident(tname)} LIMIT 0")
+        conn.execute(f"SELECT * FROM {db_utils.ident(tname)} LIMIT 0")
         return [x[0].lower() for x in conn.cursor.description]
 
     def _get_exportable_columns(
@@ -228,13 +228,13 @@ class ExportEngine:
         The snapshot is immediately re-inserted after the source rows are
         written, so referential integrity is restored within the same export.
         """
-        dest_conn.execute_safe(f"SELECT * FROM {db_utils.ident(tname)}")
+        dest_conn.execute(f"SELECT * FROM {db_utils.ident(tname)}")
         cols = [x[0].lower() for x in dest_conn.cursor.description]
         rows = list(dest_conn.cursor.fetchall())
         if rows:
             dest_conn.execute("PRAGMA foreign_keys = OFF")
             try:
-                dest_conn.execute_safe(f"DELETE FROM {db_utils.ident(tname)}")
+                dest_conn.execute(f"DELETE FROM {db_utils.ident(tname)}")
             finally:
                 dest_conn.execute("PRAGMA foreign_keys = ON")
         return rows, cols

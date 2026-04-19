@@ -180,7 +180,7 @@ class SQLiteBackend(Backend):
         return temptable_name
 
     def drop_temporary_table(self, temptable_name: str) -> None:
-        self.execute_safe(self.sql_ident("DROP TABLE {t}", t=temptable_name))
+        self.execute(self.sql_ident("DROP TABLE {t}", t=temptable_name))
 
     def drop_view(self, view_name: str) -> None:
         try:
@@ -188,7 +188,7 @@ class SQLiteBackend(Backend):
                 "DELETE FROM views_geometry_columns WHERE view_name = ?",
                 (view_name,),
             )
-            self.execute_safe(self.sql_ident("DROP VIEW IF EXISTS {v}", v=view_name))
+            self.execute(self.sql_ident("DROP VIEW IF EXISTS {v}", v=view_name))
         except Exception:
             MessagebarAndLog.warning(log_msg=traceback.format_exc())
 

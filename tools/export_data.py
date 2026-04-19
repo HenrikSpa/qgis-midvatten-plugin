@@ -115,10 +115,10 @@ class ExportData:
                 to_writer(tname, obsids, replace)
             else:
                 sql = self.source_dbconnection.sql_ident(
-                    "SELECT count(obsid) FROM {t}", t=tname
+                    "SELECT count({c}) FROM {t}", c="obsid", t=tname
                 )
                 clause, args = self.source_dbconnection.in_clause(obsids)
-                sql += f" WHERE obsid IN {clause}"
+                sql += f" WHERE {self.source_dbconnection.ident('obsid')} IN {clause}"
                 nr_of_rows = self.source_dbconnection.execute_and_fetchall(sql, args)[
                     0
                 ][0]
@@ -143,7 +143,7 @@ class ExportData:
         args = None
         if obsids:
             clause, args = self.source_dbconnection.in_clause(obsids)
-            sql += f" WHERE obsid IN {clause}"
+            sql += f" WHERE {self.source_dbconnection.ident('obsid')} IN {clause}"
         data = self.source_dbconnection.execute_and_fetchall(sql, args)
         printlist = [[col[0] for col in self.source_dbconnection.cursor.description]]
         printlist.extend(data)

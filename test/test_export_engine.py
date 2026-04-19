@@ -993,6 +993,57 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
 
         assert obsids == {"L1"}
 
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_export_empty_selection_exports_all_obs_points_and_lines(
+        self, mock_messagebar
+    ):
+        """Empty obsid_points/obsid_lines → all obs_points and obs_lines are exported."""
+        from midvatten.tools.export_engine import ExportEngine
+
+        conn = db_utils.DbConnectionManager(self._class_db_settings)
+        db_utils.sql_alter_db(
+            "INSERT INTO obs_points (obsid, geometry) VALUES "
+            "('P1', ST_GeomFromText('POINT(1 2)', 3006)),"
+            "('P2', ST_GeomFromText('POINT(3 4)', 3006))",
+            dbconnection=conn,
+        )
+        db_utils.sql_alter_db(
+            "INSERT INTO obs_lines (obsid, geometry) VALUES "
+            "('L1', ST_GeomFromText('LINESTRING(0 0, 1 1)', 3006)),"
+            "('L2', ST_GeomFromText('LINESTRING(2 2, 3 3)', 3006))",
+            dbconnection=conn,
+        )
+        conn.commit_and_closedb()
+
+        dest_path = self._make_dest_db()
+        src = self._source_conn()
+        dest = db_utils.DbConnectionManager(dest_path)
+        dest.connect2db()
+
+        try:
+            ExportEngine().export(
+                source_conn=src,
+                dest_conn=dest,
+                obsid_points=(),
+                obsid_lines=(),
+                dest_srid="3006",
+                progress_cb=lambda *a: None,
+                cancel_flag=threading.Event(),
+            )
+            point_obsids = {
+                r[0]
+                for r in dest.execute_and_fetchall("SELECT obsid FROM obs_points")
+            }
+            line_obsids = {
+                r[0] for r in dest.execute_and_fetchall("SELECT obsid FROM obs_lines")
+            }
+        finally:
+            src.closedb()
+            dest.closedb()
+
+        assert point_obsids == {"P1", "P2"}
+        assert line_obsids == {"L1", "L2"}
+
 
 # ---------------------------------------------------------------------------
 # PostGIS source → SpatiaLite dest

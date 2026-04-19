@@ -5,9 +5,6 @@ and draw onto figure.ax_main, appending handles to figure.plot_handles.
 No real DB or QGIS layer is needed for these tests.
 """
 
-import matplotlib
-
-matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pytest
 from unittest import mock

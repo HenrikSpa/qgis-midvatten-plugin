@@ -145,14 +145,10 @@ class PostgreSQLBackend(Backend):
                     err = str(e)
                 finally:
                     _clear_ssl_temp_certs_if_any(new_expanded_conn_info)
-        # NOTE: _clear_ssl_temp_certs_if_any is invoked twice on the retry path —
-        # once per inner retry via the inner finally (for each
-        # `new_expanded_conn_info`), and once after the loop via this outer
-        # finally (for the original `expanded_conn_info`). In practice these
-        # are different paths, so cleanup is correct; but if a retry ever
-        # reused the same SSL cert path, the outer cleanup could delete a
-        # cert that's still in use.
-        # TODO: revisit only if that race is observed in the wild.
+        # Cleanup fires twice on the retry path (inner finally per retry,
+        # then this outer one for the original info). Safe as long as each
+        # retry uses a distinct cert path; if they ever share, the outer
+        # cleanup could delete a cert still in use.
         finally:
             _clear_ssl_temp_certs_if_any(expanded_conn_info)
         if last_error:

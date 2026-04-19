@@ -208,9 +208,7 @@ class NewDb:
             for stmt in " ".join(sql_lines).split(";")
             if stmt.strip()
         ]
-        # Wrap the schema bootstrap in a transaction so a mid-bootstrap
-        # failure does not leave a half-created database on disk.
-        # VACUUM must run outside the transaction (it cannot run inside one).
+        # VACUUM must run outside the transaction block.
         with dbconnection.transaction():
             for line in sql_lines:
                 sql = self.replace_words(line, replace_word_replace_with)

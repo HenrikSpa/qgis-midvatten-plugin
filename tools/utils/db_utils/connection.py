@@ -145,26 +145,19 @@ class DbConnectionManager:
     def transaction(self):
         """Run a block of statements atomically.
 
-        On PostgreSQL, temporarily disables AUTOCOMMIT so commit/rollback
-        scope the whole block — commits on clean exit, rolls back on
-        exception, and restores AUTOCOMMIT in finally.
-
-        On SQLite, the sqlite3 driver already auto-starts a transaction on
-        the first write; this wrapper just scopes commit/rollback around it.
+        PostgreSQL connections run in AUTOCOMMIT by default (preserves
+        VACUUM compatibility and avoids "idle in transaction" snapshots);
+        this context manager temporarily leaves AUTOCOMMIT so the block
+        becomes a single transaction.
 
         Contract:
           - Do NOT nest transaction() blocks.
-          - Do NOT call .commit() or .rollback() from inside the block; the
-            context manager owns those.
-          - The block is not safe for operations that cannot run inside a
-            transaction (e.g. VACUUM ANALYZE). Call those outside the block.
+          - Do NOT call .commit() or .rollback() from inside the block.
+          - Do NOT run VACUUM or other non-transactional statements inside.
         """
         conn = self.conn
         if self.is_postgresql():
-            # psycopg2 is optional (SQLite-only installs don't have it), so
-            # this import is deliberately lazy — module-level imports are
-            # preferred project-wide except for psycopg2, which may not be
-            # installed.
+            # psycopg2 is optional; import lazily so SQLite-only installs work.
             import psycopg2.extensions
 
             conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_READ_COMMITTED)

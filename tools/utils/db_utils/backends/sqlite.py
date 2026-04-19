@@ -4,6 +4,7 @@ SQLite (Spatialite) backend. Connection via spatialite_connect.
 
 import ast
 import os
+import re
 import traceback
 from sqlite3 import Connection
 from typing import Any, Optional
@@ -211,7 +212,7 @@ class SQLiteBackend(Backend):
         self._conn.isolation_level = ""  # reset to default (deferred)
 
     def add_insert_or_ignore_to_sql(self, sql: str) -> str:
-        return sql.replace("INSERT", "INSERT OR IGNORE")
+        return re.sub(r"^(\s*)INSERT\b", r"\1INSERT OR IGNORE", sql, count=1)
 
     def cast_date_time_as_epoch(self, date_time: Optional[str] = None) -> str:
         if date_time is None:

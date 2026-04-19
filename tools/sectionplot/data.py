@@ -393,15 +393,9 @@ def get_plot_data_seismic(line_layer, line_feature, dbconnection=None):
     table = "seismic_data"
     if line_layer and line_layer.name() == "obs_lines":
         sql = (
-            r"""select %s as x, %s as y1, %s as y2, %s as y3 from %s where obsid=%s"""  # noqa: UP031
-            % (
-                x,
-                y1_column,
-                y2_column,
-                y3_column,
-                table,
-                dbconnection.placeholder(),
-            )
+            f"SELECT {ident(x)} AS x, {ident(y1_column)} AS y1,"
+            f" {ident(y2_column)} AS y2, {ident(y3_column)} AS y3"
+            f" FROM {ident(table)} WHERE obsid={dbconnection.placeholder()}"
         )
         recs = dbconnection.execute_and_fetchall(
             sql, args=(line_feature.attribute("obsid"),)

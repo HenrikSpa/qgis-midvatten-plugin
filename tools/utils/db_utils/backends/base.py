@@ -4,9 +4,13 @@ SQLiteBackend and PostgreSQLBackend; callers use is_sqlite()/is_postgresql()
 or the common interface only.
 """
 
+import os
+import tempfile
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Sequence
 from typing import Any, Optional, Union
+
+from midvatten.tools.utils.file_utils import write_printlist_to_file
 
 # Optional to avoid hard dependency on psycopg2 at import
 try:
@@ -289,13 +293,11 @@ class Backend(ABC):
 
     def dump_table_2_csv(self, table_name: Optional[str] = None) -> None:
         """Export table to a temp CSV file."""
-        import os
-        import tempfile
-        from midvatten.tools.utils.file_utils import write_printlist_to_file
-
         if table_name is None:
             raise ValueError("table_name is required")
         self.execute_safe(self.sql_ident("SELECT * FROM {t}", t=table_name))
+        if self.cursor.description is None:
+            raise ValueError(f"dump_table_2_csv: no result set for {table_name!r}")
         header = [col[0] for col in self.cursor.description]
         rows = self.cursor.fetchall()
         if rows:

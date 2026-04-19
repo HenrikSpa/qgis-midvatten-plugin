@@ -256,8 +256,14 @@ class Backend(ABC):
         pass
 
     @abstractmethod
-    def median_sql(self, col_ident: str, table_ident: str, ph: str) -> tuple:
-        """Return (sql, arg_count) for a median query over obsid."""
+    def median_sql(
+        self, col_ident: str, table_ident: str, ph: str, obsid: Any
+    ) -> tuple[str, tuple]:
+        """Return (sql, args) for a median query over obsid.
+
+        args is the tuple to pass directly to execute; the caller does not need
+        to know how many placeholders the SQL contains.
+        """
         pass
 
     @abstractmethod

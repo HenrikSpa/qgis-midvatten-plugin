@@ -259,7 +259,9 @@ class SQLiteBackend(Backend):
         else:
             self.execute("PRAGMA foreign_keys = OFF")
 
-    def median_sql(self, col_ident: str, table_ident: str, ph: str) -> tuple:
+    def median_sql(
+        self, col_ident: str, table_ident: str, ph: str, obsid: Any
+    ) -> tuple[str, tuple]:
         sql = (
             f"SELECT AVG({col_ident}) "
             f"FROM (SELECT {col_ident} "
@@ -269,7 +271,7 @@ class SQLiteBackend(Backend):
             f"      LIMIT 2 - (SELECT COUNT(*) FROM {table_ident} WHERE obsid = {ph}) % 2 "
             f"      OFFSET (SELECT (COUNT(*) - 1) / 2 FROM {table_ident} WHERE obsid = {ph}))"
         )
-        return sql, 3
+        return sql, (obsid, obsid, obsid)
 
     def backup(self, dbconnection: Any) -> None:
         import datetime

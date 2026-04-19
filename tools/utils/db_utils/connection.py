@@ -241,8 +241,10 @@ class DbConnectionManager:
     def activate_foreign_keys(self, activated: bool) -> None:
         self._backend.activate_foreign_keys(activated)
 
-    def median_sql(self, col_ident: str, table_ident: str, ph: str) -> tuple:
-        return self._backend.median_sql(col_ident, table_ident, ph)
+    def median_sql(
+        self, col_ident: str, table_ident: str, ph: str, obsid: Any
+    ) -> tuple[str, tuple]:
+        return self._backend.median_sql(col_ident, table_ident, ph, obsid)
 
     def backup(self) -> None:
         self._backend.backup(self)

@@ -332,9 +332,11 @@ class PostgreSQLBackend(Backend):
         # PostgreSQL enforces foreign keys natively; this is a no-op.
         pass
 
-    def median_sql(self, col_ident: str, table_ident: str, ph: str) -> tuple:
+    def median_sql(
+        self, col_ident: str, table_ident: str, ph: str, obsid: Any
+    ) -> tuple[str, tuple]:
         sql = f"SELECT median({col_ident}) FROM {table_ident} t1 WHERE obsid = {ph};"
-        return sql, 1
+        return sql, (obsid,)
 
     def backup(self, dbconnection: Any) -> None:
         from midvatten.tools.utils.message_utils import MessagebarAndLog

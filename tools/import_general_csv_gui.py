@@ -492,23 +492,25 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         try:
             ph = dbconn.placeholder()
             key_to_sid: Dict[Tuple[Any, Optional[str]], int] = {}
-            for row in rows:
-                obsid = row[obsid_idx] if obsid_idx < len(row) else None
-                source_raw = row[src_idx] if src_idx < len(row) else None
-                source_val = source_raw if source_raw not in ("", None) else None
-                if not obsid:
-                    continue
-                key = (obsid, source_val)
-                if key in key_to_sid:
-                    continue
-                dbconn.execute(
-                    f"INSERT INTO w_logger_series"
-                    f" (obsid, source, description)"
-                    f" VALUES ({ph}, {ph}, {ph})",
-                    (obsid, source_val, description),
-                )
-                key_to_sid[key] = db_utils.get_last_insert_id(dbconn)
-            dbconn.commit()
+            # Atomic: either every (obsid, source) row gets a series_id or none do,
+            # so a mid-loop failure can't leave key_to_sid pointing at uncommitted ids.
+            with dbconn.transaction():
+                for row in rows:
+                    obsid = row[obsid_idx] if obsid_idx < len(row) else None
+                    source_raw = row[src_idx] if src_idx < len(row) else None
+                    source_val = source_raw if source_raw not in ("", None) else None
+                    if not obsid:
+                        continue
+                    key = (obsid, source_val)
+                    if key in key_to_sid:
+                        continue
+                    dbconn.execute(
+                        f"INSERT INTO w_logger_series"
+                        f" (obsid, source, description)"
+                        f" VALUES ({ph}, {ph}, {ph})",
+                        (obsid, source_val, description),
+                    )
+                    key_to_sid[key] = db_utils.get_last_insert_id(dbconn)
         finally:
             if close_dbconn:
                 dbconn.closedb()

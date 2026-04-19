@@ -1,6 +1,6 @@
 """
 Abstract base for database backends. All dialect-specific logic lives in
-SQLiteBackend and PostgreSQLBackend; callers use isinstance(backend, ...)
+SQLiteBackend and PostgreSQLBackend; callers use is_sqlite()/is_postgresql()
 or the common interface only.
 """
 

@@ -229,11 +229,13 @@ class DbConnectionManager:
     def is_not_distinct_from(self) -> str:
         return self._backend.is_not_distinct_from()
 
+    def is_sqlite(self) -> bool:
+        """Return True if the backend is SQLite (SpatiaLite)."""
+        return self._backend.is_sqlite()
+
     def is_postgresql(self) -> bool:
         """Return True if the backend is PostgreSQL (PostGIS)."""
-        from midvatten.tools.utils.db_utils.backends.postgresql import PostgreSQLBackend
-
-        return isinstance(self._backend, PostgreSQLBackend)
+        return self._backend.is_postgresql()
 
     def numeric_datatypes(self) -> list:
         return self._backend.numeric_datatypes()

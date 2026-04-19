@@ -6,11 +6,13 @@ import threading
 from unittest import mock
 
 import pytest
+from qgis.PyQt.QtCore import QEventLoop, QThread
 
 from midvatten.test.utils_for_tests import (
     MidvattenTestPostgisDbSv,
     MidvattenTestSpatialiteDbSv,
 )
+from midvatten.tools.export_worker import ExportWorker
 from midvatten.tools.utils import db_utils
 
 
@@ -729,10 +731,6 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_worker_emits_signals(self, mock_messagebar):
         """ExportWorker emits table_started, rows_written, finished in correct order."""
-        from qgis.PyQt.QtCore import QEventLoop, QThread
-
-        from midvatten.tools.export_worker import ExportWorker
-
         conn = db_utils.DbConnectionManager(self._class_db_settings)
         db_utils.sql_alter_db(
             "INSERT INTO obs_points (obsid, geometry) VALUES "
@@ -776,10 +774,6 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_worker_cancel_deletes_dest_file(self, mock_messagebar):
         """Cancelling the worker causes the partial dest file to be deleted."""
-        from qgis.PyQt.QtCore import QEventLoop, QThread
-
-        from midvatten.tools.export_worker import ExportWorker
-
         conn = db_utils.DbConnectionManager(self._class_db_settings)
         db_utils.sql_alter_db(
             "INSERT INTO obs_points (obsid, geometry) VALUES "
@@ -825,10 +819,6 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
     @mock.patch("midvatten.tools.utils.db_utils.export_bytea_as_bytes")
     def test_worker_calls_export_bytea_as_bytes(self, mock_bytea, mock_messagebar):
         """ExportWorker calls export_bytea_as_bytes on the source connection."""
-        from qgis.PyQt.QtCore import QEventLoop, QThread
-
-        from midvatten.tools.export_worker import ExportWorker
-
         dest_path = self._make_dest_db()
         worker = ExportWorker(
             source_db_settings=self._class_db_settings,
@@ -851,6 +841,39 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
         thread.wait()
 
         assert mock_bytea.call_count == 1
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_worker_error_path_emits_error_signal(self, mock_messagebar):
+        """ExportWorker emits the error signal when source connect2db() fails."""
+        worker = ExportWorker(
+            source_db_settings="/nonexistent/no_such_db.sqlite",
+            dest_path="/tmp/wont_be_created.sqlite",
+            obsid_points=(),
+            obsid_lines=(),
+            dest_srid="3006",
+        )
+        thread = QThread()
+        worker.moveToThread(thread)
+        thread.started.connect(worker.run)
+        worker.finished.connect(thread.quit)
+        worker.error.connect(thread.quit)
+
+        errors: list[str] = []
+        finished: list[str] = []
+        worker.error.connect(errors.append)
+        worker.finished.connect(finished.append)
+
+        loop = QEventLoop()
+        worker.finished.connect(loop.quit)
+        worker.error.connect(loop.quit)
+        thread.start()
+        loop.exec_()
+        thread.wait()
+
+        print(f"{mock_messagebar.mock_calls=}")
+        assert errors, "Expected error signal to be emitted"
+        assert finished == [], "Expected no finished signal on error"
+        assert "Traceback" in errors[0]
 
     # ------------------------------------------------------------------ Row-count warning
 
@@ -1031,8 +1054,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
                 cancel_flag=threading.Event(),
             )
             point_obsids = {
-                r[0]
-                for r in dest.execute_and_fetchall("SELECT obsid FROM obs_points")
+                r[0] for r in dest.execute_and_fetchall("SELECT obsid FROM obs_points")
             }
             line_obsids = {
                 r[0] for r in dest.execute_and_fetchall("SELECT obsid FROM obs_lines")

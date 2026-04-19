@@ -3645,6 +3645,7 @@ class TestPivotBaroToMeteo:
         result = _pivot_baro_to_meteo(file_data, "DA123", "baro.mon")
         params = [r[2] for r in result[1:]]
         assert "pressure" in params
+        assert "temp" not in params
 
 
 @pytest.mark.spatialite
@@ -3671,8 +3672,7 @@ class TestLoggerImportBaroSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
         "2023/10/05 14:00:00.0      979.100      10.000\n"
     )
 
-    @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
-    def test_baro_import_inserts_into_meteo(self, mock_messagebar):
+    def _run_baro_import(self, mock_messagebar):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('Rb1Baro')")
 
         with common_utils.tempinput(self._BARO_MON, "utf-8", suffix=".mon") as f:
@@ -3717,6 +3717,10 @@ class TestLoggerImportBaroSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
             _run(self, f)
 
         print(mock_messagebar.mock_calls)
+
+    @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+    def test_baro_import_inserts_into_meteo(self, mock_messagebar):
+        self._run_baro_import(mock_messagebar)
 
         meteoparam_result = db_utils.sql_load_fr_db(
             "SELECT parameter FROM zz_meteoparam WHERE parameter='pressure'"
@@ -3740,50 +3744,7 @@ class TestLoggerImportBaroSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
     @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
     def test_baro_import_does_not_write_to_wlevels_logger(self, mock_messagebar):
         """Baro data must go to meteo only, not to w_levels_logger."""
-        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('Rb1Baro')")
-
-        with common_utils.tempinput(self._BARO_MON, "utf-8", suffix=".mon") as f:
-
-            @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
-            )
-            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
-            @mock.patch("qgis.utils.iface", autospec=True)
-            @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
-                autospec=True,
-            )
-            @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
-            def _run(
-                self,
-                filename,
-                mock_select_files,
-                mock_popup,
-                mock_iface,
-                mock_askuser,
-                mock_notfound,
-            ):
-                mock_notfound.return_value.answer = "ok"
-                mock_notfound.return_value.value = "Rb1Baro"
-                mock_notfound.return_value.reuse_column = "location"
-                mock_select_files.return_value = [filename]
-
-                ms = MagicMock()
-                ms.settingsdict = OrderedDict()
-                importer = LoggerImport(self.iface, ms)
-                importer.load_gui()
-                importer.format_combo.setCurrentText(LoggerImport.FORMAT_DIVEROFFICE_BARO)
-                importer.select_files()
-                importer.start_import(
-                    files=importer.files,
-                    skip_rows_without_water_level=False,
-                    confirm_names=importer.confirm_names.checked,
-                    import_all_data=importer.import_all_data.checked,
-                )
-
-            _run(self, f)
-
-        print(mock_messagebar.mock_calls)
+        self._run_baro_import(mock_messagebar)
 
         wlevels_result = db_utils.sql_load_fr_db(
             "SELECT COUNT(*) FROM w_levels_logger WHERE obsid='Rb1Baro'"

@@ -712,18 +712,18 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                 dbconn = db_utils.DbConnectionManager()
                 try:
                     ph = dbconn.placeholder()
-                    for param, explanation in _BARO_METEO_PARAMS:
-                        existing = dbconn.execute_and_fetchall(
-                            f"SELECT parameter FROM zz_meteoparam WHERE parameter = {ph}",
-                            (param,),
-                        )
-                        if not existing:
-                            dbconn.execute(
-                                f"INSERT INTO zz_meteoparam(parameter, explanation)"
-                                f" VALUES ({ph}, {ph})",
-                                (param, explanation),
+                    with dbconn.transaction():
+                        for param, explanation in _BARO_METEO_PARAMS:
+                            existing = dbconn.execute_and_fetchall(
+                                f"SELECT parameter FROM zz_meteoparam WHERE parameter = {ph}",
+                                (param,),
                             )
-                    dbconn.commit()
+                            if not existing:
+                                dbconn.execute(
+                                    f"INSERT INTO zz_meteoparam(parameter, explanation)"
+                                    f" VALUES ({ph}, {ph})",
+                                    (param, explanation),
+                                )
                 finally:
                     dbconn.closedb()
 
@@ -775,28 +775,28 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             dbconn = db_utils.DbConnectionManager()
             try:
                 ph = dbconn.placeholder()
-                for (
-                    file_data,
-                    filename,
-                    location,
-                    serial_number,
-                ) in parsed_files_with_obsid:
-                    obsid = filenames_obsid[filename]
-                    description = os.path.basename(filename) if filename else None
-                    dbconn.execute(
-                        f"INSERT INTO w_logger_series "
-                        f"(obsid, source, description, instrument) VALUES ({ph}, {ph}, {ph}, {ph})",
-                        (obsid, source_for_series, description, serial_number),
-                    )
-                    series_id = db_utils.get_last_insert_id(dbconn)
-                    file_data[0].append("series_id")
-                    if has_created_at:
-                        file_data[0].append("created_at")
-                    for row in file_data[1:]:
-                        row.append(series_id)
+                with dbconn.transaction():
+                    for (
+                        file_data,
+                        filename,
+                        location,
+                        serial_number,
+                    ) in parsed_files_with_obsid:
+                        obsid = filenames_obsid[filename]
+                        description = os.path.basename(filename) if filename else None
+                        dbconn.execute(
+                            f"INSERT INTO w_logger_series "
+                            f"(obsid, source, description, instrument) VALUES ({ph}, {ph}, {ph}, {ph})",
+                            (obsid, source_for_series, description, serial_number),
+                        )
+                        series_id = db_utils.get_last_insert_id(dbconn)
+                        file_data[0].append("series_id")
                         if has_created_at:
-                            row.append(batch_created_at)
-                dbconn.commit()
+                            file_data[0].append("created_at")
+                        for row in file_data[1:]:
+                            row.append(series_id)
+                            if has_created_at:
+                                row.append(batch_created_at)
             finally:
                 dbconn.closedb()
 

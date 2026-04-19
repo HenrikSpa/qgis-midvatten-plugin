@@ -528,9 +528,7 @@ def add_view_obs_points_obs_lines():
         dbconnection.execute(
             """DELETE FROM views_geometry_columns WHERE view_name IN ('view_obs_points', 'view_obs_lines');"""
         )
-        db_utils.execute_sqlfile(
-            definitions_path("qgis3_obsp_fix.sql"), dbconnection
-        )
+        db_utils.execute_sqlfile(definitions_path("qgis3_obsp_fix.sql"), dbconnection)
         dbconnection.commit_and_closedb()
         MessagebarAndLog.info(
             bar_msg=QCoreApplication.translate(
@@ -548,12 +546,12 @@ def add_non_essential_tables(dbconnection=None):
 
     connection_ok = dbconnection.connect2db()
     if connection_ok:
-        db_utils.execute_sqlfile(
-            definitions_path("create_db_extra_data_tables.sql"),
-            dbconnection,
-            merge_newlines=True,
-        )
-        dbconnection.commit()
+        with dbconnection.transaction():
+            db_utils.execute_sqlfile(
+                definitions_path("create_db_extra_data_tables.sql"),
+                dbconnection,
+                merge_newlines=True,
+            )
         MessagebarAndLog.info(
             bar_msg=QCoreApplication.translate(
                 "Midvatten",

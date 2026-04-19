@@ -62,9 +62,9 @@ class PrepareForQgis2Threejs:
             del self.symbolcolors_dict[key]
         self.root = QgsProject.instance().layerTreeRoot()
         self.remove_views()
-        self.drop_db_views()
-        self.create_db_views()
-        self.dbconnection.commit()
+        with self.dbconnection.transaction():
+            self.drop_db_views()
+            self.create_db_views()
         self.add_layers()
         self.dbconnection.closedb()
 
@@ -83,9 +83,7 @@ class PrepareForQgis2Threejs:
 
         colors = []
 
-        existing_tables = db_utils.get_tables(
-            self.dbconnection, skip_views=False
-        )
+        existing_tables = db_utils.get_tables(self.dbconnection, skip_views=False)
         layer_list = []
         for tablename in list_with_all_strat_layer:
             layer = build_layer(

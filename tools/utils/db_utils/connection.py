@@ -4,6 +4,7 @@ Connection factory and DbConnectionManager facade.
 
 import ast
 import os
+from contextlib import contextmanager
 from typing import Any, Optional
 
 import qgis.core
@@ -139,6 +140,49 @@ class DbConnectionManager:
 
     def commit_and_closedb(self) -> None:
         self._backend.commit_and_closedb()
+
+    @contextmanager
+    def transaction(self):
+        """Run a block of statements atomically.
+
+        On PostgreSQL, temporarily disables AUTOCOMMIT so commit/rollback
+        scope the whole block — commits on clean exit, rolls back on
+        exception, and restores AUTOCOMMIT in finally.
+
+        On SQLite, the sqlite3 driver already auto-starts a transaction on
+        the first write; this wrapper just scopes commit/rollback around it.
+
+        Contract:
+          - Do NOT nest transaction() blocks.
+          - Do NOT call .commit() or .rollback() from inside the block; the
+            context manager owns those.
+          - The block is not safe for operations that cannot run inside a
+            transaction (e.g. VACUUM ANALYZE). Call those outside the block.
+        """
+        conn = self.conn
+        if self.is_postgresql():
+            # psycopg2 is optional (SQLite-only installs don't have it), so
+            # this import is deliberately lazy — module-level imports are
+            # preferred project-wide except for psycopg2, which may not be
+            # installed.
+            import psycopg2.extensions
+
+            conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_READ_COMMITTED)
+            try:
+                yield self
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                raise
+            finally:
+                conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+        else:
+            try:
+                yield self
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                raise
 
     def closedb(self) -> None:
         self._backend.closedb()

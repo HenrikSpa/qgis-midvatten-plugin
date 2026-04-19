@@ -65,6 +65,7 @@ def execute_sqlfile(
     merge_newlines: bool = False,
 ) -> None:
     is_sqlite = dbconnection.is_sqlite()
+    is_postgresql = not is_sqlite
 
     with open(sqlfilename) as f:
         lines = [line.rstrip("\n") for rownr, line in enumerate(f) if rownr > 0]
@@ -81,7 +82,7 @@ def execute_sqlfile(
 
     for line in lines:
         if line:
-            if dbconnection.is_postgresql():
+            if is_postgresql:
                 line = _transform_line_for_postgresql(line)
             try:
                 dbconnection.execute(line)

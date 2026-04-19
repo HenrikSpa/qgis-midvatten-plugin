@@ -957,7 +957,7 @@ p, li { white-space: pre-wrap; }
                               </property>
                              </widget>
                             </item>
-                            <item row="5" column="0">
+                            <item row="7" column="0">
                              <widget class="QLabel" name="label_screens">
                               <property name="font">
                                <font>
@@ -971,7 +971,7 @@ p, li { white-space: pre-wrap; }
                               </property>
                              </widget>
                             </item>
-                            <item row="5" column="1" colspan="3">
+                            <item row="7" column="1" colspan="3">
                              <widget class="QComboBox" name="screens_mode_combo">
                               <property name="font">
                                <font>
@@ -997,7 +997,7 @@ p, li { white-space: pre-wrap; }
                               </item>
                              </widget>
                             </item>
-                            <item row="6" column="0">
+                            <item row="8" column="0">
                              <widget class="QLabel" name="label_screen_width_factor">
                               <property name="font">
                                <font>
@@ -1011,7 +1011,7 @@ p, li { white-space: pre-wrap; }
                               </property>
                              </widget>
                             </item>
-                            <item row="6" column="1" colspan="3">
+                            <item row="8" column="1" colspan="3">
                              <widget class="QDoubleSpinBox" name="screen_width_factor_spin">
                               <property name="font">
                                <font>

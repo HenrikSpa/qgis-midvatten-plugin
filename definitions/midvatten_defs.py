@@ -72,7 +72,7 @@ def settingsdict():  # These are the default settings, they shall not be changed
         "secplotselectedDEMs": [],
         "stratigraphyplotted": True,
         "secplothydrologyplotted": False,
-        "screensplotmode": "none",
+        "screensplotmode": "behind",
         "screenwidthfactor": 1.2,
         "secplotlabelsplotted": True,
         "secplotlegendplotted": True,

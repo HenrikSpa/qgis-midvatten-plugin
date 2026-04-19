@@ -23,41 +23,46 @@ def get_tables(
     skip_views: bool = False,
 ) -> list[str]:
     with use_or_create_connection(dbconnection) as dbconnection:
+        tables_args: Optional[tuple] = None
         if dbconnection.is_sqlite():
             if skip_views:
                 tabletype = "type='table'"
             else:
                 tabletype = "type = 'table' or type = 'view'"
             tables_sql = (
-                """SELECT tbl_name FROM sqlite_master WHERE (%s) AND tbl_name NOT IN %s ORDER BY tbl_name"""
-                % (tabletype, dbconnection.internal_tables())
+                f"SELECT tbl_name FROM sqlite_master WHERE ({tabletype}) "
+                f"AND tbl_name NOT IN {dbconnection.internal_tables()} "
+                f"ORDER BY tbl_name"
             )
         else:
+            ph = dbconnection.placeholder()
+            args_list: list[str] = [dbconnection.schema]
             if skip_views:
                 tabletype = "AND table_type='BASE TABLE'"
                 pg_mat_views = ""
             else:
                 tabletype = ""
-                pg_mat_views = (
-                    """UNION SELECT relname FROM pg_class WHERE relkind = 'm'"""
-                )
+                pg_mat_views = "UNION SELECT relname FROM pg_class WHERE relkind = 'm'"
                 if dbconnection.schema.lower() != "public":
                     pg_mat_views += (
-                        """ AND TRIM(TRIM(REPLACE(oid::regclass::text, relname, ''), '.'), '"') = '%s' """
-                        % dbconnection.schema
+                        " AND TRIM(TRIM(REPLACE(oid::regclass::text, relname, ''), '.'), '\"') = "
+                        + ph
+                        + " "
                     )
-            tables_sql = """SELECT table_name FROM (
-                            SELECT table_name FROM information_schema.tables
-                            WHERE table_schema='%s' %s
-                            AND table_name NOT IN %s
-                            %s) foo
-                            ORDER BY table_name""" % (
-                dbconnection.schema,
-                tabletype,
-                postgis_internal_tables(),
-                pg_mat_views,
+                    args_list.append(dbconnection.schema)
+            tables_sql = (
+                "SELECT table_name FROM ("
+                "SELECT table_name FROM information_schema.tables "
+                "WHERE table_schema = " + ph + " " + tabletype + " "
+                "AND table_name NOT IN "
+                + postgis_internal_tables()
+                + " "
+                + pg_mat_views
+                + ") foo "
+                "ORDER BY table_name"
             )
-        tables = dbconnection.execute_and_fetchall(tables_sql)
+            tables_args = tuple(args_list)
+        tables = dbconnection.execute_and_fetchall(tables_sql, args=tables_args)
         return [col[0] for col in tables]
 
 
@@ -150,23 +155,23 @@ def get_foreign_keys(
             for row in result_list:
                 foreign_keys.setdefault(row[2], []).append((row[3], row[4]))
         else:
-            sql = """
-                    SELECT
-                      conrelid::regclass AS table_from,
-                      conname,
-                      pg_get_constraintdef(c.oid) AS cdef
-                    FROM pg_constraint c
-                    JOIN pg_namespace n
-                      ON n.oid = c.connamespace
-                    WHERE contype IN ('f')
-                    AND n.nspname = '%s'
-                    AND conrelid::regclass::text = '%s'
-                    ORDER BY conrelid::regclass::text, contype DESC;
-                    """ % (
-                dbconnection.schema,
-                table,
+            ph = dbconnection.placeholder()
+            sql = (
+                "SELECT "
+                "  conrelid::regclass AS table_from, "
+                "  conname, "
+                "  pg_get_constraintdef(c.oid) AS cdef "
+                "FROM pg_constraint c "
+                "JOIN pg_namespace n "
+                "  ON n.oid = c.connamespace "
+                "WHERE contype IN ('f') "
+                "AND n.nspname = " + ph + " "
+                "AND conrelid::regclass::text = " + ph + " "
+                "ORDER BY conrelid::regclass::text, contype DESC;"
             )
-            result_list = dbconnection.execute_and_fetchall(sql)
+            result_list = dbconnection.execute_and_fetchall(
+                sql, args=(dbconnection.schema, table)
+            )
             for row in result_list:
                 info = row[2]
                 m = re.search(
@@ -230,14 +235,14 @@ def get_geometry_types(
             sql = """SELECT f_geometry_column, geometry_type FROM geometry_columns WHERE f_table_name = ?"""
             execute_args = (tablename,)
         else:
-            sql = """SELECT f_geometry_column, type
-                    FROM geometry_columns
-                    WHERE f_table_schema = '%s'
-                    AND f_table_name = '%s';""" % (
-                dbconnection.schema,
-                tablename,
+            ph = dbconnection.placeholder()
+            sql = (
+                "SELECT f_geometry_column, type "
+                "FROM geometry_columns "
+                "WHERE f_table_schema = " + ph + " "
+                "AND f_table_name = " + ph + ";"
             )
-            execute_args = None
+            execute_args = (dbconnection.schema, tablename)
         result = get_sql_result_as_dict(
             sql,
             dbconnection=dbconnection,

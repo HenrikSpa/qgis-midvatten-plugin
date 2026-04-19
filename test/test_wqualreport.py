@@ -6,6 +6,7 @@ from unittest import mock
 
 import pytest
 from qgis.core import QgsProject, QgsVectorLayer
+from qgis.PyQt.QtCore import QDir
 
 from midvatten.test import utils_for_tests
 from midvatten.tools.utils import db_utils
@@ -58,10 +59,8 @@ def _make_obs_points_layer() -> QgsVectorLayer:
 
 
 def _report_path() -> str:
-    from qgis.PyQt import QtCore
-
     return os.path.join(
-        QtCore.QDir.tempPath(), "midvatten_reports", "w_qual_report.html"
+        QDir.tempPath(), "midvatten_reports", "w_qual_report.html"
     )
 
 

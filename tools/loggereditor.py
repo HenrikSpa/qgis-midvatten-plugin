@@ -216,7 +216,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         dbconnection = db_utils.DbConnectionManager()
         try:
             ph = dbconnection.placeholder()
-            if dbconnection.dbtype == "spatialite":
+            if dbconnection.is_sqlite():
                 sql = """SELECT obsid FROM (SELECT obsid, MAX(date_time), level_masl, head_cm FROM w_levels_logger {} GROUP BY obsid)
                          WHERE level_masl IS NULL AND head_cm IS NOT NULL ORDER BY obsid""".format(
                     "" if obsid is None else f" WHERE obsid = {ph}"

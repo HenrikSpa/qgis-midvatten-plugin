@@ -503,7 +503,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                     f"""(CASE WHEN {colname} IS NOT NULL\n    THEN CAST({colname} AS {column_headers_types[colname]}) ELSE {null_replacement} END)"""
                 )
 
-        if dbconnection.dbtype.lower() == "postgis":
+        if dbconnection.is_postgresql():
             dest_table_with_schema = f'"{dbconnection.schema}"."{dest_table}"'
         else:
             dest_table_with_schema = dest_table
@@ -528,7 +528,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         count_sql = dbconnection.sql_ident(
             "SELECT count(*) FROM {t}",
             t=dest_table
-            if dbconnection.dbtype != "postgis"
+            if not dbconnection.is_postgresql()
             else f"{dbconnection.schema}.{dest_table}",
         )
         recsbefore = dbconnection.execute_and_fetchall(count_sql)[0][0]
@@ -665,7 +665,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         df = df.astype(object).where(pd.notnull(df), None)
         df = df.replace("", None)
 
-        if dbconnection.dbtype == "spatialite":
+        if dbconnection.is_sqlite():
             sql = f"INSERT INTO {dbconnection.ident(temptable_name)} VALUES ({dbconnection.placeholders(len(df.columns))})"
 
             dbconnection.cursor.executemany(sql, list(df.itertuples(index=False)))
@@ -723,7 +723,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         temp_ident = dbconnection.ident(self.temptable_name)
         dest_ident = (
             dbconnection.ident(f"{dbconnection.schema}.{dest_table}")
-            if dbconnection.dbtype.lower() == "postgis"
+            if dbconnection.is_postgresql()
             else dbconnection.ident(dest_table)
         )
         pks_concat = " || ".join(dbconnection.ident(pk) for pk in pks)

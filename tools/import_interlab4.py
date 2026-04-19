@@ -975,7 +975,7 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
         ddl = self._extract_create_table(sql_text, "s_qual_lab")
         dbconnection = db_utils.DbConnectionManager()
         try:
-            if dbconnection.dbtype == "postgis":
+            if dbconnection.is_postgresql():
                 ddl = ddl.replace("double", "double precision")
             dbconnection.execute(ddl)
             dbconnection.commit()

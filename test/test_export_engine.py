@@ -16,6 +16,21 @@ from midvatten.tools.export_worker import ExportWorker
 from midvatten.tools.utils import db_utils
 
 
+def _run_worker(worker: ExportWorker) -> None:
+    """Wire worker to a QThread, start it, and block until finished or error."""
+    thread = QThread()
+    worker.moveToThread(thread)
+    thread.started.connect(worker.run)
+    worker.finished.connect(thread.quit)
+    worker.error.connect(thread.quit)
+    loop = QEventLoop()
+    worker.finished.connect(loop.quit)
+    worker.error.connect(loop.quit)
+    thread.start()
+    loop.exec_()
+    thread.wait()
+
+
 class _ExportDestMixin:
     """Shared SpatiaLite-destination helpers for ExportEngine test classes."""
 
@@ -747,12 +762,6 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
             obsid_lines=(),
             dest_srid="3006",
         )
-        thread = QThread()
-        worker.moveToThread(thread)
-        thread.started.connect(worker.run)
-        worker.finished.connect(thread.quit)
-        worker.error.connect(thread.quit)
-
         started: list[tuple] = []
         finished: list[str] = []
         errors: list[str] = []
@@ -760,12 +769,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
         worker.finished.connect(finished.append)
         worker.error.connect(errors.append)
 
-        loop = QEventLoop()
-        worker.finished.connect(loop.quit)
-        worker.error.connect(loop.quit)
-        thread.start()
-        loop.exec_()
-        thread.wait()
+        _run_worker(worker)
 
         assert errors == [], f"Worker emitted error: {errors}"
         assert len(finished) == 1
@@ -790,24 +794,11 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
             obsid_lines=(),
             dest_srid="3006",
         )
-        thread = QThread()
-        worker.moveToThread(thread)
-        thread.started.connect(worker.run)
-        worker.finished.connect(thread.quit)
-        worker.error.connect(thread.quit)
-
         finished: list[str] = []
         worker.finished.connect(finished.append)
 
-        loop = QEventLoop()
-        worker.finished.connect(loop.quit)
-        worker.error.connect(loop.quit)
-
-        # Cancel before the thread even starts
         worker.cancel()
-        thread.start()
-        loop.exec_()
-        thread.wait()
+        _run_worker(worker)
 
         # finished("") emitted for cancel
         assert finished == [""]
@@ -827,18 +818,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
             obsid_lines=(),
             dest_srid="3006",
         )
-        thread = QThread()
-        worker.moveToThread(thread)
-        thread.started.connect(worker.run)
-        worker.finished.connect(thread.quit)
-        worker.error.connect(thread.quit)
-
-        loop = QEventLoop()
-        worker.finished.connect(loop.quit)
-        worker.error.connect(loop.quit)
-        thread.start()
-        loop.exec_()
-        thread.wait()
+        _run_worker(worker)
 
         assert mock_bytea.call_count == 1
 
@@ -852,23 +832,12 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
             obsid_lines=(),
             dest_srid="3006",
         )
-        thread = QThread()
-        worker.moveToThread(thread)
-        thread.started.connect(worker.run)
-        worker.finished.connect(thread.quit)
-        worker.error.connect(thread.quit)
-
         errors: list[str] = []
         finished: list[str] = []
         worker.error.connect(errors.append)
         worker.finished.connect(finished.append)
 
-        loop = QEventLoop()
-        worker.finished.connect(loop.quit)
-        worker.error.connect(loop.quit)
-        thread.start()
-        loop.exec_()
-        thread.wait()
+        _run_worker(worker)
 
         print(f"{mock_messagebar.mock_calls=}")
         assert errors, "Expected error signal to be emitted"

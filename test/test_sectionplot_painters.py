@@ -9,17 +9,24 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import pytest
 from unittest import mock
 
 from midvatten.tools.sectionplot.figure import SectionPlotFigure
 from midvatten.tools.sectionplot.painters import (
     _qgis_color_str_to_mpl,
     paint_bars,
-    paint_screen_bars,
     paint_drill_stop,
     paint_layer_text,
     paint_obsids,
+    paint_screen_bars,
 )
+
+
+@pytest.fixture(autouse=True)
+def _close_figures():
+    yield
+    plt.close("all")
 
 MINIMAL_TEMPLATE = {
     "geology_Axes_bar": {"DEFAULT": {"edgecolor": "black"}},

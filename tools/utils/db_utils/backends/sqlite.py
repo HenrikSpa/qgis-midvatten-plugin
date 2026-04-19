@@ -285,10 +285,11 @@ class SQLiteBackend(Backend):
         bkupname = (
             self._dbpath + datetime.datetime.now().strftime("%Y%m%dT%H%M") + ".zip"
         )
-        zf = zipfile.ZipFile(bkupname, mode="w")
-        zf.write(self._dbpath, compress_type=compression)
-        zf.close()
-        self._conn.rollback()
+        try:
+            with zipfile.ZipFile(bkupname, mode="w") as zf:
+                zf.write(self._dbpath, compress_type=compression)
+        finally:
+            self._conn.rollback()
         MessagebarAndLog.info(
             bar_msg=QCoreApplication.translate(
                 "backup_db", "Database backup was written to %s "

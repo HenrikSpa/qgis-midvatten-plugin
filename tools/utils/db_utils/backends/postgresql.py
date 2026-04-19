@@ -16,7 +16,35 @@ from qgis.core import QgsCredentials, QgsDataSourceUri
 from midvatten.tools.utils.message_utils import MessagebarAndLog
 from midvatten.tools.utils.exceptions import UserInterruptError
 from midvatten.tools.utils.db_utils.backends.base import Backend
+from midvatten.tools.utils.db_utils.dialect import UnsafeIdentifierError
 from midvatten.tools.utils.db_utils.settings import get_postgis_connections
+
+_ALLOWED_GEOM_TYPES: tuple[str, ...] = (
+    "GEOMETRY",
+    "POINT",
+    "LINESTRING",
+    "POLYGON",
+    "MULTIPOINT",
+    "MULTILINESTRING",
+    "MULTIPOLYGON",
+    "GEOMETRYCOLLECTION",
+    "GEOMETRYZ",
+    "POINTZ",
+    "LINESTRINGZ",
+    "POLYGONZ",
+    "MULTIPOINTZ",
+    "MULTILINESTRINGZ",
+    "MULTIPOLYGONZ",
+    "GEOMETRYCOLLECTIONZ",
+    "GEOMETRYM",
+    "POINTM",
+    "LINESTRINGM",
+    "POLYGONM",
+    "GEOMETRYZM",
+    "POINTZM",
+    "LINESTRINGZM",
+    "POLYGONZM",
+)
 
 
 def postgis_internal_tables(as_tuple: bool = False) -> str:
@@ -179,15 +207,18 @@ class PostgreSQLBackend(Backend):
     ) -> str:
         if not temptable_name.startswith("temp_"):
             temptable_name = f"temp_{temptable_name}"
+        table_ident = self.ident(temptable_name)
         self.execute(
-            """CREATE TEMPORARY table %s (%s)"""
-            % (temptable_name, ", ".join(fieldnames_types))
+            f"CREATE TEMPORARY TABLE {table_ident} ({', '.join(fieldnames_types)})"
         )
         if geometry_colname_type_srid is not None:
             geom_column, geom_type, srid = geometry_colname_type_srid
+            if geom_type.upper() not in _ALLOWED_GEOM_TYPES:
+                raise UnsafeIdentifierError(
+                    f"Geometry type {geom_type!r} is not in the allowed list"
+                )
             self.execute(
-                """ALTER TABLE %s ADD COLUMN %s geometry(%s, %s);"""
-                % (temptable_name, geom_column, geom_type, srid)
+                f"ALTER TABLE {table_ident} ADD COLUMN {self.ident(geom_column)} geometry({geom_type.upper()}, {int(srid)})"
             )
         return temptable_name
 

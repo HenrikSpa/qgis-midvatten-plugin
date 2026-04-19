@@ -6,11 +6,11 @@ from unittest import mock
 
 import pytest
 from qgis.core import QgsProject, QgsVectorLayer
-from qgis.PyQt.QtCore import QDir
 
 from midvatten.test import utils_for_tests
 from midvatten.tools.utils import db_utils
 from midvatten.tools.wqualreport import Wqualreport
+from midvatten.tools.wqualreport_core import report_path
 
 
 # ---------------------------------------------------------------------------
@@ -19,12 +19,7 @@ from midvatten.tools.wqualreport import Wqualreport
 
 
 def _insert_wqual_data(obsid: str = "OBS1") -> None:
-    """Insert one obs_point and several w_qual_lab rows for *obsid*.
-
-    The PRIMARY KEY on w_qual_lab is (report, parameter), so each row must have a
-    unique (report, parameter) pair.  We embed the obsid in the report name so
-    that concurrent inserts for different obsids do not collide.
-    """
+    # report PK is (report, parameter); embed obsid to avoid collision across test calls
     db_utils.sql_alter_db(
         f"""INSERT INTO obs_points (obsid, geometry)
             VALUES ('{obsid}', ST_GeomFromText('POINT(0 0)', 3006))"""
@@ -45,7 +40,6 @@ def _insert_wqual_data(obsid: str = "OBS1") -> None:
 
 
 def _make_obs_points_layer() -> QgsVectorLayer:
-    """Create a QgsVectorLayer from obs_points and select all features."""
     dbconnection = db_utils.DbConnectionManager()
     uri = dbconnection.uri
     uri.setDataSource("", "obs_points", "geometry", "", "rowid")
@@ -56,12 +50,6 @@ def _make_obs_points_layer() -> QgsVectorLayer:
     vlayer.selectByIds(feature_ids)
     dbconnection.closedb()
     return vlayer
-
-
-def _report_path() -> str:
-    return os.path.join(
-        QDir.tempPath(), "midvatten_reports", "w_qual_report.html"
-    )
 
 
 def _default_settingsdict() -> dict:
@@ -104,7 +92,7 @@ class TestWqualreportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
         print(f"{mock_messagebar.mock_calls=}")
 
-        reportpath = _report_path()
+        reportpath = report_path()
         assert os.path.isfile(reportpath), "HTML report was not created"
         with open(reportpath, encoding="utf-8") as f:
             html = f.read()
@@ -136,7 +124,7 @@ class TestWqualreportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
         print(f"{mock_messagebar.mock_calls=}")
 
-        reportpath = _report_path()
+        reportpath = report_path()
         assert os.path.isfile(reportpath)
         with open(reportpath, encoding="utf-8") as f:
             html = f.read()
@@ -154,7 +142,6 @@ class TestWqualreportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv):
         _insert_wqual_data("OBS1")
 
         mock_iface = mock.MagicMock()
-        self.midvatten.ms.settingsdict.update(_default_settingsdict())
         report = Wqualreport(mock_iface, self.midvatten.ms)
         report.settingsdict = _default_settingsdict()
 

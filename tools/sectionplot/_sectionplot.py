@@ -43,6 +43,8 @@ from midvatten.tools.utils.gui_utils import set_combobox
 
 Ui_SecPlotDock = uic.loadUiType(ui_path("secplotdockwidget.ui"))[0]
 
+# These imports must follow uic.loadUiType() above because loading the UI type
+# registers Qt classes that the imports below depend on at import time.
 from matplotlib.widgets import Slider  # noqa: E402
 from matplotlib.gridspec import GridSpec  # noqa: E402
 import datetime  # noqa: E402

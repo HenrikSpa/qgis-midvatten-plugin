@@ -76,6 +76,9 @@ class SQLiteBackend(Backend):
 
     dbtype = "spatialite"
 
+    def is_sqlite(self) -> bool:
+        return True
+
     def __init__(
         self,
         dbpath: str,

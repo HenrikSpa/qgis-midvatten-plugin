@@ -23,7 +23,7 @@ def get_tables(
     skip_views: bool = False,
 ) -> list[str]:
     with use_or_create_connection(dbconnection) as dbconnection:
-        if dbconnection.dbtype == "spatialite":
+        if dbconnection.is_sqlite():
             if skip_views:
                 tabletype = "type='table'"
             else:
@@ -70,7 +70,7 @@ def get_table_info(
     ]
 ]:
     with use_or_create_connection(dbconnection) as dbconnection:
-        if dbconnection.dbtype == "spatialite":
+        if dbconnection.is_sqlite():
             columns_sql = dbconnection.sql_ident("PRAGMA table_info({t})", t=tablename)
             try:
                 columns = dbconnection.execute_and_fetchall(columns_sql)
@@ -144,7 +144,7 @@ def get_foreign_keys(
 ) -> dict[str, list[tuple[str, str]]]:
     with use_or_create_connection(dbconnection) as dbconnection:
         foreign_keys: dict[str, list[tuple[str, str]]] = {}
-        if dbconnection.dbtype == "spatialite":
+        if dbconnection.is_sqlite():
             pragma_sql = dbconnection.sql_ident("PRAGMA foreign_key_list({t})", t=table)
             result_list = dbconnection.execute_and_fetchall(pragma_sql)
             for row in result_list:
@@ -210,7 +210,7 @@ def change_cast_type_for_geometry_columns(
     table_info: list[tuple[int, str, str, int, None, int]],
     tablename: str,
 ) -> dict[str, str]:
-    if dbconnection.dbtype == "spatialite":
+    if dbconnection.is_sqlite():
         newtype = "BLOB"
     else:
         newtype = "geometry"
@@ -226,7 +226,7 @@ def get_geometry_types(
     dbconnection: Optional[DbConnectionManager] = None,
 ) -> OrderedDict:
     with use_or_create_connection(dbconnection) as dbconnection:
-        if dbconnection.dbtype == "spatialite":
+        if dbconnection.is_sqlite():
             sql = """SELECT f_geometry_column, geometry_type FROM geometry_columns WHERE f_table_name = ?"""
             execute_args = (tablename,)
         else:

@@ -1,7 +1,7 @@
 """
 Database connection and query utilities.
 
-Backends: SQLiteBackend, PostgreSQLBackend (use isinstance, not dbtype strings).
+Backends: SQLiteBackend, PostgreSQLBackend (use is_sqlite()/is_postgresql(), not dbtype strings).
 Factory: create_backend(db_settings) -> backend.
 Facade: DbConnectionManager(db_settings) holds a backend and delegates.
 """

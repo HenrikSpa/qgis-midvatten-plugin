@@ -171,7 +171,7 @@ class PrepareForQgis2Threejs:
             "add_spatial_views_for_gis2threejs.sql",
         )
 
-        if self.dbconnection.dbtype == "spatialite":
+        if self.dbconnection.is_sqlite():
             self.dbconnection.execute(
                 r"""create view strat_obs_p_for_qgsi2threejs as select distinct "a"."rowid" as "rowid", "a"."obsid" as "obsid", "a"."geometry" as "geometry" from "obs_points" as "a" JOIN "stratigraphy" as "b" using ("obsid") where (typeof("a"."h_toc") in ('integer', 'real') or typeof("a"."h_gs") in ('integer', 'real'))"""
             )

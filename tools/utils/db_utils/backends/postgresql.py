@@ -61,6 +61,9 @@ class PostgreSQLBackend(Backend):
 
     dbtype = "postgis"
 
+    def is_postgresql(self) -> bool:
+        return True
+
     def __init__(self, connection_name: str, schema: str = "public") -> None:
         self._schema = schema
         self._connection_name = connection_name

@@ -319,3 +319,17 @@ class TestSQLiteBackendClosedb:
         assert method_names == ["rollback", "close"], (
             f"Expected ['rollback', 'close'] but got {method_names}"
         )
+
+
+@pytest.mark.spatialite
+class TestBackendPredicatesSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv):
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_is_sqlite_returns_true_for_spatialite(self, mock_messagebar):
+        conn = db_utils.DbConnectionManager(self._class_db_settings)
+        conn.connect2db()
+        try:
+            print(f"{mock_messagebar.mock_calls=}")
+            assert conn.is_sqlite() is True
+            assert conn.is_postgresql() is False
+        finally:
+            conn.closedb()

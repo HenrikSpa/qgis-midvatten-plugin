@@ -272,7 +272,7 @@ class NewDb:
             )
         else:
             self.db_settings = ru(db_settings)
-        if dbconnection.dbtype != "postgis":
+        if not dbconnection.is_postgresql():
             raise common_utils.UsageError(
                 "Database type postgis not selected, check Midvatten settings!"
             )

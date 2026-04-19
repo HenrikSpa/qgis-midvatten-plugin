@@ -89,7 +89,7 @@ def get_length_along(
 
     funcnames = ["ST_Line_Locate_Point", "ST_LineLocatePoint"]
 
-    if dbconnection.dbtype == "postgis":
+    if dbconnection.is_postgresql():
         try:
             _funcname = dbconnection.execute_and_fetchall(
                 """SELECT proname FROM pg_proc
@@ -212,7 +212,7 @@ def get_plot_data_bars(
                      FROM stratigraphy WHERE obsid = {ph}
                      AND TRIM(LOWER({strat_key})) {condition} ({subtypes})
                      ORDER BY stratid"""
-            if dbconnection.dbtype == "spatialite":
+            if dbconnection.is_sqlite():
                 _sql = sql.format(
                     ph=dbconnection.placeholder(),
                     strat_key=ident(strat_key),

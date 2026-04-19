@@ -648,7 +648,7 @@ def add_views_to_db(dbconnection, bedrock_geoshort):
             (view_name,),
         )
 
-    if dbconnection.dbtype == "spatialite":
+    if dbconnection.is_sqlite():
         view_ident = dbconnection.ident(view_name)
         sql = f"""
             CREATE VIEW {view_ident} AS
@@ -686,7 +686,7 @@ def add_views_to_db(dbconnection, bedrock_geoshort):
             % view_name
         )
 
-    if dbconnection.dbtype == "spatialite":
+    if dbconnection.is_sqlite():
         insert_view(view_name)
 
     view_name = "w_lvls_last_geom"
@@ -695,7 +695,7 @@ def add_views_to_db(dbconnection, bedrock_geoshort):
     except Exception:
         midvatten_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
     try:
-        if dbconnection.dbtype == "spatialite":
+        if dbconnection.is_sqlite():
             cur.execute(
                 f"""CREATE VIEW {view_name} AS
                                     SELECT row_number() OVER (ORDER BY a.obsid) rowid,
@@ -791,7 +791,7 @@ def add_views_to_db(dbconnection, bedrock_geoshort):
                 GROUP BY s.obsid
                 ) u ON a.obsid = u.obsid
     ORDER BY a.obsid"""
-    if dbconnection.dbtype == "spatialite":
+    if dbconnection.is_sqlite():
         _bergy = bergy.format(view_name=view_name, strata=bedrock_geoshort)
     else:
         _bergy = SQL(bergy).format(
@@ -802,7 +802,7 @@ def add_views_to_db(dbconnection, bedrock_geoshort):
     except Exception:
         midvatten_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
-    if dbconnection.dbtype == "spatialite":
+    if dbconnection.is_sqlite():
         insert_view(view_name)
 
     if view_name not in list(db_utils.tables_columns(dbconnection=dbconnection).keys()):

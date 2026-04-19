@@ -19,9 +19,9 @@ _SQLITE_KEYWORDS = ("SPATIALITE", "SQLITE")
 _POSTGRESQL_KEYWORDS = ("POSTGIS", "POSTGRESQL")
 
 
-def _strip_dialect_prefix(line: str, dbtype: str) -> str:
+def _strip_dialect_prefix(line: str, is_sqlite: bool) -> str:
     """Strip the dialect keyword from the start of line if it matches this backend."""
-    if dbtype == "spatialite":
+    if is_sqlite:
         for kw in _SQLITE_KEYWORDS:
             if line.strip().upper().startswith(kw):
                 return lstrip(kw, line.strip()).strip()
@@ -32,10 +32,10 @@ def _strip_dialect_prefix(line: str, dbtype: str) -> str:
     return line.strip()
 
 
-def _line_is_for_other_dialect(line: str, dbtype: str) -> bool:
+def _line_is_for_other_dialect(line: str, is_sqlite: bool) -> bool:
     """True if line is prefixed with the other backend's keyword (should skip)."""
     upper = line.strip().upper()
-    if dbtype == "spatialite":
+    if is_sqlite:
         return any(upper.startswith(kw) for kw in _POSTGRESQL_KEYWORDS)
     return any(upper.startswith(kw) for kw in _SQLITE_KEYWORDS)
 
@@ -64,16 +64,17 @@ def execute_sqlfile(
     dbconnection: DbConnectionManager,
     merge_newlines: bool = False,
 ) -> None:
-    dbtype = dbconnection.dbtype
+    is_sqlite = dbconnection.is_sqlite()
+    is_postgresql = not is_sqlite
 
     with open(sqlfilename) as f:
         lines = [line.rstrip("\n") for rownr, line in enumerate(f) if rownr > 0]
     lines = [
-        _strip_dialect_prefix(line, dbtype)
+        _strip_dialect_prefix(line, is_sqlite)
         for line in lines
         if line.strip()
         and not line.strip().startswith("#")
-        and not _line_is_for_other_dialect(line, dbtype)
+        and not _line_is_for_other_dialect(line, is_sqlite)
     ]
 
     if merge_newlines:
@@ -81,7 +82,7 @@ def execute_sqlfile(
 
     for line in lines:
         if line:
-            if dbconnection.is_postgresql():
+            if is_postgresql:
                 line = _transform_line_for_postgresql(line)
             try:
                 dbconnection.execute(line)

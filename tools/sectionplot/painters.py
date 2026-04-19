@@ -1067,7 +1067,7 @@ def paint_images(
             if os.path.isfile(_path):
                 path = _path
             else:
-                if dbconnection.dbtype == "spatialite":
+                if dbconnection.is_sqlite():
                     new_path = os.path.join(os.path.dirname(dbconnection.dbpath), _path)
                     if os.path.isfile(new_path):
                         path = new_path

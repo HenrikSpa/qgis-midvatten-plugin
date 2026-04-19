@@ -512,7 +512,7 @@ def compare_verson_lists(testlist: List[int], reflist: List[int]) -> bool:
 
 def add_view_obs_points_obs_lines():
     dbconnection = db_utils.DbConnectionManager()
-    if dbconnection.dbtype != "spatialite":
+    if not dbconnection.is_sqlite():
         MessagebarAndLog.info(
             bar_msg=QCoreApplication.translate(
                 "Midvatten", "Views not added for PostGIS databases (not needed)!"

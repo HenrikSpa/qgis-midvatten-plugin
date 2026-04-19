@@ -1,6 +1,6 @@
 """
 Abstract base for database backends. All dialect-specific logic lives in
-SQLiteBackend and PostgreSQLBackend; callers use isinstance(backend, ...)
+SQLiteBackend and PostgreSQLBackend; callers use is_sqlite()/is_postgresql()
 or the common interface only.
 """
 
@@ -23,6 +23,12 @@ class Backend(ABC):
     # Backend type string for backward compatibility (db_settings key).
     # One of "spatialite", "postgis".
     dbtype: str
+
+    def is_sqlite(self) -> bool:
+        return False
+
+    def is_postgresql(self) -> bool:
+        return False
 
     # Subclasses must assign self._conn and self._cursor in __init__.
     @property

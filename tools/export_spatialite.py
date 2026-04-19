@@ -196,6 +196,12 @@ class ExportSpatialite:
         progress.close()
 
         if not _signal_received:
+            common_utils.MessagebarAndLog.critical(
+                bar_msg=QCoreApplication.translate(
+                    "ExportSpatialite", "Export failed unexpectedly."
+                ),
+                button=True,
+            )
             return
         if _stats is None:
             common_utils.MessagebarAndLog.critical(

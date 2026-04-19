@@ -7,13 +7,15 @@ from unittest import mock
 
 import pytest
 
-from midvatten.test.utils_for_tests import MidvattenTestSpatialiteDbSv
+from midvatten.test.utils_for_tests import (
+    MidvattenTestPostgisDbSv,
+    MidvattenTestSpatialiteDbSv,
+)
 from midvatten.tools.utils import db_utils
 
 
-@pytest.mark.spatialite
-class TestExportEngine(MidvattenTestSpatialiteDbSv):
-    """Tests for ExportEngine using a SpatiaLite source DB."""
+class _ExportDestMixin:
+    """Shared SpatiaLite-destination helpers for ExportEngine test classes."""
 
     def setup_method(self):
         super().setup_method()
@@ -30,7 +32,6 @@ class TestExportEngine(MidvattenTestSpatialiteDbSv):
         super().teardown_method()
 
     def _make_dest_db(self, epsg_code: str = "3006", locale: str = "sv_SE") -> str:
-        """Create and return path to a fresh destination SpatiaLite DB."""
         from midvatten.tools.create_db import NewDb
 
         dest_path = os.path.join(
@@ -51,14 +52,19 @@ class TestExportEngine(MidvattenTestSpatialiteDbSv):
         )
         return dest_path
 
-    def _source_conn(self) -> db_utils.DbConnectionManager:
-        conn = db_utils.DbConnectionManager(self._class_db_settings)
-        conn.connect2db()
-        return conn
-
     def _dest_conn(self, epsg_code: str = "3006") -> db_utils.DbConnectionManager:
         path = self._make_dest_db(epsg_code=epsg_code)
         conn = db_utils.DbConnectionManager(path)
+        conn.connect2db()
+        return conn
+
+
+@pytest.mark.spatialite
+class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
+    """Tests for ExportEngine using a SpatiaLite source DB."""
+
+    def _source_conn(self) -> db_utils.DbConnectionManager:
+        conn = db_utils.DbConnectionManager(self._class_db_settings)
         conn.connect2db()
         return conn
 
@@ -812,3 +818,310 @@ class TestExportEngine(MidvattenTestSpatialiteDbSv):
         # finished("") emitted for cancel
         assert finished == [""]
         assert not os.path.exists(dest_path)
+
+    # ------------------------------------------------------------------ Critical fix
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.db_utils.export_bytea_as_bytes")
+    def test_worker_calls_export_bytea_as_bytes(self, mock_bytea, mock_messagebar):
+        """ExportWorker calls export_bytea_as_bytes on the source connection."""
+        from qgis.PyQt.QtCore import QEventLoop, QThread
+
+        from midvatten.tools.export_worker import ExportWorker
+
+        dest_path = self._make_dest_db()
+        worker = ExportWorker(
+            source_db_settings=self._class_db_settings,
+            dest_path=dest_path,
+            obsid_points=(),
+            obsid_lines=(),
+            dest_srid="3006",
+        )
+        thread = QThread()
+        worker.moveToThread(thread)
+        thread.started.connect(worker.run)
+        worker.finished.connect(thread.quit)
+        worker.error.connect(thread.quit)
+
+        loop = QEventLoop()
+        worker.finished.connect(loop.quit)
+        worker.error.connect(loop.quit)
+        thread.start()
+        loop.exec_()
+        thread.wait()
+
+        assert mock_bytea.call_count == 1
+
+    # ------------------------------------------------------------------ Row-count warning
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.export_engine.log")
+    def test_export_table_warns_on_pk_conflict(self, mock_log, mock_messagebar):
+        """Logs a warning when INSERT OR IGNORE silently drops a row due to PK conflict."""
+        from midvatten.tools.export_engine import ExportEngine
+
+        conn = db_utils.DbConnectionManager(self._class_db_settings)
+        db_utils.sql_alter_db(
+            "INSERT INTO obs_points (obsid, geometry) VALUES "
+            "('P1', ST_GeomFromText('POINT(1 2)', 3006))",
+            dbconnection=conn,
+        )
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels (obsid, date_time, meas) VALUES "
+            "('P1', '2020-01-01 00:00:00', 1.5)",
+            dbconnection=conn,
+        )
+        conn.commit_and_closedb()
+
+        src = self._source_conn()
+        dest = self._dest_conn()
+        db_utils.sql_alter_db(
+            "INSERT INTO obs_points (obsid, geometry) VALUES "
+            "('P1', ST_GeomFromText('POINT(1 2)', 3006))",
+            dbconnection=dest,
+        )
+        # Same PK row already in dest — will be ignored by INSERT OR IGNORE
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels (obsid, date_time, meas) VALUES "
+            "('P1', '2020-01-01 00:00:00', 9.9)",
+            dbconnection=dest,
+        )
+        dest.commit()
+
+        try:
+            ExportEngine()._export_table(
+                "w_levels",
+                src,
+                dest,
+                (),
+                "3006",
+                False,
+                lambda *a: None,
+                threading.Event(),
+            )
+        finally:
+            src.closedb()
+            dest.closedb()
+
+        warning_calls = [
+            call
+            for call in mock_log.warning.call_args_list
+            if "skip" in str(call).lower() or "ignor" in str(call).lower()
+        ]
+        assert warning_calls, "Expected a warning about skipped/ignored rows"
+
+    # ------------------------------------------------------------------ Cross-CRS coverage
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_export_table_cross_crs_reprojection(self, mock_messagebar):
+        """Exports geometry from SRID 3006 source into a SRID 4326 dest via WGS84 intermediate."""
+        from midvatten.tools.export_engine import ExportEngine
+
+        conn = db_utils.DbConnectionManager(self._class_db_settings)
+        db_utils.sql_alter_db(
+            "INSERT INTO obs_points (obsid, geometry) VALUES "
+            "('P1', ST_GeomFromText('POINT(633466 711659)', 3006))",
+            dbconnection=conn,
+        )
+        conn.commit_and_closedb()
+
+        src = self._source_conn()
+        dest = self._dest_conn(epsg_code="4326")
+        try:
+            ExportEngine()._export_table(
+                "obs_points",
+                src,
+                dest,
+                (),
+                "4326",
+                False,
+                lambda *a: None,
+                threading.Event(),
+            )
+            dest.commit()
+            rows = dest.execute_and_fetchall(
+                "SELECT obsid, ST_SRID(geometry), ST_AsText(geometry) FROM obs_points"
+            )
+        finally:
+            src.closedb()
+            dest.closedb()
+
+        assert len(rows) == 1
+        assert rows[0][0] == "P1"
+        assert rows[0][1] == 4326
+        # SWEREF99TM coordinates must NOT appear in the WGS84 result
+        wkt = rows[0][2]
+        assert "633466" not in wkt
+
+    # ------------------------------------------------------------------ obs_lines filter
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_export_obsid_lines_filter(self, mock_messagebar):
+        """Only the selected obs_lines obsids are exported."""
+        from midvatten.tools.export_engine import ExportEngine
+
+        conn = db_utils.DbConnectionManager(self._class_db_settings)
+        db_utils.sql_alter_db(
+            "INSERT INTO obs_lines (obsid, geometry) VALUES "
+            "('L1', ST_GeomFromText('LINESTRING(0 0, 1 1)', 3006)),"
+            "('L2', ST_GeomFromText('LINESTRING(2 2, 3 3)', 3006))",
+            dbconnection=conn,
+        )
+        conn.commit_and_closedb()
+
+        dest_path = self._make_dest_db()
+        src = self._source_conn()
+        dest = db_utils.DbConnectionManager(dest_path)
+        dest.connect2db()
+
+        try:
+            ExportEngine().export(
+                source_conn=src,
+                dest_conn=dest,
+                obsid_points=(),
+                obsid_lines=("L1",),
+                dest_srid="3006",
+                progress_cb=lambda *a: None,
+                cancel_flag=threading.Event(),
+            )
+            obsids = {
+                r[0] for r in dest.execute_and_fetchall("SELECT obsid FROM obs_lines")
+            }
+        finally:
+            src.closedb()
+            dest.closedb()
+
+        assert obsids == {"L1"}
+
+
+# ---------------------------------------------------------------------------
+# PostGIS source → SpatiaLite dest
+
+
+@pytest.mark.postgis
+class TestExportEnginePostgisSource(_ExportDestMixin, MidvattenTestPostgisDbSv):
+    """ExportEngine tests using a PostGIS source database."""
+
+    def _source_conn(self) -> db_utils.DbConnectionManager:
+        conn = db_utils.DbConnectionManager(self._class_db_settings)
+        conn.connect2db()
+        db_utils.export_bytea_as_bytes(conn)
+        return conn
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_postgis_source_basic_data_exported(self, mock_messagebar):
+        """Non-geometry data from PostGIS source arrives in SpatiaLite dest."""
+        from midvatten.tools.export_engine import ExportEngine
+
+        db_utils.sql_alter_db(
+            "INSERT INTO obs_points (obsid, geometry) VALUES "
+            "('P1', ST_GeomFromText('POINT(633466 711659)', 3006))"
+        )
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels (obsid, date_time, meas) VALUES "
+            "('P1', '2020-01-01 00:00:00', 1.5)"
+        )
+
+        dest_path = self._make_dest_db()
+        src = self._source_conn()
+        dest = db_utils.DbConnectionManager(dest_path)
+        dest.connect2db()
+
+        try:
+            ExportEngine().export(
+                source_conn=src,
+                dest_conn=dest,
+                obsid_points=(),
+                obsid_lines=(),
+                dest_srid="3006",
+                progress_cb=lambda *a: None,
+                cancel_flag=threading.Event(),
+            )
+            wlevel = dest.execute_and_fetchall(
+                "SELECT obsid, date_time, meas FROM w_levels"
+            )
+        finally:
+            src.closedb()
+            dest.closedb()
+
+        assert ("P1", "2020-01-01 00:00:00", 1.5) in wlevel
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_postgis_source_geometry_exported(self, mock_messagebar):
+        """Geometry from PostGIS source is correctly transferred to SpatiaLite dest."""
+        from midvatten.tools.export_engine import ExportEngine
+
+        db_utils.sql_alter_db(
+            "INSERT INTO obs_points (obsid, geometry) VALUES "
+            "('P1', ST_GeomFromText('POINT(633466 711659)', 3006))"
+        )
+
+        dest_path = self._make_dest_db(epsg_code="3006")
+        src = self._source_conn()
+        dest = db_utils.DbConnectionManager(dest_path)
+        dest.connect2db()
+
+        try:
+            ExportEngine().export(
+                source_conn=src,
+                dest_conn=dest,
+                obsid_points=(),
+                obsid_lines=(),
+                dest_srid="3006",
+                progress_cb=lambda *a: None,
+                cancel_flag=threading.Event(),
+            )
+            rows = dest.execute_and_fetchall(
+                "SELECT obsid, ST_AsText(geometry) FROM obs_points"
+            )
+        finally:
+            src.closedb()
+            dest.closedb()
+
+        assert len(rows) == 1
+        assert rows[0][0] == "P1"
+        assert "633466" in rows[0][1]
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_postgis_source_obsid_filter(self, mock_messagebar):
+        """ObsId filter works correctly with PostGIS source."""
+        from midvatten.tools.export_engine import ExportEngine
+
+        db_utils.sql_alter_db(
+            "INSERT INTO obs_points (obsid, geometry) VALUES "
+            "('P1', ST_GeomFromText('POINT(1 2)', 3006)),"
+            "('P2', ST_GeomFromText('POINT(3 4)', 3006))"
+        )
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels (obsid, date_time, meas) VALUES "
+            "('P1', '2020-01-01 00:00:00', 1.0),"
+            "('P2', '2020-01-01 00:00:00', 2.0)"
+        )
+
+        dest_path = self._make_dest_db()
+        src = self._source_conn()
+        dest = db_utils.DbConnectionManager(dest_path)
+        dest.connect2db()
+
+        try:
+            ExportEngine().export(
+                source_conn=src,
+                dest_conn=dest,
+                obsid_points=("P1",),
+                obsid_lines=(),
+                dest_srid="3006",
+                progress_cb=lambda *a: None,
+                cancel_flag=threading.Event(),
+            )
+            obsids = {
+                r[0] for r in dest.execute_and_fetchall("SELECT obsid FROM obs_points")
+            }
+            wlevel_obsids = {
+                r[0] for r in dest.execute_and_fetchall("SELECT obsid FROM w_levels")
+            }
+        finally:
+            src.closedb()
+            dest.closedb()
+
+        assert obsids == {"P1"}
+        assert wlevel_obsids == {"P1"}

@@ -168,6 +168,7 @@ class ExportEngine:
             source_conn.cursor.execute(select_sql)
 
         rows_written = 0
+        total_ignored = 0
         while True:
             if cancel_flag.is_set():
                 raise ExportCancelledError()
@@ -179,11 +180,21 @@ class ExportEngine:
                     chunk, src_cols, dest_conn, key_to_sid
                 )
             dest_conn.cursor.executemany(insert_sql, chunk)
+            total_ignored += len(chunk) - dest_conn.cursor.rowcount
             rows_written += len(chunk)
             progress_cb(tname, rows_written, total)
 
+        if total_ignored > 0:
+            log.warning(
+                "Table %s: %d rows skipped (duplicate key or FK violation)",
+                tname,
+                total_ignored,
+            )
+
         if replace and dest_snapshot is not None:
-            self._reinsert_dest_snapshot(tname, dest_conn, dest_snapshot, snap_cols)
+            self._reinsert_dest_snapshot(
+                tname, dest_conn, dest_snapshot, snap_cols, dest_srid
+            )
 
     def _needs_logger_migration(
         self,
@@ -234,11 +245,18 @@ class ExportEngine:
         dest_conn: DbConnectionManager,
         snapshot: list[tuple],
         snap_cols: list[str],
+        dest_srid: str,
     ) -> None:
-        """Re-insert the snapshot with INSERT OR IGNORE (source rows take priority)."""
+        """Re-insert the snapshot with INSERT OR IGNORE (source rows take priority).
+
+        Snapshot bytes are already in dest_srid (fetched from dest), so pass
+        dest_srid explicitly — no cross-CRS transform is applied.
+        """
         if not snapshot:
             return
-        insert_sql = self._build_insert_sql(tname, dest_conn, snap_cols)
+        insert_sql = self._build_insert_sql(
+            tname, dest_conn, snap_cols, wkb_srid=dest_srid
+        )
         dest_conn.cursor.executemany(insert_sql, snapshot)
 
     def _migrate_logger_chunk(
@@ -249,6 +267,9 @@ class ExportEngine:
         key_to_sid: dict[tuple, int],
     ) -> list[tuple]:
         """Replace 'source' text values with w_logger_series.id integers in chunk."""
+        assert "source" in src_cols and "obsid" in src_cols, (
+            "_migrate_logger_chunk called but src_cols missing 'source' or 'obsid'"
+        )
         src_idx = src_cols.index("source")
         obsid_idx = src_cols.index("obsid")
 
@@ -333,7 +354,7 @@ class ExportEngine:
                     )[0][0]
                     results.setdefault(tname, {})[alias] = n
                 except Exception:
-                    log.debug(
+                    log.warning(
                         "Could not count rows in %s (%s)", tname, alias, exc_info=True
                     )
 

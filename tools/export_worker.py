@@ -8,6 +8,7 @@ import traceback
 from qgis.PyQt.QtCore import QObject, pyqtSignal, pyqtSlot
 
 from midvatten.tools.export_engine import ExportCancelledError, ExportEngine
+from midvatten.tools.utils import db_utils
 from midvatten.tools.utils.db_utils import DbConnectionManager
 
 log = logging.getLogger(__name__)
@@ -45,6 +46,7 @@ class ExportWorker(QObject):
         try:
             source_conn = DbConnectionManager(self._source_db_settings)
             source_conn.connect2db()
+            db_utils.export_bytea_as_bytes(source_conn)
             dest_conn = DbConnectionManager(self._dest_path)
             dest_conn.connect2db()
 

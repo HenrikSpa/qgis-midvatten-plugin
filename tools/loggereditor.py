@@ -1444,12 +1444,16 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             )
             % (str(data))
         )
-        # Epoch SQL expressions and float literals are safe to embed; user strings go as params.
+        # Epoch expressions are SQL code (strftime/extract), so they stay inline.
+        # Dates inside those expressions come from Qt QDateTimeEdit — it cannot
+        # produce injection-unsafe strings. See
+        # docs/superpowers/specs/2026-04-19-stabilisation-followups.md (F1)
+        # for the deferred cleanup of cast_date_time_as_epoch.
         update_sql = f"""
                 UPDATE w_levels_logger SET level_masl = level_masl -
                 (
-                 ((({data["l1_level"]} - {data["l2_level"]}) / ({data["l1_date"]} - {data["L2_date"]}))
-                 - (({data["M1_level"]} - {data["M2_level"]}) / ({data["M1_date"]} - {data["M2_date"]})))
+                 ((({ph} - {ph}) / ({data["l1_date"]} - {data["L2_date"]}))
+                 - (({ph} - {ph}) / ({data["M1_date"]} - {data["M2_date"]})))
                   * ({data["date_as_numeric"]} - {data["l1_date"]})
                 )
                 WHERE obsid = {ph} AND date_time >= {ph} AND date_time <= {ph}
@@ -1459,7 +1463,15 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             update_sql,
             dbconnection=dbconnection,
             all_args=[
-                (data["obsid"], data["adjust_start_date"], data["adjust_end_date"])
+                (
+                    float(data["l1_level"]),
+                    float(data["l2_level"]),
+                    float(data["M1_level"]),
+                    float(data["M2_level"]),
+                    data["obsid"],
+                    data["adjust_start_date"],
+                    data["adjust_end_date"],
+                )
             ],
         )
         dbconnection.closedb()

@@ -16,6 +16,7 @@ from psycopg2.sql import SQL, Identifier
 from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools.utils import common_utils, db_utils
+from midvatten.tools.utils.db_utils.dialect import ident
 from midvatten.tools.utils.string_utils import returnunicode as ru
 
 
@@ -214,7 +215,7 @@ def get_plot_data_bars(
             if dbconnection.dbtype == "spatialite":
                 _sql = sql.format(
                     ph=dbconnection.placeholder(),
-                    strat_key=strat_key,
+                    strat_key=ident(strat_key),
                     condition=condition,
                     subtypes=dbconnection.placeholders(len(subtypes)),
                 )

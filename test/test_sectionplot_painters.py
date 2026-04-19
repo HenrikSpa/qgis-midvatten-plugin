@@ -9,7 +9,6 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import pytest
 from unittest import mock
 
 from midvatten.tools.sectionplot.figure import SectionPlotFigure

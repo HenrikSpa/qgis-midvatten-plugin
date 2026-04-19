@@ -249,22 +249,6 @@ def rowid_string(
         return dbconnection.rowid_string()
 
 
-def delete_duplicate_values(
-    dbconnection: DbConnectionManager,
-    tablename: str,
-    primary_keys: list,
-) -> None:
-    rowid = dbconnection.rowid_string().lower()
-    table_ident = dbconnection.ident(tablename)
-    rowid_ident = dbconnection.ident(rowid)
-    pk_idents = ", ".join(dbconnection.ident(pk) for pk in primary_keys)
-    sql = (
-        f"DELETE FROM {table_ident} WHERE {rowid_ident} NOT IN "
-        f"(SELECT MIN({rowid_ident}) FROM {table_ident} GROUP BY {pk_idents})"
-    )
-    dbconnection.execute(sql)
-
-
 def activate_foreign_keys(
     activated: bool = True,
     dbconnection: Optional[DbConnectionManager] = None,

@@ -25,11 +25,9 @@ class Backend(ABC):
     dbtype: str
 
     def is_sqlite(self) -> bool:
-        """Return True if this is a SQLite (SpatiaLite) backend."""
         return False
 
     def is_postgresql(self) -> bool:
-        """Return True if this is a PostgreSQL (PostGIS) backend."""
         return False
 
     # Subclasses must assign self._conn and self._cursor in __init__.

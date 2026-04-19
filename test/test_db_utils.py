@@ -328,6 +328,7 @@ class TestBackendPredicatesSpatialite(utils_for_tests.MidvattenTestSpatialiteDbS
         conn = db_utils.DbConnectionManager(self._class_db_settings)
         conn.connect2db()
         try:
+            print(f"{mock_messagebar.mock_calls=}")
             assert conn.is_sqlite() is True
             assert conn.is_postgresql() is False
         finally:

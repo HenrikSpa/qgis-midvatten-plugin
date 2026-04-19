@@ -230,11 +230,9 @@ class DbConnectionManager:
         return self._backend.is_not_distinct_from()
 
     def is_sqlite(self) -> bool:
-        """Return True if the backend is SQLite (SpatiaLite)."""
         return self._backend.is_sqlite()
 
     def is_postgresql(self) -> bool:
-        """Return True if the backend is PostgreSQL (PostGIS)."""
         return self._backend.is_postgresql()
 
     def numeric_datatypes(self) -> list:

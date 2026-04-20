@@ -155,15 +155,15 @@ class TestGeneralCsvImportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
                 importer.load_files()
                 importer.table_chooser.import_method = "w_levels_logger"
 
+                file_to_db = {
+                    "obsid": "obsid",
+                    "date_time": "date_time",
+                    "head_cm": "head_cm",
+                    "source": "source",
+                }
                 for column in importer.table_chooser.columns:
-                    names = {
-                        "obsid": "obsid",
-                        "date_time": "date_time",
-                        "head_cm": "head_cm",
-                        "source": "source",
-                    }
-                    if column.db_column in names:
-                        column.file_column_name = names[column.db_column]
+                    if column.db_column in file_to_db:
+                        column.file_column_name = file_to_db[column.db_column]
 
                 importer.start_import()
 
@@ -177,7 +177,6 @@ class TestGeneralCsvImportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
     ):
         self._run_w_levels_logger_import(mock_messagebar)
 
-        # Two distinct (obsid, source) groups => two w_logger_series rows.
         series_result = db_utils.sql_load_fr_db(
             "SELECT obsid, source FROM w_logger_series ORDER BY obsid, source"
         )
@@ -187,8 +186,6 @@ class TestGeneralCsvImportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
             ("rb1", "fileB"),
         ]
 
-        # All three imported rows land in w_levels_logger with the right
-        # series_id wired via w_logger_series.source.
         rows_result = db_utils.sql_load_fr_db(
             "SELECT l.obsid, l.date_time, l.head_cm, s.source"
             " FROM w_levels_logger l"

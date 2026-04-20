@@ -11,7 +11,16 @@ Resolved on branch `stabilisation-followups` via two commits:
 
 No TZ semantics were changed — the pinned tests pass before and after the refactor.
 
-## F2 — Export engine SRID values are not parameter-bound
+## F2 — DONE — Export engine SRID values are parameter-bound
+
+Resolved on branch `stabilisation-followups` via two commits (two-step defence as recommended):
+
+- `22b05af` — **boundary coercion.** Both backends now explicitly coerce the raw schema value to `int` at the return of `get_srid()` (`tools/utils/db_utils/backends/sqlite.py`, `postgresql.py`). A compromised schema that returns a non-numeric string now raises `ValueError` before the value can reach any SQL string; `None` (non-spatial table or NULL cell) is preserved. New test `test/test_get_srid_coercion.py` pins this: string coercion, None preservation, and injection rejection, for both backends.
+- `5f74128` — **parameter binding.** `tools/export_engine.py` no longer interpolates SRIDs into SQL. `_build_select_sql` now emits `ST_AsBinary(ST_Transform(<col>, <ph>))` and prepends the SRID to the returned args list. `_build_insert_sql` now emits `?`-only forms `ST_GeomFromWKB(?, ?)` and `ST_Transform(ST_GeomFromWKB(?, ?), ?)`, and returns a `(sql, geom_srid_slots)` pair; callers run `_expand_chunk_with_geom_srids` to splice the SRID value(s) into each chunk row at the correct position before `executemany`. Verified empirically that SpatiaLite accepts `?` inside both spatial functions (regression-guard test `test_export_engine_srid_placeholder_binding`).
+
+Net effect: no SRID value reaches SQL as an interpolated substring from either backend.
+
+## F2 original notes (kept for history)
 
 **File:** `tools/export_engine.py:65, 104, 107`
 
@@ -24,7 +33,7 @@ f"ST_Transform(ST_GeomFromWKB(?, {effective_wkb_srid}), {dest_srid})"
 
 **Why it matters:** SRIDs are integers read from the DB schema (`source_conn.get_srid()`). In practice always int-valued and safe; in principle a compromised schema could inject SQL. Also a convention violation.
 
-**Why not fixed:** Parameterizing inside a spatial function call (`ST_Transform(…, ?)`) is awkward and the backend-level test coverage for that is thin. Prefer a targeted fix with a round-trip test per backend once the SRID-pipeline has a test harness.
+**Why not fixed in the stabilisation pass:** Parameterizing inside a spatial function call (`ST_Transform(…, ?)`) is awkward and the backend-level test coverage for that is thin. Prefer a targeted fix with a round-trip test per backend once the SRID-pipeline has a test harness.
 
 **Recommended approach:** coerce to `int()` at the boundary where the SRID leaves `get_srid()` (belt-and-braces sanitisation), then separately move to `%s`/`?` bindings with per-backend tests.
 

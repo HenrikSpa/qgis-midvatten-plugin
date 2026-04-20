@@ -25,8 +25,10 @@ from unittest.mock import call
 import pytest
 
 from midvatten.test import utils_for_tests
+from midvatten.test import mocks_for_tests
 from midvatten.tools.import_interlab4 import Interlab4Import
-from midvatten.tools.utils import common_utils
+from midvatten.tools.obsid_assignment_dialog import DialogOutcome
+from midvatten.tools.utils import common_utils, db_utils
 
 
 @pytest.mark.spatialite
@@ -830,3 +832,111 @@ class TestExtractCreateTable:
             Interlab4Import._extract_create_table(
                 "CREATE TABLE foo (id text);", "missing"
             )
+
+
+@pytest.mark.spatialite
+class TestInterlab4ImportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv):
+    """Integration test for the full Interlab4Import.start_import() flow.
+
+    Exercises parse -> obsid assignment -> to_table -> general_import against a
+    real SpatiaLite DB, ensuring all 7 decomposed helper methods of
+    MidvDataImporter.general_import execute end-to-end for the interlab4 path.
+    """
+
+    _INTERLAB4_LINES = (
+        "#Interlab",
+        "#Version=4.0",
+        "#Tecken=UTF-8",
+        "#Textavgränsare=Nej",
+        "#Decimaltecken=,",
+        "#Provadm",
+        "Lablittera;Namn;Adress;Postnr;Ort;Kommunkod;Projekt;Laboratorium;"
+        "Provtyp;Provtagare;Registertyp;ProvplatsID;Provplatsnamn;"
+        "Specifik provplats;Provtagningsorsak;Provtyp;Provtypspecifikation;"
+        "Bedömning;Kemisk bedömning;Mikrobiologisk bedömning;Kommentar;År;"
+        "Provtagningsdatum;Provtagningstid;Inlämningsdatum;Inlämningstid;",
+        "DM-1;MFR;;;;;Demoproj;Demo-Lab;NSG;DV;;;VattA;SpA;;Dricksvatten;"
+        "Utgående;Nej;Tjänligt;;;2010;2010-09-07;10:15;2010-09-07;14:15;",
+        "#Provdat",
+        "Lablittera;Metodbeteckning;Parameter;Mätvärdetext;Mätvärdetal;"
+        "Mätvärdetalanm;Enhet;Rapporteringsgräns;Detektionsgräns;"
+        "Mätosäkerhet;Mätvärdespår;Parameterbedömning;Kommentar;",
+        "DM-1;Metod-1;Kalium;;5;;mg/l;;;;;;;",
+        "#Slut",
+    )
+
+    def _run_interlab4_import(self, mock_messagebar):
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('Rb1Lab')")
+
+        def _dialog_applies_as_is(
+            editor_rows, existing_obsids, reload_callback=None, parent=None
+        ):
+            fake = mock.MagicMock()
+            fake.editor_rows = editor_rows
+            fake.outcome = DialogOutcome.APPLY
+            fake.exec_ = lambda: None
+            return fake
+
+        with common_utils.tempinput(
+            "\n".join(self._INTERLAB4_LINES), "utf-8", suffix=".lab"
+        ) as filename:
+
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.Askuser",
+                mocks_for_tests.mock_askuser.get_v,
+            )
+            @mock.patch("midvatten.tools.utils.common_utils.NotFoundQuestion")
+            @mock.patch(
+                "midvatten.tools.import_interlab4.ObsidAssignmentDialog",
+                side_effect=_dialog_applies_as_is,
+            )
+            @mock.patch(
+                "midvatten.tools.utils.midvatten_utils.select_files",
+            )
+            def _run(
+                self,
+                fname,
+                mock_select_files,
+                mock_dialog,
+                mock_notfound,
+                mock_popup,
+            ):
+                mock_notfound.return_value.answer = "ok"
+                mock_notfound.return_value.value = "Rb1Lab"
+                mock_notfound.return_value.reuse_column = "obsid"
+                mock_select_files.return_value = [fname]
+
+                importer = Interlab4Import(self.iface, self.midvatten.ms)
+                importer.init_gui()
+                # Skip the cache path so the fallback NotFoundQuestion assigns
+                # the obsid (mirrors the simplest user flow with a fresh DB).
+                importer.use_obsid_assignment_table.setChecked(False)
+                importer.load_files()
+                importer.start_import(
+                    importer.all_lab_results,
+                    importer.metadata_filter.get_selected_lablitteras(),
+                    importer.ignore_provtagningsorsak.isChecked(),
+                )
+
+            _run(self, filename)
+
+        print(f"{mock_messagebar.mock_calls=}")
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_interlab4_start_import_inserts_into_w_qual_lab(self, mock_messagebar):
+        self._run_interlab4_import(mock_messagebar)
+
+        result = db_utils.sql_load_fr_db(
+            "SELECT obsid, report, parameter, reading_num, unit"
+            " FROM w_qual_lab WHERE obsid='Rb1Lab' ORDER BY parameter"
+        )
+        assert result[0] is True
+        rows = result[1]
+        assert len(rows) == 1, f"Expected 1 row in w_qual_lab, got: {rows}"
+        assert rows[0][1] == "DM-1"
+        assert rows[0][2] == "Kalium"
+        assert rows[0][4] == "mg/l"

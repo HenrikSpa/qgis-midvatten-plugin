@@ -27,14 +27,12 @@ class _FakeNull:
 
 @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
 def test_returnunicode_python_none_returns_empty_string(mock_messagebar):
-    """Plain Python None must map to the empty string."""
     print(f"{mock_messagebar.mock_calls=}")
     assert returnunicode(None) == ""
 
 
 @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
 def test_returnunicode_qgis_null_returns_empty_string(mock_messagebar):
-    """The canonical QGIS NULL sentinel must map to the empty string."""
     from qgis.core import NULL
 
     print(f"{mock_messagebar.mock_calls=}")
@@ -43,10 +41,5 @@ def test_returnunicode_qgis_null_returns_empty_string(mock_messagebar):
 
 @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
 def test_returnunicode_fake_object_with_isnull_true_returns_empty(mock_messagebar):
-    """Any object whose `isNull()` returns True must map to the empty string.
-
-    This is the actual contract the production code checks, so the test is
-    independent of PyQt/QGIS version details.
-    """
     print(f"{mock_messagebar.mock_calls=}")
     assert returnunicode(_FakeNull()) == ""

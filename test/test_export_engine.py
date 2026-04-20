@@ -484,6 +484,86 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
         assert "dest_only" in units
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_export_preserves_fk_referenced_zz_snapshot(self, mock_messagebar):
+        """A zz_* lookup row referenced by a data row (w_flow→zz_flowtype)
+        must survive the snapshot/clear/reinsert cycle, even though the DELETE
+        step nominally violates the FK until the snapshot is re-inserted.
+
+        Pins the expected behavior of `_snapshot_and_clear_dest_table` +
+        `_reinsert_dest_snapshot` for F3 (transaction refactor). The current
+        implementation relies on `PRAGMA foreign_keys = OFF/ON` around DELETE;
+        the post-refactor implementation must rely on
+        `PRAGMA defer_foreign_keys = ON` inside `transaction()`. This test is
+        the invariant that must hold across the refactor.
+        """
+        from midvatten.tools.export_engine import ExportEngine
+
+        # Source keeps its default zz_flowtype rows (Accvol, Momflow, Aveflow).
+        src = self._source_conn()
+        dest_path = self._make_dest_db()
+        dest = db_utils.DbConnectionManager(dest_path)
+        dest.connect2db()
+
+        # Dest: add a CustomFlow zz_flowtype row, an obs_point, and a w_flow
+        # row that FK-references CustomFlow. Clearing zz_flowtype without
+        # disabling/deferring FK checks would violate the w_flow FK.
+        dest.execute("PRAGMA foreign_keys = ON")
+        dest.execute(
+            "INSERT INTO zz_flowtype (type, explanation) VALUES "
+            "('CustomFlow', 'Custom flow used only at this site')"
+        )
+        dest.execute(
+            "INSERT INTO obs_points (obsid, geometry) VALUES "
+            "('P1', ST_GeomFromText('POINT(1 2)', 3006))"
+        )
+        dest.execute(
+            "INSERT INTO w_flow (obsid, instrumentid, flowtype, date_time, reading)"
+            " VALUES ('P1', 'I1', 'CustomFlow', '2020-01-01 00:00:00', 1.5)"
+        )
+        dest.commit()
+
+        try:
+            ExportEngine().export(
+                source_conn=src,
+                dest_conn=dest,
+                obsid_points=(),
+                obsid_lines=(),
+                dest_srid="3006",
+                progress_cb=lambda *a: None,
+                cancel_flag=threading.Event(),
+            )
+            flowtypes = {
+                r[0]
+                for r in dest.execute_and_fetchall("SELECT type FROM zz_flowtype")
+            }
+            wflow = dest.execute_and_fetchall(
+                "SELECT obsid, instrumentid, flowtype, date_time, reading"
+                " FROM w_flow"
+            )
+            integrity_violations = dest.execute_and_fetchall(
+                "PRAGMA foreign_key_check"
+            )
+        finally:
+            src.closedb()
+            dest.closedb()
+
+        print(f"{mock_messagebar.mock_calls=}")
+        # Source's default rows must be present.
+        assert {"Accvol", "Momflow", "Aveflow"}.issubset(flowtypes)
+        # Dest's FK-referenced row must survive via snapshot reinsert.
+        assert "CustomFlow" in flowtypes
+        # The data row that references CustomFlow is still intact.
+        assert (
+            "P1",
+            "I1",
+            "CustomFlow",
+            "2020-01-01 00:00:00",
+            1.5,
+        ) in wflow
+        # No FK violations left dangling by the export.
+        assert integrity_violations == []
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_needs_logger_migration_same_schema(self, mock_messagebar):
         """Returns False when source already has series_id (new schema)."""
         from midvatten.tools.export_engine import ExportEngine

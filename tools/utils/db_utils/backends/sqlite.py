@@ -218,12 +218,13 @@ class SQLiteBackend(Backend):
     def add_insert_or_ignore_to_sql(self, sql: str) -> str:
         return re.sub(r"^(\s*)INSERT\b", r"\1INSERT OR IGNORE", sql, count=1)
 
-    def cast_date_time_as_epoch(self, date_time: Optional[str] = None) -> str:
+    def cast_date_time_as_epoch(
+        self, date_time: Optional[str] = None
+    ) -> tuple[str, tuple]:
         if date_time is None:
-            date_time = "date_time"
-        else:
-            date_time = f"'{date_time}'"
-        return f"""CAST(strftime('%s', {date_time}) AS NUMERIC)"""
+            return "CAST(strftime('%s', date_time) AS NUMERIC)", ()
+        ph = self.placeholder()
+        return f"CAST(strftime('%s', {ph}) AS NUMERIC)", (date_time,)
 
     def cast_null(self, data_type: str) -> str:
         return "NULL"

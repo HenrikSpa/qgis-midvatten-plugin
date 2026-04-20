@@ -53,8 +53,7 @@ class CastDateTimeAsEpochMixin:
                 all_args=[("P_epoch",)],
             )
             db_utils.sql_alter_db(
-                f"INSERT INTO w_levels_logger (obsid, date_time) "
-                f"VALUES ({ph}, {ph})",
+                f"INSERT INTO w_levels_logger (obsid, date_time) VALUES ({ph}, {ph})",
                 dbconnection=conn,
                 all_args=[("P_epoch", FIXED_INPUT)],
             )

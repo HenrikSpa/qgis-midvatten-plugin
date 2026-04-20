@@ -2,20 +2,14 @@
 
 Notes from the 2026-04-19 risk-based triage of `ai_test`. Each item is a real convention violation that was judged low-severity-and-deferrable during the stabilisation pass. Pick them up as dedicated follow-ups.
 
-## F1 — `cast_date_time_as_epoch(date_time=...)` embeds the date literal
+## F1 — DONE — cast_date_time_as_epoch now returns (sql, args)
 
-**Files:**
-- `tools/utils/db_utils/backends/sqlite.py:221` — `date_time = f"'{date_time}'"`
-- `tools/utils/db_utils/backends/postgresql.py:255` — same pattern
+Resolved on branch `stabilisation-followups` via two commits:
 
-**Why it matters:** Every caller of `cast_date_time_as_epoch(date_time=...)` (notably `tools/loggereditor.py` `adjust_trend_func`) inherits a convention violation: a date string is baked into SQL rather than passed via a placeholder. Not exploitable today because the only callers feed it `long_dateformat(qdatetime.toPyDateTime())` — Qt `QDateTimeEdit` cannot produce an unsafe string — but it violates "never build SQL queries with Python string concatenation".
+- `75f4935` — pin UTC interpretation of the literal path and the column path in `test/test_cast_date_time_as_epoch.py` so any TZ drift would fail fast (both backends: naive `"2024-06-15 12:00:00"` must produce epoch `1718452800`).
+- `43147b7` — change `Backend.cast_date_time_as_epoch(date_time=...)` on both `SQLiteBackend` and `PostgreSQLBackend` (plus the `DbConnectionManager` facade and the `db_utils.helpers` wrapper) to return `(sql_fragment, args)`. In column mode the fragment embeds no value and `args` is empty; in literal mode the fragment holds the backend placeholder and `args` is a 1-tuple carrying the user-provided date string. Callers in `tools/loggereditor.py` (`update_level_masl_from_level_masl`, `update_level_masl_from_head`, `delete_range`-style path, and `adjust_trend_func`) now splice both the fragment and its args into the composed SQL, so the date literal is parameter-bound instead of concatenated.
 
-**Why not fixed in the stabilisation pass:** The helper returns `str` (a SQL fragment). Making it safe means either:
-
-- (a) change the signature to `(sql, args)` and plumb the extra arg through every caller, or
-- (b) compute the epoch client-side via Qt/Python and pass as a float — but SQLite's `strftime('%s', …)` and PostgreSQL's `extract(epoch from …::timestamp)` both interpret a naive date string as UTC, while Qt's `QDateTime.toSecsSinceEpoch()` converts `Qt.LocalTime` to UTC epoch. A drop-in switch shifts trend-correction timestamps by the user's TZ offset.
-
-**Recommended approach:** option (a). Add a pinned test first that locks down current TZ behavior (pick one fixed datetime + one non-UTC tz), then change the signature, then run the same test to confirm no drift.
+No TZ semantics were changed — the pinned tests pass before and after the refactor.
 
 ## F2 — Export engine SRID values are not parameter-bound
 

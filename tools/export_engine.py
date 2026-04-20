@@ -98,7 +98,7 @@ class ExportEngine:
         second element is a list of ``(dest_col_index, extra_srid_values)``
         pairs: callers must splice the extra values into each chunk row
         immediately after the geometry column's WKB value so the positional
-        bindings line up. ``_insert_chunk`` does this rewrite.
+        bindings line up. ``_expand_chunk_with_geom_srids`` does this rewrite.
 
         ``wkb_srid`` is the SRID of the incoming WKB bytes. When it differs
         from the destination table's SRID (cross-CRS export), an
@@ -378,23 +378,15 @@ class ExportEngine:
                 if not db_utils.verify_table_exists(tname, dbconnection=dest_conn):
                     log.warning("Dest table %s missing — skipping", tname)
                     continue
-                # Each per-table cycle (snapshot → DELETE → insert source →
-                # reinsert snapshot) runs atomically. defer_foreign_keys
-                # suspends FK *checks* until COMMIT while leaving enforcement
-                # on, so FK-referenced lookup rows (e.g. zz_flowtype pointed
-                # at by w_flow) can be cleared mid-transaction without
-                # violating the constraint — the snapshot reinsert restores
-                # integrity before COMMIT runs the deferred check.
-                #
-                # SQLite quirks that dictate the shape of this block:
-                #   - ``defer_foreign_keys`` is only honored *inside* an open
-                #     transaction; it is silently reset the next time SQLite
-                #     transitions out of a transaction. Python's sqlite3
-                #     deferred-isolation mode does not issue BEGIN until the
-                #     first DML, so we issue ``BEGIN`` explicitly here to
-                #     guarantee an active transaction before the pragma.
-                #   - The pragma auto-resets at each COMMIT/ROLLBACK, so it
-                #     must be set fresh per transaction.
+                # FK-referenced lookup rows (e.g. zz_flowtype pointed at by
+                # w_flow) need to be cleared mid-transaction. defer_foreign_keys
+                # postpones the check to COMMIT, by which point the snapshot
+                # reinsert has restored integrity. SQLite quirk: the pragma is
+                # only honored inside an open transaction and auto-resets at
+                # each COMMIT/ROLLBACK; Python's sqlite3 only issues BEGIN on
+                # the first DML, so we force BEGIN explicitly before the pragma.
+                # (Baking BEGIN into transaction() itself breaks create_db.py's
+                # InitSpatialMetaData(), which internally issues its own BEGIN.)
                 with dest_conn.transaction():
                     dest_conn.execute("BEGIN")
                     dest_conn.execute("PRAGMA defer_foreign_keys = ON")

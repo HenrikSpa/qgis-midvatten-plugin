@@ -53,24 +53,35 @@ class ExportEngine:
         tname: str,
         source_conn: DbConnectionManager,
         select_cols: list[str],
-        wkb_srid: str,
+        wkb_srid: int,
         obsids: tuple[str, ...],
         geom_cols: set[str],
     ) -> tuple[str, list]:
-        """Return (SELECT sql, args) streaming select_cols from source."""
+        """Return (SELECT sql, args) streaming select_cols from source.
+
+        The SRID for each geometry column is parameter-bound via
+        ``ST_Transform(geom, <ph>)`` — one binding per geometry column, added
+        to ``args`` in column order. ``obsids`` IN-clause values (if any)
+        follow. The backend-specific placeholder (``?`` on SQLite, ``%s`` on
+        PostgreSQL) is queried from ``source_conn``.
+        """
+        ph = source_conn.placeholder()
         exprs: list[str] = []
+        srid_args: list = []
         for col in select_cols:
             if col in geom_cols:
                 qcol = db_utils.ident(col)
-                exprs.append(f"ST_AsBinary(ST_Transform({qcol}, {wkb_srid}))")
+                exprs.append(f"ST_AsBinary(ST_Transform({qcol}, {ph}))")
+                srid_args.append(int(wkb_srid))
             else:
                 exprs.append(db_utils.ident(col))
 
         sql = f"SELECT {', '.join(exprs)} FROM {db_utils.ident(tname)}"
-        args: list = []
+        args: list = list(srid_args)
         if obsids:
-            clause, args = source_conn.in_clause(obsids)
+            clause, in_args = source_conn.in_clause(obsids)
             sql += f" WHERE {db_utils.ident('obsid')} IN {clause}"
+            args.extend(in_args)
         return sql, args
 
     def _build_insert_sql(
@@ -78,13 +89,20 @@ class ExportEngine:
         tname: str,
         dest_conn: DbConnectionManager,
         dest_cols: list[str],
-        wkb_srid: str | None = None,
-    ) -> str:
-        """Return INSERT OR IGNORE SQL for dest table (always SpatiaLite, ? placeholders).
+        wkb_srid: int | None = None,
+    ) -> tuple[str, list[tuple[int, tuple[int, ...]]]]:
+        """Return (INSERT sql, geom_srid_slots) for dest table (SpatiaLite).
 
-        wkb_srid is the SRID of the incoming WKB bytes.  When it differs from the
-        destination table's SRID (cross-CRS export), an ST_Transform is added so
-        coordinates are re-projected before storing.
+        The returned SQL uses ``?`` placeholders everywhere, including for
+        SRID arguments inside ``ST_GeomFromWKB`` and ``ST_Transform``. The
+        second element is a list of ``(dest_col_index, extra_srid_values)``
+        pairs: callers must splice the extra values into each chunk row
+        immediately after the geometry column's WKB value so the positional
+        bindings line up. ``_insert_chunk`` does this rewrite.
+
+        ``wkb_srid`` is the SRID of the incoming WKB bytes. When it differs
+        from the destination table's SRID (cross-CRS export), an
+        ``ST_Transform`` is added so coordinates are re-projected.
         """
         geom_cols = set(
             db_utils.get_geometry_types(tname, dbconnection=dest_conn).keys()
@@ -96,22 +114,52 @@ class ExportEngine:
 
         col_list = ", ".join(db_utils.ident(c) for c in dest_cols)
         value_exprs: list[str] = []
-        for col in dest_cols:
+        geom_srid_slots: list[tuple[int, tuple[int, ...]]] = []
+        for idx, col in enumerate(dest_cols):
             if col in geom_cols and dest_srid is not None:
                 effective_wkb_srid = wkb_srid if wkb_srid is not None else dest_srid
-                if str(effective_wkb_srid) != str(dest_srid):
-                    value_exprs.append(
-                        f"ST_Transform(ST_GeomFromWKB(?, {effective_wkb_srid}), {dest_srid})"
-                    )
+                effective_int = int(effective_wkb_srid)
+                dest_int = int(dest_srid)
+                if effective_int != dest_int:
+                    value_exprs.append("ST_Transform(ST_GeomFromWKB(?, ?), ?)")
+                    geom_srid_slots.append((idx, (effective_int, dest_int)))
                 else:
-                    value_exprs.append(f"ST_GeomFromWKB(?, {dest_srid})")
+                    value_exprs.append("ST_GeomFromWKB(?, ?)")
+                    geom_srid_slots.append((idx, (dest_int,)))
             else:
                 value_exprs.append("?")
 
-        return (
+        sql = (
             f"INSERT OR IGNORE INTO {db_utils.ident(tname)} "
             f"({col_list}) VALUES ({', '.join(value_exprs)})"
         )
+        return sql, geom_srid_slots
+
+    @staticmethod
+    def _expand_chunk_with_geom_srids(
+        chunk: list[tuple],
+        geom_srid_slots: list[tuple[int, tuple[int, ...]]],
+    ) -> list[tuple]:
+        """Rewrite each row so geom-col slots gain the SRID bindings expected
+        by the INSERT SQL returned from ``_build_insert_sql``.
+
+        For each ``(idx, extras)`` pair, the row's value at position ``idx``
+        (the raw WKB) is kept and followed by the SRID values in ``extras``.
+        All other positions pass through unchanged.
+        """
+        if not geom_srid_slots:
+            return chunk
+        # Build a position-indexed lookup for O(1) access per row.
+        extras_by_idx = dict(geom_srid_slots)
+        out: list[tuple] = []
+        for row in chunk:
+            new_row: list = []
+            for i, value in enumerate(row):
+                new_row.append(value)
+                if i in extras_by_idx:
+                    new_row.extend(extras_by_idx[i])
+            out.append(tuple(new_row))
+        return out
 
     def _export_table(
         self,
@@ -150,16 +198,19 @@ class ExportEngine:
             db_utils.get_geometry_types(tname, dbconnection=source_conn).keys()
         )
         source_srid = source_conn.get_srid(tname) if geom_cols else None
+        dest_srid_int = int(dest_srid)
         wkb_srid = (
-            dest_srid
-            if source_srid is None or str(source_srid) == str(dest_srid)
-            else "4326"
+            dest_srid_int
+            if source_srid is None or int(source_srid) == dest_srid_int
+            else 4326
         )
 
         select_sql, select_args = self._build_select_sql(
             tname, source_conn, src_cols, wkb_srid, obsids, geom_cols
         )
-        insert_sql = self._build_insert_sql(tname, dest_conn, dst_cols, wkb_srid)
+        insert_sql, geom_srid_slots = self._build_insert_sql(
+            tname, dest_conn, dst_cols, wkb_srid
+        )
 
         key_to_sid: dict[tuple, int] = {}
         if select_args:
@@ -179,7 +230,8 @@ class ExportEngine:
                 chunk = self._migrate_logger_chunk(
                     chunk, src_cols, dest_conn, key_to_sid
                 )
-            dest_conn.cursor.executemany(insert_sql, chunk)
+            expanded = self._expand_chunk_with_geom_srids(chunk, geom_srid_slots)
+            dest_conn.cursor.executemany(insert_sql, expanded)
             total_ignored += len(chunk) - dest_conn.cursor.rowcount
             rows_written += len(chunk)
             progress_cb(tname, rows_written, total)
@@ -254,10 +306,11 @@ class ExportEngine:
         """
         if not snapshot:
             return
-        insert_sql = self._build_insert_sql(
-            tname, dest_conn, snap_cols, wkb_srid=dest_srid
+        insert_sql, geom_srid_slots = self._build_insert_sql(
+            tname, dest_conn, snap_cols, wkb_srid=int(dest_srid)
         )
-        dest_conn.cursor.executemany(insert_sql, snapshot)
+        expanded = self._expand_chunk_with_geom_srids(snapshot, geom_srid_slots)
+        dest_conn.cursor.executemany(insert_sql, expanded)
 
     def _migrate_logger_chunk(
         self,

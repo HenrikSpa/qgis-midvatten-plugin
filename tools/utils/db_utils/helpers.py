@@ -61,7 +61,14 @@ def vacuum_db(dbconnection: Optional[DbConnectionManager] = None) -> None:
 def cast_date_time_as_epoch(
     dbconnection: Optional[DbConnectionManager] = None,
     date_time: Optional[str] = None,
-) -> str:
+) -> tuple[str, tuple]:
+    """Return (sql_fragment, args) for an epoch cast.
+
+    When ``date_time`` is provided the fragment uses a backend placeholder
+    and ``args`` carries the value — callers must parameter-bind the
+    returned args alongside any surrounding SQL. See F1 in
+    docs/superpowers/specs/2026-04-19-stabilisation-followups.md.
+    """
     with use_or_create_connection(dbconnection) as dbconnection:
         return dbconnection.cast_date_time_as_epoch(date_time)
 

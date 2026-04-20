@@ -2,22 +2,25 @@
 
 Notes from the 2026-04-19 risk-based triage of `ai_test`. Each item is a real convention violation that was judged low-severity-and-deferrable during the stabilisation pass. Pick them up as dedicated follow-ups.
 
-## F1 — `cast_date_time_as_epoch(date_time=...)` embeds the date literal
+## F1 — DONE — cast_date_time_as_epoch now returns (sql, args)
 
-**Files:**
-- `tools/utils/db_utils/backends/sqlite.py:221` — `date_time = f"'{date_time}'"`
-- `tools/utils/db_utils/backends/postgresql.py:255` — same pattern
+Resolved on branch `stabilisation-followups` via two commits:
 
-**Why it matters:** Every caller of `cast_date_time_as_epoch(date_time=...)` (notably `tools/loggereditor.py` `adjust_trend_func`) inherits a convention violation: a date string is baked into SQL rather than passed via a placeholder. Not exploitable today because the only callers feed it `long_dateformat(qdatetime.toPyDateTime())` — Qt `QDateTimeEdit` cannot produce an unsafe string — but it violates "never build SQL queries with Python string concatenation".
+- `75f4935` — pin UTC interpretation of the literal path and the column path in `test/test_cast_date_time_as_epoch.py` so any TZ drift would fail fast (both backends: naive `"2024-06-15 12:00:00"` must produce epoch `1718452800`).
+- `43147b7` — change `Backend.cast_date_time_as_epoch(date_time=...)` on both `SQLiteBackend` and `PostgreSQLBackend` (plus the `DbConnectionManager` facade and the `db_utils.helpers` wrapper) to return `(sql_fragment, args)`. In column mode the fragment embeds no value and `args` is empty; in literal mode the fragment holds the backend placeholder and `args` is a 1-tuple carrying the user-provided date string. Callers in `tools/loggereditor.py` (`update_level_masl_from_level_masl`, `update_level_masl_from_head`, `delete_range`-style path, and `adjust_trend_func`) now splice both the fragment and its args into the composed SQL, so the date literal is parameter-bound instead of concatenated.
 
-**Why not fixed in the stabilisation pass:** The helper returns `str` (a SQL fragment). Making it safe means either:
+No TZ semantics were changed — the pinned tests pass before and after the refactor.
 
-- (a) change the signature to `(sql, args)` and plumb the extra arg through every caller, or
-- (b) compute the epoch client-side via Qt/Python and pass as a float — but SQLite's `strftime('%s', …)` and PostgreSQL's `extract(epoch from …::timestamp)` both interpret a naive date string as UTC, while Qt's `QDateTime.toSecsSinceEpoch()` converts `Qt.LocalTime` to UTC epoch. A drop-in switch shifts trend-correction timestamps by the user's TZ offset.
+## F2 — DONE — Export engine SRID values are parameter-bound
 
-**Recommended approach:** option (a). Add a pinned test first that locks down current TZ behavior (pick one fixed datetime + one non-UTC tz), then change the signature, then run the same test to confirm no drift.
+Resolved on branch `stabilisation-followups` via two commits (two-step defence as recommended):
 
-## F2 — Export engine SRID values are not parameter-bound
+- `22b05af` — **boundary coercion.** Both backends now explicitly coerce the raw schema value to `int` at the return of `get_srid()` (`tools/utils/db_utils/backends/sqlite.py`, `postgresql.py`). A compromised schema that returns a non-numeric string now raises `ValueError` before the value can reach any SQL string; `None` (non-spatial table or NULL cell) is preserved. New test `test/test_get_srid_coercion.py` pins this: string coercion, None preservation, and injection rejection, for both backends.
+- `5f74128` — **parameter binding.** `tools/export_engine.py` no longer interpolates SRIDs into SQL. `_build_select_sql` now emits `ST_AsBinary(ST_Transform(<col>, <ph>))` and prepends the SRID to the returned args list. `_build_insert_sql` now emits `?`-only forms `ST_GeomFromWKB(?, ?)` and `ST_Transform(ST_GeomFromWKB(?, ?), ?)`, and returns a `(sql, geom_srid_slots)` pair; callers run `_expand_chunk_with_geom_srids` to splice the SRID value(s) into each chunk row at the correct position before `executemany`. Verified empirically that SpatiaLite accepts `?` inside both spatial functions (regression-guard test `test_export_engine_srid_placeholder_binding`).
+
+Net effect: no SRID value reaches SQL as an interpolated substring from either backend.
+
+## F2 original notes (kept for history)
 
 **File:** `tools/export_engine.py:65, 104, 107`
 
@@ -30,7 +33,7 @@ f"ST_Transform(ST_GeomFromWKB(?, {effective_wkb_srid}), {dest_srid})"
 
 **Why it matters:** SRIDs are integers read from the DB schema (`source_conn.get_srid()`). In practice always int-valued and safe; in principle a compromised schema could inject SQL. Also a convention violation.
 
-**Why not fixed:** Parameterizing inside a spatial function call (`ST_Transform(…, ?)`) is awkward and the backend-level test coverage for that is thin. Prefer a targeted fix with a round-trip test per backend once the SRID-pipeline has a test harness.
+**Why not fixed in the stabilisation pass:** Parameterizing inside a spatial function call (`ST_Transform(…, ?)`) is awkward and the backend-level test coverage for that is thin. Prefer a targeted fix with a round-trip test per backend once the SRID-pipeline has a test harness.
 
 **Recommended approach:** coerce to `int()` at the boundary where the SRID leaves `get_srid()` (belt-and-braces sanitisation), then separately move to `%s`/`?` bindings with per-backend tests.
 

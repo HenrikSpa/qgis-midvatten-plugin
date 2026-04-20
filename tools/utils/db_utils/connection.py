@@ -236,7 +236,9 @@ class DbConnectionManager:
     def add_insert_or_ignore_to_sql(self, sql: str) -> str:
         return self._backend.add_insert_or_ignore_to_sql(sql)
 
-    def cast_date_time_as_epoch(self, date_time: Optional[str] = None) -> str:
+    def cast_date_time_as_epoch(
+        self, date_time: Optional[str] = None
+    ) -> tuple[str, tuple]:
         return self._backend.cast_date_time_as_epoch(date_time)
 
     def cast_null(self, data_type: str) -> str:

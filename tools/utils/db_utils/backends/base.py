@@ -189,8 +189,17 @@ class Backend(ABC):
         """Return SQL with INSERT OR IGNORE (SQLite) or ON CONFLICT DO NOTHING (PG)."""
         raise NotImplementedError
 
-    def cast_date_time_as_epoch(self, date_time: Optional[str] = None) -> str:
-        """Return SQL expression for casting date_time column to epoch number."""
+    def cast_date_time_as_epoch(
+        self, date_time: Optional[str] = None
+    ) -> tuple[str, tuple]:
+        """Return a (sql_fragment, args) pair for casting to an epoch number.
+
+        When ``date_time`` is None the fragment references the column
+        ``date_time`` and ``args`` is empty. When ``date_time`` is a string,
+        the fragment embeds a backend placeholder and ``args`` is a 1-tuple
+        with the value — callers must splice both into the composed SQL so
+        the value is parameter-bound, never concatenated.
+        """
         raise NotImplementedError
 
     def cast_null(self, data_type: str) -> str:

@@ -201,7 +201,11 @@ class PostgreSQLBackend(Backend):
         rows = self._cursor.fetchall()
         if not rows:
             return None
-        return int(rows[0][0])
+        value = rows[0][0]
+        # Belt-and-braces: guarantee the SRID is a plain int before it flows
+        # into any SQL string. A compromised schema that returns a non-numeric
+        # string here will raise ValueError instead of being spliced verbatim.
+        return int(value) if value is not None else None
 
     def create_temporary_table_for_import(
         self,
@@ -248,12 +252,13 @@ class PostgreSQLBackend(Backend):
     def add_insert_or_ignore_to_sql(self, sql: str) -> str:
         return sql + " ON CONFLICT DO NOTHING"
 
-    def cast_date_time_as_epoch(self, date_time: Optional[str] = None) -> str:
+    def cast_date_time_as_epoch(
+        self, date_time: Optional[str] = None
+    ) -> tuple[str, tuple]:
         if date_time is None:
-            date_time = "date_time"
-        else:
-            date_time = f"'{date_time}'"
-        return f"""extract(epoch from {date_time}::timestamp)"""
+            return "extract(epoch from date_time::timestamp)", ()
+        ph = self.placeholder()
+        return f"extract(epoch from {ph}::timestamp)", (date_time,)
 
     def cast_null(self, data_type: str) -> str:
         from midvatten.tools.utils.db_utils.dialect import UnsafeIdentifierError

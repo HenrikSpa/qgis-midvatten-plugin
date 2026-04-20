@@ -531,14 +531,14 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         common_utils.start_waiting_cursor()
         dbconnection = db_utils.DbConnectionManager()
         ph = dbconnection.placeholder()
-        date_time_as_epoch = db_utils.cast_date_time_as_epoch(dbconnection)
+        epoch_sql, epoch_args = db_utils.cast_date_time_as_epoch(dbconnection)
         fr_epoch = (fr_d_t - datetime.datetime(1970, 1, 1)).total_seconds()
         to_epoch = (to_d_t - datetime.datetime(1970, 1, 1)).total_seconds()
-        sql = f"UPDATE w_levels_logger SET level_masl = {ph} + level_masl WHERE obsid = {ph} AND level_masl IS NOT NULL AND {date_time_as_epoch} >= {ph} AND {date_time_as_epoch} <= {ph}"
+        sql = f"UPDATE w_levels_logger SET level_masl = {ph} + level_masl WHERE obsid = {ph} AND level_masl IS NOT NULL AND {epoch_sql} >= {ph} AND {epoch_sql} <= {ph}"
         db_utils.sql_alter_db(
             sql,
             dbconnection=dbconnection,
-            all_args=[(newzref, obsid, fr_epoch, to_epoch)],
+            all_args=[(newzref, obsid, *epoch_args, fr_epoch, *epoch_args, to_epoch)],
         )
         dbconnection.closedb()
         common_utils.stop_waiting_cursor()
@@ -555,14 +555,14 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         common_utils.start_waiting_cursor()
         dbconnection = db_utils.DbConnectionManager()
         ph = dbconnection.placeholder()
-        date_time_as_epoch = db_utils.cast_date_time_as_epoch(dbconnection)
+        epoch_sql, epoch_args = db_utils.cast_date_time_as_epoch(dbconnection)
         fr_epoch = (fr_d_t - datetime.datetime(1970, 1, 1)).total_seconds()
         to_epoch = (to_d_t - datetime.datetime(1970, 1, 1)).total_seconds()
-        sql = f"UPDATE w_levels_logger SET level_masl = {ph} + head_cm / 100 WHERE obsid = {ph} AND head_cm IS NOT NULL AND {date_time_as_epoch} >= {ph} AND {date_time_as_epoch} <= {ph}"
+        sql = f"UPDATE w_levels_logger SET level_masl = {ph} + head_cm / 100 WHERE obsid = {ph} AND head_cm IS NOT NULL AND {epoch_sql} >= {ph} AND {epoch_sql} <= {ph}"
         db_utils.sql_alter_db(
             sql,
             dbconnection=dbconnection,
-            all_args=[(newzref, obsid, fr_epoch, to_epoch)],
+            all_args=[(newzref, obsid, *epoch_args, fr_epoch, *epoch_args, to_epoch)],
         )
         dbconnection.closedb()
         common_utils.stop_waiting_cursor()
@@ -1293,12 +1293,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
         dbconnection = db_utils.DbConnectionManager()
         ph = dbconnection.placeholder()
-        date_time_as_epoch = db_utils.cast_date_time_as_epoch(dbconnection)
+        epoch_sql, epoch_args = db_utils.cast_date_time_as_epoch(dbconnection)
         table_ident = dbconnection.ident(table_name)
-        where_dt_sql = (
-            f" AND {date_time_as_epoch} >= {ph} AND {date_time_as_epoch} <= {ph}"
-        )
-        alter_args = (selected_obsid, fr_d_t, to_d_t)
+        where_dt_sql = f" AND {epoch_sql} >= {ph} AND {epoch_sql} <= {ph}"
+        alter_args = (selected_obsid, *epoch_args, fr_d_t, *epoch_args, to_d_t)
 
         if set_to_null_instead:
             sql = f"UPDATE {table_ident} SET level_masl = NULL WHERE obsid = {ph}{where_dt_sql}"
@@ -1381,6 +1379,32 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         if obsid is None:
             return None
 
+        dbconnection = db_utils.DbConnectionManager()
+        ph = dbconnection.placeholder()
+
+        # Each epoch cast returns (sql_fragment, args). The args hold the
+        # date string parameter-bound — never interpolated into SQL. The
+        # column-mode call (date_as_numeric) returns an empty args tuple.
+        l1_date_sql, l1_date_args = db_utils.cast_date_time_as_epoch(
+            dbconnection=dbconnection,
+            date_time=long_dateformat(self.l1_date.dateTime().toPyDateTime()),
+        )
+        l2_date_sql, l2_date_args = db_utils.cast_date_time_as_epoch(
+            dbconnection=dbconnection,
+            date_time=long_dateformat(self.l2_date.dateTime().toPyDateTime()),
+        )
+        m1_date_sql, m1_date_args = db_utils.cast_date_time_as_epoch(
+            dbconnection=dbconnection,
+            date_time=long_dateformat(self.m1_date.dateTime().toPyDateTime()),
+        )
+        m2_date_sql, m2_date_args = db_utils.cast_date_time_as_epoch(
+            dbconnection=dbconnection,
+            date_time=long_dateformat(self.m2_date.dateTime().toPyDateTime()),
+        )
+        date_as_numeric_sql, date_as_numeric_args = db_utils.cast_date_time_as_epoch(
+            dbconnection=dbconnection
+        )
+
         data = {
             "obsid": obsid,
             "adjust_start_date": long_dateformat(
@@ -1389,31 +1413,12 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             "adjust_end_date": long_dateformat(
                 self.to_date_time.dateTime().toPyDateTime()
             ),
-            "l1_date": db_utils.cast_date_time_as_epoch(
-                date_time=long_dateformat(self.l1_date.dateTime().toPyDateTime())
-            ),
-            "L2_date": db_utils.cast_date_time_as_epoch(
-                date_time=long_dateformat(self.l2_date.dateTime().toPyDateTime())
-            ),
-            "M1_date": db_utils.cast_date_time_as_epoch(
-                date_time=long_dateformat(self.m1_date.dateTime().toPyDateTime())
-            ),
-            "M2_date": db_utils.cast_date_time_as_epoch(
-                date_time=long_dateformat(self.m2_date.dateTime().toPyDateTime())
-            ),
             "l1_level": str(float(self.l1_level.text())),
             "l2_level": str(float(self.l2_level.text())),
             "M1_level": str(float(self.m1_level.text())),
             "M2_level": str(float(self.m2_level.text())),
-            "date_as_numeric": db_utils.cast_date_time_as_epoch(),
         }
 
-        dbconnection = db_utils.DbConnectionManager()
-        ph = dbconnection.placeholder()
-
-        # User-controlled strings are passed as parameters, never interpolated into SQL.
-        # Trusted code-generated SQL expressions (epoch casts) and safe float literals
-        # are embedded directly.
         select_sql = (
             f"SELECT level_masl FROM w_levels_logger"
             f" WHERE level_masl IS NOT NULL"
@@ -1444,17 +1449,14 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             )
             % (str(data))
         )
-        # Epoch expressions are SQL code (strftime/extract), so they stay inline.
-        # Dates inside those expressions come from Qt QDateTimeEdit — it cannot
-        # produce injection-unsafe strings. See
-        # docs/superpowers/specs/2026-04-19-stabilisation-followups.md (F1)
-        # for the deferred cleanup of cast_date_time_as_epoch.
+        # Epoch expressions are SQL code (strftime/extract); their date
+        # literals are parameter-bound via the *_args tuples above.
         update_sql = f"""
                 UPDATE w_levels_logger SET level_masl = level_masl -
                 (
-                 ((({ph} - {ph}) / ({data["l1_date"]} - {data["L2_date"]}))
-                 - (({ph} - {ph}) / ({data["M1_date"]} - {data["M2_date"]})))
-                  * ({data["date_as_numeric"]} - {data["l1_date"]})
+                 ((({ph} - {ph}) / ({l1_date_sql} - {l2_date_sql}))
+                 - (({ph} - {ph}) / ({m1_date_sql} - {m2_date_sql})))
+                  * ({date_as_numeric_sql} - {l1_date_sql})
                 )
                 WHERE obsid = {ph} AND date_time >= {ph} AND date_time <= {ph}
             """
@@ -1466,8 +1468,14 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 (
                     float(data["l1_level"]),
                     float(data["l2_level"]),
+                    *l1_date_args,
+                    *l2_date_args,
                     float(data["M1_level"]),
                     float(data["M2_level"]),
+                    *m1_date_args,
+                    *m2_date_args,
+                    *date_as_numeric_args,
+                    *l1_date_args,
                     data["obsid"],
                     data["adjust_start_date"],
                     data["adjust_end_date"],

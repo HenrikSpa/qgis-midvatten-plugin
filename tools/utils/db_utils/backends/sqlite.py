@@ -144,7 +144,11 @@ class SQLiteBackend(Backend):
         )
         if not srid:
             return None
-        return int(srid[0][0])
+        value = srid[0][0]
+        # Belt-and-braces: guarantee the SRID is a plain int before it flows
+        # into any SQL string. A compromised schema that returns a non-numeric
+        # string here will raise ValueError instead of being spliced verbatim.
+        return int(value) if value is not None else None
 
     def create_temporary_table_for_import(
         self,
@@ -214,12 +218,13 @@ class SQLiteBackend(Backend):
     def add_insert_or_ignore_to_sql(self, sql: str) -> str:
         return re.sub(r"^(\s*)INSERT\b", r"\1INSERT OR IGNORE", sql, count=1)
 
-    def cast_date_time_as_epoch(self, date_time: Optional[str] = None) -> str:
+    def cast_date_time_as_epoch(
+        self, date_time: Optional[str] = None
+    ) -> tuple[str, tuple]:
         if date_time is None:
-            date_time = "date_time"
-        else:
-            date_time = f"'{date_time}'"
-        return f"""CAST(strftime('%s', {date_time}) AS NUMERIC)"""
+            return "CAST(strftime('%s', date_time) AS NUMERIC)", ()
+        ph = self.placeholder()
+        return f"CAST(strftime('%s', {ph}) AS NUMERIC)", (date_time,)
 
     def cast_null(self, data_type: str) -> str:
         return "NULL"

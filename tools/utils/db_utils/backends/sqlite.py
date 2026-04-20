@@ -144,7 +144,11 @@ class SQLiteBackend(Backend):
         )
         if not srid:
             return None
-        return int(srid[0][0])
+        value = srid[0][0]
+        # Belt-and-braces: guarantee the SRID is a plain int before it flows
+        # into any SQL string. A compromised schema that returns a non-numeric
+        # string here will raise ValueError instead of being spliced verbatim.
+        return int(value) if value is not None else None
 
     def create_temporary_table_for_import(
         self,

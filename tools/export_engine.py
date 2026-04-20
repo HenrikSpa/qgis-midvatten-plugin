@@ -70,7 +70,7 @@ class ExportEngine:
         args: list = []
         if obsids:
             clause, args = source_conn.in_clause(obsids)
-            sql += f" WHERE obsid IN {clause}"
+            sql += f" WHERE {db_utils.ident('obsid')} IN {clause}"
         return sql, args
 
     def _build_insert_sql(
@@ -281,8 +281,9 @@ class ExportEngine:
             key = (obsid, source_val)
             if key not in key_to_sid:
                 dest_conn.execute(
-                    "INSERT INTO w_logger_series (obsid, source, description)"
-                    " VALUES (?, ?, ?)",
+                    f"INSERT INTO {db_utils.ident('w_logger_series')}"
+                    f" ({db_utils.ident('obsid')}, {db_utils.ident('source')},"
+                    f" {db_utils.ident('description')}) VALUES (?, ?, ?)",
                     (obsid, source_val, "Upgraded from Midv 1.x"),
                 )
                 key_to_sid[key] = db_utils.get_last_insert_id(dest_conn)
@@ -385,7 +386,7 @@ class ExportEngine:
         args: list = []
         if obsids:
             clause_sql, clause_args = source_conn.in_clause(obsids)
-            sql += f" WHERE obsid IN {clause_sql}"
+            sql += f" WHERE {db_utils.ident('obsid')} IN {clause_sql}"
             args = clause_args
         rows = source_conn.execute_and_fetchall(sql, args if args else None)
         return rows[0][0]

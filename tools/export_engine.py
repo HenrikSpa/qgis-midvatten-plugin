@@ -275,20 +275,21 @@ class ExportEngine:
     ) -> tuple[list[tuple], list[str]]:
         """Read all dest rows, clear the table. Returns (rows, col_names).
 
-        FK constraints are disabled only for the DELETE step so that lookup
-        tables (zz_*) can be cleared even when referenced by data tables.
-        The snapshot is immediately re-inserted after the source rows are
-        written, so referential integrity is restored within the same export.
+        The caller MUST have opened a ``dest_conn.transaction()`` block and
+        issued ``PRAGMA defer_foreign_keys = ON`` inside it. Deferring FK
+        checks (instead of the previous ``PRAGMA foreign_keys = OFF/ON``
+        window) keeps FK enforcement active but postpones the check to
+        COMMIT. By COMMIT the snapshot has been re-inserted alongside the
+        source rows, so any data rows that FK-reference this lookup table
+        (e.g. ``w_flow.flowtype`` → ``zz_flowtype.type``) stay satisfied.
+        SQLite's ``defer_foreign_keys`` auto-resets at each COMMIT/ROLLBACK,
+        so callers must set it per transaction.
         """
         dest_conn.execute(f"SELECT * FROM {db_utils.ident(tname)}")
         cols = [x[0].lower() for x in dest_conn.cursor.description]
         rows = list(dest_conn.cursor.fetchall())
         if rows:
-            dest_conn.execute("PRAGMA foreign_keys = OFF")
-            try:
-                dest_conn.execute(f"DELETE FROM {db_utils.ident(tname)}")
-            finally:
-                dest_conn.execute("PRAGMA foreign_keys = ON")
+            dest_conn.execute(f"DELETE FROM {db_utils.ident(tname)}")
         return rows, cols
 
     def _reinsert_dest_snapshot(
@@ -302,7 +303,9 @@ class ExportEngine:
         """Re-insert the snapshot with INSERT OR IGNORE (source rows take priority).
 
         Snapshot bytes are already in dest_srid (fetched from dest), so pass
-        dest_srid explicitly — no cross-CRS transform is applied.
+        dest_srid explicitly — no cross-CRS transform is applied. Must run
+        inside the same ``transaction()`` block that performed the snapshot
+        + clear, so deferred FK checks clear at COMMIT time.
         """
         if not snapshot:
             return
@@ -375,20 +378,41 @@ class ExportEngine:
                 if not db_utils.verify_table_exists(tname, dbconnection=dest_conn):
                     log.warning("Dest table %s missing — skipping", tname)
                     continue
-                self._export_table(
-                    tname,
-                    source_conn,
-                    dest_conn,
-                    obsids,
-                    dest_srid,
-                    replace,
-                    progress_cb,
-                    cancel_flag,
-                )
-                dest_conn.commit()
+                # Each per-table cycle (snapshot → DELETE → insert source →
+                # reinsert snapshot) runs atomically. defer_foreign_keys
+                # suspends FK *checks* until COMMIT while leaving enforcement
+                # on, so FK-referenced lookup rows (e.g. zz_flowtype pointed
+                # at by w_flow) can be cleared mid-transaction without
+                # violating the constraint — the snapshot reinsert restores
+                # integrity before COMMIT runs the deferred check.
+                #
+                # SQLite quirks that dictate the shape of this block:
+                #   - ``defer_foreign_keys`` is only honored *inside* an open
+                #     transaction; it is silently reset the next time SQLite
+                #     transitions out of a transaction. Python's sqlite3
+                #     deferred-isolation mode does not issue BEGIN until the
+                #     first DML, so we issue ``BEGIN`` explicitly here to
+                #     guarantee an active transaction before the pragma.
+                #   - The pragma auto-resets at each COMMIT/ROLLBACK, so it
+                #     must be set fresh per transaction.
+                with dest_conn.transaction():
+                    dest_conn.execute("BEGIN")
+                    dest_conn.execute("PRAGMA defer_foreign_keys = ON")
+                    self._export_table(
+                        tname,
+                        source_conn,
+                        dest_conn,
+                        obsids,
+                        dest_srid,
+                        replace,
+                        progress_cb,
+                        cancel_flag,
+                    )
 
-        db_utils.delete_srids(dest_conn, dest_srid)
-        dest_conn.commit()
+        with dest_conn.transaction():
+            db_utils.delete_srids(dest_conn, dest_srid)
+        # VACUUM is non-transactional by definition; keep it outside
+        # transaction() per the connection manager's contract.
         dest_conn.vacuum()
 
         return self._build_stats(source_conn, dest_conn)

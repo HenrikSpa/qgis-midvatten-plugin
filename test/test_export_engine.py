@@ -533,16 +533,12 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
                 cancel_flag=threading.Event(),
             )
             flowtypes = {
-                r[0]
-                for r in dest.execute_and_fetchall("SELECT type FROM zz_flowtype")
+                r[0] for r in dest.execute_and_fetchall("SELECT type FROM zz_flowtype")
             }
             wflow = dest.execute_and_fetchall(
-                "SELECT obsid, instrumentid, flowtype, date_time, reading"
-                " FROM w_flow"
+                "SELECT obsid, instrumentid, flowtype, date_time, reading FROM w_flow"
             )
-            integrity_violations = dest.execute_and_fetchall(
-                "PRAGMA foreign_key_check"
-            )
+            integrity_violations = dest.execute_and_fetchall("PRAGMA foreign_key_check")
         finally:
             src.closedb()
             dest.closedb()

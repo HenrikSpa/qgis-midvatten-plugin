@@ -153,7 +153,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
         src = self._source_conn()
         try:
             sql, args = ExportEngine()._build_select_sql(
-                "w_levels", src, ["obsid", "date_time", "meas"], "3006", (), set()
+                "w_levels", src, ["obsid", "date_time", "meas"], 3006, (), set()
             )
             assert "obsid" in sql
             assert "ST_AsBinary" not in sql
@@ -163,17 +163,19 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_build_select_sql_geometry(self, mock_messagebar):
-        """Geometry column wrapped in ST_AsBinary(ST_Transform(...))."""
+        """Geometry column wrapped in ST_AsBinary(ST_Transform(..., ?)) with SRID bound."""
         from midvatten.tools.export_engine import ExportEngine
 
         src = self._source_conn()
         try:
             sql, args = ExportEngine()._build_select_sql(
-                "obs_points", src, ["obsid", "geometry"], "4326", (), {"geometry"}
+                "obs_points", src, ["obsid", "geometry"], 4326, (), {"geometry"}
             )
             assert "ST_AsBinary" in sql
             assert "ST_Transform" in sql
-            assert "4326" in sql
+            # SRID is parameter-bound, not baked into the SQL text
+            assert "4326" not in sql
+            assert args == [4326]
         finally:
             src.closedb()
 
@@ -184,7 +186,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
         src = self._source_conn()
         try:
             sql, args = ExportEngine()._build_select_sql(
-                "w_levels", src, ["obsid", "date_time"], "3006", ("P1",), set()
+                "w_levels", src, ["obsid", "date_time"], 3006, ("P1",), set()
             )
             assert "WHERE" in sql.upper()
             assert len(args) == 1
@@ -197,12 +199,13 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
 
         dest = self._dest_conn()
         try:
-            sql = ExportEngine()._build_insert_sql(
+            sql, slots = ExportEngine()._build_insert_sql(
                 "w_levels", dest, ["obsid", "date_time", "meas"]
             )
             assert sql.upper().startswith("INSERT OR IGNORE INTO")
             assert "?" in sql
             assert "ST_GeomFromWKB" not in sql
+            assert slots == []
         finally:
             dest.closedb()
 
@@ -212,11 +215,14 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
 
         dest = self._dest_conn()
         try:
-            sql = ExportEngine()._build_insert_sql(
+            sql, slots = ExportEngine()._build_insert_sql(
                 "obs_points", dest, ["obsid", "geometry"]
             )
             assert "ST_GeomFromWKB" in sql
-            assert "3006" in sql
+            # SRID is now parameter-bound, not inlined into SQL.
+            assert "3006" not in sql
+            # One geom slot at index 1 ("geometry"), with the dest SRID value.
+            assert slots == [(1, (3006,))]
         finally:
             dest.closedb()
 
@@ -984,6 +990,51 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
             dest.closedb()
 
         assert obsids == {"L1"}
+
+    # ------------------------------------------------------------------ SRID binding
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_export_engine_srid_placeholder_binding(self, mock_messagebar):
+        """SpatiaLite accepts ? placeholders for ST_Transform/ST_GeomFromWKB
+        SRID arguments — the invariant ExportEngine now relies on.
+
+        Regression guard: if a future SpatiaLite upgrade stops accepting
+        placeholder SRIDs, this test will flip first and signal that the
+        int-interpolation rollback is needed.
+        """
+        conn = db_utils.DbConnectionManager(self._class_db_settings)
+        try:
+            db_utils.sql_alter_db(
+                "INSERT INTO obs_points (obsid, geometry) VALUES "
+                "('P1', ST_GeomFromText('POINT(633466 711659)', 3006))",
+                dbconnection=conn,
+            )
+            conn.commit()
+
+            # ST_Transform with a ? placeholder for the target SRID.
+            conn.cursor.execute(
+                "SELECT ST_AsText(ST_Transform(geometry, ?)) "
+                "FROM obs_points WHERE obsid = ?",
+                (4326, "P1"),
+            )
+            transformed = conn.cursor.fetchone()
+
+            # ST_GeomFromWKB with both ? placeholders for WKB and SRID.
+            wkb = conn.execute_and_fetchall(
+                "SELECT ST_AsBinary(geometry) FROM obs_points WHERE obsid=?",
+                ("P1",),
+            )[0][0]
+            conn.cursor.execute("SELECT ST_AsText(ST_GeomFromWKB(?, ?))", (wkb, 3006))
+            wkb_round = conn.cursor.fetchone()
+        finally:
+            conn.closedb()
+
+        assert transformed is not None and transformed[0] is not None
+        assert "POINT" in transformed[0].upper()
+        # 633466 is a SWEREF99 coord — if the placeholder was treated as a
+        # no-op and the original geom echoed back, this assertion would fail.
+        assert "633466" not in transformed[0]
+        assert wkb_round is not None and "633466" in wkb_round[0]
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_export_empty_selection_exports_all_obs_points_and_lines(

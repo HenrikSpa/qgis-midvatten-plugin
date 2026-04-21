@@ -133,7 +133,7 @@ class LoadLayers:
             ):
                 child.clear()
                 placeholder = QgsAttributeEditorHtmlElement(
-                    "screens_placeholder", child
+                    "", child
                 )
                 if locale_is_swedish:
                     html = (

@@ -463,14 +463,11 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
             hydro_colors=self.hydro_colors,
             dbconnection=self.dbconnection,
         )
-        if self.ms.settingsdict["screensplotmode"] != "none":
-            self.screen_bars = _get_screen_plot_data(
-                obsids_x_position=self.obsids_x_position,
-                z_data=self.z_data,
-                dbconnection=self.dbconnection,
-            )
-        else:
-            self.screen_bars = {}
+        self.screen_bars = _get_screen_plot_data(
+            obsids_x_position=self.obsids_x_position,
+            z_data=self.z_data,
+            dbconnection=self.dbconnection,
+        )
         if self.line_feature is not None:
             self.obs_lines_plot_data = _get_plot_data_seismic(
                 line_layer=self.line_layer,

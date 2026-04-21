@@ -1,4 +1,5 @@
 import datetime
+import itertools
 import json
 import logging
 import math
@@ -1653,6 +1654,18 @@ class MoveNodesButton(NavigationButton):
         if not self.button().isChecked():
             self.parent.reset_cid()
         self.parent.toggle_move_nodes(self.button().isChecked())
+
+
+def _iter_filter_combos(filters: list[dict]):
+    """Yield one {col: value} mapping per cartesian-product combination of selected filter values."""
+    active = [(f["col"], f["values"]) for f in filters if f.get("values")]
+    if not active:
+        yield {}
+        return
+    cols = [col for col, _ in active]
+    value_lists = [vals for _, vals in active]
+    for combo_vals in itertools.product(*value_lists):
+        yield dict(zip(cols, combo_vals))
 
 
 def _ref_series_filter_str(s: dict) -> str:

@@ -1,5 +1,6 @@
 """Tests for the logger editor reference subplot feature."""
 
+import itertools
 import json
 
 import pandas as pd
@@ -246,3 +247,57 @@ def test_from_dict_roundtrip_no_filters():
     assert result["scale"] == pytest.approx(2.5)
     assert result["style"] == "step-pre"
     assert result["label"] == "My label"
+
+
+# ---------------------------------------------------------------------------
+# _iter_filter_combos
+# ---------------------------------------------------------------------------
+
+
+def _iter_filter_combos(filters: list[dict]):
+    """Mirror of loggereditor._iter_filter_combos for testing."""
+    active = [(f["col"], f["values"]) for f in filters if f.get("values")]
+    if not active:
+        yield {}
+        return
+    cols = [col for col, _ in active]
+    value_lists = [vals for _, vals in active]
+    for combo_vals in itertools.product(*value_lists):
+        yield dict(zip(cols, combo_vals))
+
+
+def test_iter_filter_combos_no_filters():
+    combos = list(_iter_filter_combos([]))
+    assert combos == [{}]
+
+
+def test_iter_filter_combos_single_filter_single_value():
+    combos = list(_iter_filter_combos([{"col": "obsid", "values": ["A"]}]))
+    assert combos == [{"obsid": "A"}]
+
+
+def test_iter_filter_combos_single_filter_multi_value():
+    combos = list(_iter_filter_combos([{"col": "obsid", "values": ["A", "B"]}]))
+    assert combos == [{"obsid": "A"}, {"obsid": "B"}]
+
+
+def test_iter_filter_combos_two_filters_cartesian():
+    filters = [
+        {"col": "obsid", "values": ["A", "B"]},
+        {"col": "parameter", "values": ["X", "Y"]},
+    ]
+    combos = list(_iter_filter_combos(filters))
+    assert len(combos) == 4
+    assert {"obsid": "A", "parameter": "X"} in combos
+    assert {"obsid": "A", "parameter": "Y"} in combos
+    assert {"obsid": "B", "parameter": "X"} in combos
+    assert {"obsid": "B", "parameter": "Y"} in combos
+
+
+def test_iter_filter_combos_empty_values_skipped():
+    filters = [
+        {"col": "obsid", "values": []},
+        {"col": "parameter", "values": ["X"]},
+    ]
+    combos = list(_iter_filter_combos(filters))
+    assert combos == [{"parameter": "X"}]

@@ -128,6 +128,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
         self.geo_bars = {}
         self.hydro_bars = {}
         self.screen_bars = {}
+        self._screen_bar_containers: set = set()
         self.layer_texts = {}
         self.hydro_colors = defs.hydrocolors()
 
@@ -658,14 +659,21 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
                 )
 
                 _screens_mode = self.ms.settingsdict["screensplotmode"]
+                self._screen_bar_containers = set()
                 if _screens_mode != "none" and self.screen_bars:
+                    _containers_before = set(self.figure.ax_main.containers)
                     _painters.paint_screen_bars(
                         self.figure,
                         self.screen_bars,
                         defs.screen_style_dict(),
                         width=self.barwidth,
-                        zorder=1 if _screens_mode == "behind" else 6,  # must exceed geology_Axes_bar zorder=5
+                        zorder=1
+                        if _screens_mode == "behind"
+                        else 6,  # must exceed geology_Axes_bar zorder=5
                         width_factor=float(self.ms.settingsdict["screenwidthfactor"]),
+                    )
+                    self._screen_bar_containers = (
+                        set(self.figure.ax_main.containers) - _containers_before
                     )
 
                 if self.ms.settingsdict["stratigraphyplotted"]:
@@ -1162,13 +1170,18 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
         used_xmin, used_xmax = ax.get_xlim()
         total_width = float(used_xmax) - float(used_xmin)
         barwidth = total_width * float(self.ms.settingsdict["secplotbw"]) * 0.01
+        screen_barwidth = barwidth * float(
+            self.ms.settingsdict.get("screenwidthfactor", 1.2)
+        )
         for p in ax.containers:
             if isinstance(p, container.BarContainer):
-                children = p.get_children()
-                for child in children:
+                target_width = (
+                    screen_barwidth if p in self._screen_bar_containers else barwidth
+                )
+                for child in p.get_children():
                     if isinstance(child, patches.Rectangle):
                         prev_middle = child.get_x() + child.get_width() / 2
-                        child.set_width(barwidth)
+                        child.set_width(target_width)
                         child.set_x(prev_middle - child.get_width() / 2)
 
         for a in ax.findobj(

@@ -120,6 +120,11 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         format_row.layout.addWidget(format_label)
         format_row.layout.addWidget(self.format_combo)
         self.add_row(format_row.widget)
+
+        self._format_description_label = QtWidgets.QLabel()
+        self._format_description_label.setWordWrap(True)
+        self.add_row(self._format_description_label)
+
         self.add_row(get_line())
 
         # Date/time filter (all formats)
@@ -213,18 +218,23 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             QCoreApplication.translate("LoggerImport", "Select files")
         )
         self.grid_layout_buttons.addWidget(self.select_files_button, 0, 0)
-        self.select_files_button.clicked.connect(self.select_files)
+        self.select_files_button.clicked.connect(lambda: self.select_files())
+
+        self._files_label = QtWidgets.QLabel(
+            QCoreApplication.translate("LoggerImport", "No files selected")
+        )
+        self.grid_layout_buttons.addWidget(self._files_label, 1, 0)
 
         self.close_after_import = QtWidgets.QCheckBox(
             QCoreApplication.translate("LoggerImport", "Close dialog after import")
         )
         self.close_after_import.setChecked(True)
-        self.grid_layout_buttons.addWidget(self.close_after_import, 1, 0)
+        self.grid_layout_buttons.addWidget(self.close_after_import, 2, 0)
 
         self.start_import_button = QtWidgets.QPushButton(
             QCoreApplication.translate("LoggerImport", "Start import")
         )
-        self.grid_layout_buttons.addWidget(self.start_import_button, 2, 0)
+        self.grid_layout_buttons.addWidget(self.start_import_button, 3, 0)
         self.start_import_button.clicked.connect(
             lambda: self.start_import(
                 files=self.files,
@@ -242,7 +252,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         self.export_csv_button = QtWidgets.QPushButton(
             QCoreApplication.translate("LoggerImport", "Export csv")
         )
-        self.grid_layout_buttons.addWidget(self.export_csv_button, 3, 0)
+        self.grid_layout_buttons.addWidget(self.export_csv_button, 4, 0)
         self.export_csv_button.clicked.connect(
             lambda: self.start_import(
                 files=self.files,
@@ -257,31 +267,66 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         )
         self.export_csv_button.setEnabled(False)
 
-        self.grid_layout_buttons.setRowStretch(4, 1)
+        self.grid_layout_buttons.setRowStretch(5, 1)
         self.main_vertical_layout.addStretch()
         self.setGeometry(500, 150, 1200, 700)
+
+        # Build static per-format lookup tables once (QCoreApplication.translate needs
+        # a running Qt app, so these can't be class-level constants).
+        self._format_descriptions = {
+            self.FORMAT_DIVEROFFICE: QCoreApplication.translate(
+                "LoggerImport",
+                "DiverOffice format: semicolon or comma separated.\n"
+                "Data header must contain 'Date/time' and at least one of:\n"
+                "Water head[cm], Temperature[°C], Level[cm], Conductivity[mS/cm].\n"
+                "Column names matter; column order does not.",
+            ),
+            self.FORMAT_DIVEROFFICE_BARO: QCoreApplication.translate(
+                "LoggerImport",
+                "DiverOffice Baro format: same file format as DiverOffice.\n"
+                "Imports Pressure[cmH2O] and Temperature[°C] into the meteo table.\n"
+                "The instrument serial number is used as instrumentid.\n"
+                "Column names matter; column order does not.",
+            ),
+            self.FORMAT_LEVELOGGER: QCoreApplication.translate(
+                "LoggerImport",
+                "Levelogger format: CSV exported from the Levelogger data wizard.\n"
+                "Header must contain 'Date', 'Time', and at least one of:\n"
+                "LEVEL, TEMPERATURE, spec. conductivity.\n"
+                "LEVEL unit (cm or m) is read from the row after 'LEVEL'.",
+            ),
+            self.FORMAT_HOBO: QCoreApplication.translate(
+                "LoggerImport",
+                "Hobo format: UTF-8 CSV from HOBO logger.\n"
+                'First row: "Plot Title: <name>"\n'
+                'Second row: "#","Date Time, GMT+HH:MM","Temp, °C (...LBL: obsid)"\n'
+                "obsid is read from the LBL tag in the temperature column header.",
+            ),
+        }
+        self._format_titles = {
+            self.FORMAT_DIVEROFFICE: QCoreApplication.translate(
+                "LoggerImport", "Logger import — DiverOffice"
+            ),
+            self.FORMAT_DIVEROFFICE_BARO: QCoreApplication.translate(
+                "LoggerImport", "Logger import — DiverOffice Baro"
+            ),
+            self.FORMAT_LEVELOGGER: QCoreApplication.translate(
+                "LoggerImport", "Logger import — Levelogger"
+            ),
+            self.FORMAT_HOBO: QCoreApplication.translate(
+                "LoggerImport", "Logger import — Hobo"
+            ),
+        }
 
         # Wire format change AFTER all widgets are built
         self.format_combo.currentTextChanged.connect(self._on_format_changed)
         self._on_format_changed(self.format_combo.currentText())
 
     def _build_diveroffice_section(self, database_timezone: str | None = None) -> None:
-        """Build DiverOffice-specific section (help text + UTC offset). Hidden for other formats."""
+        """Build DiverOffice-specific section (UTC offset control). Hidden for other formats."""
         self._diveroffice_section = QtWidgets.QWidget()
         _vl = QtWidgets.QVBoxLayout(self._diveroffice_section)
         _vl.setContentsMargins(0, 0, 0, 0)
-
-        _help = QtWidgets.QLabel(
-            QCoreApplication.translate(
-                "LoggerImport",
-                "DiverOffice format: semicolon or comma separated.\n"
-                "Data header must contain 'Date/time' and at least one of:\n"
-                "Water head[cm], Temperature[\u00b0C], Level[cm], Conductivity[mS/cm].\n"
-                "Column names matter; column order does not.",
-            )
-        )
-        _help.setWordWrap(True)
-        _vl.addWidget(_help)
 
         self.utcoffset_label = QtWidgets.QLabel(
             QCoreApplication.translate(
@@ -311,22 +356,10 @@ class LoggerImport(BaseImporter, import_ui_dialog):
     def _build_diveroffice_baro_section(
         self, database_timezone: str | None = None
     ) -> None:
-        """Build DiverOffice Baro section (help text + UTC offset). Imports to meteo table."""
+        """Build DiverOffice Baro section (UTC offset control). Imports to meteo table."""
         self._diveroffice_baro_section = QtWidgets.QWidget()
         _vl = QtWidgets.QVBoxLayout(self._diveroffice_baro_section)
         _vl.setContentsMargins(0, 0, 0, 0)
-
-        _help = QtWidgets.QLabel(
-            QCoreApplication.translate(
-                "LoggerImport",
-                "DiverOffice Baro format: same file format as DiverOffice.\n"
-                "Imports Pressure[cmH2O] and Temperature[\u00b0C] into the meteo table.\n"
-                "The instrument serial number is used as instrumentid.\n"
-                "Column names matter; column order does not.",
-            )
-        )
-        _help.setWordWrap(True)
-        _vl.addWidget(_help)
 
         baro_utcoffset_label = QtWidgets.QLabel(
             QCoreApplication.translate(
@@ -356,41 +389,15 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         self.add_row(self._diveroffice_baro_section)
 
     def _build_levelogger_section(self) -> None:
-        """Build Levelogger-specific section (help text only). Hidden for other formats."""
+        """Build Levelogger-specific section (no extra controls needed)."""
         self._levelogger_section = QtWidgets.QWidget()
-        _vl = QtWidgets.QVBoxLayout(self._levelogger_section)
-        _vl.setContentsMargins(0, 0, 0, 0)
-
-        _help = QtWidgets.QLabel(
-            QCoreApplication.translate(
-                "LoggerImport",
-                "Levelogger format: CSV exported from the Levelogger data wizard.\n"
-                "Header must contain 'Date', 'Time', and at least one of:\n"
-                "LEVEL, TEMPERATURE, spec. conductivity.\n"
-                "LEVEL unit (cm or m) is read from the row after 'LEVEL'.",
-            )
-        )
-        _help.setWordWrap(True)
-        _vl.addWidget(_help)
         self.add_row(self._levelogger_section)
 
     def _build_hobo_section(self) -> None:
-        """Build Hobo-specific section (help text + TzConverter). Hidden for other formats."""
+        """Build Hobo-specific section (TzConverter control). Hidden for other formats."""
         self._hobo_section = QtWidgets.QWidget()
         _vl = QtWidgets.QVBoxLayout(self._hobo_section)
         _vl.setContentsMargins(0, 0, 0, 0)
-
-        _help = QtWidgets.QLabel(
-            QCoreApplication.translate(
-                "LoggerImport",
-                "Hobo format: UTF-8 CSV from HOBO logger.\n"
-                'First row: "Plot Title: <name>"\n'
-                'Second row: "#","Date Time, GMT+HH:MM","Temp, \u00b0C (...LBL: obsid)"\n'
-                "obsid is read from the LBL tag in the temperature column header.",
-            )
-        )
-        _help.setWordWrap(True)
-        _vl.addWidget(_help)
 
         self.tz_converter = TzConverter()
         _vl.addWidget(self.tz_converter.widget)
@@ -415,23 +422,15 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         self._skip_rows_container.setVisible(show_skip_rows)
         self.skip_rows.checked = show_skip_rows
 
-        titles = {
-            self.FORMAT_DIVEROFFICE: QCoreApplication.translate(
-                "LoggerImport", "Logger import \u2014 DiverOffice"
-            ),
-            self.FORMAT_DIVEROFFICE_BARO: QCoreApplication.translate(
-                "LoggerImport", "Logger import \u2014 DiverOffice Baro"
-            ),
-            self.FORMAT_LEVELOGGER: QCoreApplication.translate(
-                "LoggerImport", "Logger import \u2014 Levelogger"
-            ),
-            self.FORMAT_HOBO: QCoreApplication.translate(
-                "LoggerImport", "Logger import \u2014 Hobo"
-            ),
-        }
-        self.setWindowTitle(titles.get(format_name, "Logger import"))
+        self._format_description_label.setText(
+            self._format_descriptions.get(format_name, "")
+        )
+        self.setWindowTitle(self._format_titles.get(format_name, "Logger import"))
 
         self.files = []
+        self._files_label.setText(
+            QCoreApplication.translate("LoggerImport", "No files selected")
+        )
         self.start_import_button.setEnabled(False)
         self.export_csv_button.setEnabled(False)
 
@@ -451,6 +450,10 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             raise common_utils.UserInterruptError()
 
         self.files = files
+        self._files_label.setText(
+            QCoreApplication.translate("LoggerImport", "%d file(s) selected")
+            % len(files)
+        )
         self.start_import_button.setEnabled(True)
         self.export_csv_button.setEnabled(True)
 

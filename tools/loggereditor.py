@@ -896,7 +896,13 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self.canvas.draw()
 
     def _plot_ref_series(self, conn, s: dict) -> None:
-        sql, params = self._build_ref_query(conn, s)
+        combos = list(_iter_filter_combos(s.get("filters", [])))
+        is_multi = len(combos) > 1
+        for combo in combos:
+            self._plot_one_combo(conn, s, combo, is_multi)
+
+    def _plot_one_combo(self, conn, s: dict, combo: dict, is_multi: bool) -> None:
+        sql, params = self._build_ref_query(conn, s, combo)
         rows = conn.execute_and_fetchall(sql, params)
         if not rows:
             return
@@ -923,13 +929,12 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         df = df * s.get("scale", 1.0)
         if df.empty:
             return
-        label = s.get("label") or _ref_series_auto_label(s)
         _ref_series_plot_style(
             self.ref_axes,
             df.index.to_pydatetime(),
             df.values,
             s.get("style", "line"),
-            label,
+            _ref_series_combo_label(s, combo, is_multi),
         )
 
     def _build_ref_query(self, conn, s: dict, combo: dict) -> tuple:
@@ -1677,6 +1682,14 @@ def _ref_series_auto_label(s: dict) -> str:
     base = f"{s.get('table', '?')}.{s.get('y_col', '?')}"
     filter_str = _ref_series_filter_str(s)
     return f"{base} [{filter_str}]" if filter_str else base
+
+
+def _ref_series_combo_label(s: dict, combo: dict, is_multi: bool) -> str:
+    combo_str = ", ".join(str(v) for v in combo.values())
+    user_label = s.get("label", "")
+    if is_multi:
+        return f"{user_label} ({combo_str})" if user_label else combo_str
+    return user_label or _ref_series_auto_label(s)
 
 
 def _ref_series_plot_style(ax, x, y, style: str, label: str) -> None:

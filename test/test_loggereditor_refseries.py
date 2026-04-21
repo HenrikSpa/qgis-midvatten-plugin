@@ -284,3 +284,63 @@ def test_iter_filter_combos_empty_values_skipped():
     ]
     combos = list(_iter_filter_combos(filters))
     assert combos == [{"parameter": "X"}]
+
+
+# ---------------------------------------------------------------------------
+# _ref_series_combo_label
+# ---------------------------------------------------------------------------
+
+
+def _ref_series_auto_label_mirror(s: dict) -> str:
+    base = f"{s.get('table', '?')}.{s.get('y_col', '?')}"
+    filter_str = ", ".join(
+        f"{f['col']}={'+'.join(str(v) for v in f['values'])}"
+        for f in s.get("filters", [])
+        if f.get("values")
+    )
+    return f"{base} [{filter_str}]" if filter_str else base
+
+
+def _ref_series_combo_label(s: dict, combo: dict, is_multi: bool) -> str:
+    combo_str = ", ".join(str(v) for v in combo.values())
+    user_label = s.get("label", "")
+    if is_multi:
+        return f"{user_label} ({combo_str})" if user_label else combo_str
+    return user_label or _ref_series_auto_label_mirror(s)
+
+
+def test_label_single_no_user_label_no_filters():
+    label = _ref_series_combo_label({**_BASE, "label": ""}, {}, is_multi=False)
+    assert label == "meteo.rdep"
+
+
+def test_label_single_no_user_label_with_filter():
+    s = {**_BASE, "label": "", "filters": [{"col": "obsid", "values": ["A"]}]}
+    label = _ref_series_combo_label(s, {"obsid": "A"}, is_multi=False)
+    assert label == "meteo.rdep [obsid=A]"
+
+
+def test_label_single_with_user_label():
+    label = _ref_series_combo_label(
+        {**_BASE, "label": "Precipitation"}, {"obsid": "A"}, is_multi=False
+    )
+    assert label == "Precipitation"
+
+
+def test_label_multi_no_user_label_two_cols():
+    s = {**_BASE, "label": ""}
+    label = _ref_series_combo_label(s, {"obsid": "A", "parameter": "X"}, is_multi=True)
+    assert label == "A, X"
+
+
+def test_label_multi_with_user_label():
+    s = {**_BASE, "label": "Precip"}
+    label = _ref_series_combo_label(s, {"obsid": "A", "parameter": "X"}, is_multi=True)
+    assert label == "Precip (A, X)"
+
+
+def test_label_multi_single_col_no_user_label():
+    label = _ref_series_combo_label(
+        {**_BASE, "label": ""}, {"obsid": "B"}, is_multi=True
+    )
+    assert label == "B"

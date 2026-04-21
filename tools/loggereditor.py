@@ -932,19 +932,16 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             label,
         )
 
-    def _build_ref_query(self, conn, s: dict) -> tuple:
+    def _build_ref_query(self, conn, s: dict, combo: dict) -> tuple:
         ph = conn.placeholder()
         sql = (
             f"SELECT {ident(s['x_col'])}, {ident(s['y_col'])} FROM {ident(s['table'])}"
         )
         where_parts: list[str] = []
         params: list = []
-        for f in s.get("filters", []):
-            if not f.get("values"):
-                continue
-            placeholders = ", ".join([ph] * len(f["values"]))
-            where_parts.append(f"{ident(f['col'])} IN ({placeholders})")
-            params.extend(f["values"])
+        for col, val in combo.items():
+            where_parts.append(f"{ident(col)} = {ph}")
+            params.append(val)
         if where_parts:
             sql += " WHERE " + " AND ".join(where_parts)
         sql += f" ORDER BY {ident(s['x_col'])}"

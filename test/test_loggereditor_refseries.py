@@ -15,17 +15,14 @@ from midvatten.tools.utils.db_utils.dialect import ident
 # ---------------------------------------------------------------------------
 
 
-def _build_ref_query(conn, s: dict) -> tuple:
+def _build_ref_query(conn, s: dict, combo: dict) -> tuple:
     ph = conn.placeholder()
     sql = f"SELECT {ident(s['x_col'])}, {ident(s['y_col'])} FROM {ident(s['table'])}"
-    where_parts: list = []
+    where_parts: list[str] = []
     params: list = []
-    for f in s.get("filters", []):
-        if not f.get("values"):
-            continue
-        placeholders = ", ".join([ph] * len(f["values"]))
-        where_parts.append(f"{ident(f['col'])} IN ({placeholders})")
-        params.extend(f["values"])
+    for col, val in combo.items():
+        where_parts.append(f"{ident(col)} = {ph}")
+        params.append(val)
     if where_parts:
         sql += " WHERE " + " AND ".join(where_parts)
     sql += f" ORDER BY {ident(s['x_col'])}"
@@ -61,8 +58,8 @@ _BASE = {
 # ---------------------------------------------------------------------------
 
 
-def test_build_ref_query_no_filters():
-    sql, params = _build_ref_query(_StubConn(), _BASE)
+def test_build_ref_query_no_combo():
+    sql, params = _build_ref_query(_StubConn(), _BASE, {})
     assert '"date_time"' in sql
     assert '"rdep"' in sql
     assert '"meteo"' in sql
@@ -71,40 +68,26 @@ def test_build_ref_query_no_filters():
     assert sql.endswith('ORDER BY "date_time"')
 
 
-def test_build_ref_query_single_filter():
-    s = {**_BASE, "filters": [{"col": "obsid", "values": ["A01", "A02"]}]}
-    sql, params = _build_ref_query(_StubConn(), s)
-    assert '"obsid" IN (?, ?)' in sql
-    assert params == ["A01", "A02"]
+def test_build_ref_query_single_value_combo():
+    sql, params = _build_ref_query(_StubConn(), _BASE, {"obsid": "A01"})
+    assert '"obsid" = ?' in sql
+    assert params == ["A01"]
 
 
-def test_build_ref_query_multi_filter():
-    s = {
-        **_BASE,
-        "filters": [
-            {"col": "obsid", "values": ["A01"]},
-            {"col": "parameter", "values": ["rain", "snow"]},
-        ],
-    }
-    sql, params = _build_ref_query(_StubConn(), s)
-    assert '"obsid" IN (?)' in sql
-    assert '"parameter" IN (?, ?)' in sql
+def test_build_ref_query_two_col_combo():
+    sql, params = _build_ref_query(
+        _StubConn(), _BASE, {"obsid": "A01", "parameter": "rain"}
+    )
+    assert '"obsid" = ?' in sql
+    assert '"parameter" = ?' in sql
     assert " AND " in sql
-    assert params == ["A01", "rain", "snow"]
+    assert params == ["A01", "rain"]
 
 
 def test_build_ref_query_postgres_placeholder():
-    s = {**_BASE, "filters": [{"col": "obsid", "values": ["X"]}]}
-    sql, params = _build_ref_query(_StubConn("%s"), s)
-    assert '"obsid" IN (%s)' in sql
+    sql, params = _build_ref_query(_StubConn("%s"), _BASE, {"obsid": "X"})
+    assert '"obsid" = %s' in sql
     assert params == ["X"]
-
-
-def test_build_ref_query_empty_filter_values_skipped():
-    s = {**_BASE, "filters": [{"col": "obsid", "values": []}]}
-    sql, params = _build_ref_query(_StubConn(), s)
-    assert "WHERE" not in sql
-    assert params == []
 
 
 # ---------------------------------------------------------------------------

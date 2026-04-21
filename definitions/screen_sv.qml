@@ -1,0 +1,48 @@
+<!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
+<qgis version="2.6.1-Brighton" minimumScale="-4.65661e-10" maximumScale="1e+08" hasScaleBasedVisibilityFlag="0">
+  <edittypes>
+    <edittype widgetv2type="TextEdit" name="obsid">
+      <widgetv2config IsMultiline="0" fieldEditable="1" UseHtml="0" labelOnTop="0"/>
+    </edittype>
+    <edittype widgetv2type="TextEdit" name="screenid">
+      <widgetv2config IsMultiline="0" fieldEditable="1" UseHtml="0" labelOnTop="0"/>
+    </edittype>
+    <edittype widgetv2type="TextEdit" name="depthtop">
+      <widgetv2config IsMultiline="0" fieldEditable="1" UseHtml="0" labelOnTop="0"/>
+    </edittype>
+    <edittype widgetv2type="TextEdit" name="depthbot">
+      <widgetv2config IsMultiline="0" fieldEditable="1" UseHtml="0" labelOnTop="0"/>
+    </edittype>
+    <edittype widgetv2type="TextEdit" name="screenshort">
+      <widgetv2config IsMultiline="0" fieldEditable="1" UseHtml="0" labelOnTop="0"/>
+    </edittype>
+    <edittype widgetv2type="TextEdit" name="screen">
+      <widgetv2config IsMultiline="0" fieldEditable="1" UseHtml="0" labelOnTop="0"/>
+    </edittype>
+  </edittypes>
+  <editform></editform>
+  <editforminit></editforminit>
+  <featformsuppress>1</featformsuppress>
+  <annotationform>.</annotationform>
+  <editorlayout>tablayout</editorlayout>
+  <aliases>
+    <alias field="screenid" index="1" name="filter nr"/>
+    <alias field="depthtop" index="2" name="från djup under my (m)"/>
+    <alias field="depthbot" index="3" name="till djup under my (m)"/>
+    <alias field="screenshort" index="4" name="filterkod"/>
+    <alias field="screen" index="5" name="filtertyp"/>
+  </aliases>
+  <excludeAttributesWMS/>
+  <excludeAttributesWFS/>
+  <attributeEditorForm>
+    <attributeEditorContainer name="Screen">
+      <attributeEditorField index="0" name="obsid"/>
+      <attributeEditorField index="1" name="screenid"/>
+      <attributeEditorField index="2" name="depthtop"/>
+      <attributeEditorField index="3" name="depthbot"/>
+      <attributeEditorField index="4" name="screenshort"/>
+      <attributeEditorField index="5" name="screen"/>
+    </attributeEditorContainer>
+  </attributeEditorForm>
+  <attributeactions/>
+</qgis>

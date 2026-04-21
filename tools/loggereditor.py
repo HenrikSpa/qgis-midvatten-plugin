@@ -770,12 +770,14 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             tick.ScalarFormatter(useOffset=False, useMathText=False)
         )
         self.calibrplotfigure.autofmt_xdate()
+        if not self.ref_axes.get_visible():
+            self._restore_main_xticklabels()
         self.axes.set_ylabel(
             QCoreApplication.translate("Calibrlogger", "Level (masl)")
-        )  # This is the method that accepts even national characters ('åäö') in matplotlib axes labels
+        )  # accepts national characters ('åäö') in matplotlib axes labels
         self.axes.set_title(
             QCoreApplication.translate("Calibrlogger", "Plot for ") + str(self.obsid)
-        )  # This is the method that accepts even national characters ('åäö') in matplotlib axes labels
+        )
         for label in self.axes.xaxis.get_ticklabels():
             label.set_fontsize(8)
         for label in self.axes.yaxis.get_ticklabels():
@@ -785,7 +787,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             leg = self.axes.legend(handles, labels)
 
         self.canvas.draw()
-        # plt.close(self.calibrplotfigure)#this closes reference to self.calibrplotfigure
         self.statusbar.clearMessage()
 
     def _setup_ref_dock(self) -> None:
@@ -874,12 +875,21 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self._refresh_ref_list_widget()
         self._draw_reference_subplot()
 
+    def _restore_main_xticklabels(self) -> None:
+        for label in self.axes.xaxis.get_ticklabels():
+            label.set_visible(True)
+            label.set_rotation(30)
+            label.set_ha("right")
+
     def _draw_reference_subplot(self) -> None:
         self.ref_axes.cla()
         if not self._ref_series:
+            self._ref_gs.set_height_ratios([1, 0.001])
             self.ref_axes.set_visible(False)
+            self._restore_main_xticklabels()
             self.canvas.draw()
             return
+        self._ref_gs.set_height_ratios([3, 1])
         self.ref_axes.set_visible(True)
         with use_or_create_connection(None) as conn:
             for s in self._ref_series:

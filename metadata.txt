@@ -3,7 +3,7 @@ name=Midvatten
 qgisMinimumVersion=3.40
 description=A toolset that makes QGIS an interface for editing/viewing hydrogeological observational data (drillings, water levels, seismic data etc) stored in a SQLite or PostgreSQL database.
 about=The plugin is a toolset that makes QGIS an interface for editing/viewing hydrogeological observational data (drillings, water levels, seismic data etc) stored in a SQLite or PostgreSQL database.
-version=1.9.0b13
+version=1.9.0b14
 author=Henrik Spångmyr, Josef Källgården
 email=midvattenplugin@midvatten.se
 repository=https://github.com/henrikspa/qgis-midvatten-plugin.git
@@ -23,6 +23,8 @@ hasProcessingProvider=no
 supportsQt6=True
 
 changelog=
+        Version 1.9.0b14:
+          - Fixes bugs
         Version 1.9.0b13:
           - Database: Added w_logger_series table; logger series metadata (source, instrument serial) moved here from w_levels_logger.
           - Database: Added screen and zz_screen_plots tables.

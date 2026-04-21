@@ -87,7 +87,8 @@
         "va": "bottom",
         "xytext": (
                 1,
-                18, )},
+                18, ),
+        "zorder": 10},
     "obsid_Axes_bar": {
         "edgecolor": "black",
         "fill": False,

@@ -1351,6 +1351,7 @@ def secplot_default_template() -> Dict[str, Any]:
         "ha": "left",
         "va": "center",
         "fontsize": 9,
+        "zorder": 10,
         "bbox": {
             "boxstyle": "square,pad=0.05",
             "fc": "white",
@@ -1369,6 +1370,7 @@ def secplot_default_template() -> Dict[str, Any]:
         "va": "top",
         "fontsize": 9,
         "rotation": 0,
+        "zorder": 10,
         "bbox": {
             "boxstyle": "square,pad=0.05",
             "fc": "white",

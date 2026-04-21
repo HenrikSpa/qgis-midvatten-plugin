@@ -13,7 +13,6 @@ from qgis.PyQt.QtWidgets import (
     QHBoxLayout,
     QListWidget,
     QPushButton,
-    QToolBar,
     QVBoxLayout,
     QWidget,
 )
@@ -814,15 +813,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         vbox.addWidget(self._ref_list)
         self._ref_dock.setWidget(container)
         self.addDockWidget(Qt.RightDockWidgetArea, self._ref_dock)
-        view_menu = self.menuBar().addMenu(
-            QCoreApplication.translate("Calibrlogger", "&View")
-        )
-        view_menu.addAction(self._ref_dock.toggleViewAction())
-        ref_toolbar = QToolBar(
-            QCoreApplication.translate("Calibrlogger", "Reference series"), self
-        )
-        self.addToolBar(ref_toolbar)
-        ref_toolbar.addAction(self._ref_dock.toggleViewAction())
+        self.menuView.addAction(self._ref_dock.toggleViewAction())
         self._ref_add_btn.clicked.connect(self._on_add_ref_series)
         self._ref_edit_btn.clicked.connect(self._on_edit_ref_series)
         self._ref_remove_btn.clicked.connect(self._on_remove_ref_series)

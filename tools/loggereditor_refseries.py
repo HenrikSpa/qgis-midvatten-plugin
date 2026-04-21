@@ -57,7 +57,6 @@ class _FilterRow(QWidget):
 
         self.values_list = QListWidget()
         self.values_list.setSelectionMode(QAbstractItemView.MultiSelection)
-        self.values_list.setMaximumHeight(90)
         right_layout.addWidget(self.values_list)
 
         self.search_edit = QLineEdit()
@@ -158,7 +157,6 @@ class RefSeriesDialog(QDialog):
         main_layout.addWidget(QLabel(_tr("Filters:")))
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setMaximumHeight(280)
         scroll.setMinimumHeight(60)
         self._filters_widget = QWidget()
         self._filters_layout = QVBoxLayout(self._filters_widget)
@@ -166,7 +164,7 @@ class RefSeriesDialog(QDialog):
         self._filters_layout.setContentsMargins(2, 2, 2, 2)
         self._filters_layout.addStretch()
         scroll.setWidget(self._filters_widget)
-        main_layout.addWidget(scroll)
+        main_layout.addWidget(scroll, 1)
 
         add_filter_btn = QPushButton(_tr("+ Add filter"))
         add_filter_btn.clicked.connect(self._add_filter_row)

@@ -897,12 +897,15 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     def _draw_reference_subplot(self) -> None:
         # sharex makes both axes share the same xaxis.major ticker object, so
         # ref_axes.cla() resets the shared formatter/locator to scalar defaults.
-        # Save and restore to preserve date formatting on the main axes.
+        # Restore only when a date formatter is already active; restoring a plain
+        # ScalarFormatter would block matplotlib's date-unit auto-detection when
+        # the ref series data is subsequently plotted.
         formatter = self.axes.xaxis.get_major_formatter()
         locator = self.axes.xaxis.get_major_locator()
         self.ref_axes.cla()
-        self.axes.xaxis.set_major_formatter(formatter)
-        self.axes.xaxis.set_major_locator(locator)
+        if not isinstance(formatter, tick.ScalarFormatter):
+            self.axes.xaxis.set_major_formatter(formatter)
+            self.axes.xaxis.set_major_locator(locator)
         if not self._ref_series:
             self._ref_gs.set_height_ratios([1, 0.001])
             self.ref_axes.set_visible(False)

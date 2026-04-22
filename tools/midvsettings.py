@@ -64,7 +64,9 @@ class MidvSettings:
             try:
                 func = functions[data_type]
                 output[key] = func("Midvatten", key)
-                self.settingsdict[key] = output[key][0]
+                loaded_value, found = output[key]
+                if found:
+                    self.settingsdict[key] = loaded_value
             except KeyError:
                 MessagebarAndLog.warning(
                     bar_msg=QCoreApplication.translate(

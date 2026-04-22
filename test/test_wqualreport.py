@@ -203,6 +203,23 @@ class TestWqualreportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert len(table) == 5  # 3 headers + 2 params
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_run_report_warns_and_returns_when_wqualtable_is_empty(
+        self, mock_messagebar
+    ):
+        """_run_report() shows a warning and returns early when wqualtable is not set."""
+        mock_iface = mock.MagicMock()
+        layer = mock.MagicMock()
+        report = Wqualreport(mock_iface, self.midvatten.ms)
+
+        settings = {**_default_settingsdict(), "wqualtable": ""}
+        report._run_report(layer, settings)
+
+        print(f"{mock_messagebar.mock_calls=}")
+        assert mock_messagebar.warning.called
+        warning_msg = mock_messagebar.warning.call_args[1]["bar_msg"]
+        assert "water quality table" in warning_msg
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_write_html_report_uses_th_for_headers_td_for_data(self, mock_messagebar):
         """write_html_report() uses <th> for header rows and <td> for data rows."""
         _insert_wqual_data("OBS1")

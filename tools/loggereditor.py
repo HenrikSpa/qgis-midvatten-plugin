@@ -71,6 +71,17 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self.selected_line = None
         self.moving_idx = None
 
+        self._buf: pd.DataFrame | None = None
+        self._original_buf: pd.DataFrame | None = None
+        self._buf_obsid: str | None = None
+        self._dirty: bool = False
+        self._schema_variant: str | None = None
+        self._meas_ts = None
+        self._meas_obsid: str | None = None
+        self._history: list[dict] = []
+        self._history_pos: int = -1
+        self._prev_combobox_index: int = -1
+
         text = QCoreApplication.translate(
             "Calibrlogger",
             "Select the observation point with logger data to be adjusted.",
@@ -191,6 +202,18 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
             self.w_levels_logger_tz = db_utils.get_timezone_from_db("w_levels_logger")
             self.w_levels_tz = db_utils.get_timezone_from_db("w_levels")
+
+            existing_columns = db_utils.tables_columns(table="w_levels_logger").get(
+                "w_levels_logger", []
+            )
+            has_series_id = "series_id" in existing_columns
+            has_series_table = bool(db_utils.tables_columns(table="w_logger_series"))
+            if has_series_id and has_series_table:
+                self._schema_variant = "series_join"
+            elif "source" in existing_columns:
+                self._schema_variant = "source_col"
+            else:
+                self._schema_variant = "no_source"
 
             self._setup_ref_dock()
 
@@ -316,52 +339,97 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         obsid = self.selected_obsid
         if not obsid:
             log.debug("error obsid " + str(obsid))
-            # utils.pop_up_info(QCoreApplication.translate('Calibrlogger', "ERROR: no obsid is chosen"))
             common_utils.stop_waiting_cursor()
             return None
 
-        dbconnection = db_utils.DbConnectionManager()
-        ph = dbconnection.placeholder()
-        meas_sql = f"SELECT date_time, level_masl FROM w_levels WHERE obsid = {ph} ORDER BY date_time"
-        _ok, meas_list = db_utils.sql_load_fr_db(
-            meas_sql, dbconnection=dbconnection, execute_args=(obsid,)
-        )
-        self.meas_ts = self.list_of_list_to_recarray(meas_list)
-        if self.w_levels_logger_tz and self.w_levels_tz:
-            self.meas_ts.date_time = [
-                change_timezone(x, self.w_levels_tz, self.w_levels_logger_tz)
-                for x in self.meas_ts.date_time
-            ]
-
-        # Schema variant detection. This reader has to work on three DB
-        # shapes that users have in the wild:
-        #   * Very old DBs: w_levels_logger has no `source` column at all.
-        #   * Current (Midv 1.x) DBs: `source` is a column on w_levels_logger.
-        #   * New DBs: `source` lives on w_logger_series, reached via
-        #     w_levels_logger.series_id.
-        existing_columns = db_utils.tables_columns(table="w_levels_logger").get(
-            "w_levels_logger", []
-        )
-        has_series_id = "series_id" in existing_columns
-        has_series_table = bool(db_utils.tables_columns(table="w_logger_series"))
-        if has_series_id and has_series_table:
-            head_level_masl_sql = (
-                f"SELECT l.date_time, l.head_cm / 100, l.level_masl,"
-                f" TRIM(COALESCE(s.source, ''))"
-                f" FROM w_levels_logger l"
-                f" LEFT JOIN w_logger_series s ON s.id = l.series_id"
-                f" WHERE l.obsid = {ph} ORDER BY l.date_time"
-            )
-        elif "source" in existing_columns:
-            head_level_masl_sql = f"SELECT date_time, head_cm / 100, level_masl, TRIM(COALESCE(source, '')) FROM w_levels_logger WHERE obsid = {ph} ORDER BY date_time"
+        if obsid == self._buf_obsid and self._buf is not None:
+            buf = self._buf
+            dt_strs = [idx.isoformat(sep=" ") for idx in buf.index]
+            sources = buf["source"].tolist()
+            head_vals = [None if pd.isna(v) else v for v in buf["head_cm_m"]]
+            level_masl_vals = [None if pd.isna(v) else v for v in buf["level_masl"]]
+            head_list = list(zip(dt_strs, head_vals, sources))
+            level_masl_list = list(zip(dt_strs, level_masl_vals, sources))
+            if self._meas_obsid == obsid and self._meas_ts is not None:
+                self.meas_ts = self._meas_ts
+            else:
+                dbconnection = db_utils.DbConnectionManager()
+                ph = dbconnection.placeholder()
+                meas_sql = f"SELECT date_time, level_masl FROM w_levels WHERE obsid = {ph} ORDER BY date_time"
+                _ok, meas_list = db_utils.sql_load_fr_db(
+                    meas_sql, dbconnection=dbconnection, execute_args=(obsid,)
+                )
+                dbconnection.closedb()
+                self.meas_ts = self.list_of_list_to_recarray(meas_list)
+                if self.w_levels_logger_tz and self.w_levels_tz:
+                    self.meas_ts.date_time = [
+                        change_timezone(x, self.w_levels_tz, self.w_levels_logger_tz)
+                        for x in self.meas_ts.date_time
+                    ]
+                self._meas_ts = self.meas_ts
+                self._meas_obsid = obsid
         else:
-            head_level_masl_sql = f"SELECT date_time, head_cm / 100, level_masl, '' as source FROM w_levels_logger WHERE obsid = {ph} ORDER BY date_time"
-        _ok, head_level_masl_list = db_utils.sql_load_fr_db(
-            head_level_masl_sql, dbconnection=dbconnection, execute_args=(obsid,)
-        )
-        dbconnection.closedb()
-        head_list = [(row[0], row[1], row[3]) for row in head_level_masl_list]
-        level_masl_list = [(row[0], row[2], row[3]) for row in head_level_masl_list]
+            if self._dirty:
+                self._buf = None
+                self._original_buf = None
+                self._dirty = False
+
+            dbconnection = db_utils.DbConnectionManager()
+            ph = dbconnection.placeholder()
+
+            if self._meas_obsid != obsid:
+                meas_sql = f"SELECT date_time, level_masl FROM w_levels WHERE obsid = {ph} ORDER BY date_time"
+                _ok, meas_list = db_utils.sql_load_fr_db(
+                    meas_sql, dbconnection=dbconnection, execute_args=(obsid,)
+                )
+                self.meas_ts = self.list_of_list_to_recarray(meas_list)
+                if self.w_levels_logger_tz and self.w_levels_tz:
+                    self.meas_ts.date_time = [
+                        change_timezone(x, self.w_levels_tz, self.w_levels_logger_tz)
+                        for x in self.meas_ts.date_time
+                    ]
+                self._meas_ts = self.meas_ts
+                self._meas_obsid = obsid
+            else:
+                self.meas_ts = self._meas_ts
+
+            schema_variant = self._schema_variant
+            if schema_variant == "series_join":
+                head_level_masl_sql = (
+                    f"SELECT l.date_time, l.head_cm / 100, l.level_masl,"
+                    f" TRIM(COALESCE(s.source, ''))"
+                    f" FROM w_levels_logger l"
+                    f" LEFT JOIN w_logger_series s ON s.id = l.series_id"
+                    f" WHERE l.obsid = {ph} ORDER BY l.date_time"
+                )
+            elif schema_variant == "source_col":
+                head_level_masl_sql = f"SELECT date_time, head_cm / 100, level_masl, TRIM(COALESCE(source, '')) FROM w_levels_logger WHERE obsid = {ph} ORDER BY date_time"
+            else:
+                head_level_masl_sql = f"SELECT date_time, head_cm / 100, level_masl, '' as source FROM w_levels_logger WHERE obsid = {ph} ORDER BY date_time"
+
+            _ok, head_level_masl_list = db_utils.sql_load_fr_db(
+                head_level_masl_sql, dbconnection=dbconnection, execute_args=(obsid,)
+            )
+            dbconnection.closedb()
+            head_list = [(row[0], row[1], row[3]) for row in head_level_masl_list]
+            level_masl_list = [(row[0], row[2], row[3]) for row in head_level_masl_list]
+
+            if head_level_masl_list:
+                buf_df = pd.DataFrame(
+                    {
+                        "head_cm_m": [r[1] for r in head_list],
+                        "level_masl": [r[1] for r in level_masl_list],
+                        "source": [r[2] for r in head_list],
+                    },
+                    index=pd.to_datetime([r[0] for r in head_list]).to_pydatetime(),
+                )
+            else:
+                buf_df = pd.DataFrame(columns=["head_cm_m", "level_masl", "source"])
+            self._buf = buf_df
+            self._original_buf = buf_df.copy()
+            self._history_push("Loaded")
+            self._dirty = False
+            self._buf_obsid = obsid
 
         self.head_ts = self.list_of_list_to_recarray(head_list)
         if self.plot_logger_head.isChecked():
@@ -467,6 +535,17 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
     @fn_timer
     def getlastcalibration(self, obsid):
+        if self._buf is not None:
+            calibrated = self._buf[self._buf["level_masl"].notna()]
+            if not calibrated.empty:
+                last = calibrated.tail(1)
+                dt = last.index[0]
+                level_masl = last["level_masl"].iloc[0]
+                head_cm_m = last["head_cm_m"].iloc[0]
+                loggerpos = level_masl - head_cm_m if pd.notna(head_cm_m) else None
+                return [(dt, loggerpos)]
+            return []
+
         dbconnection = db_utils.DbConnectionManager()
         ph = dbconnection.placeholder()
         sql = f"SELECT date_time, (level_masl - (head_cm/100)) AS loggerpos FROM w_levels_logger WHERE date_time = (SELECT max(date_time) AS date_time FROM w_levels_logger WHERE obsid = {ph} AND (CASE WHEN level_masl IS NULL THEN -1000 ELSE level_masl END) > -990 AND level_masl IS NOT NULL AND head_cm IS NOT NULL) AND obsid = {ph}"
@@ -475,6 +554,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         )
         dbconnection.closedb()
         return lastcalibr
+
+    def _history_push(self, label: str) -> None:
+        pass
 
     @fn_timer
     def set_logger_pos(self, obsid=None):

@@ -532,6 +532,20 @@ class CalibrloggerMixin:
 
         assert test == ref
 
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_update_plot_calls_draw_reference_subplot(self, mock_messagebar):
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, head_cm, level_masl) "
+            "VALUES ('rb1', '2017-02-01 00:00', 50, 100)"
+        )
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
+        with mock.patch.object(calibrlogger, "_draw_reference_subplot") as mock_draw_ref:
+            calibrlogger.update_plot()
+        print(f"{mock_messagebar.mock_calls=}")
+        mock_draw_ref.assert_called_once_with()
+
 
 class CalibrloggerPostgisMixin(CalibrloggerMixin):
     """Postgis-specific tests for calibrlogger."""

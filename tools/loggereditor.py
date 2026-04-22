@@ -1502,18 +1502,18 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             common_utils.MessagebarAndLog.warning(bar_msg="No data loaded")
             return
 
-        l1_epoch = (
-            self.l1_date.dateTime().toPyDateTime().replace(tzinfo=None).timestamp()
-        )
-        l2_epoch = (
-            self.l2_date.dateTime().toPyDateTime().replace(tzinfo=None).timestamp()
-        )
-        m1_epoch = (
-            self.m1_date.dateTime().toPyDateTime().replace(tzinfo=None).timestamp()
-        )
-        m2_epoch = (
-            self.m2_date.dateTime().toPyDateTime().replace(tzinfo=None).timestamp()
-        )
+        _utc_epoch = datetime.datetime(1970, 1, 1)
+
+        def _to_epoch(qdatetime_widget) -> float:
+            return (
+                qdatetime_widget.dateTime().toPyDateTime().replace(tzinfo=None)
+                - _utc_epoch
+            ).total_seconds()
+
+        l1_epoch = _to_epoch(self.l1_date)
+        l2_epoch = _to_epoch(self.l2_date)
+        m1_epoch = _to_epoch(self.m1_date)
+        m2_epoch = _to_epoch(self.m2_date)
 
         l1_level = float(self.l1_level.text())
         l2_level = float(self.l2_level.text())
@@ -1560,7 +1560,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         slope = (l1_level - l2_level) / (l1_epoch - l2_epoch) - (
             m1_level - m2_level
         ) / (m1_epoch - m2_epoch)
-        row_epochs = self._buf.loc[mask].index.map(lambda dt: dt.timestamp())
+        row_epochs = self._buf.loc[mask].index.map(
+            lambda dt: (dt - _utc_epoch).total_seconds()
+        )
         common_utils.start_waiting_cursor()
         self._buf.loc[mask, "level_masl"] -= slope * (row_epochs - l1_epoch)
         self._history_push("Adjust trend")

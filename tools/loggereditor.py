@@ -817,15 +817,12 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         vbox.addWidget(self._ref_list)
         self._ref_dock.setWidget(container)
         self.addDockWidget(Qt.RightDockWidgetArea, self._ref_dock)
-        _toggle = self._ref_dock.toggleViewAction()
-        _toggle.setIcon(
-            QIcon(
-                os.path.join(
-                    os.path.dirname(__file__), "..", "icons", "svg", "ref_panel.svg"
-                )
-            )
+        toggle = self._ref_dock.toggleViewAction()
+        icon_path = os.path.join(
+            os.path.dirname(__file__), "..", "icons", "svg", "ref_panel.svg"
         )
-        self.mpltoolbar.addAction(_toggle)
+        toggle.setIcon(QIcon(icon_path))
+        self.mpltoolbar.addAction(toggle)
         self._ref_add_btn.clicked.connect(self._on_add_ref_series)
         self._ref_edit_btn.clicked.connect(self._on_edit_ref_series)
         self._ref_remove_btn.clicked.connect(self._on_remove_ref_series)

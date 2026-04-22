@@ -922,6 +922,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         )
         for label in self.ref_axes.xaxis.get_ticklabels():
             label.set_fontsize(8)
+            label.set_rotation(30)
+            label.set_ha("right")
         for label in self.ref_axes.yaxis.get_ticklabels():
             label.set_fontsize(8)
         self.canvas.draw()

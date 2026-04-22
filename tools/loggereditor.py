@@ -561,6 +561,91 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         dbconnection.closedb()
         return lastcalibr
 
+    def save_to_db(self) -> bool:
+        """Compute diff between _buf and _original_buf and write minimal DB changes."""
+        if self._buf is None or self._original_buf is None or self._buf_obsid is None:
+            return False
+        obsid = self._buf_obsid
+        try:
+            deleted_indices = self._original_buf.index.difference(self._buf.index)
+            delete_params = [
+                (obsid, dt.strftime("%Y-%m-%d %H:%M")) for dt in deleted_indices
+            ]
+
+            common_index = self._original_buf.index.intersection(self._buf.index)
+            orig_vals = self._original_buf.loc[common_index, "level_masl"]
+            new_vals = self._buf.loc[common_index, "level_masl"]
+            changed_mask = ~(
+                (orig_vals == new_vals) | (orig_vals.isna() & new_vals.isna())
+            )
+            changed_index = common_index[changed_mask]
+            update_params = [
+                (
+                    None if pd.isna(new_vals[dt]) else float(new_vals[dt]),
+                    obsid,
+                    dt.strftime("%Y-%m-%d %H:%M"),
+                )
+                for dt in changed_index
+            ]
+
+            dbconnection = db_utils.DbConnectionManager()
+            ph = dbconnection.placeholder()
+            tbl = ident("w_levels_logger")
+            try:
+                with dbconnection.transaction():
+                    if delete_params:
+                        delete_sql = (
+                            f"DELETE FROM {tbl} WHERE {ident('obsid')} = {ph}"
+                            f" AND {ident('date_time')} = {ph}"
+                        )
+                        for row in delete_params:
+                            dbconnection.execute(delete_sql, args=row)
+                    if update_params:
+                        update_sql = (
+                            f"UPDATE {tbl} SET {ident('level_masl')} = {ph}"
+                            f" WHERE {ident('obsid')} = {ph}"
+                            f" AND {ident('date_time')} = {ph}"
+                        )
+                        for row in update_params:
+                            dbconnection.execute(update_sql, args=row)
+            finally:
+                dbconnection.closedb()
+        except Exception as e:
+            common_utils.MessagebarAndLog.critical(bar_msg=f"Save failed: {e}")
+            return False
+
+        self._original_buf = self._buf.copy()
+        self._dirty = False
+        self._refresh_window_title()
+        return True
+
+    def _ask_save_discard_cancel(self, msg: str) -> str:
+        """Show Save / Discard / Cancel dialog; return 'save', 'discard', or 'cancel'."""
+        box = qgis.PyQt.QtWidgets.QMessageBox(self)
+        box.setWindowTitle(
+            QCoreApplication.translate("LoggerEditor", "Unsaved changes")
+        )
+        box.setText(msg)
+        save_btn = box.addButton(
+            QCoreApplication.translate("LoggerEditor", "Save"),
+            qgis.PyQt.QtWidgets.QMessageBox.AcceptRole,
+        )
+        discard_btn = box.addButton(
+            QCoreApplication.translate("LoggerEditor", "Discard"),
+            qgis.PyQt.QtWidgets.QMessageBox.DestructiveRole,
+        )
+        box.addButton(
+            QCoreApplication.translate("LoggerEditor", "Cancel"),
+            qgis.PyQt.QtWidgets.QMessageBox.RejectRole,
+        )
+        box.exec_()
+        clicked = box.clickedButton()
+        if clicked is save_btn:
+            return "save"
+        if clicked is discard_btn:
+            return "discard"
+        return "cancel"
+
     def _discard_buf(self) -> None:
         # TODO Step 5: replace with save/discard/cancel dialog
         self._buf = None

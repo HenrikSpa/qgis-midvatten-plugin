@@ -179,6 +179,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
             self.select_nodes_button = SelectNodesButton(self, self.calibrplotfigure)
             self.move_nodes_button = MoveNodesButton(self, self.calibrplotfigure)
+            self.multi_cursor_button = MultiCursorButton(self, self.calibrplotfigure)
 
             self.get_search_radius()
 

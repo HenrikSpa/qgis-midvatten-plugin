@@ -378,6 +378,30 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
             self.combobox_obsid.setItemText(idx, new_text)
 
+    def _ensure_meas_ts(self, obsid: str, dbconnection=None) -> None:
+        """Load and cache w_levels for obsid; reuse cache when obsid hasn't changed."""
+        if self._meas_obsid == obsid and self._meas_ts is not None:
+            self.meas_ts = self._meas_ts
+            return
+        own_conn = dbconnection is None
+        if own_conn:
+            dbconnection = db_utils.DbConnectionManager()
+        ph = dbconnection.placeholder()
+        meas_sql = f"SELECT date_time, level_masl FROM w_levels WHERE obsid = {ph} ORDER BY date_time"
+        _ok, meas_list = db_utils.sql_load_fr_db(
+            meas_sql, dbconnection=dbconnection, execute_args=(obsid,)
+        )
+        if own_conn:
+            dbconnection.closedb()
+        self.meas_ts = self.list_of_list_to_recarray(meas_list)
+        if self.w_levels_logger_tz and self.w_levels_tz:
+            self.meas_ts.date_time = [
+                change_timezone(x, self.w_levels_tz, self.w_levels_logger_tz)
+                for x in self.meas_ts.date_time
+            ]
+        self._meas_ts = self.meas_ts
+        self._meas_obsid = obsid
+
     @fn_timer
     def load_obsid_and_init(self):
         """Checks the current obsid and reloads all ts.
@@ -402,24 +426,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             level_masl_vals = [None if pd.isna(v) else v for v in buf["level_masl"]]
             head_list = list(zip(dt_strs, head_vals, sources))
             level_masl_list = list(zip(dt_strs, level_masl_vals, sources))
-            if self._meas_obsid == obsid and self._meas_ts is not None:
-                self.meas_ts = self._meas_ts
-            else:
-                dbconnection = db_utils.DbConnectionManager()
-                ph = dbconnection.placeholder()
-                meas_sql = f"SELECT date_time, level_masl FROM w_levels WHERE obsid = {ph} ORDER BY date_time"
-                _ok, meas_list = db_utils.sql_load_fr_db(
-                    meas_sql, dbconnection=dbconnection, execute_args=(obsid,)
-                )
-                dbconnection.closedb()
-                self.meas_ts = self.list_of_list_to_recarray(meas_list)
-                if self.w_levels_logger_tz and self.w_levels_tz:
-                    self.meas_ts.date_time = [
-                        change_timezone(x, self.w_levels_tz, self.w_levels_logger_tz)
-                        for x in self.meas_ts.date_time
-                    ]
-                self._meas_ts = self.meas_ts
-                self._meas_obsid = obsid
+            self._ensure_meas_ts(obsid)
         else:
             if self._schema_variant is None:
                 raise RuntimeError(
@@ -429,21 +436,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             dbconnection = db_utils.DbConnectionManager()
             ph = dbconnection.placeholder()
 
-            if self._meas_obsid != obsid:
-                meas_sql = f"SELECT date_time, level_masl FROM w_levels WHERE obsid = {ph} ORDER BY date_time"
-                _ok, meas_list = db_utils.sql_load_fr_db(
-                    meas_sql, dbconnection=dbconnection, execute_args=(obsid,)
-                )
-                self.meas_ts = self.list_of_list_to_recarray(meas_list)
-                if self.w_levels_logger_tz and self.w_levels_tz:
-                    self.meas_ts.date_time = [
-                        change_timezone(x, self.w_levels_tz, self.w_levels_logger_tz)
-                        for x in self.meas_ts.date_time
-                    ]
-                self._meas_ts = self.meas_ts
-                self._meas_obsid = obsid
-            else:
-                self.meas_ts = self._meas_ts
+            self._ensure_meas_ts(obsid, dbconnection)
 
             schema_variant = self._schema_variant
             if schema_variant == "series_join":
@@ -661,9 +654,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 dbconnection.closedb()
         except Exception as e:
             common_utils.MessagebarAndLog.critical(
-                bar_msg=qgis.QtCore.QCoreApplication.translate(
-                    "LoggerEditor", "Save failed."
-                ),
+                bar_msg=QCoreApplication.translate("LoggerEditor", "Save failed."),
                 log_msg=str(e),
             )
             return False
@@ -793,7 +784,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self.update_plot()
 
     def _refresh_history_widget(self) -> None:
-        if not hasattr(self, "_history_list"):
+        if not hasattr(self, "_history_list") or not hasattr(self, "_undo_btn"):
             return
         self._history_list.clear()
         for i, entry in enumerate(self._history):
@@ -948,8 +939,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self.selected_line = None
         self.axes.clear()
 
-        p = [None] * 2  # List for plot objects
-
         handles, labels = self._draw_series()
 
         self.plot_or_update_selected_line()
@@ -1012,7 +1001,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             "#17becf",
         ]
         logger_head_colors = [str(x / 10) for x in reversed(list(range(1, 10)))]
-        # r = np.random.rand(3, 1).ravel()
 
         self.logger_plot_artists = []
         logger_time_list = self.timestring_list_to_time_list(
@@ -1366,9 +1354,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     def plot_the_recarray(self, axes, time_list, a_recarray, label, style=None):
         if style is None:
             style = {}
-        return axes.plot(
-            time_list, a_recarray.values, label=label, **style
-        )  # , xdate=True)
+        return axes.plot(time_list, a_recarray.values, label=label, **style)
 
     @fn_timer
     def set_from_date_from_x(self):
@@ -1475,11 +1461,11 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         common_utils.start_waiting_cursor()
         self.reset_plot_selects_and_calib_help()
         search_radius = self.get_search_radius()
-        if self.loggerpos_masl_or_offset_state == 1:  # UPDATE TO RELEVANT TEXT
+        if self.loggerpos_masl_or_offset_state == 1:
             logger_ts = self.head_ts
             text_field = self.logger_elevation
             calib_func = self.set_logger_pos
-        else:  # UPDATE TO RELEVANT TEXT
+        else:
             logger_ts = self.level_masl_ts
             text_field = self.offset
             calib_func = self.add_to_level_masl
@@ -1890,23 +1876,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         :param erelease:
         :return:
         """
-        "eclick and erelease are the press and release events"
         x1, y1 = num2date(eclick.xdata), eclick.ydata
         x2, y2 = num2date(erelease.xdata), erelease.ydata
-
-        # Ongoing developement
-        """xy = np.array(self.logger_artist.get_xydata())
-        filtered = xy[np.where(((xy[:, 0] >= min(x1, x2))
-                                & xy[:, 0] <= max(x1, x2))
-                                & (xy[:, 1] >= min(y1, y2))
-                                & (xy[:, 1] <= max(y1, y2)),
-                                True, False)]
-
-        if len(filtered):
-            self.from_date_time.setDateTime(num2date(min(filtered[:,0])))
-            self.to_date_time.setDateTime(num2date(max(filtered[:,0])))"""
-
-        self.logger_artist.get_xdata()
         y_idx = [
             idx
             for idx, y in enumerate(self.logger_artist.get_ydata())

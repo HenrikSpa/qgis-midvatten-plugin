@@ -23,7 +23,7 @@ from matplotlib.gridspec import GridSpec
 
 from midvatten.tools.utils.mpl_compat import FigureCanvas, NavigationToolbar
 from matplotlib.dates import num2date, datestr2num
-from matplotlib.widgets import RectangleSelector
+from matplotlib.widgets import MultiCursor, RectangleSelector
 
 from qgis.PyQt import uic
 from midvatten.tools.utils import common_utils, db_utils
@@ -1666,6 +1666,32 @@ class MoveNodesButton(NavigationButton):
         if not self.button().isChecked():
             self.parent.reset_cid()
         self.parent.toggle_move_nodes(self.button().isChecked())
+
+
+class MultiCursorButton(NavigationButton):
+    def __init__(self, parent, fig):
+        super().__init__(parent, fig)
+        self._button_setup = [
+            (
+                "show crosshair",
+                self.clicked,
+                "Show crosshair",
+                os.path.join(os.path.dirname(__file__), "..", "icons", "crosshair.png"),
+            )
+        ]
+        self.connect_toolbar()
+        self.mc = MultiCursor(
+            fig.canvas, fig.axes, horizOn=True, vertOn=True, color="k", lw=0.8, ls="--"
+        )
+        self.mc.visible = False
+
+    def button(self):
+        return list(self.actions.values())[0]
+
+    def clicked(self):
+        self.mc.visible = self.button().isChecked()
+        if not self.mc.visible:
+            self.fig.canvas.draw_idle()
 
 
 def _iter_filter_combos(filters: list[dict]):

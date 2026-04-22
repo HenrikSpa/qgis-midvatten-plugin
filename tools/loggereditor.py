@@ -569,7 +569,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         try:
             deleted_indices = self._original_buf.index.difference(self._buf.index)
             delete_params = [
-                (obsid, dt.strftime("%Y-%m-%d %H:%M")) for dt in deleted_indices
+                (obsid, dt.strftime("%Y-%m-%d %H:%M:%S")) for dt in deleted_indices
             ]
 
             common_index = self._original_buf.index.intersection(self._buf.index)
@@ -583,7 +583,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 (
                     None if pd.isna(new_vals[dt]) else float(new_vals[dt]),
                     obsid,
-                    dt.strftime("%Y-%m-%d %H:%M"),
+                    dt.strftime("%Y-%m-%d %H:%M:%S"),
                 )
                 for dt in changed_index
             ]
@@ -611,12 +611,20 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             finally:
                 dbconnection.closedb()
         except Exception as e:
-            common_utils.MessagebarAndLog.critical(bar_msg=f"Save failed: {e}")
+            common_utils.MessagebarAndLog.critical(
+                bar_msg=qgis.QtCore.QCoreApplication.translate(
+                    "LoggerEditor", "Save failed."
+                ),
+                log_msg=str(e),
+            )
             return False
 
         self._original_buf = self._buf.copy()
+        self._history = [self._history[self._history_pos]]
+        self._history_pos = 0
         self._dirty = False
         self._refresh_window_title()
+        self._refresh_history_widget()
         return True
 
     def _ask_save_discard_cancel(self, msg: str) -> str:

@@ -1686,9 +1686,6 @@ class MultiCursorButton(NavigationButton):
         )
         self.mc.visible = False
 
-    def button(self):
-        return list(self.actions.values())[0]
-
     def clicked(self):
         self.mc.visible = self.button().isChecked()
         if not self.mc.visible:

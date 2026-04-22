@@ -369,10 +369,13 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 self._meas_ts = self.meas_ts
                 self._meas_obsid = obsid
         else:
+            if self._schema_variant is None:
+                raise RuntimeError(
+                    "load_obsid_and_init called before show() — schema variant not yet detected"
+                )
+
             if self._dirty:
-                self._buf = None
-                self._original_buf = None
-                self._dirty = False
+                self._discard_buf()
 
             dbconnection = db_utils.DbConnectionManager()
             ph = dbconnection.placeholder()
@@ -494,7 +497,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
         self.level_masl_ts = self.list_of_list_to_recarray(level_masl_list)
 
-        calibration_status = [obsid] if level_masl_list[-1][1] is None else []
+        calibration_status = (
+            [obsid] if level_masl_list and level_masl_list[-1][1] is None else []
+        )
         self.update_combobox_with_calibration_info(
             obsid=obsid, _obsids_with_uncalibrated_data=calibration_status
         )
@@ -540,10 +545,11 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             if not calibrated.empty:
                 last = calibrated.tail(1)
                 dt = last.index[0]
+                dt_str = dt.strftime("%Y-%m-%d %H:%M")
                 level_masl = last["level_masl"].iloc[0]
                 head_cm_m = last["head_cm_m"].iloc[0]
                 loggerpos = level_masl - head_cm_m if pd.notna(head_cm_m) else None
-                return [(dt, loggerpos)]
+                return [(dt_str, loggerpos)]
             return []
 
         dbconnection = db_utils.DbConnectionManager()
@@ -554,6 +560,13 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         )
         dbconnection.closedb()
         return lastcalibr
+
+    def _discard_buf(self) -> None:
+        # TODO Step 5: replace with save/discard/cancel dialog
+        self._buf = None
+        self._original_buf = None
+        self._dirty = False
+        self._buf_obsid = None
 
     def _history_push(self, label: str) -> None:
         pass

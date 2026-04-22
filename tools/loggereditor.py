@@ -890,8 +890,19 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             tick.label1.set_rotation(30)
             tick.label1.set_ha("right")
 
+    def _hide_main_xticklabels(self) -> None:
+        for tick in self.axes.xaxis.get_major_ticks():
+            tick.label1.set_visible(False)
+
     def _draw_reference_subplot(self) -> None:
+        # sharex makes both axes share the same xaxis.major ticker object, so
+        # ref_axes.cla() resets the shared formatter/locator to scalar defaults.
+        # Save and restore to preserve date formatting on the main axes.
+        formatter = self.axes.xaxis.get_major_formatter()
+        locator = self.axes.xaxis.get_major_locator()
         self.ref_axes.cla()
+        self.axes.xaxis.set_major_formatter(formatter)
+        self.axes.xaxis.set_major_locator(locator)
         if not self._ref_series:
             self._ref_gs.set_height_ratios([1, 0.001])
             self.ref_axes.set_visible(False)
@@ -900,6 +911,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             return
         self._ref_gs.set_height_ratios([3, 1])
         self.ref_axes.set_visible(True)
+        self._hide_main_xticklabels()
         with use_or_create_connection(None) as conn:
             for s in self._ref_series:
                 self._plot_ref_series(conn, s)

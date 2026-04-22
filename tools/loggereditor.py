@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import qgis.PyQt
 from qgis.PyQt.QtCore import QCoreApplication, Qt
+from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import (
     QDockWidget,
     QHBoxLayout,
@@ -816,7 +817,15 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         vbox.addWidget(self._ref_list)
         self._ref_dock.setWidget(container)
         self.addDockWidget(Qt.RightDockWidgetArea, self._ref_dock)
-        self.menuView.addAction(self._ref_dock.toggleViewAction())
+        _toggle = self._ref_dock.toggleViewAction()
+        _toggle.setIcon(
+            QIcon(
+                os.path.join(
+                    os.path.dirname(__file__), "..", "icons", "svg", "ref_panel.svg"
+                )
+            )
+        )
+        self.mpltoolbar.addAction(_toggle)
         self._ref_add_btn.clicked.connect(self._on_add_ref_series)
         self._ref_edit_btn.clicked.connect(self._on_edit_ref_series)
         self._ref_remove_btn.clicked.connect(self._on_remove_ref_series)

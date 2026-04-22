@@ -614,6 +614,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self.plot_or_update_selected_line()
 
         self._finish_plot(handles, labels)
+        self._draw_reference_subplot()
 
         if last_used_obsid == self.obsid:
             self.mpltoolbar.forward()

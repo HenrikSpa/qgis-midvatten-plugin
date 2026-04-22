@@ -158,13 +158,15 @@ class RefSeriesDialog(QDialog):
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setMinimumHeight(60)
+        scroll.setMaximumHeight(320)
+        scroll.setSizeAdjustPolicy(QScrollArea.AdjustToContents)
         self._filters_widget = QWidget()
         self._filters_layout = QVBoxLayout(self._filters_widget)
         self._filters_layout.setSpacing(4)
         self._filters_layout.setContentsMargins(2, 2, 2, 2)
         self._filters_layout.addStretch()
         scroll.setWidget(self._filters_widget)
-        main_layout.addWidget(scroll, 1)
+        main_layout.addWidget(scroll)
 
         add_filter_btn = QPushButton(_tr("+ Add filter"))
         add_filter_btn.clicked.connect(self._add_filter_row)
@@ -274,11 +276,15 @@ class RefSeriesDialog(QDialog):
         row = _FilterRow(self.current_table(), self)
         self._filter_rows.append(row)
         self._filters_layout.insertWidget(self._filters_layout.count() - 1, row)
+        if self.isVisible():
+            self.adjustSize()
 
     def _remove_filter_row(self, row: "_FilterRow") -> None:
         self._filters_layout.removeWidget(row)
         self._filter_rows.remove(row)
         row.deleteLater()
+        if self.isVisible():
+            self.adjustSize()
 
     def to_dict(self) -> dict:
         norm_idx = self.norm_combo.currentIndex()

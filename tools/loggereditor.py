@@ -9,12 +9,14 @@ import numpy as np
 import pandas as pd
 import qgis.PyQt
 from qgis.PyQt.QtCore import QCoreApplication, Qt
-from qgis.PyQt.QtGui import QCloseEvent, QIcon
+from qgis.PyQt.QtGui import QCloseEvent, QIcon, QKeySequence
 from qgis.PyQt.QtWidgets import (
     QDockWidget,
     QHBoxLayout,
     QListWidget,
+    QListWidgetItem,
     QPushButton,
+    QShortcut,
     QVBoxLayout,
     QWidget,
 )
@@ -216,6 +218,54 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 self._schema_variant = "source_col"
             else:
                 self._schema_variant = "no_source"
+
+            # --- Save button in obsid row ---
+            self._save_btn = QPushButton(
+                QCoreApplication.translate("LoggerEditor", "Save"),
+                self,
+            )
+            self._save_btn.setEnabled(False)
+            self._save_btn.clicked.connect(self.save_to_db)
+            self.horizontal_layout.addWidget(self._save_btn)
+
+            # --- Undo / Redo strip ---
+            undo_redo_widget = QWidget(self)
+            undo_redo_layout = QHBoxLayout(undo_redo_widget)
+            undo_redo_layout.setContentsMargins(0, 0, 0, 0)
+            self._undo_btn = QPushButton(
+                QCoreApplication.translate("LoggerEditor", "← Undo"), self
+            )
+            self._redo_btn = QPushButton(
+                QCoreApplication.translate("LoggerEditor", "Redo →"), self
+            )
+            undo_redo_layout.addWidget(self._undo_btn)
+            undo_redo_layout.addWidget(self._redo_btn)
+            undo_redo_layout.addStretch()
+            self._undo_btn.clicked.connect(self.undo)
+            self._redo_btn.clicked.connect(self.redo)
+            parent_layout = self.vertical_layout_6
+            tab_index = -1
+            for i in range(parent_layout.count()):
+                item = parent_layout.itemAt(i)
+                if item.widget() is self.tab_widget:
+                    tab_index = i
+                    break
+            if tab_index >= 0:
+                parent_layout.insertWidget(tab_index, undo_redo_widget)
+            undo_shortcut = QShortcut(QKeySequence("Ctrl+Z"), self)
+            undo_shortcut.activated.connect(self.undo)
+            redo_shortcut = QShortcut(QKeySequence("Ctrl+Shift+Z"), self)
+            redo_shortcut.activated.connect(self.redo)
+
+            # --- History tab ---
+            self._history_list = QListWidget(self)
+            self._history_list.itemClicked.connect(
+                lambda item: self.jump_to_history(self._history_list.row(item))
+            )
+            self.tab_widget.addTab(
+                self._history_list,
+                QCoreApplication.translate("LoggerEditor", "History"),
+            )
 
             self._setup_ref_dock()
 
@@ -743,13 +793,29 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self.update_plot()
 
     def _refresh_history_widget(self) -> None:
-        pass
+        if not hasattr(self, "_history_list"):
+            return
+        self._history_list.clear()
+        for i, entry in enumerate(self._history):
+            ts = entry["timestamp"].strftime("%H:%M:%S")
+            item = QListWidgetItem(f"{ts}  {entry['label']}")
+            if i == self._history_pos:
+                font = item.font()
+                font.setBold(True)
+                item.setFont(font)
+            self._history_list.addItem(item)
+        if self._history:
+            self._history_list.scrollToItem(self._history_list.item(self._history_pos))
+        self._undo_btn.setEnabled(self._history_pos > 0)
+        self._redo_btn.setEnabled(self._history_pos < len(self._history) - 1)
 
     def _refresh_window_title(self) -> None:
         base = self.windowTitle()
         if base.endswith(" *"):
             base = base[:-2]
         self.setWindowTitle(base + " *" if self._dirty else base)
+        if hasattr(self, "_save_btn"):
+            self._save_btn.setEnabled(self._dirty)
 
     @fn_timer
     def set_logger_pos(self, obsid=None):

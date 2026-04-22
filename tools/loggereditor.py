@@ -571,6 +571,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self._history_pos = -1
 
     def _history_push(self, label: str) -> None:
+        # Truncate any redo branch before recording the new state
+        del self._history[self._history_pos + 1 :]
         entry = {
             "label": label,
             "timestamp": datetime.datetime.now(),
@@ -579,6 +581,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         }
         self._history.append(entry)
         self._history_pos = len(self._history) - 1
+        self._dirty = True
+        self._refresh_window_title()
         self._refresh_history_widget()
 
     def undo(self) -> None:
@@ -680,7 +684,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         )
         self._buf.loc[mask, "level_masl"] += float(newzref)
         self._history_push("Adjust level")
-        self._dirty = True
         self.update_plot()
 
     @fn_timer
@@ -706,7 +709,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             float(newzref) + self._buf.loc[mask, "head_cm_m"]
         )
         self._history_push("Set logger position")
-        self._dirty = True
         self.update_plot()
 
     @fn_timer
@@ -1487,7 +1489,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             else:
                 self._buf = self._buf.drop(index=self._buf.index[mask])
                 self._history_push("Delete data")
-            self._dirty = True
             common_utils.stop_waiting_cursor()
             self.update_plot()
 
@@ -1609,7 +1610,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         common_utils.start_waiting_cursor()
         self._buf.loc[mask, "level_masl"] -= slope * (row_epochs - l1_epoch)
         self._history_push("Adjust trend")
-        self._dirty = True
         common_utils.stop_waiting_cursor()
         self.update_plot()
 

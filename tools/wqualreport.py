@@ -47,12 +47,36 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
         self._run_report(layer, settingsdict)
 
     def _run_report(self, layer, settingsdict=None):
-        # show the user this may take a long time...
-        common_utils.start_waiting_cursor()
-
         if settingsdict is None:
             settingsdict = {}
         self.settingsdict = settingsdict
+
+        required = {
+            "wqualtable": QCoreApplication.translate(
+                "Wqualreport", "water quality table"
+            ),
+            "wqual_paramcolumn": QCoreApplication.translate(
+                "Wqualreport", "parameter column"
+            ),
+            "wqual_valuecolumn": QCoreApplication.translate(
+                "Wqualreport", "value column"
+            ),
+        }
+        missing = [
+            label for key, label in required.items() if not self.settingsdict.get(key)
+        ]
+        if missing:
+            common_utils.MessagebarAndLog.warning(
+                bar_msg=QCoreApplication.translate(
+                    "Wqualreport",
+                    "Water quality report is missing required settings: %s. Please configure them in Midvatten Settings.",
+                )
+                % ", ".join(missing)
+            )
+            return
+
+        # show the user this may take a long time...
+        common_utils.start_waiting_cursor()
         provider = layer.dataProvider()  # OGR provider
         kolumnindex = provider.fieldNameIndex(
             "obsid"

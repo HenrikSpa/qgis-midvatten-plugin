@@ -883,10 +883,12 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self._draw_reference_subplot()
 
     def _restore_main_xticklabels(self) -> None:
-        for label in self.axes.xaxis.get_ticklabels():
-            label.set_visible(True)
-            label.set_rotation(30)
-            label.set_ha("right")
+        # get_ticklabels() filters out invisible labels, so use get_major_ticks()
+        # to reach labels hidden by autofmt_xdate().
+        for tick in self.axes.xaxis.get_major_ticks():
+            tick.label1.set_visible(True)
+            tick.label1.set_rotation(30)
+            tick.label1.set_ha("right")
 
     def _draw_reference_subplot(self) -> None:
         self.ref_axes.cla()

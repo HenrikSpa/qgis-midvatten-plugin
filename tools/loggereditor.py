@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import qgis.PyQt
 from qgis.PyQt.QtCore import QCoreApplication, Qt
-from qgis.PyQt.QtGui import QIcon
+from qgis.PyQt.QtGui import QCloseEvent, QIcon
 from qgis.PyQt.QtWidgets import (
     QDockWidget,
     QHBoxLayout,
@@ -199,6 +199,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             # Populate combobox with obsid from table w_levels_logger
             self.load_obsid_from_db()
             common_utils.stop_waiting_cursor()
+            self._prev_combobox_index = self.combobox_obsid.currentIndex()
+            self.combobox_obsid.currentIndexChanged.connect(self._on_obsid_changed)
 
             self.w_levels_logger_tz = db_utils.get_timezone_from_db("w_levels_logger")
             self.w_levels_tz = db_utils.get_timezone_from_db("w_levels")
@@ -373,9 +375,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 raise RuntimeError(
                     "load_obsid_and_init called before show() — schema variant not yet detected"
                 )
-
-            if self._dirty:
-                self._discard_buf()
 
             dbconnection = db_utils.DbConnectionManager()
             ph = dbconnection.placeholder()
@@ -654,8 +653,49 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             return "discard"
         return "cancel"
 
+    def closeEvent(self, event: QCloseEvent) -> None:  # noqa: N802
+        if self._dirty:
+            result = self._ask_save_discard_cancel(
+                QCoreApplication.translate(
+                    "LoggerEditor",
+                    "You have unsaved changes. Save before closing?",
+                )
+            )
+            if result == "cancel":
+                event.ignore()
+                return
+            if result == "save" and not self.save_to_db():
+                event.ignore()
+                return
+        event.accept()
+
+    def _revert_combobox_to_prev(self) -> None:
+        self.combobox_obsid.blockSignals(True)
+        self.combobox_obsid.setCurrentIndex(self._prev_combobox_index)
+        self.combobox_obsid.blockSignals(False)
+
+    def _on_obsid_changed(self, new_index: int) -> None:
+        if not self._dirty:
+            self._prev_combobox_index = new_index
+            return
+        result = self._ask_save_discard_cancel(
+            QCoreApplication.translate(
+                "LoggerEditor",
+                "You have unsaved changes for this logger. Save before switching?",
+            )
+        )
+        if result == "cancel":
+            self._revert_combobox_to_prev()
+            return
+        if result == "save":
+            if not self.save_to_db():
+                self._revert_combobox_to_prev()
+                return
+        else:
+            self._discard_buf()
+        self._prev_combobox_index = new_index
+
     def _discard_buf(self) -> None:
-        # TODO Step 5: replace with save/discard/cancel dialog
         self._buf = None
         self._original_buf = None
         self._dirty = False

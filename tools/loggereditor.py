@@ -625,20 +625,20 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         :param newzref: (int/float/str [m]) The correction that should be made against the head [m]
         :return: None
         """
-        common_utils.start_waiting_cursor()
-        dbconnection = db_utils.DbConnectionManager()
-        ph = dbconnection.placeholder()
-        epoch_sql, epoch_args = db_utils.cast_date_time_as_epoch(dbconnection)
-        fr_epoch = (fr_d_t - datetime.datetime(1970, 1, 1)).total_seconds()
-        to_epoch = (to_d_t - datetime.datetime(1970, 1, 1)).total_seconds()
-        sql = f"UPDATE w_levels_logger SET level_masl = {ph} + level_masl WHERE obsid = {ph} AND level_masl IS NOT NULL AND {epoch_sql} >= {ph} AND {epoch_sql} <= {ph}"
-        db_utils.sql_alter_db(
-            sql,
-            dbconnection=dbconnection,
-            all_args=[(newzref, obsid, *epoch_args, fr_epoch, *epoch_args, to_epoch)],
+        if self._buf is None:
+            common_utils.MessagebarAndLog.warning(bar_msg="No data loaded")
+            return
+        fr = fr_d_t.replace(tzinfo=None)
+        to = to_d_t.replace(tzinfo=None)
+        mask = (
+            (fr <= self._buf.index)
+            & (self._buf.index <= to)
+            & self._buf["level_masl"].notna()
         )
-        dbconnection.closedb()
-        common_utils.stop_waiting_cursor()
+        self._buf.loc[mask, "level_masl"] += float(newzref)
+        self._history_push("Adjust level")
+        self._dirty = True
+        self.update_plot()
 
     @fn_timer
     def update_level_masl_from_head(self, obsid, fr_d_t, to_d_t, newzref):
@@ -649,20 +649,22 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         :param newzref: (int/float/str [m]) The correction that should be made against the head [m]
         :return: None
         """
-        common_utils.start_waiting_cursor()
-        dbconnection = db_utils.DbConnectionManager()
-        ph = dbconnection.placeholder()
-        epoch_sql, epoch_args = db_utils.cast_date_time_as_epoch(dbconnection)
-        fr_epoch = (fr_d_t - datetime.datetime(1970, 1, 1)).total_seconds()
-        to_epoch = (to_d_t - datetime.datetime(1970, 1, 1)).total_seconds()
-        sql = f"UPDATE w_levels_logger SET level_masl = {ph} + head_cm / 100 WHERE obsid = {ph} AND head_cm IS NOT NULL AND {epoch_sql} >= {ph} AND {epoch_sql} <= {ph}"
-        db_utils.sql_alter_db(
-            sql,
-            dbconnection=dbconnection,
-            all_args=[(newzref, obsid, *epoch_args, fr_epoch, *epoch_args, to_epoch)],
+        if self._buf is None:
+            common_utils.MessagebarAndLog.warning(bar_msg="No data loaded")
+            return
+        fr = fr_d_t.replace(tzinfo=None)
+        to = to_d_t.replace(tzinfo=None)
+        mask = (
+            (fr <= self._buf.index)
+            & (self._buf.index <= to)
+            & self._buf["head_cm_m"].notna()
         )
-        dbconnection.closedb()
-        common_utils.stop_waiting_cursor()
+        self._buf.loc[mask, "level_masl"] = (
+            float(newzref) + self._buf.loc[mask, "head_cm_m"]
+        )
+        self._history_push("Set logger position")
+        self._dirty = True
+        self.update_plot()
 
     @fn_timer
     def list_of_list_to_recarray(self, list_of_lists):
@@ -1380,9 +1382,13 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
     @fn_timer
     def delete_selected_range(self, table_name, set_to_null_instead=False):
-        """Deletes the current selected range from the database from w_levels_logger
-        :return: De
+        """Deletes or nulls the current selected range in the in-memory buffer.
+        :return: None
         """
+        if self._buf is None:
+            common_utils.MessagebarAndLog.warning(bar_msg="No data loaded")
+            return
+
         current_loaded_obsid = self.obsid
         selected_obsid = self.load_obsid_and_init()
         if current_loaded_obsid != selected_obsid:
@@ -1404,28 +1410,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self.update_plot()
             return
 
-        fr_d_t = str(
-            (
-                self.from_date_time.dateTime().toPyDateTime()
-                - datetime.datetime(1970, 1, 1)
-            ).total_seconds()
-        )
-        to_d_t = str(
-            (
-                self.to_date_time.dateTime().toPyDateTime()
-                - datetime.datetime(1970, 1, 1)
-            ).total_seconds()
-        )
-
-        dbconnection = db_utils.DbConnectionManager()
-        ph = dbconnection.placeholder()
-        epoch_sql, epoch_args = db_utils.cast_date_time_as_epoch(dbconnection)
-        table_ident = dbconnection.ident(table_name)
-        where_dt_sql = f" AND {epoch_sql} >= {ph} AND {epoch_sql} <= {ph}"
-        alter_args = (selected_obsid, *epoch_args, fr_d_t, *epoch_args, to_d_t)
+        fr_d_t = self.from_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
+        to_d_t = self.to_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
 
         if set_to_null_instead:
-            sql = f"UPDATE {table_ident} SET level_masl = NULL WHERE obsid = {ph}{where_dt_sql}"
             msg = QCoreApplication.translate(
                 "Calibrlogger",
                 "Do you want to set level_masl to NULL for the period %s to %s for obsid %s in table %s?",
@@ -1436,7 +1424,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 table_name,
             )
         else:
-            sql = f"DELETE FROM {table_ident} WHERE obsid = {ph}{where_dt_sql}"
             msg = QCoreApplication.translate(
                 "Calibrlogger",
                 "Do you want to delete the period %s to %s for obsid %s from table %s?",
@@ -1450,8 +1437,14 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         really_delete = common_utils.Askuser("YesNo", msg).result
         if really_delete:
             common_utils.start_waiting_cursor()
-            db_utils.sql_alter_db(sql, dbconnection=dbconnection, all_args=[alter_args])
-            dbconnection.closedb()
+            mask = (fr_d_t <= self._buf.index) & (self._buf.index <= to_d_t)
+            if set_to_null_instead:
+                self._buf.loc[mask, "level_masl"] = np.nan
+                self._history_push("Set to null")
+            else:
+                self._buf = self._buf.drop(index=self._buf.index[mask])
+                self._history_push("Delete data")
+            self._dirty = True
             common_utils.stop_waiting_cursor()
             self.update_plot()
 
@@ -1505,31 +1498,44 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         if obsid is None:
             return None
 
-        dbconnection = db_utils.DbConnectionManager()
-        ph = dbconnection.placeholder()
+        if self._buf is None:
+            common_utils.MessagebarAndLog.warning(bar_msg="No data loaded")
+            return
 
-        # Each epoch cast returns (sql_fragment, args). The args hold the
-        # date string parameter-bound — never interpolated into SQL. The
-        # column-mode call (date_as_numeric) returns an empty args tuple.
-        l1_date_sql, l1_date_args = db_utils.cast_date_time_as_epoch(
-            dbconnection=dbconnection,
-            date_time=long_dateformat(self.l1_date.dateTime().toPyDateTime()),
+        l1_epoch = (
+            self.l1_date.dateTime().toPyDateTime().replace(tzinfo=None).timestamp()
         )
-        l2_date_sql, l2_date_args = db_utils.cast_date_time_as_epoch(
-            dbconnection=dbconnection,
-            date_time=long_dateformat(self.l2_date.dateTime().toPyDateTime()),
+        l2_epoch = (
+            self.l2_date.dateTime().toPyDateTime().replace(tzinfo=None).timestamp()
         )
-        m1_date_sql, m1_date_args = db_utils.cast_date_time_as_epoch(
-            dbconnection=dbconnection,
-            date_time=long_dateformat(self.m1_date.dateTime().toPyDateTime()),
+        m1_epoch = (
+            self.m1_date.dateTime().toPyDateTime().replace(tzinfo=None).timestamp()
         )
-        m2_date_sql, m2_date_args = db_utils.cast_date_time_as_epoch(
-            dbconnection=dbconnection,
-            date_time=long_dateformat(self.m2_date.dateTime().toPyDateTime()),
+        m2_epoch = (
+            self.m2_date.dateTime().toPyDateTime().replace(tzinfo=None).timestamp()
         )
-        date_as_numeric_sql, date_as_numeric_args = db_utils.cast_date_time_as_epoch(
-            dbconnection=dbconnection
+
+        l1_level = float(self.l1_level.text())
+        l2_level = float(self.l2_level.text())
+        m1_level = float(self.m1_level.text())
+        m2_level = float(self.m2_level.text())
+
+        fr_d_t = self.from_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
+        to_d_t = self.to_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
+
+        mask = (
+            (fr_d_t <= self._buf.index)
+            & (self._buf.index <= to_d_t)
+            & self._buf["level_masl"].notna()
         )
+        if not mask.any():
+            common_utils.pop_up_info(
+                QCoreApplication.translate(
+                    "Calibrlogger",
+                    """Warning!\n No data found within the chosen period. No trend adjustment done!\nTry changing "from" and "to".""",
+                )
+            )
+            return
 
         data = {
             "obsid": obsid,
@@ -1539,76 +1545,26 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             "adjust_end_date": long_dateformat(
                 self.to_date_time.dateTime().toPyDateTime()
             ),
-            "l1_level": str(float(self.l1_level.text())),
-            "l2_level": str(float(self.l2_level.text())),
-            "M1_level": str(float(self.m1_level.text())),
-            "M2_level": str(float(self.m2_level.text())),
+            "l1_level": str(l1_level),
+            "l2_level": str(l2_level),
+            "M1_level": str(m1_level),
+            "M2_level": str(m2_level),
         }
-
-        select_sql = (
-            f"SELECT level_masl FROM w_levels_logger"
-            f" WHERE level_masl IS NOT NULL"
-            f" AND obsid = {ph} AND date_time >= {ph} AND date_time <= {ph}"
-        )
-        res = db_utils.sql_load_fr_db(
-            select_sql,
-            dbconnection=dbconnection,
-            execute_args=(
-                data["obsid"],
-                data["adjust_start_date"],
-                data["adjust_end_date"],
-            ),
-        )[1]
-        if not res:
-            dbconnection.closedb()
-            common_utils.pop_up_info(
-                QCoreApplication.translate(
-                    "Calibrlogger",
-                    """Warning!\n No data found within the chosen period. No trend adjustment done!\nTry changing "from" and "to".""",
-                )
-            )
-            return
-
         common_utils.MessagebarAndLog.info(
             log_msg=QCoreApplication.translate(
                 "Calibrlogger", "Trend adjusted using: \n%s"
             )
             % (str(data))
         )
-        # Epoch expressions are SQL code (strftime/extract); their date
-        # literals are parameter-bound via the *_args tuples above.
-        update_sql = f"""
-                UPDATE w_levels_logger SET level_masl = level_masl -
-                (
-                 ((({ph} - {ph}) / ({l1_date_sql} - {l2_date_sql}))
-                 - (({ph} - {ph}) / ({m1_date_sql} - {m2_date_sql})))
-                  * ({date_as_numeric_sql} - {l1_date_sql})
-                )
-                WHERE obsid = {ph} AND date_time >= {ph} AND date_time <= {ph}
-            """
+
+        slope = (l1_level - l2_level) / (l1_epoch - l2_epoch) - (
+            m1_level - m2_level
+        ) / (m1_epoch - m2_epoch)
+        row_epochs = self._buf.loc[mask].index.map(lambda dt: dt.timestamp())
         common_utils.start_waiting_cursor()
-        db_utils.sql_alter_db(
-            update_sql,
-            dbconnection=dbconnection,
-            all_args=[
-                (
-                    float(data["l1_level"]),
-                    float(data["l2_level"]),
-                    *l1_date_args,
-                    *l2_date_args,
-                    float(data["M1_level"]),
-                    float(data["M2_level"]),
-                    *m1_date_args,
-                    *m2_date_args,
-                    *date_as_numeric_args,
-                    *l1_date_args,
-                    data["obsid"],
-                    data["adjust_start_date"],
-                    data["adjust_end_date"],
-                )
-            ],
-        )
-        dbconnection.closedb()
+        self._buf.loc[mask, "level_masl"] -= slope * (row_epochs - l1_epoch)
+        self._history_push("Adjust trend")
+        self._dirty = True
         common_utils.stop_waiting_cursor()
         self.update_plot()
 

@@ -19,9 +19,9 @@
  ***************************************************************************/
 """
 
-from decimal import Decimal
-
+import math
 from unittest import mock
+
 import numpy as np
 import pytest
 
@@ -75,14 +75,9 @@ class CalibrloggerMixin:
 
         calibrlogger.set_logger_pos()
 
-        test = utils_for_tests.create_test_string(
-            db_utils.sql_load_fr_db(
-                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger"
-            )
-        )
-        ref = "(True, [(rb1, 2017-02-01 00:00, 100.0, None, None, 3.0, None)])"
+        level_masl_values = calibrlogger._buf["level_masl"].tolist()
         print(f"{mock_messagebar.mock_calls=}")
-        assert test == ref
+        assert level_masl_values == [3.0]
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_calibrlogger_add_to_level_masl(self, mock_messagebar):
@@ -103,15 +98,9 @@ class CalibrloggerMixin:
 
         calibrlogger.add_to_level_masl()
 
-        test = utils_for_tests.create_test_string(
-            db_utils.sql_load_fr_db(
-                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger"
-            )
-        )
-        ref = "(True, [(rb1, 2017-02-01 00:00, None, None, None, 150.0, None)])"
+        level_masl_values = calibrlogger._buf["level_masl"].tolist()
         print(f"{mock_messagebar.mock_calls=}")
-        print(test)
-        assert test == ref
+        assert level_masl_values == [150.0]
 
     @mock.patch("midvatten.tools.loggereditor.common_utils.pop_up_info", autospec=True)
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
@@ -172,15 +161,9 @@ class CalibrloggerMixin:
 
         calibrlogger.calc_best_fit()
 
-        test = utils_for_tests.create_test_string(
-            db_utils.sql_load_fr_db(
-                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger"
-            )
-        )
-        ref = "(True, [(rb1, 2017-02-01 01:00, None, None, None, 100.0, None)])"
+        level_masl_values = calibrlogger._buf["level_masl"].tolist()
         print(f"{mock_messagebar.mock_calls=}")
-        print(test)
-        assert test == ref
+        assert level_masl_values == [100.0]
 
     @mock.patch("midvatten.tools.loggereditor.common_utils.pop_up_info", autospec=True)
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
@@ -208,16 +191,9 @@ class CalibrloggerMixin:
 
         calibrlogger.calc_best_fit()
 
-        test = utils_for_tests.create_test_string(
-            db_utils.sql_load_fr_db(
-                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger"
-            )
-        )
-        ref = "(True, [(rb1, 2017-02-01 01:00, None, None, None, 100.0, None)])"
+        level_masl_values = calibrlogger._buf["level_masl"].tolist()
         print(f"{mock_messagebar.mock_calls=}")
-        print(test)
-        print(ref)
-        assert test == ref
+        assert level_masl_values == [100.0]
 
     @mock.patch("midvatten.tools.loggereditor.common_utils.pop_up_info", autospec=True)
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
@@ -248,15 +224,9 @@ class CalibrloggerMixin:
 
         calibrlogger.calc_best_fit()
 
-        test = utils_for_tests.create_test_string(
-            db_utils.sql_load_fr_db(
-                "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger"
-            )
-        )
-        ref = "(True, [(rb1, 2017-02-01 01:00, None, None, None, 100.0, None)])"
+        level_masl_values = calibrlogger._buf["level_masl"].tolist()
         print(f"{mock_messagebar.mock_calls=}")
-        print(test)
-        assert test == ref
+        assert level_masl_values == [100.0]
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_calibrlogger_set_last_calibration(self, mock_messagebar):
@@ -352,13 +322,13 @@ class CalibrloggerMixin:
 
         calibrlogger.delete_selected_range("w_levels_logger")
 
-        res = db_utils.sql_load_fr_db(
-            "SELECT date_time FROM w_levels_logger ORDER BY date_time"
+        buf_dates = sorted(
+            dt.strftime("%Y-%m-%d %H:%M") for dt in calibrlogger._buf.index
         )
-        test = utils_for_tests.create_test_string(res)
+        test = utils_for_tests.create_test_string(buf_dates)
         print(f"{mock_messagebar.mock_calls=}")
 
-        ref = "(True, [(2017-01-28 00:00), (2017-02-10 00:00)])"
+        ref = "[2017-01-28 00:00, 2017-02-10 00:00]"
         print("Ref")
 
         print(ref)
@@ -541,10 +511,201 @@ class CalibrloggerMixin:
         )
         calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
         calibrlogger.show()
-        with mock.patch.object(calibrlogger, "_draw_reference_subplot") as mock_draw_ref:
+        with mock.patch.object(
+            calibrlogger, "_draw_reference_subplot"
+        ) as mock_draw_ref:
             calibrlogger.update_plot()
         print(f"{mock_messagebar.mock_calls=}")
         mock_draw_ref.assert_called_once_with()
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_buffer_fast_path(self, mock_messagebar):
+        """After update_plot, _buf is populated and _buf_obsid is set."""
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, head_cm, level_masl) "
+            "VALUES ('rb1', '2017-02-01 00:00', 50, 100)"
+        )
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
+
+        calibrlogger.update_plot()
+
+        print(f"{mock_messagebar.mock_calls=}")
+        assert calibrlogger._buf is not None
+        assert calibrlogger._buf_obsid == "rb1"
+        assert calibrlogger._buf["level_masl"].tolist() == [100.0]
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_undo_reverts_buffer(self, mock_messagebar):
+        """undo() restores level_masl to the pre-edit state."""
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, head_cm, level_masl) "
+            "VALUES ('rb1', '2017-02-01 00:00', 100, NULL)"
+        )
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
+        calibrlogger.update_plot()
+
+        # Before edit, level_masl is NaN/None
+        initial_val = calibrlogger._buf["level_masl"].iloc[0]
+        assert initial_val is None or (
+            isinstance(initial_val, float) and math.isnan(initial_val)
+        )
+
+        # Make an edit
+        calibrlogger.from_date_time.setDateTime(
+            date_utils.datestring_to_date("2000-01-01 00:00:00")
+        )
+        calibrlogger.logger_elevation.setText("5")
+        gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
+        calibrlogger.set_logger_pos()
+
+        edited_level = calibrlogger._buf["level_masl"].iloc[0]
+        assert edited_level is not None and not (
+            isinstance(edited_level, float) and math.isnan(edited_level)
+        )
+        assert calibrlogger._history_pos == 1
+
+        # Undo reverts
+        calibrlogger.undo()
+
+        print(f"{mock_messagebar.mock_calls=}")
+        reverted_val = calibrlogger._buf["level_masl"].iloc[0]
+        assert reverted_val is None or (
+            isinstance(reverted_val, float) and math.isnan(reverted_val)
+        )
+        assert calibrlogger._history_pos == 0
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_redo_after_undo(self, mock_messagebar):
+        """redo() re-applies the edit after undo()."""
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, head_cm, level_masl) "
+            "VALUES ('rb1', '2017-02-01 00:00', 100, NULL)"
+        )
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
+        calibrlogger.update_plot()
+
+        calibrlogger.from_date_time.setDateTime(
+            date_utils.datestring_to_date("2000-01-01 00:00:00")
+        )
+        calibrlogger.logger_elevation.setText("5")
+        gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
+        calibrlogger.set_logger_pos()
+
+        edited_values = calibrlogger._buf["level_masl"].tolist()
+
+        calibrlogger.undo()
+        calibrlogger.redo()
+
+        print(f"{mock_messagebar.mock_calls=}")
+        assert calibrlogger._buf["level_masl"].tolist() == edited_values
+        assert calibrlogger._history_pos == 1
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_save_to_db_writes_changes(self, mock_messagebar):
+        """save_to_db() persists level_masl edits to DB and clears dirty flag."""
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, head_cm, level_masl) "
+            "VALUES ('rb1', '2017-02-01 00:00:00', 100, NULL)"
+        )
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
+        calibrlogger.update_plot()
+
+        calibrlogger.from_date_time.setDateTime(
+            date_utils.datestring_to_date("2000-01-01 00:00:00")
+        )
+        calibrlogger.logger_elevation.setText("5")
+        gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
+        calibrlogger.set_logger_pos()
+
+        assert calibrlogger._dirty
+        expected_level = calibrlogger._buf["level_masl"].iloc[0]
+
+        result = calibrlogger.save_to_db()
+
+        print(f"{mock_messagebar.mock_calls=}")
+        assert result is True
+        assert not calibrlogger._dirty
+
+        # Confirm DB was updated
+        _ok, rows = db_utils.sql_load_fr_db(
+            "SELECT level_masl FROM w_levels_logger WHERE obsid='rb1'"
+        )
+        assert _ok
+        assert rows[0][0] == expected_level
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_close_event_dirty_cancel(self, mock_messagebar):
+        """closeEvent with dirty buffer and 'cancel' response ignores the event."""
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, head_cm, level_masl) "
+            "VALUES ('rb1', '2017-02-01 00:00', 100, NULL)"
+        )
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
+        calibrlogger.update_plot()
+
+        calibrlogger.from_date_time.setDateTime(
+            date_utils.datestring_to_date("2000-01-01 00:00:00")
+        )
+        calibrlogger.logger_elevation.setText("5")
+        gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
+        calibrlogger.set_logger_pos()
+
+        assert calibrlogger._dirty
+
+        with mock.patch.object(
+            calibrlogger, "_ask_save_discard_cancel", return_value="cancel"
+        ):
+            event = mock.MagicMock()
+            calibrlogger.closeEvent(event)
+
+        print(f"{mock_messagebar.mock_calls=}")
+        event.ignore.assert_called_once()
+        event.accept.assert_not_called()
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_obsid_switch_dirty_cancel_reverts_combobox(self, mock_messagebar):
+        """_on_obsid_changed with 'cancel' restores the previous combobox selection."""
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb2')")
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, head_cm, level_masl) "
+            "VALUES ('rb1', '2017-02-01 00:00', 100, NULL)"
+        )
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, head_cm, level_masl) "
+            "VALUES ('rb2', '2017-02-01 00:00', 50, 20)"
+        )
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
+        gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
+        calibrlogger.update_plot()
+
+        calibrlogger.from_date_time.setDateTime(
+            date_utils.datestring_to_date("2000-01-01 00:00:00")
+        )
+        calibrlogger.logger_elevation.setText("5")
+        calibrlogger.set_logger_pos()
+
+        assert calibrlogger._dirty
+        prev_index = calibrlogger.combobox_obsid.currentIndex()
+
+        with mock.patch.object(
+            calibrlogger, "_ask_save_discard_cancel", return_value="cancel"
+        ):
+            calibrlogger._on_obsid_changed(0)
+
+        print(f"{mock_messagebar.mock_calls=}")
+        assert calibrlogger.combobox_obsid.currentIndex() == prev_index
 
 
 class CalibrloggerPostgisMixin(CalibrloggerMixin):
@@ -591,22 +752,19 @@ class CalibrloggerPostgisMixin(CalibrloggerMixin):
         calibrlogger.m2_level.setText("100")
 
         calibrlogger.adjust_trend_func()
-        res = db_utils.sql_load_fr_db(
-            "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger"
-        )
-        row = list(res[1][1])
-        row[5] = "%.11e" % Decimal(row[5])
-        res[1][1] = tuple(row)
-        test = utils_for_tests.create_test_string(res)
+        buf_levels = calibrlogger._buf["level_masl"].tolist()
+        level0 = buf_levels[0]
+        level1 = f"{buf_levels[1]:.11e}"
         print(f"{mock_messagebar.mock_calls=}")
 
-        ref = "(True, [(rb1, 2017-02-01 00:00, None, None, None, 100.0, None), (rb1, 2017-02-10 00:00, None, None, None, 0.00000000000e+00, None)])"
+        ref_level0 = 100.0
+        ref_level1 = "-2.84217094304e-14"
         print("Ref")
-
-        print(ref)
+        print(f"{ref_level0=}, {ref_level1=}")
         print("Test")
-        print(test)
-        assert test == ref
+        print(f"{level0=}, {level1=}")
+        assert level0 == ref_level0
+        assert level1 == ref_level1
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_calibrlogger_plot_source_postgres(self, mock_messagebar):
@@ -861,22 +1019,19 @@ class CalibrloggerSpatialiteMixin(CalibrloggerMixin):
         calibrlogger.m2_level.setText("100")
 
         calibrlogger.adjust_trend_func()
-        res = db_utils.sql_load_fr_db(
-            "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger"
-        )
-        row = list(res[1][1])
-        row[5] = "%.11e" % Decimal(row[5])
-        res[1][1] = tuple(row)
-        test = utils_for_tests.create_test_string(res)
+        buf_levels = calibrlogger._buf["level_masl"].tolist()
+        level0 = buf_levels[0]
+        level1 = f"{buf_levels[1]:.11e}"
         print(f"{mock_messagebar.mock_calls=}")
 
-        ref = "(True, [(rb1, 2017-02-01 00:00, None, None, None, 100.0, None), (rb1, 2017-02-10 00:00, None, None, None, -2.84217094304e-14, None)])"
+        ref_level0 = 100.0
+        ref_level1 = "-2.84217094304e-14"
         print("Ref")
-
-        print(ref)
+        print(f"{ref_level0=}, {ref_level1=}")
         print("Test")
-        print(test)
-        assert test == ref
+        print(f"{level0=}, {level1=}")
+        assert level0 == ref_level0
+        assert level1 == ref_level1
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_calibrlogger_plot_source_sqlite(self, mock_messagebar):
@@ -948,27 +1103,11 @@ class CalibrloggerSpatialiteMixin(CalibrloggerMixin):
 
         calibrlogger.set_logger_pos()
 
-        test = utils_for_tests.create_test_string(
-            db_utils.sql_load_fr_db(
-                "SELECT l.obsid, l.date_time, l.head_cm, l.temp_degc, l.cond_mscm,"
-                " round(l.level_masl, 2), l.comment, s.source"
-                " FROM w_levels_logger l"
-                " LEFT JOIN w_logger_series s ON s.id = l.series_id"
-            )
-        )
-        ref = (
-            "(True, ["
-            "(rb1, 2017-02-01 00:00, 100.0, None, None, 3.0, None, source1), "
-            "(rb1, 2017-02-02 00:00, 101.0, None, None, 3.01, None, source2), "
-            "(rb1, 2017-02-03 00:00, 102.0, None, None, 3.02, None, ), "
-            "(rb1, 2017-02-04 00:00, 103.0, None, None, 3.03, None, None), "
-            "(rb1, 2017-02-05 00:00, 104.0, None, None, 3.04, None, ), "
-            "(rb1, 2017-02-06 00:00, 105.0, None, None, 3.05, None, None)])"
-        )
-        # print(test)
-        # print(ref)
+        level_masl_values = [
+            round(v, 2) for v in calibrlogger._buf["level_masl"].tolist()
+        ]
         print(f"{mock_messagebar.mock_calls=}")
-        assert test == ref
+        assert level_masl_values == [3.0, 3.01, 3.02, 3.03, 3.04, 3.05]
 
         lines_data = []
         line_labels = []

@@ -9,12 +9,14 @@ import numpy as np
 import pandas as pd
 import qgis.PyQt
 from qgis.PyQt.QtCore import QCoreApplication, Qt
-from qgis.PyQt.QtGui import QIcon
+from qgis.PyQt.QtGui import QCloseEvent, QIcon, QKeySequence
 from qgis.PyQt.QtWidgets import (
     QDockWidget,
     QHBoxLayout,
     QListWidget,
+    QListWidgetItem,
     QPushButton,
+    QShortcut,
     QVBoxLayout,
     QWidget,
 )
@@ -70,6 +72,17 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self.loggerpos_masl_or_offset_state = 1
         self.selected_line = None
         self.moving_idx = None
+
+        self._buf: pd.DataFrame | None = None
+        self._original_buf: pd.DataFrame | None = None
+        self._buf_obsid: str | None = None
+        self._dirty: bool = False
+        self._schema_variant: str | None = None
+        self._meas_ts = None
+        self._meas_obsid: str | None = None
+        self._history: list[dict] = []
+        self._history_pos: int = -1
+        self._prev_combobox_index: int = -1
 
         text = QCoreApplication.translate(
             "Calibrlogger",
@@ -188,9 +201,71 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             # Populate combobox with obsid from table w_levels_logger
             self.load_obsid_from_db()
             common_utils.stop_waiting_cursor()
+            self._prev_combobox_index = self.combobox_obsid.currentIndex()
+            self.combobox_obsid.currentIndexChanged.connect(self._on_obsid_changed)
 
             self.w_levels_logger_tz = db_utils.get_timezone_from_db("w_levels_logger")
             self.w_levels_tz = db_utils.get_timezone_from_db("w_levels")
+
+            existing_columns = db_utils.tables_columns(table="w_levels_logger").get(
+                "w_levels_logger", []
+            )
+            has_series_id = "series_id" in existing_columns
+            has_series_table = bool(db_utils.tables_columns(table="w_logger_series"))
+            if has_series_id and has_series_table:
+                self._schema_variant = "series_join"
+            elif "source" in existing_columns:
+                self._schema_variant = "source_col"
+            else:
+                self._schema_variant = "no_source"
+
+            # --- Save button in obsid row ---
+            self._save_btn = QPushButton(
+                QCoreApplication.translate("LoggerEditor", "Save"),
+                self,
+            )
+            self._save_btn.setEnabled(False)
+            self._save_btn.clicked.connect(self.save_to_db)
+            self.horizontal_layout.addWidget(self._save_btn)
+
+            # --- Undo / Redo strip ---
+            undo_redo_widget = QWidget(self)
+            undo_redo_layout = QHBoxLayout(undo_redo_widget)
+            undo_redo_layout.setContentsMargins(0, 0, 0, 0)
+            self._undo_btn = QPushButton(
+                QCoreApplication.translate("LoggerEditor", "← Undo"), self
+            )
+            self._redo_btn = QPushButton(
+                QCoreApplication.translate("LoggerEditor", "Redo →"), self
+            )
+            undo_redo_layout.addWidget(self._undo_btn)
+            undo_redo_layout.addWidget(self._redo_btn)
+            undo_redo_layout.addStretch()
+            self._undo_btn.clicked.connect(self.undo)
+            self._redo_btn.clicked.connect(self.redo)
+            parent_layout = self.vertical_layout_6
+            tab_index = -1
+            for i in range(parent_layout.count()):
+                item = parent_layout.itemAt(i)
+                if item.widget() is self.tab_widget:
+                    tab_index = i
+                    break
+            if tab_index >= 0:
+                parent_layout.insertWidget(tab_index, undo_redo_widget)
+            undo_shortcut = QShortcut(QKeySequence("Ctrl+Z"), self)
+            undo_shortcut.activated.connect(self.undo)
+            redo_shortcut = QShortcut(QKeySequence("Ctrl+Shift+Z"), self)
+            redo_shortcut.activated.connect(self.redo)
+
+            # --- History tab ---
+            self._history_list = QListWidget(self)
+            self._history_list.itemClicked.connect(
+                lambda item: self.jump_to_history(self._history_list.row(item))
+            )
+            self.tab_widget.addTab(
+                self._history_list,
+                QCoreApplication.translate("LoggerEditor", "History"),
+            )
 
             self._setup_ref_dock()
 
@@ -303,6 +378,30 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
             self.combobox_obsid.setItemText(idx, new_text)
 
+    def _ensure_meas_ts(self, obsid: str, dbconnection=None) -> None:
+        """Load and cache w_levels for obsid; reuse cache when obsid hasn't changed."""
+        if self._meas_obsid == obsid and self._meas_ts is not None:
+            self.meas_ts = self._meas_ts
+            return
+        own_conn = dbconnection is None
+        if own_conn:
+            dbconnection = db_utils.DbConnectionManager()
+        ph = dbconnection.placeholder()
+        meas_sql = f"SELECT date_time, level_masl FROM w_levels WHERE obsid = {ph} ORDER BY date_time"
+        _ok, meas_list = db_utils.sql_load_fr_db(
+            meas_sql, dbconnection=dbconnection, execute_args=(obsid,)
+        )
+        if own_conn:
+            dbconnection.closedb()
+        self.meas_ts = self.list_of_list_to_recarray(meas_list)
+        if self.w_levels_logger_tz and self.w_levels_tz:
+            self.meas_ts.date_time = [
+                change_timezone(x, self.w_levels_tz, self.w_levels_logger_tz)
+                for x in self.meas_ts.date_time
+            ]
+        self._meas_ts = self.meas_ts
+        self._meas_obsid = obsid
+
     @fn_timer
     def load_obsid_and_init(self):
         """Checks the current obsid and reloads all ts.
@@ -316,52 +415,66 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         obsid = self.selected_obsid
         if not obsid:
             log.debug("error obsid " + str(obsid))
-            # utils.pop_up_info(QCoreApplication.translate('Calibrlogger', "ERROR: no obsid is chosen"))
             common_utils.stop_waiting_cursor()
             return None
 
-        dbconnection = db_utils.DbConnectionManager()
-        ph = dbconnection.placeholder()
-        meas_sql = f"SELECT date_time, level_masl FROM w_levels WHERE obsid = {ph} ORDER BY date_time"
-        _ok, meas_list = db_utils.sql_load_fr_db(
-            meas_sql, dbconnection=dbconnection, execute_args=(obsid,)
-        )
-        self.meas_ts = self.list_of_list_to_recarray(meas_list)
-        if self.w_levels_logger_tz and self.w_levels_tz:
-            self.meas_ts.date_time = [
-                change_timezone(x, self.w_levels_tz, self.w_levels_logger_tz)
-                for x in self.meas_ts.date_time
-            ]
-
-        # Schema variant detection. This reader has to work on three DB
-        # shapes that users have in the wild:
-        #   * Very old DBs: w_levels_logger has no `source` column at all.
-        #   * Current (Midv 1.x) DBs: `source` is a column on w_levels_logger.
-        #   * New DBs: `source` lives on w_logger_series, reached via
-        #     w_levels_logger.series_id.
-        existing_columns = db_utils.tables_columns(table="w_levels_logger").get(
-            "w_levels_logger", []
-        )
-        has_series_id = "series_id" in existing_columns
-        has_series_table = bool(db_utils.tables_columns(table="w_logger_series"))
-        if has_series_id and has_series_table:
-            head_level_masl_sql = (
-                f"SELECT l.date_time, l.head_cm / 100, l.level_masl,"
-                f" TRIM(COALESCE(s.source, ''))"
-                f" FROM w_levels_logger l"
-                f" LEFT JOIN w_logger_series s ON s.id = l.series_id"
-                f" WHERE l.obsid = {ph} ORDER BY l.date_time"
-            )
-        elif "source" in existing_columns:
-            head_level_masl_sql = f"SELECT date_time, head_cm / 100, level_masl, TRIM(COALESCE(source, '')) FROM w_levels_logger WHERE obsid = {ph} ORDER BY date_time"
+        if obsid == self._buf_obsid and self._buf is not None:
+            buf = self._buf
+            dt_strs = [idx.isoformat(sep=" ") for idx in buf.index]
+            sources = buf["source"].tolist()
+            head_vals = [None if pd.isna(v) else v for v in buf["head_cm_m"]]
+            level_masl_vals = [None if pd.isna(v) else v for v in buf["level_masl"]]
+            head_list = list(zip(dt_strs, head_vals, sources))
+            level_masl_list = list(zip(dt_strs, level_masl_vals, sources))
+            self._ensure_meas_ts(obsid)
         else:
-            head_level_masl_sql = f"SELECT date_time, head_cm / 100, level_masl, '' as source FROM w_levels_logger WHERE obsid = {ph} ORDER BY date_time"
-        _ok, head_level_masl_list = db_utils.sql_load_fr_db(
-            head_level_masl_sql, dbconnection=dbconnection, execute_args=(obsid,)
-        )
-        dbconnection.closedb()
-        head_list = [(row[0], row[1], row[3]) for row in head_level_masl_list]
-        level_masl_list = [(row[0], row[2], row[3]) for row in head_level_masl_list]
+            if self._schema_variant is None:
+                raise RuntimeError(
+                    "load_obsid_and_init called before show() — schema variant not yet detected"
+                )
+
+            dbconnection = db_utils.DbConnectionManager()
+            ph = dbconnection.placeholder()
+
+            self._ensure_meas_ts(obsid, dbconnection)
+
+            schema_variant = self._schema_variant
+            if schema_variant == "series_join":
+                head_level_masl_sql = (
+                    f"SELECT l.date_time, l.head_cm / 100, l.level_masl,"
+                    f" TRIM(COALESCE(s.source, ''))"
+                    f" FROM w_levels_logger l"
+                    f" LEFT JOIN w_logger_series s ON s.id = l.series_id"
+                    f" WHERE l.obsid = {ph} ORDER BY l.date_time"
+                )
+            elif schema_variant == "source_col":
+                head_level_masl_sql = f"SELECT date_time, head_cm / 100, level_masl, TRIM(COALESCE(source, '')) FROM w_levels_logger WHERE obsid = {ph} ORDER BY date_time"
+            else:
+                head_level_masl_sql = f"SELECT date_time, head_cm / 100, level_masl, '' as source FROM w_levels_logger WHERE obsid = {ph} ORDER BY date_time"
+
+            _ok, head_level_masl_list = db_utils.sql_load_fr_db(
+                head_level_masl_sql, dbconnection=dbconnection, execute_args=(obsid,)
+            )
+            dbconnection.closedb()
+            head_list = [(row[0], row[1], row[3]) for row in head_level_masl_list]
+            level_masl_list = [(row[0], row[2], row[3]) for row in head_level_masl_list]
+
+            if head_level_masl_list:
+                buf_df = pd.DataFrame(
+                    {
+                        "head_cm_m": [r[1] for r in head_list],
+                        "level_masl": [r[1] for r in level_masl_list],
+                        "source": [r[2] for r in head_list],
+                    },
+                    index=pd.to_datetime([r[0] for r in head_list]).to_pydatetime(),
+                )
+            else:
+                buf_df = pd.DataFrame(columns=["head_cm_m", "level_masl", "source"])
+            self._buf = buf_df
+            self._original_buf = buf_df.copy()
+            self._history_push("Loaded")
+            self._dirty = False
+            self._buf_obsid = obsid
 
         self.head_ts = self.list_of_list_to_recarray(head_list)
         if self.plot_logger_head.isChecked():
@@ -426,7 +539,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
         self.level_masl_ts = self.list_of_list_to_recarray(level_masl_list)
 
-        calibration_status = [obsid] if level_masl_list[-1][1] is None else []
+        calibration_status = (
+            [obsid] if level_masl_list and level_masl_list[-1][1] is None else []
+        )
         self.update_combobox_with_calibration_info(
             obsid=obsid, _obsids_with_uncalibrated_data=calibration_status
         )
@@ -467,6 +582,18 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
     @fn_timer
     def getlastcalibration(self, obsid):
+        if self._buf is not None:
+            calibrated = self._buf[self._buf["level_masl"].notna()]
+            if not calibrated.empty:
+                last = calibrated.tail(1)
+                dt = last.index[0]
+                dt_str = dt.strftime("%Y-%m-%d %H:%M")
+                level_masl = last["level_masl"].iloc[0]
+                head_cm_m = last["head_cm_m"].iloc[0]
+                loggerpos = level_masl - head_cm_m if pd.notna(head_cm_m) else None
+                return [(dt_str, loggerpos)]
+            return []
+
         dbconnection = db_utils.DbConnectionManager()
         ph = dbconnection.placeholder()
         sql = f"SELECT date_time, (level_masl - (head_cm/100)) AS loggerpos FROM w_levels_logger WHERE date_time = (SELECT max(date_time) AS date_time FROM w_levels_logger WHERE obsid = {ph} AND (CASE WHEN level_masl IS NULL THEN -1000 ELSE level_masl END) > -990 AND level_masl IS NOT NULL AND head_cm IS NOT NULL) AND obsid = {ph}"
@@ -475,6 +602,212 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         )
         dbconnection.closedb()
         return lastcalibr
+
+    def save_to_db(self) -> bool:
+        """Compute diff between _buf and _original_buf and write minimal DB changes."""
+        if self._buf is None or self._original_buf is None or self._buf_obsid is None:
+            return False
+        obsid = self._buf_obsid
+        try:
+            deleted_indices = self._original_buf.index.difference(self._buf.index)
+            delete_params = [
+                (obsid, dt.strftime("%Y-%m-%d %H:%M:%S")) for dt in deleted_indices
+            ]
+
+            common_index = self._original_buf.index.intersection(self._buf.index)
+            orig_vals = self._original_buf.loc[common_index, "level_masl"]
+            new_vals = self._buf.loc[common_index, "level_masl"]
+            changed_mask = ~(
+                (orig_vals == new_vals) | (orig_vals.isna() & new_vals.isna())
+            )
+            changed_index = common_index[changed_mask]
+            update_params = [
+                (
+                    None if pd.isna(new_vals[dt]) else float(new_vals[dt]),
+                    obsid,
+                    dt.strftime("%Y-%m-%d %H:%M:%S"),
+                )
+                for dt in changed_index
+            ]
+
+            dbconnection = db_utils.DbConnectionManager()
+            ph = dbconnection.placeholder()
+            tbl = ident("w_levels_logger")
+            try:
+                with dbconnection.transaction():
+                    if delete_params:
+                        delete_sql = (
+                            f"DELETE FROM {tbl} WHERE {ident('obsid')} = {ph}"
+                            f" AND {ident('date_time')} = {ph}"
+                        )
+                        for row in delete_params:
+                            dbconnection.execute(delete_sql, args=row)
+                    if update_params:
+                        update_sql = (
+                            f"UPDATE {tbl} SET {ident('level_masl')} = {ph}"
+                            f" WHERE {ident('obsid')} = {ph}"
+                            f" AND {ident('date_time')} = {ph}"
+                        )
+                        for row in update_params:
+                            dbconnection.execute(update_sql, args=row)
+            finally:
+                dbconnection.closedb()
+        except Exception as e:
+            common_utils.MessagebarAndLog.critical(
+                bar_msg=QCoreApplication.translate("LoggerEditor", "Save failed."),
+                log_msg=str(e),
+            )
+            return False
+
+        self._original_buf = self._buf.copy()
+        self._history = [self._history[self._history_pos]]
+        self._history_pos = 0
+        self._dirty = False
+        self._refresh_window_title()
+        self._refresh_history_widget()
+        return True
+
+    def _ask_save_discard_cancel(self, msg: str) -> str:
+        """Show Save / Discard / Cancel dialog; return 'save', 'discard', or 'cancel'."""
+        box = qgis.PyQt.QtWidgets.QMessageBox(self)
+        box.setWindowTitle(
+            QCoreApplication.translate("LoggerEditor", "Unsaved changes")
+        )
+        box.setText(msg)
+        save_btn = box.addButton(
+            QCoreApplication.translate("LoggerEditor", "Save"),
+            qgis.PyQt.QtWidgets.QMessageBox.AcceptRole,
+        )
+        discard_btn = box.addButton(
+            QCoreApplication.translate("LoggerEditor", "Discard"),
+            qgis.PyQt.QtWidgets.QMessageBox.DestructiveRole,
+        )
+        box.addButton(
+            QCoreApplication.translate("LoggerEditor", "Cancel"),
+            qgis.PyQt.QtWidgets.QMessageBox.RejectRole,
+        )
+        box.exec_()
+        clicked = box.clickedButton()
+        if clicked is save_btn:
+            return "save"
+        if clicked is discard_btn:
+            return "discard"
+        return "cancel"
+
+    def closeEvent(self, event: QCloseEvent) -> None:  # noqa: N802
+        if self._dirty:
+            result = self._ask_save_discard_cancel(
+                QCoreApplication.translate(
+                    "LoggerEditor",
+                    "You have unsaved changes. Save before closing?",
+                )
+            )
+            if result == "cancel":
+                event.ignore()
+                return
+            if result == "save" and not self.save_to_db():
+                event.ignore()
+                return
+        event.accept()
+
+    def _revert_combobox_to_prev(self) -> None:
+        self.combobox_obsid.blockSignals(True)
+        self.combobox_obsid.setCurrentIndex(self._prev_combobox_index)
+        self.combobox_obsid.blockSignals(False)
+
+    def _on_obsid_changed(self, new_index: int) -> None:
+        if not self._dirty:
+            self._prev_combobox_index = new_index
+            return
+        result = self._ask_save_discard_cancel(
+            QCoreApplication.translate(
+                "LoggerEditor",
+                "You have unsaved changes for this logger. Save before switching?",
+            )
+        )
+        if result == "cancel":
+            self._revert_combobox_to_prev()
+            return
+        if result == "save":
+            if not self.save_to_db():
+                self._revert_combobox_to_prev()
+                return
+        else:
+            self._discard_buf()
+        self._prev_combobox_index = new_index
+
+    def _discard_buf(self) -> None:
+        self._buf = None
+        self._original_buf = None
+        self._dirty = False
+        self._buf_obsid = None
+        self._history = []
+        self._history_pos = -1
+
+    def _history_push(self, label: str) -> None:
+        del self._history[self._history_pos + 1 :]
+        entry = {
+            "label": label,
+            "timestamp": datetime.datetime.now(),
+            "level_masl": self._buf["level_masl"].copy(),
+            "present_index": self._buf.index.copy(),
+        }
+        self._history.append(entry)
+        self._history_pos = len(self._history) - 1
+        self._dirty = True
+        self._refresh_window_title()
+        self._refresh_history_widget()
+
+    def undo(self) -> None:
+        if self._history_pos > 0:
+            self._history_pos -= 1
+            self._restore_from_history(self._history_pos)
+
+    def redo(self) -> None:
+        if self._history_pos < len(self._history) - 1:
+            self._history_pos += 1
+            self._restore_from_history(self._history_pos)
+
+    def jump_to_history(self, n: int) -> None:
+        if 0 <= n < len(self._history):
+            self._history_pos = n
+            self._restore_from_history(n)
+
+    def _restore_from_history(self, pos: int) -> None:
+        entry = self._history[pos]
+        self._buf = self._original_buf.loc[entry["present_index"]].copy()
+        self._buf["level_masl"] = entry["level_masl"]
+        self._dirty = pos != 0
+        self._refresh_window_title()
+        self._refresh_history_widget()
+        self.update_plot()
+
+    def _refresh_history_widget(self) -> None:
+        if not hasattr(self, "_history_list") or not hasattr(self, "_undo_btn"):
+            return
+        self._history_list.clear()
+        for i, entry in enumerate(self._history):
+            ts = entry["timestamp"].strftime("%H:%M:%S")
+            item = QListWidgetItem(f"{ts}  {entry['label']}")
+            if i == self._history_pos:
+                font = item.font()
+                font.setBold(True)
+                item.setFont(font)
+            self._history_list.addItem(item)
+        if self._history:
+            self._history_list.scrollToItem(self._history_list.item(self._history_pos))
+        self._undo_btn.setEnabled(self._history_pos > 0)
+        self._redo_btn.setEnabled(self._history_pos < len(self._history) - 1)
+
+    def _refresh_window_title(self) -> None:
+        base = self.windowTitle()
+        if base.endswith(" *"):
+            base = base[:-2]
+        new_title = base + " *" if self._dirty else base
+        if new_title != self.windowTitle():
+            self.setWindowTitle(new_title)
+        if hasattr(self, "_save_btn"):
+            self._save_btn.setEnabled(self._dirty)
 
     @fn_timer
     def set_logger_pos(self, obsid=None):
@@ -530,20 +863,19 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         :param newzref: (int/float/str [m]) The correction that should be made against the head [m]
         :return: None
         """
-        common_utils.start_waiting_cursor()
-        dbconnection = db_utils.DbConnectionManager()
-        ph = dbconnection.placeholder()
-        epoch_sql, epoch_args = db_utils.cast_date_time_as_epoch(dbconnection)
-        fr_epoch = (fr_d_t - datetime.datetime(1970, 1, 1)).total_seconds()
-        to_epoch = (to_d_t - datetime.datetime(1970, 1, 1)).total_seconds()
-        sql = f"UPDATE w_levels_logger SET level_masl = {ph} + level_masl WHERE obsid = {ph} AND level_masl IS NOT NULL AND {epoch_sql} >= {ph} AND {epoch_sql} <= {ph}"
-        db_utils.sql_alter_db(
-            sql,
-            dbconnection=dbconnection,
-            all_args=[(newzref, obsid, *epoch_args, fr_epoch, *epoch_args, to_epoch)],
+        if self._buf is None:
+            common_utils.MessagebarAndLog.warning(bar_msg="No data loaded")
+            return
+        fr = fr_d_t.replace(tzinfo=None)
+        to = to_d_t.replace(tzinfo=None)
+        mask = (
+            (fr <= self._buf.index)
+            & (self._buf.index <= to)
+            & self._buf["level_masl"].notna()
         )
-        dbconnection.closedb()
-        common_utils.stop_waiting_cursor()
+        self._buf.loc[mask, "level_masl"] += float(newzref)
+        self._history_push("Adjust level")
+        self.update_plot()
 
     @fn_timer
     def update_level_masl_from_head(self, obsid, fr_d_t, to_d_t, newzref):
@@ -554,20 +886,21 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         :param newzref: (int/float/str [m]) The correction that should be made against the head [m]
         :return: None
         """
-        common_utils.start_waiting_cursor()
-        dbconnection = db_utils.DbConnectionManager()
-        ph = dbconnection.placeholder()
-        epoch_sql, epoch_args = db_utils.cast_date_time_as_epoch(dbconnection)
-        fr_epoch = (fr_d_t - datetime.datetime(1970, 1, 1)).total_seconds()
-        to_epoch = (to_d_t - datetime.datetime(1970, 1, 1)).total_seconds()
-        sql = f"UPDATE w_levels_logger SET level_masl = {ph} + head_cm / 100 WHERE obsid = {ph} AND head_cm IS NOT NULL AND {epoch_sql} >= {ph} AND {epoch_sql} <= {ph}"
-        db_utils.sql_alter_db(
-            sql,
-            dbconnection=dbconnection,
-            all_args=[(newzref, obsid, *epoch_args, fr_epoch, *epoch_args, to_epoch)],
+        if self._buf is None:
+            common_utils.MessagebarAndLog.warning(bar_msg="No data loaded")
+            return
+        fr = fr_d_t.replace(tzinfo=None)
+        to = to_d_t.replace(tzinfo=None)
+        mask = (
+            (fr <= self._buf.index)
+            & (self._buf.index <= to)
+            & self._buf["head_cm_m"].notna()
         )
-        dbconnection.closedb()
-        common_utils.stop_waiting_cursor()
+        self._buf.loc[mask, "level_masl"] = (
+            float(newzref) + self._buf.loc[mask, "head_cm_m"]
+        )
+        self._history_push("Set logger position")
+        self.update_plot()
 
     @fn_timer
     def list_of_list_to_recarray(self, list_of_lists):
@@ -606,8 +939,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             return
         self.selected_line = None
         self.axes.clear()
-
-        p = [None] * 2  # List for plot objects
 
         handles, labels = self._draw_series()
 
@@ -671,7 +1002,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             "#17becf",
         ]
         logger_head_colors = [str(x / 10) for x in reversed(list(range(1, 10)))]
-        # r = np.random.rand(3, 1).ravel()
 
         self.logger_plot_artists = []
         logger_time_list = self.timestring_list_to_time_list(
@@ -1025,9 +1355,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     def plot_the_recarray(self, axes, time_list, a_recarray, label, style=None):
         if style is None:
             style = {}
-        return axes.plot(
-            time_list, a_recarray.values, label=label, **style
-        )  # , xdate=True)
+        return axes.plot(time_list, a_recarray.values, label=label, **style)
 
     @fn_timer
     def set_from_date_from_x(self):
@@ -1134,11 +1462,11 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         common_utils.start_waiting_cursor()
         self.reset_plot_selects_and_calib_help()
         search_radius = self.get_search_radius()
-        if self.loggerpos_masl_or_offset_state == 1:  # UPDATE TO RELEVANT TEXT
+        if self.loggerpos_masl_or_offset_state == 1:
             logger_ts = self.head_ts
             text_field = self.logger_elevation
             calib_func = self.set_logger_pos
-        else:  # UPDATE TO RELEVANT TEXT
+        else:
             logger_ts = self.level_masl_ts
             text_field = self.offset
             calib_func = self.add_to_level_masl
@@ -1285,9 +1613,13 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
     @fn_timer
     def delete_selected_range(self, table_name, set_to_null_instead=False):
-        """Deletes the current selected range from the database from w_levels_logger
-        :return: De
+        """Deletes or nulls the current selected range in the in-memory buffer.
+        :return: None
         """
+        if self._buf is None:
+            common_utils.MessagebarAndLog.warning(bar_msg="No data loaded")
+            return
+
         current_loaded_obsid = self.obsid
         selected_obsid = self.load_obsid_and_init()
         if current_loaded_obsid != selected_obsid:
@@ -1309,28 +1641,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self.update_plot()
             return
 
-        fr_d_t = str(
-            (
-                self.from_date_time.dateTime().toPyDateTime()
-                - datetime.datetime(1970, 1, 1)
-            ).total_seconds()
-        )
-        to_d_t = str(
-            (
-                self.to_date_time.dateTime().toPyDateTime()
-                - datetime.datetime(1970, 1, 1)
-            ).total_seconds()
-        )
-
-        dbconnection = db_utils.DbConnectionManager()
-        ph = dbconnection.placeholder()
-        epoch_sql, epoch_args = db_utils.cast_date_time_as_epoch(dbconnection)
-        table_ident = dbconnection.ident(table_name)
-        where_dt_sql = f" AND {epoch_sql} >= {ph} AND {epoch_sql} <= {ph}"
-        alter_args = (selected_obsid, *epoch_args, fr_d_t, *epoch_args, to_d_t)
+        fr_d_t = self.from_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
+        to_d_t = self.to_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
 
         if set_to_null_instead:
-            sql = f"UPDATE {table_ident} SET level_masl = NULL WHERE obsid = {ph}{where_dt_sql}"
             msg = QCoreApplication.translate(
                 "Calibrlogger",
                 "Do you want to set level_masl to NULL for the period %s to %s for obsid %s in table %s?",
@@ -1341,7 +1655,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 table_name,
             )
         else:
-            sql = f"DELETE FROM {table_ident} WHERE obsid = {ph}{where_dt_sql}"
             msg = QCoreApplication.translate(
                 "Calibrlogger",
                 "Do you want to delete the period %s to %s for obsid %s from table %s?",
@@ -1355,8 +1668,13 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         really_delete = common_utils.Askuser("YesNo", msg).result
         if really_delete:
             common_utils.start_waiting_cursor()
-            db_utils.sql_alter_db(sql, dbconnection=dbconnection, all_args=[alter_args])
-            dbconnection.closedb()
+            mask = (fr_d_t <= self._buf.index) & (self._buf.index <= to_d_t)
+            if set_to_null_instead:
+                self._buf.loc[mask, "level_masl"] = np.nan
+                self._history_push("Set to null")
+            else:
+                self._buf = self._buf.drop(index=self._buf.index[mask])
+                self._history_push("Delete data")
             common_utils.stop_waiting_cursor()
             self.update_plot()
 
@@ -1410,31 +1728,44 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         if obsid is None:
             return None
 
-        dbconnection = db_utils.DbConnectionManager()
-        ph = dbconnection.placeholder()
+        if self._buf is None:
+            common_utils.MessagebarAndLog.warning(bar_msg="No data loaded")
+            return
 
-        # Each epoch cast returns (sql_fragment, args). The args hold the
-        # date string parameter-bound — never interpolated into SQL. The
-        # column-mode call (date_as_numeric) returns an empty args tuple.
-        l1_date_sql, l1_date_args = db_utils.cast_date_time_as_epoch(
-            dbconnection=dbconnection,
-            date_time=long_dateformat(self.l1_date.dateTime().toPyDateTime()),
+        _utc_epoch = datetime.datetime(1970, 1, 1)
+
+        def _to_epoch(qdatetime_widget) -> float:
+            return (
+                qdatetime_widget.dateTime().toPyDateTime().replace(tzinfo=None)
+                - _utc_epoch
+            ).total_seconds()
+
+        l1_epoch = _to_epoch(self.l1_date)
+        l2_epoch = _to_epoch(self.l2_date)
+        m1_epoch = _to_epoch(self.m1_date)
+        m2_epoch = _to_epoch(self.m2_date)
+
+        l1_level = float(self.l1_level.text())
+        l2_level = float(self.l2_level.text())
+        m1_level = float(self.m1_level.text())
+        m2_level = float(self.m2_level.text())
+
+        fr_d_t = self.from_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
+        to_d_t = self.to_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
+
+        mask = (
+            (fr_d_t <= self._buf.index)
+            & (self._buf.index <= to_d_t)
+            & self._buf["level_masl"].notna()
         )
-        l2_date_sql, l2_date_args = db_utils.cast_date_time_as_epoch(
-            dbconnection=dbconnection,
-            date_time=long_dateformat(self.l2_date.dateTime().toPyDateTime()),
-        )
-        m1_date_sql, m1_date_args = db_utils.cast_date_time_as_epoch(
-            dbconnection=dbconnection,
-            date_time=long_dateformat(self.m1_date.dateTime().toPyDateTime()),
-        )
-        m2_date_sql, m2_date_args = db_utils.cast_date_time_as_epoch(
-            dbconnection=dbconnection,
-            date_time=long_dateformat(self.m2_date.dateTime().toPyDateTime()),
-        )
-        date_as_numeric_sql, date_as_numeric_args = db_utils.cast_date_time_as_epoch(
-            dbconnection=dbconnection
-        )
+        if not mask.any():
+            common_utils.pop_up_info(
+                QCoreApplication.translate(
+                    "Calibrlogger",
+                    """Warning!\n No data found within the chosen period. No trend adjustment done!\nTry changing "from" and "to".""",
+                )
+            )
+            return
 
         data = {
             "obsid": obsid,
@@ -1444,76 +1775,27 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             "adjust_end_date": long_dateformat(
                 self.to_date_time.dateTime().toPyDateTime()
             ),
-            "l1_level": str(float(self.l1_level.text())),
-            "l2_level": str(float(self.l2_level.text())),
-            "M1_level": str(float(self.m1_level.text())),
-            "M2_level": str(float(self.m2_level.text())),
+            "l1_level": str(l1_level),
+            "l2_level": str(l2_level),
+            "M1_level": str(m1_level),
+            "M2_level": str(m2_level),
         }
-
-        select_sql = (
-            f"SELECT level_masl FROM w_levels_logger"
-            f" WHERE level_masl IS NOT NULL"
-            f" AND obsid = {ph} AND date_time >= {ph} AND date_time <= {ph}"
-        )
-        res = db_utils.sql_load_fr_db(
-            select_sql,
-            dbconnection=dbconnection,
-            execute_args=(
-                data["obsid"],
-                data["adjust_start_date"],
-                data["adjust_end_date"],
-            ),
-        )[1]
-        if not res:
-            dbconnection.closedb()
-            common_utils.pop_up_info(
-                QCoreApplication.translate(
-                    "Calibrlogger",
-                    """Warning!\n No data found within the chosen period. No trend adjustment done!\nTry changing "from" and "to".""",
-                )
-            )
-            return
-
         common_utils.MessagebarAndLog.info(
             log_msg=QCoreApplication.translate(
                 "Calibrlogger", "Trend adjusted using: \n%s"
             )
             % (str(data))
         )
-        # Epoch expressions are SQL code (strftime/extract); their date
-        # literals are parameter-bound via the *_args tuples above.
-        update_sql = f"""
-                UPDATE w_levels_logger SET level_masl = level_masl -
-                (
-                 ((({ph} - {ph}) / ({l1_date_sql} - {l2_date_sql}))
-                 - (({ph} - {ph}) / ({m1_date_sql} - {m2_date_sql})))
-                  * ({date_as_numeric_sql} - {l1_date_sql})
-                )
-                WHERE obsid = {ph} AND date_time >= {ph} AND date_time <= {ph}
-            """
-        common_utils.start_waiting_cursor()
-        db_utils.sql_alter_db(
-            update_sql,
-            dbconnection=dbconnection,
-            all_args=[
-                (
-                    float(data["l1_level"]),
-                    float(data["l2_level"]),
-                    *l1_date_args,
-                    *l2_date_args,
-                    float(data["M1_level"]),
-                    float(data["M2_level"]),
-                    *m1_date_args,
-                    *m2_date_args,
-                    *date_as_numeric_args,
-                    *l1_date_args,
-                    data["obsid"],
-                    data["adjust_start_date"],
-                    data["adjust_end_date"],
-                )
-            ],
+
+        slope = (l1_level - l2_level) / (l1_epoch - l2_epoch) - (
+            m1_level - m2_level
+        ) / (m1_epoch - m2_epoch)
+        row_epochs = self._buf.loc[mask].index.map(
+            lambda dt: (dt - _utc_epoch).total_seconds()
         )
-        dbconnection.closedb()
+        common_utils.start_waiting_cursor()
+        self._buf.loc[mask, "level_masl"] -= slope * (row_epochs - l1_epoch)
+        self._history_push("Adjust trend")
         common_utils.stop_waiting_cursor()
         self.update_plot()
 
@@ -1595,23 +1877,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         :param erelease:
         :return:
         """
-        "eclick and erelease are the press and release events"
         x1, y1 = num2date(eclick.xdata), eclick.ydata
         x2, y2 = num2date(erelease.xdata), erelease.ydata
-
-        # Ongoing developement
-        """xy = np.array(self.logger_artist.get_xydata())
-        filtered = xy[np.where(((xy[:, 0] >= min(x1, x2))
-                                & xy[:, 0] <= max(x1, x2))
-                                & (xy[:, 1] >= min(y1, y2))
-                                & (xy[:, 1] <= max(y1, y2)),
-                                True, False)]
-
-        if len(filtered):
-            self.from_date_time.setDateTime(num2date(min(filtered[:,0])))
-            self.to_date_time.setDateTime(num2date(max(filtered[:,0])))"""
-
-        self.logger_artist.get_xdata()
         y_idx = [
             idx
             for idx, y in enumerate(self.logger_artist.get_ydata())

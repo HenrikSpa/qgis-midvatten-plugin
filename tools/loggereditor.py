@@ -745,7 +745,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self._history_pos = -1
 
     def _history_push(self, label: str) -> None:
-        # Truncate any redo branch before recording the new state
         del self._history[self._history_pos + 1 :]
         entry = {
             "label": label,
@@ -804,7 +803,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         base = self.windowTitle()
         if base.endswith(" *"):
             base = base[:-2]
-        self.setWindowTitle(base + " *" if self._dirty else base)
+        new_title = base + " *" if self._dirty else base
+        if new_title != self.windowTitle():
+            self.setWindowTitle(new_title)
         if hasattr(self, "_save_btn"):
             self._save_btn.setEnabled(self._dirty)
 

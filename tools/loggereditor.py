@@ -567,9 +567,52 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self._original_buf = None
         self._dirty = False
         self._buf_obsid = None
+        self._history = []
+        self._history_pos = -1
 
     def _history_push(self, label: str) -> None:
+        entry = {
+            "label": label,
+            "timestamp": datetime.datetime.now(),
+            "level_masl": self._buf["level_masl"].copy(),
+            "present_index": self._buf.index.copy(),
+        }
+        self._history.append(entry)
+        self._history_pos = len(self._history) - 1
+        self._refresh_history_widget()
+
+    def undo(self) -> None:
+        if self._history_pos > 0:
+            self._history_pos -= 1
+            self._restore_from_history(self._history_pos)
+
+    def redo(self) -> None:
+        if self._history_pos < len(self._history) - 1:
+            self._history_pos += 1
+            self._restore_from_history(self._history_pos)
+
+    def jump_to_history(self, n: int) -> None:
+        if 0 <= n < len(self._history):
+            self._history_pos = n
+            self._restore_from_history(n)
+
+    def _restore_from_history(self, pos: int) -> None:
+        entry = self._history[pos]
+        self._buf = self._original_buf.loc[entry["present_index"]].copy()
+        self._buf["level_masl"] = entry["level_masl"]
+        self._dirty = pos != 0
+        self._refresh_window_title()
+        self._refresh_history_widget()
+        self.update_plot()
+
+    def _refresh_history_widget(self) -> None:
         pass
+
+    def _refresh_window_title(self) -> None:
+        base = self.windowTitle()
+        if base.endswith(" *"):
+            base = base[:-2]
+        self.setWindowTitle(base + " *" if self._dirty else base)
 
     @fn_timer
     def set_logger_pos(self, obsid=None):

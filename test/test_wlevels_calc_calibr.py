@@ -734,6 +734,68 @@ class CalibrloggerMixin:
         assert calibrlogger.combobox_obsid.currentIndex() == prev_index
 
 
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_save_to_db_multi_period_range_sql(self, mock_messagebar):
+        """save_to_db uses range SQL for multiple distinct calibration periods."""
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        # Period 1: rows with head_cm (will be "set logger position")
+        for dt in ("2017-01-01 00:00", "2017-01-02 00:00", "2017-01-03 00:00"):
+            db_utils.sql_alter_db(
+                f"INSERT INTO w_levels_logger (obsid, date_time, head_cm, level_masl) "
+                f"VALUES ('rb1', '{dt}', 100, NULL)"
+            )
+        # Period 2: rows with level_masl already set (will be "add offset")
+        for dt in ("2017-02-01 00:00", "2017-02-02 00:00", "2017-02-03 00:00"):
+            db_utils.sql_alter_db(
+                f"INSERT INTO w_levels_logger (obsid, date_time, head_cm, level_masl) "
+                f"VALUES ('rb1', '{dt}', NULL, 10.0)"
+            )
+
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
+        gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
+        calibrlogger.update_plot()
+
+        # Calibrate period 1 via "set logger position" (elevation=2 → level = 2 + head/100 = 3.0)
+        calibrlogger.from_date_time.setDateTime(
+            date_utils.datestring_to_date("2017-01-01 00:00")
+        )
+        calibrlogger.to_date_time.setDateTime(
+            date_utils.datestring_to_date("2017-01-03 00:00")
+        )
+        calibrlogger.logger_elevation.setText("2")
+        calibrlogger.loggerpos_masl_or_offset_state = 1
+        calibrlogger.set_logger_pos()
+
+        # Calibrate period 2 via "add offset" (+5)
+        calibrlogger.from_date_time.setDateTime(
+            date_utils.datestring_to_date("2017-02-01 00:00")
+        )
+        calibrlogger.to_date_time.setDateTime(
+            date_utils.datestring_to_date("2017-02-03 00:00")
+        )
+        calibrlogger.offset.setText("5")
+        calibrlogger.loggerpos_masl_or_offset_state = 2
+        calibrlogger.add_to_level_masl()
+
+        result = calibrlogger.save_to_db()
+
+        print(f"{mock_messagebar.mock_calls=}")
+        assert result is True
+
+        _ok, rows = db_utils.sql_load_fr_db(
+            "SELECT date_time, level_masl FROM w_levels_logger WHERE obsid='rb1' ORDER BY date_time"
+        )
+        assert _ok
+        assert len(rows) == 6
+        # Period 1: level = 2 + 100/100 = 3.0
+        for row in rows[:3]:
+            assert row[1] == pytest.approx(3.0), f"period-1 row {row[0]} wrong: {row[1]}"
+        # Period 2: level = 10.0 + 5 = 15.0
+        for row in rows[3:]:
+            assert row[1] == pytest.approx(15.0), f"period-2 row {row[0]} wrong: {row[1]}"
+
+
 class CalibrloggerPostgisMixin(CalibrloggerMixin):
     """Postgis-specific tests for calibrlogger."""
 

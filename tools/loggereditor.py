@@ -46,6 +46,8 @@ from midvatten.tools.loggereditor_refseries import RefSeriesDialog
 
 log = logging.getLogger(__name__)
 
+_DT_FMT = "%Y-%m-%d %H:%M:%S"
+
 Calibr_Ui_Dialog = uic.loadUiType(ui_path("calibr_logger_dialog_integrated.ui"))[0]
 
 
@@ -401,7 +403,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 ("source", f"U{max(max_src_len, 1)}"),
             ],
         )
-        arr["date_time"] = buf.index.strftime("%Y-%m-%d %H:%M:%S").to_numpy()
+        arr["date_time"] = buf.index.strftime(_DT_FMT).to_numpy()
         arr["values"] = (
             values_override
             if values_override is not None
@@ -643,7 +645,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             delete_params = list(
                 zip(
                     [obsid] * len(deleted_indices),
-                    deleted_indices.strftime("%Y-%m-%d %H:%M:%S"),
+                    deleted_indices.strftime(_DT_FMT),
                 )
             )
 
@@ -654,26 +656,30 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 (orig_vals == new_vals) | (orig_vals.isna() & new_vals.isna())
             )
             changed_index = common_index[changed_mask]
-            update_vals = new_vals.loc[changed_index].to_numpy(
-                dtype=object, na_value=None
-            )
-            update_params = list(
-                zip(
-                    update_vals,
-                    [obsid] * len(changed_index),
-                    changed_index.strftime("%Y-%m-%d %H:%M:%S"),
-                )
-            )
+            orig_changed = orig_vals.loc[changed_index]
+            new_changed = new_vals.loc[changed_index]
+            head_changed = self._buf.loc[changed_index, "head_cm_m"]
 
             dbconnection = db_utils.DbConnectionManager()
             ph = dbconnection.placeholder()
             tbl = ident("w_levels_logger")
             # SQLite stores date_time as text; normalize both sides so that
             # '2017-02-01 00:00' and '2017-02-01 00:00:00' compare equal.
-            if dbconnection.dbtype == "spatialite":
+            is_sqlite = dbconnection.is_sqlite()
+            if is_sqlite:
                 dt_eq = f"datetime({ident('date_time')}) = datetime({ph})"
             else:
                 dt_eq = f"{ident('date_time')} = {ph}"
+            range_stmts, per_row_params = self._compute_update_statements(
+                changed_index,
+                orig_changed,
+                new_changed,
+                head_changed,
+                obsid,
+                tbl,
+                ph,
+                is_sqlite,
+            )
             try:
                 with dbconnection.transaction():
                     if delete_params:
@@ -682,13 +688,15 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                             f" AND {dt_eq}"
                         )
                         dbconnection.executemany(delete_sql, delete_params)
-                    if update_params:
+                    for sql, params in range_stmts:
+                        dbconnection.execute(sql, params)
+                    if per_row_params:
                         update_sql = (
                             f"UPDATE {tbl} SET {ident('level_masl')} = {ph}"
                             f" WHERE {ident('obsid')} = {ph}"
                             f" AND {dt_eq}"
                         )
-                        dbconnection.executemany(update_sql, update_params)
+                        dbconnection.executemany(update_sql, per_row_params)
             finally:
                 dbconnection.closedb()
         except Exception as e:
@@ -707,6 +715,100 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self._refresh_window_title()
         self._refresh_history_widget()
         return True
+
+    def _compute_update_statements(
+        self,
+        changed_index: pd.DatetimeIndex,
+        orig_changed: pd.Series,
+        new_changed: pd.Series,
+        head_changed: pd.Series,
+        obsid: str,
+        tbl: str,
+        ph: str,
+        is_sqlite: bool,
+    ) -> tuple[list[tuple], list[tuple]]:
+        """Group changed rows by contiguous buf-position; emit range or per-row SQL.
+
+        Returns (range_stmts, per_row_params):
+          range_stmts  — list of (sql, params_tuple), executed with execute()
+          per_row_params — list of (new_val, obsid, dt_str), executed with executemany()
+
+        Contiguous groups of changed rows that match a known pattern (set logger
+        position, add offset, set to NULL) are folded into a single range-based
+        UPDATE statement.  Groups that don't match — e.g. trend adjustments — fall
+        back to one row per statement via executemany.
+        """
+        if len(changed_index) == 0:
+            return [], []
+
+        dt_col = ident("date_time")
+        obsid_col = ident("obsid")
+        level_col = ident("level_masl")
+        head_col = ident("head_cm")
+        if is_sqlite:
+            dt_between = f"datetime({dt_col}) BETWEEN datetime({ph}) AND datetime({ph})"
+        else:
+            dt_between = f"{dt_col} BETWEEN {ph} AND {ph}"
+        # where_range embeds three placeholders in order: obsid, t1, t2
+        where_range = f"{obsid_col} = {ph} AND {dt_between}"
+
+        # A BETWEEN range-query only touches the intended rows when there are no
+        # unchanged rows between t1 and t2 in the buffer — split on gaps to enforce this.
+        buf_pos = self._buf.index.get_indexer(changed_index)
+        splits = (np.where(np.diff(buf_pos) > 1)[0] + 1).tolist()
+        group_slices = np.split(np.arange(len(changed_index)), splits)
+
+        range_stmts: list[tuple] = []
+        per_row_params: list[tuple] = []
+
+        for grp_idx in group_slices:
+            grp_changed = changed_index[grp_idx]
+            grp_new = new_changed.iloc[grp_idx]
+            grp_orig = orig_changed.iloc[grp_idx]
+            dt_strs = grp_changed.strftime(_DT_FMT)
+            t1, t2 = dt_strs[0], dt_strs[-1]
+
+            # Pattern: set to NULL
+            if grp_new.isna().all():
+                sql = f"UPDATE {tbl} SET {level_col} = NULL WHERE {where_range}"
+                range_stmts.append((sql, (obsid, t1, t2)))
+                continue
+
+            # Pattern: set logger position — new = C + head_cm/100 (constant C)
+            grp_head = head_changed.iloc[grp_idx]
+            if grp_head.notna().all():
+                c_arr = (grp_new - grp_head).to_numpy(dtype=float)
+                if np.all(np.abs(c_arr - c_arr[0]) < 1e-9):
+                    sql = (
+                        f"UPDATE {tbl}"
+                        f" SET {level_col} = {ph} + {head_col} / 100.0"
+                        f" WHERE {head_col} IS NOT NULL AND {where_range}"
+                    )
+                    range_stmts.append((sql, (float(c_arr[0]), obsid, t1, t2)))
+                    continue
+
+            # Pattern: add constant offset — new = orig + D (constant D, both non-null)
+            if grp_new.notna().all() and grp_orig.notna().all():
+                d_arr = (grp_new - grp_orig).to_numpy(dtype=float)
+                if np.all(np.abs(d_arr - d_arr[0]) < 1e-9):
+                    sql = (
+                        f"UPDATE {tbl}"
+                        f" SET {level_col} = {level_col} + {ph}"
+                        f" WHERE {level_col} IS NOT NULL AND {where_range}"
+                    )
+                    range_stmts.append((sql, (float(d_arr[0]), obsid, t1, t2)))
+                    continue
+
+            # Fallback: per-row executemany (trend adjustments, mixed patterns)
+            per_row_params.extend(
+                zip(
+                    grp_new.to_numpy(dtype=object, na_value=None),
+                    itertools.repeat(obsid, len(grp_idx)),
+                    dt_strs,
+                )
+            )
+
+        return range_stmts, per_row_params
 
     def _ask_save_discard_cancel(self, msg: str) -> str:
         """Show Save / Discard / Cancel dialog; return 'save', 'discard', or 'cancel'."""

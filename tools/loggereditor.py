@@ -881,7 +881,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         )
         self._buf.loc[mask, "level_masl"] += float(newzref)
         self._history_push("Adjust level")
-        self.update_plot()
 
     @fn_timer
     def update_level_masl_from_head(self, obsid, fr_d_t, to_d_t, newzref):
@@ -906,7 +905,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             float(newzref) + self._buf.loc[mask, "head_cm_m"]
         )
         self._history_push("Set logger position")
-        self.update_plot()
 
     @fn_timer
     def list_of_list_to_recarray(self, list_of_lists):

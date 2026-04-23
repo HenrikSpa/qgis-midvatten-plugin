@@ -823,7 +823,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     def set_logger_pos(self, obsid=None):
         self.loggerpos_masl_or_offset_state = 1
         if obsid is None:
-            obsid = self._buf_obsid or self.load_obsid_and_init()
+            if self._buf_obsid == self.selected_obsid:
+                obsid = self._buf_obsid
+            else:
+                obsid = self.load_obsid_and_init()
         if not self.logger_elevation.text() == "":
             self.calibrate(obsid)
             self.update_plot()
@@ -832,7 +835,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     def add_to_level_masl(self, obsid=None):
         self.loggerpos_masl_or_offset_state = 0
         if obsid is None:
-            obsid = self._buf_obsid or self.load_obsid_and_init()
+            if self._buf_obsid == self.selected_obsid:
+                obsid = self._buf_obsid
+            else:
+                obsid = self.load_obsid_and_init()
         if not self.offset.text() == "":
             self.calibrate(obsid)
         self.update_plot()
@@ -1738,7 +1744,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     @fn_timer
     def adjust_trend_func(self):
 
-        obsid = self._buf_obsid or self.load_obsid_and_init()
+        if self._buf_obsid == self.selected_obsid:
+            obsid = self._buf_obsid
+        else:
+            obsid = self.load_obsid_and_init()
         if obsid is None:
             return None
 

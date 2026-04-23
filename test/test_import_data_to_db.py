@@ -1966,6 +1966,34 @@ class DeleteExistingDateTimesFromTemptableMixin:
         print(mock_messagebar.mock_calls)
         assert rows_deleted == 0
 
+    @mock.patch(
+        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
+    )
+    def test_delete_existing_date_times_same_minute_different_seconds_blocked(self):
+        """Incoming row with different non-zero seconds but same minute as existing row is blocked.
+
+        Old behaviour (string-concat): dest hh:mm:ss1, temp hh:mm:ss2 was NOT blocked.
+        New behaviour (date_trunc/strftime): same-minute entries are always blocked.
+        """
+        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('obsid1')""")
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels (obsid, date_time, level_masl) VALUES ('obsid1', '2016-01-01 00:00:01', '123.0')"""
+        )
+
+        f = [
+            ["obsid", "date_time", "level_masl"],
+            ["obsid1", "2016-01-01 00:00:05", "456"],  # same minute, different seconds
+            ["obsid1", "2016-01-01 00:01:00", "789"],  # different minute → allowed
+        ]
+
+        self.importinstance.general_import(dest_table="w_levels", file_data=f)
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db("""select obsid, date_time, level_masl from w_levels order by date_time""")
+        )
+        reference_string = r"""(True, [(obsid1, 2016-01-01 00:00:01, 123.0), (obsid1, 2016-01-01 00:01:00, 789.0)])"""
+        assert test_string == reference_string
+
 
 @pytest.mark.postgis
 class TestGeneralImportPostgis(

@@ -217,12 +217,16 @@ class SectionPlotWidgetEffectsMixin:
         # Select the "None" radio button to turn off both stratigraphy and hydrology.
         secplot.radio_button.setChecked(True)
         secplot.drillstop.setText("")
+        # Also disable screens so only the stratigraphy-off effect is tested.
+        # (The default screensplotmode was changed to "behind" after this test was
+        # written, so we must set it explicitly here to isolate the assertion.)
+        secplot.screens_mode_combo.setCurrentText("None")
         secplot.draw_plot()
 
         assert not mock_messagebar.critical.called
-        # With no stratigraphy, no w_levels date, and no hydrology, plot_handles
-        # should have no geological or hydro bars.  (A "frame" handle may still
-        # appear; filter to non-frame/non-nolegend entries only.)
+        # With no stratigraphy, no w_levels date, no hydrology, and no screens,
+        # plot_handles should have no geological or hydro bars.  (A "frame" handle
+        # may still appear; filter to non-frame/non-nolegend entries only.)
         non_frame_handles = _non_frame_handles(secplot)
         assert len(non_frame_handles) == 0, (
             f"Expected no non-frame plot handles, got: {[h.get_label() for h in non_frame_handles]}"

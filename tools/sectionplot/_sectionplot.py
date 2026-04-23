@@ -476,17 +476,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
                 dbconnection=self.dbconnection,
             )
 
-        # Add annotation entries for obsids without stratigraphy.
-        for obs, x in self.obsids_x_position.items():
-            if obs not in self.obsid_annotation and (
-                self.ms.settingsdict["stratigraphyplotted"]
-                or self.ms.settingsdict["secplothydrologyplotted"]
-            ):
-                self.obsid_annotation[obs] = (
-                    x,
-                    self.z_data[obs]["bottom"] + self.z_data[obs]["barheight"],
-                )
-
         self.drillstops = _get_drillstops(
             obsids_x_position=self.obsids_x_position,
             z_data=self.z_data,
@@ -722,6 +711,21 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
                 )
                 if self.interactive_groupbox.isChecked():
                     self.plot_water_level_interactive()
+
+                # Fallback: obs with no stratigraphy/hydrology bars and no water-level
+                # data still need a label anchor.  Run AFTER water level so water-level
+                # positions take priority over the h_gs ground-level fallback.
+                if (
+                    self.ms.settingsdict["stratigraphyplotted"]
+                    or self.ms.settingsdict["secplothydrologyplotted"]
+                ):
+                    for obs, x in self.obsids_x_position.items():
+                        if obs not in self.figure.obsid_annotation:
+                            self.figure.obsid_annotation[obs] = (
+                                x,
+                                self.z_data[obs]["bottom"]
+                                + self.z_data[obs]["barheight"],
+                            )
 
                 if self.ms.settingsdict["secplotdrillstop"] != "" and self.drillstops:
                     drillstop_label = (

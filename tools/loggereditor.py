@@ -83,6 +83,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self._history: list[dict] = []
         self._history_pos: int = -1
         self._prev_combobox_index: int = -1
+        self._ref_subplot_dirty: bool = True
 
         text = QCoreApplication.translate(
             "Calibrlogger",
@@ -475,6 +476,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self._history_push("Loaded")
             self._dirty = False
             self._buf_obsid = obsid
+            self._ref_subplot_dirty = True
 
         self.head_ts = self.list_of_list_to_recarray(head_list)
         if self.plot_logger_head.isChecked():
@@ -669,6 +671,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self._history = [self._history[self._history_pos]]
         self._history_pos = 0
         self._dirty = False
+        self._ref_subplot_dirty = True
         self._refresh_window_title()
         self._refresh_history_widget()
         return True
@@ -1195,6 +1198,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self._ref_series.append(dlg.to_dict())
             self._save_ref_series()
             self._refresh_ref_list_widget()
+            self._ref_subplot_dirty = True
             self._draw_reference_subplot()
 
     def _on_edit_ref_series(self) -> None:
@@ -1206,6 +1210,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self._ref_series[idx] = dlg.to_dict()
             self._save_ref_series()
             self._refresh_ref_list_widget()
+            self._ref_subplot_dirty = True
             self._draw_reference_subplot()
 
     def _on_remove_ref_series(self) -> None:
@@ -1215,6 +1220,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         del self._ref_series[idx]
         self._save_ref_series()
         self._refresh_ref_list_widget()
+        self._ref_subplot_dirty = True
         self._draw_reference_subplot()
 
     def _restore_main_xticklabels(self) -> None:
@@ -1230,6 +1236,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             tick.label1.set_visible(False)
 
     def _draw_reference_subplot(self) -> None:
+        if not self._ref_subplot_dirty:
+            return
+        self._ref_subplot_dirty = False
         # sharex makes both axes share the same xaxis.major ticker object, so
         # ref_axes.cla() resets the shared formatter/locator to scalar defaults.
         # Restore only when a date formatter is already active; restoring a plain

@@ -525,13 +525,6 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             )
         sql = sql.format(**kwargs)
 
-        count_sql = dbconnection.sql_ident(
-            "SELECT count(*) FROM {t}",
-            t=dest_table
-            if not dbconnection.is_postgresql()
-            else f"{dbconnection.schema}.{dest_table}",
-        )
-        recsbefore = dbconnection.execute_and_fetchall(count_sql)[0][0]
         sql = db_utils.add_insert_or_ignore_to_sql(sql, dbconnection)
         try:
             dbconnection.execute(sql)
@@ -562,9 +555,8 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                     % (sql, str(e)),
                     duration=999,
                 )
-
-        recsafter = dbconnection.execute_and_fetchall(count_sql)[0][0]
-        return recsafter - recsbefore
+            return 0
+        return dbconnection.cursor.rowcount
 
     def _cleanup(
         self,
@@ -700,25 +692,12 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         dest_table: str,
         dbconnection: DbConnectionManager,
     ) -> int:
+        """Delete temp rows whose (non-datetime PKs + minute-truncated date_time) already exist in dest.
+
+        Uses a correlated EXISTS so the destination PK index is used for each temp row
+        lookup instead of two full sequential table scans.
         """
-        Deletes duplicate times
-        :param primary_keys: a table like ['obsid', 'date_time', ...]
-        :param dest_table: a string like 'w_levels'
-        :return: number of rows deleted from the temp table
-
-        If date 2016-01-01 00:00:00 exists for obsid1, then 2016-01-01 00:00 will not be imported for obsid1.
-        (and 2016-01-01 00 will block 2016-01-01 00:00)
-
-        If date 2016-01-01 00:00 exists for obsid1, then 2016-01-01 00:00:XX will not be imported for obsid1.
-        (and 2016-01-01 00 will block 2016-01-01 00:XX)
-        (but 2016-01-01 00 will not block 2016-01-01 00:00:XX, inconsistently)
-
-        The function uses all primary keys to identify unique combinations, so different parameters will not block each other.
-        """
-        pks = [pk for pk in primary_keys if pk != "date_time"]
-        pks.append("date_time")
-
-        # TODO: Maybe the length should be checked so that the test is only made for 2016-01-01 00:00 and 2016-01-01 00:00:00?
+        pks_non_dt = [pk for pk in primary_keys if pk != "date_time"]
 
         temp_ident = dbconnection.ident(self.temptable_name)
         dest_ident = (
@@ -726,15 +705,33 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             if dbconnection.is_postgresql()
             else dbconnection.ident(dest_table)
         )
-        pks_concat = " || ".join(dbconnection.ident(pk) for pk in pks)
-        pks_concat_00 = pks_concat + " || ':00'"
 
-        # Both conditions combined: hh:mm blocked by hh:mm:ss AND hh:mm:xx blocked by hh:mm.
-        # Single DELETE avoids two sequential table scans.
+        # SQLite does not support DELETE FROM table AS alias, so reference the outer
+        # table by its identifier in the correlated subquery.
+        # All PK columns are NOT NULL (PostgreSQL enforces this via the PK constraint;
+        # SQLite data follows the same invariant in practice), so plain = is sargable
+        # on the destination PK index and correctly handles all values.
+        dt = dbconnection.ident("date_time")
+        if dbconnection.is_postgresql():
+            date_eq = (
+                f"date_trunc('minute', d.{dt}::timestamp)"
+                f" = date_trunc('minute', {temp_ident}.{dt}::timestamp)"
+            )
+        else:
+            date_eq = (
+                f"strftime('%Y-%m-%d %H:%M', d.{dt})"
+                f" = strftime('%Y-%m-%d %H:%M', {temp_ident}.{dt})"
+            )
+
+        conditions = [
+            f"d.{dbconnection.ident(pk)} = {temp_ident}.{dbconnection.ident(pk)}"
+            for pk in pks_non_dt
+        ]
+        conditions.append(date_eq)
+
         sql = (
-            f"DELETE FROM {temp_ident} WHERE "
-            f"{pks_concat_00} IN (SELECT {pks_concat} FROM {dest_ident}) "
-            f"OR SUBSTR({pks_concat}, 1, length({pks_concat}) - 3) IN (SELECT {pks_concat} FROM {dest_ident})"
+            f"DELETE FROM {temp_ident} WHERE EXISTS ("
+            f"SELECT 1 FROM {dest_ident} d WHERE {' AND '.join(conditions)})"
         )
         dbconnection.execute(sql)
         return dbconnection.cursor.rowcount

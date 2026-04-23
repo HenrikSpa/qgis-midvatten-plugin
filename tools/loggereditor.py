@@ -226,7 +226,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 self,
             )
             self._save_btn.setEnabled(False)
-            self._save_btn.clicked.connect(self.save_to_db)
+            self._save_btn.clicked.connect(self._on_save_clicked)
             self.horizontal_layout.addWidget(self._save_btn)
 
             # --- Undo / Redo strip ---
@@ -421,10 +421,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
         if obsid == self._buf_obsid and self._buf is not None:
             buf = self._buf
-            dt_strs = [idx.isoformat(sep=" ") for idx in buf.index]
+            dt_strs = buf.index.strftime("%Y-%m-%d %H:%M:%S").tolist()
             sources = buf["source"].tolist()
-            head_vals = [None if pd.isna(v) else v for v in buf["head_cm_m"]]
-            level_masl_vals = [None if pd.isna(v) else v for v in buf["level_masl"]]
+            head_vals = buf["head_cm_m"].to_numpy(dtype=object, na_value=None).tolist()
+            level_masl_vals = buf["level_masl"].to_numpy(dtype=object, na_value=None).tolist()
             head_list = list(zip(dt_strs, head_vals, sources))
             level_masl_list = list(zip(dt_strs, level_masl_vals, sources))
             self._ensure_meas_ts(obsid)
@@ -605,6 +605,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         dbconnection.closedb()
         return lastcalibr
 
+    def _on_save_clicked(self) -> None:
+        if self.save_to_db():
+            self.update_plot()
+
     def save_to_db(self) -> bool:
         """Compute diff between _buf and _original_buf and write minimal DB changes."""
         if self._buf is None or self._original_buf is None or self._buf_obsid is None:
@@ -613,9 +617,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         common_utils.start_waiting_cursor()
         try:
             deleted_indices = self._original_buf.index.difference(self._buf.index)
-            delete_params = [
-                (obsid, dt.strftime("%Y-%m-%d %H:%M:%S")) for dt in deleted_indices
-            ]
+            delete_params = list(
+                zip([obsid] * len(deleted_indices), deleted_indices.strftime("%Y-%m-%d %H:%M:%S"))
+            )
 
             common_index = self._original_buf.index.intersection(self._buf.index)
             orig_vals = self._original_buf.loc[common_index, "level_masl"]
@@ -624,14 +628,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 (orig_vals == new_vals) | (orig_vals.isna() & new_vals.isna())
             )
             changed_index = common_index[changed_mask]
-            update_params = [
-                (
-                    None if pd.isna(new_vals[dt]) else float(new_vals[dt]),
-                    obsid,
-                    dt.strftime("%Y-%m-%d %H:%M:%S"),
-                )
-                for dt in changed_index
-            ]
+            update_vals = new_vals.loc[changed_index].to_numpy(dtype=object, na_value=None)
+            update_params = list(
+                zip(update_vals, [obsid] * len(changed_index), changed_index.strftime("%Y-%m-%d %H:%M:%S"))
+            )
 
             dbconnection = db_utils.DbConnectionManager()
             ph = dbconnection.placeholder()
@@ -823,7 +823,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     def set_logger_pos(self, obsid=None):
         self.loggerpos_masl_or_offset_state = 1
         if obsid is None:
-            obsid = self.load_obsid_and_init()
+            obsid = self._buf_obsid or self.load_obsid_and_init()
         if not self.logger_elevation.text() == "":
             self.calibrate(obsid)
             self.update_plot()
@@ -832,7 +832,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     def add_to_level_masl(self, obsid=None):
         self.loggerpos_masl_or_offset_state = 0
         if obsid is None:
-            obsid = self.load_obsid_and_init()
+            obsid = self._buf_obsid or self.load_obsid_and_init()
         if not self.offset.text() == "":
             self.calibrate(obsid)
         self.update_plot()
@@ -1635,7 +1635,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             return
 
         current_loaded_obsid = self.obsid
-        selected_obsid = self.load_obsid_and_init()
+        selected_obsid = self.selected_obsid
         if current_loaded_obsid != selected_obsid:
             common_utils.pop_up_info(
                 QCoreApplication.translate(
@@ -1738,7 +1738,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     @fn_timer
     def adjust_trend_func(self):
 
-        obsid = self.load_obsid_and_init()
+        obsid = self._buf_obsid or self.load_obsid_and_init()
         if obsid is None:
             return None
 

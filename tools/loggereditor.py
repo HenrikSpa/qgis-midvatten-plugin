@@ -819,14 +819,19 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         if hasattr(self, "_save_btn"):
             self._save_btn.setEnabled(self._dirty)
 
+    def _obsid_ensure_buf_current(self) -> str | None:
+        """Return buffered obsid if it matches the current combobox selection.
+        If the user switched obsid without clicking Update Plot, the buffer is
+        stale — fall back to load_obsid_and_init() to reload the correct one."""
+        if self._buf_obsid == self.selected_obsid:
+            return self._buf_obsid
+        return self.load_obsid_and_init()
+
     @fn_timer
     def set_logger_pos(self, obsid=None):
         self.loggerpos_masl_or_offset_state = 1
         if obsid is None:
-            if self._buf_obsid == self.selected_obsid:
-                obsid = self._buf_obsid
-            else:
-                obsid = self.load_obsid_and_init()
+            obsid = self._obsid_ensure_buf_current()
         if not self.logger_elevation.text() == "":
             self.calibrate(obsid)
             self.update_plot()
@@ -835,10 +840,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     def add_to_level_masl(self, obsid=None):
         self.loggerpos_masl_or_offset_state = 0
         if obsid is None:
-            if self._buf_obsid == self.selected_obsid:
-                obsid = self._buf_obsid
-            else:
-                obsid = self.load_obsid_and_init()
+            obsid = self._obsid_ensure_buf_current()
         if not self.offset.text() == "":
             self.calibrate(obsid)
         self.update_plot()
@@ -1744,10 +1746,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     @fn_timer
     def adjust_trend_func(self):
 
-        if self._buf_obsid == self.selected_obsid:
-            obsid = self._buf_obsid
-        else:
-            obsid = self.load_obsid_and_init()
+        obsid = self._obsid_ensure_buf_current()
         if obsid is None:
             return None
 

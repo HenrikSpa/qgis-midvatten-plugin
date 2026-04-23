@@ -262,6 +262,9 @@ class DbConnectionManager:
     def not_null_sql(self, col_ident: str, data_type: Optional[str] = None) -> str:
         return self._backend.not_null_sql(col_ident, data_type)
 
+    def truncate_to_minute_sql(self, col_expr: str) -> str:
+        return self._backend.truncate_to_minute_sql(col_expr)
+
     def is_distinct_from(self) -> str:
         return self._backend.is_distinct_from()
 

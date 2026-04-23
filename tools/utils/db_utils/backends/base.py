@@ -210,6 +210,10 @@ class Backend(ABC):
         """
         raise NotImplementedError
 
+    def truncate_to_minute_sql(self, col_expr: str) -> str:
+        """Return SQL expression that truncates col_expr to minute precision."""
+        raise NotImplementedError
+
     def cast_null(self, data_type: str) -> str:
         """Return SQL for NULL cast to data_type (e.g. NULL::text for PG)."""
         raise NotImplementedError

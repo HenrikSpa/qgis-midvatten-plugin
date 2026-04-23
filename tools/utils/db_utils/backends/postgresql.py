@@ -260,6 +260,9 @@ class PostgreSQLBackend(Backend):
         ph = self.placeholder()
         return f"extract(epoch from {ph}::timestamp)", (date_time,)
 
+    def truncate_to_minute_sql(self, col_expr: str) -> str:
+        return f"date_trunc('minute', {col_expr}::timestamp)"
+
     def cast_null(self, data_type: str) -> str:
         from midvatten.tools.utils.db_utils.dialect import UnsafeIdentifierError
 

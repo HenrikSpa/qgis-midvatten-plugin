@@ -716,20 +716,15 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         # SQLite data follows the same invariant in practice), so plain = is sargable
         # on the destination PK index and correctly handles all values.
         dt = dbconnection.ident("date_time")
-        if dbconnection.is_postgresql():
-            date_eq = (
-                f"date_trunc('minute', d.{dt}::timestamp)"
-                f" = date_trunc('minute', {temp_ident}.{dt}::timestamp)"
-            )
-        else:
-            date_eq = (
-                f"strftime('%Y-%m-%d %H:%M', d.{dt})"
-                f" = strftime('%Y-%m-%d %H:%M', {temp_ident}.{dt})"
-            )
+        date_eq = (
+            f"{dbconnection.truncate_to_minute_sql(f'd.{dt}')}"
+            f" = {dbconnection.truncate_to_minute_sql(f'{temp_ident}.{dt}')}"
+        )
 
         conditions = [
-            f"d.{dbconnection.ident(pk)} = {temp_ident}.{dbconnection.ident(pk)}"
+            f"d.{q} = {temp_ident}.{q}"
             for pk in pks_non_dt
+            for q in (dbconnection.ident(pk),)
         ]
         conditions.append(date_eq)
 

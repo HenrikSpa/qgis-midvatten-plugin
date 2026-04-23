@@ -226,6 +226,9 @@ class SQLiteBackend(Backend):
         ph = self.placeholder()
         return f"CAST(strftime('%s', {ph}) AS NUMERIC)", (date_time,)
 
+    def truncate_to_minute_sql(self, col_expr: str) -> str:
+        return f"strftime('%Y-%m-%d %H:%M', {col_expr})"
+
     def cast_null(self, data_type: str) -> str:
         return "NULL"
 

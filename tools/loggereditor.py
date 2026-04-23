@@ -392,7 +392,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     ) -> np.recarray:
         """Build a (date_time, values, source) recarray directly from a DataFrame column."""
         sources = buf["source"].to_numpy()
-        max_src_len = int(max((len(s) for s in sources), default=0))
+        max_src_len = int(buf["source"].str.len().max() or 0)
         arr = np.empty(
             len(buf),
             dtype=[
@@ -548,6 +548,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 buf_df = pd.DataFrame(columns=["head_cm_m", "level_masl", "source"])
             self._buf = buf_df
             self._original_buf = buf_df.copy()
+            self._history.clear()
+            self._history_pos = -1
             self._history_push("Loaded")
             self._dirty = False
             self._last_saved_history_pos = self._history_pos

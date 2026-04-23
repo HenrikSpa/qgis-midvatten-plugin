@@ -649,14 +649,14 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                             f"DELETE FROM {tbl} WHERE {ident('obsid')} = {ph}"
                             f" AND {dt_eq}"
                         )
-                        dbconnection.cursor.executemany(delete_sql, delete_params)
+                        dbconnection.executemany(delete_sql, delete_params)
                     if update_params:
                         update_sql = (
                             f"UPDATE {tbl} SET {ident('level_masl')} = {ph}"
                             f" WHERE {ident('obsid')} = {ph}"
                             f" AND {dt_eq}"
                         )
-                        dbconnection.cursor.executemany(update_sql, update_params)
+                        dbconnection.executemany(update_sql, update_params)
             finally:
                 dbconnection.closedb()
         except Exception as e:

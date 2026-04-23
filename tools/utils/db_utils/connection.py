@@ -135,6 +135,9 @@ class DbConnectionManager:
             a = a[0]
         self._backend.execute_and_commit(sql, args=a)
 
+    def executemany(self, sql: str, args_list: list) -> None:
+        self._backend.executemany(sql, args_list)
+
     def commit(self) -> None:
         self._backend.commit()
 

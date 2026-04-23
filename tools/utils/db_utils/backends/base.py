@@ -95,6 +95,14 @@ class Backend(ABC):
         self.execute(sql, args=args)
         self.commit()
 
+    def executemany(self, sql: str, args_list: Sequence[Sequence[Any]]) -> None:
+        """Execute sql once per row in args_list using cursor.executemany()."""
+        try:
+            self.cursor.executemany(sql, args_list)
+        except Exception as e:
+            Backend.log_execute_error(sql, args_list, e)
+            raise
+
     def commit_and_closedb(self) -> None:
         self.commit()
         self.closedb()

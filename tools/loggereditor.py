@@ -610,6 +610,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         if self._buf is None or self._original_buf is None or self._buf_obsid is None:
             return False
         obsid = self._buf_obsid
+        common_utils.start_waiting_cursor()
         try:
             deleted_indices = self._original_buf.index.difference(self._buf.index)
             delete_params = [
@@ -648,16 +649,14 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                             f"DELETE FROM {tbl} WHERE {ident('obsid')} = {ph}"
                             f" AND {dt_eq}"
                         )
-                        for row in delete_params:
-                            dbconnection.execute(delete_sql, args=row)
+                        dbconnection.cursor.executemany(delete_sql, delete_params)
                     if update_params:
                         update_sql = (
                             f"UPDATE {tbl} SET {ident('level_masl')} = {ph}"
                             f" WHERE {ident('obsid')} = {ph}"
                             f" AND {dt_eq}"
                         )
-                        for row in update_params:
-                            dbconnection.execute(update_sql, args=row)
+                        dbconnection.cursor.executemany(update_sql, update_params)
             finally:
                 dbconnection.closedb()
         except Exception as e:
@@ -666,6 +665,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 log_msg=str(e),
             )
             return False
+        finally:
+            common_utils.stop_waiting_cursor()
 
         self._original_buf = self._buf.copy()
         self._history = [self._history[self._history_pos]]

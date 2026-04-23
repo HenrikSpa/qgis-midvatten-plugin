@@ -633,12 +633,18 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             dbconnection = db_utils.DbConnectionManager()
             ph = dbconnection.placeholder()
             tbl = ident("w_levels_logger")
+            # SQLite stores date_time as text; normalize both sides so that
+            # '2017-02-01 00:00' and '2017-02-01 00:00:00' compare equal.
+            if dbconnection.dbtype == "spatialite":
+                dt_eq = f"datetime({ident('date_time')}) = datetime({ph})"
+            else:
+                dt_eq = f"{ident('date_time')} = {ph}"
             try:
                 with dbconnection.transaction():
                     if delete_params:
                         delete_sql = (
                             f"DELETE FROM {tbl} WHERE {ident('obsid')} = {ph}"
-                            f" AND {ident('date_time')} = {ph}"
+                            f" AND {dt_eq}"
                         )
                         for row in delete_params:
                             dbconnection.execute(delete_sql, args=row)
@@ -646,7 +652,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                         update_sql = (
                             f"UPDATE {tbl} SET {ident('level_masl')} = {ph}"
                             f" WHERE {ident('obsid')} = {ph}"
-                            f" AND {ident('date_time')} = {ph}"
+                            f" AND {dt_eq}"
                         )
                         for row in update_params:
                             dbconnection.execute(update_sql, args=row)

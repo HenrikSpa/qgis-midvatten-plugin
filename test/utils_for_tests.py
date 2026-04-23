@@ -446,8 +446,10 @@ class MidvattenTestPostgisNotCreated(MidvattenTestBase):
             qs.setValue("PostgreSQL/connections/{}/{}".format("nosetests", k), v)
         # Clear the database; skip PostGIS tests when server is not available
         try:
-            db_utils.sql_alter_db("DROP SCHEMA public CASCADE;")
-            db_utils.sql_alter_db("CREATE SCHEMA public;")
+            dbconn = db_utils.DbConnectionManager()
+            dbconn.execute_and_commit("DROP SCHEMA IF EXISTS public CASCADE;")
+            dbconn.execute_and_commit("CREATE SCHEMA public;")
+            dbconn.closedb()
         except common_utils.UserInterruptError as e:
             raise unittest.SkipTest("PostGIS not available (no password): %s" % e)
         except Exception as e:
@@ -457,7 +459,7 @@ class MidvattenTestPostgisNotCreated(MidvattenTestBase):
                 or "could not connect" in str(e).lower()
             ):
                 raise unittest.SkipTest("PostGIS not available: %s" % e)
-            print("Failure resetting db: " + str(e))
+            raise
 
         # Skip if PostGIS extension cannot be created (e.g. insufficient privileges)
         try:
@@ -480,18 +482,13 @@ class MidvattenTestPostgisNotCreated(MidvattenTestBase):
 
     def teardown_method(self):
         # Clear the database
-        with mock.patch(
-            "midvatten.tools.utils.common_utils.MessagebarAndLog"
-        ) as mock_messagebar:
-            try:
-                db_utils.sql_alter_db("DROP SCHEMA public CASCADE;")
-                db_utils.sql_alter_db("CREATE SCHEMA public;")
-            except Exception as e:
-                print("Failure resetting db: " + str(e))
-                print(
-                    "MidvattenTestPostgisNotCreated teardown_method problem: "
-                    + str(mock_messagebar.mock_calls)
-                )
+        try:
+            dbconn = db_utils.DbConnectionManager()
+            dbconn.execute_and_commit("DROP SCHEMA IF EXISTS public CASCADE;")
+            dbconn.execute_and_commit("CREATE SCHEMA public;")
+            dbconn.closedb()
+        except Exception as e:
+            print("Failure resetting db: " + str(e))
         super().teardown_method()
 
 
@@ -527,8 +524,10 @@ class MidvattenTestPostgisDbSv(MidvattenTestPostgisNotCreated):
         )
 
         try:
-            db_utils.sql_alter_db("DROP SCHEMA public CASCADE;")
-            db_utils.sql_alter_db("CREATE SCHEMA public;")
+            dbconn = db_utils.DbConnectionManager()
+            dbconn.execute_and_commit("DROP SCHEMA IF EXISTS public CASCADE;")
+            dbconn.execute_and_commit("CREATE SCHEMA public;")
+            dbconn.closedb()
         except common_utils.UserInterruptError as e:
             raise unittest.SkipTest("PostGIS not available (no password): %s" % e)
         except Exception as e:
@@ -538,7 +537,7 @@ class MidvattenTestPostgisDbSv(MidvattenTestPostgisNotCreated):
                 or "could not connect" in str(e).lower()
             ):
                 raise unittest.SkipTest("PostGIS not available: %s" % e)
-            print("Failure resetting db: " + str(e))
+            raise
 
         try:
             dbconnection = db_utils.DbConnectionManager()
@@ -608,12 +607,13 @@ class MidvattenTestPostgisDbSv(MidvattenTestPostgisNotCreated):
                 MidvattenTestPostgisNotCreated.TEMP_DB_SETTINGS
             ),
         )
-        with mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog"):
-            try:
-                db_utils.sql_alter_db("DROP SCHEMA public CASCADE;")
-                db_utils.sql_alter_db("CREATE SCHEMA public;")
-            except Exception as e:
-                print("MidvattenTestPostgisDbSv teardown_class failure: " + str(e))
+        try:
+            dbconn = db_utils.DbConnectionManager()
+            dbconn.execute_and_commit("DROP SCHEMA IF EXISTS public CASCADE;")
+            dbconn.execute_and_commit("CREATE SCHEMA public;")
+            dbconn.closedb()
+        except Exception as e:
+            print("MidvattenTestPostgisDbSv teardown_class failure: " + str(e))
 
     def setup_method(self):
         """Truncate all tables and restore reference data, then reinitialise the plugin."""
@@ -636,8 +636,8 @@ class MidvattenTestPostgisDbSv(MidvattenTestPostgisNotCreated):
         # Truncate all tables (data + reference) in one shot; CASCADE handles FKs.
         all_tables = _DATA_TABLES + _REFERENCE_TABLES
         truncate_sql = "TRUNCATE TABLE {} CASCADE;".format(", ".join(all_tables))
+        dbconn = db_utils.DbConnectionManager()
         try:
-            dbconn = db_utils.DbConnectionManager()
             dbconn.execute(truncate_sql)
             # Re-insert reference data using a single multi-row INSERT per table
             # (one round-trip per table instead of one per row).
@@ -650,9 +650,8 @@ class MidvattenTestPostgisDbSv(MidvattenTestPostgisNotCreated):
                     insert_sql = f"INSERT INTO {table} ({col_names}) VALUES {all_row_placeholders}"
                     flat_args = [val for row in rows for val in row]
                     dbconn.execute(insert_sql, flat_args)
+        finally:
             dbconn.closedb()
-        except Exception as e:
-            print("setup_method reset failed: " + str(e))
 
         # Reinitialise the QGIS plugin (QgsProject.clear() happens inside here).
         MidvattenTestBase.setup_method(self)
@@ -699,8 +698,10 @@ class MidvattenTestPostgisDbEn(MidvattenTestPostgisNotCreated):
         )
 
         try:
-            db_utils.sql_alter_db("DROP SCHEMA public CASCADE;")
-            db_utils.sql_alter_db("CREATE SCHEMA public;")
+            dbconn = db_utils.DbConnectionManager()
+            dbconn.execute_and_commit("DROP SCHEMA IF EXISTS public CASCADE;")
+            dbconn.execute_and_commit("CREATE SCHEMA public;")
+            dbconn.closedb()
         except common_utils.UserInterruptError as e:
             raise unittest.SkipTest("PostGIS not available (no password): %s" % e)
         except Exception as e:
@@ -710,7 +711,7 @@ class MidvattenTestPostgisDbEn(MidvattenTestPostgisNotCreated):
                 or "could not connect" in str(e).lower()
             ):
                 raise unittest.SkipTest("PostGIS not available: %s" % e)
-            print("Failure resetting db: " + str(e))
+            raise
 
         try:
             dbconnection = db_utils.DbConnectionManager()
@@ -779,12 +780,13 @@ class MidvattenTestPostgisDbEn(MidvattenTestPostgisNotCreated):
                 MidvattenTestPostgisNotCreated.TEMP_DB_SETTINGS
             ),
         )
-        with mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog"):
-            try:
-                db_utils.sql_alter_db("DROP SCHEMA public CASCADE;")
-                db_utils.sql_alter_db("CREATE SCHEMA public;")
-            except Exception as e:
-                print("MidvattenTestPostgisDbEn teardown_class failure: " + str(e))
+        try:
+            dbconn = db_utils.DbConnectionManager()
+            dbconn.execute_and_commit("DROP SCHEMA IF EXISTS public CASCADE;")
+            dbconn.execute_and_commit("CREATE SCHEMA public;")
+            dbconn.closedb()
+        except Exception as e:
+            print("MidvattenTestPostgisDbEn teardown_class failure: " + str(e))
 
     def setup_method(self):
         """Truncate all tables and restore reference data, then reinitialise the plugin."""
@@ -804,8 +806,8 @@ class MidvattenTestPostgisDbEn(MidvattenTestPostgisNotCreated):
 
         all_tables = _DATA_TABLES + _REFERENCE_TABLES
         truncate_sql = "TRUNCATE TABLE {} CASCADE;".format(", ".join(all_tables))
+        dbconn = db_utils.DbConnectionManager()
         try:
-            dbconn = db_utils.DbConnectionManager()
             dbconn.execute(truncate_sql)
             for table, (cols, rows) in self.__class__._reference_snapshot.items():
                 if rows:
@@ -816,9 +818,8 @@ class MidvattenTestPostgisDbEn(MidvattenTestPostgisNotCreated):
                     insert_sql = f"INSERT INTO {table} ({col_names}) VALUES {all_row_placeholders}"
                     flat_args = [val for row in rows for val in row]
                     dbconn.execute(insert_sql, flat_args)
+        finally:
             dbconn.closedb()
-        except Exception as e:
-            print("setup_method reset failed: " + str(e))
 
         MidvattenTestBase.setup_method(self)
 

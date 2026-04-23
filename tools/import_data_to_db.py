@@ -692,7 +692,11 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         dest_table: str,
         dbconnection: DbConnectionManager,
     ) -> int:
-        """Delete temp rows whose (non-datetime PKs + minute-truncated date_time) already exist in dest.
+        """Delete temp rows whose minute-level date_time already exists in dest.
+
+        Two date_times are considered duplicates when they fall in the same minute —
+        this prevents mixing series stored at different time resolutions
+        (e.g. minute-level logger data and second-level spot measurements).
 
         Uses a correlated EXISTS so the destination PK index is used for each temp row
         lookup instead of two full sequential table scans.

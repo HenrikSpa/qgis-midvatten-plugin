@@ -1969,11 +1969,13 @@ class DeleteExistingDateTimesFromTemptableMixin:
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
     )
-    def test_delete_existing_date_times_same_minute_different_seconds_blocked(self):
-        """Incoming row with different non-zero seconds but same minute as existing row is blocked.
+    def test_delete_existing_date_times_second_precision_dest_blocks_same_minute(self):
+        """Dest with non-zero seconds blocks any other second in the same minute.
 
-        Old behaviour (string-concat): dest hh:mm:ss1, temp hh:mm:ss2 was NOT blocked.
-        New behaviour (date_trunc/strftime): same-minute entries are always blocked.
+        The old string-concat code missed this: dest '00:00:01' (second precision with
+        non-zero seconds) did NOT block incoming '00:00:05'. The EXISTS + date_trunc
+        approach fixes it — minute-level deduplication applies regardless of which
+        side has non-zero seconds.
         """
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('obsid1')""")
         db_utils.sql_alter_db(
@@ -1982,7 +1984,7 @@ class DeleteExistingDateTimesFromTemptableMixin:
 
         f = [
             ["obsid", "date_time", "level_masl"],
-            ["obsid1", "2016-01-01 00:00:05", "456"],  # same minute, different seconds
+            ["obsid1", "2016-01-01 00:00:05", "456"],  # same minute as dest → blocked
             ["obsid1", "2016-01-01 00:01:00", "789"],  # different minute → allowed
         ]
 

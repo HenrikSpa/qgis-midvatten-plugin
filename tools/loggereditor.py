@@ -50,6 +50,8 @@ Calibr_Ui_Dialog = uic.loadUiType(ui_path("calibr_logger_dialog_integrated.ui"))
 
 
 class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
+    _MAX_HISTORY = 200
+
     @fn_timer
     def __init__(self, iface, ms):
         qgis.PyQt.QtWidgets.QMainWindow.__init__(self, iface.mainWindow())
@@ -84,6 +86,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self._history_pos: int = -1
         self._prev_combobox_index: int = -1
         self._ref_subplot_dirty: bool = True
+        self._buf_version: int = 0
+        self._ts_version: int = -1
+        self._last_saved_history_pos: int | None = None
 
         text = QCoreApplication.translate(
             "Calibrlogger",
@@ -379,6 +384,76 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
             self.combobox_obsid.setItemText(idx, new_text)
 
+    def _build_ts_recarray(
+        self,
+        buf: pd.DataFrame,
+        col: str,
+        values_override: np.ndarray | None = None,
+    ) -> np.recarray:
+        """Build a (date_time, values, source) recarray directly from a DataFrame column."""
+        sources = buf["source"].to_numpy()
+        max_src_len = int(max((len(s) for s in sources), default=0))
+        arr = np.empty(
+            len(buf),
+            dtype=[
+                ("date_time", object),
+                ("values", float),
+                ("source", f"U{max(max_src_len, 1)}"),
+            ],
+        )
+        arr["date_time"] = buf.index.strftime("%Y-%m-%d %H:%M:%S").to_numpy()
+        arr["values"] = (
+            values_override
+            if values_override is not None
+            else buf[col].to_numpy(dtype=float, na_value=np.nan)
+        )
+        arr["source"] = sources
+        return arr.view(np.recarray)
+
+    def _build_head_ts_for_plot(self, buf: pd.DataFrame) -> None:
+        """Set self.head_ts_for_plot; handles normalize_head using DataFrame ops."""
+        if not self.plot_logger_head.isChecked():
+            self.head_ts_for_plot = None
+            return
+        if not self.normalize_head.isChecked():
+            self.head_ts_for_plot = self.head_ts
+            return
+        head_valid = buf["head_cm_m"].dropna()
+        if head_valid.empty:
+            common_utils.MessagebarAndLog.warning(
+                bar_msg=QCoreApplication.translate(
+                    "Calibrlogger", "No head values to normalize against."
+                )
+            )
+            self.head_ts_for_plot = self.head_ts
+            return
+        head_mean = float(head_valid.mean())
+        level_valid = buf["level_masl"].dropna()
+        meas_vals = self.meas_ts.values.astype(float, copy=False)
+        meas_valid = meas_vals[~np.isnan(meas_vals)]
+        if level_valid.empty and meas_valid.size == 0:
+            common_utils.MessagebarAndLog.warning(
+                bar_msg=QCoreApplication.translate(
+                    "Calibrlogger",
+                    "No calibrated level_masl values to normalize against.",
+                )
+            )
+            self.head_ts_for_plot = self.head_ts
+            return
+        level_masl_mean = (
+            float(level_valid.mean())
+            if not level_valid.empty
+            else float(meas_valid.mean())
+        )
+        normalized_vals = (
+            buf["head_cm_m"]
+            .add(level_masl_mean - head_mean)
+            .to_numpy(dtype=float, na_value=np.nan)
+        )
+        self.head_ts_for_plot = self._build_ts_recarray(
+            buf, "head_cm_m", values_override=normalized_vals
+        )
+
     def _ensure_meas_ts(self, obsid: str, dbconnection=None) -> None:
         """Load and cache w_levels for obsid; reuse cache when obsid hasn't changed."""
         if self._meas_obsid == obsid and self._meas_ts is not None:
@@ -420,14 +495,14 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             return None
 
         if obsid == self._buf_obsid and self._buf is not None:
-            buf = self._buf
-            dt_strs = buf.index.strftime("%Y-%m-%d %H:%M:%S").tolist()
-            sources = buf["source"].tolist()
-            head_vals = buf["head_cm_m"].to_numpy(dtype=object, na_value=None).tolist()
-            level_masl_vals = buf["level_masl"].to_numpy(dtype=object, na_value=None).tolist()
-            head_list = list(zip(dt_strs, head_vals, sources))
-            level_masl_list = list(zip(dt_strs, level_masl_vals, sources))
             self._ensure_meas_ts(obsid)
+            if self._ts_version == self._buf_version:
+                # Buffer unchanged since last plot — reuse cached recarrays.
+                self.obsid = obsid
+                self.setlastcalibration(obsid)
+                common_utils.stop_waiting_cursor()
+                return obsid
+            buf = self._buf
         else:
             if self._schema_variant is None:
                 raise RuntimeError(
@@ -457,17 +532,17 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 head_level_masl_sql, dbconnection=dbconnection, execute_args=(obsid,)
             )
             dbconnection.closedb()
-            head_list = [(row[0], row[1], row[3]) for row in head_level_masl_list]
-            level_masl_list = [(row[0], row[2], row[3]) for row in head_level_masl_list]
 
             if head_level_masl_list:
                 buf_df = pd.DataFrame(
                     {
-                        "head_cm_m": [r[1] for r in head_list],
-                        "level_masl": [r[1] for r in level_masl_list],
-                        "source": [r[2] for r in head_list],
+                        "head_cm_m": [r[1] for r in head_level_masl_list],
+                        "level_masl": [r[2] for r in head_level_masl_list],
+                        "source": [r[3] for r in head_level_masl_list],
                     },
-                    index=pd.to_datetime([r[0] for r in head_list]).to_pydatetime(),
+                    index=pd.to_datetime(
+                        [r[0] for r in head_level_masl_list]
+                    ).to_pydatetime(),
                 )
             else:
                 buf_df = pd.DataFrame(columns=["head_cm_m", "level_masl", "source"])
@@ -475,80 +550,26 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self._original_buf = buf_df.copy()
             self._history_push("Loaded")
             self._dirty = False
+            self._last_saved_history_pos = self._history_pos
             self._buf_obsid = obsid
             self._ref_subplot_dirty = True
+            buf = self._buf
 
-        self.head_ts = self.list_of_list_to_recarray(head_list)
-        if self.plot_logger_head.isChecked():
-            if self.normalize_head.isChecked():
-                head_vals = [row[1] for row in head_list if row[1] is not None]
-                num_head = len(head_vals)
-
-                if num_head > 0:
-                    head_mean = sum(head_vals) / float(len(head_vals))
-
-                    level_masl_vals = [
-                        row[1] for row in level_masl_list if row[1] is not None
-                    ]
-                    num_level_masl_vals = len(level_masl_vals)
-                    meas_vals = [x for x in self.meas_ts.values if x is not None]
-                    num_meas_vals = len(meas_vals)
-                    if num_level_masl_vals or num_meas_vals:
-                        if num_level_masl_vals:
-                            level_masl_mean = sum(level_masl_vals) / float(
-                                num_level_masl_vals
-                            )
-                        else:
-                            level_masl_mean = sum(meas_vals) / float(num_meas_vals)
-
-                        normalized_head = [
-                            (
-                                row[0],
-                                (
-                                    row[1] + (level_masl_mean - head_mean)
-                                    if row[1] is not None
-                                    else None
-                                ),
-                                row[2],
-                            )
-                            for row in head_list
-                        ]
-
-                        self.head_ts_for_plot = self.list_of_list_to_recarray(
-                            normalized_head
-                        )
-                    else:
-                        common_utils.MessagebarAndLog.warning(
-                            bar_msg=QCoreApplication.translate(
-                                "Calibrlogger",
-                                "No calibrated level_masl values to normalize against.",
-                            )
-                        )
-                        self.head_ts_for_plot = self.head_ts
-                else:
-                    common_utils.MessagebarAndLog.warning(
-                        bar_msg=QCoreApplication.translate(
-                            "Calibrlogger", "No head values to normalize against."
-                        )
-                    )
-                    self.head_ts_for_plot = self.head_ts
-            else:
-                self.head_ts_for_plot = self.head_ts
-        else:
-            self.head_ts_for_plot = None
+        self.head_ts = self._build_ts_recarray(buf, "head_cm_m")
+        self.level_masl_ts = self._build_ts_recarray(buf, "level_masl")
+        self._build_head_ts_for_plot(buf)
 
         self.obsid = obsid
 
-        self.level_masl_ts = self.list_of_list_to_recarray(level_masl_list)
-
         calibration_status = (
-            [obsid] if level_masl_list and level_masl_list[-1][1] is None else []
+            [obsid] if not buf.empty and pd.isna(buf["level_masl"].iloc[-1]) else []
         )
         self.update_combobox_with_calibration_info(
             obsid=obsid, _obsids_with_uncalibrated_data=calibration_status
         )
 
         self.setlastcalibration(obsid)
+        self._ts_version = self._buf_version
         common_utils.stop_waiting_cursor()
         return obsid
 
@@ -618,7 +639,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         try:
             deleted_indices = self._original_buf.index.difference(self._buf.index)
             delete_params = list(
-                zip([obsid] * len(deleted_indices), deleted_indices.strftime("%Y-%m-%d %H:%M:%S"))
+                zip(
+                    [obsid] * len(deleted_indices),
+                    deleted_indices.strftime("%Y-%m-%d %H:%M:%S"),
+                )
             )
 
             common_index = self._original_buf.index.intersection(self._buf.index)
@@ -628,9 +652,15 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 (orig_vals == new_vals) | (orig_vals.isna() & new_vals.isna())
             )
             changed_index = common_index[changed_mask]
-            update_vals = new_vals.loc[changed_index].to_numpy(dtype=object, na_value=None)
+            update_vals = new_vals.loc[changed_index].to_numpy(
+                dtype=object, na_value=None
+            )
             update_params = list(
-                zip(update_vals, [obsid] * len(changed_index), changed_index.strftime("%Y-%m-%d %H:%M:%S"))
+                zip(
+                    update_vals,
+                    [obsid] * len(changed_index),
+                    changed_index.strftime("%Y-%m-%d %H:%M:%S"),
+                )
             )
 
             dbconnection = db_utils.DbConnectionManager()
@@ -669,8 +699,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             common_utils.stop_waiting_cursor()
 
         self._original_buf = self._buf.copy()
-        self._history = [self._history[self._history_pos]]
-        self._history_pos = 0
+        self._last_saved_history_pos = self._history_pos
         self._dirty = False
         self._ref_subplot_dirty = True
         self._refresh_window_title()
@@ -753,6 +782,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self._buf_obsid = None
         self._history = []
         self._history_pos = -1
+        self._last_saved_history_pos = None
 
     def _history_push(self, label: str) -> None:
         del self._history[self._history_pos + 1 :]
@@ -764,6 +794,15 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         }
         self._history.append(entry)
         self._history_pos = len(self._history) - 1
+        self._buf_version += 1
+        if len(self._history) > self._MAX_HISTORY:
+            trim = len(self._history) - self._MAX_HISTORY
+            self._history = self._history[trim:]
+            self._history_pos -= trim
+            if self._last_saved_history_pos is not None:
+                self._last_saved_history_pos -= trim
+                if self._last_saved_history_pos < 0:
+                    self._last_saved_history_pos = None
         self._dirty = True
         self._refresh_window_title()
         self._refresh_history_widget()
@@ -787,6 +826,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         entry = self._history[pos]
         self._buf = self._original_buf.loc[entry["present_index"]].copy()
         self._buf["level_masl"] = entry["level_masl"]
+        self._buf_version += 1
         self._dirty = pos != 0
         self._refresh_window_title()
         self._refresh_history_widget()
@@ -798,7 +838,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self._history_list.clear()
         for i, entry in enumerate(self._history):
             ts = entry["timestamp"].strftime("%H:%M:%S")
-            item = QListWidgetItem(f"{ts}  {entry['label']}")
+            saved_marker = " [saved]" if i == self._last_saved_history_pos else ""
+            item = QListWidgetItem(f"{ts}  {entry['label']}{saved_marker}")
             if i == self._history_pos:
                 font = item.font()
                 font.setBold(True)
@@ -1352,7 +1393,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
     @fn_timer
     def a_recarray_to_timestring_list(self, a_recarray):
-        return [a_recarray.date_time[idx] for idx in range(len(a_recarray))]
+        return a_recarray.date_time.tolist()
 
     @fn_timer
     def timestring_list_to_time_list(self, timestring_list):
@@ -1360,18 +1401,11 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         return num2date(datestr2num(timestring_list))
 
     @fn_timer
-    def contains_more_than_nan(self, a_recarray):
-        try:
-            not_nan = self.list_of_list_to_recarray(
-                list(filter(lambda v: v == v, a_recarray))
-            )
-        except TypeError:
-            log.debug("Error in contains_more_than_nan, recarray: " + str(a_recarray))
-            raise
-        if not_nan.size:
-            return True
-        else:
-            return False
+    def contains_more_than_nan(self, a_recarray: np.recarray) -> bool:
+        return bool(
+            a_recarray.size
+            and not np.all(np.isnan(a_recarray.values.astype(float, copy=False)))
+        )
 
     @fn_timer
     def plot_the_recarray(self, axes, time_list, a_recarray, label, style=None):

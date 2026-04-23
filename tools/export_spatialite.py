@@ -4,7 +4,7 @@ import logging
 
 import qgis.core
 from qgis.PyQt.QtCore import QCoreApplication, QEventLoop, Qt, QThread
-from qgis.PyQt.QtWidgets import QApplication, QDialog, QProgressDialog
+from qgis.PyQt.QtWidgets import QApplication, QDialog, QMessageBox, QProgressDialog
 
 from midvatten.tools.create_db import NewDb
 from midvatten.tools.create_db_dialogs import NewSpatialiteDbDialog
@@ -12,6 +12,71 @@ from midvatten.tools.export_worker import ExportWorker
 from midvatten.tools.utils import common_utils, db_utils
 
 log = logging.getLogger(__name__)
+
+# (table, GROUP BY expression) pairs for semantic datetime duplicate detection.
+# Expressions mirror the unique index definitions in create_db.sql.
+_DT_DUPLICATE_CHECKS: list[tuple[str, str]] = [
+    ("w_levels", "obsid, datetime(date_time)"),
+    ("w_levels_logger", "obsid, datetime(date_time)"),
+    ("comments", "obsid, datetime(date_time)"),
+    ("w_flow", "obsid, flowtype, instrumentid, datetime(date_time)"),
+    ("meteo", "obsid, parameter, instrumentid, datetime(date_time)"),
+    ("w_qual_field", "obsid, parameter, datetime(date_time), COALESCE(unit, '<NULL>')"),
+    (
+        "w_qual_logger",
+        "obsid, parameter, instrument, datetime(date_time), COALESCE(unit, '<NULL>')",
+    ),
+]
+
+
+def _find_datetime_duplicates(source_db_settings: str) -> dict[str, int]:
+    """Return {table: dup_count} for SQLite source tables with semantic datetime duplicates."""
+    try:
+        conn = db_utils.DbConnectionManager(source_db_settings)
+        conn.connect2db()
+    except Exception:
+        log.debug("Could not connect to source DB for duplicate check", exc_info=True)
+        return {}
+    if not conn.is_sqlite():
+        conn.closedb()
+        return {}
+    duplicates: dict[str, int] = {}
+    try:
+        for table, group_by in _DT_DUPLICATE_CHECKS:
+            tq = db_utils.ident(table)
+            sql = f"SELECT COUNT(*) FROM (SELECT 1 FROM {tq} GROUP BY {group_by} HAVING COUNT(*) > 1)"
+            try:
+                count = conn.execute_and_fetchall(sql)[0][0]
+                if count:
+                    duplicates[table] = count
+            except Exception:
+                log.debug(
+                    "Duplicate check query failed for table %s", table, exc_info=True
+                )
+    finally:
+        conn.closedb()
+    return duplicates
+
+
+def _warn_duplicates(parent, duplicates: dict[str, int]) -> bool:
+    lines = "\n".join(f"  {table}: {count}" for table, count in duplicates.items())
+    msg = QCoreApplication.translate(
+        "ExportSpatialite",
+        "The source database contains duplicate timestamps in the following tables:\n\n"
+        "{}\n\n"
+        "Duplicate timestamps are likely data errors. The exported database will keep only "
+        "the earliest duplicate row per timestamp.\n\n"
+        "It is recommended to review and correct these in the source database before exporting.\n\n"
+        "Continue with export?",
+    ).format(lines)
+    result = QMessageBox.question(
+        parent,
+        QCoreApplication.translate("ExportSpatialite", "Duplicate timestamps detected"),
+        msg,
+        QMessageBox.Yes | QMessageBox.No,
+        QMessageBox.No,
+    )
+    return result == QMessageBox.Yes
 
 
 class ExportSpatialite:
@@ -68,6 +133,13 @@ class ExportSpatialite:
             )
             return
 
+        source_db_settings = qgis.core.QgsProject.instance().readEntry(
+            "Midvatten", "database"
+        )[0]
+        duplicates = _find_datetime_duplicates(source_db_settings)
+        if duplicates and not _warn_duplicates(self._iface.mainWindow(), duplicates):
+            return
+
         newdbinstance = NewDb()
         progress = QProgressDialog(
             QCoreApplication.translate(
@@ -120,7 +192,9 @@ class ExportSpatialite:
             )
             return
 
-        self._run_export_worker(new_dbpath, dialog, obsid_p, obsid_l)
+        self._run_export_worker(
+            new_dbpath, dialog, obsid_p, obsid_l, source_db_settings
+        )
 
     def _run_export_worker(
         self,
@@ -128,11 +202,8 @@ class ExportSpatialite:
         dialog,
         obsid_p: tuple[str, ...],
         obsid_l: tuple[str, ...],
+        source_db_settings: str,
     ) -> None:
-        source_db_settings = qgis.core.QgsProject.instance().readEntry(
-            "Midvatten", "database"
-        )[0]
-
         worker = ExportWorker(
             source_db_settings=source_db_settings,
             dest_path=new_dbpath,

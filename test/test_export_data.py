@@ -19,12 +19,14 @@
  ***************************************************************************/
 """
 
+import csv
 import os
 import tempfile
 from unittest import mock
 
 import pytest
 
+from midvatten.tools.export_data import html_to_plaintext
 from midvatten.tools.export_spatialite import ExportSpatialite
 from midvatten.tools.utils import db_utils
 from midvatten.test import utils_for_tests
@@ -44,6 +46,43 @@ def _unique_export_path(test_self):
 
 
 TEMP_DIR = "/tmp/"
+
+
+class TestHtmlToPlaintext:
+    def test_plain_text_unchanged(self):
+        assert html_to_plaintext("Hello world") == "Hello world"
+
+    def test_less_than_digit_unchanged(self):
+        assert html_to_plaintext("<5 l/s") == "<5 l/s"
+
+    def test_less_than_space_unchanged(self):
+        assert html_to_plaintext("flow < 5 m³/s") == "flow < 5 m³/s"
+
+    def test_none_returned_unchanged(self):
+        assert html_to_plaintext(None) is None
+
+    def test_simple_paragraph_stripped(self):
+        assert html_to_plaintext("<p>Hello world</p>") == "Hello world"
+
+    def test_multi_paragraph_separated_by_newlines(self):
+        result = html_to_plaintext("<p>First</p><p>Second</p>")
+        assert result == "First\n\nSecond"
+
+    def test_br_becomes_newline(self):
+        assert html_to_plaintext("Line 1<br>Line 2") == "Line 1\nLine 2"
+
+    def test_br_self_closing_becomes_newline(self):
+        assert html_to_plaintext("Line 1<br/>Line 2") == "Line 1\nLine 2"
+
+    def test_entities_decoded(self):
+        assert html_to_plaintext("<p>a &amp; b &lt; c</p>") == "a & b < c"
+
+    def test_attribute_quotes_stripped(self):
+        result = html_to_plaintext('<p class="x">Hello</p>')
+        assert result == "Hello"
+
+    def test_non_html_angle_brackets_unchanged(self):
+        assert html_to_plaintext("<5 and >3 is not html") == "<5 and >3 is not html"
 
 
 class ExportMixin:
@@ -105,10 +144,14 @@ class ExportMixin:
         "midvatten.tools.utils.common_utils.get_selected_features_as_tuple",
         mock_selection.get_v,
     )
-    @mock.patch("qgis.PyQt.QtWidgets.QFileDialog.getExistingDirectory")
+    @mock.patch("midvatten.tools.export_data.ExportCsvDialog")
     @mock.patch("qgis.utils.iface", autospec=True)
-    def test_export_csv(self, mock_iface, mock_savepath):
-        mock_savepath.return_value = "/tmp/"
+    def test_export_csv(self, mock_iface, mock_dialog_cls):
+        mock_dlg = mock.MagicMock()
+        mock_dialog_cls.return_value = mock_dlg
+        mock_dlg.exec.return_value = 1
+        mock_dlg.export_folder = TEMP_DIR
+        mock_dlg.strip_html = False
         db_utils.sql_alter_db(
             """INSERT INTO obs_points (obsid, geometry) VALUES ('P1', ST_GeomFromText('POINT(633466 711659)', 3006))"""
         )
@@ -207,10 +250,14 @@ class ExportMixin:
         "midvatten.tools.utils.common_utils.get_selected_features_as_tuple",
         mock_no_selection.get_v,
     )
-    @mock.patch("qgis.PyQt.QtWidgets.QFileDialog.getExistingDirectory")
+    @mock.patch("midvatten.tools.export_data.ExportCsvDialog")
     @mock.patch("qgis.utils.iface", autospec=True)
-    def test_export_csv_no_selection(self, mock_iface, mock_savepath):
-        mock_savepath.return_value = "/tmp/"
+    def test_export_csv_no_selection(self, mock_iface, mock_dialog_cls):
+        mock_dlg = mock.MagicMock()
+        mock_dialog_cls.return_value = mock_dlg
+        mock_dlg.exec.return_value = 1
+        mock_dlg.export_folder = TEMP_DIR
+        mock_dlg.strip_html = False
         db_utils.sql_alter_db(
             """INSERT INTO obs_points (obsid, geometry) VALUES ('P1', ST_GeomFromText('POINT(633466 711659)', 3006))"""
         )
@@ -304,6 +351,37 @@ class ExportMixin:
         print(test_string)
         print(reference_string)
         assert test_string == reference_string
+
+    @mock.patch(
+        "midvatten.tools.utils.common_utils.get_selected_features_as_tuple",
+        mock_selection.get_v,
+    )
+    @mock.patch("midvatten.tools.export_data.ExportCsvDialog")
+    @mock.patch("qgis.utils.iface", autospec=True)
+    def test_export_csv_com_html_stripped(self, mock_iface, mock_dialog_cls):
+        mock_dlg = mock.MagicMock()
+        mock_dialog_cls.return_value = mock_dlg
+        mock_dlg.exec.return_value = 1
+        mock_dlg.export_folder = TEMP_DIR
+        mock_dlg.strip_html = True
+
+        db_utils.sql_alter_db(
+            """INSERT INTO obs_points (obsid, com_html, geometry) VALUES ('P1', '<p>First paragraph</p><p>Second paragraph</p>', ST_GeomFromText('POINT(633466 711659)', 3006))"""
+        )
+
+        self.midvatten.export_csv()
+
+        with open(os.path.join(TEMP_DIR, "obs_points.csv"), encoding="utf-8") as f:
+            rows = list(csv.reader(f, delimiter=";"))
+
+        headers = rows[0]
+        com_html_idx = headers.index("com_html")
+        com_html_value = rows[1][com_html_idx]
+
+        assert "<" not in com_html_value
+        assert "First paragraph" in com_html_value
+        assert "Second paragraph" in com_html_value
+        assert "\n" in com_html_value
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.export_spatialite.NewSpatialiteDbDialog")

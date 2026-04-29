@@ -3,7 +3,7 @@ name=Midvatten
 qgisMinimumVersion=3.40
 description=A toolset that makes QGIS an interface for editing/viewing hydrogeological observational data (drillings, water levels, seismic data etc) stored in a SQLite or PostgreSQL database.
 about=The plugin is a toolset that makes QGIS an interface for editing/viewing hydrogeological observational data (drillings, water levels, seismic data etc) stored in a SQLite or PostgreSQL database.
-version=1.9.0b15
+version=1.9.0b16
 author=Henrik Spångmyr, Josef Källgården
 email=midvattenplugin@midvatten.se
 repository=https://github.com/henrikspa/qgis-midvatten-plugin.git
@@ -23,6 +23,15 @@ hasProcessingProvider=no
 supportsQt6=True
 
 changelog=
+        Version 1.9.0b16:
+          - ExportCSV: Replaced folder-picker with a dialog that also offers a checkbox to convert HTML rich-text fields (com_html) to plain text before writing (default on); fixes broken rows in Excel/LibreOffice.
+          - Database: Added diam_inner and diam_outer columns to the screen table.
+          - Database: Added unique indexes on (obsid, date_time) for w_levels_logger, w_levels, w_flow, w_qual_field, and meteo.
+          - SectionPlot: Fixed obsid label to prefer water level over h_gs fallback.
+          - Import: Fixed severe performance freeze on large PostgreSQL imports.
+          - Import: Fixed minute-level deduplication edge case for sub-minute timestamps.
+          - LoggerEditor: Significantly improved performance for large datasets (caching, vectorised hot paths, range-based save).
+          - LoggerEditor: Fixed undo history not clearing when switching obsid.
         Version 1.9.0b15:
           - LoggerEditor: Added multicursor crosshair button to toolbar; toggles a crosshair across all visible subplots.
           - LoggerEditor: Reference series filters now plot one series per cartesian-product combination of selected filter values.

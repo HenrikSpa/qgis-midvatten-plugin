@@ -158,6 +158,8 @@ POSTGIS id SERIAL PRIMARY KEY
 , screenid integer NOT NULL --Screen sequence number per obsid
 , depthtop double --Top of the screen in m from ground surface
 , depthbot double --Bottom of the screen in m from ground surface
+, diam_inner double --Inner diameter of the screen in meters
+, diam_outer double --Outer diameter of the screen in meters
 , screenshort text --Short code used for legend label and style lookup
 , screen text --Full free-text description
 , comment text --Additional notes

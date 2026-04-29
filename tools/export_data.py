@@ -256,7 +256,26 @@ class ExportData:
         obsids: Optional[Union[tuple[str], tuple[()]]] = None,
         replace: bool = False,
     ) -> None:
-        sql = self.source_dbconnection.sql_ident("SELECT * FROM {t}", t=tname)
+        geom_cols = set(
+            db_utils.get_geometry_types(
+                tname, dbconnection=self.source_dbconnection
+            ).keys()
+        )
+        if geom_cols:
+            table_info = (
+                db_utils.get_table_info(tname, dbconnection=self.source_dbconnection)
+                or []
+            )
+            q = self.source_dbconnection.ident
+            col_exprs = [
+                f"ST_AsText({q(row[1])}) AS {q(row[1])}"
+                if row[1] in geom_cols
+                else q(row[1])
+                for row in table_info
+            ]
+            sql = f"SELECT {', '.join(col_exprs)} FROM {q(tname)}"
+        else:
+            sql = self.source_dbconnection.sql_ident("SELECT * FROM {t}", t=tname)
         args = None
         if obsids:
             clause, args = self.source_dbconnection.in_clause(obsids)

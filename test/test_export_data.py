@@ -393,6 +393,34 @@ class ExportMixin:
         assert "Second paragraph" in com_html_value
         assert "\n" in com_html_value
 
+    @mock.patch(
+        "midvatten.tools.utils.common_utils.get_selected_features_as_tuple",
+        mock_selection.get_v,
+    )
+    @mock.patch("midvatten.tools.export_data.ExportCsvDialog")
+    @mock.patch("qgis.utils.iface", autospec=True)
+    def test_export_csv_geometry_as_wkt(self, mock_iface, mock_dialog_cls):
+        mock_dlg = mock.MagicMock()
+        mock_dialog_cls.return_value = mock_dlg
+        mock_dlg.exec.return_value = 1
+        mock_dlg.export_folder = TEMP_DIR
+        mock_dlg.strip_html = False
+
+        db_utils.sql_alter_db(
+            """INSERT INTO obs_points (obsid, geometry) VALUES ('P1', ST_GeomFromText('POINT(633466 711659)', 3006))"""
+        )
+
+        self.midvatten.export_csv()
+
+        with open(os.path.join(TEMP_DIR, "obs_points.csv"), encoding="utf-8") as f:
+            rows = list(csv.reader(f, delimiter=";"))
+
+        headers = rows[0]
+        geom_idx = headers.index("geometry")
+        geom_value = rows[1][geom_idx]
+
+        assert geom_value.startswith("POINT")
+
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.export_spatialite.NewSpatialiteDbDialog")
     @mock.patch(

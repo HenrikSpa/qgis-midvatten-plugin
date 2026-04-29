@@ -84,6 +84,16 @@ class TestHtmlToPlaintext:
     def test_non_html_angle_brackets_unchanged(self):
         assert html_to_plaintext("<5 and >3 is not html") == "<5 and >3 is not html"
 
+    def test_qt_style_block_excluded(self):
+        qt_html = (
+            '<html><head><style type="text/css">\np, li { white-space: pre-wrap; }\n</style></head>'
+            "<body><p>Hello world</p></body></html>"
+        )
+        assert html_to_plaintext(qt_html) == "Hello world"
+
+    def test_script_block_excluded(self):
+        assert html_to_plaintext("<p>Text</p><script>alert('x')</script>") == "Text"
+
 
 class ExportMixin:
     answer_yes_obj = MockUsingReturnValue()

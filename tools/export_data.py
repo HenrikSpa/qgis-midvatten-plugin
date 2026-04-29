@@ -44,6 +44,7 @@ _HTML_TAG_RE = re.compile(r"<[a-zA-Z][^>]*>")
 _BLOCK_TAGS = frozenset(
     {"p", "br", "div", "li", "tr", "h1", "h2", "h3", "h4", "h5", "h6"}
 )
+_SKIP_TAGS = frozenset({"style", "head", "script"})
 _COM_HTML_COLUMN = "com_html"
 
 
@@ -51,20 +52,34 @@ class _TextExtractor(HTMLParser):
     def __init__(self):
         super().__init__()
         self._parts: list[str] = []
+        self._skip_depth: int = 0
 
     def handle_starttag(self, tag: str, attrs) -> None:
-        if tag.lower() in _BLOCK_TAGS:
+        t = tag.lower()
+        if t in _SKIP_TAGS:
+            self._skip_depth += 1
+            return
+        if self._skip_depth:
+            return
+        if t in _BLOCK_TAGS:
             self._parts.append("\n")
 
     def handle_endtag(self, tag: str) -> None:
-        if tag.lower() in _BLOCK_TAGS:
+        t = tag.lower()
+        if t in _SKIP_TAGS:
+            self._skip_depth = max(0, self._skip_depth - 1)
+            return
+        if self._skip_depth:
+            return
+        if t in _BLOCK_TAGS:
             self._parts.append("\n")
 
     def handle_startendtag(self, tag: str, attrs) -> None:
         self.handle_starttag(tag, attrs)
 
     def handle_data(self, data: str) -> None:
-        self._parts.append(data)
+        if not self._skip_depth:
+            self._parts.append(data)
 
     def get_text(self) -> str:
         text = "".join(self._parts)
@@ -117,9 +132,7 @@ class ExportCsvDialog(QDialog):
 
         layout.addLayout(form)
 
-        self._buttons = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel
-        )
+        self._buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         self._buttons.accepted.connect(self.accept)
         self._buttons.rejected.connect(self.reject)
         self._buttons.button(QDialogButtonBox.Ok).setEnabled(False)
@@ -252,7 +265,9 @@ class ExportData:
         headers = [col[0] for col in self.source_dbconnection.cursor.description]
 
         if self._strip_html:
-            html_col_indices = {i for i, h in enumerate(headers) if h == _COM_HTML_COLUMN}
+            html_col_indices = {
+                i for i, h in enumerate(headers) if h == _COM_HTML_COLUMN
+            }
             if html_col_indices:
                 data = [
                     tuple(

@@ -1380,7 +1380,7 @@ def finish_plot(
         )
     if figure.line_layer:
         line_obsid = get_line_feature_obsid(figure.line_feature)
-        if line_obsid:
+        if line_obsid is not None:
             xlabel += f" {line_obsid}"
             figure.figname = line_obsid
     figure.ax_main.set_xlabel(

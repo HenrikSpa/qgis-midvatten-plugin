@@ -27,7 +27,8 @@ def get_line_feature_obsid(line_feature) -> Optional[str]:
         return None
     if line_feature.fields().indexOf("obsid") < 0:
         return None
-    return ru(line_feature.attribute("obsid")) or None
+    val = ru(line_feature.attribute("obsid"))
+    return val if val else None
 
 
 def prepare_obsid_positions(

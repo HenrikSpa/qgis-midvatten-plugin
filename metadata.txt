@@ -3,7 +3,7 @@ name=Midvatten
 qgisMinimumVersion=3.40
 description=A toolset that makes QGIS an interface for editing/viewing hydrogeological observational data (drillings, water levels, seismic data etc) stored in a SQLite or PostgreSQL database.
 about=The plugin is a toolset that makes QGIS an interface for editing/viewing hydrogeological observational data (drillings, water levels, seismic data etc) stored in a SQLite or PostgreSQL database.
-version=1.9.0b16
+version=1.9.0b17
 author=Henrik Spångmyr, Josef Källgården
 email=midvattenplugin@midvatten.se
 repository=https://github.com/henrikspa/qgis-midvatten-plugin.git
@@ -23,6 +23,8 @@ hasProcessingProvider=no
 supportsQt6=True
 
 changelog=
+        Version 1.9.0b17:
+          - SectionPlot: Profile line layers without an obsid column are now supported; tem_data, profile_images and seismic data are silently skipped and the x-axis label falls back to the template default.
         Version 1.9.0b16:
           - ExportCSV: Replaced folder-picker with a dialog that also offers a checkbox to convert HTML rich-text fields (com_html) to plain text before writing (default on); fixes broken rows in Excel/LibreOffice.
           - Database: Added diam_inner and diam_outer columns to the screen table.

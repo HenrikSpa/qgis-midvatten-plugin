@@ -58,8 +58,8 @@ def fill_tem(ui, ms, dbconnection, line_feature=None):
     if line_feature is None:
         return
 
-    obsid = get_line_feature_obsid(line_feature)
-    if obsid is None:
+    line_obsid = get_line_feature_obsid(line_feature)
+    if line_obsid is None:
         return
 
     tables = db_utils.get_tables()
@@ -74,7 +74,7 @@ def fill_tem(ui, ms, dbconnection, line_feature=None):
 
     res = dbconnection.execute_and_fetchall(
         f"SELECT DISTINCT inversion_name FROM tem_data WHERE obsid = {dbconnection.placeholder()}",
-        args=(obsid,),
+        args=(line_obsid,),
     )
     if res:
         ui.tem_model_name.addItems([x[0] for x in res])
@@ -96,8 +96,8 @@ def fill_images(ui, ms, dbconnection, line_feature):
     if line_feature is None:
         return
 
-    obsid = get_line_feature_obsid(line_feature)
-    if obsid is None:
+    line_obsid = get_line_feature_obsid(line_feature)
+    if line_obsid is None:
         return
 
     tables = db_utils.get_tables()
@@ -117,7 +117,7 @@ def fill_images(ui, ms, dbconnection, line_feature):
 
     res = dbconnection.execute_and_fetchall(
         f"SELECT alias FROM profile_images WHERE obsid = {dbconnection.placeholder()}",
-        args=(obsid,),
+        args=(line_obsid,),
     )
     if res:
         ui.images_images.addItems([x[0] for x in sorted(res)])

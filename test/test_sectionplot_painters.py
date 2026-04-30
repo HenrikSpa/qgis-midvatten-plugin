@@ -10,6 +10,7 @@ import pytest
 from unittest import mock
 
 from midvatten.definitions import midvatten_defs as defs
+from midvatten.tools.sectionplot.data import get_line_feature_obsid
 from midvatten.tools.sectionplot.figure import SectionPlotFigure
 from midvatten.tools.sectionplot.painters import (
     _qgis_color_str_to_mpl,
@@ -420,28 +421,20 @@ class TestPaintObsids:
 
 class TestGetLineFeatureObsid:
     def test_returns_none_when_feature_is_none(self):
-        from midvatten.tools.sectionplot.data import get_line_feature_obsid
-
         assert get_line_feature_obsid(None) is None
 
     def test_returns_none_when_field_missing(self):
-        from midvatten.tools.sectionplot.data import get_line_feature_obsid
-
         feat = mock.Mock()
         feat.fields.return_value.indexOf.return_value = -1
         assert get_line_feature_obsid(feat) is None
 
     def test_returns_obsid_string_when_present(self):
-        from midvatten.tools.sectionplot.data import get_line_feature_obsid
-
         feat = mock.Mock()
         feat.fields.return_value.indexOf.return_value = 0
         feat.attribute.return_value = "BH001"
         assert get_line_feature_obsid(feat) == "BH001"
 
     def test_returns_none_when_obsid_is_null(self):
-        from midvatten.tools.sectionplot.data import get_line_feature_obsid
-
         feat = mock.Mock()
         feat.fields.return_value.indexOf.return_value = 0
         feat.attribute.return_value = None

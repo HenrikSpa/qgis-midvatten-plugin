@@ -28,6 +28,7 @@ from qgis.core import QgsProject, QgsVectorLayer
 
 from midvatten.test import utils_for_tests
 from midvatten.tools.sectionplot import get_legend_items_labels
+from midvatten.tools.sectionplot._ui_fill import fill_images, fill_tem
 from midvatten.tools.utils import db_utils, gui_utils
 from midvatten.tools.utils.string_utils import anything_to_string_representation
 
@@ -991,11 +992,9 @@ class TestFillTemNoObsid:
     def test_fill_tem_skips_db_query_when_no_obsid_field(self):
         """fill_tem must not query the DB when the line feature has no obsid column.
 
-        The test makes tem_data appear to exist so the only early-return that
-        fires is the obsid guard, not the table-missing check.
+        tem_data is made to appear present so the only early-return is the
+        obsid guard, not the table-missing check.
         """
-        from midvatten.tools.sectionplot._ui_fill import fill_tem
-
         ui = mock.Mock()
         ms = mock.Mock()
         ms.settingsdict = {}
@@ -1014,11 +1013,9 @@ class TestFillImagesNoObsid:
     def test_fill_images_skips_db_query_when_no_obsid_field(self):
         """fill_images must not query the DB when the line feature has no obsid column.
 
-        The test makes profile_images appear to exist so the only early-return
-        that fires is the obsid guard, not the table-missing check.
+        profile_images is made to appear present so the only early-return is
+        the obsid guard, not the table-missing check.
         """
-        from midvatten.tools.sectionplot._ui_fill import fill_images
-
         ui = mock.Mock()
         ms = mock.Mock()
         ms.settingsdict = {}

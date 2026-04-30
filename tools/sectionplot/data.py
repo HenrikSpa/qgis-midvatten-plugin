@@ -22,11 +22,7 @@ from midvatten.tools.utils.string_utils import returnunicode as ru
 
 
 def get_line_feature_obsid(line_feature) -> Optional[str]:
-    """Return the obsid of a line feature, or None if absent or NULL.
-
-    Use this instead of calling ``line_feature.attribute("obsid")`` directly
-    to allow profile line layers that have no obsid column.
-    """
+    """Return the obsid of a line feature, or None if absent or NULL."""
     if line_feature is None:
         return None
     if line_feature.fields().indexOf("obsid") < 0:

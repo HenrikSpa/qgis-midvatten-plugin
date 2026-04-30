@@ -980,3 +980,54 @@ class TestSectionPlotSpatialite(
     SectionPlotMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass
+
+
+# ---------------------------------------------------------------------------
+# fill_tem / fill_images — no-obsid guard (unit tests, no DB needed)
+# ---------------------------------------------------------------------------
+
+
+class TestFillTemNoObsid:
+    def test_fill_tem_skips_db_query_when_no_obsid_field(self):
+        """fill_tem must not query the DB when the line feature has no obsid column.
+
+        The test makes tem_data appear to exist so the only early-return that
+        fires is the obsid guard, not the table-missing check.
+        """
+        from midvatten.tools.sectionplot._ui_fill import fill_tem
+
+        ui = mock.Mock()
+        ms = mock.Mock()
+        ms.settingsdict = {}
+        dbconnection = mock.Mock()
+        feat = mock.Mock()
+        feat.fields.return_value.indexOf.return_value = -1
+
+        with mock.patch("midvatten.tools.sectionplot._ui_fill.db_utils") as mock_db:
+            mock_db.get_tables.return_value = ["tem_data"]
+            fill_tem(ui, ms, dbconnection, feat)
+
+        dbconnection.execute_and_fetchall.assert_not_called()
+
+
+class TestFillImagesNoObsid:
+    def test_fill_images_skips_db_query_when_no_obsid_field(self):
+        """fill_images must not query the DB when the line feature has no obsid column.
+
+        The test makes profile_images appear to exist so the only early-return
+        that fires is the obsid guard, not the table-missing check.
+        """
+        from midvatten.tools.sectionplot._ui_fill import fill_images
+
+        ui = mock.Mock()
+        ms = mock.Mock()
+        ms.settingsdict = {}
+        dbconnection = mock.Mock()
+        feat = mock.Mock()
+        feat.fields.return_value.indexOf.return_value = -1
+
+        with mock.patch("midvatten.tools.sectionplot._ui_fill.db_utils") as mock_db:
+            mock_db.get_tables.return_value = ["profile_images"]
+            fill_images(ui, ms, dbconnection, feat)
+
+        dbconnection.execute_and_fetchall.assert_not_called()

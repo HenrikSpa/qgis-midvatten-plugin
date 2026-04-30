@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import QgsProject
 
+from midvatten.tools.sectionplot.data import get_line_feature_obsid
 from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.gui_utils import set_combobox
 from midvatten.tools.utils.string_utils import returnunicode as ru
@@ -57,6 +58,10 @@ def fill_tem(ui, ms, dbconnection, line_feature=None):
     if line_feature is None:
         return
 
+    obsid = get_line_feature_obsid(line_feature)
+    if obsid is None:
+        return
+
     tables = db_utils.get_tables()
     if "tem_data" not in tables:
         ui.tem_model_name.setToolTip(
@@ -67,7 +72,6 @@ def fill_tem(ui, ms, dbconnection, line_feature=None):
         )
         return
 
-    obsid = line_feature.attribute("obsid")
     res = dbconnection.execute_and_fetchall(
         f"SELECT DISTINCT inversion_name FROM tem_data WHERE obsid = {dbconnection.placeholder()}",
         args=(obsid,),
@@ -92,6 +96,10 @@ def fill_images(ui, ms, dbconnection, line_feature):
     if line_feature is None:
         return
 
+    obsid = get_line_feature_obsid(line_feature)
+    if obsid is None:
+        return
+
     tables = db_utils.get_tables()
     if "profile_images" not in tables:
         ui.images_images.addItem(
@@ -107,7 +115,6 @@ def fill_images(ui, ms, dbconnection, line_feature):
         )
         return
 
-    obsid = line_feature.attribute("obsid")
     res = dbconnection.execute_and_fetchall(
         f"SELECT alias FROM profile_images WHERE obsid = {dbconnection.placeholder()}",
         args=(obsid,),

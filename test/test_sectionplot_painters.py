@@ -13,7 +13,7 @@ from midvatten.definitions import midvatten_defs as defs
 from midvatten.tools.sectionplot.figure import SectionPlotFigure
 from midvatten.tools.sectionplot.painters import (
     _qgis_color_str_to_mpl,
-    configure_axes,
+    finish_plot,
     paint_bars,
     paint_drill_stop,
     paint_images,
@@ -449,7 +449,7 @@ class TestGetLineFeatureObsid:
 
 
 # ---------------------------------------------------------------------------
-# paint_tem / paint_images / configure_axes — no-obsid guard
+# paint_tem / paint_images / finish_plot — no-obsid guard
 # ---------------------------------------------------------------------------
 
 
@@ -489,14 +489,22 @@ class TestPaintImagesNoObsid:
             "secplot_images_zorder": "5",
             "secplot_images_clip": True,
         }
-        template = defs.secplot_default_template()
 
-        paint_images(fig, dbconnection, settingsdict, template)
+        with mock.patch("midvatten.tools.sectionplot.painters.db_utils") as mock_db:
+            mock_db.get_tables.return_value = ["profile_images"]
+            paint_images(fig, dbconnection, settingsdict)
 
         dbconnection.execute_and_fetchall.assert_not_called()
 
 
-class TestConfigureAxesObsid:
+def _finish_plot_template():
+    """Return a finish_plot-compatible template with no deprecated grid kwargs."""
+    t = defs.secplot_default_template()
+    t["grid_Axes_grid"] = {"visible": True, "color": "0.65", "linestyle": "-", "which": "both"}
+    return t
+
+
+class TestFinishPlotObsid:
     def test_xlabel_has_no_none_when_obsid_missing(self):
         """x-axis label must not include 'None' when line_feature has no obsid."""
         fig = _make_figure()
@@ -506,8 +514,7 @@ class TestConfigureAxesObsid:
         fig.line_feature = feat
         fig.obsids_x_position = {"BH001": 10.0, "BH002": 20.0}
 
-        template = defs.secplot_default_template()
-        configure_axes(fig, template, legend_manager=None)
+        finish_plot(fig, _finish_plot_template(), legend_manager=None)
 
         xlabel = fig.ax_main.get_xlabel()
         assert "None" not in xlabel
@@ -523,8 +530,7 @@ class TestConfigureAxesObsid:
         fig.line_feature = feat
         fig.obsids_x_position = {"BH001": 10.0}
 
-        template = defs.secplot_default_template()
-        configure_axes(fig, template, legend_manager=None)
+        finish_plot(fig, _finish_plot_template(), legend_manager=None)
 
         xlabel = fig.ax_main.get_xlabel()
         assert "PROFILE_A" in xlabel

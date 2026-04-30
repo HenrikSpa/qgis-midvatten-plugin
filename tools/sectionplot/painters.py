@@ -39,8 +39,9 @@ from midvatten.tools.sectionplot._utils import (
 from midvatten.tools.utils.exceptions import UsageError
 from midvatten.tools.utils.sampledem import qchain, sampling
 from midvatten.tools.sectionplot.data import (
-    get_length_map,
     fill_empty_columns,
+    get_length_map,
+    get_line_feature_obsid,
 )
 
 log = logging.getLogger(__name__)
@@ -785,12 +786,16 @@ def paint_tem(
     if "tem_data" not in tables:
         return
 
+    line_obsid = get_line_feature_obsid(figure.line_feature)
+    if line_obsid is None:
+        return
+
     df = pd.read_sql(
         f"""SELECT length, thickness, resistivity, elevation, doi, data_fit FROM tem_data WHERE inversion_name = {dbconnection.placeholder()} AND obsid = {dbconnection.placeholder()} ORDER BY length;""",
         dbconnection.conn,
         params=(
             settingsdict["secplot_tem_model_name"],
-            figure.line_feature.attribute("obsid"),
+            line_obsid,
         ),
     )
 
@@ -1021,11 +1026,15 @@ def paint_images(
     if not settingsdict["secplot_images_images"]:
         return
 
+    line_obsid = get_line_feature_obsid(figure.line_feature)
+    if line_obsid is None:
+        return
+
     labels = []
 
     res = dbconnection.execute_and_fetchall(
         f"SELECT alias, path, clip_left_right_top_bottom, extent_left_right_top_bottom FROM profile_images WHERE obsid = {dbconnection.placeholder()}",
-        args=(figure.line_feature.attribute("obsid"),),
+        args=(line_obsid,),
     )
 
     alphas = [
@@ -1370,8 +1379,10 @@ def finish_plot(
             "xlabel", defs.secplot_default_template()["Axes_set_xlabel"]["xlabel"]
         )
     if figure.line_layer:
-        xlabel += f" {figure.line_feature.attribute('obsid')}"
-        figure.figname = figure.line_feature.attribute("obsid")
+        line_obsid = get_line_feature_obsid(figure.line_feature)
+        if line_obsid:
+            xlabel += f" {line_obsid}"
+            figure.figname = line_obsid
     figure.ax_main.set_xlabel(
         xlabel, **axes_set_xlabel
     )  # Allows international characters ('åäö') as xlabel

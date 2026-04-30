@@ -9,14 +9,18 @@ import matplotlib.pyplot as plt
 import pytest
 from unittest import mock
 
+from midvatten.definitions import midvatten_defs as defs
 from midvatten.tools.sectionplot.figure import SectionPlotFigure
 from midvatten.tools.sectionplot.painters import (
     _qgis_color_str_to_mpl,
+    configure_axes,
     paint_bars,
     paint_drill_stop,
+    paint_images,
     paint_layer_text,
     paint_obsids,
     paint_screen_bars,
+    paint_tem,
 )
 
 
@@ -407,3 +411,120 @@ class TestPaintObsids:
 
         print(f"{mock_messagebar.mock_calls=}")
         assert len(fig.plot_handles) == 0
+
+
+# ---------------------------------------------------------------------------
+# get_line_feature_obsid helper
+# ---------------------------------------------------------------------------
+
+
+class TestGetLineFeatureObsid:
+    def test_returns_none_when_feature_is_none(self):
+        from midvatten.tools.sectionplot.data import get_line_feature_obsid
+
+        assert get_line_feature_obsid(None) is None
+
+    def test_returns_none_when_field_missing(self):
+        from midvatten.tools.sectionplot.data import get_line_feature_obsid
+
+        feat = mock.Mock()
+        feat.fields.return_value.indexOf.return_value = -1
+        assert get_line_feature_obsid(feat) is None
+
+    def test_returns_obsid_string_when_present(self):
+        from midvatten.tools.sectionplot.data import get_line_feature_obsid
+
+        feat = mock.Mock()
+        feat.fields.return_value.indexOf.return_value = 0
+        feat.attribute.return_value = "BH001"
+        assert get_line_feature_obsid(feat) == "BH001"
+
+    def test_returns_none_when_obsid_is_null(self):
+        from midvatten.tools.sectionplot.data import get_line_feature_obsid
+
+        feat = mock.Mock()
+        feat.fields.return_value.indexOf.return_value = 0
+        feat.attribute.return_value = None
+        assert get_line_feature_obsid(feat) is None
+
+
+# ---------------------------------------------------------------------------
+# paint_tem / paint_images / configure_axes — no-obsid guard
+# ---------------------------------------------------------------------------
+
+
+class TestPaintTemNoObsid:
+    def test_paint_tem_skips_when_no_obsid(self):
+        """paint_tem must not crash or query DB when line_feature has no obsid."""
+        fig = _make_figure()
+        fig.line_layer = mock.Mock()
+        feat = mock.Mock()
+        feat.fields.return_value.indexOf.return_value = -1
+        fig.line_feature = feat
+
+        dbconnection = mock.Mock()
+        settingsdict = {"secplot_tem_model_name": "model1"}
+        template = defs.secplot_default_template()
+
+        with mock.patch("midvatten.tools.sectionplot.painters.db_utils") as mock_db:
+            mock_db.get_tables.return_value = ["tem_data"]
+            paint_tem(fig, dbconnection, settingsdict, template)
+
+        dbconnection.conn.cursor.assert_not_called()
+
+
+class TestPaintImagesNoObsid:
+    def test_paint_images_skips_when_no_obsid(self):
+        """paint_images must not call DB when line_feature has no obsid."""
+        fig = _make_figure()
+        fig.line_layer = mock.Mock()
+        feat = mock.Mock()
+        feat.fields.return_value.indexOf.return_value = -1
+        fig.line_feature = feat
+
+        dbconnection = mock.Mock()
+        settingsdict = {
+            "secplot_images_images": '["img1"]',
+            "secplot_images_alpha": "1.0",
+            "secplot_images_zorder": "5",
+            "secplot_images_clip": True,
+        }
+        template = defs.secplot_default_template()
+
+        paint_images(fig, dbconnection, settingsdict, template)
+
+        dbconnection.execute_and_fetchall.assert_not_called()
+
+
+class TestConfigureAxesObsid:
+    def test_xlabel_has_no_none_when_obsid_missing(self):
+        """x-axis label must not include 'None' when line_feature has no obsid."""
+        fig = _make_figure()
+        fig.line_layer = mock.Mock()
+        feat = mock.Mock()
+        feat.fields.return_value.indexOf.return_value = -1
+        fig.line_feature = feat
+        fig.obsids_x_position = {"BH001": 10.0, "BH002": 20.0}
+
+        template = defs.secplot_default_template()
+        configure_axes(fig, template, legend_manager=None)
+
+        xlabel = fig.ax_main.get_xlabel()
+        assert "None" not in xlabel
+        assert "none" not in xlabel.lower()
+
+    def test_xlabel_includes_obsid_when_present(self):
+        """x-axis label includes the profile line obsid when present."""
+        fig = _make_figure()
+        fig.line_layer = mock.Mock()
+        feat = mock.Mock()
+        feat.fields.return_value.indexOf.return_value = 0
+        feat.attribute.return_value = "PROFILE_A"
+        fig.line_feature = feat
+        fig.obsids_x_position = {"BH001": 10.0}
+
+        template = defs.secplot_default_template()
+        configure_axes(fig, template, legend_manager=None)
+
+        xlabel = fig.ax_main.get_xlabel()
+        assert "PROFILE_A" in xlabel

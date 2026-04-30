@@ -9,6 +9,7 @@ independently testable.
 
 import traceback
 from operator import itemgetter
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -18,6 +19,19 @@ from qgis.PyQt.QtCore import QCoreApplication
 from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.db_utils.dialect import ident
 from midvatten.tools.utils.string_utils import returnunicode as ru
+
+
+def get_line_feature_obsid(line_feature) -> Optional[str]:
+    """Return the obsid of a line feature, or None if absent or NULL.
+
+    Use this instead of calling ``line_feature.attribute("obsid")`` directly
+    to allow profile line layers that have no obsid column.
+    """
+    if line_feature is None:
+        return None
+    if line_feature.fields().indexOf("obsid") < 0:
+        return None
+    return ru(line_feature.attribute("obsid")) or None
 
 
 def prepare_obsid_positions(
@@ -392,13 +406,16 @@ def get_plot_data_seismic(line_layer, line_feature, dbconnection=None):
     y3_column = SEISMIC_Y3_COLUMN
     table = "seismic_data"
     if line_layer and line_layer.name() == "obs_lines":
+        line_obsid = get_line_feature_obsid(line_feature)
+        if line_obsid is None:
+            return None
         sql = (
             f"SELECT {ident(x)} AS x, {ident(y1_column)} AS y1,"
             f" {ident(y2_column)} AS y2, {ident(y3_column)} AS y3"
             f" FROM {ident(table)} WHERE obsid={dbconnection.placeholder()}"
         )
         recs = dbconnection.execute_and_fetchall(
-            sql, args=(line_feature.attribute("obsid"),)
+            sql, args=(line_obsid,)
         )
         table = np.array(recs, dtype=my_format)
         obs_lines_plot_data = table.view(np.recarray)

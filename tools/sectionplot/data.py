@@ -414,9 +414,7 @@ def get_plot_data_seismic(line_layer, line_feature, dbconnection=None):
             f" {ident(y2_column)} AS y2, {ident(y3_column)} AS y3"
             f" FROM {ident(table)} WHERE obsid={dbconnection.placeholder()}"
         )
-        recs = dbconnection.execute_and_fetchall(
-            sql, args=(line_obsid,)
-        )
+        recs = dbconnection.execute_and_fetchall(sql, args=(line_obsid,))
         table = np.array(recs, dtype=my_format)
         obs_lines_plot_data = table.view(np.recarray)
         return obs_lines_plot_data

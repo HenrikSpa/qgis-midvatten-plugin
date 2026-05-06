@@ -730,7 +730,8 @@ class Midvatten:
         try:  # if midvsettingsdock is shown, then it must be reloaded
             self.midvsettingsdialog.activateWindow()
             self.midvsettingsdialog.clear_everything()
-            self.midvsettingsdialog.select_last_settings()
+            if len(self.ms.settingsdict["database"]) > 0:
+                self.midvsettingsdialog.select_last_settings()
         except Exception:
             pass
         midvatten_utils.warn_about_old_database()

@@ -25,6 +25,7 @@ supportsQt6=True
 changelog=
         Version 1.9.0b19:
           - CSV Import: Replaced modal popup after file load with progressive disclosure; the table selector is now in the left panel, disabled until data is loaded.
+          - Stratsymbology: Aligned layer text to halv the layer instead of top.
         Version 1.9.0b18:
           - Settings: Fixed spurious "Database setting was empty" error when opening a new project from template without having selected a database.
         Version 1.9.0b17:

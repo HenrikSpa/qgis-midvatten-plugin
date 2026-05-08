@@ -175,7 +175,6 @@ class StrataInfo:
 class SurveyStore:
     def __init__(self, stratitable):
         self.stratitable = stratitable
-        self.warning_popup = True
 
     def get_data(
         self, feature_ids, vectorlayer
@@ -220,6 +219,7 @@ class SurveyStore:
                 obsid_list = [None] * n_f  # List for obsid
                 toplvl_list = [None] * n_f  # List for top_lvl
                 coord_list = [None] * n_f  # List for coordinates
+                fallback_obsids: list[str] = []
                 for i, feature in enumerate(
                     ob
                 ):  # Loop through all selected objects, a plot is added for each one of the observation points (i.e. selected objects)
@@ -230,46 +230,19 @@ class SurveyStore:
                     )
                     h_gs = ru(attributes[h_gs_col_no])
                     level_val = None
-                    error_msg = False
                     if h_gs:
                         try:
                             level_val = float(h_gs)
-                        except ValueError:
-                            error_msg = QCoreApplication.translate(
-                                "Stratigraphy", "Converting to float failed."
-                            )
-
-                        except Exception as e:
-                            error_msg = e
+                        except Exception:
+                            pass
                     if level_val is None:
                         h_toc = ru(attributes[h_toc_col_no])
                         try:
                             level_val = float(h_toc)
                         except (TypeError, ValueError):
-                            using = "-1"
                             level_val = -1
-                        else:
-                            using = "h_toc"
 
-                        common_utils.MessagebarAndLog.warning(
-                            bar_msg=QCoreApplication.translate(
-                                "Stratigraphy",
-                                "Obsid %s: using h_gs '%s' failed, using '%s' instead.",
-                            )
-                            % (obsid, h_gs, using),
-                            log_msg=QCoreApplication.translate("Stratigraphy", "%s")
-                            % error_msg,
-                            duration=90,
-                        )
-
-                        if self.warning_popup:
-                            common_utils.pop_up_info(
-                                QCoreApplication.translate(
-                                    "Stratigraphy",
-                                    "Warning, h_gs is missing. See messagebar.",
-                                )
-                            )
-                            self.warning_popup = False
+                        fallback_obsids.append(obsid)
                     toplvl_list[i] = level_val
                     coord_list[i] = feature.geometry().asPoint()
 
@@ -284,6 +257,19 @@ class SurveyStore:
                     # add to array
                     surveys[obsid_list[i]] = SurveyInfo(
                         obsid_list[i], toplvl_list[i], coord_list[i], length=length
+                    )
+                if fallback_obsids:
+                    common_utils.MessagebarAndLog.info(
+                        bar_msg=QCoreApplication.translate(
+                            "Stratigraphy",
+                            "%s obsids: h_gs missing, used h_toc or -1 instead.",
+                        )
+                        % len(fallback_obsids),
+                        log_msg=QCoreApplication.translate(
+                            "Stratigraphy",
+                            "Obsids where h_gs was missing: %s",
+                        )
+                        % ", ".join(fallback_obsids),
                     )
         else:
             common_utils.pop_up_info(

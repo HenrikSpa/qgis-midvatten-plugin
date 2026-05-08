@@ -811,7 +811,7 @@ class SectionPlotMixin:
             str(self.sectionplot.figure.obsid_annotation)
             == """{'P1': (0.0, 50.0), 'P3': (3.0, 90.0), 'P2': (1.0, 183.0)}"""
         )
-        assert mock_messagebar.warning.called
+        assert mock_messagebar.info.called
         assert not mock_messagebar.critical.called
 
     @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
@@ -861,24 +861,12 @@ class SectionPlotMixin:
         print(f"{mock_messagebar.mock_calls=}")
         print(str(self.sectionplot.figure.plot_handles))
 
-        pattern_obsids = {
-            """Obsid {}: using h_gs '[0-9None]+' failed, using 'h_toc' instead.""": [
-                "P1"
-            ],
-            """Obsid {}: using h_gs None or h_toc None failed, using 0 instead.""": [
-                "P2"
-            ],
-        }
-        for p in ["P1", "P2", "P3"]:
-            for pattern, obsids in pattern_obsids.items():
-                patt = pattern.format(p)
-                m = re.findall(patt, str(mock_messagebar.mock_calls))
-                print(str(m))
-                print(patt)
-                if p in obsids:
-                    assert m
-                else:
-                    assert not m
+        assert mock_messagebar.info.called
+        info_calls = str(mock_messagebar.info.mock_calls)
+        assert "P1" in info_calls
+        assert "P2" in info_calls
+        assert "h_toc" in info_calls
+        assert "used 0" in info_calls
 
     @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
     def test_plot_section_detach_fig(self, mock_messagebar):

@@ -149,6 +149,8 @@ def get_z_data(obsids_x_position: dict, dbconnection=None) -> dict:
     Returns a dict ``{obsid: {"z": float, "barheight": float, "bottom": float}}``.
     """
     z_data = {}
+    fallback_htoc: list[str] = []
+    fallback_zero: list[str] = []
     for obs in obsids_x_position.keys():
         sql = f"SELECT h_toc, h_gs, length FROM obs_points WHERE obsid = {dbconnection.placeholder()}"
         recs = dbconnection.execute_and_fetchall(sql, (obs,))
@@ -157,22 +159,10 @@ def get_z_data(obsids_x_position: dict, dbconnection=None) -> dict:
             z = h_gs
         elif common_utils.isfloat(str(h_toc)) and h_toc > -999:
             z = h_toc
-            common_utils.MessagebarAndLog.warning(
-                bar_msg=QCoreApplication.translate(
-                    "SectionPlot",
-                    "Obsid %s: using h_gs '%s' failed, using '%s' instead.",
-                )
-                % (obs, str(h_gs), "h_toc")
-            )
+            fallback_htoc.append(obs)
         else:
             z = 0
-            common_utils.MessagebarAndLog.warning(
-                bar_msg=QCoreApplication.translate(
-                    "SectionPlot",
-                    "Obsid %s: using h_gs %s or h_toc %s failed, using 0 instead.",
-                )
-                % (obs, str(h_gs), str(h_toc))
-            )
+            fallback_zero.append(obs)
 
         if common_utils.isfloat(str(length)):
             barheight = length
@@ -182,6 +172,33 @@ def get_z_data(obsids_x_position: dict, dbconnection=None) -> dict:
         bottom = z - barheight
 
         z_data[obs] = {"z": z, "barheight": barheight, "bottom": bottom}
+
+    if fallback_htoc:
+        common_utils.MessagebarAndLog.info(
+            bar_msg=QCoreApplication.translate(
+                "SectionPlot",
+                "%s obsids: h_gs missing, used h_toc instead.",
+            )
+            % len(fallback_htoc),
+            log_msg=QCoreApplication.translate(
+                "SectionPlot",
+                "Obsids using h_toc instead of h_gs: %s",
+            )
+            % ", ".join(fallback_htoc),
+        )
+    if fallback_zero:
+        common_utils.MessagebarAndLog.info(
+            bar_msg=QCoreApplication.translate(
+                "SectionPlot",
+                "%s obsids: both h_gs and h_toc missing, used 0.",
+            )
+            % len(fallback_zero),
+            log_msg=QCoreApplication.translate(
+                "SectionPlot",
+                "Obsids using 0 instead of h_gs/h_toc: %s",
+            )
+            % ", ".join(fallback_zero),
+        )
 
     return z_data
 

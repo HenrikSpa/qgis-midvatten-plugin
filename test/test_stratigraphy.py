@@ -355,24 +355,14 @@ class StratigraphyMixin:
             common_utils.returnunicode(dlg.data["1"].strata, keep_containers=True)
         )
 
-        assert len(mock_skippopup.mock_calls) == 1
+        assert len(mock_skippopup.mock_calls) == 0
         print(str(mock_skippopup.mock_calls))
         print(f"{mock_messagebar.mock_calls=}")
-        assert mock_skippopup.mock_calls == [
-            mock.call("Warning, h_gs is missing. See messagebar.")
-        ]
-        assert mock_messagebar.mock_calls == [
-            mock.call.warning(
-                bar_msg="Obsid 2: using h_gs '' failed, using 'h_toc' instead.",
-                duration=90,
-                log_msg="False",
-            ),
-            mock.call.warning(
-                bar_msg="Obsid 3: using h_gs '' failed, using '-1' instead.",
-                duration=90,
-                log_msg="False",
-            ),
-        ]
+        assert mock_messagebar.info.called
+        info_calls = str(mock_messagebar.info.mock_calls)
+        assert "2" in info_calls
+        assert "3" in info_calls
+        assert "h_gs" in info_calls
         print("test: " + test)
         print(test)
         assert (

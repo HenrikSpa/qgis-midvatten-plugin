@@ -88,7 +88,9 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
             wll_cols.append((next_idx, "source", "TEXT", 0, None, 0))
             self.tables_columns_info["w_levels_logger"] = wll_cols
         self.table_chooser = ImportTableChooser(
-            self.tables_columns_info, file_header=None
+            self.tables_columns_info,
+            file_header=None,
+            embed_chooser_in_layout=False,
         )
         self.main_vertical_layout.addWidget(self.table_chooser.widget)
         self.main_vertical_layout.addStretch()
@@ -121,13 +123,16 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
             lambda x: self.import_selected_features()
         )
 
-        self.grid_layout_buttons.addWidget(get_line(), 3, 0)
+        self.grid_layout_buttons.addWidget(self.table_chooser.chooser_widget, 3, 0)
+        self.table_chooser.set_chooser_enabled(False)
+
+        self.grid_layout_buttons.addWidget(get_line(), 4, 0)
 
         tables_columns = db_utils.tables_columns()
         self.distinct_value_browser = DistinctValuesBrowser(tables_columns)
-        self.grid_layout_buttons.addWidget(self.distinct_value_browser.widget, 4, 0)
+        self.grid_layout_buttons.addWidget(self.distinct_value_browser.widget, 5, 0)
 
-        self.grid_layout_buttons.addWidget(get_line(), 5, 0)
+        self.grid_layout_buttons.addWidget(get_line(), 6, 0)
 
         self.close_after_import = qgis.PyQt.QtWidgets.QCheckBox(
             QCoreApplication.translate(
@@ -135,36 +140,36 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
             )
         )
         self.close_after_import.setChecked(True)
-        self.grid_layout_buttons.addWidget(self.close_after_import, 6, 0)
+        self.grid_layout_buttons.addWidget(self.close_after_import, 7, 0)
 
         self.start_import_button = qgis.PyQt.QtWidgets.QPushButton(
             QCoreApplication.translate("GeneralCsvImportGui", "Start import")
         )
-        self.grid_layout_buttons.addWidget(self.start_import_button, 7, 0)
+        self.grid_layout_buttons.addWidget(self.start_import_button, 8, 0)
         self.start_import_button.clicked.connect(lambda x: self.start_import())
 
-        self.grid_layout_buttons.setRowStretch(8, 1)
+        self.grid_layout_buttons.setRowStretch(9, 1)
         self.setGeometry(100, 100, 1800, 800)
 
     @common_utils.general_exception_handler
     def select_file(self):
         self.load_files()
         self.table_chooser.reload()
-        self.file_data_loaded_popup()
+        self._on_file_data_loaded()
 
     @common_utils.general_exception_handler
     @common_utils.waiting_cursor
     def import_all_features(self):
         self.load_from_active_layer(only_selected=False)
         self.table_chooser.reload()
-        self.file_data_loaded_popup()
+        self._on_file_data_loaded()
 
     @common_utils.general_exception_handler
     @common_utils.waiting_cursor
     def import_selected_features(self):
         self.load_from_active_layer(only_selected=True)
         self.table_chooser.reload()
-        self.file_data_loaded_popup()
+        self._on_file_data_loaded()
 
     def load_files(self):
         charset = midvatten_utils.ask_for_charset()
@@ -219,7 +224,7 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
             self.file_data.reverse()
         common_utils.stop_waiting_cursor()
 
-    def file_data_loaded_popup(self):
+    def _on_file_data_loaded(self):
         if self.file_data is not None:
             for button in (
                 self.select_file_button,
@@ -227,12 +232,7 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
                 self.import_selected_features_button,
             ):
                 button.setEnabled(False)
-            common_utils.pop_up_info(
-                msg=QCoreApplication.translate(
-                    "GeneralCsvImportGui",
-                    "File data loaded. Select table to import to.",
-                )
-            )
+            self.table_chooser.set_chooser_enabled(True)
 
     @staticmethod
     def file_to_list(filename, charset, delimiter, quotechar='"'):
@@ -677,7 +677,12 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
 
 
 class ImportTableChooser(VRowEntry):
-    def __init__(self, tables_columns, file_header=None):
+    def __init__(
+        self,
+        tables_columns,
+        file_header=None,
+        embed_chooser_in_layout: bool = True,
+    ):
         super().__init__()
         self.tables_columns = tables_columns
         self.file_header = file_header
@@ -685,7 +690,7 @@ class ImportTableChooser(VRowEntry):
         self.grid = None
         self.numeric_datatypes = db_utils.numeric_datatypes()
 
-        chooser = RowEntry()
+        self.chooser_row = RowEntry()
 
         self.label = qgis.PyQt.QtWidgets.QLabel(
             QCoreApplication.translate("ImportTableChooser", "Import to table")
@@ -699,10 +704,11 @@ class ImportTableChooser(VRowEntry):
         self.__import_method.currentIndexChanged.connect(self.choose_method)
 
         for widget in [self.label, self.__import_method]:
-            chooser.layout.addWidget(widget)
-        chooser.layout.insertStretch(-1, 5)
+            self.chooser_row.layout.addWidget(widget)
+        self.chooser_row.layout.insertStretch(-1, 5)
 
-        self.layout.addWidget(chooser.widget)
+        if embed_chooser_in_layout:
+            self.layout.addWidget(self.chooser_row.widget)
 
         self.specific_info_widget = VRowEntry()
         self.specific_info_widget.layout.addWidget(get_line())
@@ -841,6 +847,14 @@ class ImportTableChooser(VRowEntry):
         import_method = self.import_method
         self.import_method = ""
         self.import_method = import_method
+
+    @property
+    def chooser_widget(self):
+        return self.chooser_row.widget
+
+    def set_chooser_enabled(self, enabled: bool):
+        self.__import_method.setEnabled(enabled)
+        self.label.setEnabled(enabled)
 
 
 class ColumnEntry:

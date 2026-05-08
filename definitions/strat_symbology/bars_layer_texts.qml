@@ -79,12 +79,13 @@
                 </Option>
                 <Option type="Map" name="PositionY">
                   <Option type="bool" name="active" value="true"/>
-                  <Option type="QString" name="expression" value="Y($geometry) - ( &quot;depthtop&quot; ) /**{map_scale}*/ /**{yfactor}*/"/>
+                  <Option type="QString" name="expression"
+                          value="Y($geometry) - (( &quot;depthtop&quot; ) + (( &quot;depthbot&quot; ) - ( &quot;depthtop&quot; )) / 2) /**{map_scale}*/ /**{yfactor}*/"/>
                   <Option type="int" name="type" value="3"/>
                 </Option>
                 <Option type="Map" name="Vali">
                   <Option type="bool" name="active" value="true"/>
-                  <Option type="QString" name="expression" value="'Top'"/>
+                  <Option type="QString" name="expression" value="'Half'"/>
                   <Option type="int" name="type" value="3"/>
                 </Option>
               </Option>

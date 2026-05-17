@@ -55,6 +55,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         source_srid: Optional[int] = None,
         skip_confirmation: bool = False,
         binary_geometry: bool = False,
+        defer_commit: bool = False,
     ):
         """General method for importing a list of list to a table
 
@@ -201,7 +202,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             self._cleanup(dbconnection, _dbconnection, commit=False)
             raise
         else:
-            self._cleanup(dbconnection, _dbconnection, commit=True)
+            self._cleanup(dbconnection, _dbconnection, commit=not defer_commit)
 
     def _validate_and_connect(
         self,

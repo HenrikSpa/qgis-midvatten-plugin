@@ -10,7 +10,7 @@ from datetime import datetime as _datetime
 
 import qgis.PyQt
 import qgis.PyQt.QtWidgets as QtWidgets
-from qgis.PyQt.QtCore import QCoreApplication
+from qgis.PyQt.QtCore import QCoreApplication, Qt
 
 import pandas as pd  # pandas is a mandatory dependency of this plugin
 
@@ -70,7 +70,7 @@ class CheckboxAndExplanation(VRowEntry):
         self.checkbox.setChecked(check)
 
 
-# ── Dialog class ──────────────────────────────────────────────────────────────────────────────
+# ── Dialog class ──────────────────────────────────────────────────────────────
 
 
 class LoggerImport(BaseImporter, import_ui_dialog):
@@ -101,7 +101,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         super().show()
         self.activateWindow()
 
-    # ── GUI construction ─────────────────────────────────────────────────────────────────────
+    # ── GUI construction ─────────────────────────────────────────────────────
 
     def load_gui(self) -> None:
         # Format selector
@@ -435,7 +435,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         self.start_import_button.setEnabled(False)
         self.export_csv_button.setEnabled(False)
 
-    # ── File selection ─────────────────────────────────────────────────────────────────────
+    # ── File selection ───────────────────────────────────────────────────────
 
     @common_utils.general_exception_handler
     def select_files(self) -> None:
@@ -458,7 +458,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         self.start_import_button.setEnabled(True)
         self.export_csv_button.setEnabled(True)
 
-    # ── Import logic ───────────────────────────────────────────────────────────────────────
+    # ── Import logic ─────────────────────────────────────────────────────────
 
     @common_utils.general_exception_handler
     @import_data_to_db.import_exception_handler
@@ -482,7 +482,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             0,
             self,
         )
-        progress.setWindowModality(2)  # Qt.WindowModal
+        progress.setWindowModality(Qt.WindowModal)
         progress.setMinimumDuration(0)
         progress.show()
         QtWidgets.QApplication.processEvents()
@@ -500,12 +500,12 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         fallback_charset = "cp1252"
 
         try:
-            for selected_file in files:
+            for file_idx, selected_file in enumerate(files):
                 _progress_callback(
                     QCoreApplication.translate(
                         "LoggerImport", "Parsing file %s of %s..."
                     )
-                    % (files.index(selected_file) + 1, len(files))
+                    % (file_idx + 1, len(files))
                 )
                 filename = os.path.basename(selected_file)
 

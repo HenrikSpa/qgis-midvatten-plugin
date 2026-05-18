@@ -695,12 +695,9 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
     ) -> int:
         """Delete temp rows whose minute-level date_time already exists in dest.
 
-        Two date_times are considered duplicates when they fall in the same minute —
-        this prevents mixing series stored at different time resolutions
-        (e.g. minute-level logger data and second-level spot measurements).
-
-        Uses a correlated EXISTS so the destination PK index is used for each temp row
-        lookup instead of two full sequential table scans.
+        Two date_times are considered duplicates when they fall in the same minute.
+        Uses a range comparison on the destination side so the PK index on
+        (obsid, date_time) is used for each lookup instead of a full table scan.
         """
         pks_non_dt = [pk for pk in primary_keys if pk != "date_time"]
 
@@ -711,23 +708,18 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             else dbconnection.ident(dest_table)
         )
 
-        # SQLite does not support DELETE FROM table AS alias, so reference the outer
-        # table by its identifier in the correlated subquery.
-        # All PK columns are NOT NULL (PostgreSQL enforces this via the PK constraint;
-        # SQLite data follows the same invariant in practice), so plain = is sargable
-        # on the destination PK index and correctly handles all values.
         dt = dbconnection.ident("date_time")
-        date_eq = (
-            f"{dbconnection.truncate_to_minute_sql(f'd.{dt}')}"
-            f" = {dbconnection.truncate_to_minute_sql(f'{temp_ident}.{dt}')}"
-        )
+
+        minute_start = f"substr({temp_ident}.{dt}, 1, 16)"
+        minute_end = f"(substr({temp_ident}.{dt}, 1, 16) || ':60')"
 
         conditions = [
             f"d.{q} = {temp_ident}.{q}"
             for pk in pks_non_dt
             for q in (dbconnection.ident(pk),)
         ]
-        conditions.append(date_eq)
+        conditions.append(f"d.{dt} >= {minute_start}")
+        conditions.append(f"d.{dt} < {minute_end}")
 
         sql = (
             f"DELETE FROM {temp_ident} WHERE EXISTS ("

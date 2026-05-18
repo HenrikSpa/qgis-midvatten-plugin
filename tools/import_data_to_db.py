@@ -454,9 +454,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
 
         if len(remaining_rownumbers) == len(all_rownumbers):
             import_messages.append(
-                QCoreApplication.translate(
-                    "midv_data_importer", "Proceed with import?"
-                )
+                QCoreApplication.translate("midv_data_importer", "Proceed with import?")
             )
             self.foreign_keys_import_question = 1
         else:

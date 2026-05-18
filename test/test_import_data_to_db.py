@@ -2025,7 +2025,9 @@ class DeleteExistingDateTimesFromTemptableMixin:
         self.importinstance.general_import(dest_table="w_levels", file_data=f)
 
         test_string = utils_for_tests.create_test_string(
-            db_utils.sql_load_fr_db("""select obsid, date_time, level_masl from w_levels order by date_time""")
+            db_utils.sql_load_fr_db(
+                """select obsid, date_time, level_masl from w_levels order by date_time"""
+            )
         )
         reference_string = r"""(True, [(obsid1, 2016-01-01 00:00:01, 123.0), (obsid1, 2016-01-01 00:01:00, 789.0)])"""
         assert test_string == reference_string

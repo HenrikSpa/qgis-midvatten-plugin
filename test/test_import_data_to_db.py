@@ -292,6 +292,40 @@ class GeneralImportMixin:
         print(test_string)
         assert test_string == reference_string
 
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+    def test_skip_confirmation_suppresses_dialog_with_duplicates(
+        self, mock_askuser, mock_messagebar
+    ):
+        file = [
+            ("obsid", "date_time", "head_cm"),
+            ("rb1", "2016-03-15 10:30:00", "1"),
+            ("rb1", "2016-03-15 11:00:00", "2"),
+        ]
+
+        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb1')""")
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels_logger (obsid, date_time, head_cm) VALUES ('rb1', '2016-03-15 11:00:00', 3)"""
+        )
+
+        self.importinstance.general_import(
+            dest_table="w_levels_logger",
+            file_data=file,
+            skip_confirmation=True,
+        )
+
+        print(f"{mock_messagebar.mock_calls=}")
+        print(f"{mock_askuser.mock_calls=}")
+        mock_askuser.assert_not_called()
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                """select obsid, date_time, head_cm from w_levels_logger ORDER BY date_time ASC"""
+            )
+        )
+        reference_string = r"""(True, [(rb1, 2016-03-15 10:30:00, 1.0), (rb1, 2016-03-15 11:00:00, 3.0)])"""
+        assert test_string == reference_string
+
 
 class ImportObsPointsObsLinesMixin:
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")

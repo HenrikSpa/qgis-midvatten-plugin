@@ -54,6 +54,9 @@ Implementation:
   `dbconnection.is_postgresql()`.
 - The semantics are identical: two date_times are duplicates when they fall in
   the same calendar minute.
+- Assumes ISO 8601 format with fixed-width hour/minute fields (e.g.
+  `2026-05-18 14:30:00`). This matches how Midvatten stores all date_time
+  values.
 
 ### 2. Progress feedback during import
 
@@ -78,23 +81,33 @@ Add a `QProgressDialog` in the logger importer that reports phases to the user:
 - The logger importer provides a callback that updates the progress dialog label
   and calls `QApplication.processEvents()`.
 - If the progress dialog is cancelled, the callback raises `UserInterruptError`.
+- Cancel only takes effect at phase boundaries (between SQL statements). It
+  cannot interrupt a running SQLite query, so there may be a short delay.
 
 This keeps `MidvDataImporter` UI-agnostic (it just calls a function with a
 string) while giving the logger importer full control of the dialog.
 
-### 3. Skip FK confirmation for logger imports
+### 3. Skip confirmation dialog for logger imports
 
+**File:** `tools/import_data_to_db.py` — `_ask_user_to_proceed`
 **File:** `tools/import_logger/importer.py` — line 846
 
-Pass `skip_confirmation=True` to `general_import()`:
+The current `skip_confirmation=True` flag only suppresses the dialog when **no
+rows are removed**. When duplicates exist (the common case with large tables),
+the dialog still appears with "There are X out of Y rows to import."
 
+Fix: when `skip_confirmation=True`, suppress the dialog in **both** branches of
+`_ask_user_to_proceed` — log the skipped-row count to the message panel instead
+of showing a blocking dialog. The user can still see what happened in the log.
+
+In the logger importer, pass `skip_confirmation=True`:
 ```python
 importer.general_import("w_levels_logger", file_to_import_to_db, skip_confirmation=True)
 ```
 
 Rationale: the obsid is already validated and confirmed in the earlier
-`filter_nonexisting_values_and_ask` step. The "Foreign keys will be imported
-silently" dialog adds no value for logger imports and confuses users.
+`filter_nonexisting_values_and_ask` step. The confirmation dialog adds no value
+for logger imports and confuses users. Duplicate-row counts are still logged.
 
 ## Scope
 

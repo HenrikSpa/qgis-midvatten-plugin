@@ -17,6 +17,7 @@ import pandas as pd  # pandas is a mandatory dependency of this plugin
 from midvatten.tools import import_data_to_db
 from midvatten.tools.base_importer import BaseImporter
 from midvatten.tools.utils import common_utils, db_utils, midvatten_utils
+from midvatten.tools.utils.exceptions import UserInterruptError
 from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.common_utils import format_timezone_string
@@ -69,7 +70,7 @@ class CheckboxAndExplanation(VRowEntry):
         self.checkbox.setChecked(check)
 
 
-# ── Dialog class ──────────────────────────────────────────────────────────────
+# ── Dialog class ──────────────────────────────────────────────────────────────────────────────
 
 
 class LoggerImport(BaseImporter, import_ui_dialog):
@@ -100,7 +101,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         super().show()
         self.activateWindow()
 
-    # ── GUI construction ─────────────────────────────────────────────────────
+    # ── GUI construction ─────────────────────────────────────────────────────────────────────
 
     def load_gui(self) -> None:
         # Format selector
@@ -434,7 +435,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         self.start_import_button.setEnabled(False)
         self.export_csv_button.setEnabled(False)
 
-    # ── File selection ───────────────────────────────────────────────────────
+    # ── File selection ─────────────────────────────────────────────────────────────────────
 
     @common_utils.general_exception_handler
     def select_files(self) -> None:
@@ -457,7 +458,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         self.start_import_button.setEnabled(True)
         self.export_csv_button.setEnabled(True)
 
-    # ── Import logic ─────────────────────────────────────────────────────────
+    # ── Import logic ───────────────────────────────────────────────────────────────────────
 
     @common_utils.general_exception_handler
     @import_data_to_db.import_exception_handler
@@ -473,391 +474,444 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         import_to_db=True,
     ):
         common_utils.start_waiting_cursor()
+
+        progress = QtWidgets.QProgressDialog(
+            QCoreApplication.translate("LoggerImport", "Importing logger data..."),
+            QCoreApplication.translate("LoggerImport", "Cancel"),
+            0,
+            0,
+            self,
+        )
+        progress.setWindowModality(2)  # Qt.WindowModal
+        progress.setMinimumDuration(0)
+        progress.show()
+        QtWidgets.QApplication.processEvents()
+
+        def _progress_callback(msg: str) -> None:
+            if progress.wasCanceled():
+                raise UserInterruptError()
+            progress.setLabelText(msg)
+            QtWidgets.QApplication.processEvents()
+
         parsed_files = []
         format_name = self.format_combo.currentText()
 
         default_charset = "utf-8"
         fallback_charset = "cp1252"
 
-        for selected_file in files:
-            filename = os.path.basename(selected_file)
+        try:
+            for selected_file in files:
+                _progress_callback(
+                    QCoreApplication.translate(
+                        "LoggerImport", "Parsing file %s of %s..."
+                    )
+                    % (files.index(selected_file) + 1, len(files))
+                )
+                filename = os.path.basename(selected_file)
 
-            parse_kwargs = dict(
-                path=selected_file,
-                begindate=from_date,
-                enddate=to_date,
-            )
-            if format_name == self.FORMAT_DIVEROFFICE:
-                parse_func = (
-                    DiverOfficeParser.parse_old
-                    if selected_file.endswith(".csv")
-                    else DiverOfficeParser.parse
+                parse_kwargs = dict(
+                    path=selected_file,
+                    begindate=from_date,
+                    enddate=to_date,
                 )
-                parse_kwargs["skip_rows_without_water_level"] = (
-                    skip_rows_without_water_level
-                )
-            elif format_name == self.FORMAT_DIVEROFFICE_BARO:
-                parse_func = DiverOfficeBaroParser.parse
-            elif format_name == self.FORMAT_LEVELOGGER:
-                parse_func = LeveloggerParser.parse
-                parse_kwargs["skip_rows_without_water_level"] = (
-                    skip_rows_without_water_level
-                )
-            else:  # FORMAT_HOBO
-                parse_func = HoboParser.parse
-                parse_kwargs["tz_converter"] = self.tz_converter
+                if format_name == self.FORMAT_DIVEROFFICE:
+                    parse_func = (
+                        DiverOfficeParser.parse_old
+                        if selected_file.endswith(".csv")
+                        else DiverOfficeParser.parse
+                    )
+                    parse_kwargs["skip_rows_without_water_level"] = (
+                        skip_rows_without_water_level
+                    )
+                elif format_name == self.FORMAT_DIVEROFFICE_BARO:
+                    parse_func = DiverOfficeBaroParser.parse
+                elif format_name == self.FORMAT_LEVELOGGER:
+                    parse_func = LeveloggerParser.parse
+                    parse_kwargs["skip_rows_without_water_level"] = (
+                        skip_rows_without_water_level
+                    )
+                else:  # FORMAT_HOBO
+                    parse_func = HoboParser.parse
+                    parse_kwargs["tz_converter"] = self.tz_converter
 
-            try:
-                res = parse_func(charset=default_charset, **parse_kwargs)
-            except UnicodeDecodeError:
                 try:
-                    res = parse_func(charset=fallback_charset, **parse_kwargs)
+                    res = parse_func(charset=default_charset, **parse_kwargs)
                 except UnicodeDecodeError:
+                    try:
+                        res = parse_func(charset=fallback_charset, **parse_kwargs)
+                    except UnicodeDecodeError:
+                        common_utils.MessagebarAndLog.warning(
+                            bar_msg=QCoreApplication.translate(
+                                "LoggerImport",
+                                "Could not read %s — is this a %s file?",
+                            )
+                            % (filename, format_name)
+                        )
+                        continue
+                except Exception:
+                    common_utils.MessagebarAndLog.critical(
+                        bar_msg=QCoreApplication.translate(
+                            "LoggerImport", "Error on file %s."
+                        )
+                        % selected_file,
+                        log_msg=traceback.format_exc(),
+                    )
+                    raise
+
+                if res == "cancel":
+                    self.status = True
+                    common_utils.stop_waiting_cursor()
+                    return res
+                elif res in ("skip", "ignore"):
+                    continue
+
+                try:
+                    file_data, filename, location, file_utc_offset, serial_number = res
+                except Exception as e:
+                    common_utils.MessagebarAndLog.warning(
+                        bar_msg=QCoreApplication.translate(
+                            "LoggerImport", "Import error, see log message panel"
+                        ),
+                        log_msg=QCoreApplication.translate(
+                            "LoggerImport", "File %s could not be parsed. Msg:\n%s"
+                        )
+                        % (selected_file, str(e)),
+                    )
+                    continue
+
+                # UTC offset adjustment (DiverOffice and DiverOffice Baro)
+                utc_widget = (
+                    self.baro_utc_offset
+                    if format_name == self.FORMAT_DIVEROFFICE_BARO
+                    else self.utc_offset
+                )
+                if (
+                    format_name
+                    in (
+                        self.FORMAT_DIVEROFFICE,
+                        self.FORMAT_DIVEROFFICE_BARO,
+                    )
+                    and utc_widget.currentText()
+                ):
+                    if not file_utc_offset:
+                        common_utils.MessagebarAndLog.warning(
+                            log_msg=QCoreApplication.translate(
+                                "LoggerImport", "UTC-offset not found in file %s"
+                            )
+                            % filename
+                        )
+                    else:
+                        requested_timedelta = parse_timezone_to_timedelta(
+                            utc_widget.currentText()
+                        )
+                        try:
+                            file_timedelta = parse_timezone_to_timedelta(
+                                file_utc_offset
+                            )
+                        except ValueError as e:
+                            msg = QCoreApplication.translate(
+                                "LoggerImport",
+                                "Reading timezone in file %s failed,\n"
+                                " no conversion done:\n%s\n\nSkip file?",
+                            ) % (ru(selected_file), str(e))
+                            common_utils.stop_waiting_cursor()
+                            question = common_utils.Askuser(
+                                question="YesNo",
+                                msg=msg,
+                                dialogtitle=QCoreApplication.translate(
+                                    "askuser", "File timezone error!"
+                                ),
+                                include_cancel_button=True,
+                            )
+                            common_utils.start_waiting_cursor()
+                            if question.result:
+                                continue
+                        else:
+                            if requested_timedelta != file_timedelta:
+                                td = file_timedelta - requested_timedelta
+                                df = pd.DataFrame.from_records(
+                                    file_data[1:],
+                                    index="date_time",
+                                    columns=file_data[0],
+                                )
+                                df.index = pd.to_datetime(df.index) - td
+                                df.index = df.index.strftime("%Y-%m-%d %H:%M:%S")
+                                file_data = [["date_time"]]
+                                file_data[0].extend(df.columns.tolist())
+                                file_data.extend([list(row) for row in df.itertuples()])
+
+                parsed_files.append((file_data, filename, location, serial_number))
+
+            if len(parsed_files) == 0:
+                common_utils.MessagebarAndLog.critical(
+                    bar_msg=QCoreApplication.translate(
+                        "LoggerImport", "Import Failure: No files imported"
+                    )
+                )
+                common_utils.stop_waiting_cursor()
+                return
+
+            # Add obsid to all parsed filedatas by asking the user for it.
+            filename_location_obsid = [["filename", "location", "obsid"]]
+            filename_location_obsid.extend(
+                [
+                    [parsed_file[1], parsed_file[2], parsed_file[2]]
+                    for parsed_file in parsed_files
+                ]
+            )
+
+            try_capitalize = not confirm_names
+
+            existing_obsids = db_utils.get_all_obsids()
+            common_utils.stop_waiting_cursor()
+            filename_location_obsid = common_utils.filter_nonexisting_values_and_ask(
+                file_data=filename_location_obsid,
+                header_value="obsid",
+                existing_values=existing_obsids,
+                try_capitalize=try_capitalize,
+                always_ask_user=confirm_names,
+            )
+            common_utils.start_waiting_cursor()
+
+            if len(filename_location_obsid) < 2:
+                common_utils.MessagebarAndLog.warning(
+                    bar_msg=QCoreApplication.translate(
+                        "LoggerImport",
+                        "Warning. All files were skipped, nothing imported!",
+                    )
+                )
+                common_utils.stop_waiting_cursor()
+                return False
+
+            filenames_obsid = {x[0]: x[2] for x in filename_location_obsid[1:]}
+
+            parsed_files_with_obsid = []
+            for file_data, filename, location, serial_number in parsed_files:
+                if not file_data:
                     common_utils.MessagebarAndLog.warning(
                         bar_msg=QCoreApplication.translate(
                             "LoggerImport",
-                            "Could not read %s \u2014 is this a %s file?",
+                            "Diveroffice import warning. See log message panel",
+                        ),
+                        log_msg=QCoreApplication.translate(
+                            "LoggerImport",
+                            "No data parsed from file %s. Remove rows without the correct number of columns.",
                         )
-                        % (filename, format_name)
+                        % filename,
                     )
                     continue
-            except Exception:
-                common_utils.MessagebarAndLog.critical(
-                    bar_msg=QCoreApplication.translate(
-                        "LoggerImport", "Error on file %s."
+
+                if filename in filenames_obsid:
+                    file_data = list(file_data)
+                    obsid = filenames_obsid[filename]
+                    file_data[0].append("obsid")
+                    for row in file_data[1:]:
+                        row.append(obsid)
+                    parsed_files_with_obsid.append(
+                        [file_data, filename, location, serial_number]
                     )
-                    % selected_file,
-                    log_msg=traceback.format_exc(),
-                )
-                raise
 
-            if res == "cancel":
-                self.status = True
-                common_utils.stop_waiting_cursor()
-                return res
-            elif res in ("skip", "ignore"):
-                continue
-
-            try:
-                file_data, filename, location, file_utc_offset, serial_number = res
-            except Exception as e:
+            if not parsed_files_with_obsid:
                 common_utils.MessagebarAndLog.warning(
                     bar_msg=QCoreApplication.translate(
-                        "LoggerImport", "Import error, see log message panel"
-                    ),
-                    log_msg=QCoreApplication.translate(
-                        "LoggerImport", "File %s could not be parsed. Msg:\n%s"
+                        "LoggerImport",
+                        "Warning. All files were skipped, nothing imported!",
                     )
-                    % (selected_file, str(e)),
                 )
-                continue
+                common_utils.stop_waiting_cursor()
+                return False
 
-            # UTC offset adjustment (DiverOffice and DiverOffice Baro)
-            utc_widget = (
-                self.baro_utc_offset
-                if format_name == self.FORMAT_DIVEROFFICE_BARO
-                else self.utc_offset
-            )
-            if (
-                format_name
-                in (
-                    self.FORMAT_DIVEROFFICE,
-                    self.FORMAT_DIVEROFFICE_BARO,
-                )
-                and utc_widget.currentText()
-            ):
-                if not file_utc_offset:
-                    common_utils.MessagebarAndLog.warning(
-                        log_msg=QCoreApplication.translate(
-                            "LoggerImport", "UTC-offset not found in file %s"
-                        )
-                        % filename
-                    )
-                else:
-                    requested_timedelta = parse_timezone_to_timedelta(
-                        utc_widget.currentText()
-                    )
-                    try:
-                        file_timedelta = parse_timezone_to_timedelta(file_utc_offset)
-                    except ValueError as e:
-                        msg = QCoreApplication.translate(
-                            "LoggerImport",
-                            "Reading timezone in file %s failed,\n"
-                            " no conversion done:\n%s\n\nSkip file?",
-                        ) % (ru(selected_file), str(e))
-                        common_utils.stop_waiting_cursor()
-                        question = common_utils.Askuser(
-                            question="YesNo",
-                            msg=msg,
-                            dialogtitle=QCoreApplication.translate(
-                                "askuser", "File timezone error!"
-                            ),
-                            include_cancel_button=True,
-                        )
-                        common_utils.start_waiting_cursor()
-                        if question.result:
-                            continue
+            # ── DiverOffice Baro path: pivot to meteo long format and import ────────
+            if format_name == self.FORMAT_DIVEROFFICE_BARO:
+                meteo_rows: list[list] = []
+                for (
+                    file_data,
+                    filename,
+                    location,
+                    serial_number,
+                ) in parsed_files_with_obsid:
+                    pivoted = _pivot_baro_to_meteo(file_data, serial_number, filename)
+                    if not meteo_rows:
+                        meteo_rows = pivoted
                     else:
-                        if requested_timedelta != file_timedelta:
-                            td = file_timedelta - requested_timedelta
-                            df = pd.DataFrame.from_records(
-                                file_data[1:],
-                                index="date_time",
-                                columns=file_data[0],
-                            )
-                            df.index = pd.to_datetime(df.index) - td
-                            df.index = df.index.strftime("%Y-%m-%d %H:%M:%S")
-                            file_data = [["date_time"]]
-                            file_data[0].extend(df.columns.tolist())
-                            file_data.extend([list(row) for row in df.itertuples()])
+                        meteo_rows.extend(pivoted[1:])
 
-            parsed_files.append((file_data, filename, location, serial_number))
-
-        if len(parsed_files) == 0:
-            common_utils.MessagebarAndLog.critical(
-                bar_msg=QCoreApplication.translate(
-                    "LoggerImport", "Import Failure: No files imported"
-                )
-            )
-            common_utils.stop_waiting_cursor()
-            return
-
-        # Add obsid to all parsed filedatas by asking the user for it.
-        filename_location_obsid = [["filename", "location", "obsid"]]
-        filename_location_obsid.extend(
-            [
-                [parsed_file[1], parsed_file[2], parsed_file[2]]
-                for parsed_file in parsed_files
-            ]
-        )
-
-        try_capitalize = not confirm_names
-
-        existing_obsids = db_utils.get_all_obsids()
-        common_utils.stop_waiting_cursor()
-        filename_location_obsid = common_utils.filter_nonexisting_values_and_ask(
-            file_data=filename_location_obsid,
-            header_value="obsid",
-            existing_values=existing_obsids,
-            try_capitalize=try_capitalize,
-            always_ask_user=confirm_names,
-        )
-        common_utils.start_waiting_cursor()
-
-        if len(filename_location_obsid) < 2:
-            common_utils.MessagebarAndLog.warning(
-                bar_msg=QCoreApplication.translate(
-                    "LoggerImport",
-                    "Warning. All files were skipped, nothing imported!",
-                )
-            )
-            common_utils.stop_waiting_cursor()
-            return False
-
-        filenames_obsid = {x[0]: x[2] for x in filename_location_obsid[1:]}
-
-        parsed_files_with_obsid = []
-        for file_data, filename, location, serial_number in parsed_files:
-            if not file_data:
-                common_utils.MessagebarAndLog.warning(
-                    bar_msg=QCoreApplication.translate(
-                        "LoggerImport",
-                        "Diveroffice import warning. See log message panel",
-                    ),
-                    log_msg=QCoreApplication.translate(
-                        "LoggerImport",
-                        "No data parsed from file %s. Remove rows without the correct number of columns.",
+                if len(meteo_rows) < 2:
+                    common_utils.MessagebarAndLog.info(
+                        bar_msg=QCoreApplication.translate(
+                            "LoggerImport",
+                            "DiverOffice Baro: no data to import.",
+                        )
                     )
-                    % filename,
-                )
-                continue
+                    common_utils.stop_waiting_cursor()
+                    return True
 
-            if filename in filenames_obsid:
-                file_data = list(file_data)
-                obsid = filenames_obsid[filename]
-                file_data[0].append("obsid")
-                for row in file_data[1:]:
-                    row.append(obsid)
-                parsed_files_with_obsid.append(
-                    [file_data, filename, location, serial_number]
-                )
+                if import_to_db:
+                    dbconn = db_utils.DbConnectionManager()
+                    try:
+                        ph = dbconn.placeholder()
+                        with dbconn.transaction():
+                            for param, explanation in _BARO_METEO_PARAMS:
+                                existing = dbconn.execute_and_fetchall(
+                                    f"SELECT parameter FROM zz_meteoparam WHERE parameter = {ph}",
+                                    (param,),
+                                )
+                                if not existing:
+                                    dbconn.execute(
+                                        f"INSERT INTO zz_meteoparam(parameter, explanation)"
+                                        f" VALUES ({ph}, {ph})",
+                                        (param, explanation),
+                                    )
+                    finally:
+                        dbconn.closedb()
 
-        if not parsed_files_with_obsid:
-            common_utils.MessagebarAndLog.warning(
-                bar_msg=QCoreApplication.translate(
-                    "LoggerImport", "Warning. All files were skipped, nothing imported!"
-                )
-            )
-            common_utils.stop_waiting_cursor()
-            return False
+                    importer = import_data_to_db.MidvDataImporter()
+                    try:
+                        importer.general_import(
+                            "meteo",
+                            meteo_rows,
+                            skip_confirmation=True,
+                            progress_callback=_progress_callback,
+                        )
+                    except Exception:
+                        common_utils.MessagebarAndLog.warning(
+                            log_msg=f"Got error {traceback.format_exc()}"
+                        )
+                        raise
 
-        # ── DiverOffice Baro path: pivot to meteo long format and import ────────
-        if format_name == self.FORMAT_DIVEROFFICE_BARO:
-            meteo_rows: list[list] = []
-            for file_data, filename, location, serial_number in parsed_files_with_obsid:
-                pivoted = _pivot_baro_to_meteo(file_data, serial_number, filename)
-                if not meteo_rows:
-                    meteo_rows = pivoted
-                else:
-                    meteo_rows.extend(pivoted[1:])
-
-            if len(meteo_rows) < 2:
-                common_utils.MessagebarAndLog.info(
-                    bar_msg=QCoreApplication.translate(
-                        "LoggerImport",
-                        "DiverOffice Baro: no data to import.",
+                if export_csv:
+                    path = QtWidgets.QFileDialog.getSaveFileName(
+                        self, "Save File", "", "CSV(*.csv)"
                     )
-                )
+                    if path:
+                        path = ru(path[0])
+                        common_utils.write_printlist_to_file(path, meteo_rows)
+
                 common_utils.stop_waiting_cursor()
+                if self.close_after_import.isChecked():
+                    self.close()
                 return True
 
-            if import_to_db:
+            # ── Water-level path (w_levels_logger) ──────────────────────────────────────────
+            # Schema variant detection. In the new schema, source has moved to a
+            # w_logger_series row that groups all rows from one imported file.
+            # In older schemas, source is still a column on w_levels_logger. We
+            # keep supporting both so users don't have to migrate to keep using
+            # this importer.
+            wlogger_cols = db_utils.tables_columns(table="w_levels_logger").get(
+                "w_levels_logger", []
+            )
+            has_series_id = "series_id" in wlogger_cols
+            has_created_at = "created_at" in wlogger_cols
+            has_source_column = "source" in wlogger_cols
+
+            source_text = (
+                self.source_edit.text().strip() if self.source_edit is not None else ""
+            )
+
+            # New-schema import path: create one w_logger_series row per imported
+            # file and tag every row from that file with its new series_id and a
+            # single batch-level created_at.
+            if import_to_db and has_series_id:
+                source_for_series = source_text or None
+                batch_created_at = _datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 dbconn = db_utils.DbConnectionManager()
                 try:
                     ph = dbconn.placeholder()
                     with dbconn.transaction():
-                        for param, explanation in _BARO_METEO_PARAMS:
-                            existing = dbconn.execute_and_fetchall(
-                                f"SELECT parameter FROM zz_meteoparam WHERE parameter = {ph}",
-                                (param,),
+                        for (
+                            file_data,
+                            filename,
+                            location,
+                            serial_number,
+                        ) in parsed_files_with_obsid:
+                            obsid = filenames_obsid[filename]
+                            description = (
+                                os.path.basename(filename) if filename else None
                             )
-                            if not existing:
-                                dbconn.execute(
-                                    f"INSERT INTO zz_meteoparam(parameter, explanation)"
-                                    f" VALUES ({ph}, {ph})",
-                                    (param, explanation),
-                                )
+                            dbconn.execute(
+                                f"INSERT INTO w_logger_series "
+                                f"(obsid, source, description, instrument) VALUES ({ph}, {ph}, {ph}, {ph})",
+                                (
+                                    obsid,
+                                    source_for_series,
+                                    description,
+                                    serial_number,
+                                ),
+                            )
+                            series_id = db_utils.get_last_insert_id(dbconn)
+                            file_data[0].append("series_id")
+                            if has_created_at:
+                                file_data[0].append("created_at")
+                            for row in file_data[1:]:
+                                row.append(series_id)
+                                if has_created_at:
+                                    row.append(batch_created_at)
                 finally:
                     dbconn.closedb()
 
+            file_to_import_to_db = [parsed_files_with_obsid[0][0][0]]
+            file_to_import_to_db.extend(
+                [
+                    row
+                    for parsed_file in parsed_files_with_obsid
+                    for row in parsed_file[0][1:]
+                ]
+            )
+
+            if not import_all_data:
+                file_to_import_to_db = filter_dates_from_filedata(
+                    file_to_import_to_db, db_utils.get_last_logger_dates()
+                )
+            if len(file_to_import_to_db) < 2:
+                common_utils.MessagebarAndLog.info(
+                    bar_msg=QCoreApplication.translate(
+                        "LoggerImport",
+                        "No new data existed in the files. Nothing imported.",
+                    )
+                )
+                self.status = True
+                common_utils.stop_waiting_cursor()
+                return True
+
+            # Old-schema path: source is a column on w_levels_logger itself.
+            # Only append it if we are NOT on the new schema (the new path
+            # already put source on the w_logger_series row).
+            if (
+                source_text
+                and has_source_column
+                and not has_series_id
+                and self.source_edit is not None
+            ):
+                file_to_import_to_db[0].append("source")
+                for row in file_to_import_to_db[1:]:
+                    row.append(source_text)
+
+            if import_to_db:
                 importer = import_data_to_db.MidvDataImporter()
                 try:
-                    importer.general_import("meteo", meteo_rows)
+                    importer.general_import(
+                        "w_levels_logger",
+                        file_to_import_to_db,
+                        skip_confirmation=True,
+                        progress_callback=_progress_callback,
+                    )
                 except Exception:
                     common_utils.MessagebarAndLog.warning(
                         log_msg=f"Got error {traceback.format_exc()}"
                     )
                     raise
-
             if export_csv:
                 path = QtWidgets.QFileDialog.getSaveFileName(
                     self, "Save File", "", "CSV(*.csv)"
                 )
                 if path:
                     path = ru(path[0])
-                    common_utils.write_printlist_to_file(path, meteo_rows)
+                    common_utils.write_printlist_to_file(path, file_to_import_to_db)
 
             common_utils.stop_waiting_cursor()
+
             if self.close_after_import.isChecked():
                 self.close()
-            return True
-
-        # ── Water-level path (w_levels_logger) ──────────────────────────────────
-        # Schema variant detection. In the new schema, source has moved to a
-        # w_logger_series row that groups all rows from one imported file.
-        # In older schemas, source is still a column on w_levels_logger. We
-        # keep supporting both so users don't have to migrate to keep using
-        # this importer.
-        wlogger_cols = db_utils.tables_columns(table="w_levels_logger").get(
-            "w_levels_logger", []
-        )
-        has_series_id = "series_id" in wlogger_cols
-        has_created_at = "created_at" in wlogger_cols
-        has_source_column = "source" in wlogger_cols
-
-        source_text = (
-            self.source_edit.text().strip() if self.source_edit is not None else ""
-        )
-
-        # New-schema import path: create one w_logger_series row per imported
-        # file and tag every row from that file with its new series_id and a
-        # single batch-level created_at.
-        if import_to_db and has_series_id:
-            source_for_series = source_text or None
-            batch_created_at = _datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            dbconn = db_utils.DbConnectionManager()
-            try:
-                ph = dbconn.placeholder()
-                with dbconn.transaction():
-                    for (
-                        file_data,
-                        filename,
-                        location,
-                        serial_number,
-                    ) in parsed_files_with_obsid:
-                        obsid = filenames_obsid[filename]
-                        description = os.path.basename(filename) if filename else None
-                        dbconn.execute(
-                            f"INSERT INTO w_logger_series "
-                            f"(obsid, source, description, instrument) VALUES ({ph}, {ph}, {ph}, {ph})",
-                            (obsid, source_for_series, description, serial_number),
-                        )
-                        series_id = db_utils.get_last_insert_id(dbconn)
-                        file_data[0].append("series_id")
-                        if has_created_at:
-                            file_data[0].append("created_at")
-                        for row in file_data[1:]:
-                            row.append(series_id)
-                            if has_created_at:
-                                row.append(batch_created_at)
-            finally:
-                dbconn.closedb()
-
-        file_to_import_to_db = [parsed_files_with_obsid[0][0][0]]
-        file_to_import_to_db.extend(
-            [
-                row
-                for parsed_file in parsed_files_with_obsid
-                for row in parsed_file[0][1:]
-            ]
-        )
-
-        if not import_all_data:
-            file_to_import_to_db = filter_dates_from_filedata(
-                file_to_import_to_db, db_utils.get_last_logger_dates()
-            )
-        if len(file_to_import_to_db) < 2:
-            common_utils.MessagebarAndLog.info(
-                bar_msg=QCoreApplication.translate(
-                    "LoggerImport",
-                    "No new data existed in the files. Nothing imported.",
-                )
-            )
-            self.status = True
-            common_utils.stop_waiting_cursor()
-            return True
-
-        # Old-schema path: source is a column on w_levels_logger itself.
-        # Only append it if we are NOT on the new schema (the new path
-        # already put source on the w_logger_series row).
-        if (
-            source_text
-            and has_source_column
-            and not has_series_id
-            and self.source_edit is not None
-        ):
-            file_to_import_to_db[0].append("source")
-            for row in file_to_import_to_db[1:]:
-                row.append(source_text)
-
-        if import_to_db:
-            importer = import_data_to_db.MidvDataImporter()
-            try:
-                importer.general_import("w_levels_logger", file_to_import_to_db)
-            except Exception:
-                common_utils.MessagebarAndLog.warning(
-                    log_msg=f"Got error {traceback.format_exc()}"
-                )
-                raise
-        if export_csv:
-            path = QtWidgets.QFileDialog.getSaveFileName(
-                self, "Save File", "", "CSV(*.csv)"
-            )
-            if path:
-                path = ru(path[0])
-                common_utils.write_printlist_to_file(path, file_to_import_to_db)
-
-        common_utils.stop_waiting_cursor()
-
-        if self.close_after_import.isChecked():
-            self.close()
+        finally:
+            progress.close()

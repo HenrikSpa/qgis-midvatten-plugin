@@ -56,6 +56,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         skip_confirmation: bool = False,
         binary_geometry: bool = False,
         defer_commit: bool = False,
+        progress_callback: Optional[Callable[[str], None]] = None,
     ):
         """General method for importing a list of list to a table
 
@@ -98,6 +99,13 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
 
             common_utils.start_waiting_cursor()
 
+            if progress_callback:
+                progress_callback(
+                    QCoreApplication.translate(
+                        "midv_data_importer", "Validating columns..."
+                    )
+                )
+
             (
                 dbconnection,
                 table_info,
@@ -112,6 +120,13 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             recsinfile = len(file_data[1:])
             all_rownumbers = tuple(range(recsinfile))
             remaining_rownumbers = tuple(all_rownumbers)
+
+            if progress_callback:
+                progress_callback(
+                    QCoreApplication.translate(
+                        "midv_data_importer", "Creating temporary table..."
+                    )
+                )
 
             self.list_to_table(
                 dbconnection, dest_table, file_data, primary_keys_for_concat
@@ -132,6 +147,13 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 ", ".join([str(x) for x in file_data[1:][rownr]])
                 for rownr in rownumbers[:10]
             ]
+
+            if progress_callback:
+                progress_callback(
+                    QCoreApplication.translate(
+                        "midv_data_importer", "Checking for duplicate timestamps..."
+                    )
+                )
 
             # Delete records from self.temptable where yyyy-mm-dd hh:mm or yyyy-mm-dd hh:mm:ss already exist for the same date.
             remaining_rownumbers, import_messages = self._remove_duplicate_datetimes(
@@ -176,6 +198,13 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 existing_columns_in_temptable,
                 allow_obs_fk_import,
             )
+
+            if progress_callback:
+                progress_callback(
+                    QCoreApplication.translate(
+                        "midv_data_importer", "Importing rows..."
+                    )
+                )
 
             nr_imported = self._build_and_execute_insert(
                 dbconnection,
@@ -412,17 +441,22 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
 
         Raises UserInterruptError if the user chooses not to import.
         """
-        if len(remaining_rownumbers) == len(all_rownumbers):
-            if self.foreign_keys_import_question:
-                import_messages = []
-            else:
-                import_messages.append(
-                    QCoreApplication.translate(
-                        "midv_data_importer", "Proceed with import?"
+        if self.foreign_keys_import_question:
+            if len(remaining_rownumbers) != len(all_rownumbers):
+                common_utils.MessagebarAndLog.info(
+                    log_msg=QCoreApplication.translate(
+                        "midv_data_importer",
+                        "Skipping confirmation dialog: %s out of %s rows to import (duplicates removed).",
                     )
+                    % (str(len(remaining_rownumbers)), str(len(all_rownumbers)))
                 )
-                # Only skip recurring queries for imports without errors.
-                self.foreign_keys_import_question = 1
+            return
+
+        if len(remaining_rownumbers) == len(all_rownumbers):
+            import_messages.append(
+                QCoreApplication.translate("midv_data_importer", "Proceed with import?")
+            )
+            self.foreign_keys_import_question = 1
         else:
             import_messages.append(
                 QCoreApplication.translate(
@@ -438,7 +472,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 "\n".join(import_messages),
                 QCoreApplication.translate("midv_data_importer", "Info"),
             )
-            if stop_question.result == 0:  # if the user wants to abort
+            if stop_question.result == 0:
                 raise UserInterruptError()
 
     def _handle_foreign_keys(
@@ -695,12 +729,9 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
     ) -> int:
         """Delete temp rows whose minute-level date_time already exists in dest.
 
-        Two date_times are considered duplicates when they fall in the same minute —
-        this prevents mixing series stored at different time resolutions
-        (e.g. minute-level logger data and second-level spot measurements).
-
-        Uses a correlated EXISTS so the destination PK index is used for each temp row
-        lookup instead of two full sequential table scans.
+        Two date_times are considered duplicates when they fall in the same minute.
+        Uses a range comparison on the destination side so the PK index on
+        (obsid, date_time) is used for each lookup instead of a full table scan.
         """
         pks_non_dt = [pk for pk in primary_keys if pk != "date_time"]
 
@@ -711,23 +742,22 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             else dbconnection.ident(dest_table)
         )
 
-        # SQLite does not support DELETE FROM table AS alias, so reference the outer
-        # table by its identifier in the correlated subquery.
-        # All PK columns are NOT NULL (PostgreSQL enforces this via the PK constraint;
-        # SQLite data follows the same invariant in practice), so plain = is sargable
-        # on the destination PK index and correctly handles all values.
         dt = dbconnection.ident("date_time")
-        date_eq = (
-            f"{dbconnection.truncate_to_minute_sql(f'd.{dt}')}"
-            f" = {dbconnection.truncate_to_minute_sql(f'{temp_ident}.{dt}')}"
-        )
+
+        if dbconnection.is_postgresql():
+            minute_start = f"date_trunc('minute', {temp_ident}.{dt}::timestamp)"
+            minute_end = f"date_trunc('minute', {temp_ident}.{dt}::timestamp) + interval '1 minute'"
+        else:
+            minute_start = f"substr({temp_ident}.{dt}, 1, 16)"
+            minute_end = f"(substr({temp_ident}.{dt}, 1, 16) || ':60')"
 
         conditions = [
             f"d.{q} = {temp_ident}.{q}"
             for pk in pks_non_dt
             for q in (dbconnection.ident(pk),)
         ]
-        conditions.append(date_eq)
+        conditions.append(f"d.{dt} >= {minute_start}")
+        conditions.append(f"d.{dt} < {minute_end}")
 
         sql = (
             f"DELETE FROM {temp_ident} WHERE EXISTS ("

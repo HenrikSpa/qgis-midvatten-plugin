@@ -412,17 +412,24 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
 
         Raises UserInterruptError if the user chooses not to import.
         """
-        if len(remaining_rownumbers) == len(all_rownumbers):
-            if self.foreign_keys_import_question:
-                import_messages = []
-            else:
-                import_messages.append(
-                    QCoreApplication.translate(
-                        "midv_data_importer", "Proceed with import?"
+        if self.foreign_keys_import_question:
+            if len(remaining_rownumbers) != len(all_rownumbers):
+                common_utils.MessagebarAndLog.info(
+                    log_msg=QCoreApplication.translate(
+                        "midv_data_importer",
+                        "Skipping confirmation dialog: %s out of %s rows to import (duplicates removed).",
                     )
+                    % (str(len(remaining_rownumbers)), str(len(all_rownumbers)))
                 )
-                # Only skip recurring queries for imports without errors.
-                self.foreign_keys_import_question = 1
+            return
+
+        if len(remaining_rownumbers) == len(all_rownumbers):
+            import_messages.append(
+                QCoreApplication.translate(
+                    "midv_data_importer", "Proceed with import?"
+                )
+            )
+            self.foreign_keys_import_question = 1
         else:
             import_messages.append(
                 QCoreApplication.translate(
@@ -438,7 +445,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 "\n".join(import_messages),
                 QCoreApplication.translate("midv_data_importer", "Info"),
             )
-            if stop_question.result == 0:  # if the user wants to abort
+            if stop_question.result == 0:
                 raise UserInterruptError()
 
     def _handle_foreign_keys(

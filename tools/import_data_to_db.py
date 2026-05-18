@@ -56,6 +56,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         skip_confirmation: bool = False,
         binary_geometry: bool = False,
         defer_commit: bool = False,
+        progress_callback: Optional[Callable[[str], None]] = None,
     ):
         """General method for importing a list of list to a table
 
@@ -98,6 +99,13 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
 
             common_utils.start_waiting_cursor()
 
+            if progress_callback:
+                progress_callback(
+                    QCoreApplication.translate(
+                        "midv_data_importer", "Validating columns..."
+                    )
+                )
+
             (
                 dbconnection,
                 table_info,
@@ -112,6 +120,13 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             recsinfile = len(file_data[1:])
             all_rownumbers = tuple(range(recsinfile))
             remaining_rownumbers = tuple(all_rownumbers)
+
+            if progress_callback:
+                progress_callback(
+                    QCoreApplication.translate(
+                        "midv_data_importer", "Creating temporary table..."
+                    )
+                )
 
             self.list_to_table(
                 dbconnection, dest_table, file_data, primary_keys_for_concat
@@ -132,6 +147,13 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 ", ".join([str(x) for x in file_data[1:][rownr]])
                 for rownr in rownumbers[:10]
             ]
+
+            if progress_callback:
+                progress_callback(
+                    QCoreApplication.translate(
+                        "midv_data_importer", "Checking for duplicate timestamps..."
+                    )
+                )
 
             # Delete records from self.temptable where yyyy-mm-dd hh:mm or yyyy-mm-dd hh:mm:ss already exist for the same date.
             remaining_rownumbers, import_messages = self._remove_duplicate_datetimes(
@@ -176,6 +198,13 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 existing_columns_in_temptable,
                 allow_obs_fk_import,
             )
+
+            if progress_callback:
+                progress_callback(
+                    QCoreApplication.translate(
+                        "midv_data_importer", "Importing rows..."
+                    )
+                )
 
             nr_imported = self._build_and_execute_insert(
                 dbconnection,

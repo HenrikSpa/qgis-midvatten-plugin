@@ -13,10 +13,19 @@
     <edittype widgetv2type="TextEdit" name="depthbot">
       <widgetv2config IsMultiline="0" fieldEditable="1" UseHtml="0" labelOnTop="0"/>
     </edittype>
+    <edittype widgetv2type="TextEdit" name="diam_inner">
+      <widgetv2config IsMultiline="0" fieldEditable="1" UseHtml="0" labelOnTop="0"/>
+    </edittype>
+    <edittype widgetv2type="TextEdit" name="diam_outer">
+      <widgetv2config IsMultiline="0" fieldEditable="1" UseHtml="0" labelOnTop="0"/>
+    </edittype>
     <edittype widgetv2type="TextEdit" name="screenshort">
       <widgetv2config IsMultiline="0" fieldEditable="1" UseHtml="0" labelOnTop="0"/>
     </edittype>
     <edittype widgetv2type="TextEdit" name="screen">
+      <widgetv2config IsMultiline="0" fieldEditable="1" UseHtml="0" labelOnTop="0"/>
+    </edittype>
+    <edittype widgetv2type="TextEdit" name="comment">
       <widgetv2config IsMultiline="0" fieldEditable="1" UseHtml="0" labelOnTop="0"/>
     </edittype>
   </edittypes>
@@ -33,8 +42,11 @@
       <attributeEditorField index="1" name="screenid"/>
       <attributeEditorField index="2" name="depthtop"/>
       <attributeEditorField index="3" name="depthbot"/>
-      <attributeEditorField index="4" name="screenshort"/>
-      <attributeEditorField index="5" name="screen"/>
+      <attributeEditorField index="4" name="diam_inner"/>
+      <attributeEditorField index="5" name="diam_outer"/>
+      <attributeEditorField index="6" name="screenshort"/>
+      <attributeEditorField index="7" name="screen"/>
+      <attributeEditorField index="8" name="comment"/>
     </attributeEditorContainer>
   </attributeEditorForm>
   <attributeactions/>

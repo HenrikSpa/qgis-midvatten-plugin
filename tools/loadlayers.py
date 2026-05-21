@@ -48,6 +48,7 @@ class LoadLayers:
             self.root.insertChildNode(self.group.position_index, layer_group)
 
             obs_points_layer = None
+            obs_points_spec = None
             screen_layer = None
             for spec in self.group.resolve_layers(dbconnection):
                 layer = build_layer(spec, dbconnection, existing_tables)
@@ -60,10 +61,15 @@ class LoadLayers:
                     tree_layer.setItemVisibilityCheckedRecursive(False)
                 if spec.tablename == "obs_points":
                     obs_points_layer = layer
+                    obs_points_spec = spec
                 elif spec.tablename == "screen":
                     screen_layer = layer
 
-            self._register_relations(obs_points_layer, screen_layer, dbconnection)
+            relation_registered = self._register_relations(
+                obs_points_layer, screen_layer, dbconnection
+            )
+            if relation_registered:
+                self._apply_style(obs_points_layer, obs_points_spec)
             if obs_points_layer is not None:
                 self.iface.mapCanvas().setExtent(obs_points_layer.extent())
         finally:
@@ -91,17 +97,17 @@ class LoadLayers:
         obs_points_layer,
         screen_layer,
         dbconnection: db_utils.DbConnectionManager,
-    ) -> None:
+    ) -> bool:
         if self.group.name != LayerGroupName.OBS_DB.value:
-            return
+            return False
         if obs_points_layer is None:
-            return
+            return False
 
         if screen_layer is None or not db_utils.verify_table_exists(
             "screen", dbconnection=dbconnection
         ):
             self._apply_screens_placeholder(obs_points_layer)
-            return
+            return False
 
         rel = QgsRelation()
         rel.setId("obs_points_screen")
@@ -112,16 +118,15 @@ class LoadLayers:
         rel.setStrength(QgsRelation.Association)
         if rel.isValid():
             QgsProject.instance().relationManager().addRelation(rel)
-            # Force QGIS to re-resolve relation widgets in the form config
-            obs_points_layer.setEditFormConfig(obs_points_layer.editFormConfig())
-        else:
-            common_utils.MessagebarAndLog.warning(
-                bar_msg=QCoreApplication.translate(
-                    "LoadLayers",
-                    "Failed to create obs_points_screen relation",
-                ),
-                log_msg=str(rel.validationError()),
-            )
+            return True
+        common_utils.MessagebarAndLog.warning(
+            bar_msg=QCoreApplication.translate(
+                "LoadLayers",
+                "Failed to create obs_points_screen relation",
+            ),
+            log_msg=str(rel.validationError()),
+        )
+        return False
 
     def _apply_screens_placeholder(self, obs_points_layer: "QgsVectorLayer") -> None:
         locale_is_swedish = is_locale_swedish()
@@ -134,9 +139,7 @@ class LoadLayers:
                 and child.name() == tab_name
             ):
                 child.clear()
-                placeholder = QgsAttributeEditorHtmlElement(
-                    "", child
-                )
+                placeholder = QgsAttributeEditorHtmlElement("", child)
                 if locale_is_swedish:
                     html = (
                         "<p><b>Filter (filterrör)</b></p>"

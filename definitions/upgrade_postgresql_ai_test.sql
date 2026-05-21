@@ -436,7 +436,7 @@ ON CONFLICT DO NOTHING;
 
 INSERT INTO zz_screen_plots (screenshort, color_mplot, edgecolor_mplot, hatch_mplot, linewidth_mplot)
 VALUES
-    ('default',   'none', 'black', '///', 1.0),
+    ('default',   'none', 'black', '', 1.0),
     ('JWS',       'none', 'black', '|||', 1.0),
     ('PVC solid', 'none', 'black', '',    1.5),
     ('stainless', 'none', 'black', 'xx',  1.0)

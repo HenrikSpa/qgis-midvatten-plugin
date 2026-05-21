@@ -5856,6 +5856,10 @@ p, li { white-space: pre-wrap; }
         <source>Obsid %s: using h_gs %s or h_toc %s failed, using 0 instead.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>screen </source>
+        <translation>filter </translation>
+    </message>
 </context>
 <context>
     <name>Sectionplot</name>

@@ -787,7 +787,7 @@ def screen_style_dict() -> Dict[str, Dict[str, Any]]:
             "default": {
                 "facecolor": "none",
                 "edgecolor": "black",
-                "hatch": "///",
+                "hatch": "",
                 "linewidth": 1.0,
             }
         }

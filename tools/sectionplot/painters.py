@@ -141,6 +141,7 @@ def paint_screen_bars(
     width: float,
     zorder: int = 3,
     width_factor: float = 1.2,
+    label_prefix: str = "",
 ) -> None:
     """Paint screen-interval bars with transparent fill, border, and hatch.
 
@@ -168,7 +169,7 @@ def paint_screen_bars(
     _default_style = {
         "facecolor": "none",
         "edgecolor": "black",
-        "hatch": "///",
+        "hatch": "",
         "linewidth": 1.0,
     }
     fallback = style_dict.get("default", _default_style)
@@ -194,7 +195,7 @@ def paint_screen_bars(
                     edgecolor=style["edgecolor"],
                     hatch=style["hatch"],
                     linewidth=style["linewidth"],
-                    label=screenshort,
+                    label=f"{label_prefix}{screenshort}",
                     zorder=zorder,
                     align="edge",
                 )

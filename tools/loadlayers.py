@@ -112,6 +112,8 @@ class LoadLayers:
         rel.setStrength(QgsRelation.Association)
         if rel.isValid():
             QgsProject.instance().relationManager().addRelation(rel)
+            # Force QGIS to re-resolve relation widgets in the form config
+            obs_points_layer.setEditFormConfig(obs_points_layer.editFormConfig())
         else:
             common_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(

@@ -660,6 +660,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
                         if _screens_mode == "behind"
                         else 6,  # must exceed geology_Axes_bar zorder=5
                         width_factor=float(self.ms.settingsdict["screenwidthfactor"]),
+                        label_prefix=QCoreApplication.translate("SectionPlot", "screen "),
                     )
                     self._screen_bar_containers = (
                         set(self.figure.ax_main.containers) - _containers_before

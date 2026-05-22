@@ -75,6 +75,7 @@ from midvatten.tools.sectionplot.data import (  # noqa: E402
     get_z_data as _get_z_data,
     get_plot_data_bars as _get_plot_data_bars,
     get_screen_plot_data as _get_screen_plot_data,
+    get_screen_text_data as _get_screen_text_data,
     get_plot_data_layer_texts as _get_plot_data_layer_texts,
     get_drillstops as _get_drillstops,
     get_plot_data_seismic as _get_plot_data_seismic,
@@ -130,6 +131,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
         self.screen_bars = {}
         self._screen_bar_containers: set = set()
         self.layer_texts = {}
+        self.screen_texts = {}
         self.hydro_colors = defs.hydrocolors()
 
         self.parent = iface.mainWindow()
@@ -469,6 +471,12 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
             z_data=self.z_data,
             dbconnection=self.dbconnection,
         )
+        self.screen_texts = _get_screen_text_data(
+            obsids_x_position=self.obsids_x_position,
+            z_data=self.z_data,
+            text_column=self.ms.settingsdict["secplotscreentext"],
+            dbconnection=self.dbconnection,
+        )
         if self.line_feature is not None:
             self.obs_lines_plot_data = _get_plot_data_seismic(
                 line_layer=self.line_layer,
@@ -505,6 +513,18 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
         for item in textitems:
             self.textcol_combo_box.addItem(item)
 
+        self.screen_textcol_combo_box.clear()
+        screen_textitems = [
+            "",
+            "screenshort",
+            "screen",
+            "comment",
+            "diam_inner",
+            "diam_outer",
+        ]
+        for item in screen_textitems:
+            self.screen_textcol_combo_box.addItem(item)
+
         for datum in self.ms.settingsdict["secplotdates"]:
             self.datetime.append(datum)
 
@@ -520,6 +540,12 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
                 self.textcol_combo_box,
                 str(self.ms.settingsdict["secplottext"]),
                 add_if_not_exists=False,
+            )
+
+        if len(str(self.ms.settingsdict["secplotscreentext"])):
+            set_combobox(
+                self.screen_textcol_combo_box,
+                str(self.ms.settingsdict["secplotscreentext"]),
             )
 
         drillstop = (
@@ -660,11 +686,24 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
                         if _screens_mode == "behind"
                         else 6,  # must exceed geology_Axes_bar zorder=5
                         width_factor=float(self.ms.settingsdict["screenwidthfactor"]),
-                        label_prefix=QCoreApplication.translate("SectionPlot", "screen "),
+                        label_prefix=QCoreApplication.translate(
+                            "SectionPlot", "screen "
+                        ),
                     )
                     self._screen_bar_containers = (
                         set(self.figure.ax_main.containers) - _containers_before
                     )
+                    _screen_text_col = self.ms.settingsdict["secplotscreentext"]
+                    if _screen_text_col and self.screen_texts:
+                        _painters.paint_layer_text(
+                            self.figure,
+                            self.screen_texts,
+                            _screen_text_col,
+                            self.ms.settingsdict["secplotlayertextalignment"],
+                            self.barwidth
+                            * float(self.ms.settingsdict["screenwidthfactor"]),
+                            self.secplot_templates.loaded_template,
+                        )
 
                 if self.ms.settingsdict["stratigraphyplotted"]:
                     _painters.paint_bars(

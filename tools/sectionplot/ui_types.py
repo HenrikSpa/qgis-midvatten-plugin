@@ -71,6 +71,8 @@ class SecPlotUi:
     screens_mode_combo: QtWidgets.QComboBox
     label_screen_width_factor: QtWidgets.QLabel
     screen_width_factor_spin: QtWidgets.QDoubleSpinBox
+    label_screen_text: QtWidgets.QLabel
+    screen_textcol_combo_box: QtWidgets.QComboBox
     tem_groupbox: object
     tem_alpha_below_doi: QtWidgets.QDoubleSpinBox
     tem_model_name: QtWidgets.QComboBox

@@ -347,7 +347,10 @@ def get_screen_text_data(
     for obs, x in obsids_x_position.items():
         if obs not in z_data:
             continue
-        recs = dbconnection.execute_and_fetchall(sql, args=(obs,))
+        try:
+            recs = dbconnection.execute_and_fetchall(sql, args=(obs,))
+        except Exception:
+            return {}
         if not recs:
             continue
         z = z_data[obs]["z"]

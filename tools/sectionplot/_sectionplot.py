@@ -546,6 +546,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
             set_combobox(
                 self.screen_textcol_combo_box,
                 str(self.ms.settingsdict["secplotscreentext"]),
+                add_if_not_exists=False,
             )
 
         drillstop = (
@@ -694,7 +695,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
                         set(self.figure.ax_main.containers) - _containers_before
                     )
                     _screen_text_col = self.ms.settingsdict["secplotscreentext"]
-                    if _screen_text_col and self.screen_texts:
+                    if _screen_text_col and _screen_text_col in self.screen_texts:
                         _painters.paint_layer_text(
                             self.figure,
                             self.screen_texts,

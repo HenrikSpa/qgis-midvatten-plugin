@@ -316,6 +316,59 @@ def get_screen_plot_data(
     return bars
 
 
+_SCREEN_TEXT_COLUMNS = frozenset(
+    {"screenshort", "screen", "comment", "diam_inner", "diam_outer"}
+)
+
+
+def get_screen_text_data(
+    obsids_x_position: dict,
+    z_data: dict,
+    text_column: str,
+    dbconnection=None,
+) -> dict:
+    """Fetch text labels for screen intervals, keyed by (x, z) position.
+
+    Returns ``{text_column: {(x, z): text_value}}`` — same structure as
+    ``get_plot_data_layer_texts()`` so ``paint_layer_text()`` can be reused.
+    """
+    if text_column not in _SCREEN_TEXT_COLUMNS:
+        return {}
+    if not db_utils.verify_table_exists("screen", dbconnection=dbconnection):
+        return {}
+    if not obsids_x_position:
+        return {}
+
+    texts: dict = {}
+    ph = dbconnection.placeholder()
+    col = ident(text_column, allowed=_SCREEN_TEXT_COLUMNS)
+    sql = f"SELECT depthtop, depthbot, {col} FROM screen WHERE obsid = {ph} ORDER BY screenid"
+
+    for obs, x in obsids_x_position.items():
+        if obs not in z_data:
+            continue
+        recs = dbconnection.execute_and_fetchall(sql, args=(obs,))
+        if not recs:
+            continue
+        z = z_data[obs]["z"]
+        for row in recs:
+            depthtop, depthbot, text_val = row[0], row[1], row[2]
+            if depthtop is None or depthbot is None:
+                continue
+            if (
+                text_val is None
+                or not str(text_val).strip()
+                or str(text_val).lower().strip() == "null"
+            ):
+                continue
+            height = float(depthbot) - float(depthtop)
+            bottom = z - float(depthbot)
+            mid_z = bottom + (height / 2)
+            texts.setdefault(text_column, {})[(x, mid_z)] = text_val
+
+    return texts
+
+
 def get_plot_data_layer_texts(
     obsids_x_position: dict,
     z_data: dict,

@@ -155,6 +155,104 @@ class GetScreenPlotDataMixin:
 
         assert bars == {}
 
+    def _insert_screen_data_with_text(self):
+        """Insert screen rows that include the `screen` and `comment` columns."""
+        db_utils.sql_alter_db(
+            """INSERT INTO screen (obsid, screenid, depthtop, depthbot, screenshort, screen, comment)
+               VALUES ('P1', 1, 2.0, 5.0, 'JWS', 'Johnson well screen 2-5m', 'Good condition')"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO screen (obsid, screenid, depthtop, depthbot, screenshort, screen, comment)
+               VALUES ('P1', 2, 8.0, 12.0, 'PVC solid', NULL, '')"""
+        )
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_get_screen_text_data_basic(self, mock_messagebar):
+        """get_screen_text_data returns {col: {(x,z): text}} with correct positions."""
+        from midvatten.tools.sectionplot.data import get_screen_text_data
+
+        self._insert_obs_points()
+        self._insert_screen_data_with_text()
+
+        secplot = self._make_secplot()
+        try:
+            result = get_screen_text_data(
+                {"P1": 1.0}, secplot.z_data, "screen", secplot.dbconnection
+            )
+        finally:
+            secplot.dbconnection.closedb()
+
+        print(f"{mock_messagebar.mock_calls=}")
+
+        # screen col: row1 has text, row2 is NULL → filtered out
+        assert "screen" in result
+        texts = result["screen"]
+        # Row 1: depthtop=2, depthbot=5 → height=3, bottom=100-5=95, z=95+1.5=96.5
+        assert (1.0, 96.5) in texts
+        assert texts[(1.0, 96.5)] == "Johnson well screen 2-5m"
+        # Row 2 had NULL screen → should be absent
+        assert len(texts) == 1
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_get_screen_text_data_comment_column(self, mock_messagebar):
+        """get_screen_text_data works for comment column, filters empty strings."""
+        from midvatten.tools.sectionplot.data import get_screen_text_data
+
+        self._insert_obs_points()
+        self._insert_screen_data_with_text()
+
+        secplot = self._make_secplot()
+        try:
+            result = get_screen_text_data(
+                {"P1": 1.0}, secplot.z_data, "comment", secplot.dbconnection
+            )
+        finally:
+            secplot.dbconnection.closedb()
+
+        print(f"{mock_messagebar.mock_calls=}")
+
+        # comment col: row1='Good condition', row2='' (filtered out)
+        assert "comment" in result
+        texts = result["comment"]
+        assert (1.0, 96.5) in texts
+        assert texts[(1.0, 96.5)] == "Good condition"
+        assert len(texts) == 1
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_get_screen_text_data_empty_result(self, mock_messagebar):
+        """get_screen_text_data returns {} for empty obsids."""
+        from midvatten.tools.sectionplot.data import get_screen_text_data
+
+        secplot = self._make_secplot()
+        try:
+            result = get_screen_text_data(
+                {}, secplot.z_data, "screen", secplot.dbconnection
+            )
+        finally:
+            secplot.dbconnection.closedb()
+
+        assert result == {}
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_get_screen_text_data_no_screen_table(self, mock_messagebar):
+        """get_screen_text_data returns {} when screen table is absent."""
+        from midvatten.tools.sectionplot.data import get_screen_text_data
+
+        self._insert_obs_points()
+
+        secplot = self._make_secplot()
+        try:
+            secplot.dbconnection.execute("DROP TABLE screen")
+            result = get_screen_text_data(
+                {"P1": 1.0}, secplot.z_data, "screen", secplot.dbconnection
+            )
+        finally:
+            secplot.dbconnection.closedb()
+
+        print(f"{mock_messagebar.mock_calls=}")
+
+        assert result == {}
+
 
 # ---------------------------------------------------------------------------
 # Concrete test class (spatialite only)

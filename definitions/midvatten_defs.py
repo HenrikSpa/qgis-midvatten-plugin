@@ -74,6 +74,7 @@ def settingsdict():  # These are the default settings, they shall not be changed
         "secplothydrologyplotted": False,
         "screensplotmode": "behind",
         "screenwidthfactor": 1.2,
+        "secplotscreentext": "",
         "secplotlabelsplotted": True,
         "secplotlegendplotted": True,
         "secplot_loaded_template": "",

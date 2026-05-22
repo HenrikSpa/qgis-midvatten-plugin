@@ -73,6 +73,7 @@ GENERAL_BINDINGS: dict[str, Bind] = {
     "secplotlabelsplotted": _b("secplotlabelsplotted", "labels_check_box", bool),
     "secplotlegendplotted": _b("secplotlegendplotted", "create_legend", bool),
     "screenwidthfactor": _b("screenwidthfactor", "screen_width_factor_spin", float),
+    "secplotscreentext": _b("secplotscreentext", "screen_textcol_combo_box", str),
 }
 
 # DEM-specific settings

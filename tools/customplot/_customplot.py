@@ -301,25 +301,14 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         self.layoutplot.addWidget(self.mpltoolbar)
 
     def calc_frequency(self, table2):
-        freqs = np.zeros(len(table2.values), dtype=float)
-        for j, row in enumerate(table2):
-            if j > 0:  # we can not calculate frequency for first row
-                try:
-                    diff = table2.values[j] - table2.values[j - 1]
-                    """ Get help from function datestr2num to get date and time into float"""
-                    delta_time = (
-                        24
-                        * 3600
-                        * (
-                            datestr2num(table2.date_time[j])
-                            - datestr2num(table2.date_time[j - 1])
-                        )
-                    )  # convert to seconds since numtime is days
-                except Exception:
-                    pass  # just skip inaccurate data values and use previous frequency
-                freqs[j] = diff / delta_time
-        freqs[0] = freqs[1]  # assuming start frequency to get a nicer plot
-
+        values = table2.values
+        times = np.array([datestr2num(dt) for dt in table2.date_time])
+        dt_seconds = np.diff(times) * 24 * 3600
+        diffs = np.diff(values)
+        freqs = np.zeros(len(values), dtype=float)
+        valid = dt_seconds != 0
+        freqs[1:][valid] = diffs[valid] / dt_seconds[valid]
+        freqs[0] = freqs[1] if len(freqs) > 1 else 0.0
         return freqs
 
     def draw_plot_with_styles(self):
@@ -892,24 +881,14 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
 
     def filter_filterlist(self, filterlist, lineedit):
         words = lineedit.text().split(";")
-
-        listcount = filterlist.count()
-        if words:
-            [
-                (
-                    filterlist.item(idx).setHidden(False)
-                    if any(
-                        [
-                            word.lower() in filterlist.item(idx).text().lower()
-                            for word in words
-                        ]
-                    )
-                    else filterlist.item(idx).setHidden(True)
+        for idx in range(filterlist.count()):
+            item = filterlist.item(idx)
+            if words:
+                item.setHidden(
+                    not any(word.lower() in item.text().lower() for word in words)
                 )
-                for idx in range(listcount)
-            ]
-        else:
-            [filterlist.item(idx).setHidden(False) for idx in range(listcount)]
+            else:
+                item.setHidden(False)
 
     def load_tables_from_db(
         self, tables_columns
@@ -1255,36 +1234,16 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         self.ms.settingsdict["custplot_filter2_3"] = str(
             self.tab3_filtercol2.currentText()
         )
-        self.ms.settingsdict["custplot_filter1_1_selection"] = []
-        self.ms.settingsdict["custplot_filter2_1_selection"] = []
-        self.ms.settingsdict["custplot_filter1_2_selection"] = []
-        self.ms.settingsdict["custplot_filter2_2_selection"] = []
-        self.ms.settingsdict["custplot_filter1_3_selection"] = []
-        self.ms.settingsdict["custplot_filter2_3_selection"] = []
-        for item in self.tab1_filter1.selectedItems():
-            self.ms.settingsdict["custplot_filter1_1_selection"].append(
-                str(item.text())
-            )
-        for item in self.tab1_filter2.selectedItems():
-            self.ms.settingsdict["custplot_filter2_1_selection"].append(
-                str(item.text())
-            )
-        for item in self.tab2_filter1.selectedItems():
-            self.ms.settingsdict["custplot_filter1_2_selection"].append(
-                str(item.text())
-            )
-        for item in self.tab2_filter2.selectedItems():
-            self.ms.settingsdict["custplot_filter2_2_selection"].append(
-                str(item.text())
-            )
-        for item in self.tab3_filter1.selectedItems():
-            self.ms.settingsdict["custplot_filter1_3_selection"].append(
-                str(item.text())
-            )
-        for item in self.tab3_filter2.selectedItems():
-            self.ms.settingsdict["custplot_filter2_3_selection"].append(
-                str(item.text())
-            )
+        filter_save_mappings = [
+            (self.tab1_filter1, "custplot_filter1_1_selection"),
+            (self.tab1_filter2, "custplot_filter2_1_selection"),
+            (self.tab2_filter1, "custplot_filter1_2_selection"),
+            (self.tab2_filter2, "custplot_filter2_2_selection"),
+            (self.tab3_filter1, "custplot_filter1_3_selection"),
+            (self.tab3_filter2, "custplot_filter2_3_selection"),
+        ]
+        for widget, key in filter_save_mappings:
+            self.ms.settingsdict[key] = [str(item.text()) for item in widget.selectedItems()]
         self.ms.settingsdict["custplot_plottype1"] = str(
             self.tab1_plot_type.currentText()
         )

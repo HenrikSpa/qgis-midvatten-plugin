@@ -39,7 +39,6 @@ from midvatten.tools.utils.date_utils import (
     change_timezone,
     datestring_to_date,
     dateshift,
-    long_dateformat,
 )
 from midvatten.tools.utils.gui_utils import NavigationButton, WA_DeleteOnClose
 from midvatten.tools.loggereditor_refseries import RefSeriesDialog
@@ -1983,6 +1982,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self.move_nodes_button.uncheck()
             self._draw_trend_overlay()
         else:
+            self.reset_cid()
             self._remove_trend_overlay()
 
     def _draw_trend_overlay(self):
@@ -2103,6 +2103,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     def _trend_release(self, event):
         if self._trend_dragging is None:
             return
+        if self._buf is None:
+            self._trend_dragging = None
+            return
 
         new_start_y = self._trend_start_marker.get_ydata()[0]
         new_end_y = self._trend_end_marker.get_ydata()[0]
@@ -2110,7 +2113,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         original_end_y = self._trend_original_end_y
         self._trend_dragging = None
 
-        if new_start_y == original_start_y and new_end_y == original_end_y:
+        if (
+            abs(new_start_y - original_start_y) < 1e-10
+            and abs(new_end_y - original_end_y) < 1e-10
+        ):
             return
 
         fr_d_t = self.from_date_time.dateTime().toPyDateTime().replace(tzinfo=None)

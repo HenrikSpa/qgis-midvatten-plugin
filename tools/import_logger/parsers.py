@@ -365,13 +365,17 @@ class DiverOfficeParser:
             header_row_idx = data_start_row - 1
             if header_row_idx >= 0:
                 header_row = rows[header_row_idx]
-                if "\t" in header_row:
-                    hdr_delim = "\t"
-                elif ";" in header_row:
-                    hdr_delim = ";"
-                else:
+                hdr_delim = common_utils.get_delimiter_from_file_rows(
+                    rows[header_row_idx : header_row_idx + 2],
+                    delimiters=["\t", ";", ","],
+                    filename=filename,
+                )
+                if hdr_delim is None:
                     hdr_delim = ","
-                header_cols = [c.strip() for c in header_row.split(hdr_delim)]
+                header_cols = [
+                    c.strip()
+                    for c in next(csv.reader([header_row], delimiter=hdr_delim))
+                ]
                 # legacy files may have Date/time at any column position
                 date_col_idx = next(
                     (i for i, c in enumerate(header_cols) if c.lower() == "date/time"),
@@ -404,6 +408,8 @@ class DiverOfficeParser:
             num_fields=len(data_headers),
             filename=filename,
         )
+        if delimiter is None:
+            return filedata, filename, location, utc_offset or None, serial_number
 
         usecols = []
         colnames = []
@@ -587,12 +593,21 @@ class DiverOfficeParser:
             )
             return "skip"
 
-        if len(data_rows[0].split(",")) > len(data_rows[0].split(";")):
-            delimiter = ","
-        else:
-            delimiter = ";"
+        delimiter = common_utils.get_delimiter_from_file_rows(
+            data_rows,
+            delimiters=[";", ","],
+            filename=os.path.basename(path),
+        )
+        if delimiter is None:
+            return (
+                filedata,
+                os.path.basename(path),
+                location,
+                utc_offset or None,
+                serial_number,
+            )
 
-        file_header = data_rows[0].split(delimiter)
+        file_header = next(csv.reader([data_rows[0]], delimiter=delimiter))
         nr_of_cols = len(file_header)
 
         if nr_of_cols < 2:
@@ -641,7 +656,7 @@ class DiverOfficeParser:
         errors = set()
         skipped_rows = 0
         for row in data_rows[1:]:
-            cols = row.split(delimiter)
+            cols = next(csv.reader([row], delimiter=delimiter))
             if len(cols) != nr_of_cols:
                 return common_utils.ask_user_about_stopping(
                     QCoreApplication.translate(
@@ -867,11 +882,7 @@ class LeveloggerParser:
         if delimiter is None:
             return [], filename, location, timezone, serial_number
 
-        rows = [row.split(";") for row in rows_unsplit]
-        lens = set([len(row) for row in rows[data_header_idx:]])
-        if len(lens) != 1 or list(lens)[0] == 1:
-            # Assume that the delimiter was not ';'
-            rows = [row.split(",") for row in rows_unsplit]
+        rows = [next(csv.reader([row], delimiter=delimiter)) for row in rows_unsplit]
 
         col1 = [row[0] for row in rows]
 

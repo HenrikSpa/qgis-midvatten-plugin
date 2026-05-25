@@ -21,6 +21,7 @@
 """
 
 import copy
+import csv
 from queue import Queue
 from collections import OrderedDict
 from datetime import datetime
@@ -251,7 +252,7 @@ class FieldloggerImport(BaseImporter, import_fieldlogger_ui_dialog):
         header_rownr = None
         for rownr, rawrow in enumerate(f):
             row = rawrow.rstrip("\n").strip().lower()
-            cols = row.split(delimiter)
+            cols = next(csv.reader([row], delimiter=delimiter))
             if not row:
                 continue
             else:
@@ -274,7 +275,7 @@ class FieldloggerImport(BaseImporter, import_fieldlogger_ui_dialog):
         for rownr, rawrow in enumerate(f):
             observation = {}
             row = rawrow.rstrip("\n").strip()
-            cols = row.split(delimiter)
+            cols = next(csv.reader([row], delimiter=delimiter))
             if not row:
                 continue
             if header_rownr is None and not rownr:

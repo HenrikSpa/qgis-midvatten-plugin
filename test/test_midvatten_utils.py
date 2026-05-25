@@ -442,6 +442,40 @@ class TestGetDelimiter:
 
             _test(filename)
 
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_get_delimiter_quoted_comma_in_semicolon_data(self, mock_messagebar):
+        file = ['"hello, world";42;foo', '"test, data";99;bar']
+
+        with common_utils.tempinput("\n".join(file), "utf-8") as filename:
+
+            @mock.patch(
+                "midvatten.tools.utils.file_utils.qgis.PyQt.QtWidgets.QInputDialog.getText"
+            )
+            @mock.patch("qgis.utils.iface", autospec=True)
+            def _test(filename, mock_iface, mock_get_text):
+                delimiter = common_utils.get_delimiter(filename, "utf-8")
+                print(f"{mock_messagebar.mock_calls=}")
+                assert delimiter == ";"
+
+            _test(filename)
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_get_delimiter_quoted_semicolon_in_comma_data(self, mock_messagebar):
+        file = ['"hello; world",42,foo', '"test; data",99,bar']
+
+        with common_utils.tempinput("\n".join(file), "utf-8") as filename:
+
+            @mock.patch(
+                "midvatten.tools.utils.file_utils.qgis.PyQt.QtWidgets.QInputDialog.getText"
+            )
+            @mock.patch("qgis.utils.iface", autospec=True)
+            def _test(filename, mock_iface, mock_get_text):
+                delimiter = common_utils.get_delimiter(filename, "utf-8")
+                print(f"{mock_messagebar.mock_calls=}")
+                assert delimiter == ","
+
+            _test(filename)
+
 
 @pytest.mark.active
 class TestGeneralExceptionHandler:

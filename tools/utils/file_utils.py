@@ -6,7 +6,6 @@ import csv
 import os
 import tempfile
 from contextlib import contextmanager
-from operator import itemgetter
 from typing import Any, List, Optional, Type
 from collections.abc import Iterator
 
@@ -42,7 +41,7 @@ def get_delimiter(
     delimiters: Optional[List[str]] = None,
     num_fields: Optional[int] = None,
     skip_empty_rows: bool = True,
-) -> str:
+) -> Optional[str]:
     if filename is None:
         raise TypeError(tr("get_delimiter", "Must give filename or supply rows"))
     with open(filename, encoding=charset) as f:
@@ -52,7 +51,24 @@ def get_delimiter(
     delimiter = get_delimiter_from_file_rows(
         rows, filename=filename, delimiters=delimiters, num_fields=num_fields
     )
+    if delimiter is None:
+        _result = ask_for_delimiter(
+            question=returnunicode(
+                tr(
+                    "get_delimiter",
+                    "Delimiter couldn't be found automatically for %s. Give the correct one (ex ';'):",
+                )
+            )
+            % filename
+        )
+        delimiter = _result[0]
     return delimiter
+
+
+def _count_columns(row: str, delimiter: str) -> int:
+    if len(delimiter) == 1:
+        return len(next(csv.reader([row], delimiter=delimiter)))
+    return len(row.split(delimiter))
 
 
 def get_delimiter_from_file_rows(
@@ -60,68 +76,62 @@ def get_delimiter_from_file_rows(
     filename: Optional[str] = None,
     delimiters: Optional[List[str]] = None,
     num_fields: Optional[int] = None,
-) -> str:
+) -> Optional[str]:
     if filename is None:
         filename = "the rows"
-    delimiter = None
     if delimiters is None:
-        delimiters = [",", ";"]
-    tested_delim = []
-    for _delimiter in delimiters:
-        cols_on_all_rows = set()
-        cols_on_all_rows.update([len(row.split(_delimiter)) for row in rows])
-        if len(cols_on_all_rows) == 1:
-            nr_of_cols = cols_on_all_rows.pop()
-            if num_fields is not None and nr_of_cols == num_fields:
-                delimiter = _delimiter
-                break
-            tested_delim.append((_delimiter, nr_of_cols))
+        delimiters = [";", ","]
 
-    if not delimiter:
-        # No delimiter worked
-        if not tested_delim:
-            _delimiter = ask_for_delimiter(
-                question=returnunicode(
+    # When num_fields is specified, test candidates in order (caller knows the structure)
+    if num_fields is not None:
+        any_consistent = False
+        for candidate in delimiters:
+            col_counts = {_count_columns(row, candidate) for row in rows}
+            if len(col_counts) == 1:
+                any_consistent = True
+                if col_counts.pop() == num_fields:
+                    return candidate
+        if any_consistent:
+            MessagebarAndLog.critical(
+                returnunicode(
                     tr(
                         "get_delimiter_from_file_rows",
-                        "Delimiter couldn't be found automatically for %s. Give the correct one (ex ';'):",
+                        "Delimiter not found for %s. The file must contain %s fields, but none of %s worked as delimiter.",
                     )
                 )
-                % filename
+                % (filename, str(num_fields), " or ".join(delimiters))
             )
-            delimiter = _delimiter[0]
-        else:
-            if delimiter is None:
-                if num_fields is not None:
-                    MessagebarAndLog.critical(
-                        returnunicode(
-                            tr(
-                                "get_delimiter_from_file_rows",
-                                "Delimiter not found for %s. The file must contain %s fields, but none of %s worked as delimiter.",
-                            )
-                        )
-                        % (filename, str(num_fields), " or ".join(delimiters))
-                    )
-                    return None
+            return None
 
-                lenght = max(tested_delim, key=itemgetter(1))[1]
+    # Try csv.Sniffer for auto-detection (handles quoting and escaping)
+    single_char_delims = "".join(d for d in delimiters if len(d) == 1)
+    if single_char_delims:
+        try:
+            dialect = csv.Sniffer().sniff(
+                "\n".join(r.rstrip("\r\n") for r in rows),
+                delimiters=single_char_delims,
+            )
+            if dialect.delimiter in delimiters:
+                return dialect.delimiter
+        except csv.Error:
+            pass
 
-                more_than_one_delimiter = [x[0] for x in tested_delim if x[1] == lenght]
+    # Fallback: column-counting per candidate (quote-aware for single-char)
+    best_delim = None
+    best_cols = 0
+    for candidate in delimiters:
+        col_counts = {_count_columns(row, candidate) for row in rows}
+        if len(col_counts) != 1:
+            continue
+        nr_of_cols = col_counts.pop()
+        if nr_of_cols > best_cols:
+            best_cols = nr_of_cols
+            best_delim = candidate
 
-                delimiter = max(tested_delim, key=itemgetter(1))[0]
+    if best_delim is not None and best_cols > 1:
+        return best_delim
 
-                if lenght == 1 or len(more_than_one_delimiter) > 1:
-                    _delimiter = ask_for_delimiter(
-                        question=returnunicode(
-                            tr(
-                                "get_delimiter_from_file_rows",
-                                "Delimiter couldn't be found automatically for %s. Give the correct one (ex ';'):",
-                            )
-                        )
-                        % filename
-                    )
-                    delimiter = _delimiter[0]
-    return delimiter
+    return None
 
 
 def ask_for_delimiter(

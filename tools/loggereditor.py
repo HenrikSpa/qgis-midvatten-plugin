@@ -108,18 +108,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self.button_add_offset.clicked.connect(lambda x: self.add_to_level_masl())
         self.push_button_from.clicked.connect(lambda x: self.set_from_date_from_x())
         self.push_button_to.clicked.connect(lambda x: self.set_to_date_from_x())
-        self.l1_button.clicked.connect(
-            lambda x: self.set_adjust_data("l1_date", "l1_level")
-        )
-        self.l2_button.clicked.connect(
-            lambda x: self.set_adjust_data("L2_date", "l2_level")
-        )
-        self.m1_button.clicked.connect(
-            lambda x: self.set_adjust_data("M1_date", "M1_level")
-        )
-        self.m2_button.clicked.connect(
-            lambda x: self.set_adjust_data("M2_date", "M2_level")
-        )
         self.push_button_from_extent.clicked.connect(
             lambda: self.update_date_from_extent(
                 self.from_date_time, self.axes.get_xbound()[0]
@@ -141,8 +129,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 "w_levels_logger", set_to_null_instead=True
             )
         )
-        self.adjust_trend_button.clicked.connect(lambda x: self.adjust_trend_func())
-
         self.from_date_time.dateTimeChanged.connect(
             lambda: self.plot_or_update_selected_line()
         )
@@ -1859,105 +1845,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 ),
             )
         )
-
-    @fn_timer
-    def set_adjust_data(self, date_holder, level_holder):
-        self.reset_cid()
-        self.deactivate_pan_zoom()
-        self.canvas.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
-        self.canvas.setFocus()
-        self.cid.append(
-            self.canvas.mpl_connect(
-                "button_press_event",
-                lambda event: self.set_adjust_data_on_click(
-                    event, date_holder, level_holder
-                ),
-            )
-        )
-
-    @fn_timer
-    def set_adjust_data_on_click(self, event, date_var, level_var):
-        getattr(self, level_var).setText(f"{event.ydata:.5f}")
-        getattr(self, date_var).setDateTime(event.xdata)
-        self.reset_cid()
-
-    @fn_timer
-    def adjust_trend_func(self):
-
-        obsid = self._obsid_ensure_buf_current()
-        if obsid is None:
-            return None
-
-        if self._buf is None:
-            common_utils.MessagebarAndLog.warning(bar_msg="No data loaded")
-            return
-
-        _utc_epoch = datetime.datetime(1970, 1, 1)
-
-        def _to_epoch(qdatetime_widget) -> float:
-            return (
-                qdatetime_widget.dateTime().toPyDateTime().replace(tzinfo=None)
-                - _utc_epoch
-            ).total_seconds()
-
-        l1_epoch = _to_epoch(self.l1_date)
-        l2_epoch = _to_epoch(self.l2_date)
-        m1_epoch = _to_epoch(self.m1_date)
-        m2_epoch = _to_epoch(self.m2_date)
-
-        l1_level = float(self.l1_level.text())
-        l2_level = float(self.l2_level.text())
-        m1_level = float(self.m1_level.text())
-        m2_level = float(self.m2_level.text())
-
-        fr_d_t = self.from_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
-        to_d_t = self.to_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
-
-        mask = (
-            (fr_d_t <= self._buf.index)
-            & (self._buf.index <= to_d_t)
-            & self._buf["level_masl"].notna()
-        )
-        if not mask.any():
-            common_utils.pop_up_info(
-                QCoreApplication.translate(
-                    "Calibrlogger",
-                    """Warning!\n No data found within the chosen period. No trend adjustment done!\nTry changing "from" and "to".""",
-                )
-            )
-            return
-
-        data = {
-            "obsid": obsid,
-            "adjust_start_date": long_dateformat(
-                self.from_date_time.dateTime().toPyDateTime()
-            ),
-            "adjust_end_date": long_dateformat(
-                self.to_date_time.dateTime().toPyDateTime()
-            ),
-            "l1_level": str(l1_level),
-            "l2_level": str(l2_level),
-            "M1_level": str(m1_level),
-            "M2_level": str(m2_level),
-        }
-        common_utils.MessagebarAndLog.info(
-            log_msg=QCoreApplication.translate(
-                "Calibrlogger", "Trend adjusted using: \n%s"
-            )
-            % (str(data))
-        )
-
-        slope = (l1_level - l2_level) / (l1_epoch - l2_epoch) - (
-            m1_level - m2_level
-        ) / (m1_epoch - m2_epoch)
-        row_epochs = self._buf.loc[mask].index.map(
-            lambda dt: (dt - _utc_epoch).total_seconds()
-        )
-        common_utils.start_waiting_cursor()
-        self._buf.loc[mask, "level_masl"] -= slope * (row_epochs - l1_epoch)
-        self._history_push("Adjust trend")
-        common_utils.stop_waiting_cursor()
-        self.update_plot()
 
     def plot_or_update_selected_line(self):
         if self.logger_artist is None:

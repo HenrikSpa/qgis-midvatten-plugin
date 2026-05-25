@@ -2160,7 +2160,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             if artist is not None:
                 try:
                     artist.remove()
-                except ValueError:
+                except (ValueError, NotImplementedError):
                     pass
                 setattr(self, attr, None)
         self._trend_dragging = None

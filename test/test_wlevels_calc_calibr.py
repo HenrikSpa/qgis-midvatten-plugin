@@ -20,7 +20,6 @@
 """
 
 import math
-from decimal import Decimal
 from unittest import mock
 
 import numpy as np
@@ -733,7 +732,6 @@ class CalibrloggerMixin:
         print(f"{mock_messagebar.mock_calls=}")
         assert calibrlogger.combobox_obsid.currentIndex() == prev_index
 
-
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_save_to_db_multi_period_range_sql(self, mock_messagebar):
         """save_to_db uses range SQL for multiple distinct calibration periods."""
@@ -790,10 +788,14 @@ class CalibrloggerMixin:
         assert len(rows) == 6
         # Period 1: level = 2 + 100/100 = 3.0
         for row in rows[:3]:
-            assert row[1] == pytest.approx(3.0), f"period-1 row {row[0]} wrong: {row[1]}"
+            assert row[1] == pytest.approx(3.0), (
+                f"period-1 row {row[0]} wrong: {row[1]}"
+            )
         # Period 2: level = 10.0 + 5 = 15.0
         for row in rows[3:]:
-            assert row[1] == pytest.approx(15.0), f"period-2 row {row[0]} wrong: {row[1]}"
+            assert row[1] == pytest.approx(15.0), (
+                f"period-2 row {row[0]} wrong: {row[1]}"
+            )
 
 
 class CalibrloggerPostgisMixin(CalibrloggerMixin):
@@ -801,18 +803,13 @@ class CalibrloggerPostgisMixin(CalibrloggerMixin):
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_calibrlogger_adjust_trend(self, mock_messagebar):
+        """Interactive trend: drag start up by 5, end stays (pivot)."""
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
         db_utils.sql_alter_db(
             "INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('rb1', '2017-02-01 00:00', 100)"
         )
         db_utils.sql_alter_db(
             "INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('rb1', '2017-02-10 00:00', 200)"
-        )
-        db_utils.sql_alter_db(
-            "INSERT INTO w_levels (obsid, date_time, level_masl) VALUES ('rb1', '2017-02-01 00:00', 200)"
-        )
-        db_utils.sql_alter_db(
-            "INSERT INTO w_levels (obsid, date_time, level_masl) VALUES ('rb1', '2017-02-10 00:00', 100)"
         )
 
         calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
@@ -822,34 +819,22 @@ class CalibrloggerPostgisMixin(CalibrloggerMixin):
         calibrlogger.from_date_time.setDateTime(
             date_utils.datestring_to_date("2000-01-01 00:00:00")
         )
-        calibrlogger.l1_date.setDateTime(
-            date_utils.datestring_to_date("2017-02-01 00:00")
+        calibrlogger.to_date_time.setDateTime(
+            date_utils.datestring_to_date("2099-12-31 23:59:59")
         )
-        calibrlogger.l2_date.setDateTime(
-            date_utils.datestring_to_date("2017-02-10 00:00")
-        )
-        calibrlogger.m1_date.setDateTime(
-            date_utils.datestring_to_date("2017-02-01 00:00")
-        )
-        calibrlogger.m2_date.setDateTime(
-            date_utils.datestring_to_date("2017-02-10 00:00")
-        )
-        calibrlogger.l1_level.setText("100")
-        calibrlogger.l2_level.setText("200")
-        calibrlogger.m1_level.setText("200")
-        calibrlogger.m2_level.setText("100")
 
-        calibrlogger.adjust_trend_func()
+        from midvatten.tools.trend_math import apply_trend_correction
+
+        apply_trend_correction(calibrlogger._buf, 100.0, 200.0, 105.0, 200.0)
+        calibrlogger._history_push("Adjust trend")
         calibrlogger.save_to_db()
+
         res = db_utils.sql_load_fr_db(
-            "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger"
+            "SELECT obsid, date_time, level_masl FROM w_levels_logger ORDER BY date_time"
         )
-        row = list(res[1][1])
-        row[5] = "%.11e" % Decimal(row[5])
-        res[1][1] = tuple(row)
-        test = utils_for_tests.create_test_string(res)
         print(f"{mock_messagebar.mock_calls=}")
-        ref = "(True, [(rb1, 2017-02-01 00:00, None, None, None, 100.0, None), (rb1, 2017-02-10 00:00, None, None, None, -2.84217094304e-14, None)])"
+        test = utils_for_tests.create_test_string(res)
+        ref = "(True, [(rb1, 2017-02-01 00:00, 105.0), (rb1, 2017-02-10 00:00, 200.0)])"
         assert test == ref
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
@@ -1067,18 +1052,13 @@ class CalibrloggerSpatialiteMixin(CalibrloggerMixin):
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_calibrlogger_adjust_trend(self, mock_messagebar):
+        """Interactive trend: drag start up by 5, end stays (pivot)."""
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
         db_utils.sql_alter_db(
             "INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('rb1', '2017-02-01 00:00', 100)"
         )
         db_utils.sql_alter_db(
             "INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('rb1', '2017-02-10 00:00', 200)"
-        )
-        db_utils.sql_alter_db(
-            "INSERT INTO w_levels (obsid, date_time, level_masl) VALUES ('rb1', '2017-02-01 00:00', 200)"
-        )
-        db_utils.sql_alter_db(
-            "INSERT INTO w_levels (obsid, date_time, level_masl) VALUES ('rb1', '2017-02-10 00:00', 100)"
         )
 
         calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
@@ -1088,35 +1068,112 @@ class CalibrloggerSpatialiteMixin(CalibrloggerMixin):
         calibrlogger.from_date_time.setDateTime(
             date_utils.datestring_to_date("2000-01-01 00:00:00")
         )
-        calibrlogger.l1_date.setDateTime(
-            date_utils.datestring_to_date("2017-02-01 00:00")
+        calibrlogger.to_date_time.setDateTime(
+            date_utils.datestring_to_date("2099-12-31 23:59:59")
         )
-        calibrlogger.l2_date.setDateTime(
-            date_utils.datestring_to_date("2017-02-10 00:00")
-        )
-        calibrlogger.m1_date.setDateTime(
-            date_utils.datestring_to_date("2017-02-01 00:00")
-        )
-        calibrlogger.m2_date.setDateTime(
-            date_utils.datestring_to_date("2017-02-10 00:00")
-        )
-        calibrlogger.l1_level.setText("100")
-        calibrlogger.l2_level.setText("200")
-        calibrlogger.m1_level.setText("200")
-        calibrlogger.m2_level.setText("100")
 
-        calibrlogger.adjust_trend_func()
+        from midvatten.tools.trend_math import apply_trend_correction
+
+        apply_trend_correction(calibrlogger._buf, 100.0, 200.0, 105.0, 200.0)
+        calibrlogger._history_push("Adjust trend")
         calibrlogger.save_to_db()
+
         res = db_utils.sql_load_fr_db(
-            "SELECT obsid, date_time, head_cm, temp_degc, cond_mscm, level_masl, comment FROM w_levels_logger"
+            "SELECT obsid, date_time, level_masl FROM w_levels_logger ORDER BY date_time"
         )
-        row = list(res[1][1])
-        row[5] = "%.11e" % Decimal(row[5])
-        res[1][1] = tuple(row)
-        test = utils_for_tests.create_test_string(res)
         print(f"{mock_messagebar.mock_calls=}")
-        ref = "(True, [(rb1, 2017-02-01 00:00, None, None, None, 100.0, None), (rb1, 2017-02-10 00:00, None, None, None, -2.84217094304e-14, None)])"
+        test = utils_for_tests.create_test_string(res)
+        ref = "(True, [(rb1, 2017-02-01 00:00, 105.0), (rb1, 2017-02-10 00:00, 200.0)])"
         assert test == ref
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_calibrlogger_adjust_trend_undo(self, mock_messagebar):
+        """Undo should restore level_masl to pre-trend values."""
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('rb1', '2017-02-01 00:00', 100)"
+        )
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('rb1', '2017-02-10 00:00', 200)"
+        )
+
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
+        gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
+        calibrlogger.update_plot()
+        calibrlogger.from_date_time.setDateTime(
+            date_utils.datestring_to_date("2000-01-01 00:00:00")
+        )
+        calibrlogger.to_date_time.setDateTime(
+            date_utils.datestring_to_date("2099-12-31 23:59:59")
+        )
+
+        from midvatten.tools.trend_math import apply_trend_correction
+
+        original_values = calibrlogger._buf["level_masl"].copy()
+        apply_trend_correction(calibrlogger._buf, 100.0, 200.0, 120.0, 180.0)
+        calibrlogger._history_push("Adjust trend")
+
+        calibrlogger.undo()
+
+        print(f"{mock_messagebar.mock_calls=}")
+        assert (calibrlogger._buf["level_masl"] == original_values).all()
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_calibrlogger_adjust_trend_drag_flow(self, mock_messagebar):
+        """Full event-handler flow: enter trend mode, pick, drag, release."""
+        from unittest.mock import MagicMock
+
+        from matplotlib.backend_bases import PickEvent
+
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('rb1', '2017-02-01 00:00', 100)"
+        )
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('rb1', '2017-02-10 00:00', 200)"
+        )
+
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
+        gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
+        calibrlogger.update_plot()
+        calibrlogger.from_date_time.setDateTime(
+            date_utils.datestring_to_date("2000-01-01 00:00:00")
+        )
+        calibrlogger.to_date_time.setDateTime(
+            date_utils.datestring_to_date("2099-12-31 23:59:59")
+        )
+
+        # Enter trend mode
+        calibrlogger.adjust_trend_button.button().setChecked(True)
+        calibrlogger.toggle_adjust_trend(True)
+        assert calibrlogger._trend_start_marker is not None
+        assert calibrlogger._trend_end_marker is not None
+
+        # Simulate pick on start marker
+        pick_event = MagicMock(spec=PickEvent)
+        pick_event.artist = calibrlogger._trend_start_marker
+        calibrlogger._trend_pick(pick_event)
+        assert calibrlogger._trend_dragging == "start"
+
+        # Simulate drag: move start endpoint up by 5
+        motion_event = MagicMock()
+        motion_event.ydata = 105.0
+        calibrlogger._trend_move(motion_event)
+
+        # Simulate release
+        release_event = MagicMock()
+        calibrlogger._trend_release(release_event)
+
+        # Verify correction applied
+        print(f"{mock_messagebar.mock_calls=}")
+        assert calibrlogger._buf["level_masl"].iloc[0] == pytest.approx(105.0)
+        assert calibrlogger._buf["level_masl"].iloc[1] == pytest.approx(200.0)
+
+        # Verify trend overlay was redrawn (not stale/crashed)
+        assert calibrlogger._trend_line is not None
+        assert calibrlogger._trend_start_marker is not None
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_calibrlogger_plot_source_sqlite(self, mock_messagebar):

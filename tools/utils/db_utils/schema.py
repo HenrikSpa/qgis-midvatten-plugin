@@ -3,7 +3,6 @@ Schema/metadata helpers: get_tables, get_table_info, get_foreign_keys, etc.
 """
 
 import re
-from collections import OrderedDict
 from typing import Any, Optional, Union
 from collections.abc import Sequence
 
@@ -188,7 +187,7 @@ def get_sql_result_as_dict(
     sql: str,
     dbconnection: Optional[DbConnectionManager] = None,
     execute_args: Optional[Sequence[Any]] = None,
-) -> tuple[bool, OrderedDict]:
+) -> tuple[bool, dict]:
     with use_or_create_connection(dbconnection) as dbconnection:
         connection_ok, result_list = sql_load_fr_db(
             sql,
@@ -196,8 +195,8 @@ def get_sql_result_as_dict(
             execute_args=execute_args,
         )
         if not connection_ok:
-            return False, OrderedDict()
-        result_dict: OrderedDict = OrderedDict()
+            return False, {}
+        result_dict: dict = {}
         for res in result_list:
             result_dict.setdefault(res[0], []).append(tuple(res[1:]))
         return True, result_dict
@@ -229,7 +228,7 @@ def change_cast_type_for_geometry_columns(
 def get_geometry_types(
     tablename: str,
     dbconnection: Optional[DbConnectionManager] = None,
-) -> OrderedDict:
+) -> dict:
     with use_or_create_connection(dbconnection) as dbconnection:
         if dbconnection.is_sqlite():
             sql = """SELECT f_geometry_column, geometry_type FROM geometry_columns WHERE f_table_name = ?"""

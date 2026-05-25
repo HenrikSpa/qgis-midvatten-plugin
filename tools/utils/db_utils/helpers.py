@@ -246,7 +246,7 @@ def create_dict_from_db_2_cols(params: tuple) -> tuple:
             button=True,
         )
         return False, {"": ""}
-    return True, dict((k, v) for k, v in list_of_tuples)
+    return True, dict(list_of_tuples)
 
 
 def rowid_string(

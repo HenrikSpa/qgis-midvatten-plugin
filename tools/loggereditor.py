@@ -103,6 +103,12 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         )
 
         self.cid = []
+        self._trend_line = None
+        self._trend_start_marker = None
+        self._trend_end_marker = None
+        self._trend_dragging = None
+        self._trend_original_start_y = None
+        self._trend_original_end_y = None
 
         self.button_calculate.clicked.connect(lambda x: self.set_logger_pos())
         self.button_add_offset.clicked.connect(lambda x: self.add_to_level_masl())
@@ -188,6 +194,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self.select_nodes_button = SelectNodesButton(self, self.calibrplotfigure)
             self.move_nodes_button = MoveNodesButton(self, self.calibrplotfigure)
             self.multi_cursor_button = MultiCursorButton(self, self.calibrplotfigure)
+            self.adjust_trend_button = AdjustTrendButton(self, self.calibrplotfigure)
 
             self.get_search_radius()
 
@@ -1951,6 +1958,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self.deactivate_pan_zoom()
             self.period_selector.set_active(False)
             self.select_nodes_button.uncheck()
+            self.adjust_trend_button.uncheck()
+            self._remove_trend_overlay()
             self.connect_selected_line_move()
 
     def toggle_select_nodes(self, on):
@@ -1958,7 +1967,34 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self.reset_cid()
             self.deactivate_pan_zoom()
             self.move_nodes_button.uncheck()
+            self.adjust_trend_button.uncheck()
+            self._remove_trend_overlay()
         self.period_selector.set_active(on)
+
+    def toggle_adjust_trend(self, on: bool):
+        if on:
+            self.reset_cid()
+            self.deactivate_pan_zoom()
+            self.period_selector.set_active(False)
+            self.select_nodes_button.uncheck()
+            self.move_nodes_button.uncheck()
+            self._draw_trend_overlay()
+        else:
+            self._remove_trend_overlay()
+
+    def _draw_trend_overlay(self):
+        pass
+
+    def _remove_trend_overlay(self):
+        for attr in ("_trend_line", "_trend_start_marker", "_trend_end_marker"):
+            artist = getattr(self, attr, None)
+            if artist is not None:
+                try:
+                    artist.remove()
+                except ValueError:
+                    pass
+                setattr(self, attr, None)
+        self._trend_dragging = None
 
 
 class SelectNodesButton(NavigationButton):
@@ -2030,6 +2066,30 @@ class MultiCursorButton(NavigationButton):
         self.mc.visible = self.button().isChecked()
         if not self.mc.visible:
             self.fig.canvas.draw_idle()
+
+
+class AdjustTrendButton(NavigationButton):
+    def __init__(self, parent, fig):
+        super().__init__(parent, fig)
+        self._button_setup = [
+            (
+                "adjust trend",
+                self.clicked,
+                "Adjust trend",
+                os.path.join(
+                    os.path.dirname(__file__), "..", "icons", "adjust_trend.png"
+                ),
+            )
+        ]
+        self.connect_toolbar()
+
+    def button(self):
+        return list(self.actions.values())[0]
+
+    def clicked(self):
+        if not self.button().isChecked():
+            self.parent.reset_cid()
+        self.parent.toggle_adjust_trend(self.button().isChecked())
 
 
 def _iter_filter_combos(filters: list[dict]):

@@ -302,11 +302,16 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
 
     def calc_frequency(self, table2):
         values = table2.values
-        times = np.array([datestr2num(dt) for dt in table2.date_time])
+        times = np.empty(len(values), dtype=float)
+        for i, dt in enumerate(table2.date_time):
+            try:
+                times[i] = datestr2num(dt)
+            except Exception:
+                times[i] = np.nan
         dt_seconds = np.diff(times) * 24 * 3600
         diffs = np.diff(values)
         freqs = np.zeros(len(values), dtype=float)
-        valid = dt_seconds != 0
+        valid = (dt_seconds != 0) & ~np.isnan(dt_seconds)
         freqs[1:][valid] = diffs[valid] / dt_seconds[valid]
         freqs[0] = freqs[1] if len(freqs) > 1 else 0.0
         return freqs
@@ -1243,7 +1248,9 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             (self.tab3_filter2, "custplot_filter2_3_selection"),
         ]
         for widget, key in filter_save_mappings:
-            self.ms.settingsdict[key] = [str(item.text()) for item in widget.selectedItems()]
+            self.ms.settingsdict[key] = [
+                str(item.text()) for item in widget.selectedItems()
+            ]
         self.ms.settingsdict["custplot_plottype1"] = str(
             self.tab1_plot_type.currentText()
         )

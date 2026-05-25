@@ -156,7 +156,6 @@ def return_lower_ascii_string(textstring):
     return filtered_string
 
 
-
 def calc_mean_diff(coupled_vals):
     """Calculates the mean difference for all value couples in a list of tuples
 
@@ -654,8 +653,15 @@ def get_stored_settings(ms, settingskey, default=None, skip_ast=False):
 def to_float_or_none(anything) -> float | None:
     if anything is None or (hasattr(anything, "isNull") and anything.isNull()):
         return None
-    result = pd.to_numeric(str(anything).replace(",", "."), errors="coerce")
-    return None if pd.isna(result) else float(result)
+    s = str(anything).replace(",", ".")
+    result = pd.to_numeric(s, errors="coerce")
+    if pd.isna(result):
+        # "nan", "inf", "-inf" are valid Python float literals — preserve old behavior
+        try:
+            return float(s)
+        except (ValueError, TypeError):
+            return None
+    return float(result)
 
 
 def sql_unicode_list(an_iterator: tuple[str, ...]) -> str:

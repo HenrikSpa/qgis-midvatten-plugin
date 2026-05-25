@@ -43,6 +43,7 @@ from midvatten.tools.utils.date_utils import (
 )
 from midvatten.tools.utils.gui_utils import NavigationButton, WA_DeleteOnClose
 from midvatten.tools.loggereditor_refseries import RefSeriesDialog
+from midvatten.tools.trend_math import apply_trend_correction
 
 log = logging.getLogger(__name__)
 
@@ -1112,6 +1113,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
         self.toggle_move_nodes(self.move_nodes_button.button().isChecked())
         self.toggle_select_nodes(self.select_nodes_button.button().isChecked())
+        if hasattr(self, "adjust_trend_button"):
+            self.toggle_adjust_trend(self.adjust_trend_button.button().isChecked())
 
     def _draw_series(self):
         """Draw measurement and logger time series onto self.axes. Return (handles, labels)."""
@@ -1983,7 +1986,173 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self._remove_trend_overlay()
 
     def _draw_trend_overlay(self):
-        pass
+        self._remove_trend_overlay()
+        self.reset_cid()
+
+        if self._buf is None or self.logger_artist is None:
+            self.statusbar.showMessage(
+                QCoreApplication.translate("Calibrlogger", "No data loaded."),
+                5000,
+            )
+            return
+
+        fr_d_t = self.from_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
+        to_d_t = self.to_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
+
+        mask = (
+            (fr_d_t <= self._buf.index)
+            & (self._buf.index <= to_d_t)
+            & self._buf["level_masl"].notna()
+        )
+        selected = self._buf.loc[mask]
+
+        if len(selected) < 2:
+            self.statusbar.showMessage(
+                QCoreApplication.translate(
+                    "Calibrlogger",
+                    "Need at least 2 points with level_masl in the selected range.",
+                ),
+                5000,
+            )
+            return
+
+        start_dt = selected.index[0]
+        end_dt = selected.index[-1]
+        start_y = selected["level_masl"].iloc[0]
+        end_y = selected["level_masl"].iloc[-1]
+
+        if start_dt == end_dt:
+            self.statusbar.showMessage(
+                QCoreApplication.translate(
+                    "Calibrlogger",
+                    "Selected points have the same timestamp — cannot define a trend.",
+                ),
+                5000,
+            )
+            return
+
+        self._trend_line = self.axes.plot(
+            [start_dt, end_dt],
+            [start_y, end_y],
+            linestyle="--",
+            color="#dc5028",
+            linewidth=2,
+            zorder=40,
+        )[0]
+
+        self._trend_start_marker = self.axes.plot(
+            [start_dt],
+            [start_y],
+            marker="o",
+            markersize=12,
+            color="#dc5028",
+            zorder=41,
+            picker=10,
+        )[0]
+
+        self._trend_end_marker = self.axes.plot(
+            [end_dt],
+            [end_y],
+            marker="o",
+            markersize=12,
+            color="#dc5028",
+            zorder=41,
+            picker=10,
+        )[0]
+
+        self.cid.append(self.canvas.mpl_connect("pick_event", self._trend_pick))
+        self.cid.append(
+            self.canvas.mpl_connect("motion_notify_event", self._trend_move)
+        )
+        self.cid.append(
+            self.canvas.mpl_connect("button_release_event", self._trend_release)
+        )
+        self.canvas.draw_idle()
+
+    def _trend_pick(self, event):
+        if not isinstance(event, PickEvent):
+            return
+        if event.artist is self._trend_start_marker:
+            self._trend_dragging = "start"
+        elif event.artist is self._trend_end_marker:
+            self._trend_dragging = "end"
+        else:
+            return
+        self._trend_original_start_y = self._trend_start_marker.get_ydata()[0]
+        self._trend_original_end_y = self._trend_end_marker.get_ydata()[0]
+
+    def _trend_move(self, event):
+        if self._trend_dragging is None:
+            return
+        if event.ydata is None:
+            return
+
+        start_y = self._trend_start_marker.get_ydata()[0]
+        end_y = self._trend_end_marker.get_ydata()[0]
+
+        if self._trend_dragging == "start":
+            start_y = event.ydata
+        else:
+            end_y = event.ydata
+
+        self._trend_line.set_ydata([start_y, end_y])
+        self._trend_start_marker.set_ydata([start_y])
+        self._trend_end_marker.set_ydata([end_y])
+        self.canvas.draw_idle()
+
+    def _trend_release(self, event):
+        if self._trend_dragging is None:
+            return
+
+        new_start_y = self._trend_start_marker.get_ydata()[0]
+        new_end_y = self._trend_end_marker.get_ydata()[0]
+        original_start_y = self._trend_original_start_y
+        original_end_y = self._trend_original_end_y
+        self._trend_dragging = None
+
+        if new_start_y == original_start_y and new_end_y == original_end_y:
+            return
+
+        fr_d_t = self.from_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
+        to_d_t = self.to_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
+
+        mask = (
+            (fr_d_t <= self._buf.index)
+            & (self._buf.index <= to_d_t)
+            & self._buf["level_masl"].notna()
+        )
+        selected = self._buf.loc[mask]
+        if len(selected) < 2:
+            return
+
+        common_utils.start_waiting_cursor()
+        sub = self._buf.loc[mask].copy()
+        applied = apply_trend_correction(
+            sub, original_start_y, original_end_y, new_start_y, new_end_y
+        )
+        if applied:
+            self._buf.loc[mask, "level_masl"] = sub["level_masl"]
+
+            obsid = self._buf_obsid or ""
+            delta_start = new_start_y - original_start_y
+            delta_end = new_end_y - original_end_y
+            common_utils.MessagebarAndLog.info(
+                log_msg=QCoreApplication.translate(
+                    "Calibrlogger",
+                    "Trend adjusted for %s (%s to %s): Δ_start=%.4f, Δ_end=%.4f",
+                )
+                % (
+                    obsid,
+                    fr_d_t.strftime(_DT_FMT),
+                    to_d_t.strftime(_DT_FMT),
+                    delta_start,
+                    delta_end,
+                )
+            )
+            self._history_push("Adjust trend")
+
+        common_utils.stop_waiting_cursor()
+        self.update_plot()
 
     def _remove_trend_overlay(self):
         for attr in ("_trend_line", "_trend_start_marker", "_trend_end_marker"):

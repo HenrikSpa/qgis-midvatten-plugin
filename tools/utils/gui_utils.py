@@ -73,25 +73,25 @@ class SplitterWithHandel(qgis.PyQt.QtWidgets.QSplitter):
         layout.addWidget(line)
 
 
-class RowEntry:
+class _LayoutContainer:
+    _layout_class = None
+
     def __init__(self):
         self.widget = qgis.PyQt.QtWidgets.QWidget()
-        self.layout = qgis.PyQt.QtWidgets.QHBoxLayout()
+        self.layout = self._layout_class()
         self.widget.setLayout(self.layout)
 
 
-class VRowEntry:
-    def __init__(self):
-        self.widget = qgis.PyQt.QtWidgets.QWidget()
-        self.layout = qgis.PyQt.QtWidgets.QVBoxLayout()
-        self.widget.setLayout(self.layout)
+class RowEntry(_LayoutContainer):
+    _layout_class = qgis.PyQt.QtWidgets.QHBoxLayout
 
 
-class RowEntryGrid:
-    def __init__(self):
-        self.widget = qgis.PyQt.QtWidgets.QWidget()
-        self.layout = qgis.PyQt.QtWidgets.QGridLayout()
-        self.widget.setLayout(self.layout)
+class VRowEntry(_LayoutContainer):
+    _layout_class = qgis.PyQt.QtWidgets.QVBoxLayout
+
+
+class RowEntryGrid(_LayoutContainer):
+    _layout_class = qgis.PyQt.QtWidgets.QGridLayout
 
 
 class ExtendedQPlainTextEdit(qgis.PyQt.QtWidgets.QPlainTextEdit):

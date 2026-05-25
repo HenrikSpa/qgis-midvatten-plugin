@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version='1.0' encoding='UTF-8'?>
 <ui version="4.0">
  <author>groundwatergis@gmail.com</author>
  <class>mainWindow</class>
@@ -366,7 +366,7 @@
              <bool>true</bool>
             </property>
             <property name="specialValueText">
-             <string/>
+             <string />
             </property>
             <property name="keyboardTracking">
              <bool>true</bool>
@@ -527,7 +527,7 @@
              <bool>true</bool>
             </property>
             <property name="specialValueText">
-             <string/>
+             <string />
             </property>
             <property name="keyboardTracking">
              <bool>true</bool>
@@ -696,10 +696,10 @@
             <item>
              <widget class="QLabel" name="label_10">
               <property name="toolTip">
-               <string/>
+               <string />
               </property>
               <property name="text">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;INFO: &lt;/span&gt;&lt;span style=&quot; font-size:7pt;&quot;&gt;Water level is calculated from logger water head (&lt;/span&gt;&lt;span style=&quot; font-size:7pt; font-style:italic;&quot;&gt;head_cm&lt;/span&gt;&lt;span style=&quot; font-size:7pt;&quot;&gt;) and logger elevation or adjusted by adding an offset.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=" font-weight:600;"&gt;INFO: &lt;/span&gt;&lt;span style=" font-size:7pt;"&gt;Water level is calculated from logger water head (&lt;/span&gt;&lt;span style=" font-size:7pt; font-style:italic;"&gt;head_cm&lt;/span&gt;&lt;span style=" font-size:7pt;"&gt;) and logger elevation or adjusted by adding an offset.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="textFormat">
                <enum>Qt::RichText</enum>
@@ -727,7 +727,7 @@
                </font>
               </property>
               <property name="toolTip">
-               <string/>
+               <string />
               </property>
               <property name="text">
                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Calculate from water head&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -737,10 +737,10 @@
             <item>
              <widget class="QLabel" name="label_13">
               <property name="toolTip">
-               <string/>
+               <string />
               </property>
               <property name="text">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:7pt;&quot;&gt;Calculate water level (&lt;/span&gt;&lt;span style=&quot; font-size:7pt; font-style:italic;&quot;&gt;level_masl&lt;/span&gt;&lt;span style=&quot; font-size:7pt;&quot;&gt;) from water head above logger (&lt;/span&gt;&lt;span style=&quot; font-size:7pt; font-style:italic;&quot;&gt;head_cm&lt;/span&gt;&lt;span style=&quot; font-size:7pt;&quot;&gt; / 100) + logger &lt;/span&gt;&lt;span style=&quot; font-size:7pt; font-style:italic;&quot;&gt;Elevation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=" font-size:7pt;"&gt;Calculate water level (&lt;/span&gt;&lt;span style=" font-size:7pt; font-style:italic;"&gt;level_masl&lt;/span&gt;&lt;span style=" font-size:7pt;"&gt;) from water head above logger (&lt;/span&gt;&lt;span style=" font-size:7pt; font-style:italic;"&gt;head_cm&lt;/span&gt;&lt;span style=" font-size:7pt;"&gt; / 100) + logger &lt;/span&gt;&lt;span style=" font-size:7pt; font-style:italic;"&gt;Elevation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="textFormat">
                <enum>Qt::RichText</enum>
@@ -775,7 +775,7 @@
                  </font>
                 </property>
                 <property name="text">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Elevation&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=" font-style:italic;"&gt;Elevation&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                 <property name="wordWrap">
                  <bool>true</bool>
@@ -814,7 +814,7 @@
                  <set>Qt::ImhFormattedNumbersOnly</set>
                 </property>
                 <property name="text">
-                 <string/>
+                 <string />
                 </property>
                </widget>
               </item>
@@ -876,7 +876,7 @@
                </font>
               </property>
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Fit logger water head within selected period to measurements using mean difference between calculated logger water level and measurements. Each logger water head is matched to measurements within its datetime +- &lt;span style=&quot; font-style:italic;&quot;&gt;search radius&lt;/span&gt;. Increase &lt;span style=&quot; font-style:italic;&quot;&gt;search radius&lt;/span&gt; if no match is found.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Fit logger water head within selected period to measurements using mean difference between calculated logger water level and measurements. Each logger water head is matched to measurements within its datetime +- &lt;span style=" font-style:italic;"&gt;search radius&lt;/span&gt;. Increase &lt;span style=" font-style:italic;"&gt;search radius&lt;/span&gt; if no match is found.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="text">
                <string>Calculate best fit (auto)</string>
@@ -911,10 +911,10 @@
             <item>
              <widget class="QLabel" name="label_14">
               <property name="toolTip">
-               <string/>
+               <string />
               </property>
               <property name="text">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:7pt;&quot;&gt;Adjust water level (&lt;/span&gt;&lt;span style=&quot; font-size:7pt; font-style:italic;&quot;&gt;level_masl&lt;/span&gt;&lt;span style=&quot; font-size:7pt;&quot;&gt;) by adding offset, by using &lt;/span&gt;&lt;span style=&quot; font-size:7pt; font-style:italic;&quot;&gt;Move nodes&lt;/span&gt;&lt;span style=&quot; font-size:7pt;&quot;&gt;-tool in navigation toolbar or fit automatically to measurements using &lt;/span&gt;&lt;span style=&quot; font-size:7pt; font-style:italic;&quot;&gt;Fit to measurements.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=" font-size:7pt;"&gt;Adjust water level (&lt;/span&gt;&lt;span style=" font-size:7pt; font-style:italic;"&gt;level_masl&lt;/span&gt;&lt;span style=" font-size:7pt;"&gt;) by adding offset, by using &lt;/span&gt;&lt;span style=" font-size:7pt; font-style:italic;"&gt;Move nodes&lt;/span&gt;&lt;span style=" font-size:7pt;"&gt;-tool in navigation toolbar or fit automatically to measurements using &lt;/span&gt;&lt;span style=" font-size:7pt; font-style:italic;"&gt;Fit to measurements.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="textFormat">
                <enum>Qt::RichText</enum>
@@ -949,7 +949,7 @@
                  </font>
                 </property>
                 <property name="text">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Offset&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=" font-style:italic;"&gt;Offset&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                 <property name="wordWrap">
                  <bool>true</bool>
@@ -1050,7 +1050,7 @@
                </font>
               </property>
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Fit selected water level to measurements using mean difference between logger water level and measurements. Each water level is matched to measurements within its datetime +- &lt;span style=&quot; font-style:italic;&quot;&gt;search radius&lt;/span&gt;. Increase &lt;span style=&quot; font-style:italic;&quot;&gt;search radius&lt;/span&gt; if no match is found.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Fit selected water level to measurements using mean difference between logger water level and measurements. Each water level is matched to measurements within its datetime +- &lt;span style=" font-style:italic;"&gt;search radius&lt;/span&gt;. Increase &lt;span style=" font-style:italic;"&gt;search radius&lt;/span&gt; if no match is found.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="text">
                <string>Fit to measurements (auto)</string>
@@ -1158,652 +1158,6 @@
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="adjust_drift">
-           <attribute name="title">
-            <string>Adjust trend</string>
-           </attribute>
-           <layout class="QVBoxLayout" name="vertical_layout">
-            <property name="leftMargin">
-             <number>0</number>
-            </property>
-            <property name="topMargin">
-             <number>0</number>
-            </property>
-            <property name="rightMargin">
-             <number>0</number>
-            </property>
-            <property name="bottomMargin">
-             <number>0</number>
-            </property>
-            <item>
-             <widget class="QWidget" name="widget" native="true">
-              <layout class="QVBoxLayout" name="vertical_layout_10">
-               <property name="leftMargin">
-                <number>3</number>
-               </property>
-               <property name="topMargin">
-                <number>3</number>
-               </property>
-               <property name="rightMargin">
-                <number>3</number>
-               </property>
-               <property name="bottomMargin">
-                <number>3</number>
-               </property>
-               <item>
-                <widget class="QScrollArea" name="scroll_area">
-                 <property name="horizontalScrollBarPolicy">
-                  <enum>Qt::ScrollBarAlwaysOff</enum>
-                 </property>
-                 <property name="widgetResizable">
-                  <bool>true</bool>
-                 </property>
-                 <widget class="QWidget" name="scroll_area_widget_contents">
-                  <property name="geometry">
-                   <rect>
-                    <x>0</x>
-                    <y>0</y>
-                    <width>336</width>
-                    <height>347</height>
-                   </rect>
-                  </property>
-                  <layout class="QVBoxLayout" name="vertical_layout_9">
-                   <property name="leftMargin">
-                    <number>6</number>
-                   </property>
-                   <property name="topMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="rightMargin">
-                    <number>0</number>
-                   </property>
-                   <property name="bottomMargin">
-                    <number>0</number>
-                   </property>
-                   <item>
-                    <widget class="QLabel" name="label_8">
-                     <property name="sizePolicy">
-                      <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
-                       <horstretch>0</horstretch>
-                       <verstretch>0</verstretch>
-                      </sizepolicy>
-                     </property>
-                     <property name="minimumSize">
-                      <size>
-                       <width>0</width>
-                       <height>200</height>
-                      </size>
-                     </property>
-                     <property name="font">
-                      <font>
-                       <family>Noto Sans</family>
-                       <pointsize>8</pointsize>
-                       <weight>50</weight>
-                       <bold>false</bold>
-                      </font>
-                     </property>
-                     <property name="text">
-                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;INFO:&lt;br/&gt;&lt;/span&gt;Adjust logger level_masl by giving it a new trend.&lt;/p&gt;&lt;p&gt;The new trend is calculated by subtracting the old trend with a new trend:&lt;br/&gt;L = L - (old_trend - new_trend) * (d - x1)&lt;/p&gt;&lt;p&gt;where:&lt;br/&gt;L = logger level_masl&lt;br/&gt;old_trend = (y2-y1) / (x2-x1)&lt;br/&gt;new_trend = (y4-y3) / (x4-x3)&lt;br/&gt;d = date_time for each logger timestep&lt;br/&gt;x1, y1 = The datetime and level_masl for the old trend&lt;br/&gt;x2, y2 = The datetime and level_masl for the old trend end point.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                     </property>
-                     <property name="wordWrap">
-                      <bool>true</bool>
-                     </property>
-                    </widget>
-                   </item>
-                  </layout>
-                 </widget>
-                </widget>
-               </item>
-               <item>
-                <layout class="QGridLayout" name="grid_layout_4">
-                 <item row="1" column="1">
-                  <widget class="QLabel" name="label_11">
-                   <property name="text">
-                    <string>x</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="4" column="2">
-                  <widget class="QLineEdit" name="l2_level">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
-                   <property name="minimumSize">
-                    <size>
-                     <width>10</width>
-                     <height>0</height>
-                    </size>
-                   </property>
-                   <property name="toolTip">
-                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;y2 in the equation old_trend = (y2-y1) / (x2-x1)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                   </property>
-                   <property name="text">
-                    <string>1.0</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="7" column="2">
-                  <widget class="QLineEdit" name="m2_level">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
-                   <property name="minimumSize">
-                    <size>
-                     <width>10</width>
-                     <height>0</height>
-                    </size>
-                   </property>
-                   <property name="toolTip">
-                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;y4 in the equation new_trend = (y4-y3) / (x4-x3)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                   </property>
-                   <property name="text">
-                    <string>1.0</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="3" column="0">
-                  <widget class="QLabel" name="l1_label">
-                   <property name="minimumSize">
-                    <size>
-                     <width>10</width>
-                     <height>0</height>
-                    </size>
-                   </property>
-                   <property name="toolTip">
-                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Logger node used as *1 in the equation a_L = (y2-y1) / (x2-x1) &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                   </property>
-                   <property name="text">
-                    <string>1</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="3" column="3">
-                  <widget class="QPushButton" name="l1_button">
-                   <property name="toolTip">
-                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select the first logger node that represents the old trend.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                   </property>
-                   <property name="text">
-                    <string>Select in plot</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="4" column="0">
-                  <widget class="QLabel" name="l2_label">
-                   <property name="minimumSize">
-                    <size>
-                     <width>10</width>
-                     <height>0</height>
-                    </size>
-                   </property>
-                   <property name="toolTip">
-                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Logger node used as *2 in the equation a_L = (y2-y1) / (x2-x1) &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                   </property>
-                   <property name="text">
-                    <string>2</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="4" column="1">
-                  <widget class="QDateTimeEdit" name="l2_date">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
-                   <property name="minimumSize">
-                    <size>
-                     <width>140</width>
-                     <height>22</height>
-                    </size>
-                   </property>
-                   <property name="font">
-                    <font>
-                     <family>Arial</family>
-                     <pointsize>8</pointsize>
-                     <weight>50</weight>
-                     <italic>false</italic>
-                     <bold>false</bold>
-                    </font>
-                   </property>
-                   <property name="toolTip">
-                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;x2 in the equation old_trend = (y2-y1) / (x2-x1)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                   </property>
-                   <property name="wrapping">
-                    <bool>false</bool>
-                   </property>
-                   <property name="frame">
-                    <bool>true</bool>
-                   </property>
-                   <property name="buttonSymbols">
-                    <enum>QAbstractSpinBox::NoButtons</enum>
-                   </property>
-                   <property name="specialValueText">
-                    <string/>
-                   </property>
-                   <property name="keyboardTracking">
-                    <bool>true</bool>
-                   </property>
-                   <property name="dateTime">
-                    <datetime>
-                     <hour>23</hour>
-                     <minute>59</minute>
-                     <second>59</second>
-                     <year>2099</year>
-                     <month>12</month>
-                     <day>31</day>
-                    </datetime>
-                   </property>
-                   <property name="date">
-                    <date>
-                     <year>2099</year>
-                     <month>12</month>
-                     <day>31</day>
-                    </date>
-                   </property>
-                   <property name="time">
-                    <time>
-                     <hour>23</hour>
-                     <minute>59</minute>
-                     <second>59</second>
-                    </time>
-                   </property>
-                   <property name="displayFormat">
-                    <string>yyyy-MM-dd HH:mm:ss</string>
-                   </property>
-                   <property name="calendarPopup">
-                    <bool>false</bool>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="4" column="3">
-                  <widget class="QPushButton" name="l2_button">
-                   <property name="toolTip">
-                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select the last logger node that represents the old trend.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                   </property>
-                   <property name="text">
-                    <string>Select in plot</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="6" column="0">
-                  <widget class="QLabel" name="m1_label">
-                   <property name="minimumSize">
-                    <size>
-                     <width>10</width>
-                     <height>0</height>
-                    </size>
-                   </property>
-                   <property name="toolTip">
-                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Measurement node used as *1 in the equation a_M = (y2-y1) / (x2-x1) &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                   </property>
-                   <property name="text">
-                    <string>3</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="6" column="1">
-                  <widget class="QDateTimeEdit" name="m1_date">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
-                   <property name="minimumSize">
-                    <size>
-                     <width>140</width>
-                     <height>22</height>
-                    </size>
-                   </property>
-                   <property name="font">
-                    <font>
-                     <family>Arial</family>
-                     <pointsize>8</pointsize>
-                     <weight>50</weight>
-                     <italic>false</italic>
-                     <bold>false</bold>
-                    </font>
-                   </property>
-                   <property name="toolTip">
-                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;x3 in the equation new_trend = (y4-y3) / (x4-x3)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                   </property>
-                   <property name="wrapping">
-                    <bool>false</bool>
-                   </property>
-                   <property name="frame">
-                    <bool>true</bool>
-                   </property>
-                   <property name="buttonSymbols">
-                    <enum>QAbstractSpinBox::NoButtons</enum>
-                   </property>
-                   <property name="specialValueText">
-                    <string/>
-                   </property>
-                   <property name="keyboardTracking">
-                    <bool>true</bool>
-                   </property>
-                   <property name="dateTime">
-                    <datetime>
-                     <hour>23</hour>
-                     <minute>59</minute>
-                     <second>59</second>
-                     <year>2099</year>
-                     <month>12</month>
-                     <day>31</day>
-                    </datetime>
-                   </property>
-                   <property name="date">
-                    <date>
-                     <year>2099</year>
-                     <month>12</month>
-                     <day>31</day>
-                    </date>
-                   </property>
-                   <property name="time">
-                    <time>
-                     <hour>23</hour>
-                     <minute>59</minute>
-                     <second>59</second>
-                    </time>
-                   </property>
-                   <property name="displayFormat">
-                    <string>yyyy-MM-dd HH:mm:ss</string>
-                   </property>
-                   <property name="calendarPopup">
-                    <bool>false</bool>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="6" column="3">
-                  <widget class="QPushButton" name="m1_button">
-                   <property name="toolTip">
-                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select the start point for the new trend.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                   </property>
-                   <property name="text">
-                    <string>Select in plot</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="7" column="0">
-                  <widget class="QLabel" name="m2_label">
-                   <property name="minimumSize">
-                    <size>
-                     <width>10</width>
-                     <height>0</height>
-                    </size>
-                   </property>
-                   <property name="toolTip">
-                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Measurement node used as *2 in the equation a_M = (y2-y1) / (x2-x1) &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                   </property>
-                   <property name="text">
-                    <string>4</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="7" column="1">
-                  <widget class="QDateTimeEdit" name="m2_date">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
-                   <property name="minimumSize">
-                    <size>
-                     <width>140</width>
-                     <height>22</height>
-                    </size>
-                   </property>
-                   <property name="font">
-                    <font>
-                     <family>Arial</family>
-                     <pointsize>8</pointsize>
-                     <weight>50</weight>
-                     <italic>false</italic>
-                     <bold>false</bold>
-                    </font>
-                   </property>
-                   <property name="toolTip">
-                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;x4 in the equation new_trend = (y4-y3) / (x4-x3)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                   </property>
-                   <property name="wrapping">
-                    <bool>false</bool>
-                   </property>
-                   <property name="frame">
-                    <bool>true</bool>
-                   </property>
-                   <property name="buttonSymbols">
-                    <enum>QAbstractSpinBox::NoButtons</enum>
-                   </property>
-                   <property name="specialValueText">
-                    <string/>
-                   </property>
-                   <property name="keyboardTracking">
-                    <bool>true</bool>
-                   </property>
-                   <property name="dateTime">
-                    <datetime>
-                     <hour>23</hour>
-                     <minute>59</minute>
-                     <second>59</second>
-                     <year>2099</year>
-                     <month>12</month>
-                     <day>31</day>
-                    </datetime>
-                   </property>
-                   <property name="date">
-                    <date>
-                     <year>2099</year>
-                     <month>12</month>
-                     <day>31</day>
-                    </date>
-                   </property>
-                   <property name="time">
-                    <time>
-                     <hour>23</hour>
-                     <minute>59</minute>
-                     <second>59</second>
-                    </time>
-                   </property>
-                   <property name="displayFormat">
-                    <string>yyyy-MM-dd HH:mm:ss</string>
-                   </property>
-                   <property name="calendarPopup">
-                    <bool>false</bool>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="7" column="3">
-                  <widget class="QPushButton" name="m2_button">
-                   <property name="toolTip">
-                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select the end point for the new trend.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                   </property>
-                   <property name="text">
-                    <string>Select in plot</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="3" column="2">
-                  <widget class="QLineEdit" name="l1_level">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
-                   <property name="minimumSize">
-                    <size>
-                     <width>10</width>
-                     <height>0</height>
-                    </size>
-                   </property>
-                   <property name="toolTip">
-                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;y1 in the equation old_trend = (y2-y1) / (x2-x1)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                   </property>
-                   <property name="inputMethodHints">
-                    <set>Qt::ImhDigitsOnly</set>
-                   </property>
-                   <property name="text">
-                    <string>1.0</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="6" column="2">
-                  <widget class="QLineEdit" name="m1_level">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
-                   <property name="minimumSize">
-                    <size>
-                     <width>10</width>
-                     <height>0</height>
-                    </size>
-                   </property>
-                   <property name="toolTip">
-                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;y3 in the equation new_trend = (y4-y3) / (x4-x3)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                   </property>
-                   <property name="text">
-                    <string>1.0</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="3" column="1" alignment="Qt::AlignTop">
-                  <widget class="QDateTimeEdit" name="l1_date">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
-                   <property name="minimumSize">
-                    <size>
-                     <width>140</width>
-                     <height>22</height>
-                    </size>
-                   </property>
-                   <property name="font">
-                    <font>
-                     <family>Arial</family>
-                     <pointsize>8</pointsize>
-                     <weight>50</weight>
-                     <italic>false</italic>
-                     <bold>false</bold>
-                    </font>
-                   </property>
-                   <property name="toolTip">
-                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;x1 in the equation old_trend = (y2-y1) / (x2-x1)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                   </property>
-                   <property name="wrapping">
-                    <bool>false</bool>
-                   </property>
-                   <property name="frame">
-                    <bool>true</bool>
-                   </property>
-                   <property name="buttonSymbols">
-                    <enum>QAbstractSpinBox::NoButtons</enum>
-                   </property>
-                   <property name="specialValueText">
-                    <string/>
-                   </property>
-                   <property name="keyboardTracking">
-                    <bool>true</bool>
-                   </property>
-                   <property name="dateTime">
-                    <datetime>
-                     <hour>23</hour>
-                     <minute>59</minute>
-                     <second>59</second>
-                     <year>2099</year>
-                     <month>12</month>
-                     <day>31</day>
-                    </datetime>
-                   </property>
-                   <property name="date">
-                    <date>
-                     <year>2099</year>
-                     <month>12</month>
-                     <day>31</day>
-                    </date>
-                   </property>
-                   <property name="time">
-                    <time>
-                     <hour>23</hour>
-                     <minute>59</minute>
-                     <second>59</second>
-                    </time>
-                   </property>
-                   <property name="displayFormat">
-                    <string>yyyy-MM-dd HH:mm:ss</string>
-                   </property>
-                   <property name="calendarPopup">
-                    <bool>false</bool>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="1" column="2">
-                  <widget class="QLabel" name="label_9">
-                   <property name="text">
-                    <string>y</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="2" column="0" colspan="4">
-                  <widget class="QLabel" name="label_17">
-                   <property name="font">
-                    <font>
-                     <family>Noto Sans</family>
-                     <pointsize>8</pointsize>
-                     <weight>75</weight>
-                     <bold>true</bold>
-                    </font>
-                   </property>
-                   <property name="lineWidth">
-                    <number>1</number>
-                   </property>
-                   <property name="text">
-                    <string>Old trend</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="5" column="0" colspan="4">
-                  <widget class="QLabel" name="label_18">
-                   <property name="font">
-                    <font>
-                     <family>Noto Sans</family>
-                     <pointsize>8</pointsize>
-                     <weight>75</weight>
-                     <bold>true</bold>
-                    </font>
-                   </property>
-                   <property name="text">
-                    <string>New trend</string>
-                   </property>
-                  </widget>
-                 </item>
-                </layout>
-               </item>
-               <item>
-                <widget class="QPushButton" name="adjust_trend_button">
-                 <property name="text">
-                  <string>Adjust trend</string>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </widget>
-            </item>
-           </layout>
-          </widget>
           <widget class="QWidget" name="deletion_tab">
            <attribute name="title">
             <string>Delete data</string>
@@ -1847,7 +1201,7 @@
                  </size>
                 </property>
                 <property name="text">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;INFO:&lt;/span&gt;&lt;br/&gt;In this tab you may remove erroneous data from the database table w_levels_logger. &lt;/p&gt;&lt;p&gt;Set interval for deletion above (from/to) and then select to delete logger data below. (You will be asked to confirm the deletion.)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=" font-weight:600;"&gt;INFO:&lt;/span&gt;&lt;br/&gt;In this tab you may remove erroneous data from the database table w_levels_logger. &lt;/p&gt;&lt;p&gt;Set interval for deletion above (from/to) and then select to delete logger data below. (You will be asked to confirm the deletion.)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -1895,7 +1249,7 @@
        <zorder>label_3</zorder>
        <zorder>line_11</zorder>
        <zorder>line_12</zorder>
-       <zorder></zorder>
+       <zorder />
       </widget>
       <widget class="QWidget" name="layout_widget">
        <property name="font">
@@ -2122,8 +1476,8 @@
     </item>
    </layout>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QStatusBar" name="statusbar" />
  </widget>
- <resources/>
- <connections/>
+ <resources />
+ <connections />
 </ui>

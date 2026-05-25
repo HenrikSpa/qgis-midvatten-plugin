@@ -6,6 +6,7 @@ import ast
 import os
 import re
 import traceback
+from collections import defaultdict
 from typing import Any, Optional
 
 try:
@@ -408,8 +409,7 @@ def calculate_db_table_rows() -> None:
     results = {}
     tablenames = list(tables_columns().keys())
     sql_failed = []
-    dbconnection = DbConnectionManager()
-    try:
+    with use_or_create_connection(None) as dbconnection:
         for tablename in sorted(tablenames):
             sql = dbconnection.sql_ident("SELECT count(*) FROM {t}", t=tablename)
             connection_ok, nr_of_rows = sql_load_fr_db(sql, dbconnection=dbconnection)
@@ -417,8 +417,6 @@ def calculate_db_table_rows() -> None:
                 sql_failed.append(sql)
                 continue
             results[tablename] = str(nr_of_rows[0][0])
-    finally:
-        dbconnection.closedb()
 
     if sql_failed:
         MessagebarAndLog.warning(
@@ -465,8 +463,7 @@ def refresh_spatialite_layer_statistics() -> None:
     No-op on PostgreSQL (PostGIS uses ANALYZE-driven statistics and is not
     affected by this bug).
     """
-    dbconnection = DbConnectionManager()
-    try:
+    with use_or_create_connection(None) as dbconnection:
         if not dbconnection.is_sqlite():
             MessagebarAndLog.info(
                 bar_msg=QCoreApplication.translate(
@@ -525,8 +522,6 @@ def refresh_spatialite_layer_statistics() -> None:
                 log_msg=traceback.format_exc(),
             )
             return
-    finally:
-        dbconnection.closedb()
 
     log_lines = [
         f"Recovered {len(recovered)} geometry columns: {', '.join(recovered) or '(none)'}"
@@ -590,9 +585,9 @@ _SPATIALITE_DIMENSION_NAMES: dict[int, str] = {
 def sql_to_parameters_units_tuple(sql: str) -> tuple:
     """Execute sql and return a sorted tuple of (parameter, (unit, ...)) pairs."""
     parameters_from_table = ru(sql_load_fr_db(sql)[1], True)
-    parameters_dict: dict = {}
+    parameters_dict: defaultdict = defaultdict(list)
     for parameter, unit in parameters_from_table:
-        parameters_dict.setdefault(parameter, []).append(unit)
+        parameters_dict[parameter].append(unit)
     return tuple([(k, tuple(v)) for k, v in sorted(parameters_dict.items())])
 
 
@@ -602,15 +597,9 @@ def list_of_lists_from_table(tablename: str) -> list:
     table_info = ru(table_info, keep_containers=True)
     column_names = [x[1] for x in table_info]
     result = [column_names]
-    dbconnection = DbConnectionManager()
-    try:
+    with use_or_create_connection(None) as dbconnection:
         sql = dbconnection.sql_ident("SELECT * FROM {t}", t=tablename)
         table_contents = sql_load_fr_db(sql, dbconnection=dbconnection)[1]
-    finally:
-        try:
-            dbconnection.closedb()
-        except Exception:
-            MessagebarAndLog.info(log_msg=traceback.format_exc())
     table_contents = ru(table_contents, keep_containers=True)
     result.extend(table_contents)
     return result

@@ -536,32 +536,24 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
     def translate_and_reorder_file_data(
         file_data: List[List[str]], translation_dict: Dict[str, List[str]]
     ) -> List[List[str]]:
+        # The loop "for db_column in sorted(db_columns)" is used for cases where one file column is sent to multiple database columns.
         new_file_header = [
             db_column
             for file_column, db_columns in sorted(translation_dict.items())
             for db_column in sorted(db_columns)
         ]
-        file_column_index = dict(
-            [(file_column, idx) for idx, file_column in enumerate(file_data[0])]
-        )
-        new_file_data = [new_file_header]
-        # The loop "for db_column in sorted(db_columns)" is used for cases where one file column is sent to multiple database columns.
-
-        # Due to the python3 non-leaking behaviour, this try-except no longer performs the way its intended, so I'm not
-        # using it anymore.
-        # try:
-        res = [
+        file_column_index = {
+            file_column: idx for idx, file_column in enumerate(file_data[0])
+        }
+        reordered_rows = [
             [
                 row[file_column_index[file_column]]
                 for file_column, db_columns in sorted(translation_dict.items())
                 for db_column in sorted(db_columns)
             ]
-            for rownr, row in enumerate(file_data[1:])
+            for row in file_data[1:]
         ]
-        # except IndexError as e:
-        #    raise IndexError(QCoreApplication.translate('GeneralCsvImportGui', 'Import error on row number %s:\n%s')%(str(rownr + 1), '\n'.join([': '.join(x) for x in zip(file_data[0], row)])))
-        new_file_data.extend(res)
-        return new_file_data
+        return [new_file_header] + reordered_rows
 
     @staticmethod
     def convert_comma_to_points_for_double_columns(
@@ -576,25 +568,20 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         :param table_column: a tuple like ((6, 'comment', 'text', 0, None, 0), (4, 'cond_mscm', 'double', 0, None, 0), (1, 'date_time', 'text', 1, None, 2), (2, 'head_cm', 'double', 0, None, 0), (5, 'level_masl', 'double', 0, None, 0), (0, 'obsid', 'text', 1, None, 1), (3, 'temp_degc', 'double', 0, None, 0))
         :return: file_data where double and real column types have been converted from comma to point.
         """
-        table_column_dict = dict([(column[1], column[2]) for column in table_column])
-        colnrs_to_convert = [
+        table_column_dict = {column[1]: column[2] for column in table_column}
+        colnrs_to_convert = {
             colnr
             for colnr, col in enumerate(file_data[0])
-            if table_column_dict.get(col, "").lower()
-            in ("double", "double precision", "real")
-        ]
-        file_data = [
-            [
-                (
-                    col.replace(",", ".")
-                    if all([colnr in colnrs_to_convert, rownr > 0, col is not None])
-                    else col
-                )
+            if table_column_dict.get(col, "").lower() in ("double", "double precision", "real")
+        }
+        new_data = [file_data[0]]
+        for row in file_data[1:]:
+            new_row = [
+                col.replace(",", ".") if colnr in colnrs_to_convert and col is not None else col
                 for colnr, col in enumerate(row)
             ]
-            for rownr, row in enumerate(file_data)
-        ]
-        return file_data
+            new_data.append(new_row)
+        return new_data
 
     @staticmethod
     def multiply_by_factor(file_data, columns_factors):
@@ -604,25 +591,20 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         :param table_columns_factors: a dict like {'reading': 10}
         :return: file_data where the columns have been multiplied by the factor.
         """
-        file_data = [
-            (
-                [
-                    (
-                        str(float(col) * columns_factors[file_data[0][colnr]])
-                        if (
-                            file_data[0][colnr] in columns_factors
-                            and common_utils.to_float_or_none(col) is not None
-                        )
-                        else col
-                    )
-                    for colnr, col in enumerate(row)
-                ]
-                if rownr > 0
-                else row
-            )
-            for rownr, row in enumerate(file_data)
-        ]
-        return file_data
+        header = file_data[0]
+        factor_colnrs = {
+            colnr: columns_factors[col]
+            for colnr, col in enumerate(header)
+            if col in columns_factors
+        }
+        new_data = [header]
+        for row in file_data[1:]:
+            new_row = list(row)
+            for colnr, factor in factor_colnrs.items():
+                if common_utils.to_float_or_none(new_row[colnr]) is not None:
+                    new_row[colnr] = str(float(new_row[colnr]) * factor)
+            new_data.append(new_row)
+        return new_data
 
     @staticmethod
     def reformat_date_time(file_data):
@@ -630,39 +612,35 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
             colnrs_to_convert = [file_data[0].index("date_time")]
         except ValueError:
             return file_data
-        else:
-            if colnrs_to_convert:
-                num_rows_before = len(file_data)
-                file_data = [
-                    [
-                        (
-                            date_utils.reformat_date_time(col)
-                            if all([rownr > 0, colnr in colnrs_to_convert])
-                            else col
-                        )
-                        for colnr, col in enumerate(row)
-                    ]
-                    for rownr, row in enumerate(file_data)
-                    if rownr == 0
-                    or all(
-                        [
-                            date_utils.reformat_date_time(row[_colnr])
-                            for _colnr in colnrs_to_convert
-                        ]
-                    )
-                ]
 
-                num_rows_after = len(file_data)
-                num_removed_rows = num_rows_before - num_rows_after
-                if num_removed_rows > 0:
-                    common_utils.MessagebarAndLog.warning(
-                        bar_msg=QCoreApplication.translate(
-                            "GeneralCsvImportGui",
-                            "%s rows without parsable date_time format skipped during import",
-                        )
-                        % str(num_removed_rows)
-                    )
-            return file_data
+        num_rows_before = len(file_data)
+        new_file_data = [file_data[0]]
+        for row in file_data[1:]:
+            reformatted_dates = {}
+            skip_row = False
+            for colnr in colnrs_to_convert:
+                result = date_utils.reformat_date_time(row[colnr])
+                if result is None:
+                    skip_row = True
+                    break
+                reformatted_dates[colnr] = result
+            if skip_row:
+                continue
+            new_row = [
+                reformatted_dates.get(colnr, col) for colnr, col in enumerate(row)
+            ]
+            new_file_data.append(new_row)
+
+        num_removed_rows = num_rows_before - len(new_file_data)
+        if num_removed_rows > 0:
+            common_utils.MessagebarAndLog.warning(
+                bar_msg=QCoreApplication.translate(
+                    "GeneralCsvImportGui",
+                    "%s rows without parsable date_time format skipped during import",
+                )
+                % str(num_removed_rows)
+            )
+        return new_file_data
 
     @staticmethod
     def remove_preceding_trailing_spaces_tabs(file_data):

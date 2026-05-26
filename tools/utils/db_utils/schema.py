@@ -3,8 +3,8 @@ Schema/metadata helpers: get_tables, get_table_info, get_foreign_keys, etc.
 """
 
 import re
-from collections import OrderedDict
 from typing import Any, Optional, Union
+from collections import defaultdict
 from collections.abc import Sequence
 
 from qgis.PyQt.QtCore import QCoreApplication
@@ -148,12 +148,12 @@ def get_foreign_keys(
     dbconnection: Optional[DbConnectionManager] = None,
 ) -> dict[str, list[tuple[str, str]]]:
     with use_or_create_connection(dbconnection) as dbconnection:
-        foreign_keys: dict[str, list[tuple[str, str]]] = {}
+        foreign_keys: defaultdict[str, list[tuple[str, str]]] = defaultdict(list)
         if dbconnection.is_sqlite():
             pragma_sql = dbconnection.sql_ident("PRAGMA foreign_key_list({t})", t=table)
             result_list = dbconnection.execute_and_fetchall(pragma_sql)
             for row in result_list:
-                foreign_keys.setdefault(row[2], []).append((row[3], row[4]))
+                foreign_keys[row[2]].append((row[3], row[4]))
         else:
             ph = dbconnection.placeholder()
             sql = (
@@ -180,15 +180,15 @@ def get_foreign_keys(
                 )
                 if m:
                     res = m.groups()
-                    foreign_keys.setdefault(res[1], []).append((res[0], res[2]))
-        return foreign_keys
+                    foreign_keys[res[1]].append((res[0], res[2]))
+        return dict(foreign_keys)
 
 
 def get_sql_result_as_dict(
     sql: str,
     dbconnection: Optional[DbConnectionManager] = None,
     execute_args: Optional[Sequence[Any]] = None,
-) -> tuple[bool, OrderedDict]:
+) -> tuple[bool, dict]:
     with use_or_create_connection(dbconnection) as dbconnection:
         connection_ok, result_list = sql_load_fr_db(
             sql,
@@ -196,11 +196,11 @@ def get_sql_result_as_dict(
             execute_args=execute_args,
         )
         if not connection_ok:
-            return False, OrderedDict()
-        result_dict: OrderedDict = OrderedDict()
+            return False, {}
+        result_dict: defaultdict = defaultdict(list)
         for res in result_list:
-            result_dict.setdefault(res[0], []).append(tuple(res[1:]))
-        return True, result_dict
+            result_dict[res[0]].append(tuple(res[1:]))
+        return True, dict(result_dict)
 
 
 def verify_table_exists(
@@ -229,7 +229,7 @@ def change_cast_type_for_geometry_columns(
 def get_geometry_types(
     tablename: str,
     dbconnection: Optional[DbConnectionManager] = None,
-) -> OrderedDict:
+) -> dict:
     with use_or_create_connection(dbconnection) as dbconnection:
         if dbconnection.is_sqlite():
             sql = """SELECT f_geometry_column, geometry_type FROM geometry_columns WHERE f_table_name = ?"""

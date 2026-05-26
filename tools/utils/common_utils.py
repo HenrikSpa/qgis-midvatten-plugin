@@ -18,7 +18,6 @@
 """
 
 import ast
-import copy
 import json
 import datetime
 import difflib
@@ -33,6 +32,7 @@ from typing import Dict, List, Set, Union, Any, Callable, Optional
 
 import matplotlib as mpl
 import numpy as np
+import pandas as pd
 from matplotlib.dates import num2date
 import qgis.utils
 from qgis.core import Qgis, QgsLogger
@@ -154,23 +154,6 @@ def return_lower_ascii_string(textstring):
     filtered_string = "".join(list(filter(onlyascii, textstring)))
     filtered_string = filtered_string.lower()
     return filtered_string
-
-
-def ts_gen(ts):
-    """A generator that supplies one tuple from a list of tuples at a time
-
-    ts: a list of tuples where the tuple contains two positions.
-
-    Usage:
-    a = ts_gen(ts)
-    b = next(a)
-
-    >>> for x in ts_gen(((1, 2), ('a', 'b'))): print(x)
-    (1, 2)
-    ('a', 'b')
-    """
-    for idx in range(len(ts)):
-        yield (ts[idx][0], ts[idx][1])
 
 
 def calc_mean_diff(coupled_vals):
@@ -418,12 +401,12 @@ def scale_nparray(x, a=1, b=0):
     >>> scale_nparray(np.array([2,3,1,0]), -2, -5)
     array([ -9, -11,  -7,  -5])
     """
-    return a * copy.deepcopy(x) + b
+    return a * x.copy() + b
 
 
 def remove_mean_from_nparray(x):
     """ """
-    x = copy.deepcopy(x)
+    x = x.copy()
     mean = x[np.logical_not(np.isnan(x))]
     mean = mean.mean(axis=0)
     x = x - mean
@@ -470,10 +453,7 @@ class Cancel:
 
 
 def transpose_lists_of_lists(list_of_lists):
-    outlist_of_lists = [
-        [row[colnr] for row in list_of_lists] for colnr in range(len(list_of_lists[0]))
-    ]
-    return outlist_of_lists
+    return list(map(list, zip(*list_of_lists)))
 
 
 def fn_timer(function: Callable) -> Callable:
@@ -670,31 +650,18 @@ def get_stored_settings(ms, settingskey, default=None, skip_ast=False):
     return stored_settings
 
 
-def to_float_or_none(anything: str) -> float:
-    if isinstance(anything, float):
-        return anything
-    elif isinstance(anything, int):
-        return float(anything)
-    elif isinstance(anything, str):
+def to_float_or_none(anything) -> float | None:
+    if anything is None or (hasattr(anything, "isNull") and anything.isNull()):
+        return None
+    s = str(anything).replace(",", ".")
+    result = pd.to_numeric(s, errors="coerce")
+    if pd.isna(result):
+        # "nan", "inf", "-inf" are valid Python float literals — preserve old behavior
         try:
-            a_float = float(anything.replace(",", "."))
-        except TypeError:
+            return float(s)
+        except (ValueError, TypeError):
             return None
-        except ValueError:
-            return None
-        except Exception:
-            return None
-        else:
-            return a_float
-    elif anything is None:
-        return anything
-    else:
-        try:
-            a_float = float(str(anything).replace(",", "."))
-        except Exception:
-            return None
-        else:
-            return a_float
+    return float(result)
 
 
 def sql_unicode_list(an_iterator: tuple[str, ...]) -> str:

@@ -1676,7 +1676,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         search_radius = int(search_radius_tuple[0])
         search_radius_period = search_radius_tuple[1]
 
-        logger_gen = common_utils.ts_gen(logger_ts)
+        logger_gen = iter(logger_ts)
         try:
             log_row = next(logger_gen)
         except StopIteration:

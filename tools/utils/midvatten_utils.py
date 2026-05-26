@@ -25,10 +25,10 @@ import locale
 import logging
 import os
 import re
-import string
 from typing import List, Optional, Tuple, TYPE_CHECKING
 
 import matplotlib as mpl
+from packaging.version import Version, InvalidVersion
 import qgis.PyQt
 from matplotlib import pyplot as plt
 from qgis.PyQt import QtWidgets, QtCore
@@ -435,79 +435,22 @@ def warn_about_old_database():
         dbconnection.closedb()
 
 
-def version_comparison_list(version_string: str) -> List[int]:
-    if "-" in version_string:
-        # Assume that the version name is used as suffix, ex: '3.22.0-Białowieża'
-        version_string = version_string.split("-")[0]
-
-    aslist = version_string.split(".")
-    res = []
-    for entry in aslist:
-        try:
-            val = int(entry)
-        except ValueError:
-            for letter_no, letter in enumerate(string.ascii_lowercase):
-                if letter in entry.lower():
-                    inner_res = entry.lower().split(letter)
-
-                    for idx, inner in enumerate(inner_res):
-                        inner = 0 if not inner.strip() else inner.strip()
-                        try:
-                            res.append(int(inner))
-                        except ValueError:
-                            """Programming error. Version string was 1.5.7b."""
-                            MessagebarAndLog.info(
-                                bar_msg=QCoreApplication.translate(
-                                    "version_comparison_list",
-                                    """Programming error. Version string was %s.""",
-                                )
-                                % version_string,
-                                duration=5,
-                                log_msg=f"""aslist: {str(aslist)}, Entry: {str(entry)}, inner_res: {str(inner_res)}""",
-                            )
-
-                        else:
-                            if idx + 1 < len(inner_res):
-                                res.append(letter_no)
-        else:
-            res.append(val)
-    return res
+def version_comparison_list(version_string: str) -> Optional[Version]:
+    """Return a Version object for comparison, or None if unparseable."""
+    try:
+        return Version(version_string)
+    except InvalidVersion:
+        return None
 
 
-def compare_verson_lists(testlist: List[int], reflist: List[int]) -> bool:
-    r"""
-    Compares versions.
+def compare_verson_lists(testlist: Optional[Version], reflist: Optional[Version]) -> bool:
+    """Return True if testlist version is older than reflist version.
 
-    >>> compare_verson_lists(version_comparison_list('3.16'), version_comparison_list('3.16'))
-    False
-    >>> compare_verson_lists(version_comparison_list('3.17'), version_comparison_list('3.16'))
-    False
-    >>> compare_verson_lists(version_comparison_list('3.14'), version_comparison_list('3.16'))
-    True
-    >>> compare_verson_lists(version_comparison_list('3.14.1'), version_comparison_list('3.16'))
-    True
-    >>> compare_verson_lists(version_comparison_list('3.14.1b2'), version_comparison_list('3.16'))
-    True
-    >>> compare_verson_lists(version_comparison_list('3.16.1'), version_comparison_list('3.16'))
-    False
-    >>> compare_verson_lists(version_comparison_list('3.16.1b1'), version_comparison_list('3.16'))
-    False
+    Returns False if either version could not be parsed.
     """
-
-    is_old = False
-    for idx, testval in enumerate(testlist):
-        try:
-            refval = reflist[idx]
-        except IndexError:
-            # The test version has more subversions, and since it was not old at previous level, it must be newer.
-            break
-        else:
-            if testval > refval:
-                break
-            if refval > testval:
-                is_old = True
-                break
-    return is_old
+    if testlist is None or reflist is None:
+        return False
+    return testlist < reflist
 
 
 def add_view_obs_points_obs_lines():

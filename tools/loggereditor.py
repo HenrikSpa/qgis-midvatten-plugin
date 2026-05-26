@@ -624,6 +624,81 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     def selected_line_keys(self) -> set:
         return getattr(self, "_selected_line_keys", set())
 
+    def _build_edit_mask(
+        self, fr_d_t, to_d_t, value_col: str | None = None
+    ) -> pd.Series:
+        fr = pd.Timestamp(fr_d_t)
+        to = pd.Timestamp(to_d_t)
+        mask = (fr <= self._buf.index) & (self._buf.index <= to)
+        if value_col is not None:
+            mask = mask & self._buf[value_col].notna()
+        if self.selected_line_keys and "_line_key" in self._buf.columns:
+            mask = mask & self._buf["_line_key"].isin(self.selected_line_keys)
+        return mask
+
+    def _build_selection_where(self, ph: str) -> tuple[str, list]:
+        if not self.selected_line_keys:
+            return "", []
+
+        clauses = []
+        params = []
+        dim_idx = 0
+
+        if self.separate_source_cb.isChecked():
+            sources = sorted({k[dim_idx] for k in self.selected_line_keys})
+            dim_idx += 1
+            if self._schema_variant == "series_join":
+                sub = (
+                    f"(SELECT {ident('id')} FROM {ident('w_logger_series')}"
+                    f" WHERE {ident('source')} IN ({', '.join(ph for _ in sources)}))"
+                )
+                clauses.append(f"{ident('series_id')} IN {sub}")
+                params.extend(sources)
+            elif self._schema_variant == "source_col":
+                placeholders = ", ".join(ph for _ in sources)
+                clauses.append(f"{ident('source')} IN ({placeholders})")
+                params.extend(sources)
+
+        if self.separate_created_at_cb.isChecked() and dim_idx < len(
+            next(iter(self.selected_line_keys))
+        ):
+            ca_values = sorted({k[dim_idx] for k in self.selected_line_keys})
+            dim_idx += 1
+            if self._created_at_grouping == "hour":
+                or_parts = []
+                for ca in ca_values:
+                    or_parts.append(
+                        f"({ident('created_at')} >= {ph}"
+                        f" AND {ident('created_at')} < {ph})"
+                    )
+                    params.append(ca + ":00:00")
+                    hour_int = int(ca[-2:])
+                    next_hour = ca[:11] + f"{hour_int + 1:02d}:00:00"
+                    params.append(next_hour)
+                clauses.append("(" + " OR ".join(or_parts) + ")")
+            elif self._created_at_grouping == "day":
+                or_parts = []
+                for ca in ca_values:
+                    or_parts.append(
+                        f"({ident('created_at')} >= {ph}"
+                        f" AND {ident('created_at')} < {ph})"
+                    )
+                    params.append(ca + " 00:00:00")
+                    next_day = (
+                        datetime.datetime.strptime(ca, "%Y-%m-%d")
+                        + datetime.timedelta(days=1)
+                    ).strftime("%Y-%m-%d")
+                    params.append(next_day + " 00:00:00")
+                clauses.append("(" + " OR ".join(or_parts) + ")")
+            else:
+                placeholders = ", ".join(ph for _ in ca_values)
+                clauses.append(f"{ident('created_at')} IN ({placeholders})")
+                params.extend(ca_values)
+
+        if not clauses:
+            return "", []
+        return " AND " + " AND ".join(clauses), params
+
     def _on_created_at_toggled(self):
         if not self.separate_created_at_cb.isChecked():
             self._created_at_grouping = None
@@ -948,6 +1023,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 dt_eq = f"datetime({ident('date_time')}) = datetime({ph})"
             else:
                 dt_eq = f"{ident('date_time')} = {ph}"
+            sel_where, sel_params = self._build_selection_where(ph)
             range_stmts, per_row_params = self._compute_update_statements(
                 changed_index,
                 orig_changed,
@@ -957,14 +1033,20 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 tbl,
                 ph,
                 is_sqlite,
+                sel_where,
+                sel_params,
             )
             try:
                 with dbconnection.transaction():
                     if delete_params:
                         delete_sql = (
                             f"DELETE FROM {tbl} WHERE {ident('obsid')} = {ph}"
-                            f" AND {dt_eq}"
+                            f" AND {dt_eq}{sel_where}"
                         )
+                        if sel_params:
+                            delete_params = [
+                                p + tuple(sel_params) for p in delete_params
+                            ]
                         dbconnection.executemany(delete_sql, delete_params)
                     for sql, params in range_stmts:
                         dbconnection.execute(sql, params)
@@ -972,8 +1054,12 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                         update_sql = (
                             f"UPDATE {tbl} SET {ident('level_masl')} = {ph}"
                             f" WHERE {ident('obsid')} = {ph}"
-                            f" AND {dt_eq}"
+                            f" AND {dt_eq}{sel_where}"
                         )
+                        if sel_params:
+                            per_row_params = [
+                                p + tuple(sel_params) for p in per_row_params
+                            ]
                         dbconnection.executemany(update_sql, per_row_params)
             finally:
                 dbconnection.closedb()
@@ -1004,6 +1090,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         tbl: str,
         ph: str,
         is_sqlite: bool,
+        sel_where: str = "",
+        sel_params: list | None = None,
     ) -> tuple[list[tuple], list[tuple]]:
         """Group changed rows by contiguous buf-position; emit range or per-row SQL.
 
@@ -1028,7 +1116,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         else:
             dt_between = f"{dt_col} BETWEEN {ph} AND {ph}"
         # where_range embeds three placeholders in order: obsid, t1, t2
-        where_range = f"{obsid_col} = {ph} AND {dt_between}"
+        where_range = f"{obsid_col} = {ph} AND {dt_between}{sel_where}"
 
         # A BETWEEN range-query only touches the intended rows when there are no
         # unchanged rows between t1 and t2 in the buffer — split on gaps to enforce this.
@@ -1049,7 +1137,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             # Pattern: set to NULL
             if grp_new.isna().all():
                 sql = f"UPDATE {tbl} SET {level_col} = NULL WHERE {where_range}"
-                range_stmts.append((sql, (obsid, t1, t2)))
+                range_stmts.append((sql, (obsid, t1, t2, *(sel_params or []))))
                 continue
 
             # Pattern: set logger position — new = C + head_cm/100 (constant C)
@@ -1062,7 +1150,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                         f" SET {level_col} = {ph} + {head_col} / 100.0"
                         f" WHERE {head_col} IS NOT NULL AND {where_range}"
                     )
-                    range_stmts.append((sql, (float(c_arr[0]), obsid, t1, t2)))
+                    range_stmts.append(
+                        (sql, (float(c_arr[0]), obsid, t1, t2, *(sel_params or [])))
+                    )
                     continue
 
             # Pattern: add constant offset — new = orig + D (constant D, both non-null)
@@ -1074,7 +1164,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                         f" SET {level_col} = {level_col} + {ph}"
                         f" WHERE {level_col} IS NOT NULL AND {where_range}"
                     )
-                    range_stmts.append((sql, (float(d_arr[0]), obsid, t1, t2)))
+                    range_stmts.append(
+                        (sql, (float(d_arr[0]), obsid, t1, t2, *(sel_params or [])))
+                    )
                     continue
 
             # Fallback: per-row executemany (trend adjustments, mixed patterns)
@@ -1307,12 +1399,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         if self._buf is None:
             common_utils.MessagebarAndLog.warning(bar_msg="No data loaded")
             return
-        fr = fr_d_t.replace(tzinfo=None)
-        to = to_d_t.replace(tzinfo=None)
-        mask = (
-            (fr <= self._buf.index)
-            & (self._buf.index <= to)
-            & self._buf["level_masl"].notna()
+        mask = self._build_edit_mask(
+            fr_d_t.replace(tzinfo=None),
+            to_d_t.replace(tzinfo=None),
+            value_col="level_masl",
         )
         self._buf.loc[mask, "level_masl"] += float(newzref)
         self._history_push("Adjust level")
@@ -1329,12 +1419,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         if self._buf is None:
             common_utils.MessagebarAndLog.warning(bar_msg="No data loaded")
             return
-        fr = fr_d_t.replace(tzinfo=None)
-        to = to_d_t.replace(tzinfo=None)
-        mask = (
-            (fr <= self._buf.index)
-            & (self._buf.index <= to)
-            & self._buf["head_cm_m"].notna()
+        mask = self._build_edit_mask(
+            fr_d_t.replace(tzinfo=None),
+            to_d_t.replace(tzinfo=None),
+            value_col="head_cm_m",
         )
         self._buf.loc[mask, "level_masl"] = (
             float(newzref) + self._buf.loc[mask, "head_cm_m"]
@@ -2105,7 +2193,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         really_delete = common_utils.Askuser("YesNo", msg).result
         if really_delete:
             common_utils.start_waiting_cursor()
-            mask = (fr_d_t <= self._buf.index) & (self._buf.index <= to_d_t)
+            mask = self._build_edit_mask(fr_d_t, to_d_t)
             if set_to_null_instead:
                 self._buf.loc[mask, "level_masl"] = np.nan
                 self._history_push("Set to null")
@@ -2417,11 +2505,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         fr_d_t = self.from_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
         to_d_t = self.to_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
 
-        mask = (
-            (fr_d_t <= self._buf.index)
-            & (self._buf.index <= to_d_t)
-            & self._buf["level_masl"].notna()
-        )
+        mask = self._build_edit_mask(fr_d_t, to_d_t, value_col="level_masl")
         selected = self._buf.loc[mask]
         if len(selected) < 2:
             return

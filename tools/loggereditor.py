@@ -22,6 +22,7 @@ from qgis.PyQt.QtWidgets import (
     QWidget,
 )
 from midvatten.tools.utils.legend_picker import LegendPicker
+import matplotlib.lines
 from matplotlib import pyplot as plt, ticker as tick
 from matplotlib.backend_bases import PickEvent, MouseButton
 from matplotlib.gridspec import GridSpec
@@ -1665,10 +1666,19 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             label.set_fontsize(8)
 
         leg = self.axes.legend(handles, labels)
-        pickable_handles = [h for h in handles if hasattr(h, "_line_key")]
-        if pickable_handles:
+        legend_lines = leg.get_lines()
+        paired = [
+            (ll, h)
+            for ll, h in zip(legend_lines, handles)
+            if isinstance(h, matplotlib.lines.Line2D) and hasattr(h, "_line_key")
+        ]
+        if paired:
+            pick_legend, pick_handles = zip(*paired)
             self._legend_picker = LegendPicker(
-                legend=leg, fig=self.calibrplotfigure, handles=handles
+                legend=leg,
+                fig=self.calibrplotfigure,
+                handles=list(pick_handles),
+                legend_lines=list(pick_legend),
             )
             self._legend_picker.register_pick_callback(self._on_legend_pick)
         else:

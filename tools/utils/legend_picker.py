@@ -8,6 +8,7 @@ class LegendPicker:
         legend: mpl.legend.Legend,
         fig: mpl.figure.Figure,
         handles: list,
+        legend_lines: list | None = None,
         picked_alpha: float = 1.0,
         other_alpha: float = 0.2,
         pickradius: int = 4,
@@ -21,9 +22,10 @@ class LegendPicker:
         self.selected_legend_lines: set = set()
         self._pick_callback = None
 
-        lines = [a for a in handles if isinstance(a, mpl.lines.Line2D)]
+        ax_lines = [a for a in handles if isinstance(a, mpl.lines.Line2D)]
+        leg_lines = legend_lines if legend_lines is not None else legend.get_lines()
         self.leg_lines_ax_lines = self._prepare_for_pick(
-            legend.get_lines(), lines, pickradius
+            leg_lines, ax_lines, pickradius
         )
         self.ax_to_legend = {v: k for k, v in self.leg_lines_ax_lines.items()}
         fig.canvas.mpl_connect("pick_event", self.on_pick)

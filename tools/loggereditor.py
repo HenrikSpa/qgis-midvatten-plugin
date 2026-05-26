@@ -507,7 +507,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             else buf[col].to_numpy(dtype=float, na_value=np.nan)
         )
         arr["source"] = sources
-        arr["line_key"] = np.array(line_keys, dtype=object)
+        arr["line_key"] = line_keys
         return arr.view(np.recarray)
 
     def _build_head_ts_for_plot(self, buf: pd.DataFrame) -> None:

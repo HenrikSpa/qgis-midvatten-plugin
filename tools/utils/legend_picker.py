@@ -1,4 +1,6 @@
 import matplotlib as mpl
+import matplotlib.figure
+import matplotlib.legend
 import matplotlib.lines
 
 

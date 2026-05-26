@@ -54,6 +54,33 @@ Calibr_Ui_Dialog = uic.loadUiType(ui_path("calibr_logger_dialog_integrated.ui"))
 class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     _MAX_HISTORY = 200
 
+    @staticmethod
+    def _compute_line_keys(
+        buf: pd.DataFrame,
+        separate_source: bool,
+        separate_created_at: bool,
+        separate_dt_precision: bool,
+        created_at_grouping: str | None,
+    ) -> list[tuple]:
+        n = len(buf)
+        if n == 0:
+            return []
+        parts: list[list] = []
+        if separate_source and "source" in buf.columns:
+            parts.append(buf["source"].fillna("").tolist())
+        if separate_created_at and "created_at" in buf.columns:
+            ca = buf["created_at"].fillna("")
+            if created_at_grouping == "hour":
+                ca = ca.str[:13]
+            elif created_at_grouping == "day":
+                ca = ca.str[:10]
+            parts.append(ca.tolist())
+        if separate_dt_precision and "dt_length" in buf.columns:
+            parts.append(buf["dt_length"].tolist())
+        if not parts:
+            return [("_all",)] * n
+        return list(zip(*parts))
+
     @fn_timer
     def __init__(self, iface, ms):
         qgis.PyQt.QtWidgets.QMainWindow.__init__(self, iface.mainWindow())

@@ -1533,7 +1533,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 ),
             )[0]
 
-            unique_keys = list(dict.fromkeys(self.level_masl_ts.line_key))
+            unique_keys = sorted(
+                dict.fromkeys(self.level_masl_ts.line_key),
+                key=lambda k: (bool(k[0] and str(k[0]).strip()), k),
+            )
             self._line_key_to_artist = {}
             if len(unique_keys) > 15:
                 progress = qgis.PyQt.QtWidgets.QProgressDialog(
@@ -1611,7 +1614,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             and self.head_ts_for_plot.size
             and self.contains_more_than_nan(self.head_ts_for_plot)
         ):
-            head_unique_keys = list(dict.fromkeys(self.head_ts_for_plot.line_key))
+            head_unique_keys = sorted(
+                dict.fromkeys(self.head_ts_for_plot.line_key),
+                key=lambda k: (bool(k[0] and str(k[0]).strip()), k),
+            )
             for idx, key in enumerate(head_unique_keys):
                 try:
                     color = logger_head_colors[idx]

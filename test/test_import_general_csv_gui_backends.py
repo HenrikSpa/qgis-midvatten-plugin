@@ -41,7 +41,7 @@ from midvatten.test.mocks_for_tests import MockUsingReturnValue
 from midvatten.tools.import_general_csv_gui import GeneralCsvImportGui
 from midvatten.tools.utils import common_utils
 from midvatten.tools.utils import db_utils
-from midvatten.tools.utils.date_utils import datestring_to_date
+from midvatten.tools.utils.date_utils import to_date
 
 
 class GeneralCsvGuiMixin:
@@ -490,7 +490,7 @@ class GeneralCsvGuiMixin:
 
     def test_import_w_levels_many_rows(self):
         file = ["obsid,date_time,meas"]
-        base = datestring_to_date("1900-01-01 00:01:01")
+        base = to_date("1900-01-01 00:01:01")
         date_list = [base + datetime.timedelta(days=x) for x in range(0, 10000)]
         file.extend(
             [

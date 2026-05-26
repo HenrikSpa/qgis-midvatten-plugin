@@ -49,7 +49,7 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
         calcave = w_flow_calc_aveflow.CalculateAveflow(self.iface, self.midvatten.ms)
         calcave.from_date_time.setDateTime(
-            date_utils.datestring_to_date("2000-01-01 00:00:00")
+            date_utils.to_date("2000-01-01 00:00:00")
         )
         calcave.calcall()
         print(f"{mock_messagebar.mock_calls=}")
@@ -103,7 +103,7 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
         calcave = w_flow_calc_aveflow.CalculateAveflow(self.iface, self.midvatten.ms)
         calcave.from_date_time.setDateTime(
-            date_utils.datestring_to_date("2000-01-01 00:00:00")
+            date_utils.to_date("2000-01-01 00:00:00")
         )
         calcave.calcselected()
         print(f"{mock_messagebar.mock_calls=}")
@@ -162,7 +162,7 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
         calcave = w_flow_calc_aveflow.CalculateAveflow(self.iface, self.midvatten.ms)
         calcave.from_date_time.setDateTime(
-            date_utils.datestring_to_date("2000-01-01 00:00:00")
+            date_utils.to_date("2000-01-01 00:00:00")
         )
         calcave.calcselected()
         print(f"{mock_messagebar.mock_calls=}")
@@ -214,7 +214,7 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
         calcave = w_flow_calc_aveflow.CalculateAveflow(self.iface, self.midvatten.ms)
         calcave.from_date_time.setDateTime(
-            date_utils.datestring_to_date("2000-01-01 00:00:00")
+            date_utils.to_date("2000-01-01 00:00:00")
         )
         calcave.calcselected()
         print(f"{mock_messagebar.mock_calls=}")

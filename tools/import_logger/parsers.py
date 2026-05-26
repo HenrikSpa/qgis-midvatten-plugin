@@ -18,11 +18,7 @@ import pandas as pd  # pandas is a mandatory dependency of this plugin
 from midvatten.tools.utils import common_utils, date_utils
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.common_utils import format_timezone_string
-from midvatten.tools.utils.date_utils import (
-    find_date_format,
-    datestring_to_date,
-    parse_timezone_to_timedelta,
-)
+from midvatten.tools.utils.date_utils import to_date
 from midvatten.tools.utils.gui_utils import (
     RowEntry,
     set_combobox,
@@ -43,7 +39,7 @@ def fix_date(
     try:
         dt = datetime.datetime.strptime(date_time[:-2].rstrip(), "%m/%d/%y %I:%M:%S")
     except ValueError:
-        dt = date_utils.datestring_to_date(date_time)
+        dt = date_utils.to_date(date_time)
         if dt is None:
             raise FileError(
                 QCoreApplication.translate(
@@ -123,24 +119,28 @@ def filter_dates_from_filedata(
     obsid_idx = file_data[0].index(obsid_header_name)
     date_time_idx = file_data[0].index(date_time_header_name)
 
-    # Pre-parse the last-date for each obsid once (not once per row).
     last_dates_parsed: dict[str, object] = {}
     for obsid, val in obsid_last_imported_dates.items():
         last_date_str = _get_last_date_str(val)
         last_dates_parsed[obsid] = (
-            datestring_to_date(last_date_str) if last_date_str is not None else None
+            to_date(last_date_str) if last_date_str is not None else None
         )
 
-    def _is_newer(row: list[str]) -> bool:
+    data_rows = file_data[1:]
+    row_dates = date_utils.to_dates([row[date_time_idx] for row in data_rows])
+
+    filtered_file_data = []
+    for row, row_date in zip(data_rows, row_dates):
         obsid = row[obsid_idx]
         if obsid not in obsid_last_imported_dates:
-            return True
+            filtered_file_data.append(row)
+            continue
         last_date = last_dates_parsed.get(obsid)
         if last_date is None:
-            return True
-        return datestring_to_date(row[date_time_idx]) > last_date
-
-    filtered_file_data = [row for row in file_data[1:] if _is_newer(row)]
+            filtered_file_data.append(row)
+            continue
+        if row_date is not None and row_date > last_date:
+            filtered_file_data.append(row)
 
     filtered_file_data.insert(0, file_data[0])
     return filtered_file_data
@@ -182,7 +182,7 @@ class TzConverter(RowEntry):
         if diff == 0:
             return date_time
         else:
-            new_date = date_utils.datestring_to_date(date_time) + diff
+            new_date = date_utils.to_date(date_time) + diff
             return new_date
 
     @property
@@ -669,11 +669,9 @@ class DiverOfficeParser:
                     % path
                 )
 
-            dateformat = find_date_format(cols[date_col])
+            date = date_utils.to_date(cols[date_col])
 
-            if dateformat is not None:
-                date = _datetime.strptime(cols[date_col], dateformat)
-
+            if date is not None:
                 if begindate is not None:
                     if date < begindate:
                         continue
@@ -850,9 +848,9 @@ class LeveloggerParser:
         spec_cond_factor_to_mscm = 0.001
         filename = os.path.basename(path)
         if begindate is not None:
-            begindate = date_utils.datestring_to_date(begindate)
+            begindate = date_utils.to_date(begindate)
         if enddate is not None:
-            enddate = date_utils.datestring_to_date(enddate)
+            enddate = date_utils.to_date(enddate)
 
         with open(path, encoding=str(charset)) as f:
             rows_unsplit = [row.lstrip().rstrip("\n").rstrip("\r") for row in f]
@@ -954,8 +952,7 @@ class LeveloggerParser:
             date_str = " ".join(
                 [first_data_row[date_colnr], first_data_row[time_colnr]]
             )
-            date_format = date_utils.datestring_to_date(date_str)
-            if date_format is None:
+            if date_utils.to_date(date_str) is None:
                 common_utils.MessagebarAndLog.warning(
                     bar_msg=QCoreApplication.translate(
                         "LoggerImport",
@@ -965,8 +962,9 @@ class LeveloggerParser:
                 )
                 return [], filename, location, timezone, serial_number
 
+        candidate_rows = []
+        date_strings = []
         for row in rows[data_header_idx + 1 :]:
-            date_str = " ".join([row[date_colnr], row[time_colnr]])
             if (
                 skip_rows_without_water_level
                 and level_colnr is not None
@@ -975,15 +973,21 @@ class LeveloggerParser:
                 )
             ):
                 continue
-            if begindate is not None or enddate is not None:
-                row_date = date_utils.datestring_to_date(date_str, df=date_format)
-                if begindate is not None and row_date < begindate:
-                    continue
-                if enddate is not None and row_date > enddate:
-                    continue
+            date_strings.append(" ".join([row[date_colnr], row[time_colnr]]))
+            candidate_rows.append(row)
+
+        parsed_dates = date_utils.to_dates(date_strings)
+
+        for row, row_date in zip(candidate_rows, parsed_dates):
+            if row_date is None:
+                continue
+            if begindate is not None and row_date < begindate:
+                continue
+            if enddate is not None and row_date > enddate:
+                continue
             filedata.append(
                 [
-                    date_utils.long_dateformat(date_str, date_format),
+                    row_date.strftime("%Y-%m-%d %H:%M:%S"),
                     (
                         str(
                             float(row[level_colnr].replace(",", "."))
@@ -1046,9 +1050,9 @@ class HoboParser:
         serial_number = None
         filename = os.path.basename(path)
         if begindate is not None:
-            begindate = date_utils.datestring_to_date(begindate)
+            begindate = date_utils.to_date(begindate)
         if enddate is not None:
-            enddate = date_utils.datestring_to_date(enddate)
+            enddate = date_utils.to_date(enddate)
 
         with open(path, encoding=str(charset)) as f:
             rows_unsplit = [row.lstrip().rstrip("\n").rstrip("\r") for row in f]
@@ -1123,11 +1127,9 @@ class HoboParser:
             return [], filename, location, None, serial_number
         else:
             dt = first_data_row[date_colnr]
-            date_format = date_utils.find_date_format(dt, suppress_error_msg=True)
-            if date_format is None:
+            if date_utils.to_date(dt) is None:
                 dt = first_data_row[date_colnr][:-2].rstrip()
-                date_format = date_utils.find_date_format(dt)
-                if date_format is None:
+                if date_utils.to_date(dt) is None:
                     common_utils.MessagebarAndLog.warning(
                         bar_msg=QCoreApplication.translate(
                             "LoggerImport",
@@ -1144,7 +1146,7 @@ class HoboParser:
                 continue
             filedata.append(
                 [
-                    date_utils.long_dateformat(dt),
+                    date_utils.to_YmdHMS(dt),
                     "",
                     (
                         str(float(row[temp_colnr].replace(",", ".")))

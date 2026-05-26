@@ -19,6 +19,7 @@
  ***************************************************************************/
 """
 
+import datetime
 import math
 from unittest import mock
 
@@ -68,7 +69,7 @@ class CalibrloggerMixin:
         calibrlogger.update_plot()
 
         calibrlogger.from_date_time.setDateTime(
-            date_utils.datestring_to_date("2000-01-01 00:00:00")
+            date_utils.to_date("2000-01-01 00:00:00")
         )
         calibrlogger.logger_elevation.setText("2")
         gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
@@ -97,7 +98,7 @@ class CalibrloggerMixin:
         calibrlogger.update_plot()
 
         calibrlogger.from_date_time.setDateTime(
-            date_utils.datestring_to_date("2000-01-01 00:00:00")
+            date_utils.to_date("2000-01-01 00:00:00")
         )
         calibrlogger.offset.setText("50")
         gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
@@ -133,7 +134,7 @@ class CalibrloggerMixin:
 
         calibrlogger.loggerpos_masl_or_offset_state = 2
         calibrlogger.from_date_time.setDateTime(
-            date_utils.datestring_to_date("2000-01-01 00:00:00")
+            date_utils.to_date("2000-01-01 00:00:00")
         )
         gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
 
@@ -166,7 +167,7 @@ class CalibrloggerMixin:
 
         calibrlogger.loggerpos_masl_or_offset_state = 2
         calibrlogger.from_date_time.setDateTime(
-            date_utils.datestring_to_date("2000-01-01 00:00:00")
+            date_utils.to_date("2000-01-01 00:00:00")
         )
         gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
         calibrlogger.best_fit_search_radius.setText("2 hours")
@@ -202,7 +203,7 @@ class CalibrloggerMixin:
 
         calibrlogger.loggerpos_masl_or_offset_state = 2
         calibrlogger.from_date_time.setDateTime(
-            date_utils.datestring_to_date("2017-02-01 01:00")
+            date_utils.to_date("2017-02-01 01:00")
         )
         gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
         calibrlogger.best_fit_search_radius.setText("2 hours")
@@ -238,10 +239,10 @@ class CalibrloggerMixin:
 
         calibrlogger.loggerpos_masl_or_offset_state = 2
         calibrlogger.from_date_time.setDateTime(
-            date_utils.datestring_to_date("2010-02-01 01:00")
+            date_utils.to_date("2010-02-01 01:00")
         )
         calibrlogger.to_date_time.setDateTime(
-            date_utils.datestring_to_date("2017-02-01 01:00")
+            date_utils.to_date("2017-02-01 01:00")
         )
         gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
         calibrlogger.best_fit_search_radius.setText("2 hours")
@@ -343,10 +344,10 @@ class CalibrloggerMixin:
         gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
         calibrlogger.update_plot()
         calibrlogger.from_date_time.setDateTime(
-            date_utils.datestring_to_date("2017-01-30 00:00")
+            date_utils.to_date("2017-01-30 00:00")
         )
         calibrlogger.to_date_time.setDateTime(
-            date_utils.datestring_to_date("2017-02-02 00:00")
+            date_utils.to_date("2017-02-02 00:00")
         )
         askuser.return_value.result = True
 
@@ -405,7 +406,7 @@ class CalibrloggerMixin:
         )
         calibrlogger.load_obsid_and_init()
         print(f"{mock_messagebar.mock_calls=}")
-        assert tuple(calibrlogger.meas_ts.tolist()) == (("2017-02-01 00:00", 2.0),)
+        assert tuple(calibrlogger.meas_ts.tolist()) == ((datetime.datetime(2017, 2, 1, 0, 0), 2.0),)
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_change_timezone_w_levels_tz_convert(self, mock_messagebar):
@@ -433,7 +434,7 @@ class CalibrloggerMixin:
         )
         calibrlogger.load_obsid_and_init()
         print(f"{mock_messagebar.mock_calls=}")
-        assert tuple(calibrlogger.meas_ts.tolist()) == (("2017-04-30 23:00", 2.0),)
+        assert tuple(calibrlogger.meas_ts.tolist()) == ((datetime.datetime(2017, 4, 30, 23, 0), 2.0),)
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_change_timezone_no_w_levels_logger_tz(self, mock_messagebar):
@@ -581,7 +582,7 @@ class CalibrloggerMixin:
 
         # Make an edit
         calibrlogger.from_date_time.setDateTime(
-            date_utils.datestring_to_date("2000-01-01 00:00:00")
+            date_utils.to_date("2000-01-01 00:00:00")
         )
         calibrlogger.logger_elevation.setText("5")
         gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
@@ -616,7 +617,7 @@ class CalibrloggerMixin:
         calibrlogger.update_plot()
 
         calibrlogger.from_date_time.setDateTime(
-            date_utils.datestring_to_date("2000-01-01 00:00:00")
+            date_utils.to_date("2000-01-01 00:00:00")
         )
         calibrlogger.logger_elevation.setText("5")
         gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
@@ -644,7 +645,7 @@ class CalibrloggerMixin:
         calibrlogger.update_plot()
 
         calibrlogger.from_date_time.setDateTime(
-            date_utils.datestring_to_date("2000-01-01 00:00:00")
+            date_utils.to_date("2000-01-01 00:00:00")
         )
         calibrlogger.logger_elevation.setText("5")
         gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
@@ -679,7 +680,7 @@ class CalibrloggerMixin:
         calibrlogger.update_plot()
 
         calibrlogger.from_date_time.setDateTime(
-            date_utils.datestring_to_date("2000-01-01 00:00:00")
+            date_utils.to_date("2000-01-01 00:00:00")
         )
         calibrlogger.logger_elevation.setText("5")
         gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
@@ -716,7 +717,7 @@ class CalibrloggerMixin:
         calibrlogger.update_plot()
 
         calibrlogger.from_date_time.setDateTime(
-            date_utils.datestring_to_date("2000-01-01 00:00:00")
+            date_utils.to_date("2000-01-01 00:00:00")
         )
         calibrlogger.logger_elevation.setText("5")
         calibrlogger.set_logger_pos()
@@ -756,10 +757,10 @@ class CalibrloggerMixin:
 
         # Calibrate period 1 via "set logger position" (elevation=2 → level = 2 + head/100 = 3.0)
         calibrlogger.from_date_time.setDateTime(
-            date_utils.datestring_to_date("2017-01-01 00:00")
+            date_utils.to_date("2017-01-01 00:00")
         )
         calibrlogger.to_date_time.setDateTime(
-            date_utils.datestring_to_date("2017-01-03 00:00")
+            date_utils.to_date("2017-01-03 00:00")
         )
         calibrlogger.logger_elevation.setText("2")
         calibrlogger.loggerpos_masl_or_offset_state = 1
@@ -767,10 +768,10 @@ class CalibrloggerMixin:
 
         # Calibrate period 2 via "add offset" (+5)
         calibrlogger.from_date_time.setDateTime(
-            date_utils.datestring_to_date("2017-02-01 00:00")
+            date_utils.to_date("2017-02-01 00:00")
         )
         calibrlogger.to_date_time.setDateTime(
-            date_utils.datestring_to_date("2017-02-03 00:00")
+            date_utils.to_date("2017-02-03 00:00")
         )
         calibrlogger.offset.setText("5")
         calibrlogger.loggerpos_masl_or_offset_state = 2
@@ -817,10 +818,10 @@ class CalibrloggerPostgisMixin(CalibrloggerMixin):
         gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
         calibrlogger.update_plot()
         calibrlogger.from_date_time.setDateTime(
-            date_utils.datestring_to_date("2000-01-01 00:00:00")
+            date_utils.to_date("2000-01-01 00:00:00")
         )
         calibrlogger.to_date_time.setDateTime(
-            date_utils.datestring_to_date("2099-12-31 23:59:59")
+            date_utils.to_date("2099-12-31 23:59:59")
         )
 
         from midvatten.tools.trend_math import apply_trend_correction
@@ -897,7 +898,7 @@ class CalibrloggerPostgisMixin(CalibrloggerMixin):
         calibrlogger.update_plot()
 
         calibrlogger.from_date_time.setDateTime(
-            date_utils.datestring_to_date("2000-01-01 00:00:00")
+            date_utils.to_date("2000-01-01 00:00:00")
         )
         calibrlogger.logger_elevation.setText("2")
         gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
@@ -1066,10 +1067,10 @@ class CalibrloggerSpatialiteMixin(CalibrloggerMixin):
         gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
         calibrlogger.update_plot()
         calibrlogger.from_date_time.setDateTime(
-            date_utils.datestring_to_date("2000-01-01 00:00:00")
+            date_utils.to_date("2000-01-01 00:00:00")
         )
         calibrlogger.to_date_time.setDateTime(
-            date_utils.datestring_to_date("2099-12-31 23:59:59")
+            date_utils.to_date("2099-12-31 23:59:59")
         )
 
         from midvatten.tools.trend_math import apply_trend_correction
@@ -1102,10 +1103,10 @@ class CalibrloggerSpatialiteMixin(CalibrloggerMixin):
         gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
         calibrlogger.update_plot()
         calibrlogger.from_date_time.setDateTime(
-            date_utils.datestring_to_date("2000-01-01 00:00:00")
+            date_utils.to_date("2000-01-01 00:00:00")
         )
         calibrlogger.to_date_time.setDateTime(
-            date_utils.datestring_to_date("2099-12-31 23:59:59")
+            date_utils.to_date("2099-12-31 23:59:59")
         )
 
         from midvatten.tools.trend_math import apply_trend_correction
@@ -1139,10 +1140,10 @@ class CalibrloggerSpatialiteMixin(CalibrloggerMixin):
         gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
         calibrlogger.update_plot()
         calibrlogger.from_date_time.setDateTime(
-            date_utils.datestring_to_date("2000-01-01 00:00:00")
+            date_utils.to_date("2000-01-01 00:00:00")
         )
         calibrlogger.to_date_time.setDateTime(
-            date_utils.datestring_to_date("2099-12-31 23:59:59")
+            date_utils.to_date("2099-12-31 23:59:59")
         )
 
         # Enter trend mode
@@ -1238,7 +1239,7 @@ class CalibrloggerSpatialiteMixin(CalibrloggerMixin):
         calibrlogger.update_plot()
 
         calibrlogger.from_date_time.setDateTime(
-            date_utils.datestring_to_date("2000-01-01 00:00:00")
+            date_utils.to_date("2000-01-01 00:00:00")
         )
         calibrlogger.logger_elevation.setText("2")
         gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")

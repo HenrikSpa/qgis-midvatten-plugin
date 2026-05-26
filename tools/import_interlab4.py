@@ -37,7 +37,7 @@ from midvatten.tools.obsid_assignment_dialog import (
 )
 from midvatten.tools.utils import common_utils, db_utils, midvatten_utils
 from midvatten.tools.utils.common_utils import Cancel
-from midvatten.tools.utils.date_utils import datestring_to_date
+from midvatten.tools.utils.date_utils import to_date
 from midvatten.tools.utils.db_utils import sql_load_fr_db, tables_columns
 from midvatten.tools.utils.db_utils.dialect import ident
 from midvatten.tools.utils.file_utils import definitions_path, ui_path
@@ -734,12 +734,12 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
                 sampletime = metadata.get("provtagningstid", None)
                 if sampletime is not None:
                     date_time = datetime.strftime(
-                        datestring_to_date(" ".join([sampledate, sampletime])),
+                        to_date(" ".join([sampledate, sampletime])),
                         "%Y-%m-%d %H:%M:%S",
                     )
                 else:
                     date_time = datetime.strftime(
-                        datestring_to_date(sampledate), "%Y-%m-%d %H:%M:%S"
+                        to_date(sampledate), "%Y-%m-%d %H:%M:%S"
                     )
                     common_utils.MessagebarAndLog.info(
                         log_msg=QCoreApplication.translate(

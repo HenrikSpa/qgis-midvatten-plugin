@@ -14,7 +14,7 @@ from midvatten.tools.import_fieldlogger import (
     DateTimeFilter,
 )
 from midvatten.tools.utils import common_utils
-from midvatten.tools.utils.date_utils import datestring_to_date
+from midvatten.tools.utils.date_utils import to_date
 
 
 @pytest.mark.active
@@ -34,7 +34,7 @@ class TestFieldLoggerImporterNoDb:
                 "sublocation": "obs1.sub",
                 "obsid": "obs1",
                 "flowtype": "atype",
-                "date_time": datestring_to_date("2016-01-01 00:00"),
+                "date_time": to_date("2016-01-01 00:00"),
                 "unit": "aunit",
                 "value": "123,4",
             }
@@ -49,7 +49,7 @@ class TestFieldLoggerImporterNoDb:
         observations = [
             {
                 "obsid": "obs1",
-                "date_time": datestring_to_date("2016-01-01 00:00"),
+                "date_time": to_date("2016-01-01 00:00"),
                 "meas": "123,4",
             }
         ]
@@ -64,7 +64,7 @@ class TestFieldLoggerImporterNoDb:
         observations = [
             {
                 "obsid": "obs1",
-                "date_time": datestring_to_date("2016-01-01 00:00"),
+                "date_time": to_date("2016-01-01 00:00"),
                 "value": "123,4",
                 "level_masl": "567",
             }
@@ -80,13 +80,13 @@ class TestFieldLoggerImporterNoDb:
         observations = [
             {
                 "obsid": "obs1",
-                "date_time": datestring_to_date("2016-01-01 00:00"),
+                "date_time": to_date("2016-01-01 00:00"),
                 "value": "123,4",
                 "level_masl": "567",
             },
             {
                 "obsid": "obs1",
-                "date_time": datestring_to_date("2016-01-01 00:02"),
+                "date_time": to_date("2016-01-01 00:02"),
                 "meas": "897",
             },
         ]
@@ -101,7 +101,7 @@ class TestFieldLoggerImporterNoDb:
         observations = [
             {
                 "obsid": "obs1",
-                "date_time": datestring_to_date("2016-01-01 00:00"),
+                "date_time": to_date("2016-01-01 00:00"),
                 "value": "123,4",
                 "meas": "456,4",
                 "level_masl": "567",
@@ -109,7 +109,7 @@ class TestFieldLoggerImporterNoDb:
             },
             {
                 "obsid": "obs1",
-                "date_time": datestring_to_date("2016-01-01 00:02"),
+                "date_time": to_date("2016-01-01 00:02"),
                 "meas": "897",
             },
         ]
@@ -154,7 +154,7 @@ class TestFieldLoggerImporterNoDb:
                 "sublocation": "obs1.sub",
                 "obsid": "obs1",
                 "flowtype": "atype",
-                "date_time": datestring_to_date("2016-01-01 00:00"),
+                "date_time": to_date("2016-01-01 00:00"),
                 "unit": "aunit",
                 "value": "123,4",
             },
@@ -162,7 +162,7 @@ class TestFieldLoggerImporterNoDb:
                 "sublocation": "obs1.sub",
                 "obsid": "obs1",
                 "flowtype": "atype",
-                "date_time": datestring_to_date("2016-01-02 00:00"),
+                "date_time": to_date("2016-01-02 00:00"),
                 "unit": "aunit",
                 "value": "223,4",
             },
@@ -195,7 +195,7 @@ class TestFieldLoggerImporterNoDb:
                 "sublocation": "obs1.sub",
                 "obsid": "obs1",
                 "flowtype": "atype",
-                "date_time": datestring_to_date("2016-01-01 00:00"),
+                "date_time": to_date("2016-01-01 00:00"),
                 "unit": "aunit",
                 "value": "123,4",
             },
@@ -203,7 +203,7 @@ class TestFieldLoggerImporterNoDb:
                 "sublocation": "obs2.sub",
                 "obsid": "obs2",
                 "flowtype": "atype",
-                "date_time": datestring_to_date("2016-01-02 00:00"),
+                "date_time": to_date("2016-01-02 00:00"),
                 "unit": "aunit",
                 "value": "223,4",
             },
@@ -211,7 +211,7 @@ class TestFieldLoggerImporterNoDb:
                 "sublocation": "obs2.sub",
                 "obsid": "obs2",
                 "flowtype": "atype",
-                "date_time": datestring_to_date("2016-01-03 00:00"),
+                "date_time": to_date("2016-01-03 00:00"),
                 "unit": "aunit",
                 "value": "223,4",
             },
@@ -788,7 +788,7 @@ class TestFieldLoggerImporterNoDb:
         observations = [
             {
                 "obsid": "obs1",
-                "date_time": datestring_to_date("2016-01-01 00:00"),
+                "date_time": to_date("2016-01-01 00:00"),
                 "parameter": "par1",
                 "unit": "unit1",
                 "staff": "staff1",
@@ -807,7 +807,7 @@ class TestFieldLoggerImporterNoDb:
         observations = [
             {
                 "obsid": "obs1",
-                "date_time": datestring_to_date("2016-01-01 00:00"),
+                "date_time": to_date("2016-01-01 00:00"),
                 "parameter": "par1",
                 "unit": "unit1",
                 "staff": "staff1",
@@ -826,7 +826,7 @@ class TestFieldLoggerImporterNoDb:
         observations = [
             {
                 "obsid": "obs1",
-                "date_time": datestring_to_date("2016-01-01 00:00"),
+                "date_time": to_date("2016-01-01 00:00"),
                 "parameter": "par1",
                 "unit": "unit1",
                 "staff": "staff1",
@@ -846,7 +846,7 @@ class TestFieldLoggerImporterNoDb:
         observations = [
             {
                 "obsid": "obs1",
-                "date_time": datestring_to_date("2016-01-01 00:00"),
+                "date_time": to_date("2016-01-01 00:00"),
                 "parameter": "par1",
                 "unit": "unit1",
                 "staff": "staff1",
@@ -1010,31 +1010,31 @@ class TestCommentsImportFields:
         observations = [
             {
                 "parametername": "comment",
-                "date_time": datestring_to_date("2016-01-01"),
+                "date_time": to_date("2016-01-01"),
                 "sublocation": "1",
                 "value": "shared_comment",
             },
             {
                 "parametername": "par_get_shared_comment",
-                "date_time": datestring_to_date("2016-01-01"),
+                "date_time": to_date("2016-01-01"),
                 "sublocation": "1",
                 "value": "1",
             },
             {
                 "parametername": "par_not_get_shared_comment",
-                "date_time": datestring_to_date("2016-01-02"),
+                "date_time": to_date("2016-01-02"),
                 "sublocation": "2",
                 "value": "1",
             },
             {
                 "parametername": "par_not_get_shared_comment",
-                "date_time": datestring_to_date("2016-01-04"),
+                "date_time": to_date("2016-01-04"),
                 "sublocation": "1",
                 "value": "1",
             },
             {
                 "parametername": "comment",
-                "date_time": datestring_to_date("2016-01-03"),
+                "date_time": to_date("2016-01-03"),
                 "sublocation": "1",
                 "value": "not_shared_comment",
             },
@@ -1211,7 +1211,7 @@ class TestDateTimeFilter:
         datetimefilter.from_date = "2016-01-01"
         datetimefilter.to_date = "2016-01-10"
         observation = datetimefilter.alter_data(
-            {"date_time": datestring_to_date("2015-01-01")}
+            {"date_time": to_date("2015-01-01")}
         )
         assert observation is None
 
@@ -1220,7 +1220,7 @@ class TestDateTimeFilter:
         datetimefilter.from_date = "2016-01-01"
         datetimefilter.to_date = "2016-01-10"
         observation = datetimefilter.alter_data(
-            {"date_time": datestring_to_date("2016-01-05")}
+            {"date_time": to_date("2016-01-05")}
         )
         test_string = create_test_string(observation)
         reference = "{date_time: 2016-01-05 00:00:00}"
@@ -1231,7 +1231,7 @@ class TestDateTimeFilter:
         datetimefilter.from_date = "2016-01-01"
         datetimefilter.to_date = "2016-01-10"
         observation = datetimefilter.alter_data(
-            {"date_time": datestring_to_date("2016-01-09 23:59:59")}
+            {"date_time": to_date("2016-01-09 23:59:59")}
         )
         test_string = create_test_string(observation)
         reference = "{date_time: 2016-01-09 23:59:59}"
@@ -1242,7 +1242,7 @@ class TestDateTimeFilter:
         datetimefilter.from_date = "2016-01-01"
         datetimefilter.to_date = "2016-01-10"
         observation = datetimefilter.alter_data(
-            {"date_time": datestring_to_date("2016-01-01")}
+            {"date_time": to_date("2016-01-01")}
         )
         assert observation is None
 
@@ -1251,6 +1251,6 @@ class TestDateTimeFilter:
         datetimefilter.from_date = "2016-01-01"
         datetimefilter.to_date = "2016-01-10"
         observation = datetimefilter.alter_data(
-            {"date_time": datestring_to_date("2016-01-10")}
+            {"date_time": to_date("2016-01-10")}
         )
         assert observation is None

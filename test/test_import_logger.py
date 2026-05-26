@@ -22,7 +22,7 @@ from midvatten.tools.import_logger import (
 )
 from midvatten.tools.utils import common_utils
 from midvatten.tools.utils import db_utils
-from midvatten.tools.utils.date_utils import datestring_to_date
+from midvatten.tools.utils.date_utils import to_date
 from midvatten.tools.utils.gui_utils import set_combobox
 from midvatten.test import utils_for_tests
 from midvatten.test.mocks_for_tests import MockReturnUsingDictIn
@@ -783,8 +783,8 @@ class TestFilterDatesFromFiledataOld:
             ["rb3", "2016-05-01 00:00"],
         ]
         obsid_last_imported_dates = {
-            "rb1": [(datestring_to_date("2016-01-01 00:00:00"),)],
-            "rb2": [(datestring_to_date("2017-01-01 00:00:00"),)],
+            "rb1": [(to_date("2016-01-01 00:00:00"),)],
+            "rb2": [(to_date("2017-01-01 00:00:00"),)],
         }
         test_file_data = utils_for_tests.create_test_string(
             filter_dates_from_filedata(file_data, obsid_last_imported_dates)

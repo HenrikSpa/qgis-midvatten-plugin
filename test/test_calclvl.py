@@ -26,7 +26,7 @@ from qgis.PyQt import QtWidgets
 from midvatten.test import utils_for_tests
 from midvatten.tools.calculate_level import CalculateLevel
 from midvatten.tools.utils import db_utils
-from midvatten.tools.utils.date_utils import datestring_to_date
+from midvatten.tools.utils.date_utils import to_date
 
 
 class CalclvlMixin:
@@ -45,10 +45,10 @@ class CalclvlMixin:
         )
         self.calclvl.from_date_time = QtWidgets.QDateTimeEdit()
         self.calclvl.from_date_time.setDateTime(
-            datestring_to_date("2000-01-01 00:00:00")
+            to_date("2000-01-01 00:00:00")
         )
         self.calclvl.to_date_time = QtWidgets.QDateTimeEdit()
-        self.calclvl.to_date_time.setDateTime(datestring_to_date("2010-01-01 00:00:00"))
+        self.calclvl.to_date_time.setDateTime(to_date("2010-01-01 00:00:00"))
         self.calclvl.calcall()
 
         test_string = utils_for_tests.create_test_string(
@@ -79,10 +79,10 @@ class CalclvlMixin:
         )
         self.calclvl.from_date_time = QtWidgets.QDateTimeEdit()
         self.calclvl.from_date_time.setDateTime(
-            datestring_to_date("2000-01-01 00:00:00")
+            to_date("2000-01-01 00:00:00")
         )
         self.calclvl.to_date_time = QtWidgets.QDateTimeEdit()
-        self.calclvl.to_date_time.setDateTime(datestring_to_date("2010-01-01 00:00:00"))
+        self.calclvl.to_date_time.setDateTime(to_date("2010-01-01 00:00:00"))
         self.calclvl.calcselected()
 
         test_string = utils_for_tests.create_test_string(
@@ -115,10 +115,10 @@ class CalclvlMixin:
         )
         self.calclvl.from_date_time = QtWidgets.QDateTimeEdit()
         self.calclvl.from_date_time.setDateTime(
-            datestring_to_date("2000-01-01 00:00:00")
+            to_date("2000-01-01 00:00:00")
         )
         self.calclvl.to_date_time = QtWidgets.QDateTimeEdit()
-        self.calclvl.to_date_time.setDateTime(datestring_to_date("2010-01-01 00:00:00"))
+        self.calclvl.to_date_time.setDateTime(to_date("2010-01-01 00:00:00"))
         self.calclvl.calcselected()
 
         test_string = utils_for_tests.create_test_string(
@@ -156,10 +156,10 @@ class CalclvlMixin:
         )
         self.calclvl.from_date_time = QtWidgets.QDateTimeEdit()
         self.calclvl.from_date_time.setDateTime(
-            datestring_to_date("2000-01-01 00:00:00")
+            to_date("2000-01-01 00:00:00")
         )
         self.calclvl.to_date_time = QtWidgets.QDateTimeEdit()
-        self.calclvl.to_date_time.setDateTime(datestring_to_date("2010-01-01 00:00:00"))
+        self.calclvl.to_date_time.setDateTime(to_date("2010-01-01 00:00:00"))
         self.calclvl.overwrite_prev.setChecked(False)
         self.calclvl.calcselected()
         # self.checkBox_skipnulls
@@ -200,10 +200,10 @@ class CalclvlMixin:
         )
         self.calclvl.from_date_time = QtWidgets.QDateTimeEdit()
         self.calclvl.from_date_time.setDateTime(
-            datestring_to_date("2000-01-01 00:00:00")
+            to_date("2000-01-01 00:00:00")
         )
         self.calclvl.to_date_time = QtWidgets.QDateTimeEdit()
-        self.calclvl.to_date_time.setDateTime(datestring_to_date("2010-01-01 00:00:00"))
+        self.calclvl.to_date_time.setDateTime(to_date("2010-01-01 00:00:00"))
         self.calclvl.overwrite_prev.setChecked(False)
 
         self.calclvl.calcselected()
@@ -245,10 +245,10 @@ class CalclvlMixin:
         )
         self.calclvl.from_date_time = QtWidgets.QDateTimeEdit()
         self.calclvl.from_date_time.setDateTime(
-            datestring_to_date("2000-01-01 00:00:00")
+            to_date("2000-01-01 00:00:00")
         )
         self.calclvl.to_date_time = QtWidgets.QDateTimeEdit()
-        self.calclvl.to_date_time.setDateTime(datestring_to_date("2010-01-01 00:00:00"))
+        self.calclvl.to_date_time.setDateTime(to_date("2010-01-01 00:00:00"))
         self.calclvl.overwrite_prev.setChecked(False)
         self.calclvl.stop_if_null.setChecked(False)
 

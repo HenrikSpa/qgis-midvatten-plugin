@@ -515,11 +515,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                     enddate=to_date,
                 )
                 if format_name == self.FORMAT_DIVEROFFICE:
-                    parse_func = (
-                        DiverOfficeParser.parse_old
-                        if selected_file.endswith(".csv")
-                        else DiverOfficeParser.parse
-                    )
+                    parse_func = DiverOfficeParser.parse
                     parse_kwargs["skip_rows_without_water_level"] = (
                         skip_rows_without_water_level
                     )

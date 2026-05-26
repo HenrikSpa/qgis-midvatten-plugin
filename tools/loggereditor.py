@@ -356,6 +356,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self._selected_line_keys: set = set()
             self._legend_picker = None
 
+            self.logger_line_nodes.stateChanged.connect(lambda _: self.update_plot())
+            self.plot_logger_head.stateChanged.connect(lambda _: self.update_plot())
+            self.normalize_head.stateChanged.connect(lambda _: self.update_plot())
             self.separate_source_cb.stateChanged.connect(lambda _: self.update_plot())
             self.separate_created_at_cb.stateChanged.connect(
                 lambda _: self._on_created_at_toggled()

@@ -669,7 +669,7 @@
              <string>Set To to the latest date of the selected lines</string>
             </property>
             <property name="text">
-             <string>From selection</string>
+             <string>To selection</string>
             </property>
             <property name="enabled">
              <bool>false</bool>

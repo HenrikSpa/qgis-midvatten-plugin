@@ -1554,6 +1554,20 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
             unique_keys = list(dict.fromkeys(self.level_masl_ts.line_key))
             self._line_key_to_artist = {}
+            if len(unique_keys) > 15:
+                progress = qgis.PyQt.QtWidgets.QProgressDialog(
+                    QCoreApplication.translate(
+                        "Calibrlogger",
+                        f"Drawing {len(unique_keys)} lines...",
+                    ),
+                    QCoreApplication.translate("Calibrlogger", "Abort"),
+                    0,
+                    len(unique_keys),
+                    self,
+                )
+                progress.setWindowModality(Qt.WindowModal)
+            else:
+                progress = None
             for idx, key in enumerate(unique_keys):
                 label = self._label_for_line_key(obsid, key)
                 ts = self.level_masl_ts.copy()
@@ -1582,6 +1596,21 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 self._line_key_to_artist[key] = a
                 handles.append(a)
                 labels.append(label)
+                if progress is not None:
+                    progress.setValue(idx + 1)
+                    qgis.PyQt.QtWidgets.QApplication.processEvents()
+                    if progress.wasCanceled():
+                        break
+            if progress is not None and progress.wasCanceled():
+                if self.separate_created_at_cb.isChecked():
+                    self.separate_created_at_cb.blockSignals(True)
+                    self.separate_created_at_cb.setChecked(False)
+                    self.separate_created_at_cb.blockSignals(False)
+                elif self.separate_dt_precision_cb.isChecked():
+                    self.separate_dt_precision_cb.blockSignals(True)
+                    self.separate_dt_precision_cb.setChecked(False)
+                    self.separate_dt_precision_cb.blockSignals(False)
+                self._recompute_line_keys()
 
         else:
             self.logger_artist = None

@@ -660,10 +660,6 @@ def to_float_or_none(anything) -> float | None:
     return float(result)
 
 
-def sql_unicode_list(an_iterator: tuple[str, ...]) -> str:
-    """Used by midv_addons plugin (graph_symbology, midvatten_imports)."""
-    return ", ".join([f"'{returnunicode(x)}'" for x in an_iterator])
-
 
 def get_save_file_name_no_extension(**kwargs) -> str:
     filename = qgis.PyQt.QtWidgets.QFileDialog.getSaveFileName(**kwargs)

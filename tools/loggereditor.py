@@ -11,6 +11,7 @@ import qgis.PyQt
 from qgis.PyQt.QtCore import QCoreApplication, Qt
 from qgis.PyQt.QtGui import QCloseEvent, QIcon, QKeySequence
 from qgis.PyQt.QtWidgets import (
+    QCheckBox,
     QDockWidget,
     QHBoxLayout,
     QListWidget,
@@ -20,6 +21,7 @@ from qgis.PyQt.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from midvatten.tools.utils.legend_picker import LegendPicker
 from matplotlib import pyplot as plt, ticker as tick
 from matplotlib.backend_bases import PickEvent, MouseButton
 from matplotlib.gridspec import GridSpec
@@ -247,6 +249,74 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             else:
                 self._schema_variant = "no_source"
 
+            self._existing_columns = existing_columns
+
+            self.separate_source_cb = QCheckBox(
+                QCoreApplication.translate("Calibrlogger", "Separate by source")
+            )
+            self.separate_source_cb.setChecked(True)
+            self.separate_source_cb.setFont(self.logger_line_nodes.font())
+
+            self.separate_created_at_cb = QCheckBox(
+                QCoreApplication.translate("Calibrlogger", "Separate by import time")
+            )
+            self.separate_created_at_cb.setFont(self.logger_line_nodes.font())
+
+            self.separate_dt_precision_cb = QCheckBox(
+                QCoreApplication.translate(
+                    "Calibrlogger", "Separate by datetime precision"
+                )
+            )
+            self.separate_dt_precision_cb.setFont(self.logger_line_nodes.font())
+
+            self.grid_layout_7.addWidget(self.separate_source_cb, 3, 0, 1, 2)
+            self.grid_layout_7.addWidget(self.separate_created_at_cb, 4, 0, 1, 2)
+            self.grid_layout_7.addWidget(self.separate_dt_precision_cb, 5, 0, 1, 2)
+
+            if self._schema_variant == "no_source":
+                self.separate_source_cb.setEnabled(False)
+                self.separate_source_cb.setChecked(False)
+                self.separate_source_cb.setToolTip(
+                    QCoreApplication.translate(
+                        "Calibrlogger",
+                        "Source column not available in this database",
+                    )
+                )
+            if "created_at" not in existing_columns:
+                self.separate_created_at_cb.setEnabled(False)
+                self.separate_created_at_cb.setToolTip(
+                    QCoreApplication.translate(
+                        "Calibrlogger",
+                        "created_at column not available in this database",
+                    )
+                )
+
+            self._created_at_grouping: str | None = None
+            self._selected_line_keys: set = set()
+            self._legend_picker = None
+
+            self.fit_period_btn = QPushButton(
+                QCoreApplication.translate("Calibrlogger", "Fit period to selection")
+            )
+            self.fit_period_btn.setFont(self.logger_line_nodes.font())
+            self.fit_period_btn.setEnabled(False)
+            self.fit_period_btn.setToolTip(
+                QCoreApplication.translate(
+                    "Calibrlogger",
+                    "Set from/to dates to cover the selected lines' full time range",
+                )
+            )
+            self.fit_period_btn.clicked.connect(self._fit_period_to_selection)
+            self.grid_layout_7.addWidget(self.fit_period_btn, 6, 0, 1, 2)
+
+            self.separate_source_cb.stateChanged.connect(lambda _: self.update_plot())
+            self.separate_created_at_cb.stateChanged.connect(
+                lambda _: self._on_created_at_toggled()
+            )
+            self.separate_dt_precision_cb.stateChanged.connect(
+                lambda _: self.update_plot()
+            )
+
             # --- Save button in obsid row ---
             self._save_btn = QPushButton(
                 QCoreApplication.translate("LoggerEditor", "Save"),
@@ -412,15 +482,21 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         col: str,
         values_override: np.ndarray | None = None,
     ) -> np.recarray:
-        """Build a (date_time, values, source) recarray directly from a DataFrame column."""
+        """Build a (date_time, values, source, line_key) recarray from a DataFrame column."""
+        n = len(buf)
         sources = buf["source"].to_numpy()
         max_src_len = int(buf["source"].str.len().max() or 0)
+        if "_line_key" in buf.columns:
+            line_keys = buf["_line_key"].tolist()
+        else:
+            line_keys = [("_all",)] * n
         arr = np.empty(
-            len(buf),
+            n,
             dtype=[
                 ("date_time", object),
                 ("values", float),
                 ("source", f"U{max(max_src_len, 1)}"),
+                ("line_key", object),
             ],
         )
         arr["date_time"] = buf.index.strftime(_DT_FMT).to_numpy()
@@ -430,6 +506,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             else buf[col].to_numpy(dtype=float, na_value=np.nan)
         )
         arr["source"] = sources
+        arr["line_key"] = np.array(line_keys, dtype=object)
         return arr.view(np.recarray)
 
     def _build_head_ts_for_plot(self, buf: pd.DataFrame) -> None:
@@ -476,6 +553,148 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             buf, "head_cm_m", values_override=normalized_vals
         )
 
+    def _recompute_line_keys(self):
+        if self._buf is not None and not self._buf.empty:
+            new_keys = self._compute_line_keys(
+                self._buf,
+                separate_source=self.separate_source_cb.isChecked(),
+                separate_created_at=self.separate_created_at_cb.isChecked(),
+                separate_dt_precision=self.separate_dt_precision_cb.isChecked(),
+                created_at_grouping=self._created_at_grouping,
+            )
+            old_keys = (
+                self._buf["_line_key"].tolist()
+                if "_line_key" in self._buf.columns
+                else None
+            )
+            self._buf["_line_key"] = new_keys
+            if old_keys != new_keys:
+                self._buf_version += 1
+        self._legend_picker = None
+
+    def _label_for_line_key(self, obsid: str, key: tuple) -> str:
+        label = obsid + QCoreApplication.translate(
+            "Calibrlogger", " logger water level"
+        )
+        parts = []
+        dim_idx = 0
+        if self.separate_source_cb.isChecked():
+            src = key[dim_idx]
+            dim_idx += 1
+            if src and str(src).strip():
+                parts.append(str(src))
+        if self.separate_created_at_cb.isChecked():
+            parts.append(f"imported={key[dim_idx]}")
+            dim_idx += 1
+        if self.separate_dt_precision_cb.isChecked():
+            parts.append(f"dt_len={key[dim_idx]}")
+            dim_idx += 1
+        if parts:
+            label += ", " + ", ".join(parts)
+        return label
+
+    def _label_for_head_key(self, obsid: str, key: tuple) -> str:
+        label = obsid + QCoreApplication.translate("Calibrlogger", " logger head")
+        parts = []
+        dim_idx = 0
+        if self.separate_source_cb.isChecked():
+            src = key[dim_idx]
+            dim_idx += 1
+            if src and str(src).strip():
+                parts.append(str(src))
+        if self.separate_created_at_cb.isChecked():
+            parts.append(f"imported={key[dim_idx]}")
+            dim_idx += 1
+        if self.separate_dt_precision_cb.isChecked():
+            parts.append(f"dt_len={key[dim_idx]}")
+            dim_idx += 1
+        if parts:
+            label += ", " + ", ".join(parts)
+        return label
+
+    def _on_legend_pick(self, ax_lines: list):
+        self._selected_line_keys = set()
+        for line in ax_lines:
+            if hasattr(line, "_line_key"):
+                self._selected_line_keys.add(line._line_key)
+        self.plot_or_update_selected_line()
+        self._update_fit_period_button_state()
+
+    @property
+    def selected_line_keys(self) -> set:
+        return getattr(self, "_selected_line_keys", set())
+
+    def _on_created_at_toggled(self):
+        if not self.separate_created_at_cb.isChecked():
+            self._created_at_grouping = None
+            self.update_plot()
+            return
+
+        if self._buf is None or "created_at" not in self._buf.columns:
+            self.update_plot()
+            return
+
+        distinct_count = self._buf["created_at"].nunique()
+        if distinct_count <= 10:
+            self._created_at_grouping = None
+            self.update_plot()
+            return
+
+        box = qgis.PyQt.QtWidgets.QMessageBox(self)
+        box.setWindowTitle(
+            QCoreApplication.translate("Calibrlogger", "Many import timestamps")
+        )
+        box.setText(
+            QCoreApplication.translate(
+                "Calibrlogger",
+                "Found {} distinct import timestamps. This may clutter the plot.",
+            ).format(distinct_count)
+        )
+        btn_hour = box.addButton(
+            QCoreApplication.translate("Calibrlogger", "Group by hour"),
+            qgis.PyQt.QtWidgets.QMessageBox.ActionRole,
+        )
+        btn_day = box.addButton(
+            QCoreApplication.translate("Calibrlogger", "Group by day"),
+            qgis.PyQt.QtWidgets.QMessageBox.ActionRole,
+        )
+        btn_continue = box.addButton(
+            QCoreApplication.translate("Calibrlogger", "Continue without grouping"),
+            qgis.PyQt.QtWidgets.QMessageBox.ActionRole,
+        )
+        box.addButton(qgis.PyQt.QtWidgets.QMessageBox.Cancel)
+
+        box.exec_()
+        clicked = box.clickedButton()
+
+        if clicked is btn_hour:
+            self._created_at_grouping = "hour"
+        elif clicked is btn_day:
+            self._created_at_grouping = "day"
+        elif clicked is btn_continue:
+            self._created_at_grouping = None
+        else:
+            self.separate_created_at_cb.blockSignals(True)
+            self.separate_created_at_cb.setChecked(False)
+            self.separate_created_at_cb.blockSignals(False)
+            return
+
+        self.update_plot()
+
+    def _fit_period_to_selection(self):
+        if not self.selected_line_keys or self._buf is None:
+            return
+        mask = self._buf["_line_key"].isin(self.selected_line_keys)
+        selected_data = self._buf.loc[mask]
+        if selected_data.empty:
+            return
+        self.from_date_time.setDateTime(selected_data.index.min())
+        self.to_date_time.setDateTime(selected_data.index.max())
+
+    def _update_fit_period_button_state(self):
+        if hasattr(self, "fit_period_btn"):
+            self.fit_period_btn.setEnabled(bool(self.selected_line_keys))
+
     def _ensure_meas_ts(self, obsid: str, dbconnection=None) -> None:
         """Load and cache w_levels for obsid; reuse cache when obsid hasn't changed."""
         if self._meas_obsid == obsid and self._meas_ts is not None:
@@ -518,6 +737,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
         if obsid == self._buf_obsid and self._buf is not None:
             self._ensure_meas_ts(obsid)
+            self._recompute_line_keys()  # updates _line_key + bumps _buf_version
             if self._ts_version == self._buf_version:
                 # Buffer unchanged since last plot — reuse cached recarrays.
                 self.obsid = obsid
@@ -537,18 +757,42 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self._ensure_meas_ts(obsid, dbconnection)
 
             schema_variant = self._schema_variant
+            existing_columns = getattr(self, "_existing_columns", [])
+            has_created_at = "created_at" in existing_columns
             if schema_variant == "series_join":
+                extra_cols = ""
+                if has_created_at:
+                    extra_cols += ", COALESCE(l.created_at, '') AS created_at"
+                extra_cols += ", LENGTH(l.date_time) AS dt_length"
                 head_level_masl_sql = (
                     f"SELECT l.date_time, l.head_cm / 100, l.level_masl,"
-                    f" TRIM(COALESCE(s.source, ''))"
+                    f" TRIM(COALESCE(s.source, '')){extra_cols}"
                     f" FROM w_levels_logger l"
                     f" LEFT JOIN w_logger_series s ON s.id = l.series_id"
                     f" WHERE l.obsid = {ph} ORDER BY l.date_time"
                 )
             elif schema_variant == "source_col":
-                head_level_masl_sql = f"SELECT date_time, head_cm / 100, level_masl, TRIM(COALESCE(source, '')) FROM w_levels_logger WHERE obsid = {ph} ORDER BY date_time"
+                extra_cols = ""
+                if has_created_at:
+                    extra_cols += ", COALESCE(created_at, '') AS created_at"
+                extra_cols += ", LENGTH(date_time) AS dt_length"
+                head_level_masl_sql = (
+                    f"SELECT date_time, head_cm / 100, level_masl,"
+                    f" TRIM(COALESCE(source, '')){extra_cols}"
+                    f" FROM w_levels_logger WHERE obsid = {ph}"
+                    f" ORDER BY date_time"
+                )
             else:
-                head_level_masl_sql = f"SELECT date_time, head_cm / 100, level_masl, '' as source FROM w_levels_logger WHERE obsid = {ph} ORDER BY date_time"
+                extra_cols = ""
+                if has_created_at:
+                    extra_cols += ", COALESCE(created_at, '') AS created_at"
+                extra_cols += ", LENGTH(date_time) AS dt_length"
+                head_level_masl_sql = (
+                    f"SELECT date_time, head_cm / 100, level_masl,"
+                    f" '' as source{extra_cols}"
+                    f" FROM w_levels_logger WHERE obsid = {ph}"
+                    f" ORDER BY date_time"
+                )
 
             _ok, head_level_masl_list = db_utils.sql_load_fr_db(
                 head_level_masl_sql, dbconnection=dbconnection, execute_args=(obsid,)
@@ -556,19 +800,33 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             dbconnection.closedb()
 
             if head_level_masl_list:
+                cols_data: dict = {
+                    "head_cm_m": [r[1] for r in head_level_masl_list],
+                    "level_masl": [r[2] for r in head_level_masl_list],
+                    "source": [r[3] for r in head_level_masl_list],
+                }
+                col_idx = 4
+                if has_created_at:
+                    cols_data["created_at"] = [
+                        str(r[col_idx]) if r[col_idx] else ""
+                        for r in head_level_masl_list
+                    ]
+                    col_idx += 1
+                cols_data["dt_length"] = [r[col_idx] for r in head_level_masl_list]
                 buf_df = pd.DataFrame(
-                    {
-                        "head_cm_m": [r[1] for r in head_level_masl_list],
-                        "level_masl": [r[2] for r in head_level_masl_list],
-                        "source": [r[3] for r in head_level_masl_list],
-                    },
+                    cols_data,
                     index=pd.to_datetime(
                         [r[0] for r in head_level_masl_list]
                     ).to_pydatetime(),
                 )
             else:
-                buf_df = pd.DataFrame(columns=["head_cm_m", "level_masl", "source"])
+                buf_cols = ["head_cm_m", "level_masl", "source"]
+                if has_created_at:
+                    buf_cols.append("created_at")
+                buf_cols.append("dt_length")
+                buf_df = pd.DataFrame(columns=buf_cols)
             self._buf = buf_df
+            self._recompute_line_keys()
             self._original_buf = buf_df.copy()
             self._history.clear()
             self._history_pos = -1
@@ -1119,6 +1377,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self.statusbar.clearMessage()
             return
         self.selected_line = None
+        self._selected_line_keys = set()
+        self._update_fit_period_button_state()
         self.axes.clear()
 
         handles, labels = self._draw_series()
@@ -1204,20 +1464,13 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 ),
             )[0]
 
-            for idx, source in enumerate(
-                np.unique(self.level_masl_ts.source, equal_nan=True)
-            ):
-                label = obsid + QCoreApplication.translate(
-                    "Calibrlogger", " logger water level"
-                )
-
-                if source is None or not str(source).strip():
-                    pass
-                else:
-                    label = label + f", {source}"
-
+            unique_keys = list(dict.fromkeys(self.level_masl_ts.line_key))
+            self._line_key_to_artist = {}
+            for idx, key in enumerate(unique_keys):
+                label = self._label_for_line_key(obsid, key)
                 ts = self.level_masl_ts.copy()
-                ts.values[ts.source != source] = np.nan
+                mask = np.array([k != key for k in ts.line_key])
+                ts.values[mask] = np.nan
                 try:
                     color = logger_level_masl_colors[idx]
                 except IndexError:
@@ -1236,7 +1489,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                         color=color,
                     ),
                 )[0]
+                a._line_key = key
                 self.logger_plot_artists.append(a)
+                self._line_key_to_artist[key] = a
                 handles.append(a)
                 labels.append(label)
 
@@ -1248,24 +1503,17 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             and self.head_ts_for_plot.size
             and self.contains_more_than_nan(self.head_ts_for_plot)
         ):
-            for idx, source in enumerate(
-                np.unique(self.head_ts_for_plot.source, equal_nan=True)
-            ):
+            head_unique_keys = list(dict.fromkeys(self.head_ts_for_plot.line_key))
+            for idx, key in enumerate(head_unique_keys):
                 try:
                     color = logger_head_colors[idx]
                 except IndexError:
                     color = np.random.rand(3, 1).ravel()
 
-                label = obsid + QCoreApplication.translate(
-                    "Calibrlogger", " logger head"
-                )
-
-                if source is None or not str(source).strip():
-                    pass
-                else:
-                    label = label + f", {source}"
+                label = self._label_for_head_key(obsid, key)
                 ts = self.head_ts_for_plot.copy()
-                ts.values[ts.source != source] = np.nan
+                mask = np.array([k != key for k in ts.line_key])
+                ts.values[mask] = np.nan
 
                 a = self.plot_recarray(
                     self.axes,
@@ -1299,8 +1547,15 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         for label in self.axes.yaxis.get_ticklabels():
             label.set_fontsize(8)
 
-        if self.axes.legend_ is None:
-            leg = self.axes.legend(handles, labels)
+        leg = self.axes.legend(handles, labels)
+        pickable_handles = [h for h in handles if hasattr(h, "_line_key")]
+        if pickable_handles:
+            self._legend_picker = LegendPicker(
+                legend=leg, fig=self.calibrplotfigure, handles=pickable_handles
+            )
+            self._legend_picker.register_pick_callback(self._on_legend_pick)
+        else:
+            self._legend_picker = None
 
         self.canvas.draw()
         self.statusbar.clearMessage()
@@ -1888,10 +2143,23 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         fr_d_t = self.from_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
         to_d_t = self.to_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
         xdata = self.logger_artist.get_xdata()
-        ydata = [
-            y if fr_d_t <= xdata[idx].replace(tzinfo=None) <= to_d_t else None
-            for idx, y in enumerate(self.logger_artist.get_ydata())
-        ]
+
+        selected_keys = self.selected_line_keys
+        has_key_filter = (
+            bool(selected_keys)
+            and self._buf is not None
+            and "_line_key" in self._buf.columns
+        )
+
+        ydata = []
+        for idx, y in enumerate(self.logger_artist.get_ydata()):
+            in_period = fr_d_t <= xdata[idx].replace(tzinfo=None) <= to_d_t
+            if has_key_filter and in_period:
+                buf_idx = min(idx, len(self._buf) - 1)
+                in_selection = self._buf.iloc[buf_idx]["_line_key"] in selected_keys
+                ydata.append(y if in_selection else None)
+            else:
+                ydata.append(y if in_period else None)
 
         if self.selected_line is None:
             self.selected_line = self.axes.plot(

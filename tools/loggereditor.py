@@ -356,12 +356,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self._selected_line_keys: set = set()
             self._legend_picker = None
 
-            self.separate_source_cb.stateChanged.connect(lambda _: self.update_plot())
             self.separate_created_at_cb.stateChanged.connect(
                 lambda _: self._on_created_at_toggled()
-            )
-            self.separate_dt_precision_cb.stateChanged.connect(
-                lambda _: self.update_plot()
             )
 
             # --- Save button in obsid row ---
@@ -690,17 +686,14 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     def _on_created_at_toggled(self):
         if not self.separate_created_at_cb.isChecked():
             self._created_at_grouping = None
-            self.update_plot()
             return
 
         if self._buf is None or "created_at" not in self._buf.columns:
-            self.update_plot()
             return
 
         distinct_count = self._buf["created_at"].nunique()
         if distinct_count <= 10:
             self._created_at_grouping = None
-            self.update_plot()
             return
 
         box = qgis.PyQt.QtWidgets.QMessageBox(self)
@@ -740,9 +733,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self.separate_created_at_cb.blockSignals(True)
             self.separate_created_at_cb.setChecked(False)
             self.separate_created_at_cb.blockSignals(False)
-            return
-
-        self.update_plot()
 
     def _from_date_from_selection(self) -> None:
         if not self.selected_line_keys or self._buf is None:

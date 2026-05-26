@@ -414,6 +414,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
             self._setup_ref_dock()
 
+            self.update_plot()
+
         super().show()
         self.activateWindow()
 

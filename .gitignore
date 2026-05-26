@@ -15,3 +15,4 @@ qgis-auth.db
 __pycache__
 monkeytype.sqlite3
 .worktrees/
+.superpowers/

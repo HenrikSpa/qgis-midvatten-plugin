@@ -251,22 +251,22 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
                 )
 
         self.export_format_row = VRowEntry()
-        self.export_format_row.layout.setContentsMargins(0, 0, 0, 0)
+        self.export_format_row.layout().setContentsMargins(0, 0, 0, 0)
         self.export_as_fieldlogger = QtWidgets.QRadioButton(
             QCoreApplication.translate("ExportToFieldLogger", "FieldLogger")
         )
         self.export_as_fieldform = QtWidgets.QRadioButton(
             QCoreApplication.translate("ExportToFieldLogger", "FieldForm")
         )
-        self.export_format_row.layout.addWidget(
+        self.export_format_row.layout().addWidget(
             QtWidgets.QLabel(
                 QCoreApplication.translate("ExportToFieldLogger", "Export format")
             )
         )
-        self.export_format_row.layout.addWidget(self.export_as_fieldlogger)
-        self.export_format_row.layout.addWidget(self.export_as_fieldform)
+        self.export_format_row.layout().addWidget(self.export_as_fieldlogger)
+        self.export_format_row.layout().addWidget(self.export_as_fieldform)
         self.grid_layout_buttons.addWidget(
-            self.export_format_row.widget, self.grid_layout_buttons.rowCount(), 0
+            self.export_format_row, self.grid_layout_buttons.rowCount(), 0
         )
         self.grid_layout_buttons.addWidget(
             get_line(), self.grid_layout_buttons.rowCount(), 0
@@ -296,9 +296,9 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         )
         self.obslayer = ObsLayer(self.iface, self.obs_from_vlayer)
         self.obs_from_row = VRowEntry()
-        self.obs_from_row.layout.setContentsMargins(0, 0, 0, 0)
-        self.obs_from_row.layout.addWidget(self.obs_from_obs_points)
-        self.obs_from_row.layout.addWidget(self.obs_from_vlayer)
+        self.obs_from_row.layout().setContentsMargins(0, 0, 0, 0)
+        self.obs_from_row.layout().addWidget(self.obs_from_obs_points)
+        self.obs_from_row.layout().addWidget(self.obs_from_vlayer)
 
         self.parameter_groups = self.create_parameter_groups_using_stored_settings(
             common_utils.get_stored_settings(self.ms, self.stored_settingskey),
@@ -377,10 +377,10 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
             )
         )
         self.grid_layout_buttons.addWidget(
-            self.obs_from_row.widget, self.grid_layout_buttons.rowCount(), 0
+            self.obs_from_row, self.grid_layout_buttons.rowCount(), 0
         )
         self.grid_layout_buttons.addWidget(
-            self.obslayer.widget, self.grid_layout_buttons.rowCount(), 0
+            self.obslayer, self.grid_layout_buttons.rowCount(), 0
         )
         self.grid_layout_buttons.addWidget(
             get_line(), self.grid_layout_buttons.rowCount(), 0
@@ -1429,11 +1429,11 @@ class ObsLayer(gui_utils.VRowEntry):
         for combobox in [self.vectorlayer_list, self.column_list]:
             combobox.setEnabled(False)
 
-        self.layout.addWidget(self.vectorlayer_list)
-        self.layout.addWidget(
+        self.layout().addWidget(self.vectorlayer_list)
+        self.layout().addWidget(
             QtWidgets.QLabel(QCoreApplication.translate("ObsLayer", "id column:"))
         )
-        self.layout.addWidget(self.column_list)
+        self.layout().addWidget(self.column_list)
 
     def update_column_list(self, select_column="obsid"):
         if select_column is None:

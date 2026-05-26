@@ -92,7 +92,7 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
             file_header=None,
             embed_chooser_in_layout=False,
         )
-        self.main_vertical_layout.addWidget(self.table_chooser.widget)
+        self.main_vertical_layout.addWidget(self.table_chooser)
         self.main_vertical_layout.addStretch()
         # General buttons
         self.select_file_button = qgis.PyQt.QtWidgets.QPushButton(
@@ -130,7 +130,7 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
 
         tables_columns = db_utils.tables_columns()
         self.distinct_value_browser = DistinctValuesBrowser(tables_columns)
-        self.grid_layout_buttons.addWidget(self.distinct_value_browser.widget, 5, 0)
+        self.grid_layout_buttons.addWidget(self.distinct_value_browser, 5, 0)
 
         self.grid_layout_buttons.addWidget(get_line(), 6, 0)
 
@@ -572,12 +572,15 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         colnrs_to_convert = {
             colnr
             for colnr, col in enumerate(file_data[0])
-            if table_column_dict.get(col, "").lower() in ("double", "double precision", "real")
+            if table_column_dict.get(col, "").lower()
+            in ("double", "double precision", "real")
         }
         new_data = [file_data[0]]
         for row in file_data[1:]:
             new_row = [
-                col.replace(",", ".") if colnr in colnrs_to_convert and col is not None else col
+                col.replace(",", ".")
+                if colnr in colnrs_to_convert and col is not None
+                else col
                 for colnr, col in enumerate(row)
             ]
             new_data.append(new_row)
@@ -682,19 +685,19 @@ class ImportTableChooser(VRowEntry):
         self.__import_method.currentIndexChanged.connect(self.choose_method)
 
         for widget in [self.label, self.__import_method]:
-            self.chooser_row.layout.addWidget(widget)
-        self.chooser_row.layout.insertStretch(-1, 5)
+            self.chooser_row.layout().addWidget(widget)
+        self.chooser_row.layout().insertStretch(-1, 5)
 
         if embed_chooser_in_layout:
-            self.layout.addWidget(self.chooser_row.widget)
+            self.layout().addWidget(self.chooser_row)
 
         self.specific_info_widget = VRowEntry()
-        self.specific_info_widget.layout.addWidget(get_line())
+        self.specific_info_widget.layout().addWidget(get_line())
         self.specific_table_info = qgis.PyQt.QtWidgets.QLabel()
-        self.specific_info_widget.layout.addWidget(self.specific_table_info)
-        self.specific_info_widget.layout.addWidget(get_line())
+        self.specific_info_widget.layout().addWidget(self.specific_table_info)
+        self.specific_info_widget.layout().addWidget(get_line())
 
-        self.layout.addWidget(self.specific_info_widget.widget)
+        self.layout().addWidget(self.specific_info_widget)
 
     def get_translation_dict(self):
         translation_dict = {}
@@ -759,8 +762,8 @@ class ImportTableChooser(VRowEntry):
             return None
 
         if self.grid is not None:
-            self.layout.removeWidget(self.grid.widget)
-            self.grid.widget.close()
+            self.layout().removeWidget(self.grid)
+            self.grid.close()
 
         self.columns = []
 
@@ -768,37 +771,37 @@ class ImportTableChooser(VRowEntry):
             return None
 
         self.grid = RowEntryGrid()
-        self.layout.addWidget(self.grid.widget)
+        self.layout().addWidget(self.grid)
 
-        self.grid.layout.addWidget(
+        self.grid.layout().addWidget(
             qgis.PyQt.QtWidgets.QLabel(
                 QCoreApplication.translate("ImportTableChooser", "Column name")
             ),
             0,
             0,
         )
-        self.grid.layout.addWidget(
+        self.grid.layout().addWidget(
             qgis.PyQt.QtWidgets.QLabel(
                 QCoreApplication.translate("ImportTableChooser", "File column")
             ),
             0,
             1,
         )
-        self.grid.layout.addWidget(
+        self.grid.layout().addWidget(
             qgis.PyQt.QtWidgets.QLabel(
                 QCoreApplication.translate("ImportTableChooser", "Static value")
             ),
             0,
             2,
         )
-        self.grid.layout.addWidget(
+        self.grid.layout().addWidget(
             qgis.PyQt.QtWidgets.QLabel(
                 QCoreApplication.translate("ImportTableChooser", "Factor")
             ),
             0,
             3,
         )
-        self.grid.layout.addWidget(
+        self.grid.layout().addWidget(
             qgis.PyQt.QtWidgets.QLabel(
                 QCoreApplication.translate(
                     "ImportTableChooser", "Ignore not null warning"
@@ -814,12 +817,12 @@ class ImportTableChooser(VRowEntry):
             column = ColumnEntry(
                 tables_columns_info, file_header, self.numeric_datatypes
             )
-            rownr = self.grid.layout.rowCount()
+            rownr = self.grid.layout().rowCount()
             for colnr, wid in enumerate(column.column_widgets):
-                self.grid.layout.addWidget(wid, rownr, colnr)
+                self.grid.layout().addWidget(wid, rownr, colnr)
             self.columns.append(column)
 
-        self.grid.layout.setColumnStretch(5, 5)
+        self.grid.layout().setColumnStretch(5, 5)
 
     def reload(self):
         import_method = self.import_method
@@ -828,7 +831,7 @@ class ImportTableChooser(VRowEntry):
 
     @property
     def chooser_widget(self):
-        return self.chooser_row.widget
+        return self.chooser_row
 
     def set_chooser_enabled(self, enabled: bool):
         self.__import_method.setEnabled(enabled)
@@ -887,14 +890,14 @@ class ColumnEntry:
             )
 
             self.obsid_widget = RowEntry()
-            self.obsid_widget.layout.addWidget(self.obsids_from_selection)
-            self.obsid_widget.layout.addWidget(self.combobox)
+            self.obsid_widget.layout().addWidget(self.obsids_from_selection)
+            self.obsid_widget.layout().addWidget(self.combobox)
 
             self._all_widgets.extend(
-                [self.obsids_from_selection, self.combobox, self.obsid_widget.widget]
+                [self.obsids_from_selection, self.combobox, self.obsid_widget]
             )
 
-            self.column_widgets.append(self.obsid_widget.widget)
+            self.column_widgets.append(self.obsid_widget)
         else:
             self.column_widgets.append(self.combobox)
             self._all_widgets.extend(self.column_widgets)

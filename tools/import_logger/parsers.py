@@ -164,11 +164,11 @@ class TzConverter(RowEntry):
         self._tz_list.addItems(timezones)
 
         for widget in [self.label, self._tz_list]:
-            self.layout.addWidget(widget)
+            self.layout().addWidget(widget)
 
         self.target_tz = "GMT+1"
 
-        self.layout.addStretch()
+        self.layout().addStretch()
 
     def convert_datetime(self, date_time: datetime.datetime) -> datetime.datetime:
         if self.source_tz is None:

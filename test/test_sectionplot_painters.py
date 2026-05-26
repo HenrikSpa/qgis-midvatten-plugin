@@ -30,6 +30,7 @@ def _close_figures():
     yield
     plt.close("all")
 
+
 MINIMAL_TEMPLATE = {
     "geology_Axes_bar": {"DEFAULT": {"edgecolor": "black"}},
     "drillstop_Axes_plot": {
@@ -493,7 +494,12 @@ class TestPaintImagesNoObsid:
 def _finish_plot_template():
     """Return a finish_plot-compatible template with no deprecated grid kwargs."""
     t = defs.secplot_default_template()
-    t["grid_Axes_grid"] = {"visible": True, "color": "0.65", "linestyle": "-", "which": "both"}
+    t["grid_Axes_grid"] = {
+        "visible": True,
+        "color": "0.65",
+        "linestyle": "-",
+        "which": "both",
+    }
     return t
 
 

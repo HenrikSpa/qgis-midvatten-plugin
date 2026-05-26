@@ -51,7 +51,7 @@ class CalculateStatisticsGui(
         tables_columns = db_utils.tables_columns()
         self.db_browser = DbBrowser(tables_columns)
 
-        self.grid_layout.addWidget(self.db_browser.widget, 0, 0)
+        self.grid_layout.addWidget(self.db_browser, 0, 0)
 
         self.push_button_ok.clicked.connect(lambda x: self.calculate())
 

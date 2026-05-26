@@ -675,9 +675,9 @@ class DatabaseSettings:
         self._dbtype_combobox.addItems(["", "spatialite", "postgis"])
 
         self.grid = gui_utils.RowEntryGrid()
-        self.grid.layout.addWidget(self._label, 0, 0)
-        self.grid.layout.addWidget(self._dbtype_combobox, 0, 1)
-        self.layout.addWidget(self.grid.widget)
+        self.grid.layout().addWidget(self._label, 0, 0)
+        self.grid.layout().addWidget(self._dbtype_combobox, 0, 1)
+        self.layout.addWidget(self.grid)
 
         self.child_widgets = []
 
@@ -726,8 +726,8 @@ class DatabaseSettings:
             return
 
         self.db_settings_obj = dbclass(self.midvsettingsdialogdock, self.label_width)
-        self.layout.addWidget(self.db_settings_obj.widget, self.layout.rowCount(), 0)
-        self.child_widgets.append(self.db_settings_obj.widget)
+        self.layout.addWidget(self.db_settings_obj, self.layout.rowCount(), 0)
+        self.child_widgets.append(self.db_settings_obj)
 
         # self.layout.setRowStretch(self.layout.rowCount(), 1)
 
@@ -812,11 +812,11 @@ class SpatialiteSettings(gui_utils.RowEntryGrid):
             QCoreApplication.translate("SpatialiteSettings", "Select db")
         )
         self.btn_set_db.setFixedWidth(label_width)
-        self.layout.addWidget(self.btn_set_db, 0, 0)
+        self.layout().addWidget(self.btn_set_db, 0, 0)
         self._dbpath = qgis.PyQt.QtWidgets.QLineEdit("")
         self._dbpath.textChanged.connect(lambda: self.database_chosen())
         self._dbpath.editingFinished.connect(self.database_chosen)
-        self.layout.addWidget(self._dbpath, 0, 1)
+        self.layout().addWidget(self._dbpath, 0, 1)
 
         # select file
         self.btn_set_db.clicked.connect(lambda x: self.select_file())
@@ -915,10 +915,10 @@ class PostgisSettings(gui_utils.RowEntryGrid):
         self._schema_combo.setCurrentText("public")
         self._schema_combo.currentTextChanged.connect(self._on_schema_changed)
 
-        self.layout.addWidget(self.label, 0, 0)
-        self.layout.addWidget(self._connection, 0, 1)
-        self.layout.addWidget(self.schema_label, 1, 0)
-        self.layout.addWidget(self._schema_combo, 1, 1)
+        self.layout().addWidget(self.label, 0, 0)
+        self.layout().addWidget(self._connection, 0, 1)
+        self.layout().addWidget(self.schema_label, 1, 0)
+        self.layout().addWidget(self._schema_combo, 1, 1)
 
     @property
     def connection(self):

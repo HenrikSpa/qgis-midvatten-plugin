@@ -443,7 +443,9 @@ def version_comparison_list(version_string: str) -> Optional[Version]:
         return None
 
 
-def compare_verson_lists(testlist: Optional[Version], reflist: Optional[Version]) -> bool:
+def compare_verson_lists(
+    testlist: Optional[Version], reflist: Optional[Version]
+) -> bool:
     """Return True if testlist version is older than reflist version.
 
     Returns False if either version could not be parsed.

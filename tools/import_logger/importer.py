@@ -54,12 +54,12 @@ class CheckboxAndExplanation(VRowEntry):
     def __init__(self, checkbox_label, explanation=None):
         super().__init__()
         self.checkbox = QtWidgets.QCheckBox(checkbox_label)
-        self.layout.addWidget(self.checkbox)
+        self.layout().addWidget(self.checkbox)
         self.label = QtWidgets.QLabel()
 
         if explanation:
             self.label.setText(explanation)
-            self.layout.addWidget(self.label)
+            self.layout().addWidget(self.label)
 
     @property
     def checked(self):
@@ -118,9 +118,9 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                 self.FORMAT_HOBO,
             ]
         )
-        format_row.layout.addWidget(format_label)
-        format_row.layout.addWidget(self.format_combo)
-        self.add_row(format_row.widget)
+        format_row.layout().addWidget(format_label)
+        format_row.layout().addWidget(self.format_combo)
+        self.add_row(format_row)
 
         self._format_description_label = QtWidgets.QLabel()
         self._format_description_label.setWordWrap(True)
@@ -153,7 +153,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             ),
         )
         self.skip_rows.checked = True
-        _vl.addWidget(self.skip_rows.widget)
+        _vl.addWidget(self.skip_rows)
         _vl.addWidget(get_line())
         self.add_row(self._skip_rows_container)
 
@@ -172,7 +172,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             ),
         )
         self.confirm_names.checked = True
-        self.add_row(self.confirm_names.widget)
+        self.add_row(self.confirm_names)
         self.add_row(get_line())
 
         # import_all_data
@@ -187,7 +187,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             ),
         )
         self.import_all_data.checked = False
-        self.add_row(self.import_all_data.widget)
+        self.add_row(self.import_all_data)
 
         # Optional source comment
         existing_columns = db_utils.tables_columns(table="w_levels_logger")[
@@ -208,9 +208,9 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                 )
             )
             self.source_edit = QtWidgets.QLineEdit()
-            self.source_row.layout.addWidget(self.source_label)
-            self.source_row.layout.addWidget(self.source_edit)
-            self.add_row(self.source_row.widget)
+            self.source_row.layout().addWidget(self.source_label)
+            self.source_row.layout().addWidget(self.source_edit)
+            self.add_row(self.source_row)
         else:
             self.source_edit = None
 
@@ -348,9 +348,9 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         if database_timezone is not None:
             set_combobox(self.utc_offset, database_timezone, add_if_not_exists=False)
         self.utcoffset_row = RowEntry()
-        self.utcoffset_row.layout.addWidget(self.utcoffset_label)
-        self.utcoffset_row.layout.addWidget(self.utc_offset)
-        _vl.addWidget(self.utcoffset_row.widget)
+        self.utcoffset_row.layout().addWidget(self.utcoffset_label)
+        self.utcoffset_row.layout().addWidget(self.utc_offset)
+        _vl.addWidget(self.utcoffset_row)
 
         self.add_row(self._diveroffice_section)
 
@@ -383,9 +383,9 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                 self.baro_utc_offset, database_timezone, add_if_not_exists=False
             )
         baro_utcoffset_row = RowEntry()
-        baro_utcoffset_row.layout.addWidget(baro_utcoffset_label)
-        baro_utcoffset_row.layout.addWidget(self.baro_utc_offset)
-        _vl.addWidget(baro_utcoffset_row.widget)
+        baro_utcoffset_row.layout().addWidget(baro_utcoffset_label)
+        baro_utcoffset_row.layout().addWidget(self.baro_utc_offset)
+        _vl.addWidget(baro_utcoffset_row)
 
         self.add_row(self._diveroffice_baro_section)
 
@@ -401,7 +401,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         _vl.setContentsMargins(0, 0, 0, 0)
 
         self.tz_converter = TzConverter()
-        _vl.addWidget(self.tz_converter.widget)
+        _vl.addWidget(self.tz_converter)
         self.add_row(self._hobo_section)
 
     def _on_format_changed(self, format_name: str) -> None:

@@ -79,10 +79,10 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
 
         self.specific_meta_filter = MetaFilterSelection(None)
 
-        splitter.addWidget(self.specific_meta_filter.widget)
+        splitter.addWidget(self.specific_meta_filter)
 
         self.metadata_filter = MetadataFilter(None)
-        splitter.addWidget(self.metadata_filter.widget)
+        splitter.addWidget(self.metadata_filter)
 
         self.metadata_filter.update_selection_button.clicked.connect(
             lambda: self.metadata_filter.set_selection(
@@ -1160,13 +1160,13 @@ class MetaFilterSelection(VRowEntry):
     def __init__(self, all_lab_results):
         """ """
         super().__init__()
-        self.layout.addWidget(qgis.PyQt.QtWidgets.QLabel("Column header"))
+        self.layout().addWidget(qgis.PyQt.QtWidgets.QLabel("Column header"))
         self.combobox = qgis.PyQt.QtWidgets.QComboBox()
         if all_lab_results:
             self.update_combobox(all_lab_results)
-        self.layout.addWidget(self.combobox)
+        self.layout().addWidget(self.combobox)
         self.items = ExtendedQPlainTextEdit()
-        self.layout.addWidget(self.items)
+        self.layout().addWidget(self.items)
 
     def update_combobox(self, all_lab_results):
         self.combobox.clear()
@@ -1188,18 +1188,18 @@ class MetadataFilter(VRowEntry):
             "Update selection"
         )
         self.button_layout = RowEntry()
-        self.button_layout.layout.addWidget(self.update_selection_button)
+        self.button_layout.layout().addWidget(self.update_selection_button)
 
         self.show_only_selected_checkbox = qgis.PyQt.QtWidgets.QCheckBox(
             "Show only selected rows"
         )
-        self.button_layout.layout.addWidget(self.show_only_selected_checkbox)
+        self.button_layout.layout().addWidget(self.show_only_selected_checkbox)
 
-        self.layout.addWidget(self.button_layout.widget)
+        self.layout().addWidget(self.button_layout)
 
         self.label = qgis.PyQt.QtWidgets.QLabel()
         self.label_layout = RowEntry()
-        self.label_layout.layout.addWidget(self.label)
+        self.label_layout.layout().addWidget(self.label)
 
         self.button_save = qgis.PyQt.QtWidgets.QPushButton(
             "Save metadata table to file"
@@ -1210,9 +1210,9 @@ class MetadataFilter(VRowEntry):
                 "save the metadata table into a csv file for examination in another application",
             )
         )
-        self.label_layout.layout.addWidget(self.button_save)
+        self.label_layout.layout().addWidget(self.button_save)
 
-        self.layout.addWidget(self.label_layout.widget)
+        self.layout().addWidget(self.label_layout)
 
         self.table = qgis.PyQt.QtWidgets.QTableWidget()
         self.table.setSelectionBehavior(
@@ -1238,7 +1238,7 @@ class MetadataFilter(VRowEntry):
         if all_lab_results:
             self.update_table(all_lab_results)
             self.update_nr_of_selected()
-        self.layout.addWidget(self.table)
+        self.layout().addWidget(self.table)
 
     @common_utils.waiting_cursor
     def set_selection(self, table_header):

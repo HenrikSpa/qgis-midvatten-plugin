@@ -1551,7 +1551,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         pickable_handles = [h for h in handles if hasattr(h, "_line_key")]
         if pickable_handles:
             self._legend_picker = LegendPicker(
-                legend=leg, fig=self.calibrplotfigure, handles=pickable_handles
+                legend=leg, fig=self.calibrplotfigure, handles=handles
             )
             self._legend_picker.register_pick_callback(self._on_legend_pick)
         else:

@@ -443,7 +443,9 @@ def version_comparison_list(version_string: str) -> Optional[Version]:
         return None
 
 
-def compare_verson_lists(testlist: Optional[Version], reflist: Optional[Version]) -> bool:
+def compare_verson_lists(
+    testlist: Optional[Version], reflist: Optional[Version]
+) -> bool:
     """Return True if testlist version is older than reflist version.
 
     Returns False if either version could not be parsed.
@@ -557,6 +559,7 @@ def select_files(
 def create_markdown_table_from_table(
     tablename, transposed=False, only_description=False
 ):
+    """Used externally to generate markdown tables for the GitHub wiki."""
     table = list_of_lists_from_table(tablename)
     if only_description:
         descr_idx = table[0].index("description")

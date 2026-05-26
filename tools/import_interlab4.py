@@ -890,22 +890,6 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
 
         return file_data
 
-    def add_line(self, layout=None):
-        """just adds a line"""
-        # horizontalLineWidget = PyQt4.QtWidgets.QWidget()
-        # horizontalLineWidget.setFixedHeight(2)
-        # horizontalLineWidget.setSizePolicy(PyQt4.QtWidgets.QSizePolicy.Expanding, PyQt4.QtWidgets.QSizePolicy.Fixed)
-        # horizontalLineWidget.setStyleSheet(PyQt4.QtCore.QString("background-color: #c0c0c0;"));
-        line = qgis.PyQt.QtWidgets.QFrame()
-        # line.setObjectName(QString::fromUtf8("line"));
-        line.setGeometry(qgis.PyQt.QtCore.QRect(320, 150, 118, 3))
-        line.setFrameShape(qgis.PyQt.QtWidgets.QFrame.HLine)
-        line.setFrameShadow(qgis.PyQt.QtWidgets.QFrame.Sunken)
-        if layout is None:
-            self.add_row(line)
-        else:
-            layout.addWidget(line)
-
     @common_utils.general_exception_handler
     def handle_save(self):
         """

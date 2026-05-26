@@ -140,10 +140,6 @@ def verify_this_layer_selected_and_not_in_edit_mode(errorsignal, layername):
     return errorsignal
 
 
-def null_2_empty_string(input_string):
-    return input_string.replace("NULL", "").replace("null", "")
-
-
 def return_lower_ascii_string(textstring):
     def onlyascii(char):
         if ord(char) < 48 or ord(char) > 127:
@@ -665,6 +661,7 @@ def to_float_or_none(anything) -> float | None:
 
 
 def sql_unicode_list(an_iterator: tuple[str, ...]) -> str:
+    """Used by midv_addons plugin (graph_symbology, midvatten_imports)."""
     return ", ".join([f"'{returnunicode(x)}'" for x in an_iterator])
 
 
@@ -808,6 +805,8 @@ class PickAnnotator:
 
 
 class Timer:
+    """Ad-hoc profiling helper — used interactively to diagnose performance issues."""
+
     def __init__(self, name):
         self.t0 = time.time()
         self.t1 = self.t0
@@ -832,6 +831,7 @@ class Timer:
 
 @contextmanager
 def timer(name):
+    """Ad-hoc profiling context manager — used interactively to diagnose performance issues."""
     t0 = time.time()
     yield
     t1 = time.time()

@@ -304,22 +304,6 @@ class FieldloggerImport(BaseImporter, import_fieldlogger_ui_dialog):
                 observations.append(observation)
         return observations
 
-    def add_line(self, layout=None):
-        """just adds a line"""
-        # horizontalLineWidget = PyQt4.QtWidgets.QWidget()
-        # horizontalLineWidget.setFixedHeight(2)
-        # horizontalLineWidget.setSizePolicy(PyQt4.QtWidgets.QSizePolicy.Expanding, PyQt4.QtWidgets.QSizePolicy.Fixed)
-        # horizontalLineWidget.setStyleSheet(PyQt4.QtCore.QString("background-color: #c0c0c0;"));
-        line = QtWidgets.QFrame()
-        # line.setObjectName(QString::fromUtf8("line"));
-        line.setGeometry(QtCore.QRect(320, 150, 118, 3))
-        line.setFrameShape(QtWidgets.QFrame.HLine)
-        line.setFrameShadow(QtWidgets.QFrame.Sunken)
-        if layout is None:
-            self.add_row(line)
-        else:
-            layout.addWidget(line)
-
     def update_sublocations_and_inputfields_on_date_change(self):
         sleep(0.2)
         observations = copy.deepcopy(self.observations)

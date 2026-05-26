@@ -421,10 +421,6 @@ class PiperPlot:
             "zorder": 0,
         }
 
-        # if mpl.rcParams['axes.grid']:
-        #    for l in rhomb.get_grid_lines(axes_step):
-        #        ax.plot(*l, grid_linestyle, **grid_linestyle_kwargs)
-
         for tri in [tri1, tri2]:
             inner_triangle = [[50, 50, 0, 50], [0, 50, 50, 0]]
             ax.plot(
@@ -1098,18 +1094,6 @@ class RhomboidGraph:
             + y / ((self.ylim[1] - self.ylim[0]) * 2)
         )
         return transformed_x, transformed_y
-
-    def get_grid_lines(self, step):
-        lines = []
-
-        if mpl.rcParams["axes.grid.axis"] in ("both", "x"):
-            for y in range(min(self.ylim) + step, max(self.ylim), step):
-                lines.append(self.transform([self.xlim[0], self.xlim[1]], [y, y]))
-        if mpl.rcParams["axes.grid.axis"] in ("both", "y"):
-            for x in range(min(self.xlim) + step, max(self.xlim), step):
-                lines.append(self.transform([x, x], [self.ylim[0], self.ylim[1]]))
-
-        return lines
 
 
 def equilateral_height(side_length):

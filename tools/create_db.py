@@ -17,12 +17,10 @@
  ***************************************************************************/
 """
 
-import datetime
 import locale
 import logging
 import os
 import re
-import traceback
 from typing import Dict, List, Optional, Tuple
 
 import qgis.PyQt
@@ -47,12 +45,6 @@ class NewDb:
         filenamepath = os.path.join(os.path.dirname(__file__), "..", "metadata.txt")
         ini_text = QSettings(filenamepath, QSettings.Format.IniFormat)
         return str(ini_text.value("version"))
-
-    def show_sqlite(self) -> None:
-        self.create_new_spatialite_db(self._read_version())
-
-    def show_postgis(self) -> None:
-        self.populate_postgis_db(self._read_version())
 
     def create_new_spatialite_db(
         self,
@@ -246,13 +238,6 @@ class NewDb:
         settings.setValue("%s/sqlitepath" % os.path.basename(dbpath), "%s" % dbpath)
         settings.endGroup()
 
-        """
-        #The intention is to keep layer styles in the database by using the class AddLayerStyles but due to limitations in how layer styles are stored in the database, I will put this class on hold for a while.
-
-        #Finally add the layer styles info into the data base
-        AddLayerStyles(dbpath)
-        """
-
         common_utils.stop_waiting_cursor()
 
     def populate_postgis_db(
@@ -432,12 +417,6 @@ class NewDb:
 
         dbconnection.commit_and_closedb()
 
-        """
-        #The intention is to keep layer styles in the database by using the class AddLayerStyles but due to limitations in how layer styles are stored in the database, I will put this class on hold for a while.
-
-        #Finally add the layer styles info into the data base
-        AddLayerStyles(dbpath)
-        """
         common_utils.stop_waiting_cursor()
 
     def replace_words(
@@ -649,73 +628,3 @@ class NewDb:
                 dbconnection.execute(
                     sql, all_args=[(tz_lit, tz_suffix, tname, "date_time")]
                 )
-
-
-class AddLayerStyles:
-    """currently this class is not used although it should be, when storing layer styles in the database works better"""
-
-    def __init__(self):
-
-        dbconnection = db_utils.DbConnectionManager()
-        self.dbpath = dbconnection.dbpath
-
-        try:
-            dbconnection.execute(
-                "PRAGMA foreign_keys = ON"
-            )  # Foreign key constraints are disabled by default (for backwards compatibility), so must be enabled separately for each database dbconnection separately.
-        except Exception:
-            common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
-
-        # add layer styles
-        self.add_layer_styles_2_db(dbconnection)
-
-        # load style from file and set it as value into the layer styles table
-        """
-        self.style_from_file_into_db('obs_lines', 'obs_lines_tablayout.qml','obs_lines_tablayout.sld')
-        self.style_from_file_into_db('obs_p_w_strat', 'obs_p_w_strat.qml','obs_p_w_strat.sld')
-        self.style_from_file_into_db('obs_p_w_lvl', 'obs_p_w_lvl.qml','obs_p_w_lvl.sld')
-        #osv
-        """
-        self.style_from_file_into_db(
-            "obs_points",
-            "obs_points_tablayout.qml",
-            "obs_points_tablayout.sld",
-            dbconnection,
-        )
-        self.style_from_file_into_db(
-            "stratigraphy",
-            "stratigraphy_tablayout.qml",
-            "stratigraphy_tablayout.sld",
-            dbconnection,
-        )
-
-        try:
-            dbconnection.execute("PRAGMA foreign_keys = OFF")
-        except Exception:
-            common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
-        dbconnection.commit_and_closedb()
-
-    def add_layer_styles_2_db(self, dbconnection):
-        sql_file = definitions_path("add_layer_styles_2_db.sql")
-        datetimestring = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        f = open(sql_file)
-        for linecounter, line in enumerate(f):
-            if linecounter > 1:  # first line is encoding info....
-                dbconnection.execute(
-                    line.replace("CHANGETOCURRENTDATETIME", datetimestring).replace(
-                        "CHANGETODBPATH", self.dbpath
-                    )
-                )  # use tags to find and replace SRID and versioning info
-
-    def style_from_file_into_db(self, layer, qml_file, sld_file, dbconnection):
-        with open(definitions_path(qml_file)) as content_file:
-            content = content_file.read()
-        dbconnection.execute(
-            "update layer_styles set styleQML=? where f_table_name=?", (content, layer)
-        )  # Use parameterized arguments to allow sqlite3 to escape the quotes for you. (It also helps prevent SQL injection.
-        # "UPDATE posts SET html = ? WHERE id = ?", (html ,temp[i][1])
-        with open(definitions_path(sld_file)) as content_file:
-            content = content_file.read()
-        dbconnection.execute(
-            "update layer_styles set styleSLD=? where f_table_name=?", (content, layer)
-        )  # Use parameterized arguments to allow sqlite3 to escape the quotes for you. (It also helps prevent SQL injection.

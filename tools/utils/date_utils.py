@@ -195,10 +195,6 @@ def long_dateformat(astring: str, dateformat: str = None) -> str:
     )
 
 
-def date_to_epoch(astring: str):
-    return datestring_to_date(astring) - datetime.datetime(1970, 1, 1)
-
-
 def reformat_date_time(astring: str):
     date_format = find_date_format(astring)
     if date_format is None:
@@ -220,45 +216,6 @@ def reformat_date_time(astring: str):
         datetime.datetime.strptime(astring, date_format), outformat
     )
     return new_datestring
-
-
-def find_time_format(datestring: str):
-    """
-    Parses a string and returns the found working dateformat string
-    :param datestring: A string representing a time, ex: '12:00'
-    :return: The dateformat of the string, ex: ' %H:%M'
-
-    Can only parse a list of preconfigured datestrings. See the code.
-
-    """
-    datestring = str(datestring)
-    # Length, format
-    time_formats_to_try = {
-        4: ["%H%M"],
-        5: ["%H:%M", "%H %M"],
-        6: ["%H%M%S"],
-        8: ["%H:%M:%S", "%H %M %S"],
-    }
-
-    found_format = None
-
-    length = len(datestring)
-
-    format_list = time_formats_to_try.get(length, None)
-    if format_list is None:
-        log.debug("Timeformat not supported for %s" % datestring)
-        return None
-
-    for timeformat in format_list:
-        try:
-            datetime.datetime.strptime(datestring, timeformat)
-        except ValueError:
-            continue
-        else:
-            found_format = timeformat
-            break
-
-    return found_format
 
 
 def parse_timezone_to_timedelta(tz_string: str) -> datetime.timedelta:

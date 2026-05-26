@@ -3,7 +3,7 @@ name=Midvatten
 qgisMinimumVersion=3.40
 description=A toolset that makes QGIS an interface for editing/viewing hydrogeological observational data (drillings, water levels, seismic data etc) stored in a SQLite or PostgreSQL database.
 about=The plugin is a toolset that makes QGIS an interface for editing/viewing hydrogeological observational data (drillings, water levels, seismic data etc) stored in a SQLite or PostgreSQL database.
-version=1.9.0b22
+version=1.9.0b23
 author=Henrik Spångmyr, Josef Källgården
 email=midvattenplugin@midvatten.se
 repository=https://github.com/henrikspa/qgis-midvatten-plugin.git
@@ -23,6 +23,14 @@ hasProcessingProvider=no
 supportsQt6=True
 
 changelog=
+        Version 1.9.0b23:
+          - LoggerEditor: Fixed NumPy broadcasting error when loading logger data with multi-element line keys.
+          - LoggerEditor: Removed manual Update Plot button from main panel; plot now auto-refreshes on obsid change. A new Update Plot button in the reference series dock panel applies checkbox changes.
+          - LoggerEditor: Moved plot option checkboxes (circle nodes, plot head, normalize head, separate by source/import time/precision) to the reference series dock panel under a "Plot options" section.
+          - LoggerEditor: Replaced single "Fit period to selection" button with independent "From selection" and "To selection" buttons next to the period date pickers.
+          - LoggerEditor: Replaced low-quality adjust trend icon with an SVG matching the existing icon style.
+          - LoggerEditor: Fixed plot line drawing order so combined (unsourced) lines appear before source-specific lines.
+          - LoggerEditor: Fixed missing matplotlib imports in legend_picker.
         Version 1.9.0b22:
           - Fixes bugs with the screen table in obs_points form view.
         Version 1.9.0b21:

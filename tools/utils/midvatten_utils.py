@@ -559,6 +559,7 @@ def select_files(
 def create_markdown_table_from_table(
     tablename, transposed=False, only_description=False
 ):
+    """Used externally to generate markdown tables for the GitHub wiki."""
     table = list_of_lists_from_table(tablename)
     if only_description:
         descr_idx = table[0].index("description")

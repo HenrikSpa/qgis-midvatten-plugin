@@ -16,7 +16,6 @@ import logging
 import os
 import traceback
 import types
-from contextlib import contextmanager
 from functools import partial
 
 import matplotlib as mpl
@@ -1417,19 +1416,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
             fig.canvas.mpl_connect("draw_event", self.update_slider)
             fig.date_slider.on_changed(partial(self.update_animation, fig))
 
-        fig.update_legend_cid = fig.canvas.mpl_connect(
-            "draw_event", lambda x: self.update_legend(True, fig)
-        )
-
-    @contextmanager
-    def temporary_deactivate_update_legend(self, fig):
-        """Currently the legend is updated after each draw, but it doesn't trigger draw itself.
-
-        draw_idle probably doesn't work with the context manager as it exits the manager before draw is triggered
-        reusling in a very slow gui as legend is redone over and over again."""
-        fig.canvas.mpl_disconnect(fig.update_legend_cid)
-        fig.update_legend_cid = None
-        yield
         fig.update_legend_cid = fig.canvas.mpl_connect(
             "draw_event", lambda x: self.update_legend(True, fig)
         )

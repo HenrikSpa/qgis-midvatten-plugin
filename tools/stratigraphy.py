@@ -114,7 +114,6 @@ class Stratigraphy:
         common_utils.stop_waiting_cursor()  # Restores the mouse cursor to normal symbol
         # show widget
         w = SurveyDialog()
-        # w.widget.set_data2_nosorting(data)  #THIS IS IF DATA IS NOT TO BE SORTED!!
         w.widget.set_data(self.data)  # THIS IS ONLY TO SORT DATA!!
         w.show()
         self.w = w  # save reference so it doesn't get deleted immediately        This has to be done both here and also in midvatten instance
@@ -488,11 +487,6 @@ class SurveyWidget(QtWidgets.QFrame):
             # cc = lambda a,b: cmp(a.coord.y(), b.coord.y())
         order = sorted(self.sondaggio.values(), key=cc)
         self.order = order  # THIS SHOULD BE REPLACED BY 2L BELOW
-
-    def set_data2_nosorting(self, sondaggio):  # Without sorting
-        self.order = []
-        for s in sondaggio.values():
-            self.order.append(s)
 
     def set_type(self, switch_geo_hydro):
         """sets whether fill columns with Geo colors (0) or Hydro colors (1)"""

@@ -744,12 +744,8 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
 
         dt = dbconnection.ident("date_time")
 
-        if dbconnection.is_postgresql():
-            minute_start = f"date_trunc('minute', {temp_ident}.{dt}::timestamp)"
-            minute_end = f"date_trunc('minute', {temp_ident}.{dt}::timestamp) + interval '1 minute'"
-        else:
-            minute_start = f"substr({temp_ident}.{dt}, 1, 16)"
-            minute_end = f"(substr({temp_ident}.{dt}, 1, 16) || ':60')"
+        minute_start = f"substr({temp_ident}.{dt}, 1, 16)"
+        minute_end = f"(substr({temp_ident}.{dt}, 1, 16) || ':60')"
 
         conditions = [
             f"d.{q} = {temp_ident}.{q}"

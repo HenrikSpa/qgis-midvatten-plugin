@@ -9,11 +9,13 @@ import numpy as np
 import pandas as pd
 import qgis.PyQt
 from qgis.PyQt.QtCore import QCoreApplication, Qt
-from qgis.PyQt.QtGui import QCloseEvent, QIcon, QKeySequence
+from qgis.PyQt.QtGui import QCloseEvent, QFont, QIcon, QKeySequence
 from qgis.PyQt.QtWidgets import (
     QCheckBox,
     QDockWidget,
+    QFrame,
     QHBoxLayout,
+    QLabel,
     QListWidget,
     QListWidgetItem,
     QPushButton,
@@ -154,7 +156,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 self.to_date_time, self.axes.get_xbound()[1]
             )
         )
-        self.push_buttonupdateplot.clicked.connect(lambda x: self.update_plot())
+        self.push_button_from_selection.clicked.connect(self._from_date_from_selection)
+        self.push_button_to_selection.clicked.connect(self._to_date_from_selection)
         self.button_auto_calculate.clicked.connect(lambda x: self.logger_pos_best_fit())
         self.button_auto_fit.clicked.connect(lambda x: self.level_masl_best_fit())
         self.push_button_delete_logger.clicked.connect(
@@ -252,27 +255,84 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
             self._existing_columns = existing_columns
 
+            _cb_font = QFont("Noto Sans", 8)
+
+            self.logger_line_nodes = QCheckBox(
+                QCoreApplication.translate(
+                    "Calibrlogger", "Circle nodes for logger line"
+                )
+            )
+            self.logger_line_nodes.setChecked(True)
+            self.logger_line_nodes.setFont(_cb_font)
+            self.logger_line_nodes.setToolTip(
+                QCoreApplication.translate(
+                    "Calibrlogger",
+                    "Show circle markers at each data point on the logger line",
+                )
+            )
+
+            self.plot_logger_head = QCheckBox(
+                QCoreApplication.translate("Calibrlogger", "Plot logger water head")
+            )
+            self.plot_logger_head.setChecked(True)
+            self.plot_logger_head.setFont(_cb_font)
+            self.plot_logger_head.setToolTip(
+                QCoreApplication.translate(
+                    "Calibrlogger",
+                    "Plot the raw head_cm column as a separate line",
+                )
+            )
+
+            self.normalize_head = QCheckBox(
+                QCoreApplication.translate(
+                    "Calibrlogger", "Normalize head to logger line"
+                )
+            )
+            self.normalize_head.setChecked(True)
+            self.normalize_head.setFont(_cb_font)
+            self.normalize_head.setToolTip(
+                QCoreApplication.translate(
+                    "Calibrlogger",
+                    "Shift head_cm line so its mean matches level_masl mean"
+                    " (visual only, no DB change)",
+                )
+            )
+
             self.separate_source_cb = QCheckBox(
                 QCoreApplication.translate("Calibrlogger", "Separate by source")
             )
             self.separate_source_cb.setChecked(True)
-            self.separate_source_cb.setFont(self.logger_line_nodes.font())
+            self.separate_source_cb.setFont(_cb_font)
+            self.separate_source_cb.setToolTip(
+                QCoreApplication.translate(
+                    "Calibrlogger",
+                    "Draw separate lines per data source",
+                )
+            )
 
             self.separate_created_at_cb = QCheckBox(
                 QCoreApplication.translate("Calibrlogger", "Separate by import time")
             )
-            self.separate_created_at_cb.setFont(self.logger_line_nodes.font())
+            self.separate_created_at_cb.setFont(_cb_font)
+            self.separate_created_at_cb.setToolTip(
+                QCoreApplication.translate(
+                    "Calibrlogger",
+                    "Draw separate lines per import timestamp",
+                )
+            )
 
             self.separate_dt_precision_cb = QCheckBox(
                 QCoreApplication.translate(
                     "Calibrlogger", "Separate by datetime precision"
                 )
             )
-            self.separate_dt_precision_cb.setFont(self.logger_line_nodes.font())
-
-            self.grid_layout_7.addWidget(self.separate_source_cb, 3, 0, 1, 2)
-            self.grid_layout_7.addWidget(self.separate_created_at_cb, 4, 0, 1, 2)
-            self.grid_layout_7.addWidget(self.separate_dt_precision_cb, 5, 0, 1, 2)
+            self.separate_dt_precision_cb.setFont(_cb_font)
+            self.separate_dt_precision_cb.setToolTip(
+                QCoreApplication.translate(
+                    "Calibrlogger",
+                    "Draw separate lines per datetime string precision",
+                )
+            )
 
             if self._schema_variant == "no_source":
                 self.separate_source_cb.setEnabled(False)
@@ -296,26 +356,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self._selected_line_keys: set = set()
             self._legend_picker = None
 
-            self.fit_period_btn = QPushButton(
-                QCoreApplication.translate("Calibrlogger", "Fit period to selection")
-            )
-            self.fit_period_btn.setFont(self.logger_line_nodes.font())
-            self.fit_period_btn.setEnabled(False)
-            self.fit_period_btn.setToolTip(
-                QCoreApplication.translate(
-                    "Calibrlogger",
-                    "Set from/to dates to cover the selected lines' full time range",
-                )
-            )
-            self.fit_period_btn.clicked.connect(self._fit_period_to_selection)
-            self.grid_layout_7.addWidget(self.fit_period_btn, 6, 0, 1, 2)
-
-            self.separate_source_cb.stateChanged.connect(lambda _: self.update_plot())
             self.separate_created_at_cb.stateChanged.connect(
                 lambda _: self._on_created_at_toggled()
-            )
-            self.separate_dt_precision_cb.stateChanged.connect(
-                lambda _: self.update_plot()
             )
 
             # --- Save button in obsid row ---
@@ -367,6 +409,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             )
 
             self._setup_ref_dock()
+
+            self.update_plot()
 
         super().show()
         self.activateWindow()
@@ -507,7 +551,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             else buf[col].to_numpy(dtype=float, na_value=np.nan)
         )
         arr["source"] = sources
-        arr["line_key"] = np.array(line_keys, dtype=object)
+        arr["line_key"] = line_keys
         return arr.view(np.recarray)
 
     def _build_head_ts_for_plot(self, buf: pd.DataFrame) -> None:
@@ -621,7 +665,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             if hasattr(line, "_line_key"):
                 self._selected_line_keys.add(line._line_key)
         self.plot_or_update_selected_line()
-        self._update_fit_period_button_state()
+        self._update_selection_button_state()
 
     @property
     def selected_line_keys(self) -> set:
@@ -642,17 +686,14 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     def _on_created_at_toggled(self):
         if not self.separate_created_at_cb.isChecked():
             self._created_at_grouping = None
-            self.update_plot()
             return
 
         if self._buf is None or "created_at" not in self._buf.columns:
-            self.update_plot()
             return
 
         distinct_count = self._buf["created_at"].nunique()
         if distinct_count <= 10:
             self._created_at_grouping = None
-            self.update_plot()
             return
 
         box = qgis.PyQt.QtWidgets.QMessageBox(self)
@@ -692,11 +733,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self.separate_created_at_cb.blockSignals(True)
             self.separate_created_at_cb.setChecked(False)
             self.separate_created_at_cb.blockSignals(False)
-            return
 
-        self.update_plot()
-
-    def _fit_period_to_selection(self):
+    def _from_date_from_selection(self) -> None:
         if not self.selected_line_keys or self._buf is None:
             return
         mask = self._buf["_line_key"].isin(self.selected_line_keys)
@@ -704,11 +742,20 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         if selected_data.empty:
             return
         self.from_date_time.setDateTime(selected_data.index.min())
+
+    def _to_date_from_selection(self) -> None:
+        if not self.selected_line_keys or self._buf is None:
+            return
+        mask = self._buf["_line_key"].isin(self.selected_line_keys)
+        selected_data = self._buf.loc[mask]
+        if selected_data.empty:
+            return
         self.to_date_time.setDateTime(selected_data.index.max())
 
-    def _update_fit_period_button_state(self):
-        if hasattr(self, "fit_period_btn"):
-            self.fit_period_btn.setEnabled(bool(self.selected_line_keys))
+    def _update_selection_button_state(self) -> None:
+        enabled = bool(self.selected_line_keys)
+        self.push_button_from_selection.setEnabled(enabled)
+        self.push_button_to_selection.setEnabled(enabled)
 
     def _ensure_meas_ts(self, obsid: str, dbconnection=None) -> None:
         """Load and cache w_levels for obsid; reuse cache when obsid hasn't changed."""
@@ -1153,6 +1200,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     def _on_obsid_changed(self, new_index: int) -> None:
         if not self._dirty:
             self._prev_combobox_index = new_index
+            self.update_plot()
             return
         result = self._ask_save_discard_cancel(
             QCoreApplication.translate(
@@ -1170,6 +1218,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         else:
             self._discard_buf()
         self._prev_combobox_index = new_index
+        self.update_plot()
 
     def _discard_buf(self) -> None:
         self._buf = None
@@ -1388,7 +1437,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             return
         self.selected_line = None
         self._selected_line_keys = set()
-        self._update_fit_period_button_state()
+        self._update_selection_button_state()
         self.axes.clear()
 
         handles, labels = self._draw_series()
@@ -1474,7 +1523,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 ),
             )[0]
 
-            unique_keys = list(dict.fromkeys(self.level_masl_ts.line_key))
+            unique_keys = sorted(
+                dict.fromkeys(self.level_masl_ts.line_key),
+                key=lambda k: (bool(k[0] and str(k[0]).strip()), k),
+            )
             self._line_key_to_artist = {}
             if len(unique_keys) > 15:
                 progress = qgis.PyQt.QtWidgets.QProgressDialog(
@@ -1552,7 +1604,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             and self.head_ts_for_plot.size
             and self.contains_more_than_nan(self.head_ts_for_plot)
         ):
-            head_unique_keys = list(dict.fromkeys(self.head_ts_for_plot.line_key))
+            head_unique_keys = sorted(
+                dict.fromkeys(self.head_ts_for_plot.line_key),
+                key=lambda k: (bool(k[0] and str(k[0]).strip()), k),
+            )
             for idx, key in enumerate(head_unique_keys):
                 try:
                     color = logger_head_colors[idx]
@@ -1644,6 +1699,31 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         btn_row.addWidget(self._ref_remove_btn)
         vbox.addLayout(btn_row)
         vbox.addWidget(self._ref_list)
+
+        options_separator = QFrame()
+        options_separator.setFrameShape(QFrame.HLine)
+        options_separator.setFrameShadow(QFrame.Sunken)
+        vbox.addWidget(options_separator)
+        options_label = QLabel(
+            QCoreApplication.translate("Calibrlogger", "Plot options")
+        )
+        options_label.setFont(QFont("Noto Sans", 8))
+        options_label.setStyleSheet("font-weight: bold; color: #555;")
+        vbox.addWidget(options_label)
+        vbox.addWidget(self.logger_line_nodes)
+        vbox.addWidget(self.plot_logger_head)
+        vbox.addWidget(self.normalize_head)
+        vbox.addWidget(self.separate_source_cb)
+        vbox.addWidget(self.separate_created_at_cb)
+        vbox.addWidget(self.separate_dt_precision_cb)
+        self._update_plot_btn = QPushButton(
+            QCoreApplication.translate("Calibrlogger", "Update plot")
+        )
+        self._update_plot_btn.setFont(QFont("Noto Sans", 8))
+        self._update_plot_btn.clicked.connect(lambda _: self.update_plot())
+        vbox.addWidget(self._update_plot_btn)
+        vbox.addStretch()
+
         self._ref_dock.setWidget(container)
         self.addDockWidget(Qt.RightDockWidgetArea, self._ref_dock)
         toggle = self._ref_dock.toggleViewAction()
@@ -2614,7 +2694,7 @@ class AdjustTrendButton(NavigationButton):
                 self.clicked,
                 "Adjust trend",
                 os.path.join(
-                    os.path.dirname(__file__), "..", "icons", "adjust_trend.png"
+                    os.path.dirname(__file__), "..", "icons", "svg", "adjust_trend.svg"
                 ),
             )
         ]

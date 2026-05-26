@@ -100,3 +100,30 @@ class TestLegendPickerAxisPick:
         event = FakePickEvent(line_a)
         picker.on_pick(event)
         assert len(picker.selected_legend_lines) == 1
+
+
+class TestLegendPickerFilteredLegendLines:
+    def test_non_pickable_handle_excluded(self):
+        fig, ax = plt.subplots()
+        meas_line = ax.plot([0, 1], [0, 1], label="measurements")[0]
+        series_line = ax.plot([0, 1], [1, 0], label="series A")[0]
+        series_line._line_key = ("A",)
+        handles = [meas_line, series_line]
+        leg = ax.legend(handles, ["measurements", "series A"])
+        legend_lines = leg.get_lines()
+        paired = [
+            (ll, h)
+            for ll, h in zip(legend_lines, handles)
+            if isinstance(h, matplotlib.lines.Line2D) and hasattr(h, "_line_key")
+        ]
+        pick_legend, pick_handles = zip(*paired)
+        picker = LegendPicker(
+            legend=leg,
+            fig=fig,
+            handles=list(pick_handles),
+            legend_lines=list(pick_legend),
+        )
+        assert meas_line not in picker.leg_lines_ax_lines.values()
+        assert series_line in picker.leg_lines_ax_lines.values()
+        assert len(picker.leg_lines_ax_lines) == 1
+        plt.close(fig)

@@ -673,9 +673,11 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                         f" AND {ident('created_at')} < {ph})"
                     )
                     params.append(ca + ":00:00")
-                    hour_int = int(ca[-2:])
-                    next_hour = ca[:11] + f"{hour_int + 1:02d}:00:00"
-                    params.append(next_hour)
+                    lower_dt = datetime.datetime.strptime(
+                        ca + ":00:00", "%Y-%m-%d %H:%M:%S"
+                    )
+                    upper_dt = lower_dt + datetime.timedelta(hours=1)
+                    params.append(upper_dt.strftime("%Y-%m-%d %H:%M:%S"))
                 clauses.append("(" + " OR ".join(or_parts) + ")")
             elif self._created_at_grouping == "day":
                 or_parts = []

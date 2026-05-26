@@ -38,7 +38,7 @@ from midvatten.tools.utils import common_utils, midvatten_utils, db_utils
 import midvatten.tools.import_data_to_db as import_data_to_db
 from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.string_utils import returnunicode as ru
-from midvatten.tools.utils.date_utils import datestring_to_date, dateshift
+from midvatten.tools.utils.date_utils import to_date, dateshift
 import midvatten.definitions.midvatten_defs as defs
 from midvatten.tools.utils.gui_utils import (
     SplitterWithHandel,
@@ -288,7 +288,7 @@ class FieldloggerImport(BaseImporter, import_fieldlogger_ui_dialog):
                 observation["sublocation"] = cols[location_idx]
                 date = cols[date_idx]
                 time = cols[time_idx]
-                observation["date_time"] = datestring_to_date(" ".join([date, time]))
+                observation["date_time"] = to_date(" ".join([date, time]))
                 observation["value"] = cols[value_idx]
                 observation["parametername"] = cols[type_idx]
             else:
@@ -296,7 +296,7 @@ class FieldloggerImport(BaseImporter, import_fieldlogger_ui_dialog):
                 observation["sublocation"] = cols[0]
                 date = cols[1]
                 time = cols[2]
-                observation["date_time"] = datestring_to_date(" ".join([date, time]))
+                observation["date_time"] = to_date(" ".join([date, time]))
                 observation["value"] = cols[3]
                 observation["parametername"] = cols[4]
 

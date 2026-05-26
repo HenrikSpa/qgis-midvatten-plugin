@@ -36,7 +36,7 @@ from qgis.PyQt.QtWidgets import QComboBox
 
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.message_utils import MessagebarAndLog, sql_failed_msg
-from midvatten.tools.utils.date_utils import datestring_to_date
+from midvatten.tools.utils.date_utils import to_date
 from midvatten.tools.utils.db_utils import DbConnectionManager
 
 # Qt6 uses scoped enums (Qt.WidgetAttribute.WA_DeleteOnClose),
@@ -141,7 +141,7 @@ class DateTimeFilter(qgis.PyQt.QtWidgets.QWidget):
             QCoreApplication.translate("DateTimeFilter", "Import data from: ")
         )
         self.from_datetimeedit = qgis.PyQt.QtWidgets.QDateTimeEdit(
-            datestring_to_date("1901-01-01 00:00:00")
+            to_date("1901-01-01 00:00:00")
         )
         self.from_datetimeedit.setDisplayFormat("yyyy-MM-dd hh:mm:ss")
         self.from_datetimeedit.setMinimumWidth(180)
@@ -150,7 +150,7 @@ class DateTimeFilter(qgis.PyQt.QtWidgets.QWidget):
             QCoreApplication.translate("DateTimeFilter", "to: ")
         )
         self.to_datetimeedit = qgis.PyQt.QtWidgets.QDateTimeEdit(
-            datestring_to_date("2099-12-31 23:59:59")
+            to_date("2099-12-31 23:59:59")
         )
         self.to_datetimeedit.setDisplayFormat("yyyy-MM-dd hh:mm:ss")
         self.to_datetimeedit.setMinimumWidth(180)
@@ -189,7 +189,7 @@ class DateTimeFilter(qgis.PyQt.QtWidgets.QWidget):
 
     @from_date.setter
     def from_date(self, value):
-        self.from_datetimeedit.setDateTime(datestring_to_date(value))
+        self.from_datetimeedit.setDateTime(to_date(value))
 
     @property
     def to_date(self):
@@ -197,7 +197,7 @@ class DateTimeFilter(qgis.PyQt.QtWidgets.QWidget):
 
     @to_date.setter
     def to_date(self, value):
-        self.to_datetimeedit.setDateTime(datestring_to_date(value))
+        self.to_datetimeedit.setDateTime(to_date(value))
 
 
 def set_combobox(combobox: QComboBox, value: str, add_if_not_exists: bool = True):

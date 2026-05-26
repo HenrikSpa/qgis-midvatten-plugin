@@ -28,7 +28,7 @@ from matplotlib.backend_bases import PickEvent, MouseButton
 from matplotlib.gridspec import GridSpec
 
 from midvatten.tools.utils.mpl_compat import FigureCanvas, NavigationToolbar
-from matplotlib.dates import num2date, datestr2num
+from matplotlib.dates import num2date, datestr2num, date2num
 from matplotlib.widgets import MultiCursor, RectangleSelector
 
 from qgis.PyQt import uic
@@ -40,7 +40,7 @@ from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.date_utils import (
     change_timezone,
-    datestring_to_date,
+    to_date,
     dateshift,
 )
 from midvatten.tools.utils.gui_utils import NavigationButton, WA_DeleteOnClose
@@ -1838,7 +1838,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
     @fn_timer
     def timestring_list_to_time_list(self, timestring_list):
-        """Convert date strings to date"""
+        """Convert date strings or datetimes to matplotlib date objects"""
+        if timestring_list and isinstance(timestring_list[0], datetime.datetime):
+            return num2date(date2num(timestring_list))
         return num2date(datestr2num(timestring_list))
 
     @fn_timer
@@ -1897,7 +1899,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     @fn_timer
     def reset_settings(self):
 
-        self.to_date_time.setDateTime(datestring_to_date("2099-12-31 23:59:59"))
+        self.to_date_time.setDateTime(to_date("2099-12-31 23:59:59"))
         self.offset.setText("")
         self.best_fit_search_radius.setText("60 minutes")
 
@@ -1906,14 +1908,11 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             if last_calibration[0][1] and last_calibration[0][0]:
                 self.logger_elevation.setText(f"{last_calibration[0][1]:.5f}")
                 self.from_date_time.setDateTime(
-                    datestring_to_date(last_calibration[0][0])
-                    + datetime.timedelta(milliseconds=1)
+                    to_date(last_calibration[0][0]) + datetime.timedelta(milliseconds=1)
                 )
             else:
                 self.logger_elevation.setText("")
-                self.from_date_time.setDateTime(
-                    datestring_to_date("2099-12-31 23:59:59")
-                )
+                self.from_date_time.setDateTime(to_date("2099-12-31 23:59:59"))
         except Exception as e:
             common_utils.MessagebarAndLog.info(
                 log_msg=QCoreApplication.translate(
@@ -1923,7 +1922,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 % (self.obsid, str(e))
             )
             self.logger_elevation.setText("")
-            self.from_date_time.setDateTime(datestring_to_date("2099-12-31 23:59:59"))
+            self.from_date_time.setDateTime(to_date("2099-12-31 23:59:59"))
 
     @fn_timer
     def reset_cid(self):
@@ -2026,31 +2025,30 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         log_vals = []
 
         all_done = False
-        # The .replace(tzinfo=None) is used to remove info about timezone. Needed for the comparisons. This should not be a problem though as the date scale in the plot is based on the dates from the database.
         outer_begin = self.from_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
         outer_end = self.to_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
-        logger_step = datestring_to_date(log_row[0]).replace(tzinfo=None)
+        logger_step = to_date(log_row[0])
+        if logger_step is None:
+            return None
         for m in meas_ts:
-            if logger_step is None:
-                break
-            meas_step = datestring_to_date(m[0]).replace(tzinfo=None)
+            meas_step = to_date(m[0])
+            if meas_step is None or logger_step is None:
+                continue
 
             step_begin = dateshift(meas_step, -search_radius, search_radius_period)
             step_end = dateshift(meas_step, search_radius, search_radius_period)
-
             if step_end < outer_begin:
                 continue
             if step_begin > outer_end:
                 break
 
-            # Skip logger steps that are earlier than the chosen begin date or are not inside the measurement period.
             while logger_step <= step_begin or logger_step <= outer_begin:
                 try:
                     log_row = next(logger_gen)
                 except StopIteration:
                     all_done = True
                     break
-                logger_step = datestring_to_date(log_row[0]).replace(tzinfo=None)
+                logger_step = to_date(log_row[0])
 
             log_vals = []
 
@@ -2066,7 +2064,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 except StopIteration:
                     all_done = True
                     break
-                logger_step = datestring_to_date(log_row[0]).replace(tzinfo=None)
+                logger_step = to_date(log_row[0])
 
             if log_vals:
                 mean = np.mean(log_vals)

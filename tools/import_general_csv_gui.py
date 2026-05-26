@@ -622,7 +622,7 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
             reformatted_dates = {}
             skip_row = False
             for colnr in colnrs_to_convert:
-                result = date_utils.reformat_date_time(row[colnr])
+                result = date_utils.normalize_datestring(row[colnr])
                 if result is None:
                     skip_row = True
                     break

@@ -20,110 +20,138 @@
 import datetime
 import logging
 import re
-from typing import List
+from typing import Union
 
+import pandas as pd
 import pytz
+from dateutil import parser as dateutil_parser
 from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools.utils.string_utils import returnunicode as ru
-from midvatten.tools.utils.message_utils import MessagebarAndLog
 
 log = logging.getLogger(__name__)
 
+_YEAR_PREFIX = re.compile(r"\d{4}")
 
-def find_date_format(datestring: str, suppress_error_msg: bool = False) -> str:
+
+def to_date(
+    astring: Union[str, datetime.datetime, datetime.date],
+) -> datetime.datetime | None:
     """
-    Parses a string and returns the found working dateformat string
-    :param datestring: A string representing a date, ex: '2015-01-01 12:00'
-    :return: The dateformat of the string, ex: '%Y-%m-%d %H:%M'
+    Converts a string or date object to a datetime.
 
-    Can only parse a list of preconfigured datestrings. See the code.
-
-    >>> find_date_format('2015-01-01 01:01:01')
-    '%Y-%m-%d %H:%M:%S'
-    >>> find_date_format('01-01-2015 01:01:01')
-    '%d-%m-%Y %H:%M:%S'
-    >>> find_date_format('01:01:01')
-    '%H:%M:%S'
-    >>> find_date_format('2015-01-01')
-    '%Y-%m-%d'
-    >>> print(find_date_format('abc'))
-    None
+    >>> to_date('2015-01-01')
+    datetime.datetime(2015, 1, 1, 0, 0)
+    >>> to_date('2015-01-01 12:00')
+    datetime.datetime(2015, 1, 1, 12, 0)
+    >>> to_date(datetime.datetime(2015, 1, 1, 12, 0))
+    datetime.datetime(2015, 1, 1, 12, 0)
+    >>> to_date(datetime.date(2015, 1, 1))
+    datetime.datetime(2015, 1, 1, 0, 0)
+    >>> to_date('01-01-2015 01:01:01')
+    datetime.datetime(2015, 1, 1, 1, 1, 1)
+    >>> to_date('2015/01/01 12:00:00')
+    datetime.datetime(2015, 1, 1, 12, 0)
+    >>> to_date('20150101')
+    datetime.datetime(2015, 1, 1, 0, 0)
+    >>> to_date('2010-09-07')
+    datetime.datetime(2010, 9, 7, 0, 0)
+    >>> to_date('07-09-2010')
+    datetime.datetime(2010, 9, 7, 0, 0)
+    >>> to_date('abc') is None
+    True
     """
-    datestring = str(datestring)
-    date_formats_to_try = [
-        "%Y/%m/%d %H:%M:%S",
-        "%Y-%m-%d %H:%M:%S",
-        "%Y-%m-%dT%H:%M:%S",
-        "%Y-%m-%dT%H:%M:%S.%f",
-        "%Y-%m-%d %H:%M:%S.%f",
-        "%Y%m%d %H:%M:%S",
-        "%Y%m%d %H:%M",
-        "%Y-%m-%d %H:%M",
-        "%Y%m%d",
-        "%Y-%m-%d",
-        "%d-%m-%Y",
-        "%H:%M:%S",
-        "%d-%m-%Y %H:%M:%S",
-        "%d-%m-%Y %H:%M",
-        "%d-%m-%Y %H",
-        "%Y/%m/%d %H:%M",
-        "%Y/%m/%d %H",
-        "%Y%m%d %H%M%S",
-        "%Y%m%d %H%M",
-        "%Y%m%d %H",
-        "%m/%d/%y %H:%M:%S",
-        "%d-%b-%y %H:%M:%S",
-        "%d-%b-%Y %H:%M:%S",
-        "%d-%B-%y %H:%M:%S",
-        "%d-%B-%Y %H:%M:%S",
-        "%d.%m.%Y %H:%M",
-        "%d.%m.%Y %H:%M:%S",
-        "%d/%m/%Y %H:%M:%S",
-        "%d/%m/%Y %H:%M",
-    ]
-    found_format = None
-    for dateformat in date_formats_to_try:
-        try:
-            datetime.datetime.strptime(datestring, dateformat)
-        except ValueError:
-            continue
+    if isinstance(astring, datetime.datetime):
+        return astring.replace(tzinfo=None)
+    if isinstance(astring, datetime.date):
+        return datetime.datetime(astring.year, astring.month, astring.day)
+    try:
+        s = str(astring).strip()
+        if _YEAR_PREFIX.match(s):
+            dt = dateutil_parser.parse(s, yearfirst=True)
         else:
-            found_format = dateformat
-            break
-
-    if found_format is None:
-        if not suppress_error_msg:
-            MessagebarAndLog.critical(
-                bar_msg=QCoreApplication.translate(
-                    "find_date_format", "Date parsing failed, see log message panel"
-                ),
-                log_msg=QCoreApplication.translate(
-                    "find_date_format",
-                    'Could not find the date format for string "%s"\nSupported date formats:\n%s',
-                )
-                % (ru(datestring), "\n".join(date_formats_to_try)),
-            )
-
-    return found_format
+            dt = dateutil_parser.parse(s, dayfirst=True)
+        return dt.replace(tzinfo=None)
+    except (ValueError, TypeError, OverflowError):
+        return None
 
 
-def dateshift(adate: datetime.datetime, n: int, step_lenght: str) -> datetime.datetime:
+def to_YmdHMS(astring: Union[str, datetime.datetime, datetime.date]) -> str | None:  # noqa: N802
     """
-    Shifts a date n step_lenghts and returns a new date object
-    :param adate: A string representing a date or a datetime object.
-    :param n: Number of step_lengths to shift the date. It can be positive or negative.
-    :param step_lenght: The step_lenght of the shift, for example "days, hours, weeks". See the function for all supported lenghts.
-    :return: The dateformat of the string, ex: '%Y-%m-%d %H:%M'
+    Converts a date string or object to '%Y-%m-%d %H:%M:%S' format.
+
+    >>> to_YmdHMS('2015-01-01')
+    '2015-01-01 00:00:00'
+    >>> to_YmdHMS('01-01-2015 01:01:01')
+    '2015-01-01 01:01:01'
+    >>> to_YmdHMS('abc') is None
+    True
+    """
+    dt = to_date(astring)
+    if dt is None:
+        return None
+    return dt.strftime("%Y-%m-%d %H:%M:%S")
+
+
+def normalize_datestring(
+    astring: Union[str, datetime.datetime, datetime.date],
+) -> str | None:
+    """
+    Normalizes a date string to ISO format, preserving the input's time precision.
+
+    >>> normalize_datestring('2015/01/01')
+    '2015-01-01'
+    >>> normalize_datestring('01-01-2015 01:01')
+    '2015-01-01 01:01'
+    >>> normalize_datestring('2015-01-01 01:01:01')
+    '2015-01-01 01:01:01'
+    >>> normalize_datestring('abc') is None
+    True
+    """
+    dt = to_date(astring)
+    if dt is None:
+        return None
+    s = str(astring).strip()
+    if ":" not in s:
+        return dt.strftime("%Y-%m-%d")
+    if s.count(":") >= 2:
+        return dt.strftime("%Y-%m-%d %H:%M:%S")
+    return dt.strftime("%Y-%m-%d %H:%M")
+
+
+def to_dates(
+    strings: list[str], dayfirst: bool = True
+) -> list[datetime.datetime | None]:
+    """
+    Batch-convert date strings to datetimes using pd.to_datetime.
+
+    >>> to_dates(['2015-01-01', '2016-02-03 12:00'])
+    [datetime.datetime(2015, 1, 1, 0, 0), datetime.datetime(2016, 2, 3, 12, 0)]
+    >>> to_dates(['2015-01-01', 'bad', '2016-01-01'])
+    [datetime.datetime(2015, 1, 1, 0, 0), None, datetime.datetime(2016, 1, 1, 0, 0)]
+    """
+    if not strings:
+        return []
+    result = pd.to_datetime(strings, format="mixed", dayfirst=dayfirst, errors="coerce")
+    return [None if pd.isna(ts) else ts.to_pydatetime() for ts in result]
+
+
+def dateshift(
+    adate: Union[str, datetime.datetime], n: Union[int, float, str], step_lenght: str
+) -> datetime.datetime | None:
+    """
+    Shifts a date n step_lenghts and returns a new date object.
 
     >>> dateshift('2015-02-01', -5, 'days')
     datetime.datetime(2015, 1, 27, 0, 0)
     >>> dateshift('2016-03-01', -24, 'hours')
     datetime.datetime(2016, 2, 29, 0, 0)
     """
-    if isinstance(n, (str)):
+    if isinstance(n, str):
         n = float(n)
-    adate = datestring_to_date(adate)
+    adate = to_date(adate)
+    if adate is None:
+        return None
 
     step_lenght = step_lenght.lower()
     if not step_lenght.endswith("s"):
@@ -149,116 +177,8 @@ def dateshift(adate: datetime.datetime, n: int, step_lenght: str) -> datetime.da
     return new_date
 
 
-def datestring_to_date(
-    astring: str, now: datetime.datetime = datetime.datetime.now(), df: str = None
-) -> datetime.datetime:
-    """
-    Takes a string representing a date and converts it to datetime
-    :param astring: A string or a datetime-object representing a date, ex: '2015-01-01 12:00' or an epoch number.
-    :param: df: a date format
-    :return: A datetime object representing the string/datetime astring
-
-    If astring is a datetime object, it is untouched and returned.
-
-    >>> datestring_to_date('2015-01-01')
-    datetime.datetime(2015, 1, 1, 0, 0)
-    >>> datestring_to_date('2015-01-01 12:00')
-    datetime.datetime(2015, 1, 1, 12, 0)
-    >>> datestring_to_date(datetime.datetime(2015, 1, 1, 12, 0))
-    datetime.datetime(2015, 1, 1, 12, 0)
-    """
-    if isinstance(astring, datetime.date):
-        return astring
-    else:
-        if df is not None:
-            format = df
-        else:
-            format = find_date_format(astring)
-        if format is not None:
-            adate = datetime.datetime.strptime(astring, find_date_format(astring))
-        else:
-            splitted = astring.split()
-            if len(splitted) == 2:
-                n, step_lenght = splitted
-                adate = dateshift(now, n, step_lenght)
-            else:
-                try:
-                    adate = datetime.datetime.fromtimestamp(float(astring))
-                except Exception:
-                    adate = None
-    return adate
-
-
-def long_dateformat(astring: str, dateformat: str = None) -> str:
-    return datetime.datetime.strftime(
-        datestring_to_date(astring, df=dateformat), "%Y-%m-%d %H:%M:%S"
-    )
-
-
-def date_to_epoch(astring: str):
-    return datestring_to_date(astring) - datetime.datetime(1970, 1, 1)
-
-
-def reformat_date_time(astring: str):
-    date_format = find_date_format(astring)
-    if date_format is None:
-        return None
-
-    date = "-".join(
-        [
-            f"%{letter}"
-            for letter in ["Y", "m", "d"]
-            if letter
-            in date_format.replace("b", "m").replace("B", "m").replace("y", "Y")
-        ]
-    )  # fix for rare cases where date_format contains month names instead of month no.
-    time = ":".join(
-        [f"%{letter}" for letter in ["H", "M", "S"] if letter in date_format]
-    )
-    outformat = " ".join([date, time])
-    new_datestring = datetime.datetime.strftime(
-        datetime.datetime.strptime(astring, date_format), outformat
-    )
-    return new_datestring
-
-
-def find_time_format(datestring: str):
-    """
-    Parses a string and returns the found working dateformat string
-    :param datestring: A string representing a time, ex: '12:00'
-    :return: The dateformat of the string, ex: ' %H:%M'
-
-    Can only parse a list of preconfigured datestrings. See the code.
-
-    """
-    datestring = str(datestring)
-    # Length, format
-    time_formats_to_try = {
-        4: ["%H%M"],
-        5: ["%H:%M", "%H %M"],
-        6: ["%H%M%S"],
-        8: ["%H:%M:%S", "%H %M %S"],
-    }
-
-    found_format = None
-
-    length = len(datestring)
-
-    format_list = time_formats_to_try.get(length, None)
-    if format_list is None:
-        log.debug("Timeformat not supported for %s" % datestring)
-        return None
-
-    for timeformat in format_list:
-        try:
-            datetime.datetime.strptime(datestring, timeformat)
-        except ValueError:
-            continue
-        else:
-            found_format = timeformat
-            break
-
-    return found_format
+def date_to_epoch(astring: Union[str, datetime.datetime]) -> datetime.timedelta:
+    return to_date(astring) - datetime.datetime(1970, 1, 1)
 
 
 def parse_timezone_to_timedelta(tz_string: str) -> datetime.timedelta:
@@ -331,25 +251,22 @@ def parse_timezone_to_timedelta(tz_string: str) -> datetime.timedelta:
     return td
 
 
-def change_timezone(date_or_string, from_timezone, to_timezone):
+def change_timezone(
+    date_or_string: Union[str, datetime.datetime], from_timezone: str, to_timezone: str
+) -> datetime.datetime:
     """
-    This function should probably not be used for huge amounts of logger data as it might be rather slow.
-    @param date_or_string:
-    @param from_timezone:
-    @param to_timezone:
-    @return:
+    Converts a datetime between timezones. Always returns a naive datetime.
 
-    # Replace winter time into same utc offset - no change
     >>> change_timezone('2022-03-27 00:00', 'Europe/Stockholm', 'UTC+1')
-    '2022-03-27 00:00'
+    datetime.datetime(2022, 3, 27, 0, 0)
     >>> change_timezone('2022-03-28 00:00', 'Europe/Stockholm', 'UTC+1')
-    '2022-03-27 23:00'
+    datetime.datetime(2022, 3, 27, 23, 0)
     >>> change_timezone('2022-03-27 23:00', 'UTC+1', 'Europe/Stockholm')
-    '2022-03-28 00:00'
+    datetime.datetime(2022, 3, 28, 0, 0)
     >>> change_timezone('2022-10-30 00:00', 'Europe/Stockholm', 'UTC+1')
-    '2022-10-29 23:00'
+    datetime.datetime(2022, 10, 29, 23, 0)
     >>> change_timezone('2022-10-31 00:00', 'Europe/Stockholm', 'UTC+1')
-    '2022-10-31 00:00'
+    datetime.datetime(2022, 10, 31, 0, 0)
     """
 
     def get_tz_and_timedelta(tz_string):
@@ -361,12 +278,12 @@ def change_timezone(date_or_string, from_timezone, to_timezone):
             timedelta = None
         return new_tz, timedelta
 
-    tz_naive = datestring_to_date(date_or_string)
+    tz_naive = to_date(date_or_string)
 
     tz, td = get_tz_and_timedelta(from_timezone)
     try:
         tz_aware = tz.localize(tz_naive, is_dst=None)
-    except AttributeError as e:
+    except AttributeError:
         raise Exception(
             f"Error changing timezone for '{date_or_string}', returned '{tz_naive}'."
         )
@@ -378,12 +295,8 @@ def change_timezone(date_or_string, from_timezone, to_timezone):
     if new_td is not None:
         new_date = new_date + new_td
 
-    if isinstance(date_or_string, str):
-        res = new_date.strftime(find_date_format(date_or_string))
-    else:
-        res = new_date
-    return res
+    return new_date.replace(tzinfo=None)
 
 
-def get_pytz_timezones() -> List[str]:
+def get_pytz_timezones() -> list[str]:
     return pytz.all_timezones

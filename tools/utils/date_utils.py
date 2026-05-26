@@ -46,6 +46,8 @@ def to_date(
     datetime.datetime(2015, 1, 1, 12, 0)
     >>> to_date(datetime.datetime(2015, 1, 1, 12, 0))
     datetime.datetime(2015, 1, 1, 12, 0)
+    >>> to_date(datetime.date(2015, 1, 1))
+    datetime.datetime(2015, 1, 1, 0, 0)
     >>> to_date('01-01-2015 01:01:01')
     datetime.datetime(2015, 1, 1, 1, 1, 1)
     >>> to_date('2015/01/01 12:00:00')
@@ -59,13 +61,17 @@ def to_date(
     >>> to_date('abc') is None
     True
     """
-    if isinstance(astring, (datetime.datetime, datetime.date)):
-        return astring
+    if isinstance(astring, datetime.datetime):
+        return astring.replace(tzinfo=None)
+    if isinstance(astring, datetime.date):
+        return datetime.datetime(astring.year, astring.month, astring.day)
     try:
         s = str(astring).strip()
         if _YEAR_PREFIX.match(s):
-            return dateutil_parser.parse(s, yearfirst=True)
-        return dateutil_parser.parse(s, dayfirst=True)
+            dt = dateutil_parser.parse(s, yearfirst=True)
+        else:
+            dt = dateutil_parser.parse(s, dayfirst=True)
+        return dt.replace(tzinfo=None)
     except (ValueError, TypeError, OverflowError):
         return None
 

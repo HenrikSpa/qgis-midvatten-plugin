@@ -105,20 +105,6 @@ class TestLineKeyComputation:
         assert result[0] == result[1]
 
 
-class TestBuildSelectionWhereHourBoundary:
-    def test_hour_23_rolls_to_next_day(self):
-        """Verify that hour-grouped SQL WHERE for hour 23 uses next day 00:00:00."""
-        import datetime
-        from midvatten.tools.utils.db_utils.dialect import ident
-
-        lower_dt = datetime.datetime.strptime(
-            "2024-01-01 23:00:00", "%Y-%m-%d %H:%M:%S"
-        )
-        upper_dt = lower_dt + datetime.timedelta(hours=1)
-        upper_str = upper_dt.strftime("%Y-%m-%d %H:%M:%S")
-        assert upper_str == "2024-01-02 00:00:00"
-
-
 class TestCreatedAtGrouping:
     def test_group_by_hour_truncates(self):
         buf = pd.DataFrame(

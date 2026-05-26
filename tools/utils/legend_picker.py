@@ -28,7 +28,7 @@ class LegendPicker:
             leg_lines, ax_lines, pickradius
         )
         self.ax_to_legend = {v: k for k, v in self.leg_lines_ax_lines.items()}
-        fig.canvas.mpl_connect("pick_event", self.on_pick)
+        self._cid = fig.canvas.mpl_connect("pick_event", self.on_pick)
 
     def _prepare_for_pick(
         self,
@@ -44,6 +44,11 @@ class LegendPicker:
             self.original_alphas[legend_line] = legend_line.get_alpha()
             self.original_alphas[ax_line] = ax_line.get_alpha()
         return mapping
+
+    def disconnect(self):
+        if self._cid is not None:
+            self.fig.canvas.mpl_disconnect(self._cid)
+            self._cid = None
 
     def register_pick_callback(self, callback):
         self._pick_callback = callback

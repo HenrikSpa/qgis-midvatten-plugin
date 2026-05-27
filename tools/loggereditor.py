@@ -2886,12 +2886,12 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             in_period = fr_d_t <= xdata[idx].replace(tzinfo=None) <= to_d_t
             if has_key_filter and in_period:
                 if idx >= buf_len:
-                    ydata.append(None)
+                    ydata.append(np.nan)
                     continue
                 in_selection = self._buf.iloc[idx]["_line_key"] in selected_keys
-                ydata.append(y if in_selection else None)
+                ydata.append(y if in_selection else np.nan)
             else:
-                ydata.append(y if in_period else None)
+                ydata.append(y if in_period else np.nan)
 
         if self.selected_line is None:
             self.selected_line = self.axes.plot(
@@ -2944,7 +2944,12 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         if self.moving_idx is not None:
             logger_y = self.logger_artist.get_ydata()[self.moving_idx]
             selected_y = self.selected_line.get_ydata()[self.moving_idx]
-            if logger_y is not None and selected_y is not None:
+            if (
+                logger_y is not None
+                and selected_y is not None
+                and not np.isnan(float(logger_y))
+                and not np.isnan(float(selected_y))
+            ):
                 offset = (
                     self.selected_line.get_ydata()[self.moving_idx]
                     - self.logger_artist.get_ydata()[self.moving_idx]

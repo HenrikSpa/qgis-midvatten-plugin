@@ -414,6 +414,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                     self._series_tab,
                     QCoreApplication.translate("LoggerEditor", "Series"),
                 )
+                self.tab_widget.currentChanged.connect(self._on_tab_changed)
 
             # --- History tab ---
             self._history_list = QListWidget(self)
@@ -1095,13 +1096,14 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                             if k < 0 and (self._buf["series_id"] == k).any()
                         }
                         for temp_id, meta in new_series.items():
-                            dbconnection.execute(
+                            rows = dbconnection.execute_and_fetchall(
                                 f"INSERT INTO {series_tbl}"
                                 f" ({ident('obsid')}, {ident('source')},"
                                 f" {ident('instrument')},"
                                 f" {ident('description')},"
                                 f" {ident('comment')})"
-                                f" VALUES ({ph}, {ph}, {ph}, {ph}, {ph})",
+                                f" VALUES ({ph}, {ph}, {ph}, {ph}, {ph})"
+                                f" RETURNING {ident('id')}",
                                 (
                                     meta["obsid"],
                                     meta["source"],
@@ -1110,15 +1112,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                                     meta.get("comment"),
                                 ),
                             )
-                            if is_sqlite:
-                                real_id = dbconnection.execute_and_fetchall(
-                                    "SELECT last_insert_rowid()"
-                                )[0][0]
-                            else:
-                                real_id = dbconnection.execute_and_fetchall(
-                                    "SELECT lastval()"
-                                )[0][0]
-                            id_mapping[temp_id] = real_id
+                            id_mapping[temp_id] = rows[0][0]
 
                         # 2. UPDATE existing series with changed metadata
                         for sid, meta in self._series_buf.items():
@@ -1154,20 +1148,26 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                                     | (orig_sid.isna() & new_sid.isna())
                                 )
                             ).fillna(True)
-                            for dt_idx in common[sid_changed]:
-                                raw_sid = self._buf.loc[dt_idx, "series_id"]
-                                if pd.notna(raw_sid):
-                                    int_sid = int(raw_sid)
-                                    resolved = id_mapping.get(int_sid, int_sid)
-                                else:
-                                    resolved = None
-                                dt_str = dt_idx.strftime(_DT_FMT)
-                                dbconnection.execute(
+                            changed_idx = common[sid_changed]
+                            if len(changed_idx) > 0:
+                                sid_update_params = []
+                                for dt_idx in changed_idx:
+                                    raw_sid = self._buf.loc[dt_idx, "series_id"]
+                                    if pd.notna(raw_sid):
+                                        int_sid = int(raw_sid)
+                                        resolved = id_mapping.get(int_sid, int_sid)
+                                    else:
+                                        resolved = None
+                                    dt_str = dt_idx.strftime(_DT_FMT)
+                                    sid_update_params.append((resolved, obsid, dt_str))
+                                sid_update_sql = (
                                     f"UPDATE {logger_tbl}"
                                     f" SET {ident('series_id')} = {ph}"
                                     f" WHERE {ident('obsid')} = {ph}"
-                                    f" AND {dt_eq}",
-                                    (resolved, obsid, dt_str),
+                                    f" AND {dt_eq}"
+                                )
+                                dbconnection.executemany(
+                                    sid_update_sql, sid_update_params
                                 )
 
                         # 4. DELETE orphaned series
@@ -1575,6 +1575,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self._series_edit_btn.setEnabled(False)
 
         return tab
+
+    def _on_tab_changed(self, index: int) -> None:
+        if self.tab_widget.widget(index) is self._series_tab:
+            self._update_series_tab()
 
     def _update_series_tab(self) -> None:
         """Update the series tab to reflect the current selection state."""
@@ -2883,7 +2887,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         else:
             self.selected_line.set_ydata(ydata)
         self.canvas.draw_idle()
-        if hasattr(self, "_series_tab"):
+        if (
+            hasattr(self, "_series_tab")
+            and self.tab_widget.currentWidget() is self._series_tab
+        ):
             self._update_series_tab()
 
     def connect_selected_line_move(self):

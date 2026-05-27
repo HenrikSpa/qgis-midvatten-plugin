@@ -919,7 +919,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 buf_df = pd.DataFrame(
                     cols_data,
                     index=pd.to_datetime(
-                        [r[0] for r in head_level_masl_list]
+                        [r[0] for r in head_level_masl_list],
+                        format="mixed",
                     ).to_pydatetime(),
                 )
             else:

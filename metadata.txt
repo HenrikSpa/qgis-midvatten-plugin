@@ -3,7 +3,7 @@ name=Midvatten
 qgisMinimumVersion=3.40
 description=A toolset that makes QGIS an interface for editing/viewing hydrogeological observational data (drillings, water levels, seismic data etc) stored in a SQLite or PostgreSQL database.
 about=The plugin is a toolset that makes QGIS an interface for editing/viewing hydrogeological observational data (drillings, water levels, seismic data etc) stored in a SQLite or PostgreSQL database. NOTE: This plugin requires the Python packages numpy, pandas and matplotlib. These are installed automatically by the qpip helper plugin. When you first install Midvatten, qpip will show a dialog asking to install these packages — click "Install" to proceed. This is a one-time step.
-version=1.9.0b23
+version=1.9.0b24
 author=Henrik Spångmyr, Josef Källgården
 email=midvattenplugin@midvatten.se
 repository=https://github.com/henrikspa/qgis-midvatten-plugin.git
@@ -23,6 +23,11 @@ hasProcessingProvider=no
 supportsQt6=True
 
 changelog=
+        Version 1.9.0b24:
+          - LoggerEditor: Added "Series" tab for creating, assigning, and editing w_logger_series metadata directly from the editor (only available on modern schema with series_id column).
+          - LoggerEditor: Series changes participate in undo/redo and are saved atomically alongside level adjustments.
+          - LoggerEditor: Series_id UPDATE statements are now batched via executemany for faster saves on large datasets.
+          - LoggerEditor: Series tab refresh is debounced (500ms) to avoid lag during rapid date edits.
         Version 1.9.0b23:
           - LoggerEditor: Fixed NumPy broadcasting error when loading logger data with multi-element line keys.
           - LoggerEditor: Removed manual Update Plot button from main panel; plot now auto-refreshes on obsid change. A new Update Plot button in the reference series dock panel applies checkbox changes.

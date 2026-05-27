@@ -87,6 +87,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             parts.append(ca.tolist())
         if separate_dt_precision and "dt_length" in buf.columns:
             parts.append(buf["dt_length"].tolist())
+        if "series_id" in buf.columns:
+            parts.append(buf["series_id"].fillna(-999).astype(int).tolist())
         if not parts:
             return [("_all",)] * n
         return list(zip(*parts))
@@ -920,7 +922,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                     ).to_pydatetime(),
                 )
             else:
-                buf_cols = ["head_cm_m", "level_masl", "source"]
+                buf_cols = ["head_cm_m", "level_masl", "source", "series_id"]
                 if has_created_at:
                     buf_cols.append("created_at")
                 buf_cols.append("dt_length")
@@ -1088,7 +1090,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
                         # 1. INSERT new series (negative temporary IDs)
                         new_series = {
-                            k: v for k, v in self._series_buf.items() if k < 0
+                            k: v
+                            for k, v in self._series_buf.items()
+                            if k < 0 and (self._buf["series_id"] == k).any()
                         }
                         for temp_id, meta in new_series.items():
                             dbconnection.execute(
@@ -1203,6 +1207,15 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 self._buf.loc[self._buf["series_id"] == temp_id, "series_id"] = real_id
                 if temp_id in self._series_buf:
                     self._series_buf[real_id] = self._series_buf.pop(temp_id)
+            # Back-patch all history snapshots so undo does not restore stale temp IDs
+            for entry in self._history:
+                sid_col = entry["series_id"]
+                for temp_id, real_id in id_mapping.items():
+                    sid_col[sid_col == temp_id] = real_id
+                sb = entry["series_buf"]
+                for temp_id, real_id in id_mapping.items():
+                    if temp_id in sb:
+                        sb[real_id] = sb.pop(temp_id)
 
         self._original_buf = self._buf.copy()
         self._original_series_buf = {k: dict(v) for k, v in self._series_buf.items()}
@@ -1694,7 +1707,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         new_id = min(min(self._series_buf.keys(), default=0), 0) - 1
 
         self._series_buf[new_id] = {
-            "obsid": self.selected_obsid,
+            "obsid": self._buf_obsid,
             "source": source,
             "instrument": self._series_instrument_edit.text().strip() or None,
             "description": self._series_description_edit.text().strip() or None,
@@ -1778,7 +1791,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
         # Update series metadata
         self._series_buf[sid] = {
-            "obsid": self._series_buf.get(sid, {}).get("obsid", self.selected_obsid),
+            "obsid": self._series_buf.get(sid, {}).get("obsid", self._buf_obsid),
             "source": source,
             "instrument": self._series_instrument_edit.text().strip() or None,
             "description": self._series_description_edit.text().strip() or None,

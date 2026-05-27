@@ -12,14 +12,19 @@ from qgis.PyQt.QtCore import QCoreApplication, Qt
 from qgis.PyQt.QtGui import QCloseEvent, QFont, QIcon, QKeySequence
 from qgis.PyQt.QtWidgets import (
     QCheckBox,
+    QComboBox,
     QDockWidget,
+    QFormLayout,
     QFrame,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QListWidget,
     QListWidgetItem,
     QPushButton,
     QShortcut,
+    QTextEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -116,6 +121,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self._schema_variant: str | None = None
         self._meas_ts = None
         self._meas_obsid: str | None = None
+        self._series_buf: dict[int, dict] = {}
+        self._original_series_buf: dict[int, dict] = {}
         self._history: list[dict] = []
         self._history_pos: int = -1
         self._prev_combobox_index: int = -1
@@ -397,6 +404,14 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             undo_shortcut.activated.connect(self.undo)
             redo_shortcut = QShortcut(QKeySequence("Ctrl+Shift+Z"), self)
             redo_shortcut.activated.connect(self.redo)
+
+            # --- Series tab (only for series_join schema) ---
+            if self._schema_variant == "series_join":
+                self._series_tab = self._build_series_tab()
+                self.tab_widget.addTab(
+                    self._series_tab,
+                    QCoreApplication.translate("LoggerEditor", "Series"),
+                )
 
             # --- History tab ---
             self._history_list = QListWidget(self)
@@ -828,7 +843,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 extra_cols += ", LENGTH(l.date_time) AS dt_length"
                 head_level_masl_sql = (
                     f"SELECT l.date_time, l.head_cm / 100, l.level_masl,"
-                    f" TRIM(COALESCE(s.source, '')){extra_cols}"
+                    f" TRIM(COALESCE(s.source, '')), l.series_id{extra_cols}"
                     f" FROM w_levels_logger l"
                     f" LEFT JOIN w_logger_series s ON s.id = l.series_id"
                     f" WHERE l.obsid = {ph} ORDER BY l.date_time"
@@ -840,7 +855,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 extra_cols += ", LENGTH(date_time) AS dt_length"
                 head_level_masl_sql = (
                     f"SELECT date_time, head_cm / 100, level_masl,"
-                    f" TRIM(COALESCE(source, '')){extra_cols}"
+                    f" TRIM(COALESCE(source, '')), NULL AS series_id{extra_cols}"
                     f" FROM w_levels_logger WHERE obsid = {ph}"
                     f" ORDER BY date_time"
                 )
@@ -851,7 +866,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 extra_cols += ", LENGTH(date_time) AS dt_length"
                 head_level_masl_sql = (
                     f"SELECT date_time, head_cm / 100, level_masl,"
-                    f" '' as source{extra_cols}"
+                    f" '' as source, NULL AS series_id{extra_cols}"
                     f" FROM w_levels_logger WHERE obsid = {ph}"
                     f" ORDER BY date_time"
                 )
@@ -859,6 +874,26 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             _ok, head_level_masl_list = db_utils.sql_load_fr_db(
                 head_level_masl_sql, dbconnection=dbconnection, execute_args=(obsid,)
             )
+
+            if schema_variant == "series_join":
+                series_rows = dbconnection.execute_and_fetchall(
+                    f"SELECT id, obsid, source, instrument, description, comment"
+                    f" FROM w_logger_series WHERE obsid = {ph}",
+                    (obsid,),
+                )
+                self._series_buf = {
+                    row[0]: {
+                        "obsid": row[1],
+                        "source": row[2],
+                        "instrument": row[3],
+                        "description": row[4],
+                        "comment": row[5],
+                    }
+                    for row in series_rows
+                }
+            else:
+                self._series_buf = {}
+
             dbconnection.closedb()
 
             if head_level_masl_list:
@@ -866,8 +901,11 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                     "head_cm_m": [r[1] for r in head_level_masl_list],
                     "level_masl": [r[2] for r in head_level_masl_list],
                     "source": [r[3] for r in head_level_masl_list],
+                    "series_id": pd.array(
+                        [r[4] for r in head_level_masl_list], dtype="Int64"
+                    ),
                 }
-                col_idx = 4
+                col_idx = 5
                 if has_created_at:
                     cols_data["created_at"] = [
                         str(r[col_idx]) if r[col_idx] else ""
@@ -887,9 +925,13 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                     buf_cols.append("created_at")
                 buf_cols.append("dt_length")
                 buf_df = pd.DataFrame(columns=buf_cols)
+                buf_df["series_id"] = pd.array([], dtype="Int64")
             self._buf = buf_df
             self._recompute_line_keys()
             self._original_buf = buf_df.copy()
+            self._original_series_buf = {
+                k: dict(v) for k, v in self._series_buf.items()
+            }
             self._history.clear()
             self._history_pos = -1
             self._history_push("Loaded")
@@ -979,6 +1021,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         if self._buf is None or self._original_buf is None or self._buf_obsid is None:
             return False
         obsid = self._buf_obsid
+        id_mapping: dict[int, int] = {}
         common_utils.start_waiting_cursor()
         try:
             deleted_indices = self._original_buf.index.difference(self._buf.index)
@@ -1037,6 +1080,112 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                             f" AND {dt_eq}"
                         )
                         dbconnection.executemany(update_sql, per_row_params)
+
+                    # --- Series CRUD (only for series_join schema) ---
+                    if self._schema_variant == "series_join":
+                        series_tbl = ident("w_logger_series")
+                        logger_tbl = ident("w_levels_logger")
+
+                        # 1. INSERT new series (negative temporary IDs)
+                        new_series = {
+                            k: v for k, v in self._series_buf.items() if k < 0
+                        }
+                        for temp_id, meta in new_series.items():
+                            dbconnection.execute(
+                                f"INSERT INTO {series_tbl}"
+                                f" ({ident('obsid')}, {ident('source')},"
+                                f" {ident('instrument')},"
+                                f" {ident('description')},"
+                                f" {ident('comment')})"
+                                f" VALUES ({ph}, {ph}, {ph}, {ph}, {ph})",
+                                (
+                                    meta["obsid"],
+                                    meta["source"],
+                                    meta.get("instrument"),
+                                    meta.get("description"),
+                                    meta.get("comment"),
+                                ),
+                            )
+                            if is_sqlite:
+                                real_id = dbconnection.execute_and_fetchall(
+                                    "SELECT last_insert_rowid()"
+                                )[0][0]
+                            else:
+                                real_id = dbconnection.execute_and_fetchall(
+                                    "SELECT lastval()"
+                                )[0][0]
+                            id_mapping[temp_id] = real_id
+
+                        # 2. UPDATE existing series with changed metadata
+                        for sid, meta in self._series_buf.items():
+                            if sid < 0:
+                                continue
+                            orig = self._original_series_buf.get(sid)
+                            if orig is None or meta == orig:
+                                continue
+                            dbconnection.execute(
+                                f"UPDATE {series_tbl}"
+                                f" SET {ident('source')} = {ph},"
+                                f" {ident('instrument')} = {ph},"
+                                f" {ident('description')} = {ph},"
+                                f" {ident('comment')} = {ph}"
+                                f" WHERE {ident('id')} = {ph}",
+                                (
+                                    meta["source"],
+                                    meta.get("instrument"),
+                                    meta.get("description"),
+                                    meta.get("comment"),
+                                    sid,
+                                ),
+                            )
+
+                        # 3. UPDATE series_id on rows where it changed
+                        common = self._original_buf.index.intersection(self._buf.index)
+                        if len(common) > 0:
+                            orig_sid = self._original_buf.loc[common, "series_id"]
+                            new_sid = self._buf.loc[common, "series_id"]
+                            sid_changed = (
+                                ~(
+                                    (orig_sid == new_sid)
+                                    | (orig_sid.isna() & new_sid.isna())
+                                )
+                            ).fillna(True)
+                            for dt_idx in common[sid_changed]:
+                                raw_sid = self._buf.loc[dt_idx, "series_id"]
+                                if pd.notna(raw_sid):
+                                    int_sid = int(raw_sid)
+                                    resolved = id_mapping.get(int_sid, int_sid)
+                                else:
+                                    resolved = None
+                                dt_str = dt_idx.strftime(_DT_FMT)
+                                dbconnection.execute(
+                                    f"UPDATE {logger_tbl}"
+                                    f" SET {ident('series_id')} = {ph}"
+                                    f" WHERE {ident('obsid')} = {ph}"
+                                    f" AND {dt_eq}",
+                                    (resolved, obsid, dt_str),
+                                )
+
+                        # 4. DELETE orphaned series
+                        for sid in list(self._original_series_buf.keys()):
+                            if sid not in self._series_buf:
+                                dbconnection.execute(
+                                    f"DELETE FROM {series_tbl}"
+                                    f" WHERE {ident('id')} = {ph}",
+                                    (sid,),
+                                )
+                            elif sid >= 0:
+                                remaining = dbconnection.execute_and_fetchall(
+                                    f"SELECT COUNT(*) FROM {logger_tbl}"
+                                    f" WHERE {ident('series_id')} = {ph}",
+                                    (sid,),
+                                )
+                                if remaining[0][0] == 0:
+                                    dbconnection.execute(
+                                        f"DELETE FROM {series_tbl}"
+                                        f" WHERE {ident('id')} = {ph}",
+                                        (sid,),
+                                    )
             finally:
                 dbconnection.closedb()
         except Exception as e:
@@ -1048,7 +1197,15 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         finally:
             common_utils.stop_waiting_cursor()
 
+        # Remap temporary series IDs to real DB IDs after successful save
+        if id_mapping:
+            for temp_id, real_id in id_mapping.items():
+                self._buf.loc[self._buf["series_id"] == temp_id, "series_id"] = real_id
+                if temp_id in self._series_buf:
+                    self._series_buf[real_id] = self._series_buf.pop(temp_id)
+
         self._original_buf = self._buf.copy()
+        self._original_series_buf = {k: dict(v) for k, v in self._series_buf.items()}
         self._last_saved_history_pos = self._history_pos
         self._dirty = False
         self._ref_subplot_dirty = True
@@ -1225,6 +1382,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self._original_buf = None
         self._dirty = False
         self._buf_obsid = None
+        self._series_buf = {}
+        self._original_series_buf = {}
         self._history = []
         self._history_pos = -1
         self._last_saved_history_pos = None
@@ -1236,6 +1395,11 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             "timestamp": datetime.datetime.now(),
             "level_masl": self._buf["level_masl"].copy(),
             "present_index": self._buf.index.copy(),
+            "series_id": self._buf["series_id"].copy(),
+            "series_buf": {k: dict(v) for k, v in self._series_buf.items()},
+            "source": (
+                self._buf["source"].copy() if "source" in self._buf.columns else None
+            ),
         }
         self._history.append(entry)
         self._history_pos = len(self._history) - 1
@@ -1271,6 +1435,12 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         entry = self._history[pos]
         self._buf = self._original_buf.loc[entry["present_index"]].copy()
         self._buf["level_masl"] = entry["level_masl"]
+        self._buf["series_id"] = entry["series_id"]
+        if entry.get("source") is not None and "source" in self._buf.columns:
+            self._buf["source"] = entry["source"]
+        self._series_buf = {k: dict(v) for k, v in entry["series_buf"].items()}
+        if hasattr(self, "_series_last_shown_id"):
+            self._series_last_shown_id = None
         self._buf_version += 1
         self._dirty = pos != 0
         self._refresh_window_title()
@@ -1294,6 +1464,337 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self._history_list.scrollToItem(self._history_list.item(self._history_pos))
         self._undo_btn.setEnabled(self._history_pos > 0)
         self._redo_btn.setEnabled(self._history_pos < len(self._history) - 1)
+
+    # ------------------------------------------------------------------
+    # Series tab
+    # ------------------------------------------------------------------
+
+    def _build_series_tab(self) -> QWidget:
+        """Create and return the Series tab widget for managing logger series."""
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+
+        # --- Selection summary ---
+        self._series_summary_label = QLabel(
+            QCoreApplication.translate("LoggerEditor", "No points selected")
+        )
+        self._series_summary_label.setWordWrap(True)
+        layout.addWidget(self._series_summary_label)
+
+        # --- Form fields ---
+        form_group = QGroupBox(
+            QCoreApplication.translate("LoggerEditor", "Series metadata")
+        )
+        form_layout = QFormLayout(form_group)
+
+        self._series_source_edit = QLineEdit()
+        form_layout.addRow(
+            QCoreApplication.translate("LoggerEditor", "Source:"),
+            self._series_source_edit,
+        )
+
+        self._series_instrument_edit = QLineEdit()
+        form_layout.addRow(
+            QCoreApplication.translate("LoggerEditor", "Instrument:"),
+            self._series_instrument_edit,
+        )
+
+        self._series_description_edit = QLineEdit()
+        form_layout.addRow(
+            QCoreApplication.translate("LoggerEditor", "Description:"),
+            self._series_description_edit,
+        )
+
+        self._series_comment_edit = QTextEdit()
+        self._series_comment_edit.setMaximumHeight(80)
+        form_layout.addRow(
+            QCoreApplication.translate("LoggerEditor", "Comment:"),
+            self._series_comment_edit,
+        )
+
+        layout.addWidget(form_group)
+
+        # --- Action buttons ---
+        action_group = QGroupBox(QCoreApplication.translate("LoggerEditor", "Actions"))
+        action_layout = QVBoxLayout(action_group)
+
+        self._series_create_btn = QPushButton(
+            QCoreApplication.translate("LoggerEditor", "Create new series")
+        )
+        self._series_create_btn.clicked.connect(self._on_series_create)
+        action_layout.addWidget(self._series_create_btn)
+
+        assign_row = QHBoxLayout()
+        self._series_assign_combo = QComboBox()
+        self._series_assign_combo.setSizeAdjustPolicy(
+            QComboBox.SizeAdjustPolicy.AdjustToContents
+        )
+        assign_row.addWidget(self._series_assign_combo, 1)
+        self._series_assign_btn = QPushButton(
+            QCoreApplication.translate("LoggerEditor", "Assign to existing")
+        )
+        self._series_assign_btn.clicked.connect(self._on_series_assign)
+        assign_row.addWidget(self._series_assign_btn)
+        action_layout.addLayout(assign_row)
+
+        self._series_edit_btn = QPushButton(
+            QCoreApplication.translate("LoggerEditor", "Apply changes")
+        )
+        self._series_edit_btn.clicked.connect(self._on_series_edit)
+        action_layout.addWidget(self._series_edit_btn)
+
+        layout.addWidget(action_group)
+
+        # --- Info label ---
+        self._series_info_label = QLabel()
+        self._series_info_label.setWordWrap(True)
+        self._series_info_label.setVisible(False)
+        layout.addWidget(self._series_info_label)
+
+        layout.addStretch()
+
+        # Track the last-shown series id to avoid clobbering user edits
+        self._series_last_shown_id: int | None = None
+
+        # Initial disabled state
+        self._series_create_btn.setEnabled(False)
+        self._series_assign_btn.setEnabled(False)
+        self._series_edit_btn.setEnabled(False)
+
+        return tab
+
+    def _update_series_tab(self) -> None:
+        """Update the series tab to reflect the current selection state."""
+        if self._buf is None or not hasattr(self, "_series_summary_label"):
+            return
+
+        fr_d_t = self.from_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
+        to_d_t = self.to_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
+        mask = self._build_edit_mask(fr_d_t, to_d_t)
+        n_selected = int(mask.sum())
+
+        if n_selected == 0:
+            self._series_summary_label.setText(
+                QCoreApplication.translate("LoggerEditor", "No points selected")
+            )
+            self._series_create_btn.setEnabled(False)
+            self._series_assign_btn.setEnabled(False)
+            self._series_edit_btn.setEnabled(False)
+            self._series_info_label.setVisible(False)
+            return
+
+        # Gather unique series_id values from selected rows
+        selected_sids = self._buf.loc[mask, "series_id"]
+        unique_sids = selected_sids.dropna().unique().tolist()
+        n_unassigned = int(selected_sids.isna().sum())
+
+        # Build summary text
+        parts = []
+        for sid in sorted(unique_sids):
+            sid_int = int(sid)
+            count = int((selected_sids == sid).sum())
+            meta = self._series_buf.get(sid_int, {})
+            src_label = meta.get("source") or QCoreApplication.translate(
+                "LoggerEditor", "(unnamed)"
+            )
+            parts.append(f"{count} from '{src_label}' (id={sid_int})")
+        if n_unassigned > 0:
+            parts.append(
+                f"{n_unassigned} "
+                + QCoreApplication.translate("LoggerEditor", "unassigned")
+            )
+        summary = QCoreApplication.translate(
+            "LoggerEditor", "Selected %d points: %s"
+        ) % (n_selected, ", ".join(parts))
+        self._series_summary_label.setText(summary)
+
+        # Populate assign combo with existing series for this obsid
+        self._series_assign_combo.clear()
+        for sid, meta in sorted(self._series_buf.items()):
+            label = (
+                f"{meta.get('source') or QCoreApplication.translate('LoggerEditor', '(unnamed)')}"
+                f" (id={sid})"
+            )
+            self._series_assign_combo.addItem(label, sid)
+
+        # Determine mode
+        has_single_sid = len(unique_sids) == 1 and n_unassigned == 0
+        all_null = len(unique_sids) == 0 and n_unassigned > 0
+        has_assignable = self._series_assign_combo.count() > 0
+
+        if has_single_sid:
+            sid_int = int(unique_sids[0])
+            # Check if the selection covers ALL points with this series_id
+            all_with_sid = self._buf["series_id"] == sid_int
+            covers_all = all_with_sid.sum() == n_selected
+
+            if covers_all:
+                # EDIT mode — pre-fill form only if the series changed
+                self._series_create_btn.setEnabled(True)
+                self._series_assign_btn.setEnabled(has_assignable)
+                self._series_edit_btn.setEnabled(True)
+                self._series_info_label.setVisible(False)
+                if self._series_last_shown_id != sid_int:
+                    self._series_last_shown_id = sid_int
+                    meta = self._series_buf.get(sid_int, {})
+                    self._series_source_edit.setText(meta.get("source") or "")
+                    self._series_instrument_edit.setText(meta.get("instrument") or "")
+                    self._series_description_edit.setText(meta.get("description") or "")
+                    self._series_comment_edit.setPlainText(meta.get("comment") or "")
+            else:
+                # Sub-range of one series — CREATE/ASSIGN only
+                self._series_create_btn.setEnabled(True)
+                self._series_assign_btn.setEnabled(has_assignable)
+                self._series_edit_btn.setEnabled(False)
+                self._series_info_label.setText(
+                    QCoreApplication.translate(
+                        "LoggerEditor",
+                        "To edit series metadata, select the entire series.",
+                    )
+                )
+                self._series_info_label.setVisible(True)
+                self._series_last_shown_id = None
+        elif all_null:
+            # All unassigned — CREATE mode
+            self._series_create_btn.setEnabled(True)
+            self._series_assign_btn.setEnabled(has_assignable)
+            self._series_edit_btn.setEnabled(False)
+            self._series_info_label.setVisible(False)
+            self._series_last_shown_id = None
+        else:
+            # Mixed series — CREATE/ASSIGN
+            self._series_create_btn.setEnabled(True)
+            self._series_assign_btn.setEnabled(has_assignable)
+            self._series_edit_btn.setEnabled(False)
+            self._series_info_label.setVisible(False)
+            self._series_last_shown_id = None
+
+    def _on_series_create(self) -> None:
+        """Create a new series from the form fields and assign selected points."""
+        source = self._series_source_edit.text().strip()
+        if not source:
+            common_utils.MessagebarAndLog.warning(
+                bar_msg=QCoreApplication.translate(
+                    "LoggerEditor", "Source is required to create a series."
+                )
+            )
+            return
+
+        if self._buf is None:
+            return
+
+        fr_d_t = self.from_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
+        to_d_t = self.to_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
+        mask = self._build_edit_mask(fr_d_t, to_d_t)
+        count = int(mask.sum())
+        if count == 0:
+            return
+
+        # Generate negative temporary id to avoid collision with real DB ids
+        new_id = min(min(self._series_buf.keys(), default=0), 0) - 1
+
+        self._series_buf[new_id] = {
+            "obsid": self.selected_obsid,
+            "source": source,
+            "instrument": self._series_instrument_edit.text().strip() or None,
+            "description": self._series_description_edit.text().strip() or None,
+            "comment": self._series_comment_edit.toPlainText().strip() or None,
+        }
+
+        self._buf.loc[mask, "series_id"] = new_id
+        if "source" in self._buf.columns:
+            self._buf.loc[mask, "source"] = source
+
+        self._recompute_line_keys()
+        self._history_push(
+            QCoreApplication.translate(
+                "LoggerEditor", "Set series: '%s' (new, %d points)"
+            )
+            % (source, count)
+        )
+        self.update_plot()
+
+    def _on_series_assign(self) -> None:
+        """Assign selected points to an existing series."""
+        sid = self._series_assign_combo.currentData()
+        if sid is None or self._buf is None:
+            return
+
+        fr_d_t = self.from_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
+        to_d_t = self.to_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
+        mask = self._build_edit_mask(fr_d_t, to_d_t)
+        count = int(mask.sum())
+        if count == 0:
+            return
+
+        # Guard: skip if all selected rows already have this series_id
+        current_sids = self._buf.loc[mask, "series_id"]
+        if current_sids.notna().all() and (current_sids == sid).all():
+            return
+
+        self._buf.loc[mask, "series_id"] = sid
+        meta = self._series_buf.get(sid, {})
+        new_source = meta.get("source") or ""
+        if "source" in self._buf.columns:
+            self._buf.loc[mask, "source"] = new_source
+
+        self._recompute_line_keys()
+        src_label = meta.get("source") or QCoreApplication.translate(
+            "LoggerEditor", "(unnamed)"
+        )
+        self._history_push(
+            QCoreApplication.translate(
+                "LoggerEditor", "Assign to series '%s' (id=%d, %d points)"
+            )
+            % (src_label, sid, count)
+        )
+        self.update_plot()
+
+    def _on_series_edit(self) -> None:
+        """Edit metadata for the single fully-selected series."""
+        source = self._series_source_edit.text().strip()
+        if not source:
+            common_utils.MessagebarAndLog.warning(
+                bar_msg=QCoreApplication.translate(
+                    "LoggerEditor", "Source is required."
+                )
+            )
+            return
+
+        if self._buf is None:
+            return
+
+        fr_d_t = self.from_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
+        to_d_t = self.to_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
+        mask = self._build_edit_mask(fr_d_t, to_d_t)
+        if mask.sum() == 0:
+            return
+
+        # Get the single series_id from selected points
+        selected_sids = self._buf.loc[mask, "series_id"].dropna().unique()
+        if len(selected_sids) != 1:
+            return
+        sid = int(selected_sids[0])
+
+        # Update series metadata
+        self._series_buf[sid] = {
+            "obsid": self._series_buf.get(sid, {}).get("obsid", self.selected_obsid),
+            "source": source,
+            "instrument": self._series_instrument_edit.text().strip() or None,
+            "description": self._series_description_edit.text().strip() or None,
+            "comment": self._series_comment_edit.toPlainText().strip() or None,
+        }
+
+        # Update source in _buf for ALL rows with this series_id, not just selected
+        if "source" in self._buf.columns:
+            self._buf.loc[self._buf["series_id"] == sid, "source"] = source
+
+        self._recompute_line_keys()
+        self._history_push(
+            QCoreApplication.translate("LoggerEditor", "Edit series '%s' (id=%d)")
+            % (source, sid)
+        )
+        self.update_plot()
 
     def _refresh_window_title(self) -> None:
         base = self.windowTitle()
@@ -1461,7 +1962,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self.toggle_move_nodes(True)
         elif self.select_nodes_button.button().isChecked():
             self.toggle_select_nodes(True)
-        elif hasattr(self, "adjust_trend_button") and self.adjust_trend_button.button().isChecked():
+        elif (
+            hasattr(self, "adjust_trend_button")
+            and self.adjust_trend_button.button().isChecked()
+        ):
             self.toggle_adjust_trend(True)
 
     def _fast_update_after_move(self):
@@ -2366,6 +2870,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         else:
             self.selected_line.set_ydata(ydata)
         self.canvas.draw_idle()
+        if hasattr(self, "_series_tab"):
+            self._update_series_tab()
 
     def connect_selected_line_move(self):
         self.cid.append(self.canvas.mpl_connect("pick_event", self.node_pressed))

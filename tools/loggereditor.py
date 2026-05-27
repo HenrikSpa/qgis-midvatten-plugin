@@ -1573,7 +1573,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         # Debounce timer for series tab refresh during rapid date edits
         self._series_tab_timer = QTimer(self)
         self._series_tab_timer.setSingleShot(True)
-        self._series_tab_timer.setInterval(150)
+        self._series_tab_timer.setInterval(500)
         self._series_tab_timer.timeout.connect(self._update_series_tab)
 
         # Initial disabled state

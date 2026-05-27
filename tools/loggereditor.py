@@ -649,7 +649,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             if src and str(src).strip():
                 parts.append(str(src))
             # series_id dimension follows source when separate_source is on
-            if dim_idx < len(key) and "series_id" in (self._buf.columns if self._buf is not None else []):
+            if dim_idx < len(key) and "series_id" in (
+                self._buf.columns if self._buf is not None else []
+            ):
                 dim_idx += 1
         if self.separate_created_at_cb.isChecked():
             parts.append(f"imported={key[dim_idx]}")
@@ -671,7 +673,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             if src and str(src).strip():
                 parts.append(str(src))
             # series_id dimension follows source when separate_source is on
-            if dim_idx < len(key) and "series_id" in (self._buf.columns if self._buf is not None else []):
+            if dim_idx < len(key) and "series_id" in (
+                self._buf.columns if self._buf is not None else []
+            ):
                 dim_idx += 1
         if self.separate_created_at_cb.isChecked():
             parts.append(f"imported={key[dim_idx]}")
@@ -2086,7 +2090,12 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 ),
                 time_list=logger_time_list,
                 style=dict(
-                    linestyle="none", picker=5, marker=None, zorder=10, color="white"
+                    linestyle="none",
+                    picker=5,
+                    marker=".",
+                    markersize=0.01,
+                    alpha=0,
+                    zorder=10,
                 ),
             )[0]
 
@@ -2986,6 +2995,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self.select_nodes_button.uncheck()
             self.adjust_trend_button.uncheck()
             self._remove_trend_overlay()
+            if self._legend_picker is not None:
+                self._legend_picker.disconnect()
             self.connect_selected_line_move()
 
     def toggle_select_nodes(self, on):

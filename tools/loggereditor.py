@@ -1456,10 +1456,44 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
         common_utils.stop_waiting_cursor()
 
-        self.toggle_move_nodes(self.move_nodes_button.button().isChecked())
-        self.toggle_select_nodes(self.select_nodes_button.button().isChecked())
-        if hasattr(self, "adjust_trend_button"):
-            self.toggle_adjust_trend(self.adjust_trend_button.button().isChecked())
+        self.period_selector.set_active(False)
+        if self.move_nodes_button.button().isChecked():
+            self.toggle_move_nodes(True)
+        elif self.select_nodes_button.button().isChecked():
+            self.toggle_select_nodes(True)
+        elif hasattr(self, "adjust_trend_button") and self.adjust_trend_button.button().isChecked():
+            self.toggle_adjust_trend(True)
+
+    def _fast_update_after_move(self):
+        """Update artist y-data in place after a move offset — avoids full redraw."""
+        buf = self._buf
+        if buf is None or self.logger_artist is None:
+            self.update_plot()
+            return
+
+        new_values = buf["level_masl"].to_numpy(dtype=float, na_value=np.nan)
+        self.level_masl_ts.values[:] = new_values
+        self._ts_version = self._buf_version
+
+        self.logger_artist.set_ydata(new_values)
+
+        line_keys = self.level_masl_ts.line_key
+        n = len(new_values)
+        key_to_indices: dict = {}
+        for i, k in enumerate(line_keys):
+            key_to_indices.setdefault(k, []).append(i)
+        for key, artist in self._line_key_to_artist.items():
+            masked = np.full(n, np.nan)
+            indices = key_to_indices.get(key)
+            if indices is not None:
+                idx = np.asarray(indices)
+                masked[idx] = new_values[idx]
+            artist.set_ydata(masked)
+
+        self.plot_or_update_selected_line()
+        self.setlastcalibration(self.obsid)
+        self.canvas.draw()
+        self.statusbar.clearMessage()
 
     def _draw_series(self):
         """Draw measurement and logger time series onto self.axes. Return (handles, labels)."""
@@ -2349,13 +2383,13 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
     def node_moving(self, event):
         if self.moving_idx is not None and self.selected_line is not None:
-            ydata = self.selected_line.get_ydata()
-            _y = ydata[self.moving_idx]
-            if _y is None:
+            if event.ydata is None:
                 return
-            diff = event.ydata - _y
-            new_ydata = [y + diff if y is not None else None for y in ydata]
-            self.selected_line.set_ydata(new_ydata)
+            ydata = self.selected_line.get_ydata()
+            ref = float(ydata[self.moving_idx])
+            if np.isnan(ref):
+                return
+            self.selected_line.set_ydata(ydata + (event.ydata - ref))
             self.canvas.draw_idle()
 
     def node_released(self, event=None):
@@ -2369,9 +2403,11 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 )
                 self.moving_idx = None
                 if offset:
-                    self.loggerpos_masl_or_offset_state = 1
                     self.offset.setText(f"{offset:.5f}")
-                    self.add_to_level_masl()
+                    self.loggerpos_masl_or_offset_state = 0
+                    obsid = self._obsid_ensure_buf_current()
+                    self.calibrate(obsid)
+                    self._fast_update_after_move()
             self.moving_idx = None
 
     def line_select_callback(self, eclick, erelease):

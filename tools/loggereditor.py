@@ -8,7 +8,7 @@ import os
 import numpy as np
 import pandas as pd
 import qgis.PyQt
-from qgis.PyQt.QtCore import QCoreApplication, Qt
+from qgis.PyQt.QtCore import QCoreApplication, Qt, QTimer
 from qgis.PyQt.QtGui import QCloseEvent, QFont, QIcon, QKeySequence
 from qgis.PyQt.QtWidgets import (
     QCheckBox,
@@ -1569,6 +1569,12 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         # Track the last-shown series id to avoid clobbering user edits
         self._series_last_shown_id: int | None = None
 
+        # Debounce timer for series tab refresh during rapid date edits
+        self._series_tab_timer = QTimer(self)
+        self._series_tab_timer.setSingleShot(True)
+        self._series_tab_timer.setInterval(150)
+        self._series_tab_timer.timeout.connect(self._update_series_tab)
+
         # Initial disabled state
         self._series_create_btn.setEnabled(False)
         self._series_assign_btn.setEnabled(False)
@@ -2891,7 +2897,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             hasattr(self, "_series_tab")
             and self.tab_widget.currentWidget() is self._series_tab
         ):
-            self._update_series_tab()
+            self._series_tab_timer.start()
 
     def connect_selected_line_move(self):
         self.cid.append(self.canvas.mpl_connect("pick_event", self.node_pressed))

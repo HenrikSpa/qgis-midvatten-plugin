@@ -66,22 +66,23 @@ def replace_matplotlib_backends_backend_qt5agg_NavigationToolbar2QT_functions():
     :return:
     """
 
-    def apply_func(old_func):
+    def make_wrapper(orig_fn):
         def use_style_context(self, *args, **kwargs):
-            old_f = getattr(self, old_func)
             if hasattr(self, "midv_use_style"):
                 mpl.style.reload_library()
                 with plt.style.context(self.midv_use_style):
-                    old_f(*args, **kwargs)
+                    orig_fn(self, *args, **kwargs)
             else:
-                old_f(*args, **kwargs)
-
+                orig_fn(self, *args, **kwargs)
         return use_style_context
 
-    for old_func in ["edit_parameters", "configure_subplots", "save_figure"]:
-        new_name = f"_midv_old_{old_func}"
-        setattr(NavigationToolbar, new_name, getattr(NavigationToolbar, old_func))
-        setattr(NavigationToolbar, old_func, apply_func(new_name))
+    for func_name in ["edit_parameters", "configure_subplots", "save_figure"]:
+        guard_name = f"_midv_old_{func_name}"
+        if hasattr(NavigationToolbar, guard_name):
+            continue
+        original = getattr(NavigationToolbar, func_name)
+        setattr(NavigationToolbar, guard_name, original)
+        setattr(NavigationToolbar, func_name, make_wrapper(original))
 
 
 def _find_rcsetup_attr(name: str):

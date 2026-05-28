@@ -64,7 +64,9 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
         )
 
     def show(self) -> None:
-        self.init_gui()
+        if not hasattr(self, "_gui_initialized"):
+            self.init_gui()
+            self._gui_initialized = True
         super().show()
         self.activateWindow()
 
@@ -1172,6 +1174,11 @@ class MetaFilterSelection(qgis.PyQt.QtWidgets.QDialog):
         close_button.clicked.connect(self.hide)
         button_row.addWidget(close_button)
         layout.addLayout(button_row)
+        self.resize(400, 300)
+
+    def closeEvent(self, event):
+        event.ignore()
+        self.hide()
 
     def update_combobox(self, all_lab_results):
         self.combobox.clear()

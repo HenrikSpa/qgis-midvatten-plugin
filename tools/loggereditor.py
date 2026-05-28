@@ -1066,7 +1066,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             if is_sqlite:
                 dt_eq = f"datetime({ident('date_time')}) = datetime({ph})"
             else:
-                dt_eq = f"{ident('date_time')} = {ph}"
+                dt_eq = f"{ident('date_time')}::timestamp = {ph}::timestamp"
             range_stmts, per_row_params = self._compute_update_statements(
                 changed_index,
                 orig_changed,
@@ -1269,7 +1269,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         if is_sqlite:
             dt_between = f"datetime({dt_col}) BETWEEN datetime({ph}) AND datetime({ph})"
         else:
-            dt_between = f"{dt_col} BETWEEN {ph} AND {ph}"
+            dt_between = (
+                f"{dt_col}::timestamp BETWEEN {ph}::timestamp AND {ph}::timestamp"
+            )
         where_range = f"{obsid_col} = {ph} AND {dt_between}"
 
         # A BETWEEN range-query only touches the intended rows when there are no

@@ -44,7 +44,6 @@ from midvatten.tools.utils.file_utils import definitions_path, ui_path
 from midvatten.tools.utils.gui_utils import (
     ExtendedQPlainTextEdit,
     RowEntry,
-    SplitterWithHandel,
     VRowEntry,
     get_line,
 )
@@ -73,18 +72,24 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
     def dest_table(self) -> str:
         return "s_qual_lab" if self.radio_s_qual_lab.isChecked() else "w_qual_lab"
 
+    def _show_filter_popup(self):
+        self.specific_meta_filter.show()
+        self.specific_meta_filter.raise_()
+        self.specific_meta_filter.activateWindow()
+
     def init_gui(self):
-        splitter = SplitterWithHandel(qgis.PyQt.QtCore.Qt.Vertical)
-        self.main_vertical_layout.addWidget(splitter)
-
-        self.specific_meta_filter = MetaFilterSelection(None)
-
-        splitter.addWidget(self.specific_meta_filter)
-
         self.metadata_filter = MetadataFilter(None)
-        splitter.addWidget(self.metadata_filter)
+        self.main_vertical_layout.addWidget(self.metadata_filter)
 
-        self.metadata_filter.update_selection_button.clicked.connect(
+        self.specific_meta_filter = MetaFilterSelection(parent=self)
+
+        filter_button = qgis.PyQt.QtWidgets.QPushButton(
+            QCoreApplication.translate("Interlab4Import", "Filter by list...")
+        )
+        filter_button.clicked.connect(self._show_filter_popup)
+        self.metadata_filter.button_layout.layout().insertWidget(0, filter_button)
+
+        self.specific_meta_filter.apply_button.clicked.connect(
             lambda: self.metadata_filter.set_selection(
                 self.specific_meta_filter.get_items_dict()
             )
@@ -112,17 +117,18 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
         self.help_label.setToolTip(
             QCoreApplication.translate(
                 "Interlab4Import",
-                'Selected rows (lablitteras in the bottom table will be imported when pushing "Start import" button.\n'
+                'Selected rows (lablitteras) in the table will be imported when pushing "Start import" button.\n'
                 "The table can be sorted by clicking the column headers.\n\n"
-                "Rows at the bottom table can also be selected using the top list.\n"
+                'Rows can also be selected using the "Filter by list..." button.\n'
                 "Howto:\n"
-                "1. Choose column header to make a selection by in the Column header drop down list.\n"
-                "2. Make a list of entries (one row per entry).\n"
-                '3. Click "Update selection".\n'
+                '1. Click "Filter by list..." to open the filter dialog.\n'
+                "2. Choose a column header in the drop down list.\n"
+                "3. Paste a list of entries (one row per entry).\n"
+                '4. Click "Apply".\n'
                 "All rows where values in the chosen column match entries in the pasted list will be selected.\n\n"
                 "Hover over a column header to see which database column it will go to.\n\n"
-                '("Save data table to csv" is a feature to save the data table into a csv file for examination in another application.)\n'
-                '("Save metadata table to file" is a feature to save the metadata table into a csv file, at system temporary path, for examination in another application.)',
+                '("Save data table to csv" saves the data table into a csv file for examination in another application.)\n'
+                '("Save metadata table to file" saves the metadata table into a csv file for examination in another application.)',
             )
         )
 
@@ -1135,17 +1141,37 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
         return "\n".join(result)
 
 
-class MetaFilterSelection(VRowEntry):
-    def __init__(self, all_lab_results):
-        """ """
-        super().__init__()
-        self.layout().addWidget(qgis.PyQt.QtWidgets.QLabel("Column header"))
+class MetaFilterSelection(qgis.PyQt.QtWidgets.QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(
+            QCoreApplication.translate("Interlab4Import", "Filter by list")
+        )
+        layout = qgis.PyQt.QtWidgets.QVBoxLayout()
+        self.setLayout(layout)
+
+        layout.addWidget(
+            qgis.PyQt.QtWidgets.QLabel(
+                QCoreApplication.translate("Interlab4Import", "Column header")
+            )
+        )
         self.combobox = qgis.PyQt.QtWidgets.QComboBox()
-        if all_lab_results:
-            self.update_combobox(all_lab_results)
-        self.layout().addWidget(self.combobox)
+        layout.addWidget(self.combobox)
         self.items = ExtendedQPlainTextEdit()
-        self.layout().addWidget(self.items)
+        layout.addWidget(self.items)
+
+        button_row = qgis.PyQt.QtWidgets.QHBoxLayout()
+        button_row.addStretch()
+        self.apply_button = qgis.PyQt.QtWidgets.QPushButton(
+            QCoreApplication.translate("Interlab4Import", "Apply")
+        )
+        button_row.addWidget(self.apply_button)
+        close_button = qgis.PyQt.QtWidgets.QPushButton(
+            QCoreApplication.translate("Interlab4Import", "Close")
+        )
+        close_button.clicked.connect(self.hide)
+        button_row.addWidget(close_button)
+        layout.addLayout(button_row)
 
     def update_combobox(self, all_lab_results):
         self.combobox.clear()
@@ -1163,14 +1189,10 @@ class MetadataFilter(VRowEntry):
         self.all_lab_results = all_lab_results
         super().__init__()
 
-        self.update_selection_button = qgis.PyQt.QtWidgets.QPushButton(
-            "Update selection"
-        )
         self.button_layout = RowEntry()
-        self.button_layout.layout().addWidget(self.update_selection_button)
 
         self.show_only_selected_checkbox = qgis.PyQt.QtWidgets.QCheckBox(
-            "Show only selected rows"
+            QCoreApplication.translate("Interlab4Import", "Show only selected rows")
         )
         self.button_layout.layout().addWidget(self.show_only_selected_checkbox)
 

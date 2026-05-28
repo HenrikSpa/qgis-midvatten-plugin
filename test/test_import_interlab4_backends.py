@@ -486,7 +486,7 @@ class Interlab4ImporterDBMixin:
                 importer.specific_meta_filter.items.paste_data(patterns)
 
                 importer.metadata_filter.show_only_selected_checkbox.setChecked(True)
-                importer.metadata_filter.update_selection_button.click()
+                importer.specific_meta_filter.apply_button.click()
                 return importer.metadata_filter.get_selected_lablitteras()
 
             lablitteras = _test(self, filename)
@@ -549,7 +549,7 @@ class Interlab4ImporterDBMixin:
                 importer.specific_meta_filter.items.paste_data(patterns)
 
                 importer.metadata_filter.show_only_selected_checkbox.setChecked(True)
-                importer.metadata_filter.update_selection_button.click()
+                importer.specific_meta_filter.apply_button.click()
                 return importer.metadata_filter.get_selected_lablitteras()
 
             lablitteras = _test(self, filename)
@@ -612,7 +612,7 @@ class Interlab4ImporterDBMixin:
                 importer.specific_meta_filter.items.paste_data(patterns)
 
                 importer.metadata_filter.show_only_selected_checkbox.setChecked(True)
-                importer.metadata_filter.update_selection_button.click()
+                importer.specific_meta_filter.apply_button.click()
                 return importer.metadata_filter.get_selected_lablitteras()
 
             lablitteras = _test(self, filename)
@@ -674,7 +674,7 @@ class Interlab4ImporterDBMixin:
                 importer.specific_meta_filter.items.paste_data(patterns)
 
                 importer.metadata_filter.show_only_selected_checkbox.setChecked(True)
-                importer.metadata_filter.update_selection_button.click()
+                importer.specific_meta_filter.apply_button.click()
                 return importer.metadata_filter.get_selected_lablitteras()
 
             lablitteras = _test(self, filename)
@@ -747,7 +747,7 @@ class Interlab4ImporterDBMixin:
                 # print(str(importer.specific_meta_filter.items.toPlainText()))
 
                 importer.metadata_filter.show_only_selected_checkbox.setChecked(True)
-                importer.metadata_filter.update_selection_button.click()
+                importer.specific_meta_filter.apply_button.click()
                 return importer.metadata_filter.get_selected_lablitteras()
 
             lablitteras = _test(self, filename)

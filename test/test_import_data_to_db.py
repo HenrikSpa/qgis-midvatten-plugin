@@ -2060,6 +2060,30 @@ class DeleteExistingDateTimesFromTemptableMixin:
         reference_string = r"""(True, [(obsid1, 2016-01-01 00:00:01, 123.0), (obsid1, 2016-01-01 00:01:00, 789.0)])"""
         assert test_string == reference_string
 
+    @mock.patch(
+        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
+    )
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_in_file_same_instant_dedups_keeps_raw(self, mock_messagebar):
+        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb1')""")
+        file_data = [
+            ["obsid", "date_time", "level_masl"],
+            ["rb1", "2015-01-01 00:00", "1"],  # same instant as next -> one survives
+            ["rb1", "2015-01-01 00:00:00", "2"],
+            ["rb1", "2015-01-01 00:00:01", "3"],  # distinct second -> kept
+        ]
+        self.importinstance.general_import(
+            dest_table="w_levels_logger", file_data=file_data
+        )
+        rows = db_utils.sql_load_fr_db(
+            "SELECT date_time FROM w_levels_logger WHERE obsid='rb1' ORDER BY date_time"
+        )[1]
+        print(mock_messagebar.mock_calls)
+        vals = [r[0] for r in rows]
+        assert len(vals) == 2
+        assert "2015-01-01 00:00:01" in vals
+        assert "2015-01-01 00:00" in vals or "2015-01-01 00:00:00" in vals
+
 
 @pytest.mark.postgis
 class TestGeneralImportPostgis(

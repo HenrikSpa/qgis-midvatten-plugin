@@ -32,6 +32,7 @@ from qgis.PyQt.QtCore import QCoreApplication
 from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.exceptions import UserInterruptError
 from midvatten.tools.utils.db_utils import DbConnectionManager
+from midvatten.tools.utils.date_utils import instant_key
 
 
 class MidvDataImporter:  # this class is intended to be a multipurpose import class  BUT loggerdata probably needs specific importer or its own subfunction
@@ -679,9 +680,14 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
 
         if primary_keys_for_concat:
             len_before = len(df)
-            df = df.drop_duplicates(
-                subset=primary_keys_for_concat, keep="first", ignore_index=True
-            )
+            # Dedup on the normalized instant for date_time so '00:00' and
+            # '00:00:00' collapse, WITHOUT changing the stored (raw) value.
+            subset = list(primary_keys_for_concat)
+            if "date_time" in subset and "date_time" in df.columns:
+                df["_instant_key"] = df["date_time"].map(instant_key)
+                subset = ["_instant_key" if c == "date_time" else c for c in subset]
+            df = df.drop_duplicates(subset=subset, keep="first", ignore_index=True)
+            df = df.drop(columns=["_instant_key"], errors="ignore")
             len_after = len(df)
             numskipped = len_before - len_after
 

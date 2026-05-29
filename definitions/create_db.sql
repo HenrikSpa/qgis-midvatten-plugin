@@ -181,7 +181,7 @@ obsid text NOT NULL --Obsid linked to obs_points.obsid
 , FOREIGN KEY(obsid) REFERENCES obs_points(obsid) ON UPDATE CASCADE ON DELETE CASCADE
 );
 SPATIALITE CREATE UNIQUE INDEX w_qual_field_unit_unique_index_null ON w_qual_field (obsid, parameter, datetime(date_time), COALESCE(unit, '<NULL>'));
-POSTGIS CREATE UNIQUE INDEX w_qual_field_unit_unique_index_null ON w_qual_field (obsid, parameter, date_time, COALESCE(unit, '<NULL>'));
+POSTGIS CREATE UNIQUE INDEX w_qual_field_unit_unique_index_null ON w_qual_field (obsid, parameter, midv_to_instant(date_time), COALESCE(unit, '<NULL>'));
 CREATE TABLE w_qual_lab /*Water quality from laboratory analysis*/(
 obsid text NOT NULL --Obsid linked to obs_points.obsid
 , depth double --Depth (m below h_gs) from where sample is taken
@@ -312,7 +312,7 @@ CREATE TABLE w_qual_logger /*Water quality from logger measurements*/(
  , FOREIGN KEY(obsid) REFERENCES obs_points(obsid) ON UPDATE CASCADE ON DELETE CASCADE
  );
 SPATIALITE CREATE UNIQUE INDEX w_qual_logger_unit_unique_index_null ON w_qual_logger (obsid, parameter, instrument, datetime(date_time), COALESCE(unit, '<NULL>'));
-POSTGIS CREATE UNIQUE INDEX w_qual_logger_unit_unique_index_null ON w_qual_logger (obsid, parameter, instrument, date_time, COALESCE(unit, '<NULL>'));
+POSTGIS CREATE UNIQUE INDEX w_qual_logger_unit_unique_index_null ON w_qual_logger (obsid, parameter, instrument, midv_to_instant(date_time), COALESCE(unit, '<NULL>'));
 CREATE TABLE spatial_history /*Spatial history for obs_points*/ (
 SPATIALITE id INTEGER PRIMARY KEY AUTOINCREMENT
 POSTGIS id SERIAL PRIMARY KEY
@@ -369,12 +369,12 @@ CREATE INDEX idx_wlogger_series_obsid ON w_logger_series(obsid);
 CREATE INDEX idx_wflow_oif ON w_flow(obsid, instrumentid, flowtype);
 CREATE INDEX idx_wflow_ofi ON w_flow(obsid, flowtype, instrumentid);
 SPATIALITE CREATE UNIQUE INDEX uq_w_levels_obsid_dt ON w_levels (obsid, datetime(date_time));
-POSTGIS CREATE UNIQUE INDEX uq_w_levels_obsid_dt ON w_levels (obsid, date_time);
+POSTGIS CREATE UNIQUE INDEX uq_w_levels_obsid_dt ON w_levels (obsid, midv_to_instant(date_time));
 SPATIALITE CREATE UNIQUE INDEX uq_w_levels_logger_obsid_dt ON w_levels_logger (obsid, datetime(date_time));
-POSTGIS CREATE UNIQUE INDEX uq_w_levels_logger_obsid_dt ON w_levels_logger (obsid, date_time);
+POSTGIS CREATE UNIQUE INDEX uq_w_levels_logger_obsid_dt ON w_levels_logger (obsid, midv_to_instant(date_time));
 SPATIALITE CREATE UNIQUE INDEX uq_comments_obsid_dt ON comments (obsid, datetime(date_time));
-POSTGIS CREATE UNIQUE INDEX uq_comments_obsid_dt ON comments (obsid, date_time);
+POSTGIS CREATE UNIQUE INDEX uq_comments_obsid_dt ON comments (obsid, midv_to_instant(date_time));
 SPATIALITE CREATE UNIQUE INDEX uq_w_flow_obsid_dt ON w_flow (obsid, flowtype, instrumentid, datetime(date_time));
-POSTGIS CREATE UNIQUE INDEX uq_w_flow_obsid_dt ON w_flow (obsid, flowtype, instrumentid, date_time);
+POSTGIS CREATE UNIQUE INDEX uq_w_flow_obsid_dt ON w_flow (obsid, flowtype, instrumentid, midv_to_instant(date_time));
 SPATIALITE CREATE UNIQUE INDEX uq_meteo_obsid_dt ON meteo (obsid, parameter, instrumentid, datetime(date_time));
-POSTGIS CREATE UNIQUE INDEX uq_meteo_obsid_dt ON meteo (obsid, parameter, instrumentid, date_time);
+POSTGIS CREATE UNIQUE INDEX uq_meteo_obsid_dt ON meteo (obsid, parameter, instrumentid, midv_to_instant(date_time));

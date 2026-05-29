@@ -36,6 +36,20 @@ from midvatten.tools.utils.db_utils import DbConnectionManager, execute_sqlfile
 
 log = logging.getLogger(__name__)
 
+# DDL for the helper function used in PostgreSQL expression indexes on date_time columns.
+# Must be executed inline (not via create_db.sql) because create_db.sql is processed by
+# splitting on every ";" — which would truncate a plpgsql function body at its first
+# internal semicolon.  psycopg2 sends this entire string as a single command.
+MIDV_TO_INSTANT_DDL = """
+CREATE OR REPLACE FUNCTION midv_to_instant(t text) RETURNS timestamp AS $$
+BEGIN
+    RETURN t::timestamp;
+EXCEPTION WHEN others THEN
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE
+"""
+
 
 class NewDb:
     def __init__(self):
@@ -359,6 +373,9 @@ class NewDb:
         dbconnection.execute(
             f"CREATE SCHEMA IF NOT EXISTS {dbconnection.ident(dbconnection.schema)}"
         )
+        # Create the helper function before the index block — the indexes in create_db.sql
+        # reference midv_to_instant(), so the function must exist first.
+        dbconnection.execute(MIDV_TO_INSTANT_DDL)
         for linenr, line in enumerate(sql_lines):
             sql = self.replace_words(line, replace_word_replace_with)
             try:

@@ -2,7 +2,7 @@ import os
 
 
 def latest_database_version():
-    return "1.11.0"
+    return "1.11.1"
 
 
 def sql_setup_file():

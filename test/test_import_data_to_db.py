@@ -2084,6 +2084,43 @@ class DeleteExistingDateTimesFromTemptableMixin:
         assert "2015-01-01 00:00:01" in vals
         assert "2015-01-01 00:00" in vals or "2015-01-01 00:00:00" in vals
 
+    @mock.patch(
+        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
+    )
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_in_file_same_instant_deduped_in_temptable(self, mock_messagebar):
+        """In-file dedup collapses same-second rows in the TEMP table itself
+        (independent of dest-level INSERT OR IGNORE), keeping the raw value."""
+        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb1')""")
+        file_data = [
+            ["obsid", "date_time", "level_masl"],
+            ["rb1", "2015-01-01 00:00", "1"],
+            ["rb1", "2015-01-01 00:00:00", "2"],  # same instant -> dropped in-file
+            ["rb1", "2015-01-01 00:00:01", "3"],  # distinct second -> kept
+        ]
+        dbconnection = db_utils.DbConnectionManager()
+        try:
+            self.importinstance.list_to_table(
+                dbconnection, "w_levels_logger", file_data, ["obsid", "date_time"]
+            )
+            temp = dbconnection.ident(self.importinstance.temptable_name)
+            count = dbconnection.execute_and_fetchall(f"SELECT count(*) FROM {temp}")[
+                0
+            ][0]
+            raws = [
+                r[0]
+                for r in dbconnection.execute_and_fetchall(
+                    f"SELECT date_time FROM {temp} ORDER BY date_time"
+                )
+            ]
+        finally:
+            dbconnection.closedb()
+        print(mock_messagebar.mock_calls)
+        assert count == 2  # 3 input rows, same-instant pair collapsed to 1
+        assert "2015-01-01 00:00:01" in raws
+        # surviving same-instant row kept its raw (un-padded) text
+        assert ("2015-01-01 00:00" in raws) or ("2015-01-01 00:00:00" in raws)
+
 
 @pytest.mark.postgis
 class TestGeneralImportPostgis(

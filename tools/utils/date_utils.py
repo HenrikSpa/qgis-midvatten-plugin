@@ -93,6 +93,20 @@ def to_YmdHMS(astring: Union[str, datetime.datetime, datetime.date]) -> str | No
     return dt.strftime("%Y-%m-%d %H:%M:%S")
 
 
+def instant_key(
+    value: Union[str, datetime.datetime, datetime.date, None],
+) -> Union[str, None]:
+    """Normalized second-precision instant used ONLY for duplicate detection.
+
+    Returns '%Y-%m-%d %H:%M:%S' or None for empty/unparseable input. This value
+    is never stored — date_time is kept exactly as observed. It mirrors SQLite
+    datetime(): same instant -> same key; unparseable -> None (escapes uniqueness).
+    """
+    if value is None or value == "":
+        return None
+    return to_YmdHMS(value)
+
+
 def normalize_datestring(
     astring: Union[str, datetime.datetime, datetime.date],
 ) -> str | None:

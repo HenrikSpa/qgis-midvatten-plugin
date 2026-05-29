@@ -32,9 +32,9 @@ class GetFunctionsMixin:
     def test_get_last_logger_dates(self):
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb1')""")
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb2')""")
-        db_utils.sql_alter_db(
-            """INSERT INTO w_levels_logger (obsid, date_time) VALUES ('rb1', '2015-01-01 00:00')"""
-        )
+        # Distinct minutes only: w_levels_logger has a UNIQUE index on
+        # (obsid, datetime(date_time)) (uq_w_levels_logger_obsid_dt), so two
+        # readings in the same minute for one obsid cannot coexist.
         db_utils.sql_alter_db(
             """INSERT INTO w_levels_logger (obsid, date_time) VALUES ('rb1', '2015-01-01 00:00:00')"""
         )

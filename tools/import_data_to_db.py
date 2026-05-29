@@ -680,16 +680,18 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
 
         if primary_keys_for_concat:
             len_before = len(df)
-            # Dedup on the normalized instant for date_time so '00:00' and
-            # '00:00:00' collapse, WITHOUT changing the stored (raw) value.
-            subset = list(primary_keys_for_concat)
-            if "date_time" in subset and "date_time" in df.columns:
-                df["_instant_key"] = df["date_time"].map(instant_key)
-                subset = ["_instant_key" if c == "date_time" else c for c in subset]
-            df = df.drop_duplicates(subset=subset, keep="first", ignore_index=True)
-            df = df.drop(columns=["_instant_key"], errors="ignore")
-            len_after = len(df)
-            numskipped = len_before - len_after
+            # Dedup key: normalize date_time to its second-instant so '00:00' and
+            # '00:00:00' collapse, but fall back to the RAW text when unparseable so
+            # distinct malformed dates are not merged (they escape the normalized
+            # uniqueness in the DB too). The stored date_time stays raw — we compute
+            # the key on a separate frame and never mutate df's columns.
+            key_df = df[list(primary_keys_for_concat)].copy()
+            if "date_time" in key_df.columns:
+                key_df["date_time"] = key_df["date_time"].map(
+                    lambda v: instant_key(v) or v
+                )
+            df = df[~key_df.duplicated(keep="first")].reset_index(drop=True)
+            numskipped = len_before - len(df)
 
         for column in df.columns:
             try:

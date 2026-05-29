@@ -200,6 +200,27 @@ class SqlInjectionHardeningMixin:
         finally:
             dbconnection.closedb()
 
+    def test_quote_ident_escapes_and_preserves_non_ascii(self):
+        # Escape-based quoting: doubles internal quotes, never splits on '.'.
+        assert db_utils.quote_ident("level_masl") == '"level_masl"'
+        # Non-ASCII headers (e.g. Swedish) are preserved, not rejected.
+        assert db_utils.quote_ident("Nivå") == '"Nivå"'
+        # A name with a dot is one identifier, not a qualified one.
+        assert db_utils.quote_ident("a.b") == '"a.b"'
+        # An injection payload is neutralised by doubling the closing quote.
+        assert (
+            db_utils.quote_ident('x"); DROP TABLE obs_points; --')
+            == '"x""); DROP TABLE obs_points; --"'
+        )
+        # Empty and control-character names are rejected.
+        for bad in ("", "  ", "a\x00b", "a\nb"):
+            try:
+                db_utils.quote_ident(bad)
+            except db_utils.UnsafeIdentifierError:
+                pass
+            else:
+                raise AssertionError(f"Expected UnsafeIdentifierError for {bad!r}")
+
 
 @pytest.mark.postgis
 class TestDbTablesColumnsInfoPostgis(

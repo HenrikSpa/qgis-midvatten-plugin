@@ -631,7 +631,13 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         @param primary_keys_for_concat:
         @return:
         """
-        fieldnames_types = [f"{field_name} TEXT" for field_name in file_data[0]]
+        # field_name comes from the imported file's header row (user-supplied),
+        # so it must be safely quoted before being spliced into CREATE TABLE.
+        # quote_ident (not ident) is used so non-ASCII headers (e.g. Swedish
+        # å/ä/ö) are preserved rather than rejected.
+        fieldnames_types = [
+            f"{db_utils.quote_ident(field_name)} TEXT" for field_name in file_data[0]
+        ]
         tname = f"temp_{destination_table}_temp"
         self.temptable_rowid_name = f"{tname}_rowid"
         fieldnames_types.append(f"{self.temptable_rowid_name} INTEGER")

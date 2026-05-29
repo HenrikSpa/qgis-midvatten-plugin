@@ -54,6 +54,29 @@ class Backend(ABC):
 
     # --- Execution (single sql string, args optional) ---
 
+    def _execute(
+        self,
+        sql: Union[str, Composable],
+        args: Optional[Sequence[Any]],
+        *,
+        normalize_args: bool,
+    ) -> None:
+        """Run cursor.execute, logging and re-raising on error.
+
+        ``normalize_args`` mirrors the historical difference between the two
+        public callers: execute() coerces args to a list, execute_and_fetchall()
+        passes them through unchanged.
+        """
+        try:
+            if args is None:
+                self.cursor.execute(sql)  # type: ignore[arg-type]
+            else:
+                exec_args = list(args) if normalize_args else args
+                self.cursor.execute(sql, exec_args)  # type: ignore[arg-type]
+        except Exception as e:
+            Backend.log_execute_error(sql, args, e)
+            raise
+
     def execute(
         self,
         sql: Union[str, Composable],
@@ -61,31 +84,13 @@ class Backend(ABC):
     ) -> None:
         """Execute a single SQL statement (string or, for PostgreSQL,
         psycopg2.sql.Composable). No commit. Logs and re-raises on error."""
-        if args is None:
-            try:
-                self.cursor.execute(sql)  # type: ignore[arg-type]
-            except Exception as e:
-                Backend.log_execute_error(sql, None, e)
-                raise
-        else:
-            try:
-                self.cursor.execute(sql, list(args))  # type: ignore[arg-type]
-            except Exception as e:
-                Backend.log_execute_error(sql, args, e)
-                raise
+        self._execute(sql, args, normalize_args=True)
 
     def execute_and_fetchall(
         self, sql: str, args: Optional[Sequence[Any]] = None
     ) -> list[Any]:
         """Execute and return cursor.fetchall()."""
-        try:
-            if args is not None:
-                self.cursor.execute(sql, args)
-            else:
-                self.cursor.execute(sql)
-        except Exception as e:
-            Backend.log_execute_error(sql, args, e)
-            raise
+        self._execute(sql, args, normalize_args=False)
         return self.cursor.fetchall()
 
     def execute_and_commit(

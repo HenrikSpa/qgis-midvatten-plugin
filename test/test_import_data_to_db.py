@@ -2003,6 +2003,40 @@ class DeleteExistingDateTimesFromTemptableMixin:
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
     )
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_import_headers_are_quoted_against_injection(self, mock_messagebar):
+        """Import-file headers are user-supplied and spliced into CREATE TABLE.
+
+        A header carrying a SQL payload must not inject, and a non-ASCII header
+        (e.g. Swedish 'Nivå') must not break the temp-table creation.
+        """
+        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('obsid1')""")
+        file_data = [
+            [
+                "obsid",
+                "date_time",
+                "level_masl",
+                "Nivå",
+                'x"); DROP TABLE obs_points; --',
+            ],
+            ["obsid1", "2016-01-01 00:00", "456", "1", "2"],
+        ]
+        dbconnection = db_utils.DbConnectionManager()
+        try:
+            self.importinstance.list_to_table(
+                dbconnection, "w_levels", file_data, ["obsid", "date_time"]
+            )
+            tables_after = db_utils.get_tables(dbconnection=dbconnection)
+        finally:
+            dbconnection.closedb()
+
+        print(mock_messagebar.mock_calls)
+        # The injected DROP must not have executed.
+        assert "obs_points" in tables_after
+
+    @mock.patch(
+        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
+    )
     def test_delete_existing_date_times_second_precision_dest_blocks_same_minute(self):
         """Dest with non-zero seconds blocks any other second in the same minute."""
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('obsid1')""")

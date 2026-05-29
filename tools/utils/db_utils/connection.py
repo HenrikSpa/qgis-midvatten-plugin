@@ -114,14 +114,21 @@ class DbConnectionManager:
     def connect2db(self) -> bool:
         return self._backend.connect2db()
 
+    @staticmethod
+    def _resolve_args(args: Optional[Any], all_args: Optional[Any]) -> Optional[Any]:
+        """Pick args (or all_args) and unwrap a one-row arg list.
+
+        all_args=[(v1,..)] -> pass (v1,..); a single tuple ("P1",) is left as-is.
+        """
+        a = args if args is not None else all_args
+        if isinstance(a, list) and len(a) == 1:
+            a = a[0]
+        return a
+
     def execute(
         self, sql: Any, args: Optional[Any] = None, all_args: Optional[Any] = None
     ) -> None:
-        a = args if args is not None else all_args
-        # One-row list: all_args=[(v1,..)] -> pass (v1,..); do not unwrap tuple ("P1",)
-        if isinstance(a, list) and len(a) == 1:
-            a = a[0]
-        self._backend.execute(sql, args=a)
+        self._backend.execute(sql, args=self._resolve_args(args, all_args))
 
     def execute_and_fetchall(self, sql: str, args: Optional[Any] = None) -> list:
         return self._backend.execute_and_fetchall(sql, args=args)
@@ -129,11 +136,7 @@ class DbConnectionManager:
     def execute_and_commit(
         self, sql: str, args: Optional[Any] = None, all_args: Optional[Any] = None
     ) -> None:
-        a = args if args is not None else all_args
-        # One-row list: all_args=[(v1,..)] -> pass (v1,..); do not unwrap tuple ("P1",)
-        if isinstance(a, list) and len(a) == 1:
-            a = a[0]
-        self._backend.execute_and_commit(sql, args=a)
+        self._backend.execute_and_commit(sql, args=self._resolve_args(args, all_args))
 
     def executemany(self, sql: str, args_list: list) -> None:
         self._backend.executemany(sql, args_list)

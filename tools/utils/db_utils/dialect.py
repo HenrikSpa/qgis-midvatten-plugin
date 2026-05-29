@@ -54,6 +54,30 @@ def ident(
     return ".".join([f'"{p}"' for p in parts])
 
 
+def quote_ident(name: str) -> str:
+    """Quote a single SQL identifier by escaping, allowing any printable character.
+
+    Unlike :func:`ident`, this does NOT restrict the character set, so it is
+    safe for user-supplied names that may legitimately contain non-ASCII
+    characters (e.g. Swedish å/ä/ö in imported file headers). It also does NOT
+    split on ``.`` — a name containing a dot is treated as a single identifier.
+    NUL and other control characters are rejected.
+
+    Use this only for names that cannot be validated against an allowed list
+    (e.g. arbitrary import-file column headers). For schema-controlled names,
+    prefer :func:`ident`.
+    """
+    if not isinstance(name, str) or not name.strip():
+        raise UnsafeIdentifierError(
+            f"Identifier must be a non-empty string, got {name!r}"
+        )
+    if any(ch in name for ch in ("\x00", "\n", "\r", "\t")):
+        raise UnsafeIdentifierError(
+            f"Identifier contained forbidden control characters: {name!r}"
+        )
+    return '"' + name.replace('"', '""') + '"'
+
+
 def sql_ident(template: str, /, **identifiers: str) -> str:
     """Format a template where substitutions are IDENTIFIERS ONLY.
 

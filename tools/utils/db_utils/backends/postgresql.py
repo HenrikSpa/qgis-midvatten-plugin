@@ -61,18 +61,28 @@ def postgis_internal_tables(as_tuple: bool = False) -> str:
 
 
 def _clear_ssl_temp_certs_if_any(connection_info: str) -> None:
+    """Remove the temporary SSL cert files QGIS expands into the connection info.
+
+    Idempotent: missing files are skipped, so it is safe to call more than once
+    across overlapping connection infos (e.g. the original info plus a retry
+    that reused the same cert paths). Never raises; failures are logged so a
+    cleanup problem cannot mask the real connection error from a ``finally``
+    block.
+    """
     expanded_uri = QgsDataSourceUri(connection_info)
 
     def remove_cert(cert_file: str) -> None:
         cert_file = cert_file.replace("'", "")
         file = QFile(cert_file)
-        if not file.setPermissions(QFile.Permission.WriteOwner):
-            raise Exception(
-                f"Cannot change permissions on {file.fileName()}: error code: {file.error()}"
-            )
-        if not file.remove():
-            raise Exception(
-                f"Cannot remove {file.fileName()}: error code: {file.error()}"
+        if not file.exists():
+            return
+        if not file.setPermissions(QFile.Permission.WriteOwner) or not file.remove():
+            # A lingering temp SSL key/cert on disk is security-relevant, so warn
+            # rather than info — but never raise (this runs inside a finally and
+            # must not mask the real connection error).
+            MessagebarAndLog.warning(
+                log_msg=f"Could not remove temporary SSL cert {file.fileName()}: "
+                f"error code: {file.error()}"
             )
 
     for param in ("sslcert", "sslkey", "sslrootcert"):
@@ -145,10 +155,6 @@ class PostgreSQLBackend(Backend):
                     err = str(e)
                 finally:
                     _clear_ssl_temp_certs_if_any(new_expanded_conn_info)
-        # Cleanup fires twice on the retry path (inner finally per retry,
-        # then this outer one for the original info). Safe as long as each
-        # retry uses a distinct cert path; if they ever share, the outer
-        # cleanup could delete a cert still in use.
         finally:
             _clear_ssl_temp_certs_if_any(expanded_conn_info)
         if last_error:
@@ -264,8 +270,6 @@ class PostgreSQLBackend(Backend):
         return f"date_trunc('minute', {col_expr}::timestamp)"
 
     def cast_null(self, data_type: str) -> str:
-        from midvatten.tools.utils.db_utils.dialect import UnsafeIdentifierError
-
         allowed = {
             "smallint",
             "integer",

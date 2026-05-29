@@ -323,6 +323,9 @@ class PostgreSQLBackend(Backend):
     def is_not_distinct_from(self) -> str:
         return "IS NOT DISTINCT FROM"
 
+    def normalized_instant_sql(self, col_expr: str) -> str:
+        return f"midv_to_instant({col_expr})"
+
     _NUMERIC_DATATYPES = [
         "smallint",
         "integer",

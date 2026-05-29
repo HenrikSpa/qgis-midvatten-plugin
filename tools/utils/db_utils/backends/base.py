@@ -266,6 +266,16 @@ class Backend(ABC):
         pass
 
     @abstractmethod
+    def normalized_instant_sql(self, col_expr: str) -> str:
+        """SQL expression normalizing a date_time column to a comparable second instant.
+
+        Used so duplicate detection matches the unique-index definition on each
+        backend. col_expr is an already-safe SQL column reference (e.g. a quoted
+        identifier or 'd."date_time"').
+        """
+        pass
+
+    @abstractmethod
     def numeric_datatypes(self) -> list:
         """Return list of numeric data type names for this backend."""
         pass

@@ -741,34 +741,29 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         dest_table: str,
         dbconnection: DbConnectionManager,
     ) -> int:
-        """Delete temp rows whose minute-level date_time already exists in dest.
+        """Delete temp rows already present in dest at the same normalized instant.
 
-        Two date_times are considered duplicates when they fall in the same minute.
-        Uses a range comparison on the destination side so the PK index on
-        (obsid, date_time) is used for each lookup instead of a full table scan.
+        date_time is compared via the backend's normalized-instant expression
+        (the same one the unique index uses), so duplicates are detected at
+        second precision and the expression index assists the lookup. Other
+        primary-key columns are compared by exact identity.
         """
-        pks_non_dt = [pk for pk in primary_keys if pk != "date_time"]
-
         temp_ident = dbconnection.ident(self.temptable_name)
         dest_ident = (
             dbconnection.ident(f"{dbconnection.schema}.{dest_table}")
             if dbconnection.is_postgresql()
             else dbconnection.ident(dest_table)
         )
-
-        dt = dbconnection.ident("date_time")
-
-        minute_start = f"substr({temp_ident}.{dt}, 1, 16)"
-        minute_end = f"(substr({temp_ident}.{dt}, 1, 16) || ':60')"
-
-        conditions = [
-            f"d.{q} = {temp_ident}.{q}"
-            for pk in pks_non_dt
-            for q in (dbconnection.ident(pk),)
-        ]
-        conditions.append(f"d.{dt} >= {minute_start}")
-        conditions.append(f"d.{dt} < {minute_end}")
-
+        conditions = []
+        for pk in primary_keys:
+            q = dbconnection.ident(pk)
+            if pk == "date_time":
+                conditions.append(
+                    f"{dbconnection.normalized_instant_sql(f'd.{q}')} "
+                    f"= {dbconnection.normalized_instant_sql(f'{temp_ident}.{q}')}"
+                )
+            else:
+                conditions.append(f"d.{q} = {temp_ident}.{q}")
         sql = (
             f"DELETE FROM {temp_ident} WHERE EXISTS ("
             f"SELECT 1 FROM {dest_ident} d WHERE {' AND '.join(conditions)})"

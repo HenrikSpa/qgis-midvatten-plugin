@@ -256,6 +256,9 @@ class SQLiteBackend(Backend):
     def is_not_distinct_from(self) -> str:
         return "IS"
 
+    def normalized_instant_sql(self, col_expr: str) -> str:
+        return f"datetime({col_expr})"
+
     _NUMERIC_DATATYPES = ["integer", "double"]
 
     def numeric_datatypes(self) -> list:

@@ -1932,7 +1932,7 @@ class DeleteExistingDateTimesFromTemptableMixin:
         test_string = utils_for_tests.create_test_string(
             db_utils.sql_load_fr_db("""select * from w_levels""")
         )
-        reference_string = r"""(True, [(obsid1, 2016-01-01 00:00, None, None, 123.0, None), (obsid1, 2016-01-01 00:02:00, None, None, 789.0, None)])"""
+        reference_string = r"""(True, [(obsid1, 2016-01-01 00:00, None, None, 123.0, None), (obsid1, 2016-01-01 00:00:01, None, None, 456.0, None), (obsid1, 2016-01-01 00:02:00, None, None, 789.0, None)])"""
         assert test_string == reference_string
 
     @mock.patch(
@@ -2037,8 +2037,12 @@ class DeleteExistingDateTimesFromTemptableMixin:
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
     )
-    def test_delete_existing_date_times_second_precision_dest_blocks_same_minute(self):
-        """Dest with non-zero seconds blocks any other second in the same minute."""
+    def test_delete_existing_distinct_second_in_same_minute_not_blocked(self):
+        """A file row at a different second in the same minute is NOT a duplicate.
+
+        Second-precision normalization (datetime()) means only exact-second matches
+        are blocked. 00:00:05 != 00:00:01 even though they share the same minute.
+        """
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('obsid1')""")
         db_utils.sql_alter_db(
             """INSERT INTO w_levels (obsid, date_time, level_masl) VALUES ('obsid1', '2016-01-01 00:00:01', '123.0')"""
@@ -2046,7 +2050,11 @@ class DeleteExistingDateTimesFromTemptableMixin:
 
         f = [
             ["obsid", "date_time", "level_masl"],
-            ["obsid1", "2016-01-01 00:00:05", "456"],  # same minute as dest → blocked
+            [
+                "obsid1",
+                "2016-01-01 00:00:05",
+                "456",
+            ],  # same minute, diff second → allowed
             ["obsid1", "2016-01-01 00:01:00", "789"],  # different minute → allowed
         ]
 
@@ -2057,7 +2065,7 @@ class DeleteExistingDateTimesFromTemptableMixin:
                 """select obsid, date_time, level_masl from w_levels order by date_time"""
             )
         )
-        reference_string = r"""(True, [(obsid1, 2016-01-01 00:00:01, 123.0), (obsid1, 2016-01-01 00:01:00, 789.0)])"""
+        reference_string = r"""(True, [(obsid1, 2016-01-01 00:00:01, 123.0), (obsid1, 2016-01-01 00:00:05, 456.0), (obsid1, 2016-01-01 00:01:00, 789.0)])"""
         assert test_string == reference_string
 
     @mock.patch(
@@ -2147,6 +2155,66 @@ class DeleteExistingDateTimesFromTemptableMixin:
             dbconnection.closedb()
         print(mock_messagebar.mock_calls)
         assert count == 2
+
+    @mock.patch(
+        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
+    )
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_delete_existing_keeps_distinct_seconds(self, mock_messagebar):
+        """Rows at different seconds are NOT duplicates and must not be deleted."""
+        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('o1')""")
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels (obsid, date_time, level_masl) VALUES ('o1', '2016-01-01 00:00:00', '1')"
+        )
+        file_data = [
+            ["obsid", "date_time", "level_masl"],
+            ["o1", "2016-01-01 00:00:01", "2"],
+        ]
+        dbconnection = db_utils.DbConnectionManager()
+        try:
+            self.importinstance.list_to_table(
+                dbconnection, "w_levels", file_data, ["obsid", "date_time"]
+            )
+            rows_deleted = (
+                self.importinstance.delete_existing_date_times_from_temptable(
+                    ["obsid", "date_time"], "w_levels", dbconnection
+                )
+            )
+        finally:
+            dbconnection.closedb()
+        print(mock_messagebar.mock_calls)
+        assert rows_deleted == 0  # different second is NOT a duplicate
+
+    @mock.patch(
+        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
+    )
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_delete_existing_same_instant_different_format_is_duplicate(
+        self, mock_messagebar
+    ):
+        """Dest has 'hh:mm:ss', file has 'hh:mm' — same instant, should be deleted."""
+        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('o1')""")
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels (obsid, date_time, level_masl) VALUES ('o1', '2016-01-01 00:00:00', '1')"
+        )
+        file_data = [
+            ["obsid", "date_time", "level_masl"],
+            ["o1", "2016-01-01 00:00", "2"],
+        ]
+        dbconnection = db_utils.DbConnectionManager()
+        try:
+            self.importinstance.list_to_table(
+                dbconnection, "w_levels", file_data, ["obsid", "date_time"]
+            )
+            rows_deleted = (
+                self.importinstance.delete_existing_date_times_from_temptable(
+                    ["obsid", "date_time"], "w_levels", dbconnection
+                )
+            )
+        finally:
+            dbconnection.closedb()
+        print(mock_messagebar.mock_calls)
+        assert rows_deleted == 1  # same instant (different format) IS a duplicate
 
 
 @pytest.mark.postgis

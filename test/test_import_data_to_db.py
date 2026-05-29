@@ -1912,7 +1912,7 @@ class DeleteExistingDateTimesFromTemptableMixin:
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
     )
-    def test_delete_existing_date_times_from_temptable_minute_already_exists(self):
+    def test_delete_existing_date_times_exact_second_blocks_only_matching_second(self):
         self.importinstance.charsetchoosen = ["utf-8"]
 
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('obsid1')""")

@@ -357,11 +357,10 @@ ALTER TABLE profile_images
 -- The column order changed from (obsid, date_time, parameter, COALESCE(...))
 -- to (obsid, parameter, date_time, COALESCE(...)), and the date_time column is
 -- now wrapped in midv_to_instant() for instant-normalised uniqueness.
--- Drop the old index here; the new normalised index is created in section 13
--- after deduplication has been completed in section 12.
+-- The old index is dropped together with all other old datetime indexes in
+-- section 12b, before deduplication; the new normalised index is created in
+-- section 13 after deduplication has been completed.
 -- =============================================================================
-
-DROP INDEX IF EXISTS w_qual_field_unit_unique_index_null;
 
 -- =============================================================================
 -- 12. Deduplicate datetime-PK tables (instant-normalised)
@@ -572,10 +571,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS w_qual_logger_unit_unique_index_null
 --
 -- Each query below must return zero rows if the migration in sections 12–13
 -- succeeded.  A non-empty result means same-instant duplicates remain, which
--- would have caused the corresponding CREATE UNIQUE INDEX above to fail (and
--- did — the script would have aborted).  These SELECTs are a post-hoc sanity
--- check; if section 13 indexes were created successfully, these will always
--- return zero.
+-- would have caused the corresponding CREATE UNIQUE INDEX above to fail.
+-- If section 13's indexes built successfully — which they must have, or this
+-- script would already have aborted — these queries return zero rows.
 --
 -- To verify interactively after running this script:
 --   psql -d <your_db> -c "SELECT obsid, midv_to_instant(date_time), count(*) FROM w_levels WHERE midv_to_instant(date_time) IS NOT NULL GROUP BY obsid, midv_to_instant(date_time) HAVING count(*) > 1;"

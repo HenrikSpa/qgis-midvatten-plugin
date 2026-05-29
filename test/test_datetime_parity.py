@@ -56,19 +56,24 @@ class DatetimeParityMixin:
     def test_same_instant_collapses_distinct_second_kept(self, mock_messagebar):
         """Same-instant pair ('hh:mm' and 'hh:mm:ss') collapses to ONE row.
 
-        - The surviving row's date_time is the first raw input
-          ('2015-01-01 00:00' or '2015-01-01 00:00:00' — both are valid survivors
-          depending on dict ordering; either is acceptable because the raw string
-          is never rewritten to a padded canonical form).
+        - The surviving row's date_time is the FIRST row seen in file order.
+          In-file dedup uses pandas drop_duplicates(keep="first") over the
+          ordered file_data list, so '2015-01-01 00:00' (row 1) is kept and
+          '2015-01-01 00:00:00' (row 2) is dropped. The raw string is never
+          rewritten to a padded canonical form.
         - '2015-01-01 00:00:01' is a distinct second and must be kept separately.
         """
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
 
         file_data = [
             ("obsid", "date_time", "head_cm"),
-            ("rb1", "2015-01-01 00:00", "1"),  # first of same-instant pair
+            ("rb1", "2015-01-01 00:00", "1"),  # first of same-instant pair — kept
             ("rb1", "2015-01-01 00:00:00", "2"),  # same instant -> dropped in-file
-            ("rb1", "2015-01-01 00:00:01", "3"),  # distinct second -> kept
+            (
+                "rb1",
+                "2015-01-01 00:00:01",
+                "3",
+            ),  # distinct second -> kept (numeric string)
         ]
 
         self.importinstance.general_import(
@@ -87,9 +92,9 @@ class DatetimeParityMixin:
         # Distinct second must be present
         assert "2015-01-01 00:00:01" in vals, f"'00:00:01' row missing from {vals}"
 
-        # Same-instant survivor is whichever raw string survived (NOT rewritten)
-        assert "2015-01-01 00:00" in vals or "2015-01-01 00:00:00" in vals, (
-            f"No same-instant survivor found in {vals}"
+        # First-seen row is deterministically kept (drop_duplicates keep="first")
+        assert "2015-01-01 00:00" in vals, (
+            f"Expected first-seen survivor '2015-01-01 00:00' in {vals}"
         )
 
     # ------------------------------------------------------------------
@@ -136,7 +141,7 @@ class DatetimeParityMixin:
     @mock.patch(
         "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
     )
-    def test_malformed_date_behavior(self, mock_messagebar):
+    def test_distinct_malformed_dates_both_stored(self, mock_messagebar):
         """Malformed / unparseable date_time strings are stored verbatim.
 
         Observed behavior (verified via code inspection and this test):
@@ -149,11 +154,12 @@ class DatetimeParityMixin:
         - On PostGIS, midv_to_instant('not a date') → NULL (EXCEPTION handler),
           giving the same semantics: multiple NULL index values are allowed,
           so both rows survive.
-        - delete_existing uses NULL=NULL which is never true, so existing
-          malformed rows are NEVER seen as duplicates of a reimport attempt.
+        - Reimporting malformed rows is NOT idempotent: delete_existing matches
+          on the normalized key (datetime(date_time) / midv_to_instant(date_time)),
+          which is NULL for malformed values, and NULL = NULL is never true in SQL.
+          Each reimport therefore inserts an additional copy — this is the intended
+          behavior for unparseable values, but it is not idempotent.
         - Net: two distinct malformed date strings produce two distinct rows.
-
-        NOTE: Reimporting malformed rows is NOT idempotent (see test 4 comment).
         """
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb3')")
 

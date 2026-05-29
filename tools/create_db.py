@@ -40,14 +40,18 @@ log = logging.getLogger(__name__)
 # Must be executed inline (not via create_db.sql) because create_db.sql is processed by
 # splitting on every ";" — which would truncate a plpgsql function body at its first
 # internal semicolon.  psycopg2 sends this entire string as a single command.
-MIDV_TO_INSTANT_DDL = """
-CREATE OR REPLACE FUNCTION midv_to_instant(t text) RETURNS timestamp AS $$
+# The EXCEPTION block adds a per-call subtransaction, but the function is evaluated only
+# at index-build time and per-row on insert (small data volumes here), so the cost is
+# accepted.  Do NOT replace it with a plain SQL cast — that cannot return NULL on
+# unparseable input, which is required so malformed dates escape the unique index
+# (mirroring SQLite datetime()->NULL).
+MIDV_TO_INSTANT_DDL = """CREATE OR REPLACE FUNCTION midv_to_instant(t text) RETURNS timestamp AS $$
 BEGIN
     RETURN t::timestamp;
 EXCEPTION WHEN others THEN
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql IMMUTABLE
+$$ LANGUAGE plpgsql IMMUTABLE;
 """
 
 

@@ -668,6 +668,7 @@ class ImportTableChooser(VRowEntry):
         self.tables_columns = tables_columns
         self.file_header = file_header
         self.columns = []
+        self.series_columns = []
         self.grid = None
         self.numeric_datatypes = db_utils.numeric_datatypes()
 
@@ -709,6 +710,19 @@ class ImportTableChooser(VRowEntry):
                 column_list.append(column_entry.db_column)
                 translation_dict[file_column_name] = column_list
         return translation_dict
+
+    def get_series_translation(self):
+        """translation_dict-shaped mapping for series fields, but every target
+        is the namespaced carrier ``__series_<field>`` so it can never collide
+        with a real column (notably ``comment``, which exists in both tables)."""
+        series_translation = {}
+        for column_entry in self.series_columns:
+            file_column_name = column_entry.file_column_name
+            if file_column_name:
+                carrier = "__series_" + column_entry.db_column
+                existing = series_translation.get(file_column_name, [])
+                series_translation[file_column_name] = existing + [carrier]
+        return series_translation
 
     def get_columns_factors_dict(self):
         columns_factors = dict(
@@ -766,6 +780,7 @@ class ImportTableChooser(VRowEntry):
             self.grid.close()
 
         self.columns = []
+        self.series_columns = []
 
         if not import_method_name:
             return None
@@ -822,7 +837,47 @@ class ImportTableChooser(VRowEntry):
                 self.grid.layout().addWidget(wid, rownr, colnr)
             self.columns.append(column)
 
+        self._append_series_block(import_method_name, file_header)
+
         self.grid.layout().setColumnStretch(5, 5)
+
+    def _append_series_block(self, import_method_name, file_header):
+        """For w_levels_logger on the new schema, render a separated block of
+        ColumnEntry rows mapping the editable w_logger_series fields."""
+        if import_method_name != "w_levels_logger":
+            return
+        series_info = self.tables_columns.get("w_logger_series")
+        wll_info = self.tables_columns.get("w_levels_logger", [])
+        has_series_id = any(col[1] == "series_id" for col in wll_info)
+        if not series_info or not has_series_id:
+            return
+
+        rownr = self.grid.layout().rowCount()
+        self.grid.layout().addWidget(get_line(), rownr, 0, 1, 5)
+        rownr = self.grid.layout().rowCount()
+        self.grid.layout().addWidget(
+            qgis.PyQt.QtWidgets.QLabel(
+                QCoreApplication.translate(
+                    "ImportTableChooser",
+                    "Logger series metadata (w_logger_series)",
+                )
+            ),
+            rownr,
+            0,
+            1,
+            5,
+        )
+
+        info_by_name = {col[1]: col for col in series_info}
+        for field in ("source", "instrument", "description", "comment"):
+            col_info = info_by_name.get(field)
+            if col_info is None:
+                continue
+            column = ColumnEntry(col_info, file_header, self.numeric_datatypes)
+            rownr = self.grid.layout().rowCount()
+            for colnr, wid in enumerate(column.column_widgets):
+                self.grid.layout().addWidget(wid, rownr, colnr)
+            self.series_columns.append(column)
 
     def reload(self):
         import_method = self.import_method

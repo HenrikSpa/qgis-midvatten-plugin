@@ -198,3 +198,23 @@ class TestGeneralCsvImportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
             ("rb1", "2016-03-15 11:00:00", 101.0, "fileA"),
             ("rb1", "2016-03-15 12:00:00", 102.0, "fileB"),
         ]
+
+    def test_series_block_built_for_w_levels_logger(self):
+        """Choosing w_levels_logger on the new schema builds a series block with
+        one ColumnEntry per editable w_logger_series field; choosing another
+        table builds none."""
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+
+        ms = MagicMock()
+        ms.settingsdict = OrderedDict()
+        gui = GeneralCsvImportGui(self.iface, ms)
+        gui.load_gui()
+        # A non-None file_header is required for choose_method to build the grid.
+        gui.table_chooser.file_header = ["obsid", "date_time", "head_cm", "source"]
+
+        gui.table_chooser.import_method = "w_levels_logger"
+        series_fields = sorted(c.db_column for c in gui.table_chooser.series_columns)
+        assert series_fields == ["comment", "description", "instrument", "source"]
+
+        gui.table_chooser.import_method = "obs_points"
+        assert gui.table_chooser.series_columns == []

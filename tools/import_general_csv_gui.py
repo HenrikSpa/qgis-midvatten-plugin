@@ -521,8 +521,7 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         close_dbconn = self.dbconnection is None
         colnames = ", ".join(["obsid"] + present_fields)
         try:
-            ph = dbconn.placeholder()
-            placeholders = ", ".join([ph] * (1 + len(present_fields)))
+            placeholders = dbconn.placeholders(1 + len(present_fields))
             key_to_sid: Dict[Tuple[Any, Tuple[Any, ...]], int] = {}
             # Atomic: a mid-loop failure rolls back every series row rather than
             # leaving key_to_sid pointing at uncommitted ids.

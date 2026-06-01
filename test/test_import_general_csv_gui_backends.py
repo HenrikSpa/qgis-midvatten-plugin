@@ -1530,11 +1530,7 @@ class GeneralCsvGuiMixin:
                         column.file_column_name = names[column.db_column]
 
                 # source now lives in the logger-series metadata block.
-                for column in importer.table_chooser.series_columns:
-                    if column.db_column == "source":
-                        column.file_column_name = "source"
-                    else:
-                        column.file_column_name = None
+                self._map_series(importer, {"source": "source"})
 
                 importer.start_import()
 
@@ -1644,6 +1640,18 @@ class GeneralCsvGuiMixin:
         for column in importer.table_chooser.columns:
             column.file_column_name = mapping.get(column.db_column, None)
 
+    @staticmethod
+    def _map_series(importer, file_map, static_map=None):
+        """Map series fields: ``file_map`` picks a file column, ``static_map``
+        sets a static value; unlisted fields are left unmapped (None)."""
+        static_map = static_map or {}
+        for column in importer.table_chooser.series_columns:
+            if column.db_column in static_map:
+                column.static_checkbox.setChecked(True)
+                column.combobox.setEditText(static_map[column.db_column])
+            else:
+                column.file_column_name = file_map.get(column.db_column, None)
+
     def test_import_w_levels_logger_series_static_metadata(self):
         """source from file column, instrument+description as static values →
         one series row per (obsid, source) carrying the static metadata."""
@@ -1659,17 +1667,11 @@ class GeneralCsvGuiMixin:
                 importer,
                 {"obsid": "obsid", "date_time": "date_time", "head_cm": "head_cm"},
             )
-            for column in importer.table_chooser.series_columns:
-                if column.db_column == "source":
-                    column.file_column_name = "source"
-                elif column.db_column == "instrument":
-                    column.static_checkbox.setChecked(True)
-                    column.combobox.setEditText("Diver-A")
-                elif column.db_column == "description":
-                    column.static_checkbox.setChecked(True)
-                    column.combobox.setEditText("wellhead")
-                else:
-                    column.file_column_name = None
+            self._map_series(
+                importer,
+                {"source": "source"},
+                {"instrument": "Diver-A", "description": "wellhead"},
+            )
 
         self._run_wll_series_import(file, configure)
 
@@ -1704,11 +1706,7 @@ class GeneralCsvGuiMixin:
                     "comment": "row_comment",
                 },
             )
-            for column in importer.table_chooser.series_columns:
-                if column.db_column == "comment":
-                    column.file_column_name = "series_comment"
-                else:
-                    column.file_column_name = None
+            self._map_series(importer, {"comment": "series_comment"})
 
         self._run_wll_series_import(file, configure)
 
@@ -1730,8 +1728,7 @@ class GeneralCsvGuiMixin:
                 importer,
                 {"obsid": "obsid", "date_time": "date_time", "head_cm": "head_cm"},
             )
-            for column in importer.table_chooser.series_columns:
-                column.file_column_name = None
+            self._map_series(importer, {})
 
         self._run_wll_series_import(file, configure)
 

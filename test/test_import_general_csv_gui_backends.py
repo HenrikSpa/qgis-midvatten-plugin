@@ -1525,10 +1525,16 @@ class GeneralCsvGuiMixin:
                         "obsid": "obsid",
                         "date_time": "date_time",
                         "head_cm": "head_cm",
-                        "source": "source",
                     }
                     if column.db_column in names:
                         column.file_column_name = names[column.db_column]
+
+                # source now lives in the logger-series metadata block.
+                for column in importer.table_chooser.series_columns:
+                    if column.db_column == "source":
+                        column.file_column_name = "source"
+                    else:
+                        column.file_column_name = None
 
                 importer.start_import()
 

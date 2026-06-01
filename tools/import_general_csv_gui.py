@@ -40,7 +40,7 @@ from midvatten.tools.utils.gui_utils import (
     RowEntryGrid,
     DistinctValuesBrowser,
 )
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 import_ui_dialog = qgis.PyQt.uic.loadUiType(ui_path("import_fieldlogger.ui"))[0]
 
@@ -75,18 +75,10 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
             if not k.endswith("_geom")
         }
         # On the new schema, source has moved from w_levels_logger to
-        # w_logger_series. Expose a virtual "source" column on
-        # w_levels_logger in the table chooser so users can still map their
-        # CSV "source" column to w_levels_logger imports. start_import
-        # intercepts and creates one w_logger_series row per distinct
-        # (obsid, source) group, replacing the virtual source column with
-        # the real series_id before the insert.
-        wll_cols = list(self.tables_columns_info.get("w_levels_logger", []))
-        has_series_id = any(col[1] == "series_id" for col in wll_cols)
-        if has_series_id and "w_logger_series" in self.tables_columns_info:
-            next_idx = (max([col[0] for col in wll_cols]) + 1) if wll_cols else 0
-            wll_cols.append((next_idx, "source", "TEXT", 0, None, 0))
-            self.tables_columns_info["w_levels_logger"] = wll_cols
+        # w_logger_series. The chooser renders a dedicated "Logger series
+        # metadata" block for w_levels_logger (see ImportTableChooser.
+        # _append_series_block); source and the other series fields are mapped
+        # there and routed into w_logger_series by _route_series_metadata.
         self.table_chooser = ImportTableChooser(
             self.tables_columns_info,
             file_header=None,
@@ -321,9 +313,22 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
 
         translation_dict = self.table_chooser.get_translation_dict()
 
-        file_data = copy.deepcopy(self.file_data)
-
         dest_table = self.table_chooser.import_method
+
+        # Series metadata mappings merge into translation_dict under their
+        # namespaced __series_<field> carrier targets, so the existing
+        # StaticValue-injection and translate/reorder pipeline carries them
+        # through row-aligned. _route_series_metadata consumes and strips them.
+        if dest_table == "w_levels_logger":
+            for (
+                file_column,
+                carriers,
+            ) in self.table_chooser.get_series_translation().items():
+                translation_dict[file_column] = (
+                    translation_dict.get(file_column, []) + carriers
+                )
+
+        file_data = copy.deepcopy(self.file_data)
 
         foreign_keys = db_utils.get_foreign_keys(
             dest_table, dbconnection=self.dbconnection
@@ -403,7 +408,7 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         file_data = self.reformat_date_time(file_data)
 
         if dest_table == "w_levels_logger":
-            file_data = self._route_source_to_logger_series(file_data)
+            file_data = self._route_series_metadata(file_data)
 
         importer = import_data_to_db.MidvDataImporter()
         answer = importer.general_import(
@@ -417,19 +422,18 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         if self.close_after_import.isChecked():
             self.close()
 
-    def _route_source_to_logger_series(
-        self, file_data: List[List[Any]]
-    ) -> List[List[Any]]:
-        """For w_levels_logger imports on the new schema, turn ``source`` into
-        ``series_id`` by creating one fresh ``w_logger_series`` row per
-        distinct ``(obsid, source)`` group.
+    SERIES_FIELDS = ("source", "instrument", "description", "comment")
 
-        Always creates new series rows, never matches existing ones, because
-        ``source`` is free-form text that different batches may intentionally
-        reuse. Dropping a ``series_id`` column from the CSV (with a warning)
-        is also handled here: cross-DB integer ids don't translate, so
-        letting them pass would silently link imported rows to the wrong
-        series on the target database.
+    def _route_series_metadata(self, file_data: List[List[Any]]) -> List[List[Any]]:
+        """Turn ``__series_*`` carrier columns into ``w_logger_series`` rows and
+        a ``series_id`` column on each w_levels_logger row.
+
+        One series row is created per distinct
+        ``(obsid, source, instrument, description, comment)`` tuple. Ids are
+        captured at INSERT time (never re-queried), so two batches that reuse
+        the same metadata still get distinct series. Always creates new series
+        rows, never matches existing ones. A stray ``series_id`` column from the
+        CSV is dropped with a warning: cross-DB integer ids don't translate.
         """
         if not file_data or len(file_data) < 2:
             return file_data
@@ -437,6 +441,11 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         header = list(file_data[0])
         rows = [list(r) for r in file_data[1:]]
 
+        carrier_cols = [c for c in header if c.startswith("__series_")]
+        if not carrier_cols:
+            return [header] + rows
+
+        # Drop any stray CSV series_id: cross-database ids do not translate.
         if "series_id" in header:
             idx = header.index("series_id")
             header.pop(idx)
@@ -448,37 +457,47 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
                     "GeneralCsvImportGui",
                     "Ignoring 'series_id' column from CSV on import to"
                     " w_levels_logger: cross-database ids do not translate."
-                    " Use the 'source' column to group rows into new series"
-                    " instead.",
+                    " Use the logger series metadata fields to group rows into"
+                    " new series instead.",
                 )
             )
 
-        if "source" not in header:
-            return [header] + rows
+        def _strip_carriers(hdr, data_rows):
+            keep = [i for i, c in enumerate(hdr) if c not in carrier_cols]
+            new_hdr = [hdr[i] for i in keep]
+            new_data = [[r[i] if i < len(r) else None for i in keep] for r in data_rows]
+            return [new_hdr] + new_data
 
         existing_tables = db_utils.tables_columns(dbconnection=self.dbconnection)
         if "w_logger_series" not in existing_tables:
-            return [header] + rows
+            return _strip_carriers(header, rows)
         if "series_id" not in existing_tables.get("w_levels_logger", []):
-            return [header] + rows
+            return _strip_carriers(header, rows)
         if "obsid" not in header:
             common_utils.MessagebarAndLog.warning(
                 log_msg=QCoreApplication.translate(
                     "GeneralCsvImportGui",
-                    "CSV has a 'source' column but no 'obsid' column; cannot"
-                    " create w_logger_series rows. Source values will be"
-                    " dropped.",
+                    "Logger series metadata supplied but no 'obsid' column;"
+                    " cannot create w_logger_series rows. Series metadata will"
+                    " be dropped.",
                 )
             )
-            src_idx = header.index("source")
-            header.pop(src_idx)
-            for row in rows:
-                if src_idx < len(row):
-                    row.pop(src_idx)
-            return [header] + rows
+            return _strip_carriers(header, rows)
 
-        src_idx = header.index("source")
+        present_fields = [f for f in self.SERIES_FIELDS if ("__series_" + f) in header]
         obsid_idx = header.index("obsid")
+        field_idx = {f: header.index("__series_" + f) for f in present_fields}
+
+        def _norm(value):
+            return value if value not in ("", None) else None
+
+        def _key(row):
+            obsid = row[obsid_idx] if obsid_idx < len(row) else None
+            vals = tuple(
+                _norm(row[field_idx[f]]) if field_idx[f] < len(row) else None
+                for f in present_fields
+            )
+            return obsid, vals
 
         dbconn = (
             self.dbconnection
@@ -486,49 +505,39 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
             else db_utils.DbConnectionManager()
         )
         close_dbconn = self.dbconnection is None
-        description = QCoreApplication.translate(
-            "GeneralCsvImportGui", "Imported from general CSV"
-        )
+        colnames = ", ".join(["obsid"] + present_fields)
         try:
             ph = dbconn.placeholder()
-            key_to_sid: Dict[Tuple[Any, Optional[str]], int] = {}
-            # Atomic: either every (obsid, source) row gets a series_id or none do,
-            # so a mid-loop failure can't leave key_to_sid pointing at uncommitted ids.
+            placeholders = ", ".join([ph] * (1 + len(present_fields)))
+            key_to_sid: Dict[Tuple[Any, Tuple[Any, ...]], int] = {}
+            # Atomic: a mid-loop failure rolls back every series row rather than
+            # leaving key_to_sid pointing at uncommitted ids.
             with dbconn.transaction():
                 for row in rows:
-                    obsid = row[obsid_idx] if obsid_idx < len(row) else None
-                    source_raw = row[src_idx] if src_idx < len(row) else None
-                    source_val = source_raw if source_raw not in ("", None) else None
+                    obsid, vals = _key(row)
                     if not obsid:
                         continue
-                    key = (obsid, source_val)
+                    key = (obsid, vals)
                     if key in key_to_sid:
                         continue
                     dbconn.execute(
-                        f"INSERT INTO w_logger_series"
-                        f" (obsid, source, description)"
-                        f" VALUES ({ph}, {ph}, {ph})",
-                        (obsid, source_val, description),
+                        f"INSERT INTO w_logger_series ({colnames})"
+                        f" VALUES ({placeholders})",
+                        (obsid,) + vals,
                     )
                     key_to_sid[key] = db_utils.get_last_insert_id(dbconn)
         finally:
             if close_dbconn:
                 dbconn.closedb()
 
-        new_header = list(header)
-        new_header[src_idx] = "series_id"
+        keep = [i for i, c in enumerate(header) if c not in carrier_cols]
+        new_header = [header[i] for i in keep] + ["series_id"]
         new_rows = []
         for row in rows:
-            new_row = list(row)
-            if len(new_row) <= src_idx:
-                new_row.extend([None] * (src_idx + 1 - len(new_row)))
-            obsid = new_row[obsid_idx] if obsid_idx < len(new_row) else None
-            source_raw = new_row[src_idx] if src_idx < len(new_row) else None
-            source_val = source_raw if source_raw not in ("", None) else None
-            if obsid and (obsid, source_val) in key_to_sid:
-                new_row[src_idx] = key_to_sid[(obsid, source_val)]
-            else:
-                new_row[src_idx] = None
+            obsid, vals = _key(row)
+            sid = key_to_sid.get((obsid, vals)) if obsid else None
+            new_row = [row[i] if i < len(row) else None for i in keep]
+            new_row.append(sid)
             new_rows.append(new_row)
         return [new_header] + new_rows
 

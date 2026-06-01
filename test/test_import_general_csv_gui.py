@@ -159,11 +159,17 @@ class TestGeneralCsvImportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
                     "obsid": "obsid",
                     "date_time": "date_time",
                     "head_cm": "head_cm",
-                    "source": "source",
                 }
                 for column in importer.table_chooser.columns:
                     if column.db_column in file_to_db:
                         column.file_column_name = file_to_db[column.db_column]
+
+                # source now lives in the logger-series metadata block.
+                for column in importer.table_chooser.series_columns:
+                    if column.db_column == "source":
+                        column.file_column_name = "source"
+                    else:
+                        column.file_column_name = None
 
                 importer.start_import()
 

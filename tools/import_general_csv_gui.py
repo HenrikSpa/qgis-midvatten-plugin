@@ -44,6 +44,18 @@ from typing import Any, Dict, List, Tuple
 
 import_ui_dialog = qgis.PyQt.uic.loadUiType(ui_path("import_fieldlogger.ui"))[0]
 
+# Editable w_logger_series fields the CSV importer can map for w_levels_logger.
+SERIES_FIELDS = ("source", "instrument", "description", "comment")
+# Carrier columns ride the import pipeline under this prefix so series mappings
+# stay row-aligned and never collide with real columns (e.g. ``comment``, which
+# exists in both tables). It is the contract between get_series_translation
+# (producer) and _route_series_metadata (consumer); keep the prefix in one place.
+SERIES_CARRIER_PREFIX = "__series_"
+
+
+def series_carrier(field: str) -> str:
+    return SERIES_CARRIER_PREFIX + field
+
 
 class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
     def __init__(self, iface, ms, dbconnection=None):
@@ -422,8 +434,6 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         if self.close_after_import.isChecked():
             self.close()
 
-    SERIES_FIELDS = ("source", "instrument", "description", "comment")
-
     def _route_series_metadata(self, file_data: List[List[Any]]) -> List[List[Any]]:
         """Turn ``__series_*`` carrier columns into ``w_logger_series`` rows and
         a ``series_id`` column on each w_levels_logger row.
@@ -441,7 +451,7 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         header = list(file_data[0])
         rows = [list(r) for r in file_data[1:]]
 
-        carrier_cols = [c for c in header if c.startswith("__series_")]
+        carrier_cols = [c for c in header if c.startswith(SERIES_CARRIER_PREFIX)]
         if not carrier_cols:
             return [header] + rows
 
@@ -462,17 +472,21 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
                 )
             )
 
-        def _strip_carriers(hdr, data_rows):
-            keep = [i for i, c in enumerate(hdr) if c not in carrier_cols]
-            new_hdr = [hdr[i] for i in keep]
-            new_data = [[r[i] if i < len(r) else None for i in keep] for r in data_rows]
-            return [new_hdr] + new_data
+        # One carrier-stripping projection shared by every exit path.
+        keep = [i for i, c in enumerate(header) if c not in carrier_cols]
+        stripped_header = [header[i] for i in keep]
+
+        def _project(row):
+            return [row[i] if i < len(row) else None for i in keep]
+
+        def _stripped():
+            return [stripped_header] + [_project(r) for r in rows]
 
         existing_tables = db_utils.tables_columns(dbconnection=self.dbconnection)
         if "w_logger_series" not in existing_tables:
-            return _strip_carriers(header, rows)
+            return _stripped()
         if "series_id" not in existing_tables.get("w_levels_logger", []):
-            return _strip_carriers(header, rows)
+            return _stripped()
         if "obsid" not in header:
             common_utils.MessagebarAndLog.warning(
                 log_msg=QCoreApplication.translate(
@@ -482,11 +496,11 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
                     " be dropped.",
                 )
             )
-            return _strip_carriers(header, rows)
+            return _stripped()
 
-        present_fields = [f for f in self.SERIES_FIELDS if ("__series_" + f) in header]
+        present_fields = [f for f in SERIES_FIELDS if series_carrier(f) in header]
         obsid_idx = header.index("obsid")
-        field_idx = {f: header.index("__series_" + f) for f in present_fields}
+        field_idx = {f: header.index(series_carrier(f)) for f in present_fields}
 
         def _norm(value):
             return value if value not in ("", None) else None
@@ -530,13 +544,12 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
             if close_dbconn:
                 dbconn.closedb()
 
-        keep = [i for i, c in enumerate(header) if c not in carrier_cols]
-        new_header = [header[i] for i in keep] + ["series_id"]
+        new_header = stripped_header + ["series_id"]
         new_rows = []
         for row in rows:
             obsid, vals = _key(row)
             sid = key_to_sid.get((obsid, vals)) if obsid else None
-            new_row = [row[i] if i < len(row) else None for i in keep]
+            new_row = _project(row)
             new_row.append(sid)
             new_rows.append(new_row)
         return [new_header] + new_rows
@@ -728,7 +741,7 @@ class ImportTableChooser(VRowEntry):
         for column_entry in self.series_columns:
             file_column_name = column_entry.file_column_name
             if file_column_name:
-                carrier = "__series_" + column_entry.db_column
+                carrier = series_carrier(column_entry.db_column)
                 existing = series_translation.get(file_column_name, [])
                 series_translation[file_column_name] = existing + [carrier]
         return series_translation
@@ -878,7 +891,7 @@ class ImportTableChooser(VRowEntry):
         )
 
         info_by_name = {col[1]: col for col in series_info}
-        for field in ("source", "instrument", "description", "comment"):
+        for field in SERIES_FIELDS:
             col_info = info_by_name.get(field)
             if col_info is None:
                 continue

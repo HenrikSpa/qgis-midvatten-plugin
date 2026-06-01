@@ -92,31 +92,46 @@ cannot collide with real columns.
   never fires. The `factor` widget stays hidden for these text columns.
 - `load_gui()` **no longer injects** the virtual `source` column into
   `w_levels_logger`.
-- New accessor `get_series_translation()` returns
-  `{db_field: file_column_name}` for each series entry whose mapping is non-empty,
-  where `file_column_name` is either a file-header string or a `StaticValue`
-  (same shape `get_translation_dict()` already yields).
+- New accessor `get_series_translation()` returns a **`translation_dict`-shaped**
+  mapping `{file_column_name: ["__series_<db_field>"]}` for each series entry
+  whose mapping is non-empty. The key is the same `file_column_name` shape
+  `get_translation_dict()` yields (a file-header string or a `StaticValue`); the
+  value targets the **carrier** db-name `__series_<db_field>`, never the bare
+  field name. Two series entries that point at the same file column merge into one
+  list of carriers.
 
 ### Import: `GeneralCsvImportGui.start_import()`
 
 Series values must stay aligned with logger rows through date filtering, the
 obsid filter, comma/factor conversion, etc. To guarantee alignment, series
-values ride along as ordinary extra columns under sentinel names
+values ride along as ordinary extra columns under sentinel ("carrier") names
 (`__series_source`, `__series_instrument`, `__series_description`,
 `__series_comment`) and are consumed + stripped at the end.
 
+**Why merge into `translation_dict` rather than inject separately:**
+`translate_and_reorder_file_data()` rebuilds `file_data` from `translation_dict`
+and **drops every column not referenced there**. So a carrier column injected as
+a standalone pre-step would be discarded. Instead the carriers are merged into the
+main `translation_dict` under their `__series_*` targets, and the *existing*
+StaticValue-injection + reorder machinery carries them through for free. Using the
+namespaced carrier name as the target (not the bare `source`/`comment`) is exactly
+what avoids the `comment` double-map: `w_levels_logger.comment` maps to
+`comment`, series comment maps to `__series_comment` — distinct targets, even if
+both read the same file column.
+
 1. Read `series_translation = self.table_chooser.get_series_translation()` (empty
    on old schema / non-`w_levels_logger` targets).
-2. **Before** `translate_and_reorder_file_data`, inject one sentinel column per
-   mapped series field into `file_data`:
-   - `StaticValue` → constant value in every row;
-   - file-column name → copy that file column's values per row.
-   This mirrors the existing `StaticValue`/`Obsids_from_selection` injection loop.
-   Sentinel columns are plain text, so they are untouched by comma-to-point,
-   factor, and `date_time` reformatting; they survive row filtering because they
-   are real rows-aligned columns.
-3. Run the existing pipeline unchanged (translate/reorder of the *logger*
-   columns, comma, factor, strip, obsid filter, date reformat).
+2. **Right after** building the logger `translation_dict`, merge each
+   `series_translation` entry into it (append carriers to any existing list for a
+   shared file-column key). From here the existing pipeline does everything:
+   - the StaticValue loop injects a constant carrier column for static series
+     fields and sets `translation_dict["__series_<f>"] = ["__series_<f>"]`;
+   - `translate_and_reorder_file_data` emits the carrier columns alongside the
+     logger columns;
+   - carriers are plain text, so comma-to-point, factor, and `date_time`
+     reformatting skip them; they ride row-aligned through the obsid filter.
+3. Run the existing pipeline unchanged (translate/reorder, comma, factor, strip,
+   obsid filter, date reformat) — carriers flow through automatically.
 4. Replace `_route_source_to_logger_series()` with
    `_route_series_metadata()` (rename, generalized):
    - If no `__series_*` columns present → return `file_data` unchanged
@@ -190,6 +205,13 @@ start_import: inject __series_* carrier columns into file_data
 - **`source` mapped but no `obsid` column:** existing warning path; series
   metadata dropped, logger rows import with NULL series_id.
 - **Stray `series_id` in CSV:** dropped with the existing warning.
+- **Dropped auto-description (intentional behavior change):** the old
+  `_route_source_to_logger_series` always stamped
+  `description = "Imported from general CSV"` on every series row. The new routing
+  only writes the series fields the user actually mapped; an unmapped `description`
+  is `NULL`. This is consistent with decision 5 (series fields fully optional) and
+  is the only intentional behavior change for the source-only path. The existing
+  backward-compat test does not assert `description`, so it stays green.
 - **Orphan series (pre-existing, out of scope):** routing commits series rows in
   its own transaction before `general_import`; rows rejected *inside*
   `general_import` (e.g. PK conflict) could leave a childless series row. This

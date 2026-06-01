@@ -1740,6 +1740,34 @@ class GeneralCsvGuiMixin:
         sids = db_utils.sql_load_fr_db("SELECT series_id FROM w_levels_logger")[1]
         assert sids[0][0] is None
 
+    def test_import_w_levels_logger_series_comment_not_autofilled(self):
+        """A CSV 'comment' column auto-maps to w_levels_logger.comment but NOT
+        to the series comment (a name shared by both tables), so a batch with
+        varying per-row comments stays one series per source instead of
+        fragmenting into one series per distinct comment."""
+        file = [
+            "obsid,date_time,head_cm,comment,source",
+            "rb1,2016-03-15 10:30:00,100.0,note-1,fileA",
+            "rb1,2016-03-15 11:00:00,101.0,note-2,fileA",
+        ]
+        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb1')""")
+
+        def configure(importer):
+            # Rely on default prefill: matching CSV headers auto-map. The series
+            # 'comment' field stays blank because w_levels_logger also has it.
+            pass
+
+        self._run_wll_series_import(file, configure)
+
+        series = db_utils.sql_load_fr_db(
+            "SELECT obsid, source, comment FROM w_logger_series"
+        )[1]
+        assert [tuple(r) for r in series] == [("rb1", "fileA", None)]
+        logger = db_utils.sql_load_fr_db(
+            "SELECT comment FROM w_levels_logger ORDER BY date_time"
+        )[1]
+        assert [tuple(r) for r in logger] == [("note-1",), ("note-2",)]
+
 
 class GeneralCsvGuiFromLayerMixin:
     """Test to make sure wlvllogg_import goes all the way to the end without errors"""

@@ -890,12 +890,21 @@ class ImportTableChooser(VRowEntry):
             5,
         )
 
+        # ColumnEntry prefills each field to a same-named CSV column. That is
+        # convenient for series-only fields (e.g. source), but for a field whose
+        # name also exists on w_levels_logger (comment) the CSV column is meant
+        # for the logger row; auto-mapping it into the series key too would
+        # fragment the batch into one series per distinct value. Suppress the
+        # prefill for those shared names so they stay opt-in.
         info_by_name = {col[1]: col for col in series_info}
+        wll_colnames = {col[1] for col in wll_info}
         for field in SERIES_FIELDS:
             col_info = info_by_name.get(field)
             if col_info is None:
                 continue
             column = ColumnEntry(col_info, file_header, self.numeric_datatypes)
+            if field in wll_colnames:
+                column.file_column_name = None
             rownr = self.grid.layout().rowCount()
             for colnr, wid in enumerate(column.column_widgets):
                 self.grid.layout().addWidget(wid, rownr, colnr)

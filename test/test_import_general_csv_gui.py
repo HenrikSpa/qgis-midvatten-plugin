@@ -82,11 +82,11 @@ class TestGeneralCsvImportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
     Exercises the full user-triggered path that import_general_csv_gui runs
     when the user clicks "Start import":
       load_files() -> table chooser wiring -> start_import() ->
-      _route_source_to_logger_series() (new dbconn.transaction() wrap) ->
+      _route_series_metadata() (dbconn.transaction() wrap) ->
       MidvDataImporter.general_import() -> INSERT into w_levels_logger.
 
     Targets ``w_levels_logger`` because that path invokes
-    ``_route_source_to_logger_series``, which was recently wrapped in
+    ``_route_series_metadata``, which wraps the w_logger_series inserts in
     ``dbconn.transaction()``; this test guards that wrap end-to-end.
     """
 

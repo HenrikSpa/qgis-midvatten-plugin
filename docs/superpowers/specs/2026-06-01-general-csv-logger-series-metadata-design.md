@@ -123,17 +123,46 @@ values ride along as ordinary extra columns under sentinel names
      (series_id stays absent/NULL).
    - Drop any stray `series_id` column from the CSV with the existing warning
      (cross-DB ids don't translate).
-   - Group rows by `(obsid, source, instrument, description, comment)` using the
-     sentinel columns (empty string / None normalized to `None`). Skip rows with
-     no obsid. In one transaction, `INSERT INTO w_logger_series
-     (obsid, source, instrument, description, comment) VALUES (...)` once per
-     distinct tuple, recording `key -> series_id`.
-   - Append a real `series_id` column, fill each row from its tuple's id (or
-     `None` if the row had no obsid), and **remove all `__series_*` columns**.
+   - Run the **two-pass id-capture** described below to create series rows and
+     stamp `series_id` onto each logger row.
    - Keep the existing guards: bail to a plain import (no series rows) if
      `w_logger_series` is missing, if `w_levels_logger` lacks `series_id`, or if
      there is no `obsid` column (warn that series metadata is dropped).
 5. `general_import()` is unchanged and never sees the sentinel columns.
+
+### How each logger row gets its `series_id` (two-pass id-capture)
+
+`series_id` is **captured at INSERT time and remembered in a dict** — never
+re-queried with a `SELECT`. This is exactly the mechanism today's
+`_route_source_to_logger_series()` uses for `(obsid, source)`, widened to the
+full tuple. It MUST NOT be degraded into a post-insert lookup query (a `SELECT`
+on the series fields cannot distinguish two batches that legitimately reuse the
+same metadata, and would reattach to a pre-existing series).
+
+Let `key(row) = (obsid, source, instrument, description, comment)` computed from
+the row's `obsid` plus its `__series_*` carrier columns, with `""`/`None`
+normalized to `None`.
+
+- **Pass 1 — create series, remember ids.** Hold a `key_to_sid: dict[tuple, int]`.
+  Iterate rows; for each `key` not yet in `key_to_sid` (skip rows with no obsid),
+  `INSERT INTO w_logger_series (obsid, source, instrument, description, comment)
+  VALUES (...)` and immediately capture the new id via
+  `db_utils.get_last_insert_id(dbconn)`, storing `key_to_sid[key] = id`. A key
+  already present is skipped — no duplicate insert. The entire loop runs inside
+  one `dbconn.transaction()`, so the ids are valid and the batch is atomic: a
+  mid-loop failure rolls back every series row rather than leaving `key_to_sid`
+  pointing at uncommitted ids.
+- **Pass 2 — stamp each logger row.** Append a real `series_id` column. Iterate
+  rows again; recompute `key(row)` and write `key_to_sid[key]` into the row's
+  `series_id` (or `None` when the row has no obsid). Then **remove all
+  `__series_*` carrier columns** so `general_import()` only sees real columns.
+
+The id flow is `INSERT → get_last_insert_id → key_to_sid → row`. No `SELECT`
+round-trip; it works identically on SpatiaLite and PostgreSQL because
+`get_last_insert_id` already abstracts the backend difference. Correctness
+depends on the carrier columns staying row-aligned through date filtering and the
+obsid filter (step 2/3), so the key recomputed in Pass 2 matches the key used in
+Pass 1 for that same row.
 
 ### Data flow
 

@@ -28,7 +28,10 @@ import pytest
 import qgis.PyQt
 
 from midvatten.test import utils_for_tests
-from midvatten.tools.import_general_csv_gui import GeneralCsvImportGui
+from midvatten.tools.import_general_csv_gui import (
+    GeneralCsvImportGui,
+    ImportTableChooser,
+)
 from midvatten.tools.utils import common_utils
 from midvatten.tools.utils import db_utils
 
@@ -224,3 +227,19 @@ class TestGeneralCsvImportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
 
         gui.table_chooser.import_method = "obs_points"
         assert gui.table_chooser.series_columns == []
+
+    def test_old_schema_source_is_plain_column_no_series_block(self):
+        """Without w_logger_series / series_id, source is a normal column and
+        no series block is built."""
+        tables_columns = {
+            "w_levels_logger": [
+                (0, "obsid", "text", 1, None, 1),
+                (1, "date_time", "text", 1, None, 2),
+                (2, "head_cm", "double", 0, None, 0),
+                (3, "source", "text", 0, None, 0),
+            ],
+        }
+        chooser = ImportTableChooser(tables_columns, file_header=["obsid", "source"])
+        chooser.import_method = "w_levels_logger"
+        assert chooser.series_columns == []
+        assert "source" in [c.db_column for c in chooser.columns]

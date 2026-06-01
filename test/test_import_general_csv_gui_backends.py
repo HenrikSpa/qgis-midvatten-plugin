@@ -1573,6 +1573,173 @@ class GeneralCsvGuiMixin:
             assert sids[0][2] == sids[1][2]  # both rb1 fileA rows
             assert sids[0][2] != sids[2][2]  # rb1 fileA vs rb1 fileB
 
+    def _run_wll_series_import(self, file_lines, configure):
+        """Run the full general-CSV import flow into w_levels_logger.
+
+        ``configure(importer)`` wires column / series_columns mappings after the
+        table is chosen and before start_import().
+        """
+        with common_utils.tempinput("\n".join(file_lines), "utf-8") as filename:
+
+            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("qgis.utils.iface", autospec=True)
+            @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
+            @mock.patch(
+                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                autospec=True,
+            )
+            @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
+            def _test(
+                self,
+                filename,
+                mock_filename,
+                mock_skippopup,
+                mock_encoding,
+                mock_iface,
+                mock_askuser,
+            ):
+                mock_filename.return_value = [filename]
+                mock_encoding.return_value = ["utf-8", True]
+
+                def side_effect(*args, **kwargs):
+                    mock_result = mock.MagicMock()
+                    if "msg" in kwargs and kwargs["msg"].startswith(
+                        "Does the file contain a header?"
+                    ):
+                        mock_result.result = 1
+                        return mock_result
+                    if len(args) > 1:
+                        if args[1].startswith("Do you want to confirm"):
+                            mock_result.result = 0
+                            return mock_result
+                        elif args[1].startswith("Do you want to import all"):
+                            mock_result.result = 0
+                            return mock_result
+                        elif args[1].startswith("Note:\nForeign keys"):
+                            mock_result.result = 1
+                            return mock_result
+                        elif args[1].startswith("Please note!\nThere are"):
+                            mock_result.result = 1
+                            return mock_result
+                        elif args[1].startswith("It is a strong recommendation"):
+                            mock_result.result = 0
+                            return mock_result
+                    return mock_result
+
+                mock_askuser.side_effect = side_effect
+
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = GeneralCsvImportGui(self.iface, ms)
+                importer.load_gui()
+                importer.load_files()
+                importer.table_chooser.import_method = "w_levels_logger"
+                configure(importer)
+                importer.start_import()
+
+            _test(self, filename)
+
+    @staticmethod
+    def _map_columns(importer, mapping):
+        for column in importer.table_chooser.columns:
+            column.file_column_name = mapping.get(column.db_column, None)
+
+    def test_import_w_levels_logger_series_static_metadata(self):
+        """source from file column, instrument+description as static values →
+        one series row per (obsid, source) carrying the static metadata."""
+        file = [
+            "obsid,date_time,head_cm,source",
+            "rb1,2016-03-15 10:30:00,100.0,fileA",
+            "rb1,2016-03-15 11:00:00,101.0,fileA",
+        ]
+        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb1')""")
+
+        def configure(importer):
+            self._map_columns(
+                importer,
+                {"obsid": "obsid", "date_time": "date_time", "head_cm": "head_cm"},
+            )
+            for column in importer.table_chooser.series_columns:
+                if column.db_column == "source":
+                    column.file_column_name = "source"
+                elif column.db_column == "instrument":
+                    column.static_checkbox.setChecked(True)
+                    column.combobox.setEditText("Diver-A")
+                elif column.db_column == "description":
+                    column.static_checkbox.setChecked(True)
+                    column.combobox.setEditText("wellhead")
+                else:
+                    column.file_column_name = None
+
+        self._run_wll_series_import(file, configure)
+
+        rows = db_utils.sql_load_fr_db(
+            "SELECT obsid, source, instrument, description, comment"
+            " FROM w_logger_series ORDER BY obsid, source"
+        )[1]
+        assert [tuple(r) for r in rows] == [
+            ("rb1", "fileA", "Diver-A", "wellhead", None),
+        ]
+        sids = db_utils.sql_load_fr_db(
+            "SELECT series_id FROM w_levels_logger ORDER BY date_time"
+        )[1]
+        assert sids[0][0] is not None and sids[0][0] == sids[1][0]
+
+    def test_import_w_levels_logger_series_comment_collision(self):
+        """Logger comment and series comment read different file columns and
+        must each land in their own table (the carrier-namespacing guard)."""
+        file = [
+            "obsid,date_time,head_cm,row_comment,series_comment",
+            "rb1,2016-03-15 10:30:00,100.0,row-note,batch-note",
+        ]
+        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb1')""")
+
+        def configure(importer):
+            self._map_columns(
+                importer,
+                {
+                    "obsid": "obsid",
+                    "date_time": "date_time",
+                    "head_cm": "head_cm",
+                    "comment": "row_comment",
+                },
+            )
+            for column in importer.table_chooser.series_columns:
+                if column.db_column == "comment":
+                    column.file_column_name = "series_comment"
+                else:
+                    column.file_column_name = None
+
+        self._run_wll_series_import(file, configure)
+
+        logger = db_utils.sql_load_fr_db("SELECT comment FROM w_levels_logger")[1]
+        assert [tuple(r) for r in logger] == [("row-note",)]
+        series = db_utils.sql_load_fr_db("SELECT comment FROM w_logger_series")[1]
+        assert [tuple(r) for r in series] == [("batch-note",)]
+
+    def test_import_w_levels_logger_no_series_mapped_null_series_id(self):
+        """No series field mapped → no w_logger_series rows, series_id NULL."""
+        file = [
+            "obsid,date_time,head_cm",
+            "rb1,2016-03-15 10:30:00,100.0",
+        ]
+        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb1')""")
+
+        def configure(importer):
+            self._map_columns(
+                importer,
+                {"obsid": "obsid", "date_time": "date_time", "head_cm": "head_cm"},
+            )
+            for column in importer.table_chooser.series_columns:
+                column.file_column_name = None
+
+        self._run_wll_series_import(file, configure)
+
+        count = db_utils.sql_load_fr_db("SELECT count(*) FROM w_logger_series")[1]
+        assert int(count[0][0]) == 0
+        sids = db_utils.sql_load_fr_db("SELECT series_id FROM w_levels_logger")[1]
+        assert sids[0][0] is None
+
 
 class GeneralCsvGuiFromLayerMixin:
     """Test to make sure wlvllogg_import goes all the way to the end without errors"""

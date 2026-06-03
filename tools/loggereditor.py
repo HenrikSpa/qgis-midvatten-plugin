@@ -697,6 +697,60 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             groups.append({"instant": instant, "kind": kind, "rows": rows})
         return groups
 
+    def _drop_rows_by_raw(self, drop_raws: set, label: str) -> None:
+        """Drop buffer rows whose date_time_raw is in drop_raws; snapshot for undo.
+
+        date_time_raw is unique per row, so this removes exactly the chosen rows.
+        Line keys are recomputed by the next plot refresh, not here (this method
+        is callable without show())."""
+        if not drop_raws:
+            return
+        self._buf = self._buf[~self._buf["date_time_raw"].isin(drop_raws)]
+        self._history_push(label)
+
+    def _remove_redundant_duplicates(self) -> int:
+        """Drop coarse twins at every 'redundant' instant, keeping the row with
+        the highest datetime precision (longest dt_length; tie-break newest
+        created_at when available). Returns the number of rows removed."""
+        drop_raws = set()
+        for grp in self._classify_duplicates():
+            if grp["kind"] != "redundant":
+                continue
+            keep = max(
+                grp["rows"],
+                key=lambda r: (r["dt_length"], r.get("created_at", "")),
+            )
+            for r in grp["rows"]:
+                if r["date_time_raw"] != keep["date_time_raw"]:
+                    drop_raws.add(r["date_time_raw"])
+        self._drop_rows_by_raw(drop_raws, "Remove redundant duplicates")
+        return len(drop_raws)
+
+    def _remove_cross_source_overlaps(self, keep_source: str) -> int:
+        """At every 'cross_source' instant where keep_source is present, drop the
+        rows from the other sources. Instants without keep_source are left
+        untouched (never emptied). Returns the number of rows removed."""
+        drop_raws = set()
+        for grp in self._classify_duplicates():
+            if grp["kind"] != "cross_source":
+                continue
+            sources_here = {r["source"] for r in grp["rows"]}
+            if keep_source not in sources_here:
+                continue
+            for r in grp["rows"]:
+                if r["source"] != keep_source:
+                    drop_raws.add(r["date_time_raw"])
+        self._drop_rows_by_raw(drop_raws, "Remove cross-source overlaps")
+        return len(drop_raws)
+
+    def _resolve_conflict_keep(self, instant: pd.Timestamp, keep_raw: str) -> int:
+        """At a single duplicated instant, keep the row whose date_time_raw is
+        keep_raw and drop the others. Returns the number of rows removed."""
+        sub = self._buf[self._buf.index == instant]
+        drop_raws = {r for r in sub["date_time_raw"].tolist() if r != keep_raw}
+        self._drop_rows_by_raw(drop_raws, "Resolve duplicate conflict")
+        return len(drop_raws)
+
     def _label_for_key(self, obsid: str, key: tuple, translated_suffix: str) -> str:
         """Build a plot-line label from a line key. ``translated_suffix`` is the
         already-translated base (e.g. " logger water level"); the active

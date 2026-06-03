@@ -459,3 +459,47 @@ class TestLoggerEditorDupes(utils_for_tests.MidvattenTestSpatialiteDbSv):
                 "series_id",
                 "dt_length",
             }
+
+    def test_remove_redundant_duplicates_keeps_higher_precision(self):
+        editor = self._twin_editor()
+        n = editor._remove_redundant_duplicates()
+        assert n == 1
+        sub = editor._buf[editor._buf.index == pd.Timestamp("2024-01-01 00:00:00")]
+        assert sub["date_time_raw"].tolist() == ["2024-01-01 00:00:00"]
+        assert (
+            len(editor._buf[editor._buf.index == pd.Timestamp("2024-01-02 00:00:00")])
+            == 2
+        )
+        assert (
+            len(editor._buf[editor._buf.index == pd.Timestamp("2024-01-03 00:00:00")])
+            == 2
+        )
+        assert editor._dirty is True
+
+    def test_remove_cross_source_overlaps_keeps_chosen_source(self):
+        editor = self._twin_editor()
+        n = editor._remove_cross_source_overlaps("a")
+        assert n == 1
+        sub = editor._buf[editor._buf.index == pd.Timestamp("2024-01-02 00:00:00")]
+        assert sub["source"].tolist() == ["a"]
+        assert (
+            len(editor._buf[editor._buf.index == pd.Timestamp("2024-01-01 00:00:00")])
+            == 2
+        )
+
+    def test_resolve_conflict_keep(self):
+        editor = self._twin_editor()
+        editor._resolve_conflict_keep(
+            pd.Timestamp("2024-01-03 00:00:00"), "2024-01-03 00:00:00"
+        )
+        sub = editor._buf[editor._buf.index == pd.Timestamp("2024-01-03 00:00:00")]
+        assert sub["date_time_raw"].tolist() == ["2024-01-03 00:00:00"]
+        assert sub["level_masl"].tolist() == [31.0]
+
+    def test_resolution_is_undoable(self):
+        editor = self._twin_editor()
+        before = len(editor._buf)
+        editor._remove_redundant_duplicates()
+        assert len(editor._buf) == before - 1
+        editor.undo()
+        assert len(editor._buf) == before

@@ -651,10 +651,11 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         dup_mask = self._buf.index.duplicated(keep=False)
         return self._buf.index[dup_mask].unique()
 
-    def _label_for_line_key(self, obsid: str, key: tuple) -> str:
-        label = obsid + QCoreApplication.translate(
-            "Calibrlogger", " logger water level"
-        )
+    def _label_for_key(self, obsid: str, key: tuple, translated_suffix: str) -> str:
+        """Build a plot-line label from a line key. ``translated_suffix`` is the
+        already-translated base (e.g. " logger water level"); the active
+        "Separate by ..." dimensions are appended in key order."""
+        label = obsid + translated_suffix
         parts = []
         dim_idx = 0
         if self.separate_source_cb.isChecked():
@@ -672,24 +673,19 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             label += ", " + ", ".join(parts)
         return label
 
+    def _label_for_line_key(self, obsid: str, key: tuple) -> str:
+        return self._label_for_key(
+            obsid,
+            key,
+            QCoreApplication.translate("Calibrlogger", " logger water level"),
+        )
+
     def _label_for_head_key(self, obsid: str, key: tuple) -> str:
-        label = obsid + QCoreApplication.translate("Calibrlogger", " logger head")
-        parts = []
-        dim_idx = 0
-        if self.separate_source_cb.isChecked():
-            src = key[dim_idx]
-            dim_idx += 1
-            if src and str(src).strip():
-                parts.append(str(src))
-        if self.separate_created_at_cb.isChecked():
-            parts.append(f"imported={key[dim_idx]}")
-            dim_idx += 1
-        if self.separate_dt_precision_cb.isChecked():
-            parts.append(f"dt_len={key[dim_idx]}")
-            dim_idx += 1
-        if parts:
-            label += ", " + ", ".join(parts)
-        return label
+        return self._label_for_key(
+            obsid,
+            key,
+            QCoreApplication.translate("Calibrlogger", " logger head"),
+        )
 
     def _on_legend_pick(self, ax_lines: list):
         self._selected_line_keys = set()

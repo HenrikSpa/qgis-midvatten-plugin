@@ -1088,7 +1088,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             # would miss it because the surviving twin keeps the label.
             orig_raw = self._original_buf["date_time_raw"]
             buf_raw = set(self._buf["date_time_raw"])
-            deleted_raw = [r for r in orig_raw if r not in buf_raw]
+            deleted_raw = orig_raw[~orig_raw.isin(buf_raw)].tolist()
             delete_params = [(obsid, raw) for raw in deleted_raw]
 
             common_index = original_buf.index.intersection(buf.index)

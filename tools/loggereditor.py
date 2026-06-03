@@ -1053,14 +1053,20 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         # Drop them from the local diff buffers so the save targets only the
         # unique rows, and warn the user. The real buffers keep the twins —
         # a later plan adds a UI to resolve them.
-        dup_instants = self._duplicate_instants()
-        if len(dup_instants) > 0:
-            buf = self._buf[~self._buf.index.duplicated(keep=False)]
+        dup_mask = self._buf.index.duplicated(keep=False)
+        if dup_mask.any():
+            dup_instants = self._buf.index[dup_mask].unique()
+            buf = self._buf[~dup_mask]
             original_buf = self._original_buf[
                 ~self._original_buf.index.duplicated(keep=False)
             ]
-            sample = ", ".join(d.strftime(_DT_FMT) for d in dup_instants[:5])
-            more = "" if len(dup_instants) <= 5 else f" (+{len(dup_instants) - 5} more)"
+            head = dup_instants[:5]
+            sample = ", ".join(head.strftime(_DT_FMT))
+            more = (
+                f" (+{len(dup_instants) - len(head)} more)"
+                if len(dup_instants) > len(head)
+                else ""
+            )
             common_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "LoggerEditor",
@@ -1115,7 +1121,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 tbl,
                 ph,
                 is_sqlite,
-                force_per_row=len(dup_instants) > 0,
+                force_per_row=bool(dup_mask.any()),
             )
             try:
                 with dbconnection.transaction():
@@ -1268,6 +1274,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                     if temp_id in sb:
                         sb[real_id] = sb.pop(temp_id)
 
+        # Deliberately on self._buf, not the deduped local `buf`: the real
+        # buffer keeps any twin rows (they were only excluded from the write).
         self._original_buf = self._buf.copy()
         self._original_series_buf = {k: dict(v) for k, v in self._series_buf.items()}
         self._last_saved_history_pos = self._history_pos

@@ -19,6 +19,24 @@ from midvatten.test.test_loggereditor_series import (
 )
 
 
+def _drop_dt_index() -> None:
+    """Drop the normalized-instant unique index so same-instant twins can be
+    inserted (reproduces the legacy-DB precondition that predates the index)."""
+    db_utils.sql_alter_db("DROP INDEX IF EXISTS uq_w_levels_logger_obsid_dt")
+
+
+def _fetch_levels(obsid: str) -> dict:
+    """Return {date_time: level_masl} for an obsid, ordered by date_time."""
+    dbconn = db_utils.DbConnectionManager()
+    rows = dbconn.execute_and_fetchall(
+        "SELECT date_time, level_masl FROM w_levels_logger"
+        " WHERE obsid = ? ORDER BY date_time",
+        (obsid,),
+    )
+    dbconn.closedb()
+    return {r[0]: r[1] for r in rows}
+
+
 @pytest.mark.spatialite
 class TestLoggerEditorDupes(utils_for_tests.MidvattenTestSpatialiteDbSv):
     def teardown_method(self):
@@ -101,9 +119,7 @@ class TestLoggerEditorDupes(utils_for_tests.MidvattenTestSpatialiteDbSv):
         self, mock_messagebar
     ):
         _insert_obs_point("rb1")
-        # Twins can only exist in legacy DBs created before the normalized-instant
-        # unique index; drop it to reproduce that precondition.
-        db_utils.sql_alter_db("DROP INDEX IF EXISTS uq_w_levels_logger_obsid_dt")
+        _drop_dt_index()
         # Two rows, same normalized instant, different raw text (the twin pair)
         _insert_logger_row("rb1", "2024-01-01 00:00", 100.0, 10.0)
         _insert_logger_row("rb1", "2024-01-01 00:00:00", 100.0, 11.0)
@@ -128,13 +144,7 @@ class TestLoggerEditorDupes(utils_for_tests.MidvattenTestSpatialiteDbSv):
         print(f"{mock_messagebar.mock_calls=}")
         assert result is True  # save succeeded, did not crash
 
-        dbconn = db_utils.DbConnectionManager()
-        rows = dbconn.execute_and_fetchall(
-            "SELECT date_time, level_masl FROM w_levels_logger"
-            " WHERE obsid='rb1' ORDER BY date_time"
-        )
-        dbconn.closedb()
-        by_dt = {r[0]: r[1] for r in rows}
+        by_dt = _fetch_levels("rb1")
         # The clean edit persisted
         assert by_dt["2024-01-02 00:00:00"] == 99.0
         # BOTH twins are untouched (no silent overwrite of either)
@@ -148,9 +158,7 @@ class TestLoggerEditorDupes(utils_for_tests.MidvattenTestSpatialiteDbSv):
         """A duplicate instant between two edited clean rows must not be
         swept up by a BETWEEN range UPDATE."""
         _insert_obs_point("rb1")
-        # Twins can only exist in legacy DBs created before the normalized-instant
-        # unique index; drop it to reproduce that precondition.
-        db_utils.sql_alter_db("DROP INDEX IF EXISTS uq_w_levels_logger_obsid_dt")
+        _drop_dt_index()
         # Clean row, then a twin pair (same instant), then another clean row.
         _insert_logger_row("rb1", "2024-01-01 00:00:00", 100.0, 10.0)
         _insert_logger_row("rb1", "2024-01-02 00:00", 200.0, 20.0)
@@ -181,13 +189,7 @@ class TestLoggerEditorDupes(utils_for_tests.MidvattenTestSpatialiteDbSv):
         print(f"{mock_messagebar.mock_calls=}")
         assert result is True
 
-        dbconn = db_utils.DbConnectionManager()
-        rows = dbconn.execute_and_fetchall(
-            "SELECT date_time, level_masl FROM w_levels_logger"
-            " WHERE obsid='rb1' ORDER BY date_time"
-        )
-        dbconn.closedb()
-        by_dt = {r[0]: r[1] for r in rows}
+        by_dt = _fetch_levels("rb1")
         # The clean edits persisted (set to NULL)
         assert by_dt["2024-01-01 00:00:00"] is None
         assert by_dt["2024-01-03 00:00:00"] is None

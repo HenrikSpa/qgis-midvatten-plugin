@@ -1054,7 +1054,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         # unique rows, and warn the user. The real buffers keep the twins —
         # a later plan adds a UI to resolve them.
         dup_mask = self._buf.index.duplicated(keep=False)
-        if dup_mask.any():
+        has_dups = bool(dup_mask.any())
+        if has_dups:
             dup_instants = self._buf.index[dup_mask].unique()
             buf = self._buf[~dup_mask]
             original_buf = self._original_buf[
@@ -1121,7 +1122,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 tbl,
                 ph,
                 is_sqlite,
-                force_per_row=bool(dup_mask.any()),
+                force_per_row=has_dups,
             )
             try:
                 with dbconnection.transaction():
@@ -1313,6 +1314,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         from ``buf``), range merging is disabled: a BETWEEN range derived from
         the deduped buffer could span a skipped twin's instant in the DB.
         Per-row statements target exact instants and never touch a twin.
+        Note this disables range merging for ALL rows in the save, not just
+        those adjacent to a twin; Plan 2 (duplicate-resolve UI) should remove
+        the flag entirely once twins can no longer reach save.
         """
         if len(changed_index) == 0:
             return [], []

@@ -1046,6 +1046,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         # a later plan adds a UI to resolve them.
         dup_mask = self._buf.index.duplicated(keep=False)
         has_dups = bool(dup_mask.any())
+        buf_raw = set(self._buf["date_time_raw"])
         if has_dups:
             dup_instants = self._buf.index[dup_mask].unique()
             buf = self._buf[~dup_mask]
@@ -1075,9 +1076,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             # duplicate index label. Align original_buf to the surviving rows by
             # raw text so the UPDATE diff compares identically-labeled Series.
             original_buf = self._original_buf[
-                self._original_buf["date_time_raw"].isin(
-                    set(self._buf["date_time_raw"])
-                )
+                self._original_buf["date_time_raw"].isin(buf_raw)
             ]
 
         common_utils.start_waiting_cursor()
@@ -1087,7 +1086,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             # text) is caught -- a label set-difference on the deduped buffers
             # would miss it because the surviving twin keeps the label.
             orig_raw = self._original_buf["date_time_raw"]
-            buf_raw = set(self._buf["date_time_raw"])
             deleted_raw = orig_raw[~orig_raw.isin(buf_raw)].tolist()
             delete_params = [(obsid, raw) for raw in deleted_raw]
 
@@ -1531,14 +1529,12 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
     def _restore_from_history(self, pos: int) -> None:
         entry = self._history[pos]
+        # Select snapshot rows from _original_buf by unique raw date_time text
+        # (not the datetime index, which is non-unique when twins are present),
+        # then restore the original datetime index.
         ob_by_raw = self._original_buf.set_index("date_time_raw", drop=False)
-        present_raw = entry.get("present_raw")
-        if present_raw is None:
-            # Back-compat: snapshots taken before present_raw existed.
-            self._buf = self._original_buf.loc[entry["present_index"]].copy()
-        else:
-            self._buf = ob_by_raw.loc[present_raw].copy()
-            self._buf.index = entry["present_index"]
+        self._buf = ob_by_raw.loc[entry["present_raw"]].copy()
+        self._buf.index = entry["present_index"]
         self._buf["level_masl"] = entry["level_masl"].to_numpy()
         # Overlay positionally (numpy) to avoid index-alignment on duplicate
         # labels, but keep series_id's nullable-Int64 dtype.

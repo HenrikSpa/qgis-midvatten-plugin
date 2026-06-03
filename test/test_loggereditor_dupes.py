@@ -157,6 +157,27 @@ class TestLoggerEditorDupes(utils_for_tests.MidvattenTestSpatialiteDbSv):
         # A warning was emitted about the skipped duplicate
         assert mock_messagebar.warning.called
 
+    def test_buffer_carries_raw_date_time_text(self):
+        """The buffer keeps the original DB date_time text per row, distinct for twins."""
+        _insert_obs_point("rb1")
+        editor = _make_editor_with_buf(
+            self.iface,
+            self.midvatten.ms,
+            obsid="rb1",
+            dates=["2024-01-05 00:00", "2024-01-05 00:00:00", "2024-01-06 00:00:00"],
+            head_values=[1.0, 1.0, 2.0],
+            level_values=[10.0, 11.0, 20.0],
+            series_ids=[None, None, None],
+            sources=["", "", ""],
+            series_buf={},
+        )
+        assert "date_time_raw" in editor._buf.columns
+        assert editor._buf["date_time_raw"].tolist() == [
+            "2024-01-05 00:00",
+            "2024-01-05 00:00:00",
+            "2024-01-06 00:00:00",
+        ]
+
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_save_does_not_range_over_skipped_twin(self, mock_messagebar):
         """A duplicate instant between two edited clean rows must not be

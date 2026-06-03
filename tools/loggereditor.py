@@ -926,6 +926,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                     ]
                     col_idx += 1
                 cols_data["dt_length"] = [r[col_idx] for r in head_level_masl_list]
+                cols_data["date_time_raw"] = [r[0] for r in head_level_masl_list]
                 buf_df = pd.DataFrame(
                     cols_data,
                     index=pd.to_datetime(
@@ -938,6 +939,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 if has_created_at:
                     buf_cols.append("created_at")
                 buf_cols.append("dt_length")
+                buf_cols.append("date_time_raw")
                 buf_df = pd.DataFrame(columns=buf_cols)
                 buf_df["series_id"] = pd.array([], dtype="Int64")
             self._buf = buf_df

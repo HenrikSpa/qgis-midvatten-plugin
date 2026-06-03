@@ -83,6 +83,7 @@ def _make_editor_with_buf(
             "source": sources,
             "series_id": pd.array(series_ids, dtype="Int64"),
             "dt_length": [len(d) for d in dates],
+            "date_time_raw": list(dates),
         },
         index=pd.to_datetime(dates, format="ISO8601"),
     )

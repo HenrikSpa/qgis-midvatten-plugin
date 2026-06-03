@@ -14,6 +14,7 @@ from midvatten.tools.loggereditor import LoggerEditor
 from midvatten.tools.utils import db_utils
 from midvatten.test.test_loggereditor_series import (
     _insert_obs_point,
+    _insert_logger_row,
     _make_editor_with_buf,
 )
 
@@ -64,6 +65,7 @@ class TestLoggerEditorDupes(utils_for_tests.MidvattenTestSpatialiteDbSv):
             assert "Getting last calibration failed" not in str(call)
 
     def test_duplicate_instants_detects_repeated_label(self):
+        _insert_obs_point("rb1")
         editor = _make_editor_with_buf(
             self.iface,
             self.midvatten.ms,
@@ -80,6 +82,7 @@ class TestLoggerEditorDupes(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert dups[0] == pd.Timestamp("2024-01-01 00:00:00")
 
     def test_duplicate_instants_empty_when_clean(self):
+        _insert_obs_point("rb1")
         editor = _make_editor_with_buf(
             self.iface,
             self.midvatten.ms,
@@ -92,3 +95,103 @@ class TestLoggerEditorDupes(utils_for_tests.MidvattenTestSpatialiteDbSv):
             series_buf={},
         )
         assert len(editor._duplicate_instants()) == 0
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_save_with_duplicate_instant_does_not_crash_or_corrupt(
+        self, mock_messagebar
+    ):
+        _insert_obs_point("rb1")
+        # Twins can only exist in legacy DBs created before the normalized-instant
+        # unique index; drop it to reproduce that precondition.
+        db_utils.sql_alter_db("DROP INDEX IF EXISTS uq_w_levels_logger_obsid_dt")
+        # Two rows, same normalized instant, different raw text (the twin pair)
+        _insert_logger_row("rb1", "2024-01-01 00:00", 100.0, 10.0)
+        _insert_logger_row("rb1", "2024-01-01 00:00:00", 100.0, 11.0)
+        # One clean row the user will actually edit
+        _insert_logger_row("rb1", "2024-01-02 00:00:00", 200.0, 20.0)
+
+        editor = _make_editor_with_buf(
+            self.iface,
+            self.midvatten.ms,
+            obsid="rb1",
+            dates=["2024-01-01 00:00", "2024-01-01 00:00:00", "2024-01-02 00:00:00"],
+            head_values=[1.0, 1.0, 2.0],
+            level_values=[10.0, 11.0, 20.0],
+            series_ids=[None, None, None],
+            sources=["", "", ""],
+            series_buf={},
+        )
+        # Edit only the clean row
+        editor._buf.loc[pd.Timestamp("2024-01-02 00:00:00"), "level_masl"] = 99.0
+
+        result = editor.save_to_db()
+        print(f"{mock_messagebar.mock_calls=}")
+        assert result is True  # save succeeded, did not crash
+
+        dbconn = db_utils.DbConnectionManager()
+        rows = dbconn.execute_and_fetchall(
+            "SELECT date_time, level_masl FROM w_levels_logger"
+            " WHERE obsid='rb1' ORDER BY date_time"
+        )
+        dbconn.closedb()
+        by_dt = {r[0]: r[1] for r in rows}
+        # The clean edit persisted
+        assert by_dt["2024-01-02 00:00:00"] == 99.0
+        # BOTH twins are untouched (no silent overwrite of either)
+        assert by_dt["2024-01-01 00:00"] == 10.0
+        assert by_dt["2024-01-01 00:00:00"] == 11.0
+        # A warning was emitted about the skipped duplicate
+        assert mock_messagebar.warning.called
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_save_does_not_range_over_skipped_twin(self, mock_messagebar):
+        """A duplicate instant between two edited clean rows must not be
+        swept up by a BETWEEN range UPDATE."""
+        _insert_obs_point("rb1")
+        # Twins can only exist in legacy DBs created before the normalized-instant
+        # unique index; drop it to reproduce that precondition.
+        db_utils.sql_alter_db("DROP INDEX IF EXISTS uq_w_levels_logger_obsid_dt")
+        # Clean row, then a twin pair (same instant), then another clean row.
+        _insert_logger_row("rb1", "2024-01-01 00:00:00", 100.0, 10.0)
+        _insert_logger_row("rb1", "2024-01-02 00:00", 200.0, 20.0)
+        _insert_logger_row("rb1", "2024-01-02 00:00:00", 200.0, 21.0)
+        _insert_logger_row("rb1", "2024-01-03 00:00:00", 300.0, 30.0)
+
+        editor = _make_editor_with_buf(
+            self.iface,
+            self.midvatten.ms,
+            obsid="rb1",
+            dates=[
+                "2024-01-01 00:00:00",
+                "2024-01-02 00:00",
+                "2024-01-02 00:00:00",
+                "2024-01-03 00:00:00",
+            ],
+            head_values=[1.0, 2.0, 2.0, 3.0],
+            level_values=[10.0, 20.0, 21.0, 30.0],
+            series_ids=[None, None, None, None],
+            sources=["", "", "", ""],
+            series_buf={},
+        )
+        # Set BOTH flanking clean rows to NULL (a range pattern over the twin).
+        editor._buf.loc[pd.Timestamp("2024-01-01 00:00:00"), "level_masl"] = None
+        editor._buf.loc[pd.Timestamp("2024-01-03 00:00:00"), "level_masl"] = None
+
+        result = editor.save_to_db()
+        print(f"{mock_messagebar.mock_calls=}")
+        assert result is True
+
+        dbconn = db_utils.DbConnectionManager()
+        rows = dbconn.execute_and_fetchall(
+            "SELECT date_time, level_masl FROM w_levels_logger"
+            " WHERE obsid='rb1' ORDER BY date_time"
+        )
+        dbconn.closedb()
+        by_dt = {r[0]: r[1] for r in rows}
+        # The clean edits persisted (set to NULL)
+        assert by_dt["2024-01-01 00:00:00"] is None
+        assert by_dt["2024-01-03 00:00:00"] is None
+        # BOTH twins are untouched — not swept by a range UPDATE
+        assert by_dt["2024-01-02 00:00"] == 20.0
+        assert by_dt["2024-01-02 00:00:00"] == 21.0
+        assert mock_messagebar.warning.called

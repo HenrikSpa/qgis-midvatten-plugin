@@ -1047,9 +1047,36 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             return False
         obsid = self._buf_obsid
         id_mapping: dict[int, int] = {}
+
+        # Duplicate instants (two rows with the same normalized datetime but
+        # different raw text) cannot be addressed individually by the editor.
+        # Drop them from the local diff buffers so the save targets only the
+        # unique rows, and warn the user. The real buffers keep the twins —
+        # a later plan adds a UI to resolve them.
+        dup_instants = self._duplicate_instants()
+        if len(dup_instants) > 0:
+            buf = self._buf[~self._buf.index.duplicated(keep=False)]
+            original_buf = self._original_buf[
+                ~self._original_buf.index.duplicated(keep=False)
+            ]
+            sample = ", ".join(d.strftime(_DT_FMT) for d in dup_instants[:5])
+            more = "" if len(dup_instants) <= 5 else f" (+{len(dup_instants) - 5} more)"
+            common_utils.MessagebarAndLog.warning(
+                bar_msg=QCoreApplication.translate(
+                    "LoggerEditor",
+                    "%s duplicate timestamp(s) were skipped while saving."
+                    " Resolve duplicates to save edits at those times.",
+                )
+                % len(dup_instants),
+                log_msg=f"Skipped duplicate instants for obsid {obsid}: {sample}{more}",
+            )
+        else:
+            buf = self._buf
+            original_buf = self._original_buf
+
         common_utils.start_waiting_cursor()
         try:
-            deleted_indices = self._original_buf.index.difference(self._buf.index)
+            deleted_indices = original_buf.index.difference(buf.index)
             delete_params = list(
                 zip(
                     [obsid] * len(deleted_indices),
@@ -1057,16 +1084,16 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 )
             )
 
-            common_index = self._original_buf.index.intersection(self._buf.index)
-            orig_vals = self._original_buf.loc[common_index, "level_masl"]
-            new_vals = self._buf.loc[common_index, "level_masl"]
+            common_index = original_buf.index.intersection(buf.index)
+            orig_vals = original_buf.loc[common_index, "level_masl"]
+            new_vals = buf.loc[common_index, "level_masl"]
             changed_mask = ~(
                 (orig_vals == new_vals) | (orig_vals.isna() & new_vals.isna())
             )
             changed_index = common_index[changed_mask]
             orig_changed = orig_vals.loc[changed_index]
             new_changed = new_vals.loc[changed_index]
-            head_changed = self._buf.loc[changed_index, "head_cm_m"]
+            head_changed = buf.loc[changed_index, "head_cm_m"]
 
             dbconnection = db_utils.DbConnectionManager()
             ph = dbconnection.placeholder()
@@ -1079,6 +1106,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             else:
                 dt_eq = f"{ident('date_time')}::timestamp = {ph}::timestamp"
             range_stmts, per_row_params = self._compute_update_statements(
+                buf,
                 changed_index,
                 orig_changed,
                 new_changed,
@@ -1087,6 +1115,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 tbl,
                 ph,
                 is_sqlite,
+                force_per_row=len(dup_instants) > 0,
             )
             try:
                 with dbconnection.transaction():
@@ -1115,7 +1144,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                         new_series = {
                             k: v
                             for k, v in self._series_buf.items()
-                            if k < 0 and (self._buf["series_id"] == k).any()
+                            if k < 0 and (buf["series_id"] == k).any()
                         }
                         for temp_id, meta in new_series.items():
                             rows = dbconnection.execute_and_fetchall(
@@ -1160,10 +1189,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                             )
 
                         # 3. UPDATE series_id on rows where it changed
-                        common = self._original_buf.index.intersection(self._buf.index)
+                        common = original_buf.index.intersection(buf.index)
                         if len(common) > 0:
-                            orig_sid = self._original_buf.loc[common, "series_id"]
-                            new_sid = self._buf.loc[common, "series_id"]
+                            orig_sid = original_buf.loc[common, "series_id"]
+                            new_sid = buf.loc[common, "series_id"]
                             sid_changed = (
                                 ~(
                                     (orig_sid == new_sid)
@@ -1174,7 +1203,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                             if len(changed_idx) > 0:
                                 sid_update_params = []
                                 for dt_idx in changed_idx:
-                                    raw_sid = self._buf.loc[dt_idx, "series_id"]
+                                    raw_sid = buf.loc[dt_idx, "series_id"]
                                     if pd.notna(raw_sid):
                                         int_sid = int(raw_sid)
                                         resolved = id_mapping.get(int_sid, int_sid)
@@ -1250,6 +1279,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
     def _compute_update_statements(
         self,
+        buf: pd.DataFrame,
         changed_index: pd.DatetimeIndex,
         orig_changed: pd.Series,
         new_changed: pd.Series,
@@ -1258,6 +1288,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         tbl: str,
         ph: str,
         is_sqlite: bool,
+        force_per_row: bool = False,
     ) -> tuple[list[tuple], list[tuple]]:
         """Group changed rows by contiguous buf-position; emit range or per-row SQL.
 
@@ -1269,6 +1300,11 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         position, add offset, set to NULL) are folded into a single range-based
         UPDATE statement.  Groups that don't match — e.g. trend adjustments — fall
         back to one row per statement via executemany.
+
+        When ``force_per_row`` is True (duplicate instants present and dropped
+        from ``buf``), range merging is disabled: a BETWEEN range derived from
+        the deduped buffer could span a skipped twin's instant in the DB.
+        Per-row statements target exact instants and never touch a twin.
         """
         if len(changed_index) == 0:
             return [], []
@@ -1287,7 +1323,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
         # A BETWEEN range-query only touches the intended rows when there are no
         # unchanged rows between t1 and t2 in the buffer — split on gaps to enforce this.
-        buf_pos = self._buf.index.get_indexer(changed_index)
+        buf_pos = buf.index.get_indexer(changed_index)
         splits = (np.where(np.diff(buf_pos) > 1)[0] + 1).tolist()
         group_slices = np.split(np.arange(len(changed_index)), splits)
 
@@ -1300,6 +1336,18 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             grp_orig = orig_changed.iloc[grp_idx]
             dt_strs = grp_changed.strftime(_DT_FMT)
             t1, t2 = dt_strs[0], dt_strs[-1]
+
+            if force_per_row:
+                # Duplicate instants dropped from buf — a BETWEEN range could
+                # span a skipped twin. Emit exact per-row updates only.
+                per_row_params.extend(
+                    zip(
+                        grp_new.to_numpy(dtype=object, na_value=None),
+                        itertools.repeat(obsid, len(grp_idx)),
+                        dt_strs,
+                    )
+                )
+                continue
 
             # Pattern: set to NULL
             if grp_new.isna().all():

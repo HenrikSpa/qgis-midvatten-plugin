@@ -1492,6 +1492,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             "timestamp": datetime.datetime.now(),
             "level_masl": self._buf["level_masl"].copy(),
             "present_index": self._buf.index.copy(),
+            "present_raw": self._buf["date_time_raw"].tolist(),
             "series_id": self._buf["series_id"].copy(),
             "series_buf": {k: dict(v) for k, v in self._series_buf.items()},
             "source": (
@@ -1530,11 +1531,18 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
     def _restore_from_history(self, pos: int) -> None:
         entry = self._history[pos]
-        self._buf = self._original_buf.loc[entry["present_index"]].copy()
-        self._buf["level_masl"] = entry["level_masl"]
-        self._buf["series_id"] = entry["series_id"]
+        ob_by_raw = self._original_buf.set_index("date_time_raw", drop=False)
+        present_raw = entry.get("present_raw")
+        if present_raw is None:
+            # Back-compat: snapshots taken before present_raw existed.
+            self._buf = self._original_buf.loc[entry["present_index"]].copy()
+        else:
+            self._buf = ob_by_raw.loc[present_raw].copy()
+            self._buf.index = entry["present_index"]
+        self._buf["level_masl"] = entry["level_masl"].to_numpy()
+        self._buf["series_id"] = entry["series_id"].to_numpy()
         if entry.get("source") is not None and "source" in self._buf.columns:
-            self._buf["source"] = entry["source"]
+            self._buf["source"] = entry["source"].to_numpy()
         self._series_buf = {k: dict(v) for k, v in entry["series_buf"].items()}
         if hasattr(self, "_series_last_shown_id"):
             self._series_last_shown_id = None

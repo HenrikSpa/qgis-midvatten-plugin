@@ -101,6 +101,7 @@ def _make_editor_with_buf(
             "timestamp": pd.Timestamp.now(),
             "level_masl": editor._buf["level_masl"].copy(),
             "present_index": editor._buf.index.copy(),
+            "present_raw": editor._buf["date_time_raw"].tolist(),
             "series_id": editor._buf["series_id"].copy(),
             "series_buf": {k: dict(v) for k, v in editor._series_buf.items()},
             "source": editor._buf["source"].copy(),

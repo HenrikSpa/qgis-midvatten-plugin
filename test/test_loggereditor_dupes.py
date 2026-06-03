@@ -307,3 +307,60 @@ class TestLoggerEditorDupes(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert "2024-01-05 00:00" not in by_dt
         assert by_dt["2024-01-05 00:00:00"] == 11.0
         assert by_dt["2024-01-06 00:00:00"] == 20.0
+
+    def test_undo_redo_with_twins_present(self):
+        """Editing then undo/redo must not corrupt a buffer that contains twins."""
+        _insert_obs_point("rb1")
+        editor = _make_editor_with_buf(
+            self.iface,
+            self.midvatten.ms,
+            obsid="rb1",
+            dates=["2024-01-05 00:00", "2024-01-05 00:00:00", "2024-01-06 00:00:00"],
+            head_values=[1.0, 1.0, 2.0],
+            level_values=[10.0, 11.0, 20.0],
+            series_ids=[None, None, None],
+            sources=["", "", ""],
+            series_buf={},
+        )
+        editor._buf.loc[pd.Timestamp("2024-01-06 00:00:00"), "level_masl"] = 99.0
+        editor._history_push("edit")
+        assert len(editor._buf) == 3  # no row explosion from the twin label
+
+        editor.undo()
+        assert len(editor._buf) == 3
+        assert editor._buf["date_time_raw"].tolist() == [
+            "2024-01-05 00:00",
+            "2024-01-05 00:00:00",
+            "2024-01-06 00:00:00",
+        ]
+        assert (
+            editor._buf.loc[pd.Timestamp("2024-01-06 00:00:00"), "level_masl"] == 20.0
+        )
+
+        editor.redo()
+        assert len(editor._buf) == 3
+        assert (
+            editor._buf.loc[pd.Timestamp("2024-01-06 00:00:00"), "level_masl"] == 99.0
+        )
+
+    def test_undo_restores_removed_twin(self):
+        """Undo after removing a twin brings the removed row back."""
+        _insert_obs_point("rb1")
+        editor = _make_editor_with_buf(
+            self.iface,
+            self.midvatten.ms,
+            obsid="rb1",
+            dates=["2024-01-05 00:00", "2024-01-05 00:00:00", "2024-01-06 00:00:00"],
+            head_values=[1.0, 1.0, 2.0],
+            level_values=[10.0, 11.0, 20.0],
+            series_ids=[None, None, None],
+            sources=["", "", ""],
+            series_buf={},
+        )
+        editor._buf = editor._buf[editor._buf["date_time_raw"] != "2024-01-05 00:00"]
+        editor._history_push("remove twin")
+        assert len(editor._buf) == 2
+
+        editor.undo()
+        assert len(editor._buf) == 3
+        assert "2024-01-05 00:00" in editor._buf["date_time_raw"].tolist()

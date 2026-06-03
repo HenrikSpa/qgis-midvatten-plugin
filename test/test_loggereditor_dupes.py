@@ -15,6 +15,7 @@ from midvatten.tools.utils import db_utils
 from midvatten.test.test_loggereditor_series import (
     _insert_obs_point,
     _insert_logger_row,
+    _insert_series,
     _make_editor_with_buf,
 )
 
@@ -30,6 +31,18 @@ def _fetch_levels(obsid: str) -> dict:
     dbconn = db_utils.DbConnectionManager()
     rows = dbconn.execute_and_fetchall(
         "SELECT date_time, level_masl FROM w_levels_logger"
+        " WHERE obsid = ? ORDER BY date_time",
+        (obsid,),
+    )
+    dbconn.closedb()
+    return {r[0]: r[1] for r in rows}
+
+
+def _fetch_series_ids(obsid: str) -> dict:
+    """Return {date_time: series_id} for an obsid, ordered by date_time."""
+    dbconn = db_utils.DbConnectionManager()
+    rows = dbconn.execute_and_fetchall(
+        "SELECT date_time, series_id FROM w_levels_logger"
         " WHERE obsid = ? ORDER BY date_time",
         (obsid,),
     )
@@ -196,4 +209,57 @@ class TestLoggerEditorDupes(utils_for_tests.MidvattenTestSpatialiteDbSv):
         # BOTH twins are untouched — not swept by a range UPDATE
         assert by_dt["2024-01-02 00:00"] == 20.0
         assert by_dt["2024-01-02 00:00:00"] == 21.0
+        assert mock_messagebar.warning.called
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_save_series_id_change_with_twin_present(self, mock_messagebar):
+        """Assigning a series_id to a clean row while twins exist must persist
+        the assignment (series_join path) and leave both twin rows untouched."""
+        _insert_obs_point("rb1")
+        _drop_dt_index()
+        sid = _insert_series("rb1", "src_a")
+        # Twin pair: same normalized instant, different raw text, no series_id
+        _insert_logger_row("rb1", "2024-01-05 00:00", 100.0, 10.0)
+        _insert_logger_row("rb1", "2024-01-05 00:00:00", 100.0, 11.0)
+        # Clean row to assign to the existing series
+        _insert_logger_row("rb1", "2024-01-06 00:00:00", 200.0, 20.0)
+
+        editor = _make_editor_with_buf(
+            self.iface,
+            self.midvatten.ms,
+            obsid="rb1",
+            dates=["2024-01-05 00:00", "2024-01-05 00:00:00", "2024-01-06 00:00:00"],
+            head_values=[1.0, 1.0, 2.0],
+            level_values=[10.0, 11.0, 20.0],
+            series_ids=[None, None, None],
+            sources=["", "", ""],
+            series_buf={
+                sid: {
+                    "obsid": "rb1",
+                    "source": "src_a",
+                    "instrument": None,
+                    "description": None,
+                    "comment": None,
+                }
+            },
+        )
+
+        # Simulate the user assigning the clean row to the existing series
+        editor._buf.loc[pd.Timestamp("2024-01-06 00:00:00"), "series_id"] = sid
+        editor._buf.loc[pd.Timestamp("2024-01-06 00:00:00"), "source"] = "src_a"
+
+        result = editor.save_to_db()
+        print(f"{mock_messagebar.mock_calls=}")
+        assert result is True
+
+        by_sid = _fetch_series_ids("rb1")
+        by_lvl = _fetch_levels("rb1")
+        # Clean row's series_id was written to the DB
+        assert by_sid["2024-01-06 00:00:00"] == sid
+        # Both twin rows are untouched: series_id still NULL, levels unchanged
+        assert by_sid["2024-01-05 00:00"] is None
+        assert by_sid["2024-01-05 00:00:00"] is None
+        assert by_lvl["2024-01-05 00:00"] == 10.0
+        assert by_lvl["2024-01-05 00:00:00"] == 11.0
+        # A warning was emitted about the skipped duplicate instants
         assert mock_messagebar.warning.called

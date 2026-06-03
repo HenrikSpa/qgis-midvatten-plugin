@@ -487,10 +487,15 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     @fn_timer
     def load_obsid_from_db(self):
         self.combobox_obsid.clear()
+        self.combobox_obsid.setPlaceholderText(
+            QCoreApplication.translate("Calibrlogger", "Select an obsid...")
+        )
         self.combobox_obsid.addItems(self.get_all_obsids_in_w_levels_logger())
         self.update_combobox_with_calibration_info(
             _obsids_with_uncalibrated_data=self.get_uncalibrated_obsids()
         )
+        # Start clean: no obsid is loaded until the user picks one.
+        self.combobox_obsid.setCurrentIndex(-1)
 
     @fn_timer
     def update_combobox_with_calibration_info(

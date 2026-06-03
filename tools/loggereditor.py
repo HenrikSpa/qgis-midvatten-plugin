@@ -1070,17 +1070,26 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             )
         else:
             buf = self._buf
-            original_buf = self._original_buf
+            # A resolved twin (one of a duplicate pair dropped from the buffer)
+            # leaves self._buf clean, but self._original_buf still carries the
+            # duplicate index label. Align original_buf to the surviving rows by
+            # raw text so the UPDATE diff compares identically-labeled Series.
+            original_buf = self._original_buf[
+                self._original_buf["date_time_raw"].isin(
+                    set(self._buf["date_time_raw"])
+                )
+            ]
 
         common_utils.start_waiting_cursor()
         try:
-            deleted_indices = original_buf.index.difference(buf.index)
-            delete_params = list(
-                zip(
-                    [obsid] * len(deleted_indices),
-                    deleted_indices.strftime(_DT_FMT),
-                )
-            )
+            # Compute deletions over the FULL buffers by raw date_time text so
+            # that dropping one twin (same normalized instant, different raw
+            # text) is caught -- a label set-difference on the deduped buffers
+            # would miss it because the surviving twin keeps the label.
+            orig_raw = self._original_buf["date_time_raw"]
+            buf_raw = set(self._buf["date_time_raw"])
+            deleted_raw = [r for r in orig_raw if r not in buf_raw]
+            delete_params = [(obsid, raw) for raw in deleted_raw]
 
             common_index = original_buf.index.intersection(buf.index)
             orig_vals = original_buf.loc[common_index, "level_masl"]
@@ -1120,7 +1129,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                     if delete_params:
                         delete_sql = (
                             f"DELETE FROM {tbl} WHERE {ident('obsid')} = {ph}"
-                            f" AND {dt_eq}"
+                            f" AND {ident('date_time')} = {ph}"
                         )
                         dbconnection.executemany(delete_sql, delete_params)
                     for sql, params in range_stmts:

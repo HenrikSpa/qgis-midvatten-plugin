@@ -275,3 +275,35 @@ class TestLoggerEditorDupes(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert by_lvl["2024-01-05 00:00:00"] == 11.0
         # A warning was emitted about the skipped duplicate instants
         assert mock_messagebar.warning.called
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_save_persists_removed_twin(self, mock_messagebar):
+        """Dropping one twin row from the buffer deletes exactly that DB row on save."""
+        _insert_obs_point("rb1")
+        _drop_dt_index()
+        _insert_logger_row("rb1", "2024-01-05 00:00", 100.0, 10.0)
+        _insert_logger_row("rb1", "2024-01-05 00:00:00", 100.0, 11.0)
+        _insert_logger_row("rb1", "2024-01-06 00:00:00", 200.0, 20.0)
+
+        editor = _make_editor_with_buf(
+            self.iface,
+            self.midvatten.ms,
+            obsid="rb1",
+            dates=["2024-01-05 00:00", "2024-01-05 00:00:00", "2024-01-06 00:00:00"],
+            head_values=[1.0, 1.0, 2.0],
+            level_values=[10.0, 11.0, 20.0],
+            series_ids=[None, None, None],
+            sources=["", "", ""],
+            series_buf={},
+        )
+        # Resolve: drop the coarse twin (raw text "2024-01-05 00:00"), keep the precise one.
+        editor._buf = editor._buf[editor._buf["date_time_raw"] != "2024-01-05 00:00"]
+
+        result = editor.save_to_db()
+        print(f"{mock_messagebar.mock_calls=}")
+        assert result is True
+
+        by_dt = _fetch_col("rb1", "level_masl")
+        assert "2024-01-05 00:00" not in by_dt
+        assert by_dt["2024-01-05 00:00:00"] == 11.0
+        assert by_dt["2024-01-06 00:00:00"] == 20.0

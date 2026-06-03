@@ -84,7 +84,7 @@ def _make_editor_with_buf(
             "series_id": pd.array(series_ids, dtype="Int64"),
             "dt_length": [len(d) for d in dates],
         },
-        index=pd.to_datetime(dates),
+        index=pd.to_datetime(dates, format="ISO8601"),
     )
     editor._buf = buf_df
     editor._original_buf = buf_df.copy()

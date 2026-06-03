@@ -637,6 +637,17 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self._legend_picker.disconnect()
             self._legend_picker = None
 
+    def _duplicate_instants(self) -> pd.DatetimeIndex:
+        """Parsed-datetime labels occurring more than once in _buf.
+
+        A repeated label means two rows share the same normalized instant
+        (same (obsid, datetime(date_time))) but differ in raw date_time text.
+        """
+        if self._buf is None or self._buf.empty:
+            return pd.DatetimeIndex([])
+        dup_mask = self._buf.index.duplicated(keep=False)
+        return self._buf.index[dup_mask].unique()
+
     def _label_for_line_key(self, obsid: str, key: tuple) -> str:
         label = obsid + QCoreApplication.translate(
             "Calibrlogger", " logger water level"

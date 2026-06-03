@@ -7,10 +7,15 @@ import pytest
 
 pytest.importorskip("qgis.PyQt")
 
+import pandas as pd
+
 from midvatten.test import utils_for_tests
 from midvatten.tools.loggereditor import LoggerEditor
 from midvatten.tools.utils import db_utils
-from midvatten.test.test_loggereditor_series import _insert_obs_point
+from midvatten.test.test_loggereditor_series import (
+    _insert_obs_point,
+    _make_editor_with_buf,
+)
 
 
 @pytest.mark.spatialite
@@ -57,3 +62,33 @@ class TestLoggerEditorDupes(utils_for_tests.MidvattenTestSpatialiteDbSv):
         print(f"{mock_messagebar.mock_calls=}")
         for call in mock_messagebar.mock_calls:
             assert "Getting last calibration failed" not in str(call)
+
+    def test_duplicate_instants_detects_repeated_label(self):
+        editor = _make_editor_with_buf(
+            self.iface,
+            self.midvatten.ms,
+            obsid="rb1",
+            dates=["2024-01-01 00:00", "2024-01-01 00:00:00", "2024-01-02 00:00:00"],
+            head_values=[1.0, 1.0, 2.0],
+            level_values=[10.0, 10.0, 20.0],
+            series_ids=[None, None, None],
+            sources=["", "", ""],
+            series_buf={},
+        )
+        dups = editor._duplicate_instants()
+        assert len(dups) == 1
+        assert dups[0] == pd.Timestamp("2024-01-01 00:00:00")
+
+    def test_duplicate_instants_empty_when_clean(self):
+        editor = _make_editor_with_buf(
+            self.iface,
+            self.midvatten.ms,
+            obsid="rb1",
+            dates=["2024-01-01 00:00:00", "2024-01-02 00:00:00"],
+            head_values=[1.0, 2.0],
+            level_values=[10.0, 20.0],
+            series_ids=[None, None],
+            sources=["", ""],
+            series_buf={},
+        )
+        assert len(editor._duplicate_instants()) == 0

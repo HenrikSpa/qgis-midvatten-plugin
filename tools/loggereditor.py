@@ -1540,7 +1540,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self._buf = ob_by_raw.loc[present_raw].copy()
             self._buf.index = entry["present_index"]
         self._buf["level_masl"] = entry["level_masl"].to_numpy()
-        self._buf["series_id"] = entry["series_id"].to_numpy()
+        # Overlay positionally (numpy) to avoid index-alignment on duplicate
+        # labels, but keep series_id's nullable-Int64 dtype.
+        self._buf["series_id"] = pd.array(entry["series_id"].to_numpy(), dtype="Int64")
         if entry.get("source") is not None and "source" in self._buf.columns:
             self._buf["source"] = entry["source"].to_numpy()
         self._series_buf = {k: dict(v) for k, v in entry["series_buf"].items()}

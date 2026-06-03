@@ -343,6 +343,45 @@ class TestLoggerEditorDupes(utils_for_tests.MidvattenTestSpatialiteDbSv):
             editor._buf.loc[pd.Timestamp("2024-01-06 00:00:00"), "level_masl"] == 99.0
         )
 
+    def test_undo_preserves_series_id_dtype_and_values(self):
+        """Undo must keep series_id as nullable Int64 with its values intact."""
+        _insert_obs_point("rb1")
+        editor = _make_editor_with_buf(
+            self.iface,
+            self.midvatten.ms,
+            obsid="rb1",
+            dates=[
+                "2024-01-05 00:00:00",
+                "2024-01-06 00:00:00",
+                "2024-01-07 00:00:00",
+            ],
+            head_values=[1.0, 2.0, 3.0],
+            level_values=[10.0, 20.0, 30.0],
+            series_ids=[1, 1, 2],
+            sources=["a", "a", "b"],
+            series_buf={
+                1: {
+                    "obsid": "rb1",
+                    "source": "a",
+                    "instrument": None,
+                    "description": None,
+                    "comment": None,
+                },
+                2: {
+                    "obsid": "rb1",
+                    "source": "b",
+                    "instrument": None,
+                    "description": None,
+                    "comment": None,
+                },
+            },
+        )
+        editor._buf.loc[pd.Timestamp("2024-01-05 00:00:00"), "level_masl"] = 99.0
+        editor._history_push("edit")
+        editor.undo()
+        assert str(editor._buf["series_id"].dtype) == "Int64"
+        assert editor._buf["series_id"].tolist() == [1, 1, 2]
+
     def test_undo_restores_removed_twin(self):
         """Undo after removing a twin brings the removed row back."""
         _insert_obs_point("rb1")

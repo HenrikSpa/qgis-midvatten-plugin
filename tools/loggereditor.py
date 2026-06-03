@@ -651,16 +651,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         dup_mask = self._buf.index.duplicated(keep=False)
         return self._buf.index[dup_mask].unique()
 
-    @staticmethod
-    def _values_all_equal(values: list) -> bool:
-        """True if all values are equal, treating NaN/NA as equal to NaN/NA."""
-        first = values[0]
-        for v in values[1:]:
-            both_na = pd.isna(first) and pd.isna(v)
-            if not both_na and v != first:
-                return False
-        return True
-
     def _classify_duplicates(self) -> list[dict]:
         """Classify each duplicated instant in _buf.
 
@@ -688,9 +678,11 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             sources = {r["source"] for r in rows}
             if len(sources) > 1:
                 kind = "cross_source"
-            elif self._values_all_equal(
-                [r["head_cm_m"] for r in rows]
-            ) and self._values_all_equal([r["level_masl"] for r in rows]):
+            elif (
+                sub["head_cm_m"].nunique(dropna=False) <= 1
+                and sub["level_masl"].nunique(dropna=False) <= 1
+            ):
+                # nunique(dropna=False) == 1 means all values equal (NaN==NaN).
                 kind = "redundant"
             else:
                 kind = "conflict"

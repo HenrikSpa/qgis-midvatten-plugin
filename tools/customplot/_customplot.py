@@ -1527,7 +1527,7 @@ class SaveToCsvDialog(QtWidgets.QDialog):
     def save_data(self, *args):
         filename = self.filename.filePath()
         if not filename:
-            MessagebarAndLog.critical(
+            common_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
                     "SaveToCsvDialog", "Must give filename"
                 )
@@ -1554,7 +1554,7 @@ class SaveToCsvDialog(QtWidgets.QDialog):
                     columns=[series[1]],
                 )
                 if not len(df) == len(df.loc[~df.index.duplicated(keep="first")]):
-                    MessagebarAndLog.critical(
+                    common_utils.MessagebarAndLog.critical(
                         bar_msg=QCoreApplication.translate(
                             "SaveToCsvDialog",
                             "Unable to export as columns (the x-axis contained duplicates)",

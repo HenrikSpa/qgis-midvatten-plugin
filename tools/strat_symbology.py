@@ -550,7 +550,12 @@ def symbology_using_cloning(plot_types, colors, layer, stylename, column):
 
         if types is None:
             condition = "NOT IN"
-            types = [x for k, v in types.items() for x in v if k != typ]
+            types = [
+                x
+                for k, v in plot_types.items()
+                if k != key and v is not None
+                for x in v
+            ]
         else:
             condition = "IN"
         _types = ", ".join([f"'{x}'" for x in types])

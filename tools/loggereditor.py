@@ -2564,7 +2564,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
         last_calibration = self.getlastcalibration(self.obsid)
         try:
-            if last_calibration[0][1] and last_calibration[0][0]:
+            if last_calibration and last_calibration[0][1] and last_calibration[0][0]:
                 self.logger_elevation.setText(f"{last_calibration[0][1]:.5f}")
                 self.from_date_time.setDateTime(
                     to_date(last_calibration[0][0]) + datetime.timedelta(milliseconds=1)

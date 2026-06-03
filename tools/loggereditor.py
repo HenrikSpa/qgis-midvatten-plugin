@@ -87,8 +87,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             parts.append(ca.tolist())
         if separate_dt_precision and "dt_length" in buf.columns:
             parts.append(buf["dt_length"].tolist())
-        if separate_source and "series_id" in buf.columns:
-            parts.append(buf["series_id"].fillna(-999).astype(int).tolist())
         if not parts:
             return [("_all",)] * n
         return list(zip(*parts))
@@ -664,11 +662,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             dim_idx += 1
             if src and str(src).strip():
                 parts.append(str(src))
-            # series_id dimension follows source when separate_source is on
-            if dim_idx < len(key) and "series_id" in (
-                self._buf.columns if self._buf is not None else []
-            ):
-                dim_idx += 1
         if self.separate_created_at_cb.isChecked():
             parts.append(f"imported={key[dim_idx]}")
             dim_idx += 1
@@ -688,11 +681,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             dim_idx += 1
             if src and str(src).strip():
                 parts.append(str(src))
-            # series_id dimension follows source when separate_source is on
-            if dim_idx < len(key) and "series_id" in (
-                self._buf.columns if self._buf is not None else []
-            ):
-                dim_idx += 1
         if self.separate_created_at_cb.isChecked():
             parts.append(f"imported={key[dim_idx]}")
             dim_idx += 1

@@ -915,6 +915,7 @@ class CalibrloggerPostgisMixin(CalibrloggerMixin):
         )
         calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
         calibrlogger.show()
+        gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
 
         calibrlogger.update_plot()
 
@@ -922,7 +923,6 @@ class CalibrloggerPostgisMixin(CalibrloggerMixin):
             date_utils.to_date("2000-01-01 00:00:00")
         )
         calibrlogger.logger_elevation.setText("2")
-        gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
 
         calibrlogger.set_logger_pos()
 
@@ -1250,6 +1250,7 @@ class CalibrloggerSpatialiteMixin(CalibrloggerMixin):
         )
         calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
         calibrlogger.show()
+        gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
 
         calibrlogger.update_plot()
 
@@ -1257,7 +1258,6 @@ class CalibrloggerSpatialiteMixin(CalibrloggerMixin):
             date_utils.to_date("2000-01-01 00:00:00")
         )
         calibrlogger.logger_elevation.setText("2")
-        gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
 
         calibrlogger.set_logger_pos()
 

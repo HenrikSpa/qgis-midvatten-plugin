@@ -48,6 +48,39 @@ class TestLineKeyComputation:
             ("A", "2024-01-02 14:00:00"),
         ]
 
+    def test_series_id_column_does_not_split_or_shift_keys(self):
+        """A series_id column must NOT add a grouping dimension: rows that share
+        source (incl. empty/null) group together regardless of series_id, and
+        the created_at dimension stays correctly positioned in the key."""
+        buf = pd.DataFrame(
+            {
+                "head_cm_m": [1.0, 2.0, 3.0],
+                "level_masl": [10.0, 20.0, 30.0],
+                "source": ["A", "", ""],
+                "series_id": pd.array([1, 2, 3], dtype="Int64"),
+                "created_at": [
+                    "2024-01-01 10:00:00",
+                    "2024-01-02 14:00:00",
+                    "2024-01-02 14:00:00",
+                ],
+            },
+            index=pd.to_datetime(["2024-01-01", "2024-01-02", "2024-01-03"]),
+        )
+        result = LoggerEditor._compute_line_keys(
+            buf,
+            separate_source=True,
+            separate_created_at=True,
+            separate_dt_precision=False,
+            created_at_grouping=None,
+        )
+        # series_id 2 and 3 share source "" and created_at -> same key (no split);
+        # the second key element is created_at, not series_id.
+        assert list(result) == [
+            ("A", "2024-01-01 10:00:00"),
+            ("", "2024-01-02 14:00:00"),
+            ("", "2024-01-02 14:00:00"),
+        ]
+
     def test_created_at_grouped_by_day(self):
         buf = pd.DataFrame(
             {

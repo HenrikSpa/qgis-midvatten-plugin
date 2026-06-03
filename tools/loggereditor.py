@@ -651,6 +651,52 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         dup_mask = self._buf.index.duplicated(keep=False)
         return self._buf.index[dup_mask].unique()
 
+    @staticmethod
+    def _values_all_equal(values: list) -> bool:
+        """True if all values are equal, treating NaN/NA as equal to NaN/NA."""
+        first = values[0]
+        for v in values[1:]:
+            both_na = pd.isna(first) and pd.isna(v)
+            if not both_na and v != first:
+                return False
+        return True
+
+    def _classify_duplicates(self) -> list[dict]:
+        """Classify each duplicated instant in _buf.
+
+        Returns a list of dicts: {"instant": Timestamp, "kind": str,
+        "rows": [row-dict, ...]}, where kind is one of:
+          - "cross_source": the competing rows come from >1 distinct source
+          - "redundant":    same source and equal head_cm_m AND level_masl
+          - "conflict":     same source but head_cm_m or level_masl differ
+        """
+        if self._buf is None:
+            return []
+        row_cols = ["date_time_raw", "head_cm_m", "level_masl", "source", "dt_length"]
+        groups = []
+        for instant in self._duplicate_instants():
+            sub = self._buf[self._buf.index == instant]
+            rows = []
+            for _, r in sub.iterrows():
+                row = {c: r[c] for c in row_cols}
+                row["series_id"] = (
+                    None if pd.isna(r["series_id"]) else int(r["series_id"])
+                )
+                if "created_at" in sub.columns:
+                    row["created_at"] = r["created_at"]
+                rows.append(row)
+            sources = {r["source"] for r in rows}
+            if len(sources) > 1:
+                kind = "cross_source"
+            elif self._values_all_equal(
+                [r["head_cm_m"] for r in rows]
+            ) and self._values_all_equal([r["level_masl"] for r in rows]):
+                kind = "redundant"
+            else:
+                kind = "conflict"
+            groups.append({"instant": instant, "kind": kind, "rows": rows})
+        return groups
+
     def _label_for_key(self, obsid: str, key: tuple, translated_suffix: str) -> str:
         """Build a plot-line label from a line key. ``translated_suffix`` is the
         already-translated base (e.g. " logger water level"); the active

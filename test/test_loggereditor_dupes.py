@@ -403,3 +403,59 @@ class TestLoggerEditorDupes(utils_for_tests.MidvattenTestSpatialiteDbSv):
         editor.undo()
         assert len(editor._buf) == 3
         assert "2024-01-05 00:00" in editor._buf["date_time_raw"].tolist()
+
+    def _twin_editor(self, **overrides):
+        """Editor with three duplicated instants: one redundant, one cross-source,
+        one same-source conflict (plus a clean row)."""
+        kwargs = dict(
+            obsid="rb1",
+            dates=[
+                "2024-01-01 00:00",
+                "2024-01-01 00:00:00",  # redundant (equal values, same source)
+                "2024-01-02 00:00",
+                "2024-01-02 00:00:00",  # cross-source (source a vs b)
+                "2024-01-03 00:00",
+                "2024-01-03 00:00:00",  # conflict (same source, diff level)
+                "2024-01-04 00:00:00",  # clean
+            ],
+            head_values=[1.0, 1.0, 2.0, 2.0, 3.0, 3.0, 4.0],
+            level_values=[10.0, 10.0, 20.0, 21.0, 30.0, 31.0, 40.0],
+            series_ids=[None, None, None, None, None, None, None],
+            sources=["s", "s", "a", "b", "c", "c", ""],
+            series_buf={},
+        )
+        kwargs.update(overrides)
+        _insert_obs_point("rb1")
+        return _make_editor_with_buf(self.iface, self.midvatten.ms, **kwargs)
+
+    def test_classify_duplicates_kinds(self):
+        editor = self._twin_editor()
+        result = {g["instant"]: g for g in editor._classify_duplicates()}
+        assert set(result) == {
+            pd.Timestamp("2024-01-01 00:00:00"),
+            pd.Timestamp("2024-01-02 00:00:00"),
+            pd.Timestamp("2024-01-03 00:00:00"),
+        }
+        assert result[pd.Timestamp("2024-01-01 00:00:00")]["kind"] == "redundant"
+        assert result[pd.Timestamp("2024-01-02 00:00:00")]["kind"] == "cross_source"
+        assert result[pd.Timestamp("2024-01-03 00:00:00")]["kind"] == "conflict"
+
+    def test_classify_duplicates_rows_payload(self):
+        editor = self._twin_editor()
+        groups = {g["instant"]: g for g in editor._classify_duplicates()}
+        rows = groups[pd.Timestamp("2024-01-02 00:00:00")]["rows"]
+        assert len(rows) == 2
+        assert {r["source"] for r in rows} == {"a", "b"}
+        assert {r["date_time_raw"] for r in rows} == {
+            "2024-01-02 00:00",
+            "2024-01-02 00:00:00",
+        }
+        for r in rows:
+            assert set(r) >= {
+                "date_time_raw",
+                "head_cm_m",
+                "level_masl",
+                "source",
+                "series_id",
+                "dt_length",
+            }

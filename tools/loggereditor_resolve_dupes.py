@@ -5,7 +5,7 @@ Reads the editor's classification and calls its buffer resolution operations
 editor's plot via _focus_plot_on_instants.
 """
 
-from qgis.PyQt.QtCore import QCoreApplication
+from qgis.PyQt.QtCore import QCoreApplication, Qt
 from qgis.PyQt.QtWidgets import (
     QDialog,
     QDialogButtonBox,
@@ -25,19 +25,33 @@ class ResolveDuplicatesDialog(QDialog):
     def __init__(self, editor, parent=None):
         super().__init__(parent or editor)
         self._editor = editor
+        self.setWindowFlags(self.windowFlags() | Qt.Tool)
         self.setWindowTitle(_tr("Resolve duplicate timestamps"))
         self.resize(640, 480)
         self._outer = QVBoxLayout(self)
+        self._header = QLabel("", self)
+        self._header.setWordWrap(True)
+        self._outer.addWidget(self._header)
+        whole = QPushButton(_tr("Whole dataset"), self)
+        whole.clicked.connect(self._on_whole_dataset)
+        self._outer.addWidget(whole)
         self._body_holder = QVBoxLayout()
         self._outer.addLayout(self._body_holder)
         buttons = QDialogButtonBox(QDialogButtonBox.Close)
         buttons.rejected.connect(self.reject)
         self._outer.addWidget(buttons)
+        editor.from_date_time.dateTimeChanged.connect(self._on_range_changed)
+        editor.to_date_time.dateTimeChanged.connect(self._on_range_changed)
         self._rebuild()
 
     # --- data helpers -------------------------------------------------
+    def _range(self):
+        fr = self._editor.from_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
+        to = self._editor.to_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
+        return fr, to
+
     def _groups(self) -> list:
-        return self._editor._classify_duplicates()
+        return self._editor._classify_duplicates(*self._range())
 
     def _bucket_counts(self, groups: list | None = None) -> dict:
         counts = {"redundant": 0, "cross_source": 0, "conflict": 0}
@@ -67,13 +81,34 @@ class ResolveDuplicatesDialog(QDialog):
         return btn
 
     # --- actions ------------------------------------------------------
+    def _on_range_changed(self, *args) -> None:
+        self._rebuild()
+
+    def _on_whole_dataset(self) -> None:
+        fr, to = self._editor._full_buffer_range()
+        if fr is not None:
+            self._editor.from_date_time.setDateTime(fr)
+            self._editor.to_date_time.setDateTime(to)
+        self._rebuild()
+
     def _on_remove_redundant(self) -> None:
-        self._editor._remove_redundant_duplicates()
+        self._editor._remove_redundant_duplicates(*self._range())
         self._after_change()
 
     def _on_keep_source(self, keep_source: str) -> None:
-        self._editor._remove_cross_source_overlaps(keep_source)
+        self._editor._remove_cross_source_overlaps(keep_source, *self._range())
         self._after_change()
+
+    def closeEvent(self, event):  # noqa: N802
+        for sig in (
+            self._editor.from_date_time.dateTimeChanged,
+            self._editor.to_date_time.dateTimeChanged,
+        ):
+            try:
+                sig.disconnect(self._on_range_changed)
+            except (TypeError, RuntimeError):
+                pass
+        super().closeEvent(event)
 
     def _on_show_instants(self, instants: list) -> None:
         self._editor._focus_plot_on_instants(instants)
@@ -96,6 +131,17 @@ class ResolveDuplicatesDialog(QDialog):
     def _rebuild(self) -> None:
         self._clear_body()
         groups = self._groups()
+        fr, to = self._range()
+        total = len(self._editor._duplicate_instants())
+        self._header.setText(
+            _tr("Resolving within %s – %s — %s of %s duplicate instants in range")
+            % (
+                fr.strftime("%Y-%m-%d %H:%M"),
+                to.strftime("%Y-%m-%d %H:%M"),
+                len(groups),
+                total,
+            )
+        )
         counts = self._bucket_counts(groups)
 
         if not groups:

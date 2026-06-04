@@ -524,6 +524,9 @@ class TestLoggerEditorDupes(utils_for_tests.MidvattenTestSpatialiteDbSv):
         from midvatten.tools.loggereditor_resolve_dupes import ResolveDuplicatesDialog
 
         editor = self._twin_editor()
+        fr, to = editor._full_buffer_range()
+        editor.from_date_time.setDateTime(fr)
+        editor.to_date_time.setDateTime(to)
         before = len(editor._buf)
         dlg = ResolveDuplicatesDialog(editor)
         dlg._on_remove_redundant()
@@ -534,6 +537,9 @@ class TestLoggerEditorDupes(utils_for_tests.MidvattenTestSpatialiteDbSv):
         from midvatten.tools.loggereditor_resolve_dupes import ResolveDuplicatesDialog
 
         editor = self._twin_editor()
+        fr, to = editor._full_buffer_range()
+        editor.from_date_time.setDateTime(fr)
+        editor.to_date_time.setDateTime(to)
         dlg = ResolveDuplicatesDialog(editor)
         dlg._on_keep_source("a")
         sub = editor._buf[editor._buf.index == pd.Timestamp("2024-01-02 00:00:00")]
@@ -543,6 +549,9 @@ class TestLoggerEditorDupes(utils_for_tests.MidvattenTestSpatialiteDbSv):
         from midvatten.tools.loggereditor_resolve_dupes import ResolveDuplicatesDialog
 
         editor = self._twin_editor()
+        fr, to = editor._full_buffer_range()
+        editor.from_date_time.setDateTime(fr)
+        editor.to_date_time.setDateTime(to)
         dlg = ResolveDuplicatesDialog(editor)
         assert dlg._bucket_counts() == {
             "redundant": 1,
@@ -583,6 +592,9 @@ class TestLoggerEditorDupes(utils_for_tests.MidvattenTestSpatialiteDbSv):
         from midvatten.tools.loggereditor_resolve_dupes import ResolveDuplicatesDialog
 
         editor = self._twin_editor()  # has one conflict instant
+        fr, to = editor._full_buffer_range()
+        editor.from_date_time.setDateTime(fr)
+        editor.to_date_time.setDateTime(to)
         dlg = ResolveDuplicatesDialog(editor)
         per_row = [
             b for b in dlg.findChildren(QPushButton) if b.text().startswith("Keep:")

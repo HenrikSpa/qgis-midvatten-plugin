@@ -151,6 +151,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self._trend_original_start_y = None
         self._trend_original_end_y = None
         self._dupe_marker_artists: list = []
+        self._resolve_dialog = None
 
         self.button_calculate.clicked.connect(lambda x: self.set_logger_pos())
         self.button_add_offset.clicked.connect(lambda x: self.add_to_level_masl())
@@ -1646,6 +1647,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self.combobox_obsid.blockSignals(False)
 
     def _on_obsid_changed(self, new_index: int) -> None:
+        self._close_resolve_dialog()
         if not self._dirty:
             self._prev_combobox_index = new_index
             self.update_plot()
@@ -2324,9 +2326,25 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     def _open_resolve_dupes_dialog(self) -> None:
         if not self._duplicate_instants().size:
             return
+        if self._resolve_dialog is not None:
+            self._resolve_dialog.raise_()
+            self._resolve_dialog.activateWindow()
+            self._resolve_dialog._rebuild()
+            return
         dlg = ResolveDuplicatesDialog(self)
-        dlg.exec_()
-        self._refresh_dupe_banner()
+        self._resolve_dialog = dlg
+        dlg.finished.connect(lambda _result: self._on_resolve_dialog_closed())
+        dlg.setVisible(
+            True
+        )  # not show(): test harness monkeypatches QWidget.show to a no-op
+
+    def _on_resolve_dialog_closed(self) -> None:
+        self._resolve_dialog = None
+
+    def _close_resolve_dialog(self) -> None:
+        if self._resolve_dialog is not None:
+            self._resolve_dialog.close()
+            self._resolve_dialog = None
 
     def _fast_update_after_move(self):
         """Update artist y-data in place after a move offset — avoids full redraw."""

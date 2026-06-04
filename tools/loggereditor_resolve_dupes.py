@@ -34,7 +34,6 @@ class ResolveDuplicatesDialog(QDialog):
         self._outer.addLayout(self._body_holder)
         buttons = QDialogButtonBox(QDialogButtonBox.Close)
         buttons.rejected.connect(self.reject)
-        buttons.accepted.connect(self.accept)
         self._outer.addWidget(buttons)
         self._rebuild()
 
@@ -42,9 +41,9 @@ class ResolveDuplicatesDialog(QDialog):
     def _groups(self) -> list:
         return self._editor._classify_duplicates()
 
-    def _bucket_counts(self) -> dict:
+    def _bucket_counts(self, groups: list | None = None) -> dict:
         counts = {"redundant": 0, "cross_source": 0, "conflict": 0}
-        for g in self._groups():
+        for g in self._groups() if groups is None else groups:
             counts[g["kind"]] += 1
         return counts
 
@@ -93,7 +92,7 @@ class ResolveDuplicatesDialog(QDialog):
     def _rebuild(self) -> None:
         self._clear_body()
         groups = self._groups()
-        counts = self._bucket_counts()
+        counts = self._bucket_counts(groups)
 
         if not groups:
             self._body_holder.addWidget(
@@ -200,4 +199,11 @@ class ResolveDuplicatesDialog(QDialog):
             inner_lay.addStretch()
             scroll.setWidget(inner)
             lay.addWidget(scroll)
+            show = QPushButton(_tr("Show on plot"), self)
+            show.clicked.connect(
+                lambda: self._on_show_instants(
+                    [g["instant"] for g in self._groups() if g["kind"] == "conflict"]
+                )
+            )
+            lay.addWidget(show)
             self._body_holder.addWidget(box)

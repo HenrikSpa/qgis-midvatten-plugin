@@ -405,6 +405,22 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             redo_shortcut = QShortcut(QKeySequence("Ctrl+Shift+Z"), self)
             redo_shortcut.activated.connect(self.redo)
 
+            # --- Duplicate-timestamps banner (hidden unless duplicates exist) ---
+            self._dupe_banner = QWidget(self)
+            dupe_layout = QHBoxLayout(self._dupe_banner)
+            dupe_layout.setContentsMargins(0, 0, 0, 0)
+            self._dupe_warning_label = QLabel("", self)
+            self._resolve_dupes_btn = QPushButton(
+                QCoreApplication.translate("LoggerEditor", "Resolve duplicates…"),
+                self,
+            )
+            self._resolve_dupes_btn.clicked.connect(self._open_resolve_dupes_dialog)
+            dupe_layout.addWidget(self._dupe_warning_label)
+            dupe_layout.addWidget(self._resolve_dupes_btn)
+            dupe_layout.addStretch()
+            parent_layout.insertWidget(max(tab_index, 0), self._dupe_banner)
+            self._dupe_banner.setVisible(False)
+
             # --- Series tab (only for series_join schema) ---
             if self._schema_variant == "series_join":
                 self._series_tab = self._build_series_tab()
@@ -2211,6 +2227,27 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             and self.adjust_trend_button.button().isChecked()
         ):
             self.toggle_adjust_trend(True)
+
+        self._refresh_dupe_banner()
+
+    def _refresh_dupe_banner(self) -> None:
+        if not hasattr(self, "_dupe_banner"):
+            return
+        n = len(self._duplicate_instants())
+        if n > 0:
+            self._dupe_warning_label.setText(
+                QCoreApplication.translate(
+                    "LoggerEditor", "⚠ %s duplicate timestamp(s) for this obsid."
+                )
+                % n
+            )
+            self._dupe_banner.setVisible(True)
+        else:
+            self._dupe_banner.setVisible(False)
+
+    def _open_resolve_dupes_dialog(self) -> None:
+        # Real implementation added in Task 4.
+        pass
 
     def _fast_update_after_move(self):
         """Update artist y-data in place after a move offset — avoids full redraw."""

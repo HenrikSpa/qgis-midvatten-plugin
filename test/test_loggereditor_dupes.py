@@ -549,3 +549,46 @@ class TestLoggerEditorDupes(utils_for_tests.MidvattenTestSpatialiteDbSv):
             "cross_source": 1,
             "conflict": 1,
         }
+
+    def test_classify_duplicates_handles_many_instants(self):
+        """Classification must be linear in rows, not O(instants x rows)."""
+        _insert_obs_point("rb1")
+        n = 800
+        base = pd.date_range("2000-01-01", periods=n, freq="D")
+        dates = []
+        for ts in base:
+            # redundant twin pair at each instant (coarse + precise text)
+            dates.append(ts.strftime("%Y-%m-%d %H:%M"))
+            dates.append(ts.strftime("%Y-%m-%d %H:%M:%S"))
+        editor = _make_editor_with_buf(
+            self.iface,
+            self.midvatten.ms,
+            obsid="rb1",
+            dates=dates,
+            head_values=[1.0] * (2 * n),
+            level_values=[10.0] * (2 * n),
+            series_ids=[None] * (2 * n),
+            sources=[""] * (2 * n),
+            series_buf={},
+        )
+        groups = editor._classify_duplicates()
+        assert len(groups) == n
+        assert all(g["kind"] == "redundant" for g in groups)
+
+    def test_resolve_dialog_conflict_bucket_has_no_per_row_buttons(self):
+        """Conflicts are not enumerated value-by-value (would not scale to 10k+);
+        the bucket offers only a count + 'Show on plot'."""
+        from qgis.PyQt.QtWidgets import QPushButton
+
+        from midvatten.tools.loggereditor_resolve_dupes import ResolveDuplicatesDialog
+
+        editor = self._twin_editor()  # has one conflict instant
+        dlg = ResolveDuplicatesDialog(editor)
+        per_row = [
+            b for b in dlg.findChildren(QPushButton) if b.text().startswith("Keep:")
+        ]
+        assert per_row == []
+        show_btns = [
+            b for b in dlg.findChildren(QPushButton) if "plot" in b.text().lower()
+        ]
+        assert len(show_btns) >= 1

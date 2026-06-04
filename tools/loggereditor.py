@@ -712,17 +712,23 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         """
         if self._buf is None:
             return []
+        # Group the duplicated rows once (O(rows)) instead of scanning the whole
+        # buffer per instant (O(instants x rows)) — matters for obsids with tens
+        # of thousands of duplicates.
+        dup = self._buf[self._buf.index.duplicated(keep=False)]
+        if dup.empty:
+            return []
         row_cols = ["date_time_raw", "head_cm_m", "level_masl", "source", "dt_length"]
+        has_created_at = "created_at" in dup.columns
         groups = []
-        for instant in self._duplicate_instants():
-            sub = self._buf[self._buf.index == instant]
+        for instant, sub in dup.groupby(level=0, sort=True):
             rows = []
             for _, r in sub.iterrows():
                 row = {c: r[c] for c in row_cols}
                 row["series_id"] = (
                     None if pd.isna(r["series_id"]) else int(r["series_id"])
                 )
-                if "created_at" in sub.columns:
+                if has_created_at:
                     row["created_at"] = r["created_at"]
                 rows.append(row)
             sources = {r["source"] for r in rows}

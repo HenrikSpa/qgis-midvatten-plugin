@@ -77,10 +77,6 @@ class ResolveDuplicatesDialog(QDialog):
         self._editor._remove_cross_source_overlaps(keep_source)
         self._after_change()
 
-    def _on_keep_conflict(self, instant, keep_raw: str) -> None:
-        self._editor._resolve_conflict_keep(instant, keep_raw)
-        self._after_change()
-
     def _on_show_instants(self, instants: list) -> None:
         self._editor._focus_plot_on_instants(instants)
 
@@ -157,41 +153,24 @@ class ResolveDuplicatesDialog(QDialog):
             lay.addWidget(self._show_on_plot_button("cross_source"))
             self._body_holder.addWidget(box)
 
-        # Bucket 3 — conflicts (per instant)
+        # Bucket 3 — conflicts. Not enumerated value-by-value: there can be tens
+        # of thousands. Point the user at the plot to compare and resolve via the
+        # existing "Separate by datetime precision" + select + delete flow.
         if counts["conflict"]:
             box = QGroupBox(
                 _tr("Conflicts (values differ) — %s") % counts["conflict"], self
             )
             lay = QVBoxLayout(box)
-            scroll = QScrollArea(self)
-            scroll.setWidgetResizable(True)
-            inner = QWidget(scroll)
-            inner_lay = QVBoxLayout(inner)
-            for g in groups:
-                if g["kind"] != "conflict":
-                    continue
-                instant = g["instant"]
-                inner_lay.addWidget(
-                    QLabel(_tr("At %s:") % instant.strftime("%Y-%m-%d %H:%M:%S"), inner)
+            lay.addWidget(
+                QLabel(
+                    _tr(
+                        "These rows share a timestamp and source but differ in"
+                        " value. Use 'Show on plot' to compare them, then keep the"
+                        " correct line with 'Separate by datetime precision',"
+                        " select it and delete the other."
+                    ),
+                    self,
                 )
-                for r in g["rows"]:
-                    row = QHBoxLayout()
-                    desc = _tr("head=%s level=%s src=%s") % (
-                        r["head_cm_m"],
-                        r["level_masl"],
-                        r["source"],
-                    )
-                    keep_btn = QPushButton(_tr("Keep: %s") % desc, inner)
-                    keep_btn.clicked.connect(
-                        lambda _checked=False, i=instant, raw=r["date_time_raw"]: (
-                            self._on_keep_conflict(i, raw)
-                        )
-                    )
-                    row.addWidget(keep_btn)
-                    row.addStretch()
-                    inner_lay.addLayout(row)
-            inner_lay.addStretch()
-            scroll.setWidget(inner)
-            lay.addWidget(scroll)
+            )
             lay.addWidget(self._show_on_plot_button("conflict"))
             self._body_holder.addWidget(box)

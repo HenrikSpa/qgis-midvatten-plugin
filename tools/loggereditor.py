@@ -619,6 +619,22 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             buf, "head_cm_m", values_override=normalized_vals
         )
 
+    def _build_optional_extra_cols(
+        self, has_created_at: bool, has_comment: bool, prefix: str = ""
+    ) -> str:
+        """Return a SQL fragment of optional trailing SELECT columns.
+
+        ``prefix`` is prepended to each column reference (e.g. ``"l."`` for
+        aliased joins).  The fragment always ends with the dt_length column so
+        callers can rely on a fixed trailing position."""
+        extra = ""
+        if has_created_at:
+            extra += f", COALESCE({prefix}created_at, '') AS created_at"
+        if has_comment:
+            extra += f", COALESCE({prefix}comment, '') AS comment"
+        extra += f", LENGTH({prefix}date_time) AS dt_length"
+        return extra
+
     def _recompute_line_keys(self):
         if self._buf is not None and not self._buf.empty:
             new_keys = self._compute_line_keys(
@@ -639,6 +655,23 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         if self._legend_picker is not None:
             self._legend_picker.disconnect()
             self._legend_picker = None
+
+    def _focus_plot_on_instants(self, instants: list) -> None:
+        """Drive the main plot to show the competing rows at ``instants``:
+        enable datetime-precision separation (so twins draw as distinct lines),
+        select the affected line keys, and set the date range to span them."""
+        if self._buf is None or not instants:
+            return
+        self.separate_dt_precision_cb.setChecked(True)
+        self._recompute_line_keys()
+        mask = self._buf.index.isin(instants)
+        if "_line_key" in self._buf.columns:
+            self._selected_line_keys = set(self._buf.loc[mask, "_line_key"].tolist())
+        lo = min(instants)
+        hi = max(instants)
+        self.from_date_time.setDateTime(lo - pd.Timedelta(days=1))
+        self.to_date_time.setDateTime(hi + pd.Timedelta(days=1))
+        self.update_plot()
 
     def _duplicate_instants(self) -> pd.DatetimeIndex:
         """Parsed-datetime labels occurring more than once in _buf.
@@ -943,12 +976,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             has_created_at = "created_at" in existing_columns
             has_comment = "comment" in existing_columns
             if schema_variant == "series_join":
-                extra_cols = ""
-                if has_created_at:
-                    extra_cols += ", COALESCE(l.created_at, '') AS created_at"
-                if has_comment:
-                    extra_cols += ", COALESCE(l.comment, '') AS comment"
-                extra_cols += ", LENGTH(l.date_time) AS dt_length"
+                extra_cols = self._build_optional_extra_cols(
+                    has_created_at, has_comment, prefix="l."
+                )
                 head_level_masl_sql = (
                     f"SELECT l.date_time, l.head_cm / 100, l.level_masl,"
                     f" TRIM(COALESCE(s.source, '')), l.series_id{extra_cols}"
@@ -957,12 +987,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                     f" WHERE l.obsid = {ph} ORDER BY l.date_time"
                 )
             elif schema_variant == "source_col":
-                extra_cols = ""
-                if has_created_at:
-                    extra_cols += ", COALESCE(created_at, '') AS created_at"
-                if has_comment:
-                    extra_cols += ", COALESCE(comment, '') AS comment"
-                extra_cols += ", LENGTH(date_time) AS dt_length"
+                extra_cols = self._build_optional_extra_cols(
+                    has_created_at, has_comment
+                )
                 head_level_masl_sql = (
                     f"SELECT date_time, head_cm / 100, level_masl,"
                     f" TRIM(COALESCE(source, '')), NULL AS series_id{extra_cols}"
@@ -970,12 +997,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                     f" ORDER BY date_time"
                 )
             else:
-                extra_cols = ""
-                if has_created_at:
-                    extra_cols += ", COALESCE(created_at, '') AS created_at"
-                if has_comment:
-                    extra_cols += ", COALESCE(comment, '') AS comment"
-                extra_cols += ", LENGTH(date_time) AS dt_length"
+                extra_cols = self._build_optional_extra_cols(
+                    has_created_at, has_comment
+                )
                 head_level_masl_sql = (
                     f"SELECT date_time, head_cm / 100, level_masl,"
                     f" '' as source, NULL AS series_id{extra_cols}"

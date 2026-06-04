@@ -85,11 +85,12 @@ class ResolveDuplicatesDialog(QDialog):
         self._rebuild()
 
     def _on_whole_dataset(self) -> None:
+        # Setting the editor's From/To fires dateTimeChanged -> _on_range_changed
+        # -> _rebuild(), so no explicit rebuild is needed here.
         fr, to = self._editor._full_buffer_range()
         if fr is not None:
             self._editor.from_date_time.setDateTime(fr)
             self._editor.to_date_time.setDateTime(to)
-        self._rebuild()
 
     def _on_remove_redundant(self) -> None:
         self._editor._remove_redundant_duplicates(*self._range())

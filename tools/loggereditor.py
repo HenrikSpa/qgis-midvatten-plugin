@@ -2334,9 +2334,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         dlg = ResolveDuplicatesDialog(self)
         self._resolve_dialog = dlg
         dlg.finished.connect(lambda _result: self._on_resolve_dialog_closed())
-        dlg.setVisible(
-            True
-        )  # not show(): test harness monkeypatches QWidget.show to a no-op
+        dlg.show()
 
     def _on_resolve_dialog_closed(self) -> None:
         self._resolve_dialog = None

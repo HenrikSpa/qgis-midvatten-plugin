@@ -47,16 +47,26 @@ class ResolveDuplicatesDialog(QDialog):
             counts[g["kind"]] += 1
         return counts
 
-    def _cross_source_values(self) -> list:
+    def _cross_source_values(self, groups: list | None = None) -> list:
         """Distinct sources appearing in cross-source groups (for keep choices)."""
         sources = []
-        for g in self._groups():
+        for g in self._groups() if groups is None else groups:
             if g["kind"] != "cross_source":
                 continue
             for r in g["rows"]:
                 if r["source"] not in sources:
                     sources.append(r["source"])
         return sources
+
+    def _show_on_plot_button(self, kind: str) -> QPushButton:
+        """A 'Show on plot' button that focuses the plot on this kind's instants."""
+        btn = QPushButton(_tr("Show on plot"), self)
+        btn.clicked.connect(
+            lambda: self._on_show_instants(
+                [g["instant"] for g in self._groups() if g["kind"] == kind]
+            )
+        )
+        return btn
 
     # --- actions ------------------------------------------------------
     def _on_remove_redundant(self) -> None:
@@ -119,14 +129,8 @@ class ResolveDuplicatesDialog(QDialog):
                 self,
             )
             btn.clicked.connect(self._on_remove_redundant)
-            show = QPushButton(_tr("Show on plot"), self)
-            show.clicked.connect(
-                lambda: self._on_show_instants(
-                    [g["instant"] for g in self._groups() if g["kind"] == "redundant"]
-                )
-            )
             row.addWidget(btn)
-            row.addWidget(show)
+            row.addWidget(self._show_on_plot_button("redundant"))
             row.addStretch()
             lay.addLayout(row)
             self._body_holder.addWidget(box)
@@ -140,7 +144,7 @@ class ResolveDuplicatesDialog(QDialog):
             lay.addWidget(
                 QLabel(_tr("Keep one source at the overlapping instants:"), self)
             )
-            for src in self._cross_source_values():
+            for src in self._cross_source_values(groups):
                 row = QHBoxLayout()
                 label = src if (src and str(src).strip()) else _tr("(no source)")
                 keep_btn = QPushButton(_tr("Keep '%s'") % label, self)
@@ -150,17 +154,7 @@ class ResolveDuplicatesDialog(QDialog):
                 row.addWidget(keep_btn)
                 row.addStretch()
                 lay.addLayout(row)
-            show = QPushButton(_tr("Show on plot"), self)
-            show.clicked.connect(
-                lambda: self._on_show_instants(
-                    [
-                        g["instant"]
-                        for g in self._groups()
-                        if g["kind"] == "cross_source"
-                    ]
-                )
-            )
-            lay.addWidget(show)
+            lay.addWidget(self._show_on_plot_button("cross_source"))
             self._body_holder.addWidget(box)
 
         # Bucket 3 — conflicts (per instant)
@@ -199,11 +193,5 @@ class ResolveDuplicatesDialog(QDialog):
             inner_lay.addStretch()
             scroll.setWidget(inner)
             lay.addWidget(scroll)
-            show = QPushButton(_tr("Show on plot"), self)
-            show.clicked.connect(
-                lambda: self._on_show_instants(
-                    [g["instant"] for g in self._groups() if g["kind"] == "conflict"]
-                )
-            )
-            lay.addWidget(show)
+            lay.addWidget(self._show_on_plot_button("conflict"))
             self._body_holder.addWidget(box)

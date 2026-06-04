@@ -1059,18 +1059,17 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                     ),
                 }
                 col_idx = 5
-                if has_created_at:
-                    cols_data["created_at"] = [
-                        str(r[col_idx]) if r[col_idx] else ""
-                        for r in head_level_masl_list
-                    ]
-                    col_idx += 1
-                if has_comment:
-                    cols_data["comment"] = [
-                        str(r[col_idx]) if r[col_idx] else ""
-                        for r in head_level_masl_list
-                    ]
-                    col_idx += 1
+                # Same order as _build_optional_extra_cols emits them.
+                for colname, present in (
+                    ("created_at", has_created_at),
+                    ("comment", has_comment),
+                ):
+                    if present:
+                        cols_data[colname] = [
+                            str(r[col_idx]) if r[col_idx] else ""
+                            for r in head_level_masl_list
+                        ]
+                        col_idx += 1
                 cols_data["dt_length"] = [r[col_idx] for r in head_level_masl_list]
                 cols_data["date_time_raw"] = [r[0] for r in head_level_masl_list]
                 buf_df = pd.DataFrame(
@@ -2249,7 +2248,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     def _open_resolve_dupes_dialog(self) -> None:
         if not self._duplicate_instants().size:
             return
-        dlg = ResolveDuplicatesDialog(self, parent=self)
+        dlg = ResolveDuplicatesDialog(self)
         dlg.exec_()
         self._refresh_dupe_banner()
 

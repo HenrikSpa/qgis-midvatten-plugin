@@ -18,6 +18,9 @@ The cross-source resolution `_remove_cross_source_overlaps(keep_source)` is **gl
 - Conflicts are resolved via the plot (Plan 2c decision), so they are unaffected by range params.
 - The dialog reads the editor's current `From`/`To` (`self._editor.from_date_time` / `to_date_time`, `.dateTime().toPyDateTime()`) and passes them to classification + every op. A header label states the active scope and counts, e.g. *"Resolving within 2021-01-01 – 2021-03-31 — 8402 of 25107 duplicates in range"*. A **"Whole dataset"** button widens the working scope to all data (sets the editor From/To to the buffer's full extent, then refreshes), so a user who does not care about periods still gets one-click global resolution.
 
+- **The dialog is non-modal and stays open across periods.** It is shown with `.show()` (not `.exec_()`), so the editor stays fully interactive while it is open — the user can change `From`/`To` (by typing, the "set from/to from selection" buttons, or "Show on plot") and the dialog **re-scopes live**: it connects to `from_date_time.dateTimeChanged` and `to_date_time.dateTimeChanged` and rebuilds its header/counts/buckets on change. The flow is: select period → resolve → select a new period → resolve → … without reopening. After each resolution the dialog also rebuilds (so the just-cleared period drops out) and the plot/marker refresh.
+- **Lifecycle:** the editor keeps a single reference `self._resolve_dialog`; clicking "Resolve duplicates…" again raises/refreshes the existing dialog instead of opening a second one. On dialog close the From/To signal connections are disconnected and the reference cleared. Loading a different obsid closes the open dialog (its data would be stale). To avoid signal churn while the user is typing a date, the rebuild is the lightweight `_rebuild()` (re-reads classification, which is O(rows)); a debounce is a possible later refinement, not required for v1.
+
 ### B. Duplicate-run marker
 
 - `_duplicate_runs() -> list[tuple]`: returns `(start_ts, end_ts)` for each maximal **run** of duplicated instants — consecutive in the buffer's sorted *distinct* instants. A run breaks where a non-duplicated instant interrupts it. Pure and unit-testable; scale-safe (a 10 000-row overlap collapses to one run, so the marker draws O(runs) not O(rows)).
@@ -26,10 +29,11 @@ The cross-source resolution `_remove_cross_source_overlaps(keep_source)` is **gl
 ### C. Workflow
 
 1. Load an obsid with duplicates → banner appears + red runs at the bottom.
-2. Aim `From`/`To` at a run (type, the existing "set from/to from selection" buttons, or the dialog's "Show on plot").
-3. *Resolve duplicates…* → dialog scoped to that window → pick keep-source for *that* period, or bulk-remove redundant in-window.
-4. Buffer updates → that run shrinks/vanishes. Repeat for the next period.
-5. Save persists all resolutions at once (Plan 2a delete-by-raw-text).
+2. *Resolve duplicates…* → the (non-modal) dialog opens, scoped to the current `From`/`To`.
+3. Aim `From`/`To` at a run (type, the existing "set from/to from selection" buttons, or the dialog's "Show on plot"). The dialog re-scopes live to the new period.
+4. Pick keep-source for *that* period, or bulk-remove redundant in-window.
+5. Buffer updates → that run shrinks/vanishes and the dialog rebuilds. **Without closing the dialog**, select the next period and resolve it. Repeat until the red line is gone.
+6. Save persists all resolutions at once (Plan 2a delete-by-raw-text).
 
 ### D. Components / interfaces
 
@@ -38,18 +42,22 @@ The cross-source resolution `_remove_cross_source_overlaps(keep_source)` is **gl
 - `LoggerEditor._duplicate_runs() -> list[tuple]` — new, pure.
 - `LoggerEditor._draw_duplicate_marker()` (or inline in `update_plot`) — new; clears prior marker artists, draws current runs.
 - `LoggerEditor._full_buffer_range() -> tuple` — helper returning (min_ts, max_ts) of `_buf.index` (used by "Whole dataset").
-- `ResolveDuplicatesDialog` — read editor From/To; pass to ops; header label with scope + counts; "Whole dataset" button (sets editor From/To to `_full_buffer_range()` and refreshes); existing buckets otherwise unchanged.
+- `ResolveDuplicatesDialog` — read editor From/To; pass to ops; header label with scope + counts; "Whole dataset" button (sets editor From/To to `_full_buffer_range()` and refreshes); connects to the editor's `from_date_time`/`to_date_time` `dateTimeChanged` to re-scope live and disconnects them on close; existing buckets otherwise unchanged.
+- `LoggerEditor._open_resolve_dupes_dialog()` — non-modal: create-and-`show()` if no dialog open, else raise/refresh the existing `self._resolve_dialog`; store the reference; clear it on the dialog's `finished`/close.
+- `LoggerEditor` obsid-change path (`_on_obsid_changed`) closes an open resolve dialog (stale data guard).
 
 ### E. Testing — every user-facing widget is click-tested
 
-Per the project rule that integration tests must exercise the real user flow, **each button/widget is driven by clicking the actual widget** (e.g. `QPushButton.click()`, `gui_utils.set_combobox`) inside a `show()`-based test — not by calling the `_on_*` handler directly. Modal `exec_` is avoided by constructing the dialog directly (as Plan 2c tests do) and clicking its buttons, and by patching `ResolveDuplicatesDialog.exec_` when testing the banner button.
+Per the project rule that integration tests must exercise the real user flow, **each button/widget is driven by clicking the actual widget** (e.g. `QPushButton.click()`, `gui_utils.set_combobox`, `setDateTime`) inside a `show()`-based test — not by calling the `_on_*` handler directly. Because the dialog is now non-modal (`.show()`), tests open it the real way (click the banner button) and then click the dialog's buttons — no `exec_` patching needed.
 
 Widget coverage (all via real clicks):
-- **Banner "Resolve duplicates…" button** — with `exec_` patched, `_resolve_dupes_btn.click()` opens a dialog scoped to the editor's range; banner refreshes afterward.
-- **Dialog "Remove N redundant rows" button** — `.click()` removes the coarse twins in range, buffer shrinks, `_dirty` set.
+- **Banner "Resolve duplicates…" button** — `_resolve_dupes_btn.click()` opens the non-modal dialog (`editor._resolve_dialog` exists and is visible), scoped to the editor's range; clicking it again raises the same dialog (no second instance).
+- **Dialog "Remove N redundant rows" button** — `.click()` removes the coarse twins in range, buffer shrinks, `_dirty` set, dialog rebuilds.
 - **Each cross-source "Keep '<source>'" button** — `.click()` keeps that source in the current window only; a twin in a *different* window with a different keep-source is left untouched (the per-period correctness test).
-- **"Show on plot" buttons (all three buckets)** — `.click()` enables datetime-precision separation and sets the From/To around the bucket's instants (editor shown).
+- **"Show on plot" buttons (all three buckets)** — `.click()` enables datetime-precision separation and sets the From/To around the bucket's instants.
 - **"Whole dataset" button** — `.click()` sets editor From/To to the full extent and the dialog re-scopes (header/counts update to the totals).
+- **Stay-open multi-period flow** — open the dialog once; set From/To to period A (`setDateTime`), assert the dialog re-scoped (counts reflect A); resolve A; set From/To to period B; assert re-scope; resolve B — all on the same dialog instance, asserting both periods ended up resolved with their respective keep-sources. This is the headline test for the feature.
+- **Lifecycle** — changing the obsid (`set_combobox`) closes the open dialog; closing the dialog disconnects the From/To signals (no error on a subsequent `setDateTime`).
 
 Pure/state coverage:
 - `_duplicate_runs()` merges contiguous duplicated instants into runs and breaks on a clean instant (unit).

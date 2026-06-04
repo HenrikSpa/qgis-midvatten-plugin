@@ -71,3 +71,18 @@ class TestResolveUiSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv):
         gui_utils.set_combobox(editor.combobox_obsid, "clean1")
         editor.update_plot()
         assert editor._dupe_banner.isVisibleTo(editor) is False
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_duplicate_marker_drawn_and_shrinks(self, mock_messagebar):
+        _setup_twin_obsid()  # rb1: one duplicated instant at 2024-01-01 + a clean row
+        editor = LoggerEditor(self.iface, self.midvatten.ms)
+        editor.show()
+        gui_utils.set_combobox(editor.combobox_obsid, "rb1")
+        editor.update_plot()
+        print(f"{mock_messagebar.mock_calls=}")
+        assert len(editor._dupe_marker_artists) == 1  # one run
+
+        # remove the duplicate, redraw -> marker gone
+        editor._buf = editor._buf[editor._buf["date_time_raw"] != "2024-01-01 00:00"]
+        editor.update_plot()
+        assert editor._dupe_marker_artists == []

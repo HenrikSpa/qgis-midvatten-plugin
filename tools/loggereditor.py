@@ -36,6 +36,7 @@ from matplotlib.gridspec import GridSpec
 
 from midvatten.tools.utils.mpl_compat import FigureCanvas, NavigationToolbar
 from matplotlib.dates import num2date, datestr2num, date2num
+from matplotlib.transforms import blended_transform_factory
 from matplotlib.widgets import MultiCursor, RectangleSelector
 
 from qgis.PyQt import uic
@@ -149,6 +150,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self._trend_dragging = None
         self._trend_original_start_y = None
         self._trend_original_end_y = None
+        self._dupe_marker_artists: list = []
 
         self.button_calculate.clicked.connect(lambda x: self.set_logger_pos())
         self.button_add_offset.clicked.connect(lambda x: self.add_to_level_masl())
@@ -2275,6 +2277,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         ):
             self.toggle_adjust_trend(True)
 
+        self._draw_duplicate_marker()
         self._refresh_dupe_banner()
 
     def _refresh_dupe_banner(self) -> None:
@@ -2291,6 +2294,32 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self._dupe_banner.setVisible(True)
         else:
             self._dupe_banner.setVisible(False)
+
+    def _draw_duplicate_marker(self) -> None:
+        """Draw red segments along the axes bottom, one per duplicate run, so the
+        user sees where duplicates remain. Recomputed on every redraw, so it
+        shrinks as periods are resolved."""
+        self._dupe_marker_artists = []
+        if self._buf is None:
+            return
+        runs = self._duplicate_runs()
+        if not runs:
+            return
+        trans = blended_transform_factory(self.axes.transData, self.axes.transAxes)
+        for start, end in runs:
+            (line,) = self.axes.plot(
+                [date2num(start), date2num(end)],
+                [0.02, 0.02],
+                transform=trans,
+                color="red",
+                linewidth=3,
+                marker="|",
+                markersize=8,
+                solid_capstyle="butt",
+                clip_on=False,
+                zorder=5,
+            )
+            self._dupe_marker_artists.append(line)
 
     def _open_resolve_dupes_dialog(self) -> None:
         if not self._duplicate_instants().size:

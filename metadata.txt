@@ -3,7 +3,7 @@ name=Midvatten
 qgisMinimumVersion=3.40
 description=A toolset that makes QGIS an interface for editing/viewing hydrogeological observational data (drillings, water levels, seismic data etc) stored in a SQLite or PostgreSQL database.
 about=The plugin is a toolset that makes QGIS an interface for editing/viewing hydrogeological observational data (drillings, water levels, seismic data etc) stored in a SQLite or PostgreSQL database. NOTE: This plugin requires the Python packages numpy, pandas and matplotlib. These are installed automatically by the qpip helper plugin. When you first install Midvatten, qpip will show a dialog asking to install these packages — click "Install" to proceed. This is a one-time step.
-version=1.9.0b27
+version=1.9.0b28
 author=Henrik Spångmyr, Josef Källgården
 email=midvattenplugin@midvatten.se
 repository=https://github.com/henrikspa/qgis-midvatten-plugin.git
@@ -23,6 +23,11 @@ hasProcessingProvider=no
 supportsQt6=True
 
 changelog=
+        Version 1.9.0b28:
+          - LoggerEditor: Duplicate timestamps (two rows for the same obsid and instant, found in older databases) no longer crash Save. The editor warns, leaves both rows untouched, and still saves all other edits.
+          - LoggerEditor: New duplicate-resolution workflow. A banner appears when the loaded obsid has duplicate timestamps, and a red marker along the plot bottom shows the periods where duplicates remain (it shrinks as you clean them). The "Resolve duplicates…" dialog (non-modal, floats above the editor) bulk-removes redundant copies (keeping the higher datetime precision), lets you keep one source per period for overlapping logger series, and points you to the plot to compare same-source value conflicts. Resolution is scoped to the From/To period, so different periods can keep different sources; a "Whole dataset" button widens the scope. All changes are undoable and written on Save.
+          - LoggerEditor: Now starts clean — no observation point is loaded until you select one from the obsid list.
+          - LoggerEditor: Fixed source-separated plot lines so rows sharing a source (including no source) draw as a single line instead of several identically-labelled lines.
         Version 1.9.0b27:
           - CSV import: When importing to w_levels_logger on the modern schema, a "Logger series metadata (w_logger_series)" block now lets you map source, instrument, description, and comment (from file columns or static values). One w_logger_series row is created per distinct obsid+metadata combination and each imported row is linked via series_id. The source field replaces the previous virtual source column.
         Version 1.9.0b26:

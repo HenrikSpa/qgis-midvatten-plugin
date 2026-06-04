@@ -754,8 +754,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         # buffer per instant (O(instants x rows)) — matters for obsids with tens
         # of thousands of duplicates.
         dup = self._buf[self._buf.index.duplicated(keep=False)]
-        if dup.empty:
-            return []
         if fr is not None:
             dup = dup[dup.index >= fr]
         if to is not None:
@@ -2322,6 +2320,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 zorder=5,
             )
             self._dupe_marker_artists.append(line)
+        # The markers are added after _finish_plot's canvas.draw(); repaint so
+        # they appear immediately rather than at the next incidental paint event.
+        self.canvas.draw_idle()
 
     def _open_resolve_dupes_dialog(self) -> None:
         if not self._duplicate_instants().size:

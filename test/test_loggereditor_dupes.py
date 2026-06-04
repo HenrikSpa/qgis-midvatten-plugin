@@ -666,3 +666,50 @@ class TestLoggerEditorDupes(utils_for_tests.MidvattenTestSpatialiteDbSv):
             len(editor._buf[editor._buf.index == pd.Timestamp("2024-06-10 00:00:00")])
             == 2
         )
+
+    def test_duplicate_runs_merges_contiguous(self):
+        _insert_obs_point("rb1")
+        # Two adjacent duplicated instants form ONE run; a clean instant splits;
+        # then another duplicated instant is a second run.
+        editor = _make_editor_with_buf(
+            self.iface,
+            self.midvatten.ms,
+            obsid="rb1",
+            dates=[
+                "2024-01-01 00:00",
+                "2024-01-01 00:00:00",  # dup instant A
+                "2024-01-02 00:00",
+                "2024-01-02 00:00:00",  # dup instant B (adjacent to A -> same run)
+                "2024-01-03 00:00:00",  # clean -> splits
+                "2024-01-04 00:00",
+                "2024-01-04 00:00:00",  # dup instant C -> second run
+            ],
+            head_values=[1.0, 1.0, 2.0, 2.0, 3.0, 4.0, 4.0],
+            level_values=[1.0, 1.0, 2.0, 2.0, 3.0, 4.0, 4.0],
+            series_ids=[None] * 7,
+            sources=[""] * 7,
+            series_buf={},
+        )
+        runs = editor._duplicate_runs()
+        assert runs == [
+            (pd.Timestamp("2024-01-01 00:00:00"), pd.Timestamp("2024-01-02 00:00:00")),
+            (pd.Timestamp("2024-01-04 00:00:00"), pd.Timestamp("2024-01-04 00:00:00")),
+        ]
+
+    def test_full_buffer_range(self):
+        _insert_obs_point("rb1")
+        editor = _make_editor_with_buf(
+            self.iface,
+            self.midvatten.ms,
+            obsid="rb1",
+            dates=["2024-01-01 00:00:00", "2024-03-01 00:00:00"],
+            head_values=[1.0, 2.0],
+            level_values=[1.0, 2.0],
+            series_ids=[None, None],
+            sources=["", ""],
+            series_buf={},
+        )
+        assert editor._full_buffer_range() == (
+            pd.Timestamp("2024-01-01 00:00:00"),
+            pd.Timestamp("2024-03-01 00:00:00"),
+        )

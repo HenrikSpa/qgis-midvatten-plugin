@@ -701,6 +701,38 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         dup_mask = self._buf.index.duplicated(keep=False)
         return self._buf.index[dup_mask].unique()
 
+    def _full_buffer_range(self) -> tuple:
+        """(min, max) timestamp of the buffer index, or (None, None) if empty."""
+        if self._buf is None or self._buf.empty:
+            return (None, None)
+        idx = self._buf.index
+        return (idx.min(), idx.max())
+
+    def _duplicate_runs(self) -> list:
+        """Maximal runs of duplicated instants that are consecutive in the
+        buffer's sorted distinct instants. Returns [(start_ts, end_ts), ...].
+        A run breaks where a non-duplicated instant interrupts it. Scale-safe:
+        an overlap of thousands of rows collapses to one run."""
+        if self._buf is None or self._buf.empty:
+            return []
+        distinct = self._buf.index.unique().sort_values()
+        dup_set = set(self._duplicate_instants())
+        runs = []
+        run_start = None
+        prev = None
+        for ts in distinct:
+            if ts in dup_set:
+                if run_start is None:
+                    run_start = ts
+                prev = ts
+            else:
+                if run_start is not None:
+                    runs.append((run_start, prev))
+                    run_start = None
+        if run_start is not None:
+            runs.append((run_start, prev))
+        return runs
+
     def _classify_duplicates(self, fr=None, to=None) -> list[dict]:
         """Classify each duplicated instant in _buf.
 

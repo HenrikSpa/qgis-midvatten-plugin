@@ -592,3 +592,77 @@ class TestLoggerEditorDupes(utils_for_tests.MidvattenTestSpatialiteDbSv):
             b for b in dlg.findChildren(QPushButton) if "plot" in b.text().lower()
         ]
         assert len(show_btns) >= 1
+
+    def _two_period_editor(self):
+        """Cross-source twins in two periods: Jan (a vs b) and Jun (a vs b)."""
+        _insert_obs_point("rb1")
+        return _make_editor_with_buf(
+            self.iface,
+            self.midvatten.ms,
+            obsid="rb1",
+            dates=[
+                "2024-01-10 00:00",
+                "2024-01-10 00:00:00",
+                "2024-06-10 00:00",
+                "2024-06-10 00:00:00",
+            ],
+            head_values=[1.0, 1.0, 2.0, 2.0],
+            level_values=[10.0, 11.0, 20.0, 21.0],
+            series_ids=[None, None, None, None],
+            sources=["a", "b", "a", "b"],
+            series_buf={},
+        )
+
+    def test_classify_duplicates_respects_range(self):
+        editor = self._two_period_editor()
+        jan = editor._classify_duplicates(
+            pd.Timestamp("2024-01-01"), pd.Timestamp("2024-02-01")
+        )
+        assert [g["instant"] for g in jan] == [pd.Timestamp("2024-01-10 00:00:00")]
+        allg = editor._classify_duplicates()
+        assert len(allg) == 2  # default = full range, unchanged
+
+    def test_cross_source_keep_is_per_period(self):
+        editor = self._two_period_editor()
+        # Keep 'a' in Jan only
+        editor._remove_cross_source_overlaps(
+            "a", pd.Timestamp("2024-01-01"), pd.Timestamp("2024-02-01")
+        )
+        jan = editor._buf[editor._buf.index == pd.Timestamp("2024-01-10 00:00:00")]
+        assert jan["source"].tolist() == ["a"]
+        # Jun still has both sources (untouched by the Jan-scoped call)
+        jun = editor._buf[editor._buf.index == pd.Timestamp("2024-06-10 00:00:00")]
+        assert sorted(jun["source"].tolist()) == ["a", "b"]
+        # Now keep 'b' in Jun
+        editor._remove_cross_source_overlaps(
+            "b", pd.Timestamp("2024-06-01"), pd.Timestamp("2024-07-01")
+        )
+        jun = editor._buf[editor._buf.index == pd.Timestamp("2024-06-10 00:00:00")]
+        assert jun["source"].tolist() == ["b"]
+
+    def test_remove_redundant_respects_range(self):
+        _insert_obs_point("rb1")
+        editor = _make_editor_with_buf(
+            self.iface,
+            self.midvatten.ms,
+            obsid="rb1",
+            dates=[
+                "2024-01-10 00:00",
+                "2024-01-10 00:00:00",
+                "2024-06-10 00:00",
+                "2024-06-10 00:00:00",
+            ],
+            head_values=[1.0, 1.0, 2.0, 2.0],
+            level_values=[10.0, 10.0, 20.0, 20.0],
+            series_ids=[None, None, None, None],
+            sources=["", "", "", ""],
+            series_buf={},
+        )
+        n = editor._remove_redundant_duplicates(
+            pd.Timestamp("2024-01-01"), pd.Timestamp("2024-02-01")
+        )
+        assert n == 1  # only the Jan redundant twin removed
+        assert (
+            len(editor._buf[editor._buf.index == pd.Timestamp("2024-06-10 00:00:00")])
+            == 2
+        )

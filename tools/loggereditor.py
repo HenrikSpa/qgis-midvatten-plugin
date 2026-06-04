@@ -701,8 +701,11 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         dup_mask = self._buf.index.duplicated(keep=False)
         return self._buf.index[dup_mask].unique()
 
-    def _classify_duplicates(self) -> list[dict]:
+    def _classify_duplicates(self, fr=None, to=None) -> list[dict]:
         """Classify each duplicated instant in _buf.
+
+        When *fr* and/or *to* are given, only instants within [fr, to] are
+        returned; omit both (the default) to classify the full buffer.
 
         Returns a list of dicts: {"instant": Timestamp, "kind": str,
         "rows": [row-dict, ...]}, where kind is one of:
@@ -716,6 +719,12 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         # buffer per instant (O(instants x rows)) — matters for obsids with tens
         # of thousands of duplicates.
         dup = self._buf[self._buf.index.duplicated(keep=False)]
+        if dup.empty:
+            return []
+        if fr is not None:
+            dup = dup[dup.index >= fr]
+        if to is not None:
+            dup = dup[dup.index <= to]
         if dup.empty:
             return []
         row_cols = ["date_time_raw", "head_cm_m", "level_masl", "source", "dt_length"]
@@ -756,12 +765,12 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self._buf = self._buf[~self._buf["date_time_raw"].isin(drop_raws)]
         self._history_push(label)
 
-    def _remove_redundant_duplicates(self) -> int:
+    def _remove_redundant_duplicates(self, fr=None, to=None) -> int:
         """Drop coarse twins at every 'redundant' instant, keeping the row with
         the highest datetime precision (longest dt_length; tie-break newest
         created_at when available). Returns the number of rows removed."""
         drop_raws = set()
-        for grp in self._classify_duplicates():
+        for grp in self._classify_duplicates(fr, to):
             if grp["kind"] != "redundant":
                 continue
             keep = max(
@@ -774,12 +783,12 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self._drop_rows_by_raw(drop_raws, "Remove redundant duplicates")
         return len(drop_raws)
 
-    def _remove_cross_source_overlaps(self, keep_source: str) -> int:
+    def _remove_cross_source_overlaps(self, keep_source: str, fr=None, to=None) -> int:
         """At every 'cross_source' instant where keep_source is present, drop the
         rows from the other sources. Instants without keep_source are left
         untouched (never emptied). Returns the number of rows removed."""
         drop_raws = set()
-        for grp in self._classify_duplicates():
+        for grp in self._classify_duplicates(fr, to):
             if grp["kind"] != "cross_source":
                 continue
             sources_here = {r["source"] for r in grp["rows"]}

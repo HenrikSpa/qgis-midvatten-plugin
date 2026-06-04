@@ -519,3 +519,33 @@ class TestLoggerEditorDupes(utils_for_tests.MidvattenTestSpatialiteDbSv):
             comments=["hello", ""],
         )
         assert editor._buf["comment"].tolist() == ["hello", ""]
+
+    def test_resolve_dialog_remove_redundant(self):
+        from midvatten.tools.loggereditor_resolve_dupes import ResolveDuplicatesDialog
+
+        editor = self._twin_editor()
+        before = len(editor._buf)
+        dlg = ResolveDuplicatesDialog(editor)
+        dlg._on_remove_redundant()
+        assert len(editor._buf) == before - 1
+        assert editor._dirty is True
+
+    def test_resolve_dialog_cross_source_keep(self):
+        from midvatten.tools.loggereditor_resolve_dupes import ResolveDuplicatesDialog
+
+        editor = self._twin_editor()
+        dlg = ResolveDuplicatesDialog(editor)
+        dlg._on_keep_source("a")
+        sub = editor._buf[editor._buf.index == pd.Timestamp("2024-01-02 00:00:00")]
+        assert sub["source"].tolist() == ["a"]
+
+    def test_resolve_dialog_summary_counts(self):
+        from midvatten.tools.loggereditor_resolve_dupes import ResolveDuplicatesDialog
+
+        editor = self._twin_editor()
+        dlg = ResolveDuplicatesDialog(editor)
+        assert dlg._bucket_counts() == {
+            "redundant": 1,
+            "cross_source": 1,
+            "conflict": 1,
+        }

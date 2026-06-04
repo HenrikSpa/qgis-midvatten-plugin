@@ -52,6 +52,7 @@ from midvatten.tools.utils.date_utils import (
 )
 from midvatten.tools.utils.gui_utils import NavigationButton, WA_DeleteOnClose
 from midvatten.tools.loggereditor_refseries import RefSeriesDialog
+from midvatten.tools.loggereditor_resolve_dupes import ResolveDuplicatesDialog
 from midvatten.tools.trend_math import apply_trend_correction
 
 log = logging.getLogger(__name__)
@@ -2246,8 +2247,11 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self._dupe_banner.setVisible(False)
 
     def _open_resolve_dupes_dialog(self) -> None:
-        # Real implementation added in Task 4.
-        pass
+        if not self._duplicate_instants().size:
+            return
+        dlg = ResolveDuplicatesDialog(self, parent=self)
+        dlg.exec_()
+        self._refresh_dupe_banner()
 
     def _fast_update_after_move(self):
         """Update artist y-data in place after a move offset — avoids full redraw."""

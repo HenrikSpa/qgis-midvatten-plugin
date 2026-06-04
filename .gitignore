@@ -16,3 +16,4 @@ __pycache__
 monkeytype.sqlite3
 .worktrees/
 .superpowers/
+symbology-style.db

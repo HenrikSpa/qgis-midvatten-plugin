@@ -62,11 +62,12 @@ def _make_editor_with_buf(
     series_ids: list[int | None],
     sources: list[str],
     series_buf: dict[int, dict],
+    comments: list[str] | None = None,
 ) -> LoggerEditor:
     """Create a LoggerEditor with a manually constructed _buf (no show() needed)."""
     editor = LoggerEditor(iface, ms)
     editor._schema_variant = "series_join"
-    editor._existing_columns = [
+    existing_columns = [
         "obsid",
         "date_time",
         "head_cm",
@@ -75,16 +76,23 @@ def _make_editor_with_buf(
         "series_id",
         "created_at",
     ]
+    if comments is not None:
+        existing_columns.append("comment")
+    editor._existing_columns = existing_columns
+
+    buf_dict: dict = {
+        "head_cm_m": head_values,
+        "level_masl": level_values,
+        "source": sources,
+        "series_id": pd.array(series_ids, dtype="Int64"),
+    }
+    if comments is not None:
+        buf_dict["comment"] = comments
+    buf_dict["dt_length"] = [len(d) for d in dates]
+    buf_dict["date_time_raw"] = list(dates)
 
     buf_df = pd.DataFrame(
-        {
-            "head_cm_m": head_values,
-            "level_masl": level_values,
-            "source": sources,
-            "series_id": pd.array(series_ids, dtype="Int64"),
-            "dt_length": [len(d) for d in dates],
-            "date_time_raw": list(dates),
-        },
+        buf_dict,
         index=pd.to_datetime(dates, format="ISO8601"),
     )
     editor._buf = buf_df

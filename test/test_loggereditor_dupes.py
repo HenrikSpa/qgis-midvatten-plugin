@@ -503,3 +503,19 @@ class TestLoggerEditorDupes(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert len(editor._buf) == before - 1
         editor.undo()
         assert len(editor._buf) == before
+
+    def test_buffer_carries_comment_when_present(self):
+        _insert_obs_point("rb1")
+        editor = _make_editor_with_buf(
+            self.iface,
+            self.midvatten.ms,
+            obsid="rb1",
+            dates=["2024-01-01 00:00:00", "2024-01-02 00:00:00"],
+            head_values=[1.0, 2.0],
+            level_values=[10.0, 20.0],
+            series_ids=[None, None],
+            sources=["", ""],
+            series_buf={},
+            comments=["hello", ""],
+        )
+        assert editor._buf["comment"].tolist() == ["hello", ""]

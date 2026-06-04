@@ -941,10 +941,13 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             schema_variant = self._schema_variant
             existing_columns = getattr(self, "_existing_columns", [])
             has_created_at = "created_at" in existing_columns
+            has_comment = "comment" in existing_columns
             if schema_variant == "series_join":
                 extra_cols = ""
                 if has_created_at:
                     extra_cols += ", COALESCE(l.created_at, '') AS created_at"
+                if has_comment:
+                    extra_cols += ", COALESCE(l.comment, '') AS comment"
                 extra_cols += ", LENGTH(l.date_time) AS dt_length"
                 head_level_masl_sql = (
                     f"SELECT l.date_time, l.head_cm / 100, l.level_masl,"
@@ -957,6 +960,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 extra_cols = ""
                 if has_created_at:
                     extra_cols += ", COALESCE(created_at, '') AS created_at"
+                if has_comment:
+                    extra_cols += ", COALESCE(comment, '') AS comment"
                 extra_cols += ", LENGTH(date_time) AS dt_length"
                 head_level_masl_sql = (
                     f"SELECT date_time, head_cm / 100, level_masl,"
@@ -968,6 +973,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 extra_cols = ""
                 if has_created_at:
                     extra_cols += ", COALESCE(created_at, '') AS created_at"
+                if has_comment:
+                    extra_cols += ", COALESCE(comment, '') AS comment"
                 extra_cols += ", LENGTH(date_time) AS dt_length"
                 head_level_masl_sql = (
                     f"SELECT date_time, head_cm / 100, level_masl,"
@@ -1017,6 +1024,12 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                         for r in head_level_masl_list
                     ]
                     col_idx += 1
+                if has_comment:
+                    cols_data["comment"] = [
+                        str(r[col_idx]) if r[col_idx] else ""
+                        for r in head_level_masl_list
+                    ]
+                    col_idx += 1
                 cols_data["dt_length"] = [r[col_idx] for r in head_level_masl_list]
                 cols_data["date_time_raw"] = [r[0] for r in head_level_masl_list]
                 buf_df = pd.DataFrame(
@@ -1030,6 +1043,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 buf_cols = ["head_cm_m", "level_masl", "source", "series_id"]
                 if has_created_at:
                     buf_cols.append("created_at")
+                if has_comment:
+                    buf_cols.append("comment")
                 buf_cols.append("dt_length")
                 buf_cols.append("date_time_raw")
                 buf_df = pd.DataFrame(columns=buf_cols)

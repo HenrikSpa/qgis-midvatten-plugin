@@ -3212,29 +3212,22 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     def plot_or_update_selected_line(self):
         if self.logger_artist is None:
             return
+        if self._buf is None or self._buf.empty:
+            return
         fr_d_t = self.from_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
         to_d_t = self.to_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
         xdata = self.logger_artist.get_xdata()
 
-        selected_keys = self.selected_line_keys
-        has_key_filter = (
-            bool(selected_keys)
-            and self._buf is not None
-            and "_line_key" in self._buf.columns
-        )
-
-        buf_len = len(self._buf) if self._buf is not None else 0
-        ydata = []
-        for idx, y in enumerate(self.logger_artist.get_ydata()):
-            in_period = fr_d_t <= xdata[idx].replace(tzinfo=None) <= to_d_t
-            if has_key_filter and in_period:
-                if idx >= buf_len:
-                    ydata.append(np.nan)
-                    continue
-                in_selection = self._buf.iloc[idx]["_line_key"] in selected_keys
-                ydata.append(y if in_selection else np.nan)
-            else:
-                ydata.append(y if in_period else np.nan)
+        yf = np.asarray(self.logger_artist.get_ydata(), dtype=float)
+        n_artist = len(yf)
+        if len(self._buf) == n_artist:
+            show = np.asarray(self._build_edit_mask(fr_d_t, to_d_t), dtype=bool)
+        else:
+            fr_num = date2num(fr_d_t)
+            to_num = date2num(to_d_t)
+            xf = date2num(xdata)
+            show = (xf >= fr_num) & (xf <= to_num)
+        ydata = np.where(show, yf, np.nan)
 
         if self.selected_line is None:
             self.selected_line = self.axes.plot(
@@ -3307,34 +3300,18 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self.moving_idx = None
 
     def line_select_callback(self, eclick, erelease):
-        """
-        https://matplotlib.org/stable/gallery/widgets/rectangle_selector.html
-        https://matplotlib.org/stable/gallery/widgets/rectangle_selector.html?highlight=rectangle%20selector
-
-        :param eclick:
-        :param erelease:
-        :return:
-        """
-        x1, y1 = num2date(eclick.xdata), eclick.ydata
-        x2, y2 = num2date(erelease.xdata), erelease.ydata
-        y_idx = [
-            idx
-            for idx, y in enumerate(self.logger_artist.get_ydata())
-            if min(y1, y2) <= y <= max(y1, y2)
-        ]
-        x_idx = [
-            idx
-            for idx, x in enumerate(self.logger_artist.get_xdata())
-            if min(x1, x2) <= x <= max(x1, x2)
-        ]
-        found_idx = [idx for idx in x_idx if idx in y_idx]
-        if found_idx:
-            self.from_date_time.setDateTime(
-                self.logger_artist.get_xdata()[min(found_idx)]
-            )
-            self.to_date_time.setDateTime(
-                self.logger_artist.get_xdata()[max(found_idx)]
-            )
+        xdata = self.logger_artist.get_xdata()
+        xf = date2num(xdata)
+        yf = np.asarray(self.logger_artist.get_ydata(), dtype=float)
+        x_lo, x_hi = sorted((eclick.xdata, erelease.xdata))
+        y_lo, y_hi = sorted((eclick.ydata, erelease.ydata))
+        mask = (xf >= x_lo) & (xf <= x_hi) & (yf >= y_lo) & (yf <= y_hi)
+        if mask.any():
+            sel_x = xf[mask]
+            self.from_date_time.blockSignals(True)
+            self.from_date_time.setDateTime(num2date(sel_x.min()))
+            self.from_date_time.blockSignals(False)
+            self.to_date_time.setDateTime(num2date(sel_x.max()))
 
     def toggle_move_nodes(self, on):
         if on:

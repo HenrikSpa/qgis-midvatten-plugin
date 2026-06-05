@@ -3216,20 +3216,19 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             return
         fr_d_t = self.from_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
         to_d_t = self.to_date_time.dateTime().toPyDateTime().replace(tzinfo=None)
-        xdata = self.logger_artist.get_xdata()
 
         yf = np.asarray(self.logger_artist.get_ydata(), dtype=float)
-        n_artist = len(yf)
-        if len(self._buf) == n_artist:
+        if len(self._buf) == len(yf):
             show = np.asarray(self._build_edit_mask(fr_d_t, to_d_t), dtype=bool)
         else:
+            xf = date2num(self.logger_artist.get_xdata())
             fr_num = date2num(fr_d_t)
             to_num = date2num(to_d_t)
-            xf = date2num(xdata)
             show = (xf >= fr_num) & (xf <= to_num)
         ydata = np.where(show, yf, np.nan)
 
         if self.selected_line is None:
+            xdata = self.logger_artist.get_xdata()
             self.selected_line = self.axes.plot(
                 xdata,
                 ydata,

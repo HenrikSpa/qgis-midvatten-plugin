@@ -86,6 +86,13 @@ class LoggerImport(BaseImporter, import_ui_dialog):
     FORMAT_LEVELOGGER = "Levelogger"
     FORMAT_HOBO = "Hobo"
 
+    _FORMAT_EXTENSIONS = {
+        FORMAT_DIVEROFFICE: frozenset((".csv", ".mon")),
+        FORMAT_DIVEROFFICE_BARO: frozenset((".csv", ".mon")),
+        FORMAT_LEVELOGGER: frozenset((".csv",)),
+        FORMAT_HOBO: frozenset((".csv",)),
+    }
+
     def __init__(self, iface, ms):
         self.files = []
         # BaseImporter.__init__(iface, ms) calls QMainWindow.__init__(self, iface.mainWindow())
@@ -428,12 +435,17 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         )
         self.setWindowTitle(self._format_titles.get(format_name, "Logger import"))
 
-        self.files = []
-        self._files_label.setText(
-            QCoreApplication.translate("LoggerImport", "No files selected")
+        accepted = self._FORMAT_EXTENSIONS.get(format_name, frozenset())
+        files_compatible = self.files and all(
+            os.path.splitext(f)[1].lower() in accepted for f in self.files
         )
-        self.start_import_button.setEnabled(False)
-        self.export_csv_button.setEnabled(False)
+        if not files_compatible:
+            self.files = []
+            self._files_label.setText(
+                QCoreApplication.translate("LoggerImport", "No files selected")
+            )
+            self.start_import_button.setEnabled(False)
+            self.export_csv_button.setEnabled(False)
 
     # ── File selection ───────────────────────────────────────────────────────
 
@@ -441,11 +453,14 @@ class LoggerImport(BaseImporter, import_ui_dialog):
     def select_files(self) -> None:
         """Open file picker. Encoding is handled automatically in start_import()."""
         format_name = self.format_combo.currentText()
-        extension = (
-            "csv (*.csv);;mon (*.mon)"
-            if format_name in (self.FORMAT_DIVEROFFICE, self.FORMAT_DIVEROFFICE_BARO)
-            else "csv (*.csv)"
-        )
+        exts = sorted(self._FORMAT_EXTENSIONS.get(format_name, frozenset((".csv",))))
+        if len(exts) > 1:
+            combined = " ".join(f"*{e}" for e in exts)
+            parts = [f"All supported ({combined})"]
+            parts.extend(f"{e.lstrip('.')} (*{e})" for e in exts)
+            extension = ";;".join(parts)
+        else:
+            extension = f"{exts[0].lstrip('.')} (*{exts[0]})"
         files = midvatten_utils.select_files(only_one_file=False, extension=extension)
         if not files:
             raise common_utils.UserInterruptError()

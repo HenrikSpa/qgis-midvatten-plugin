@@ -111,8 +111,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
     # ── GUI construction ─────────────────────────────────────────────────────
 
     def load_gui(self) -> None:
-        # Format selector
-        format_row = RowEntry()
+        # Format selector — in left panel for a top-to-bottom workflow
         format_label = QtWidgets.QLabel(
             QCoreApplication.translate("LoggerImport", "Logger format:")
         )
@@ -125,10 +124,11 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                 self.FORMAT_HOBO,
             ]
         )
-        format_row.layout().addWidget(format_label)
-        format_row.layout().addWidget(self.format_combo)
-        self.add_row(format_row)
+        self.grid_layout_buttons.addWidget(format_label, 0, 0)
+        self.grid_layout_buttons.addWidget(self.format_combo, 1, 0)
+        self.grid_layout_buttons.addWidget(get_line(), 2, 0)
 
+        # Format description — stays in right panel as reference text
         self._format_description_label = QtWidgets.QLabel()
         self._format_description_label.setWordWrap(True)
         self.add_row(self._format_description_label)
@@ -225,24 +225,24 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         self.select_files_button = QtWidgets.QPushButton(
             QCoreApplication.translate("LoggerImport", "Select files")
         )
-        self.grid_layout_buttons.addWidget(self.select_files_button, 0, 0)
+        self.grid_layout_buttons.addWidget(self.select_files_button, 3, 0)
         self.select_files_button.clicked.connect(lambda: self.select_files())
 
         self._files_label = QtWidgets.QLabel(
             QCoreApplication.translate("LoggerImport", "No files selected")
         )
-        self.grid_layout_buttons.addWidget(self._files_label, 1, 0)
+        self.grid_layout_buttons.addWidget(self._files_label, 4, 0)
 
         self.close_after_import = QtWidgets.QCheckBox(
             QCoreApplication.translate("LoggerImport", "Close dialog after import")
         )
         self.close_after_import.setChecked(True)
-        self.grid_layout_buttons.addWidget(self.close_after_import, 2, 0)
+        self.grid_layout_buttons.addWidget(self.close_after_import, 5, 0)
 
         self.start_import_button = QtWidgets.QPushButton(
             QCoreApplication.translate("LoggerImport", "Start import")
         )
-        self.grid_layout_buttons.addWidget(self.start_import_button, 3, 0)
+        self.grid_layout_buttons.addWidget(self.start_import_button, 6, 0)
         self.start_import_button.clicked.connect(
             lambda: self.start_import(
                 files=self.files,
@@ -260,7 +260,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         self.export_csv_button = QtWidgets.QPushButton(
             QCoreApplication.translate("LoggerImport", "Export csv")
         )
-        self.grid_layout_buttons.addWidget(self.export_csv_button, 4, 0)
+        self.grid_layout_buttons.addWidget(self.export_csv_button, 7, 0)
         self.export_csv_button.clicked.connect(
             lambda: self.start_import(
                 files=self.files,
@@ -275,7 +275,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         )
         self.export_csv_button.setEnabled(False)
 
-        self.grid_layout_buttons.setRowStretch(5, 1)
+        self.grid_layout_buttons.setRowStretch(8, 1)
         self.main_vertical_layout.addStretch()
         self.setGeometry(500, 150, 1200, 700)
 

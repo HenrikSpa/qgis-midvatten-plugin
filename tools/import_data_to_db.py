@@ -540,9 +540,11 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 )
 
         if dbconnection.is_postgresql():
-            dest_table_with_schema = f'"{dbconnection.schema}"."{dest_table}"'
+            dest_table_with_schema = dbconnection.ident(
+                f"{dbconnection.schema}.{dest_table}"
+            )
         else:
-            dest_table_with_schema = dest_table
+            dest_table_with_schema = dbconnection.ident(dest_table)
 
         sql = """INSERT INTO {dest_table} ({dest_columns})\nSELECT {source_columns}\nFROM {source_table}\n"""
         kwargs = {
@@ -555,7 +557,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             sql += """WHERE {notnullcheck}"""
             kwargs["notnullcheck"] = " AND ".join(
                 [
-                    "%s IS NOT NULL" % notnullcol
+                    f"{dbconnection.ident(notnullcol)} IS NOT NULL"
                     for notnullcol in sorted(not_null_columns)
                 ]
             )

@@ -761,6 +761,31 @@ def paint_graded_dems(
                 plotted_axvlines.add(x_vals[_idx])
 
 
+def parse_tem_number_list(value, column: str) -> list:
+    """Parse a tem_data list literal like "[1.0, 4.0, 5.0]" without eval.
+
+    tem_data content may come from external inversion files or shared
+    databases, so it must never be evaluated as Python code.
+    """
+    try:
+        # RecursionError guards against deeply-nested malicious literals;
+        # the rest are the normal literal_eval failures for bad input.
+        parsed = ast.literal_eval(value)
+    except (ValueError, SyntaxError, TypeError, RecursionError):
+        parsed = None
+    if not isinstance(parsed, (list, tuple)) or not all(
+        isinstance(item, (int, float)) and not isinstance(item, bool) for item in parsed
+    ):
+        raise UsageError(
+            QCoreApplication.translate(
+                "SectionPlot",
+                "Could not parse tem_data column %s value %s as a list of numbers.",
+            )
+            % (column, str(value))
+        )
+    return list(parsed)
+
+
 def paint_tem(
     figure,
     dbconnection,
@@ -805,7 +830,7 @@ def paint_tem(
 
     number_of_layers = 0
     for col in ["thickness", "resistivity"]:
-        df[col] = df[col].apply(eval)
+        df[col] = df[col].apply(lambda value: parse_tem_number_list(value, col))
         _max_layers = df[col].apply(len).max()
         number_of_layers = max(_max_layers, number_of_layers)
 

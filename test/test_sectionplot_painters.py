@@ -22,7 +22,9 @@ from midvatten.tools.sectionplot.painters import (
     paint_obsids,
     paint_screen_bars,
     paint_tem,
+    parse_tem_number_list,
 )
+from midvatten.tools.utils.exceptions import UsageError
 
 
 @pytest.fixture(autouse=True)
@@ -533,3 +535,35 @@ class TestFinishPlotObsid:
 
         xlabel = fig.ax_main.get_xlabel()
         assert "PROFILE_A" in xlabel
+
+
+class TestParseTemNumberList:
+    """tem_data list literals must be parsed safely, never executed as code."""
+
+    def test_parses_list_of_floats(self):
+        assert parse_tem_number_list("[1.0, 4.0, 5.5]", "thickness") == [1.0, 4.0, 5.5]
+
+    def test_parses_list_of_ints(self):
+        assert parse_tem_number_list("[1, 2, 3]", "resistivity") == [1, 2, 3]
+
+    def test_parses_tuple_literal(self):
+        assert parse_tem_number_list("(1.0, 2.0)", "thickness") == [1.0, 2.0]
+
+    def test_malicious_code_raises_instead_of_executing(self, tmp_path):
+        marker = tmp_path / "pwned"
+        payload = f"__import__('pathlib').Path({str(marker)!r}).touch()"
+        with pytest.raises(UsageError):
+            parse_tem_number_list(payload, "thickness")
+        assert not marker.exists()
+
+    def test_non_list_literal_raises(self):
+        with pytest.raises(UsageError):
+            parse_tem_number_list("1.0", "thickness")
+
+    def test_list_with_non_numbers_raises(self):
+        with pytest.raises(UsageError):
+            parse_tem_number_list("['a', 'b']", "resistivity")
+
+    def test_garbage_string_raises(self):
+        with pytest.raises(UsageError):
+            parse_tem_number_list("not a list", "thickness")

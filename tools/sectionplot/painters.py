@@ -13,6 +13,7 @@ import copy
 import json
 import logging
 import os
+import re
 import traceback
 
 import matplotlib.pyplot as plt
@@ -761,29 +762,61 @@ def paint_graded_dems(
                 plotted_axvlines.add(x_vals[_idx])
 
 
+_NUMPY_SCALAR_RE = re.compile(r"^(?:np|numpy)\.float(?:16|32|64|128)?\((.*)\)$")
+
+
+def _coerce_tem_number(token: str) -> float:
+    """Convert one tem_data list token to a float without eval.
+
+    Tolerates numpy scalar reprs (``np.float64(1.0)``) and ``nan``/``inf``,
+    which a numpy-based exporter may write. ``float()`` only accepts numeric
+    text, so nothing is executed even if the wrapper contains an expression.
+    """
+    token = token.strip()
+    match = _NUMPY_SCALAR_RE.match(token)
+    if match:
+        token = match.group(1).strip()
+    return float(token)
+
+
 def parse_tem_number_list(value, column: str) -> list:
     """Parse a tem_data list literal like "[1.0, 4.0, 5.0]" without eval.
 
     tem_data content may come from external inversion files or shared
-    databases, so it must never be evaluated as Python code.
+    databases, so it must never be evaluated as Python code. The fast path
+    handles the documented ``[1.0, 4.0, 5.0]`` format via ast.literal_eval;
+    a token-based fallback tolerates numpy scalar reprs and ``nan``/``inf``
+    so this stays at least as permissive as the previous eval()-based code.
     """
     try:
         # RecursionError guards against deeply-nested malicious literals;
         # the rest are the normal literal_eval failures for bad input.
         parsed = ast.literal_eval(value)
+        if isinstance(parsed, (list, tuple)) and all(
+            isinstance(item, (int, float)) and not isinstance(item, bool)
+            for item in parsed
+        ):
+            return list(parsed)
     except (ValueError, SyntaxError, TypeError, RecursionError):
-        parsed = None
-    if not isinstance(parsed, (list, tuple)) or not all(
-        isinstance(item, (int, float)) and not isinstance(item, bool) for item in parsed
-    ):
-        raise UsageError(
-            QCoreApplication.translate(
-                "SectionPlot",
-                "Could not parse tem_data column %s value %s as a list of numbers.",
-            )
-            % (column, str(value))
+        pass
+
+    text = value.strip() if isinstance(value, str) else ""
+    if text.startswith("[") and text.endswith("]"):
+        inner = text[1:-1].strip()
+        try:
+            return [
+                _coerce_tem_number(token) for token in inner.split(",") if token.strip()
+            ]
+        except ValueError:
+            pass
+
+    raise UsageError(
+        QCoreApplication.translate(
+            "SectionPlot",
+            "Could not parse tem_data column %s value %s as a list of numbers.",
         )
-    return list(parsed)
+        % (column, str(value))
+    )
 
 
 def paint_tem(

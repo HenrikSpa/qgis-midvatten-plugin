@@ -567,3 +567,36 @@ class TestParseTemNumberList:
     def test_garbage_string_raises(self):
         with pytest.raises(UsageError):
             parse_tem_number_list("not a list", "thickness")
+
+
+class TestParseTemNumberListCompat:
+    """Backward-compat: stay at least as permissive as the old eval(), minus
+    code execution. Covers formats an external numpy-based exporter may emit."""
+
+    def test_tolerates_numpy_scalar_reprs(self):
+        result = parse_tem_number_list(
+            "[np.float64(1.0), np.float64(2.5)]", "thickness"
+        )
+        assert result == [1.0, 2.5]
+
+    def test_tolerates_numpy_module_prefix_and_float32(self):
+        result = parse_tem_number_list(
+            "[numpy.float32(3.0), np.float64(4.0)]", "resistivity"
+        )
+        assert result == [3.0, 4.0]
+
+    def test_tolerates_nan_and_inf_tokens(self):
+        import math
+
+        result = parse_tem_number_list("[1.0, nan, inf, -inf]", "thickness")
+        assert result[0] == 1.0
+        assert math.isnan(result[1])
+        assert math.isinf(result[2]) and result[2] > 0
+        assert math.isinf(result[3]) and result[3] < 0
+
+    def test_malicious_numpy_wrapper_does_not_execute(self, tmp_path):
+        marker = tmp_path / "pwned"
+        payload = f"[np.float64(__import__('pathlib').Path({str(marker)!r}).touch())]"
+        with pytest.raises(UsageError):
+            parse_tem_number_list(payload, "thickness")
+        assert not marker.exists()

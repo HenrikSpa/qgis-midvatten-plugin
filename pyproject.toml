@@ -1,0 +1,49 @@
+[project]
+name = "midvatten"
+version = "0.1.0"
+description = "QGIS plugin for hydrogeological observational data"
+readme = "README.md"
+requires-python = ">=3.9"
+
+[tool.ruff]
+target-version = "py39"
+line-length = 88
+exclude = [
+    ".git",
+    ".venv",
+    ".worktrees",
+    ".claude",
+    "_pkgroot",
+    "__pycache__",
+    "*.egg-info",
+    "resources.py",
+]
+src = ["."]
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "N",      # pep8-naming
+    "UP",     # pyupgrade
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Test framework methods
+"test/**/*.py" = ["N802"]  # Allow setUp, tearDown (lowercase) - unittest convention
+
+[tool.ruff.lint.pep8-naming]
+# Extend default ignore: setUp, tearDown are unittest convention
+extend-ignore-names = [
+    "setUp", "tearDown", "setUpClass", "tearDownClass",
+    "classFactory",  # QGIS plugin entry point - required name
+    "initGui",  # QGIS plugin - required method name
+    "qInitResources", "qCleanupResources",  # Qt generated - required names
+    "setData", "paintEvent", "showEvent", "eventFilter",  # Qt overrides
+]
+
+[tool.ruff.format]
+quote-style = "double"

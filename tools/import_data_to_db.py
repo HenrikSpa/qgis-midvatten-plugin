@@ -36,7 +36,7 @@ from midvatten.tools.utils.date_utils import instant_key
 
 
 class MidvDataImporter:  # this class is intended to be a multipurpose import class  BUT loggerdata probably needs specific importer or its own subfunction
-    def __init__(self):
+    def __init__(self) -> None:
         self.columns = 0
         self.recsbefore = 0
         self.recsafter = 0
@@ -58,7 +58,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         binary_geometry: bool = False,
         defer_commit: bool = False,
         progress_callback: Optional[Callable[[str], None]] = None,
-    ):
+    ) -> None:
         """General method for importing a list of list to a table
 
             self.temptableName must be the name of the table containing the new data to import.
@@ -437,7 +437,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         remaining_rownumbers: Tuple,
         all_rownumbers: Tuple,
         import_messages: List[str],
-    ):
+    ) -> None:
         """Assemble the confirmation message and ask the user whether to proceed.
 
         Raises UserInterruptError if the user chooses not to import.
@@ -482,7 +482,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         dest_table: str,
         existing_columns_in_temptable: List[str],
         allow_obs_fk_import: bool,
-    ):
+    ) -> None:
         """Detect and import foreign key rows for the destination table."""
         foreign_keys = db_utils.get_foreign_keys(dest_table, dbconnection=dbconnection)
         if foreign_keys:
@@ -601,7 +601,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         dbconnection: Optional[DbConnectionManager],
         _dbconnection: Optional[DbConnectionManager],
         commit: bool,
-    ):
+    ) -> None:
         """Commit or roll back and release resources after import succeeds or fails."""
         if dbconnection is None:
             common_utils.stop_waiting_cursor()
@@ -625,7 +625,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         destination_table: str,
         file_data: List[Any],
         primary_keys_for_concat: List[str],
-    ):
+    ) -> None:
         """
         TODO: This method can be extremely slow sometimes.
         @param dbconnection:
@@ -833,7 +833,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
 
     def check_and_delete_stratigraphy(
         self, existing_columns: List[str], dbconnection: DbConnectionManager
-    ):
+    ) -> None:
         if all(
             [
                 "stratid" in existing_columns,
@@ -913,7 +913,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
 
     def convert_null_unit_to_empty_string(
         self, temptable_name: str, column: str, dbconnection: DbConnectionManager
-    ):
+    ) -> None:
         sql = dbconnection.sql_ident(
             "UPDATE {t} SET {c} = TRIM(COALESCE({c}, ''))",
             t=temptable_name,
@@ -928,7 +928,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         temptablename: str,
         foreign_keys: Dict[str, List[Tuple[str, str]]],
         existing_columns_in_temptable: List[str],
-    ):
+    ) -> None:
         # TODO: Empty foreign keys are probably imported now. Must add "case when...NULL" to a couple of sql questions here
 
         # What I want to do:

@@ -36,7 +36,7 @@ _EMPTY_VALS = ("", "NULL")
 
 
 class Drillreport:  # general observation point info for the selected object
-    def __init__(self, iface, ms):
+    def __init__(self, iface, ms) -> None:
         self._iface = iface
         self._ms = ms
 
@@ -50,7 +50,7 @@ class Drillreport:  # general observation point info for the selected object
         self,
         obsids: List[str] = None,
         settingsdict: Dict[str, Union[str, int, bool, float]] = None,
-    ):
+    ) -> None:
         if obsids is None:
             obsids = [""]
         if settingsdict is None:
@@ -128,7 +128,7 @@ class Drillreport:  # general observation point info for the selected object
         imgpath: str,
         logopath: str,
         f: codecs.StreamReaderWriter,
-    ):
+    ) -> None:
         rpt += r"""<html><TABLE WIDTH=100% BORDER=0 CELLPADDING=1 CELLSPACING=1><TR VALIGN=TOP><TD WIDTH=15%><h3 style="font-family:'arial';font-size:18pt; font-weight:600">"""
         rpt += obsid
         if midvatten_utils.is_locale_swedish():
@@ -419,7 +419,12 @@ class Drillreport:  # general observation point info for the selected object
             )
         return rpt
 
-    def rpt_upper_left(self, general_data: List[ObsPointsRow], crs="", crs_name=""):
+    def rpt_upper_left(
+        self,
+        general_data: List[ObsPointsRow],
+        crs: str = "",
+        crs_name: str = "",
+    ) -> str:
         r = general_data[0]
         rpt = r"""<p style="font-family:'arial'; font-size:8pt; font-weight:400; font-style:normal;">"""
         if ru(r.name) != "" and ru(r.name) != "NULL" and ru(r.name) != ru(r.obsid):
@@ -727,7 +732,9 @@ class Drillreport:  # general observation point info for the selected object
         rpt += r"""</p>"""
         return rpt
 
-    def rpt_lower_right(self, statistics, meas_or_level_masl):
+    def rpt_lower_right(
+        self, statistics: list[Optional[Union[float, int]]], meas_or_level_masl: str
+    ) -> str:
         if meas_or_level_masl == "meas":
             unit = QCoreApplication.translate("Drillreport", " m below toc") + "<br>"
         else:

@@ -25,7 +25,7 @@ import locale
 import logging
 import os
 import re
-from typing import List, Optional, Tuple, TYPE_CHECKING
+from typing import Callable, List, Optional, Tuple, TYPE_CHECKING
 
 import matplotlib as mpl
 from packaging.version import Version, InvalidVersion
@@ -149,7 +149,9 @@ def verify_msettings_loaded_and_layer_edit_mode(
 # These DB query helpers now live in db_utils; re-exported here for backward compatibility.
 
 
-def ask_for_charset(default_charset=None, msg=None):
+def ask_for_charset(
+    default_charset: Optional[str] = None, msg: Optional[str] = None
+) -> str:
     try:  # MacOSX fix2
         localencoding = getcurrentlocale()[1]
         if default_charset is None:
@@ -252,7 +254,8 @@ def add_triggers_to_obs_points(filename: str):
 
 
 def getcurrentlocale(
-    print_error_message_in_bar: bool = True, dbconnection=None
+    print_error_message_in_bar: bool = True,
+    dbconnection: Optional[DbConnectionManager] = None,
 ) -> List[str]:
     if not isinstance(dbconnection, db_utils.DbConnectionManager):
         try:
@@ -283,7 +286,7 @@ def getcurrentlocale(
         return locale.getlocale()
 
 
-def is_locale_swedish(dbconnection=None) -> bool:
+def is_locale_swedish(dbconnection: Optional[DbConnectionManager] = None) -> bool:
     """True when the resolved locale (DB override + system fallback) is
     Swedish. Use for branches that can't go through
     QCoreApplication.translate — image-file picking, `_sv.qml` fallbacks,
@@ -339,13 +342,13 @@ from midvatten.tools.utils.db_utils.helpers import (  # noqa: E402
 
 
 def create_layer(
-    tablename,
-    geometrycolumn=None,
-    sql=None,
-    keycolumn=None,
-    dbconnection=None,
-    layername=None,
-):
+    tablename: str,
+    geometrycolumn: Optional[str] = None,
+    sql: Optional[str] = None,
+    keycolumn: Optional[str] = None,
+    dbconnection: Optional[DbConnectionManager] = None,
+    layername: Optional[str] = None,
+) -> QgsVectorLayer:
     if not isinstance(dbconnection, db_utils.DbConnectionManager):
         dbconnection = db_utils.DbConnectionManager()
         dbconnection_created = True
@@ -370,7 +373,7 @@ def create_layer(
         dbconnection.closedb()
 
 
-def warn_about_old_database():
+def warn_about_old_database() -> None:
     try:
         dbconnection = db_utils.DbConnectionManager()
     except UsageError:
@@ -455,7 +458,7 @@ def compare_verson_lists(
     return testlist < reflist
 
 
-def add_view_obs_points_obs_lines():
+def add_view_obs_points_obs_lines() -> None:
     dbconnection = db_utils.DbConnectionManager()
     if not dbconnection.is_sqlite():
         MessagebarAndLog.info(
@@ -483,7 +486,9 @@ def add_view_obs_points_obs_lines():
         )
 
 
-def add_non_essential_tables(dbconnection=None):
+def add_non_essential_tables(
+    dbconnection: Optional[DbConnectionManager] = None,
+) -> None:
     connection_created = False
     if dbconnection is None:
         connection_created = True
@@ -557,8 +562,8 @@ def select_files(
 
 
 def create_markdown_table_from_table(
-    tablename, transposed=False, only_description=False
-):
+    tablename: str, transposed: bool = False, only_description: bool = False
+) -> str:
     """Used externally to generate markdown tables for the GitHub wiki."""
     table = list_of_lists_from_table(tablename)
     if only_description:
@@ -603,11 +608,11 @@ class PlotTemplates:
         save_as_button,
         import_button,
         remove_button,
-        template_folder,
-        templates_settingskey,
-        loaded_template_settingskey,
-        fallback_template,
-        msettings=None,
+        template_folder: str,
+        templates_settingskey: str,
+        loaded_template_settingskey: str,
+        fallback_template: dict,
+        msettings: Optional["MidvSettings"] = None,
     ):
 
         # Gui objects
@@ -712,7 +717,7 @@ class PlotTemplates:
         self.remove_button.clicked.connect(lambda x: self.remove())
 
     @general_exception_handler
-    def edit(self):
+    def edit(self) -> None:
         old_string = self.readable_output(self.loaded_template)
 
         msg = returnunicode(
@@ -738,7 +743,7 @@ class PlotTemplates:
         self.loaded_template = as_dict
 
     @general_exception_handler
-    def load(self, template=None):
+    def load(self, template: Optional[dict] = None):
         if isinstance(template, dict):
             self.loaded_template = template
         else:
@@ -751,7 +756,7 @@ class PlotTemplates:
                 self.loaded_template = self.templates[filename]["template"]
 
     @general_exception_handler
-    def save_as(self):
+    def save_as(self) -> None:
         filename = get_save_file_name_no_extension(
             parent=None,
             caption=returnunicode(
@@ -776,7 +781,7 @@ class PlotTemplates:
         self.update_template_list()
 
     @general_exception_handler
-    def import_templates(self, filenames=None):
+    def import_templates(self, filenames: Optional[list[str]] = None):
         if filenames is None:
             filenames = select_files(only_one_file=False, extension="")
         templates = {}
@@ -798,7 +803,7 @@ class PlotTemplates:
         self.update_template_list()
 
     @general_exception_handler
-    def remove(self):
+    def remove(self) -> None:
         selected = self.template_list.selectedItems()
         if selected:
             filename = selected[0].filename
@@ -807,14 +812,14 @@ class PlotTemplates:
             self.update_template_list()
 
     @general_exception_handler
-    def import_from_template_folder(self):
+    def import_from_template_folder(self) -> None:
         for root, dirs, files in os.walk(self.template_folder):
             if files:
                 filenames = [os.path.join(root, filename) for filename in files]
                 self.import_templates(filenames)
 
     @general_exception_handler
-    def import_saved_templates(self):
+    def import_saved_templates(self) -> None:
         filenames = [
             x for x in self.ms.settingsdict[self.templates_settingskey].split(";") if x
         ]
@@ -827,7 +832,7 @@ class PlotTemplates:
             )
             self.import_templates(filenames)
 
-    def parse_template(self, filename):
+    def parse_template(self, filename: str) -> dict:
         name = os.path.splitext(os.path.basename(filename))[0]
         if not os.path.isfile(filename):
             raise UsageError(
@@ -882,13 +887,13 @@ class PlotTemplates:
         else:
             return {}
 
-    def update_settingsdict(self):
+    def update_settingsdict(self) -> None:
         self.ms.settingsdict[self.templates_settingskey] = ";".join(
             list(self.templates.keys())
         )
         self.ms.save_settings(self.templates_settingskey)
 
-    def update_template_list(self):
+    def update_template_list(self) -> None:
         self.template_list.clear()
         for filename, template in sorted(
             iter(self.templates.items()), key=lambda x: os.path.basename(x[0])
@@ -898,7 +903,7 @@ class PlotTemplates:
             qlistwidgetitem.filename = template["filename"]
             self.template_list.addItem(qlistwidgetitem)
 
-    def readable_output(self, a_dict=None):
+    def readable_output(self, a_dict: Optional[dict] = None) -> str:
         if a_dict is None:
             a_dict = self.loaded_template
         return anything_to_string_representation(
@@ -910,7 +915,7 @@ class PlotTemplates:
             tupleformatter="(\n%s, )",
         )
 
-    def string_to_dict(self, the_string):
+    def string_to_dict(self, the_string: str):
         the_string = returnunicode(the_string)
         if not the_string:
             return ""
@@ -962,7 +967,12 @@ def _sanitize_mplstyle_content(content: str) -> tuple[str, list[str]]:
 class _FixStylesDialog(QtWidgets.QDialog):
     """Dialog that lets the user inspect and fix .mplstyle files in the stylelib."""
 
-    def __init__(self, style_folder: str, style_extension: str, parent=None):
+    def __init__(
+        self,
+        style_folder: str,
+        style_extension: str,
+        parent: Optional[QtWidgets.QWidget] = None,
+    ):
         super().__init__(parent)
         self.style_folder = style_folder
         self.style_extension = style_extension
@@ -970,7 +980,7 @@ class _FixStylesDialog(QtWidgets.QDialog):
         self._setup_ui()
         self._scan()
 
-    def _setup_ui(self):
+    def _setup_ui(self) -> None:
         self.setWindowTitle(
             QCoreApplication.translate("_FixStylesDialog", "Fix style files")
         )
@@ -1019,7 +1029,7 @@ class _FixStylesDialog(QtWidgets.QDialog):
 
         self.resize(520, 320)
 
-    def _scan(self):
+    def _scan(self) -> None:
         self._list.blockSignals(True)
         self._list.clear()
         self._info: dict = {}
@@ -1058,7 +1068,7 @@ class _FixStylesDialog(QtWidgets.QDialog):
         self._list.blockSignals(False)
         self._update_fix_btn()
 
-    def _set_all(self, checked: bool):
+    def _set_all(self, checked: bool) -> None:
         state = QtCore.Qt.Checked if checked else QtCore.Qt.Unchecked
         self._list.blockSignals(True)
         for i in range(self._list.count()):
@@ -1066,17 +1076,17 @@ class _FixStylesDialog(QtWidgets.QDialog):
         self._list.blockSignals(False)
         self._update_fix_btn()
 
-    def _on_item_changed(self, _item):
+    def _on_item_changed(self, _item: QtWidgets.QListWidgetItem) -> None:
         self._update_fix_btn()
 
-    def _update_fix_btn(self):
+    def _update_fix_btn(self) -> None:
         any_checked = any(
             self._list.item(i).checkState() == QtCore.Qt.Checked
             for i in range(self._list.count())
         )
         self._fix_btn.setEnabled(any_checked)
 
-    def _fix_selected(self):
+    def _fix_selected(self) -> None:
         fixed: list[str] = []
         for i in range(self._list.count()):
             item = self._list.item(i)
@@ -1120,9 +1130,9 @@ class MatplotlibStyles:
         available_settings_button,
         save_as_button,
         fix_styles_button,
-        last_used_style_settingskey,
-        defaultstyle_stylename,
-        msettings=None,
+        last_used_style_settingskey: str,
+        defaultstyle_stylename: tuple[str, str],
+        msettings: Optional["MidvSettings"] = None,
     ):
 
         # Gui objects
@@ -1216,14 +1226,14 @@ class MatplotlibStyles:
         self.fix_styles_button.clicked.connect(lambda x: self.fix_styles())
 
     @general_exception_handler
-    def fix_styles(self):
+    def fix_styles(self) -> None:
         """Open a dialog where the user can select which style files to sanitize."""
         dialog = _FixStylesDialog(self.style_folder, self.style_extension)
         dialog.exec_()
         if dialog.fixed_any:
             self.update_style_list()
 
-    def save_style_to_stylelib(self, stylestring_stylename):
+    def save_style_to_stylelib(self, stylestring_stylename: tuple[str, str]) -> None:
         filename = self.filename_from_style(stylestring_stylename[1])
         content, skipped = _sanitize_mplstyle_content(stylestring_stylename[0])
         if skipped:
@@ -1247,17 +1257,21 @@ class MatplotlibStyles:
             of.write(content)
         mpl.style.reload_library()
 
-    def get_selected_style(self):
+    def get_selected_style(self) -> Optional[str]:
         selected = self.style_list.selectedItems()
         if selected:
             return selected[0].text()
 
-    def filename_from_style(self, style):
+    def filename_from_style(self, style: str) -> str:
         filename = os.path.join(self.style_folder, style + self.style_extension)
         return filename
 
     @general_exception_handler
-    def load(self, drawfunc, plot_widget_navigationtoolbar_name=None):
+    def load(
+        self,
+        drawfunc: Callable,
+        plot_widget_navigationtoolbar_name: Optional[tuple] = None,
+    ) -> None:
         # mpl.rcdefaults()
         fallback_style = "fallback_" + self.defaultstyle_stylename[1]
         self.save_style_to_stylelib([self.defaultstyle_stylename[0], fallback_style])
@@ -1339,7 +1353,7 @@ class MatplotlibStyles:
             drawfunc()
 
     @general_exception_handler
-    def import_style(self, filenames=None):
+    def import_style(self, filenames: Optional[list[str]] = None) -> None:
         if filenames is None:
             filenames = select_files(only_one_file=False, extension="")
         if filenames:
@@ -1387,7 +1401,7 @@ class MatplotlibStyles:
             self.update_style_list()
 
     @general_exception_handler
-    def save_as(self):
+    def save_as(self) -> None:
         filename = get_save_file_name_no_extension(
             parent=None,
             caption=returnunicode(
@@ -1406,17 +1420,17 @@ class MatplotlibStyles:
         self.update_style_list()
 
     @general_exception_handler
-    def open_folder(self):
+    def open_folder(self) -> None:
         url = QtCore.QUrl(self.style_folder, QtCore.QUrl.TolerantMode)
         QDesktopServices.openUrl(url)
 
-    def update_settingsdict(self):
+    def update_settingsdict(self) -> None:
         self.ms.settingsdict[self.last_used_style_settingskey] = (
             self.get_selected_style()
         )
         self.ms.save_settings(self.last_used_style_settingskey)
 
-    def update_style_list(self):
+    def update_style_list(self) -> None:
         mpl.style.reload_library()
         selected_style = self.get_selected_style()
         self.style_list.clear()
@@ -1427,7 +1441,7 @@ class MatplotlibStyles:
             if style == selected_style:
                 qlistwidgetitem.setSelected(True)
 
-    def available_settings_to_log(self):
+    def available_settings_to_log(self) -> None:
         rows = self.rcparams()
         MessagebarAndLog.info(
             bar_msg=returnunicode(
@@ -1438,8 +1452,8 @@ class MatplotlibStyles:
             log_msg=rows,
         )
 
-    def rcparams(self):
-        def format_v(v):
+    def rcparams(self) -> str:
+        def format_v(v) -> str:
             if isinstance(v, (list, tuple)):
                 if v:
                     return ",".join([str(_v) for _v in v])
@@ -1452,7 +1466,7 @@ class MatplotlibStyles:
             [f"{str(k)}: {format_v(v)}" for k, v in sorted(mpl.rcParams.items())]
         )
 
-    def select_style_in_list(self, style):
+    def select_style_in_list(self, style: str) -> None:
         for idx in range(self.style_list.count()):
             item = self.style_list.item(idx)
             if item.text() == style:

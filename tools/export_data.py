@@ -49,12 +49,12 @@ _COM_HTML_COLUMN = "com_html"
 
 
 class _TextExtractor(HTMLParser):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self._parts: list[str] = []
         self._skip_depth: int = 0
 
-    def handle_starttag(self, tag: str, attrs) -> None:
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, Optional[str]]]) -> None:
         t = tag.lower()
         if t in _SKIP_TAGS:
             self._skip_depth += 1
@@ -74,7 +74,9 @@ class _TextExtractor(HTMLParser):
         if t in _BLOCK_TAGS:
             self._parts.append("\n")
 
-    def handle_startendtag(self, tag: str, attrs) -> None:
+    def handle_startendtag(
+        self, tag: str, attrs: list[tuple[str, Optional[str]]]
+    ) -> None:
         self.handle_starttag(tag, attrs)
 
     def handle_data(self, data: str) -> None:
@@ -96,7 +98,7 @@ def html_to_plaintext(value: str) -> str:
 
 
 class ExportCsvDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self.setWindowTitle(QCoreApplication.translate("ExportData", "Export to CSV"))
         self._folder = ""
@@ -160,7 +162,7 @@ class ExportCsvDialog(QDialog):
 
 
 class ExportData:
-    def __init__(self, iface, ms):
+    def __init__(self, iface, ms) -> None:
         self._iface = iface
         self._ms = ms
         self.source_dbconnection = None
@@ -222,7 +224,7 @@ class ExportData:
         obsids: Optional[Union[tuple[str], tuple[()]]],
         ptabs: list[str],
         replace: bool = False,
-    ):
+    ) -> None:
         for tname in ptabs:
             QApplication.processEvents()
             if not db_utils.verify_table_exists(

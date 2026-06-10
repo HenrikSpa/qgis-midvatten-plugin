@@ -15,6 +15,7 @@ qgis-auth.db
 __pycache__
 monkeytype.sqlite3
 .worktrees/
+.claude/worktrees/
 .superpowers/
 symbology-style.db
 

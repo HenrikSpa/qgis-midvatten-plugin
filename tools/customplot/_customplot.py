@@ -1445,13 +1445,18 @@ class PandasCalculations:
             resample_kwargs = {"offset": offset}
 
         if rule:
-            how = self.how.text() if self.how.text() else "mean"
-            if pd.__version__ > "0.18.0":
-                # new api for pandas >=0.18
-                df = getattr(df.resample(rule, **resample_kwargs), how)()
+            try:
+                how = defs.validate_resample_how(self.how.text())
+            except common_utils.UsageError as e:
+                # Skip resampling, mirroring the bad-base handling above.
+                common_utils.MessagebarAndLog.critical(bar_msg=str(e))
             else:
-                # old pandas
-                df = df.resample(rule, how=how, base=base)
+                if pd.__version__ > "0.18.0":
+                    # new api for pandas >=0.18
+                    df = getattr(df.resample(rule, **resample_kwargs), how)()
+                else:
+                    # old pandas
+                    df = df.resample(rule, how=how, base=base)
 
         # Rolling mean
         window = self.window.text()

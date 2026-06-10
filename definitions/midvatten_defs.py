@@ -38,7 +38,8 @@ from midvatten.tools.utils.db_utils import (
     get_table_info,
 )
 from midvatten.tools.utils.midvatten_utils import getcurrentlocale, is_locale_swedish
-from typing import Any, Dict
+from midvatten.tools.utils.exceptions import UsageError
+from typing import Any, Dict, Optional
 
 
 def settingsdict():  # These are the default settings, they shall not be changed!!!
@@ -1500,13 +1501,47 @@ def pandas_base_tooltip():
     )
 
 
+RESAMPLE_HOW_METHODS = (
+    "count",
+    "first",
+    "last",
+    "max",
+    "mean",
+    "median",
+    "min",
+    "std",
+    "sum",
+    "var",
+)
+
+
 def pandas_how_tooltip():
     return QCoreApplication.translate(
         "pandas_how_tooltip",
-        'How to make the resample, ex. "mean" (default), "first", "last", "sum".\n'
-        "See pandas pandas.DataFrame.resample documentation for more info\n"
-        '(though "how" is not explained a lot)',
-    )
+        'How to make the resample, ex. "mean" (default). Allowed methods:\n%s\n'
+        "See pandas pandas.DataFrame.resample documentation for more info",
+    ) % ", ".join(RESAMPLE_HOW_METHODS)
+
+
+def validate_resample_how(how: Optional[str]) -> str:
+    """Validate a user-supplied pandas resample aggregation method name.
+
+    The returned name is safe to use as ``getattr(df.resample(...), how)()``.
+    Empty input falls back to "mean". Raises UsageError for anything not in
+    RESAMPLE_HOW_METHODS, so widget text can never reach getattr() unchecked.
+    """
+    method = (how or "").strip().lower()
+    if not method:
+        return "mean"
+    if method not in RESAMPLE_HOW_METHODS:
+        raise UsageError(
+            QCoreApplication.translate(
+                "validate_resample_how",
+                'Resample method "%s" is not supported. Allowed methods: %s',
+            )
+            % (how.strip(), ", ".join(RESAMPLE_HOW_METHODS))
+        )
+    return method
 
 
 def midv_line_cycle() -> _cycler_mod.Cycler:

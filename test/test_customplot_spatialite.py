@@ -760,6 +760,25 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert not np.isclose(float(ydata_mean[0]), float(ydata_sum[0]))
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    def test_pandas_resample_how_invalid_skips_resample_with_message(
+        self, mock_messagebar
+    ):
+        _insert_w_levels_logger_data()
+        self.midvatten.plot_sqlite()
+        customplot = self.midvatten.customplot
+        _configure_customplot_tab1_tab2(customplot, tab2=False)
+        customplot.tab1_pandas_calc.rule.setText("1d")
+        customplot.tab1_pandas_calc.how.setText("to_csv")
+        customplot.draw_plot_all()
+        lines = customplot.axes.get_lines()
+        print(f"{mock_messagebar.mock_calls=}")
+        assert mock_messagebar.critical.called
+        assert len(lines) >= 1
+        xdata, ydata = lines[0].get_data()
+        # Resampling must be skipped: o1 keeps its 3 raw points.
+        assert len(xdata) == 3 and len(ydata) == 3
+
+    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_pandas_rolling_window_smooths_line_data(self, mock_messagebar):
         _insert_w_levels_logger_data()
         self.midvatten.plot_sqlite()

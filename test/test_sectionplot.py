@@ -756,6 +756,55 @@ class SectionPlotMixin:
         assert not mock_messagebar.critical.called
 
     @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    def test_plot_section_interactive_invalid_resample_how_skips_with_message(
+        self, mock_messagebar
+    ):
+        db_utils.sql_alter_db(
+            """INSERT INTO obs_lines (obsid, geometry) VALUES ('1', ST_GeomFromText('LINESTRING(633466.711659 6720684.24498, 633599.530455 6720727.016568)', 3006))"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO obs_points (obsid, geometry, length, h_gs) VALUES ('P1', ST_GeomFromText('POINT(633466 711659)', 3006), 2, 21)"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO obs_points (obsid, geometry, length, h_gs) VALUES ('P2', ST_GeomFromText('POINT(6720727 016568)', 3006), '1', 22)"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels (obsid, date_time, meas, h_toc, level_masl) VALUES ('P1', '2015-01-01 00:00:00', '15', '200', '185')"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels (obsid, date_time, meas, h_toc, level_masl) VALUES ('P2', '2015-01-01 00:00:00', '17', '200', '183')"""
+        )
+        self.create_and_select_vlayer()
+
+        @mock.patch("midvatten.tools.sectionplot.common_utils.find_layer")
+        @mock.patch(
+            "midvatten.tools.sectionplot.common_utils.get_selected_object_names",
+            autospec=True,
+        )
+        @mock.patch("qgis.utils.iface", autospec=True)
+        def _test(self, mock_iface, mock_getselectedobjectnames, mock_findlayer):
+            mock_iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
+            self.iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
+            mock_findlayer.return_value.isEditable.return_value = False
+            mock_getselectedobjectnames.return_value = ("P1", "P2")
+            mock_mapcanvas = mock_iface.mapCanvas.return_value
+            mock_mapcanvas.layerCount.return_value = 0
+            self.midvatten.plot_section()
+            self.sectionplot = self.midvatten.sectionplot
+            gui_utils.set_combobox(self.sectionplot.wlvltable, "w_levels")
+            self.sectionplot.interactive_groupbox.setChecked(True)
+            self.sectionplot.resample_how.setText("to_csv")
+
+            self.sectionplot.draw_plot()
+            return self.sectionplot
+
+        myplot = _test(self)
+        print(f"{mock_messagebar.mock_calls=}")
+        assert mock_messagebar.critical.called
+        # The interactive water level subplot must not be created.
+        assert len(myplot.figure.axes) == 1
+
+    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
     def test_plot_section_obsids(self, mock_messagebar):
         db_utils.sql_alter_db(
             """INSERT INTO obs_lines (obsid, geometry) VALUES ('1', ST_GeomFromText('LINESTRING(1 0, 4 0)', 3006))"""

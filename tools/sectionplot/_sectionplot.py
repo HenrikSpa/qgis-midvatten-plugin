@@ -1294,6 +1294,11 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
         self.dbconnection.execute(sql, all_args=[(geom_linestring.asWkt(), srid)])
 
     def plot_water_level_interactive(self):
+        try:
+            resample_how = defs.validate_resample_how(self.resample_how.text())
+        except common_utils.UsageError as e:
+            common_utils.MessagebarAndLog.critical(bar_msg=str(e))
+            return
         placeholders = self.dbconnection.placeholders(len(self.obsids_x_position))
         sql = self.dbconnection.sql_ident(
             f"SELECT date_time, level_masl, obsid FROM {{t}} WHERE obsid IN ({placeholders})",
@@ -1321,7 +1326,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
         if isinstance(df, pd.Series):
             df = df.to_frame()
 
-        resample_kwargs = {"how": self.resample_how.text()}
+        resample_kwargs = {"how": resample_how}
         if self.resample_offset.text():
             if pd.__version__ < "1.1.0":
                 resample_kwargs["base"] = int(self.resample_offset.text())
@@ -1423,7 +1428,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
 
 def resample(df, valuecol, rule, resample_kwargs):
     resample_kwargs = dict(resample_kwargs)
-    how = resample_kwargs.get("how", "mean")
+    how = defs.validate_resample_how(resample_kwargs.get("how", "mean"))
     del resample_kwargs["how"]
     df = df if valuecol is None else df[valuecol]
     df = getattr(df.resample(rule, **resample_kwargs), how)()

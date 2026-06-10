@@ -38,6 +38,7 @@ from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.message_utils import MessagebarAndLog, sql_failed_msg
 from midvatten.tools.utils.date_utils import to_date
 from midvatten.tools.utils.db_utils import DbConnectionManager
+from midvatten.tools.utils.mpl_compat import qt_backend
 
 # Qt6 uses scoped enums (Qt.WidgetAttribute.WA_DeleteOnClose),
 # Qt5 uses flat enums (Qt.WA_DeleteOnClose). Prefer Qt6; fall back to Qt5.
@@ -396,8 +397,11 @@ class DetachFigureButton(NavigationButton):
     def _detach_button(self):
         self.button().setChecked(False)
         fignums = plt.get_fignums()
-        max_fignums = 0 if not fignums else max(plt.get_fignums())
-        plt._backend_mod.new_figure_manager_given_figure(max_fignums, self.fig)
+        max_fignums = max(fignums) if fignums else 0
+        # Use the Qt backend explicitly: the detached window must get a Qt
+        # canvas and toolbar regardless of pyplot's global backend, which can
+        # be switched to Agg by unrelated code (e.g. test collection).
+        qt_backend.new_figure_manager_given_figure(max_fignums, self.fig)
 
         title = getattr(self.fig, "midv_figname", "")
         if title:

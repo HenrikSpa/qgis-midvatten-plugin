@@ -23,6 +23,7 @@ import re
 
 from unittest import mock
 from unittest.mock import call
+import matplotlib.pyplot as plt
 import pytest
 from qgis.core import QgsProject, QgsVectorLayer
 
@@ -916,6 +917,62 @@ class SectionPlotMixin:
         assert "P2" in info_calls
         assert "h_toc" in info_calls
         assert "used 0" in info_calls
+
+    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    def test_plot_section_detach_fig_when_pyplot_backend_is_agg(self, mock_messagebar):
+        """Detaching must not depend on pyplot's global backend.
+
+        Regression test: a test module importing matplotlib.use("Agg") during
+        collection (e.g. test_legend_picker) switches the global pyplot
+        backend, which made detach create a manager without a Qt toolbar.
+        """
+        db_utils.sql_alter_db(
+            """INSERT INTO obs_lines (obsid, geometry) VALUES ('1', ST_GeomFromText('LINESTRING(633466.711659 6720684.24498, 633599.530455 6720727.016568)', 3006))"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO obs_points (obsid, geometry, h_gs, length) VALUES ('P1', ST_GeomFromText('POINT(633466 711659)', 3006), 2, 10)"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO obs_points (obsid, geometry, h_gs, length) VALUES ('P2', ST_GeomFromText('POINT(6720727 016568)', 3006), 3, 20)"""
+        )
+
+        self.create_and_select_vlayer()
+
+        @mock.patch("midvatten.tools.sectionplot.common_utils.find_layer")
+        @mock.patch(
+            "midvatten.tools.sectionplot.common_utils.get_selected_object_names",
+            autospec=True,
+        )
+        @mock.patch("qgis.utils.iface", autospec=True)
+        def _test(self, mock_iface, mock_getselectedobjectnames, mock_findlayer):
+            mock_iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
+            self.iface.mapCanvas.return_value.currentLayer.return_value = self.vlayer
+            mock_findlayer.return_value.isEditable.return_value = False
+            mock_getselectedobjectnames.return_value = ("P1", "P2")
+            mock_mapcanvas = mock_iface.mapCanvas.return_value
+            mock_mapcanvas.layerCount.return_value = 0
+            self.midvatten.plot_section()
+            self.sectionplot = self.midvatten.sectionplot
+            self.sectionplot.draw_plot()
+            return self.sectionplot
+
+        old_backend = plt.get_backend()
+        plt.switch_backend("agg")
+        try:
+            secplot = _test(self)
+            fig = secplot.figure
+            for callback in fig.canvas.toolbar._actions:
+                if "SectionPlot.detach_figure" in str(
+                    callback
+                ) or "DetachFigureButton" in str(callback):
+                    callback()
+                    break
+            print(f"{mock_messagebar.mock_calls=}")
+            assert secplot.figure is None
+            assert fig.canvas.toolbar is not None
+            assert hasattr(fig.canvas.toolbar, "_actions")
+        finally:
+            plt.switch_backend(old_backend)
 
     @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
     def test_plot_section_detach_fig(self, mock_messagebar):

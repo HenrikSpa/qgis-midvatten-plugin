@@ -6,14 +6,16 @@ from here instead of duplicating try/except blocks.
 """
 
 try:
+    from matplotlib.backends import backend_qtagg as qt_backend
     from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
     from matplotlib.backends.backend_qtagg import (
         NavigationToolbar2QT as NavigationToolbar,
     )
 except ImportError:
+    from matplotlib.backends import backend_qt5agg as qt_backend
     from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
     from matplotlib.backends.backend_qt5agg import (
         NavigationToolbar2QT as NavigationToolbar,
     )
 
-__all__ = ["FigureCanvas", "NavigationToolbar"]
+__all__ = ["FigureCanvas", "NavigationToolbar", "qt_backend"]

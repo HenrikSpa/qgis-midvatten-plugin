@@ -17,3 +17,6 @@ monkeytype.sqlite3
 .worktrees/
 .superpowers/
 symbology-style.db
+
+# Synthetic TEM demo database (regenerate via test_export_demo_db)
+demo/

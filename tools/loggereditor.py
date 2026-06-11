@@ -41,7 +41,7 @@ from matplotlib.widgets import MultiCursor, RectangleSelector
 
 from qgis.PyQt import uic
 from midvatten.definitions import midvatten_defs as defs
-from midvatten.tools.utils import common_utils, db_utils, exceptions
+from midvatten.tools.utils import common_utils, db_utils, dialog_utils, exceptions
 from midvatten.tools.utils.common_utils import fn_timer
 from midvatten.tools.utils.db_utils.dialect import ident
 from midvatten.tools.utils.db_utils.execution import use_or_create_connection
@@ -3182,7 +3182,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 + selection_note
             )
 
-        really_delete = common_utils.Askuser("YesNo", msg).result
+        really_delete = dialog_utils.Askuser("YesNo", msg).result
         if really_delete:
             common_utils.start_waiting_cursor()
             mask = self._build_edit_mask(fr_d_t, to_d_t)

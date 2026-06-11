@@ -30,7 +30,7 @@ import psycopg2
 import psycopg2.extras
 from qgis.PyQt.QtCore import QCoreApplication
 
-from midvatten.tools.utils import common_utils, db_utils
+from midvatten.tools.utils import common_utils, db_utils, dialog_utils
 from midvatten.tools.utils.exceptions import UserInterruptError
 from midvatten.tools.utils.db_utils import DbConnectionManager
 from midvatten.tools.utils.date_utils import instant_key
@@ -469,7 +469,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             )
 
         if import_messages:
-            stop_question = common_utils.Askuser(
+            stop_question = dialog_utils.Askuser(
                 "YesNo",
                 "\n".join(import_messages),
                 QCoreApplication.translate("midv_data_importer", "Info"),

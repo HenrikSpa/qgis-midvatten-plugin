@@ -104,7 +104,7 @@ class TestGeneralCsvImportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
 
         with file_utils.tempinput(csv_text, "utf-8", suffix=".csv") as filename:
 
-            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(

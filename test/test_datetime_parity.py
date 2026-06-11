@@ -50,9 +50,7 @@ class DatetimeParityMixin:
     # ------------------------------------------------------------------
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_same_instant_collapses_distinct_second_kept(self, mock_messagebar):
         """Same-instant pair ('hh:mm' and 'hh:mm:ss') collapses to ONE row.
 
@@ -102,9 +100,7 @@ class DatetimeParityMixin:
     # ------------------------------------------------------------------
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_date_only_stored_verbatim(self, mock_messagebar):
         """A date-only value ('yyyy-mm-dd') must be stored exactly as given.
 
@@ -138,9 +134,7 @@ class DatetimeParityMixin:
     # ------------------------------------------------------------------
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_distinct_malformed_dates_both_stored(self, mock_messagebar):
         """Malformed / unparseable date_time strings are stored verbatim.
 
@@ -189,9 +183,7 @@ class DatetimeParityMixin:
     # ------------------------------------------------------------------
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_reimport_is_idempotent(self, mock_messagebar):
         """Importing the same parseable file twice leaves row count unchanged.
 

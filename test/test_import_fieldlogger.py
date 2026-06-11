@@ -19,7 +19,7 @@ from midvatten.tools.utils.date_utils import to_date
 
 @pytest.mark.active
 class TestFieldLoggerImporterNoDb:
-    @mock.patch("midvatten.tools.import_fieldlogger.common_utils.NotFoundQuestion")
+    @mock.patch("midvatten.tools.utils.dialog_utils.NotFoundQuestion")
     @mock.patch(
         "midvatten.tools.import_fieldlogger.db_utils.get_last_used_flow_instruments"
     )
@@ -139,7 +139,7 @@ class TestFieldLoggerImporterNoDb:
         )
         assert test == reference
 
-    @mock.patch("midvatten.tools.import_fieldlogger.common_utils.NotFoundQuestion")
+    @mock.patch("midvatten.tools.utils.dialog_utils.NotFoundQuestion")
     @mock.patch(
         "midvatten.tools.import_fieldlogger.db_utils.get_last_used_flow_instruments"
     )
@@ -180,7 +180,7 @@ class TestFieldLoggerImporterNoDb:
         reference_string = "[[obsid, instrumentid, flowtype, date_time, reading, unit, comment], [obs1, inst1, atype, 2016-01-01 00:00:00, 123.4, aunit, ], [obs1, inst1, atype, 2016-01-02 00:00:00, 223.4, aunit, ]]"
         assert test_string == reference_string
 
-    @mock.patch("midvatten.tools.import_fieldlogger.common_utils.NotFoundQuestion")
+    @mock.patch("midvatten.tools.utils.dialog_utils.NotFoundQuestion")
     @mock.patch(
         "midvatten.tools.import_fieldlogger.db_utils.get_last_used_flow_instruments"
     )

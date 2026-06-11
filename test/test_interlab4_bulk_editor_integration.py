@@ -126,7 +126,7 @@ class TestInterlab4BulkEditorIntegration(utils_for_tests.MidvattenTestSpatialite
                 return_value=[[filename]],
             ),
             mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.Askuser",
+                "midvatten.tools.utils.dialog_utils.Askuser",
                 mocks_for_tests.mock_askuser.get_v,
             ),
             mock.patch(
@@ -183,7 +183,7 @@ class TestInterlab4BulkEditorIntegration(utils_for_tests.MidvattenTestSpatialite
                 return_value=[[filename]],
             ),
             mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.Askuser",
+                "midvatten.tools.utils.dialog_utils.Askuser",
                 mocks_for_tests.mock_askuser.get_v,
             ),
             mock.patch(
@@ -296,7 +296,7 @@ class TestInterlab4BulkEditorIntegration(utils_for_tests.MidvattenTestSpatialite
                 return_value=[[filename]],
             ),
             mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.Askuser",
+                "midvatten.tools.utils.dialog_utils.Askuser",
                 mocks_for_tests.mock_askuser.get_v,
             ),
             mock.patch(

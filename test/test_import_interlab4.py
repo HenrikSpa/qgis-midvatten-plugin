@@ -884,7 +884,7 @@ class TestInterlab4ImportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv)
                 autospec=True,
             )
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.Askuser",
+                "midvatten.tools.utils.dialog_utils.Askuser",
                 mocks_for_tests.mock_askuser.get_v,
             )
             @mock.patch("midvatten.tools.utils.common_utils.NotFoundQuestion")

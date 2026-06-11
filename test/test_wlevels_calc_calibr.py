@@ -348,7 +348,7 @@ class CalibrloggerMixin:
         print(test)
         assert test == ref
 
-    @mock.patch("midvatten.tools.utils.common_utils.Askuser")
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_delete_range(self, mock_messagebar, askuser):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")

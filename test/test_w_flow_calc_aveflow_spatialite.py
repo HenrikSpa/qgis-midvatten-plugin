@@ -28,7 +28,7 @@ from midvatten.tools.utils import common_utils, date_utils, db_utils, string_uti
 
 @pytest.mark.spatialite
 class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
-    @mock.patch("midvatten.tools.utils.common_utils.Askuser", mock.MagicMock())
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_calcall(self, mock_messagebar):
 
@@ -66,7 +66,7 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
         print(reference)
         assert test == reference
 
-    @mock.patch("midvatten.tools.utils.common_utils.Askuser", mock.MagicMock())
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     @mock.patch("qgis.utils.iface", autospec=True)
     @mock.patch(
         "midvatten.tools.utils.layer_utils.get_selected_object_names",
@@ -116,7 +116,7 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
         print(f"ref:\n{reference}")
         assert test == reference
 
-    @mock.patch("midvatten.tools.utils.common_utils.Askuser", mock.MagicMock())
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     @mock.patch("qgis.utils.iface", autospec=True)
     @mock.patch(
         "midvatten.tools.utils.layer_utils.get_selected_object_names",
@@ -173,7 +173,7 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
         print("Test:\n" + str(test))
         assert test == reference
 
-    @mock.patch("midvatten.tools.utils.common_utils.Askuser", mock.MagicMock())
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     @mock.patch("qgis.utils.iface", autospec=True)
     @mock.patch(
         "midvatten.tools.utils.layer_utils.get_selected_object_names",

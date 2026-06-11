@@ -15,7 +15,7 @@ from qgis.PyQt.QtCore import QCoreApplication
 
 import pandas as pd  # pandas is a mandatory dependency of this plugin
 
-from midvatten.tools.utils import common_utils, date_utils, file_utils
+from midvatten.tools.utils import common_utils, date_utils, dialog_utils, file_utils
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.common_utils import format_timezone_string
 from midvatten.tools.utils.date_utils import to_date
@@ -496,7 +496,7 @@ class DiverOfficeParser:
                 df[col] = df[col].apply(lambda v: str(v) if v is not None else None)
         filedata.extend(df.loc[:, _output_cols].values.tolist())
         if len(filedata) < 2:
-            return common_utils.ask_user_about_stopping(
+            return dialog_utils.ask_user_about_stopping(
                 QCoreApplication.translate(
                     "LoggerImport",
                     "Failure, parsing failed for file %s\nNo valid data "

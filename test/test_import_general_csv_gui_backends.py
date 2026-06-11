@@ -57,7 +57,7 @@ class GeneralCsvGuiMixin:
             utils_askuser_answer_no_obj.result = 0
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
 
-            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
@@ -141,7 +141,7 @@ class GeneralCsvGuiMixin:
             utils_askuser_answer_no_obj.result = 0
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
 
-            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
@@ -224,7 +224,7 @@ class GeneralCsvGuiMixin:
             @mock.patch(
                 "midvatten.tools.utils.common_utils.NotFoundQuestion", autospec=True
             )
-            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
@@ -318,7 +318,7 @@ class GeneralCsvGuiMixin:
             @mock.patch(
                 "midvatten.tools.utils.common_utils.NotFoundQuestion", autospec=True
             )
-            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
@@ -411,7 +411,7 @@ class GeneralCsvGuiMixin:
             utils_askuser_answer_no_obj.result = 0
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
 
-            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
@@ -506,7 +506,7 @@ class GeneralCsvGuiMixin:
             utils_askuser_answer_no_obj.result = 0
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
 
-            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
@@ -590,7 +590,7 @@ class GeneralCsvGuiMixin:
             @mock.patch(
                 "midvatten.tools.utils.layer_utils.get_selected_features_as_tuple"
             )
-            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
@@ -681,7 +681,7 @@ class GeneralCsvGuiMixin:
             @mock.patch(
                 "midvatten.tools.utils.layer_utils.get_selected_features_as_tuple"
             )
-            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
@@ -772,7 +772,7 @@ class GeneralCsvGuiMixin:
             utils_askuser_answer_no_obj.result = 0
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
 
-            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
@@ -861,7 +861,7 @@ class GeneralCsvGuiMixin:
             utils_askuser_answer_no_obj.result = 0
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
 
-            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
@@ -944,7 +944,7 @@ class GeneralCsvGuiMixin:
             utils_askuser_answer_no_obj.result = 0
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
 
-            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
@@ -1027,7 +1027,7 @@ class GeneralCsvGuiMixin:
             utils_askuser_answer_no_obj.result = 0
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
 
-            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
@@ -1117,7 +1117,7 @@ class GeneralCsvGuiMixin:
             utils_askuser_answer_no_obj.result = 0
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
 
-            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
@@ -1200,7 +1200,7 @@ class GeneralCsvGuiMixin:
             utils_askuser_answer_no_obj.result = 0
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
 
-            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
@@ -1284,7 +1284,7 @@ class GeneralCsvGuiMixin:
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
 
             @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
@@ -1373,7 +1373,7 @@ class GeneralCsvGuiMixin:
             utils_askuser_answer_no_obj.result = 0
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
 
-            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
@@ -1467,7 +1467,7 @@ class GeneralCsvGuiMixin:
 
         with file_utils.tempinput("\n".join(file), "utf-8") as filename:
 
-            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
@@ -1577,7 +1577,7 @@ class GeneralCsvGuiMixin:
         """
         with file_utils.tempinput("\n".join(file_lines), "utf-8") as filename:
 
-            @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+            @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
@@ -1814,7 +1814,7 @@ class GeneralCsvGuiFromLayerMixin:
         utils_askuser_answer_no_obj.result = 0
         utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
 
-        @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+        @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
         @mock.patch("qgis.utils.iface", autospec=True)
         @mock.patch(
             "midvatten.tools.import_data_to_db.common_utils.pop_up_info", autospec=True
@@ -1897,7 +1897,7 @@ class GeneralCsvGuiFromLayerMixin:
         utils_askuser_answer_no_obj.result = 0
         utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
 
-        @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+        @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
         @mock.patch("qgis.utils.iface", autospec=True)
         @mock.patch(
             "midvatten.tools.import_data_to_db.common_utils.pop_up_info", autospec=True

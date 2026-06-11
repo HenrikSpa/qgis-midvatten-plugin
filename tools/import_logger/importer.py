@@ -16,7 +16,13 @@ import pandas as pd  # pandas is a mandatory dependency of this plugin
 
 from midvatten.tools import import_data_to_db
 from midvatten.tools.base_importer import BaseImporter
-from midvatten.tools.utils import common_utils, db_utils, midvatten_utils, file_utils
+from midvatten.tools.utils import (
+    common_utils,
+    db_utils,
+    dialog_utils,
+    midvatten_utils,
+    file_utils,
+)
 from midvatten.tools.utils.exceptions import UserInterruptError
 from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.string_utils import returnunicode as ru
@@ -626,7 +632,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                                 " no conversion done:\n%s\n\nSkip file?",
                             ) % (ru(selected_file), str(e))
                             common_utils.stop_waiting_cursor()
-                            question = common_utils.Askuser(
+                            question = dialog_utils.Askuser(
                                 question="YesNo",
                                 msg=msg,
                                 dialogtitle=QCoreApplication.translate(

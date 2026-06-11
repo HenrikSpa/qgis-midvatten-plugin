@@ -35,9 +35,7 @@ class GeneralImportMixin:
     """Test to make sure wlvllogg_import goes all the way to the end without errors"""
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_general_import_wlvllogg(self, mock_messagebar):
         file = [("obsid", "date_time", "head_cm"), ("rb1", "2016-03-15 10:30:00", "1")]
 
@@ -58,9 +56,7 @@ class GeneralImportMixin:
         assert test_string == reference_string
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_general_import_wlvllogg_primary_keys_existing(self, mock_messagebar):
         file = [
             ("obsid", "date_time", "head_cm"),
@@ -93,9 +89,7 @@ class GeneralImportMixin:
         )
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     @mock.patch("qgis.utils.iface", autospec=True)
     def test_general_import_wlvllogg_missing_not_null_column(
         self, mock_iface, mock_messagebar
@@ -120,9 +114,7 @@ class GeneralImportMixin:
         reference_string = r"""(True, [])"""
         assert test_string == reference_string
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_general_import_wlvllogg_with_comment(self):
         file = [
             ("obsid", "date_time", "head_cm", "comment"),
@@ -139,9 +131,7 @@ class GeneralImportMixin:
         reference_string = r"""(True, [(rb1, 2016-03-15 10:30:00, 1.0, None, None, None, testcomment)])"""
         assert test_string == reference_string
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_general_import_wlvllogg_with_temp(self):
         file = [
             ("obsid", "date_time", "head_cm", "temp_degc"),
@@ -160,9 +150,7 @@ class GeneralImportMixin:
         )
         assert test_string == reference_string
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_general_import_wlvllogg_with_temp_comment(self):
         file = [
             ("obsid", "date_time", "head_cm", "temp_degc", "cond_mscm"),
@@ -181,9 +169,7 @@ class GeneralImportMixin:
         )
         assert test_string == reference_string
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_general_import_wlvllogg_different_order(self):
         file = [
             ("obsid", "cond_mscm", "date_time", "head_cm", "temp_degc"),
@@ -203,9 +189,7 @@ class GeneralImportMixin:
         )
         assert test_string == reference_string
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_general_import_wlvllogg_only_level_masl(self):
         file = [
             ("obsid", "date_time", "level_masl"),
@@ -225,9 +209,7 @@ class GeneralImportMixin:
         )
         assert test_string == reference_string
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_general_import_wlvllogg_only_temp_degc(self):
         file = [
             ("obsid", "date_time", "temp_degc"),
@@ -247,9 +229,7 @@ class GeneralImportMixin:
         )
         assert test_string == reference_string
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_general_import_wlvllogg_only_cond_mscm(self):
         file = [
             ("obsid", "date_time", "cond_mscm"),
@@ -270,9 +250,7 @@ class GeneralImportMixin:
         assert test_string == reference_string
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_general_import_import_null(self, mock_messagebar):
         file = [("obsid", "date_time", "head_cm"), ("rb1", "2016-03-15 10:30:00", "")]
 
@@ -293,7 +271,7 @@ class GeneralImportMixin:
         assert test_string == reference_string
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
     def test_skip_confirmation_suppresses_dialog_with_duplicates(
         self, mock_askuser, mock_messagebar
     ):
@@ -329,9 +307,7 @@ class GeneralImportMixin:
 
 class ImportObsPointsObsLinesMixin:
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_import_obsids_directly(self, mock_messagebar):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('obsid1')")
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('obsid2')")
@@ -402,9 +378,7 @@ class ImportObsPointsObsLinesMixin:
         )
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_import_obs_points(self, mock_messagebar):
         f = [
             [
@@ -478,9 +452,7 @@ class ImportObsPointsObsLinesMixin:
         assert test_string == reference_string
 
     @mock.patch("qgis.utils.iface")
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_import_obs_points_already_exist(self, mock_iface):
         db_utils.sql_alter_db("""insert into obs_points (obsid) values ('rb1')""")
         self.importinstance.charsetchoosen = ["utf-8"]
@@ -561,9 +533,7 @@ class ImportObsPointsObsLinesMixin:
         reference_string = r"""(True, [(rb1, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None)])"""
         assert test_string == reference_string
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_import_obs_points_duplicates(self, mock_messagebar):
         f = [
@@ -699,9 +669,7 @@ class ImportObsPointsObsLinesMixin:
         reference_string = r"""(True, [(rb1, rb1, a, pipe, 1.0, 1, 1.0, 1, 1, 1, 1, 1, 1, 421484.0, 6542696.0, 1.0, 1, 1.0, 1.0, 1.0, 1.0, 1, 1, 1, 1, 1, POINT(421484 6542696))])"""
         assert test_string == reference_string
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_import_obs_points_no_east_north(self):
         f = [
             [
@@ -773,9 +741,7 @@ class ImportObsPointsObsLinesMixin:
         reference_string = r"""(True, [(rb1, rb1, a, pipe, 1.0, 1, 1.0, 1, 1, 1, 1, 1, 1, None, None, 1.0, 1, 1.0, 1.0, 1.0, 1.0, 1, 1, 1, 1, 1, None)])"""
         assert test_string == reference_string
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_import_obs_points_geometry_as_wkt(self):
         f = [
             [
@@ -849,9 +815,7 @@ class ImportObsPointsObsLinesMixin:
         reference_string = r"""(True, [(rb1, rb1, a, pipe, 1.0, 1, 1.0, 1, 1, 1, 1, 1, 1, 45.0, 55.0, 1.0, 1, 1.0, 1.0, 1.0, 1.0, 1, 1, 1, 1, 1, POINT(45 55))])"""
         assert test_string == reference_string
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_import_obs_lines_geometry_as_wkt(self):
         f = [["obsid", "geometry"], ["line1", "LINESTRING(1 2, 3 4, 5 6, 7 8)"]]
 
@@ -871,9 +835,7 @@ class ImportObsPointsObsLinesMixin:
 
 
 class WquallabImportMixin:
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_wquallab_import_from_csvlayer(self):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('obsid1')")
         f = [
@@ -916,9 +878,7 @@ class WquallabImportMixin:
         reference_string = r"""(True, [(obsid1, 2.0, testreport, testproject, teststaff, 2011-10-19 12:30:00, testmethod, 1,2-Dikloretan, 1.5, <1.5, µg/l, testcomment)])"""
         assert test_string == reference_string
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_wquallab_import_from_csvlayer_depth_empty_string(self):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('obsid1')")
         f = [
@@ -961,9 +921,7 @@ class WquallabImportMixin:
         reference_string = r"""(True, [(obsid1, None, testreport, testproject, teststaff, 2011-10-19 12:30:00, testmethod, 1,2-Dikloretan, 1.5, <1.5, µg/l, testcomment)])"""
         assert test_string == reference_string
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_wquallab_import_from_csvlayer_no_staff(self):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('obsid1')")
 
@@ -1006,9 +964,7 @@ class WquallabImportMixin:
 
 
 class WflowImportMixin:
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_wflow_import_from_csvlayer(self):
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('obsid1')""")
         f = [
@@ -1040,9 +996,7 @@ class WflowImportMixin:
         reference_string = r"""(True, [(obsid1, testid, Momflow, 2011-10-19 12:30:00, 2.0, l/s, testcomment)])"""
         assert test_string == reference_string
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_wflow_import_from_csvlayer_type_missing(self):
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('obsid1')""")
         f = [
@@ -1074,9 +1028,7 @@ class WflowImportMixin:
         reference_string = r"""(True, [(obsid1, testid, Testtype, 2011-10-19 12:30:00, 2.0, l/s, testcomment)])"""
         assert test_string == reference_string
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_wflow_new_param_into_zz_flowtype(self):
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('obsid1')""")
         f = [
@@ -1115,9 +1067,7 @@ class WflowImportMixin:
 
 
 class WqualfieldImportMixin:
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_w_qual_field_import_from_csvlayer(self):
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('obsid1')""")
         f = [
@@ -1155,9 +1105,7 @@ class WqualfieldImportMixin:
         reference_string = r"""(True, [(obsid1, teststaff, 2011-10-19 12:30:00, testinstrument, DO, 12.0, <12, %, 22.0, testcomment)])"""
         assert test_string == reference_string
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_w_qual_field_import_from_csvlayer_no_depth(self):
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('obsid1')""")
         f = [
@@ -1195,9 +1143,7 @@ class WqualfieldImportMixin:
         reference_string = r"""(True, [(obsid1, teststaff, 2011-10-19 12:30:00, testinstrument, DO, 12.0, <12, %, None, testcomment)])"""
         assert test_string == reference_string
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_w_qual_field_no_parameter(self, mock_messagebar):
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('obsid1')""")
@@ -1240,9 +1186,7 @@ class WqualfieldImportMixin:
         reference_string = r"""(True, [])"""
         assert test_string == reference_string
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_w_qual_field_parameter_empty_string(self, mock_messagebar):
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('obsid1')""")
@@ -1302,9 +1246,7 @@ class WqualfieldImportMixin:
         reference_string = r"""(True, [(obsid1, teststaff, 2011-10-19 12:30:00, testinstrument, DO, 12.0, <12, %, 22.0, testcomment)])"""
         assert test_string == reference_string
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_w_qual_field_staff_null(self, mock_messagebar):
         self.importinstance.charsetchoosen = ["utf-8"]
@@ -1370,9 +1312,7 @@ class WqualfieldImportMixin:
         reference_string = r"""(True, [(obsid1, None, 2011-10-19 12:30:00, testinstrument, DO, 12.0, <12, %, 22.0, testcomment), (obsid2, None, 2011-10-19 12:30:00, testinstrument, DO, 12.0, <12, %, 22.0, testcomment)])"""
         assert test_string == reference_string
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_w_qual_field_units(self, mock_messagebar):
         """
@@ -1502,9 +1442,7 @@ class WqualfieldImportMixin:
 
 
 class WlevelsImportMixin:
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_w_level_import_from_csvlayer(self):
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('obsid1')""")
         f = [
@@ -1522,9 +1460,7 @@ class WlevelsImportMixin:
         )
         assert test_string == reference_string
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def _test_w_level_import_from_csvlayer_missing_columns(self):
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('obsid1')""")
         # f = [['obsid', 'date_time', 'meas', 'comment'],
@@ -1541,9 +1477,7 @@ class WlevelsImportMixin:
 
 
 class SeismicImportMixin:
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_seismic_import_from_csvlayer(self):
         db_utils.sql_alter_db("""INSERT INTO obs_lines (obsid) VALUES ('obsid1')""")
         f = [
@@ -1561,9 +1495,7 @@ class SeismicImportMixin:
 
 
 class CommentsImportMixin:
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_comments_import_from_csvlayer(self):
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('obsid1')""")
         f = [
@@ -1585,9 +1517,7 @@ class CommentsImportMixin:
 
 
 class StratImportMixin:
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_strat_import_from_csvlayer(self):
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('obsid1')""")
         f = [
@@ -1626,9 +1556,7 @@ class StratImportMixin:
         reference_string = """(True, [(obsid1, 1, 0.0, 1.0, grusig sand, sand, 5, (j), acomment), (obsid1, 2, 1.0, 4.0, siltigt sandigt grus, grus, 4+, (j), acomment2)])"""
         assert test_string == reference_string
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_strat_import_from_csvlayer_eleven_layers(self):
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('obsid1')""")
         f = [
@@ -1666,9 +1594,7 @@ class StratImportMixin:
         reference_string = """(True, [(obsid1, 1, 0.0, 1.0, s, s, 1, (j), acomment), (obsid1, 2, 1.0, 2.0, s, s, 1, (j), acomment), (obsid1, 3, 2.0, 3.0, s, s, 1, (j), acomment), (obsid1, 4, 3.0, 4.0, s, s, 1, (j), acomment), (obsid1, 5, 4.0, 5.0, s, s, 1, (j), acomment), (obsid1, 6, 5.0, 6.0, s, s, 1, (j), acomment), (obsid1, 7, 6.0, 7.0, s, s, 1, (j), acomment), (obsid1, 8, 7.0, 8.0, s, s, 1, (j), acomment), (obsid1, 9, 8.0, 9.0, s, s, 1, (j), acomment), (obsid1, 10, 9.0, 12.1, s, s, 1, (j), acomment), (obsid1, 11, 12.1, 13.0, s, s, 1, (j), acomment)])"""
         assert test_string == reference_string
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_strat_import_one_obs_fail_stratid_gaps(self):
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('obsid1')""")
         f = [
@@ -1719,9 +1645,7 @@ class StratImportMixin:
         reference_string = """(True, [(obsid1, 1, 0.0, 1.0, grusig sand, sand, 5, (j), acomment), (obsid1, 2, 1.0, 4.0, siltigt sandigt grus, grus, 4+, (j), acomment2)])"""
         assert test_string == reference_string
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_strat_import_one_obs_fail_depthbot_gaps(self):
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('obsid1')""")
         f = [
@@ -1774,9 +1698,7 @@ class StratImportMixin:
 
 
 class MeteoImportMixin:
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_meteo_import_from_csvlayer(self):
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('obsid1')""")
         f = [
@@ -1812,9 +1734,7 @@ class MeteoImportMixin:
 
 
 class VlfImportMixin:
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_vlf_import_from_csvlayer(self):
         db_utils.sql_alter_db("""INSERT INTO obs_lines (obsid) VALUES ('obsid1')""")
         f = [
@@ -1831,9 +1751,7 @@ class VlfImportMixin:
         assert test_string == reference_string
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_vlf_import_from_csvlayer_no_obs_line(self, mock_messagebar):
         f = [
             ["obsid", "length", "real_comp", "imag_comp", "comment"],
@@ -1853,9 +1771,7 @@ class VlfImportMixin:
 
 
 class ObsLinesImportMixin:
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_obs_lines_import_from_csvlayer(self, mock_messagebar):
         f = [
@@ -1873,9 +1789,7 @@ class ObsLinesImportMixin:
 
 
 class GetForeignKeysMixin:
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_get_foreign_columns(self):
         test = db_utils.get_foreign_keys("w_levels")
         assert len(test) > 0
@@ -1885,9 +1799,7 @@ class GetForeignKeysMixin:
 
 
 class DeleteExistingDateTimesFromTemptableMixin:
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_delete_existing_date_times_from_temptable_00_already_exists(self):
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('obsid1')""")
         db_utils.sql_alter_db(
@@ -1909,9 +1821,7 @@ class DeleteExistingDateTimesFromTemptableMixin:
         )
         assert test_string == reference_string
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_delete_existing_date_times_exact_second_blocks_only_matching_second(self):
         self.importinstance.charsetchoosen = ["utf-8"]
 
@@ -1935,9 +1845,7 @@ class DeleteExistingDateTimesFromTemptableMixin:
         reference_string = r"""(True, [(obsid1, 2016-01-01 00:00, None, None, 123.0, None), (obsid1, 2016-01-01 00:00:01, None, None, 456.0, None), (obsid1, 2016-01-01 00:02:00, None, None, 789.0, None)])"""
         assert test_string == reference_string
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_delete_existing_date_times_returns_count_when_rows_deleted(
         self, mock_messagebar
@@ -1971,9 +1879,7 @@ class DeleteExistingDateTimesFromTemptableMixin:
         print(mock_messagebar.mock_calls)
         assert rows_deleted == 1
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_delete_existing_date_times_returns_zero_when_no_duplicates(
         self, mock_messagebar
@@ -2000,9 +1906,7 @@ class DeleteExistingDateTimesFromTemptableMixin:
         print(mock_messagebar.mock_calls)
         assert rows_deleted == 0
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_import_headers_are_quoted_against_injection(self, mock_messagebar):
         """Import-file headers are user-supplied and spliced into CREATE TABLE.
@@ -2034,9 +1938,7 @@ class DeleteExistingDateTimesFromTemptableMixin:
         # The injected DROP must not have executed.
         assert "obs_points" in tables_after
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_delete_existing_distinct_second_in_same_minute_not_blocked(self):
         """A file row at a different second in the same minute is NOT a duplicate.
 
@@ -2068,9 +1970,7 @@ class DeleteExistingDateTimesFromTemptableMixin:
         reference_string = r"""(True, [(obsid1, 2016-01-01 00:00:01, 123.0), (obsid1, 2016-01-01 00:00:05, 456.0), (obsid1, 2016-01-01 00:01:00, 789.0)])"""
         assert test_string == reference_string
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_in_file_same_instant_dedups_keeps_raw(self, mock_messagebar):
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb1')""")
@@ -2092,9 +1992,7 @@ class DeleteExistingDateTimesFromTemptableMixin:
         assert "2015-01-01 00:00:01" in vals
         assert "2015-01-01 00:00" in vals or "2015-01-01 00:00:00" in vals
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_in_file_same_instant_deduped_in_temptable(self, mock_messagebar):
         """In-file dedup collapses same-second rows in the TEMP table itself
@@ -2129,9 +2027,7 @@ class DeleteExistingDateTimesFromTemptableMixin:
         # surviving same-instant row kept its raw (un-padded) text
         assert ("2015-01-01 00:00" in raws) or ("2015-01-01 00:00:00" in raws)
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_in_file_distinct_malformed_dates_not_merged(self, mock_messagebar):
         """Two rows with different UNPARSEABLE date_time strings are distinct
@@ -2156,9 +2052,7 @@ class DeleteExistingDateTimesFromTemptableMixin:
         print(mock_messagebar.mock_calls)
         assert count == 2
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_delete_existing_keeps_distinct_seconds(self, mock_messagebar):
         """Rows at different seconds are NOT duplicates and must not be deleted."""
@@ -2185,9 +2079,7 @@ class DeleteExistingDateTimesFromTemptableMixin:
         print(mock_messagebar.mock_calls)
         assert rows_deleted == 0  # different second is NOT a duplicate
 
-    @mock.patch(
-        "midvatten.tools.import_data_to_db.common_utils.Askuser", mock.MagicMock()
-    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     def test_delete_existing_same_instant_different_format_is_duplicate(
         self, mock_messagebar

@@ -62,7 +62,13 @@ from midvatten.tools.sectionplot import SectionPlot
 from midvatten.tools.strat_symbology import StratSymbology
 from midvatten.tools.stratigraphy import Stratigraphy
 from midvatten.tools.tsplot import TimeSeriesPlot
-from midvatten.tools.utils import common_utils, db_utils, layer_utils, midvatten_utils
+from midvatten.tools.utils import (
+    common_utils,
+    db_utils,
+    dialog_utils,
+    layer_utils,
+    midvatten_utils,
+)
 from midvatten.tools.utils import matplotlib_replacements
 from midvatten.tools.utils.util_translate import get_translate
 from midvatten.tools.w_flow_calc_aveflow import CalculateAveflow
@@ -716,7 +722,7 @@ class Midvatten:
             ]
         with open(str(outname), "w", encoding="cp1252") as outfile:
             outfile.write("\n".join(rows))
-        dlg = common_utils.HtmlDialog(
+        dlg = dialog_utils.HtmlDialog(
             "About Midvatten plugin for QGIS", QUrl.fromLocalFile(str(outname))
         )
         dlg.exec()

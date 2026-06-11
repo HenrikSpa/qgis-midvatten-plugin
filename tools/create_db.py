@@ -27,7 +27,13 @@ import qgis.PyQt
 from qgis.PyQt.QtCore import QCoreApplication, QSettings
 from qgis.core import Qgis
 
-from midvatten.tools.utils import common_utils, db_utils, exceptions, string_utils
+from midvatten.tools.utils import (
+    common_utils,
+    db_utils,
+    dialog_utils,
+    exceptions,
+    string_utils,
+)
 from midvatten.tools.utils.string_utils import returnunicode as ru, lstrip
 from midvatten.tools.utils.file_utils import definitions_path
 from midvatten.tools.utils.common_utils import format_timezone_string
@@ -459,7 +465,7 @@ class NewDb:
         locale_names = [localeobj.name() for localeobj in locales]
         locale_names.append(locale.getlocale()[0])
         locale_names = list(set(locale_names))
-        question = common_utils.NotFoundQuestion(
+        question = dialog_utils.NotFoundQuestion(
             dialogtitle=QCoreApplication.translate("NewDb", "User input needed"),
             msg=QCoreApplication.translate(
                 "NewDb",
@@ -515,7 +521,7 @@ class NewDb:
 
             timezone_list.extend(get_pytz_timezones())
 
-        question = common_utils.NotFoundQuestion(
+        question = dialog_utils.NotFoundQuestion(
             dialogtitle=QCoreApplication.translate("NewDb", "User input needed"),
             msg=msg,
             existing_list=timezone_list,

@@ -1254,7 +1254,7 @@ class TestExportSpatialite(ExportMixin, utils_for_tests.MidvattenTestSpatialiteD
         ExportMixin.mock_no_selection.get_v,
     )
     @mock.patch(
-        "midvatten.tools.utils.common_utils.Askuser", ExportMixin.mock_askuser.get_v
+        "midvatten.tools.utils.dialog_utils.Askuser", ExportMixin.mock_askuser.get_v
     )
     def test_export_spatialite_migrates_old_logger_source_to_series(
         self,

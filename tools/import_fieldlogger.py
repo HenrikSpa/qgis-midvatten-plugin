@@ -36,6 +36,7 @@ from qgis.PyQt.QtCore import QCoreApplication
 from midvatten.tools.base_importer import BaseImporter
 from midvatten.tools.utils import (
     common_utils,
+    dialog_utils,
     midvatten_utils,
     db_utils,
     file_utils,
@@ -432,7 +433,7 @@ class FieldloggerImport(BaseImporter, import_fieldlogger_ui_dialog):
                         last_used_instrumentid = [x[1] for x in last_used_instrumentid]
                     else:
                         last_used_instrumentid = [""]
-                question = common_utils.NotFoundQuestion(
+                question = dialog_utils.NotFoundQuestion(
                     dialogtitle=QCoreApplication.translate(
                         "FieldloggerImport", "Submit instrument id"
                     ),

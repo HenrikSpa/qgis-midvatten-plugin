@@ -33,6 +33,7 @@ from midvatten.tools.utils import (
     common_utils,
     db_utils,
     date_utils,
+    dialog_utils,
     exceptions,
     file_utils,
     layer_utils,
@@ -206,7 +207,7 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         self.file_data = self.file_to_list(filename, charset, delimiter)
 
         common_utils.stop_waiting_cursor()
-        header_question = common_utils.Askuser(
+        header_question = dialog_utils.Askuser(
             question="YesNo",
             msg=QCoreApplication.translate(
                 "GeneralCsvImportGui", """Does the file contain a header?"""

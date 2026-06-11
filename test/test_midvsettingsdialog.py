@@ -8,7 +8,7 @@ from midvatten.midvsettingsdialog import MidvattenSettingsDock
 
 
 class ComboStub:
-    """Mimics the QComboBox subset used by load_and_select_last_piper_settings."""
+    """Mimics the QComboBox subset that gui_utils.set_combobox calls."""
 
     def __init__(self, items):
         self.items = items

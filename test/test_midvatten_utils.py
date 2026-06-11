@@ -752,3 +752,11 @@ class TestDecoratorMetadata:
 
         assert my_import_func.__name__ == "my_import_func"
         assert my_import_func.__doc__ == "Import docstring."
+
+    def test_waiting_cursor_preserves_metadata(self):
+        @common_utils.waiting_cursor
+        def my_cursor_func():
+            """Cursor docstring."""
+
+        assert my_cursor_func.__name__ == "my_cursor_func"
+        assert my_cursor_func.__doc__ == "Cursor docstring."

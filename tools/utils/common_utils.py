@@ -413,6 +413,7 @@ def remove_mean_from_nparray(x):
 
 
 def waiting_cursor(func: Callable) -> Callable:
+    @wraps(func)
     def func_wrapper(*args, **kwargs):
         start_waiting_cursor()
         result = func(*args, **kwargs)

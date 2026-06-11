@@ -83,6 +83,13 @@ class TestLoadAndSelectLastPiperSettings:
 
 @pytest.mark.active
 class TestLoadAndSelectLastWqualSettings:
+    BASE_SETTINGSDICT = {
+        "wqual_paramcolumn": "parameter",
+        "wqual_valuecolumn": "reading_txt",
+        "wqual_unitcolumn": "unit",
+        "wqual_sortingcolumn": "obsid",
+    }
+
     def _make_stub_dock(self, settingsdict):
         dock = types.SimpleNamespace()
         dock.ms = types.SimpleNamespace(settingsdict=settingsdict)
@@ -98,13 +105,10 @@ class TestLoadAndSelectLastWqualSettings:
 
     def test_found_table_selects_columns_and_updates(self):
         dock = self._make_stub_dock(
-            {
+            self.BASE_SETTINGSDICT
+            | {
                 "wqualtable": "w_qual_lab",
-                "wqual_paramcolumn": "parameter",
-                "wqual_valuecolumn": "reading_txt",
                 "wqual_date_time_format": "%Y-%m-%d %H:%M:%S",
-                "wqual_unitcolumn": "unit",
-                "wqual_sortingcolumn": "obsid",
             }
         )
         MidvattenSettingsDock.load_and_select_last_wqual_settings(dock)
@@ -118,13 +122,10 @@ class TestLoadAndSelectLastWqualSettings:
 
     def test_missing_date_time_format_falls_back_to_index_1(self):
         dock = self._make_stub_dock(
-            {
+            self.BASE_SETTINGSDICT
+            | {
                 "wqualtable": "w_qual_lab",
-                "wqual_paramcolumn": "parameter",
-                "wqual_valuecolumn": "reading_txt",
                 "wqual_date_time_format": "not_in_list",
-                "wqual_unitcolumn": "unit",
-                "wqual_sortingcolumn": "obsid",
             }
         )
         MidvattenSettingsDock.load_and_select_last_wqual_settings(dock)
@@ -135,13 +136,10 @@ class TestLoadAndSelectLastWqualSettings:
 
     def test_missing_table_touches_nothing(self):
         dock = self._make_stub_dock(
-            {
+            self.BASE_SETTINGSDICT
+            | {
                 "wqualtable": "gone_table",
-                "wqual_paramcolumn": "parameter",
-                "wqual_valuecolumn": "reading_txt",
                 "wqual_date_time_format": "%Y-%m-%d",
-                "wqual_unitcolumn": "unit",
-                "wqual_sortingcolumn": "obsid",
             }
         )
         MidvattenSettingsDock.load_and_select_last_wqual_settings(dock)

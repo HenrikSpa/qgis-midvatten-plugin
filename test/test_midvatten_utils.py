@@ -29,6 +29,7 @@ import pytest
 from midvatten.test.mocks_for_tests import MockUsingReturnValue
 from midvatten.test.utils_for_tests import create_test_string
 from midvatten.tools.utils import common_utils, db_utils, midvatten_utils
+from midvatten.tools.utils.db_utils import execution
 from midvatten.tools.utils.common_utils import dict_to_tuple
 from midvatten.tools.utils.matplotlib_replacements import perform_all_replacements
 from midvatten.tools.utils.midvatten_utils import (
@@ -734,3 +735,11 @@ class TestDecoratorMetadata:
 
         assert my_decorated_func.__name__ == "my_decorated_func"
         assert my_decorated_func.__doc__ == "My docstring."
+
+    def test_if_connection_ok_preserves_metadata(self):
+        @execution.if_connection_ok
+        def my_db_func():
+            """Db docstring."""
+
+        assert my_db_func.__name__ == "my_db_func"
+        assert my_db_func.__doc__ == "Db docstring."

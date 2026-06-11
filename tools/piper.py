@@ -31,7 +31,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from midvatten.definitions.midvatten_defs import piperplot2_style
-from midvatten.tools.utils import common_utils, db_utils
+from midvatten.tools.utils import common_utils, db_utils, layer_utils
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.common_utils import LEGEND_NCOL_KEY
 
@@ -270,7 +270,7 @@ class PiperPlot:
         conn_ok, self.date_times = db_utils.sql_load_fr_db(sql2, execute_args=args)
 
     def get_selected_observations(self):
-        self.observations = common_utils.get_selected_object_names(self.activelayer)
+        self.observations = layer_utils.get_selected_object_names(self.activelayer)
 
     def get_selected_obstypes(self):
         dbconnection = db_utils.DbConnectionManager()

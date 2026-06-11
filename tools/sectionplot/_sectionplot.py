@@ -50,7 +50,7 @@ import datetime  # noqa: E402
 import matplotlib.dates as mdates  # noqa: E402
 from copy import deepcopy  # noqa: E402
 
-from midvatten.tools.utils import common_utils, db_utils, exceptions  # noqa: E402
+from midvatten.tools.utils import common_utils, db_utils, exceptions, layer_utils  # noqa: E402
 from midvatten.tools.utils.string_utils import returnunicode as ru  # noqa: E402
 from midvatten.tools.utils.midvatten_utils import PlotTemplates  # noqa: E402
 from midvatten.tools.utils.gui_utils import DetachFigureButton, ReverseSectionButton  # noqa: E402
@@ -262,7 +262,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
                     raise exceptions.UsageError()
                 else:
                     try:
-                        obs_points_layer = common_utils.find_layer("obs_points")
+                        obs_points_layer = layer_utils.find_layer("obs_points")
                     except exceptions.UsageError as e:
                         common_utils.MessagebarAndLog.critical(
                             bar_msg=QCoreApplication.translate(
@@ -282,13 +282,13 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
                             )
                             break
                         else:
-                            selected_obspoints = common_utils.get_selected_object_names(
+                            selected_obspoints = layer_utils.get_selected_object_names(
                                 obs_points_layer
                             )
             else:
                 selected_layer = None
                 selected_obspoints = (
-                    common_utils.get_selected_object_names()
+                    layer_utils.get_selected_object_names()
                 )  # Finding obsid from currently selected layer
                 if not selected_obspoints:
                     common_utils.MessagebarAndLog.warning(
@@ -298,7 +298,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
                         )
                     )
                     try:
-                        obs_points_layer = common_utils.find_layer("obs_points")
+                        obs_points_layer = layer_utils.find_layer("obs_points")
                     except exceptions.UsageError:
                         common_utils.MessagebarAndLog.warning(
                             bar_msg=QCoreApplication.translate(
@@ -317,7 +317,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
                             )
                             break
                         else:
-                            selected_obspoints = common_utils.get_selected_object_names(
+                            selected_obspoints = layer_utils.get_selected_object_names(
                                 obs_points_layer
                             )
 

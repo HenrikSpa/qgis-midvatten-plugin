@@ -44,9 +44,7 @@ class CalclvlMixin:
             """INSERT into w_levels (obsid, meas, date_time) VALUES ('rb1', 222, '2005-01-01 00:00:00')"""
         )
         self.calclvl.from_date_time = QtWidgets.QDateTimeEdit()
-        self.calclvl.from_date_time.setDateTime(
-            to_date("2000-01-01 00:00:00")
-        )
+        self.calclvl.from_date_time.setDateTime(to_date("2000-01-01 00:00:00"))
         self.calclvl.to_date_time = QtWidgets.QDateTimeEdit()
         self.calclvl.to_date_time.setDateTime(to_date("2010-01-01 00:00:00"))
         self.calclvl.calcall()
@@ -60,9 +58,7 @@ class CalclvlMixin:
         print(f"{mock_messagebar.mock_calls=}")
         assert test_string == reference_string
 
-    @mock.patch(
-        "midvatten.tools.calculate_level.common_utils.get_selected_object_names"
-    )
+    @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
     def test_calc_selected(self, mock_selected_obsids):
         mock_selected_obsids.return_value = ["rb1"]
         db_utils.sql_alter_db(
@@ -78,9 +74,7 @@ class CalclvlMixin:
             """INSERT into w_levels (obsid, meas, date_time) VALUES ('rb2', 444, '2005-01-01 00:00:00')"""
         )
         self.calclvl.from_date_time = QtWidgets.QDateTimeEdit()
-        self.calclvl.from_date_time.setDateTime(
-            to_date("2000-01-01 00:00:00")
-        )
+        self.calclvl.from_date_time.setDateTime(to_date("2000-01-01 00:00:00"))
         self.calclvl.to_date_time = QtWidgets.QDateTimeEdit()
         self.calclvl.to_date_time.setDateTime(to_date("2010-01-01 00:00:00"))
         self.calclvl.calcselected()
@@ -93,9 +87,7 @@ class CalclvlMixin:
         reference_string = "(True, [(rb1, 2005-01-01 00:00:00, 222.0, 1.0, -221.0), (rb2, 2005-01-01 00:00:00, 444.0, None, None)])"
         assert test_string == reference_string
 
-    @mock.patch(
-        "midvatten.tools.calculate_level.common_utils.get_selected_object_names"
-    )
+    @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
     def test_calc_selected_overwrite(self, mock_selected_obsids):
         mock_selected_obsids.return_value = ["rb1", "rb2"]
         db_utils.sql_alter_db(
@@ -114,9 +106,7 @@ class CalclvlMixin:
             """INSERT into w_levels (obsid, meas, level_masl, date_time) VALUES ('rb2', 555, 667, '2005-01-02 00:00:00')"""
         )
         self.calclvl.from_date_time = QtWidgets.QDateTimeEdit()
-        self.calclvl.from_date_time.setDateTime(
-            to_date("2000-01-01 00:00:00")
-        )
+        self.calclvl.from_date_time.setDateTime(to_date("2000-01-01 00:00:00"))
         self.calclvl.to_date_time = QtWidgets.QDateTimeEdit()
         self.calclvl.to_date_time.setDateTime(to_date("2010-01-01 00:00:00"))
         self.calclvl.calcselected()
@@ -134,9 +124,7 @@ class CalclvlMixin:
         assert test_string == reference_string
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch(
-        "midvatten.tools.calculate_level.common_utils.get_selected_object_names"
-    )
+    @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
     def test_calc_selected_dont_overwrite(self, mock_selected_obsids, mock_messagebar):
         mock_selected_obsids.return_value = ["rb1", "rb2"]
         db_utils.sql_alter_db(
@@ -155,9 +143,7 @@ class CalclvlMixin:
             """INSERT into w_levels (obsid, meas, level_masl, date_time) VALUES ('rb2', 555, 667, '2005-01-02 00:00:00')"""
         )
         self.calclvl.from_date_time = QtWidgets.QDateTimeEdit()
-        self.calclvl.from_date_time.setDateTime(
-            to_date("2000-01-01 00:00:00")
-        )
+        self.calclvl.from_date_time.setDateTime(to_date("2000-01-01 00:00:00"))
         self.calclvl.to_date_time = QtWidgets.QDateTimeEdit()
         self.calclvl.to_date_time.setDateTime(to_date("2010-01-01 00:00:00"))
         self.calclvl.overwrite_prev.setChecked(False)
@@ -176,9 +162,7 @@ class CalclvlMixin:
 
     @mock.patch("midvatten.tools.loggereditor.common_utils.pop_up_info", autospec=True)
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch(
-        "midvatten.tools.calculate_level.common_utils.get_selected_object_names"
-    )
+    @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
     def test_calc_selected_dont_overwrite_dont_skip_nulls(
         self, mock_selected_obsids, mock_messagebar, mock_skippopup
     ):
@@ -199,9 +183,7 @@ class CalclvlMixin:
             """INSERT into w_levels (obsid, meas, level_masl, date_time) VALUES ('rb2', 555, 667, '2005-01-02 00:00:00')"""
         )
         self.calclvl.from_date_time = QtWidgets.QDateTimeEdit()
-        self.calclvl.from_date_time.setDateTime(
-            to_date("2000-01-01 00:00:00")
-        )
+        self.calclvl.from_date_time.setDateTime(to_date("2000-01-01 00:00:00"))
         self.calclvl.to_date_time = QtWidgets.QDateTimeEdit()
         self.calclvl.to_date_time.setDateTime(to_date("2010-01-01 00:00:00"))
         self.calclvl.overwrite_prev.setChecked(False)
@@ -221,9 +203,7 @@ class CalclvlMixin:
 
     @mock.patch("midvatten.tools.loggereditor.common_utils.pop_up_info", autospec=True)
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch(
-        "midvatten.tools.calculate_level.common_utils.get_selected_object_names"
-    )
+    @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
     def test_calc_selected_dont_overwrite_skip_nulls(
         self, mock_selected_obsids, mock_messagebar, mock_skippopup
     ):
@@ -244,9 +224,7 @@ class CalclvlMixin:
             """INSERT into w_levels (obsid, meas, level_masl, date_time) VALUES ('rb2', 555, 667, '2005-01-02 00:00:00')"""
         )
         self.calclvl.from_date_time = QtWidgets.QDateTimeEdit()
-        self.calclvl.from_date_time.setDateTime(
-            to_date("2000-01-01 00:00:00")
-        )
+        self.calclvl.from_date_time.setDateTime(to_date("2000-01-01 00:00:00"))
         self.calclvl.to_date_time = QtWidgets.QDateTimeEdit()
         self.calclvl.to_date_time.setDateTime(to_date("2010-01-01 00:00:00"))
         self.calclvl.overwrite_prev.setChecked(False)

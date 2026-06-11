@@ -31,11 +31,12 @@ import midvatten.definitions.midvatten_defs as defs
 from midvatten.tools import import_data_to_db
 from midvatten.tools.utils import (
     common_utils,
-    midvatten_utils,
     db_utils,
     date_utils,
     exceptions,
     file_utils,
+    layer_utils,
+    midvatten_utils,
 )
 from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.string_utils import returnunicode as ru
@@ -266,7 +267,7 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         self.file_data = None
         self.table_chooser.file_header = None
 
-        active_layer = common_utils.get_active_layer()
+        active_layer = layer_utils.get_active_layer()
         if not active_layer:
             common_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
@@ -368,7 +369,7 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
             new_value = None
             # Check if obsid should be set from selection and add an obsid-column if so.
             if isinstance(file_column, Obsids_from_selection):
-                selected = common_utils.get_selected_features_as_tuple()
+                selected = layer_utils.get_selected_features_as_tuple()
                 if len(selected) != 1:
                     common_utils.MessagebarAndLog.critical(
                         bar_msg=QCoreApplication.translate(
@@ -779,7 +780,7 @@ class ImportTableChooser(VRowEntry):
         file_header = self.file_header
         import_method_name = self.import_method
         try:
-            layer = common_utils.find_layer(import_method_name)
+            layer = layer_utils.find_layer(import_method_name)
         except exceptions.UsageError:
             pass
         else:

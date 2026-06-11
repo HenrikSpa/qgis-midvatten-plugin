@@ -69,7 +69,7 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
     @mock.patch("midvatten.tools.utils.common_utils.Askuser", mock.MagicMock())
     @mock.patch("qgis.utils.iface", autospec=True)
     @mock.patch(
-        "midvatten.tools.sectionplot.common_utils.get_selected_object_names",
+        "midvatten.tools.utils.layer_utils.get_selected_object_names",
         autospec=True,
     )
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
@@ -119,7 +119,7 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
     @mock.patch("midvatten.tools.utils.common_utils.Askuser", mock.MagicMock())
     @mock.patch("qgis.utils.iface", autospec=True)
     @mock.patch(
-        "midvatten.tools.sectionplot.common_utils.get_selected_object_names",
+        "midvatten.tools.utils.layer_utils.get_selected_object_names",
         autospec=True,
     )
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
@@ -176,7 +176,7 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
     @mock.patch("midvatten.tools.utils.common_utils.Askuser", mock.MagicMock())
     @mock.patch("qgis.utils.iface", autospec=True)
     @mock.patch(
-        "midvatten.tools.sectionplot.common_utils.get_selected_object_names",
+        "midvatten.tools.utils.layer_utils.get_selected_object_names",
         autospec=True,
     )
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")

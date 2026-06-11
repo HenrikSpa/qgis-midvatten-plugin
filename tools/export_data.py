@@ -37,7 +37,7 @@ from qgis.PyQt.QtWidgets import (
     QVBoxLayout,
 )
 
-from midvatten.tools.utils import common_utils, db_utils, file_utils
+from midvatten.tools.utils import common_utils, db_utils, file_utils, layer_utils
 from midvatten.definitions import midvatten_defs as defs
 
 _HTML_TAG_RE = re.compile(r"<[a-zA-Z][^>]*>")
@@ -171,8 +171,8 @@ class ExportData:
 
     def show(self) -> None:
         common_utils.start_waiting_cursor()
-        obsid_p = common_utils.get_selected_features_as_tuple("obs_points")
-        obsid_l = common_utils.get_selected_features_as_tuple("obs_lines")
+        obsid_p = layer_utils.get_selected_features_as_tuple("obs_points")
+        obsid_l = layer_utils.get_selected_features_as_tuple("obs_lines")
         common_utils.stop_waiting_cursor()
 
         dlg = ExportCsvDialog(None)

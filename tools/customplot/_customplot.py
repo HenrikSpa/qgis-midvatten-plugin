@@ -38,7 +38,13 @@ import matplotlib.ticker as tick
 
 from qgis.PyQt.QtWidgets import QApplication
 
-from midvatten.tools.utils import common_utils, midvatten_utils, db_utils, exceptions
+from midvatten.tools.utils import (
+    common_utils,
+    db_utils,
+    exceptions,
+    layer_utils,
+    midvatten_utils,
+)
 from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.common_utils import LEGEND_NCOL_KEY
@@ -1275,7 +1281,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         current_column = ru(filter_combobox.currentText())
         if not current_column:
             return
-        selected_values = common_utils.get_selected_object_names(
+        selected_values = layer_utils.get_selected_object_names(
             column_name=current_column
         )
         [

@@ -37,7 +37,7 @@ from qgis.core import (
 )
 
 from midvatten.definitions import midvatten_defs as defs
-from midvatten.tools.utils import common_utils, db_utils, midvatten_utils
+from midvatten.tools.utils import common_utils, db_utils, layer_utils, midvatten_utils
 from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
 from midvatten.tools.utils.layer_build import build_layer
@@ -386,7 +386,7 @@ def add_group(parent_group, name, checked=False):
 
 
 def apply_obsid_filter_to_layers(layers):
-    selected_obsids = common_utils.get_selected_object_names(column_name="obsid")
+    selected_obsids = layer_utils.get_selected_object_names(column_name="obsid")
     if selected_obsids:
         # QgsExpression filter string (not DB-API), so we must escape literals ourselves.
         filter_string = "obsid IN ({})".format(

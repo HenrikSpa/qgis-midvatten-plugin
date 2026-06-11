@@ -22,7 +22,7 @@ from qgis.PyQt.QtCore import QCoreApplication, QVariant
 from qgis.PyQt.QtWidgets import QApplication
 from qgis.core import QgsVectorLayer
 
-from midvatten.tools.utils import common_utils, db_utils, gui_utils
+from midvatten.tools.utils import common_utils, db_utils, gui_utils, layer_utils
 from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
 
@@ -54,7 +54,7 @@ class ValuesFromSelectedFeaturesGui(
         super().show()
 
     def reload_combobox(self):
-        self.activelayer = common_utils.get_active_layer()
+        self.activelayer = layer_utils.get_active_layer()
         if not isinstance(self.activelayer, QgsVectorLayer):
             common_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
@@ -77,7 +77,7 @@ class ValuesFromSelectedFeaturesGui(
         thelayer is an optional argument, if not given then activelayer is used
         """
 
-        activelayer = common_utils.get_active_layer()
+        activelayer = layer_utils.get_active_layer()
         if activelayer is not self.activelayer:
             self.reload_combobox()
             common_utils.MessagebarAndLog.warning(

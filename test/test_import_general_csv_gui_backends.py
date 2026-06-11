@@ -588,7 +588,7 @@ class GeneralCsvGuiMixin:
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
 
             @mock.patch(
-                "midvatten.tools.utils.common_utils.get_selected_features_as_tuple"
+                "midvatten.tools.utils.layer_utils.get_selected_features_as_tuple"
             )
             @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
@@ -679,7 +679,7 @@ class GeneralCsvGuiMixin:
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
 
             @mock.patch(
-                "midvatten.tools.utils.common_utils.get_selected_features_as_tuple"
+                "midvatten.tools.utils.layer_utils.get_selected_features_as_tuple"
             )
             @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)

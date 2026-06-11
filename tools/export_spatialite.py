@@ -9,7 +9,7 @@ from qgis.PyQt.QtWidgets import QApplication, QDialog, QMessageBox, QProgressDia
 from midvatten.tools.create_db import NewDb
 from midvatten.tools.create_db_dialogs import NewSpatialiteDbDialog
 from midvatten.tools.export_worker import ExportWorker
-from midvatten.tools.utils import common_utils, db_utils
+from midvatten.tools.utils import common_utils, db_utils, layer_utils
 
 log = logging.getLogger(__name__)
 
@@ -87,8 +87,8 @@ class ExportSpatialite:
     def show(self) -> None:
         common_utils.start_waiting_cursor()
 
-        obsid_p = common_utils.get_selected_features_as_tuple("obs_points")
-        obsid_l = common_utils.get_selected_features_as_tuple("obs_lines")
+        obsid_p = layer_utils.get_selected_features_as_tuple("obs_points")
+        obsid_l = layer_utils.get_selected_features_as_tuple("obs_lines")
         log.debug("Selected obs_points to export: %s", obsid_p)
         log.debug("Selected obs_lines to export: %s", obsid_l)
 

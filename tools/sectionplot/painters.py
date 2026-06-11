@@ -32,7 +32,7 @@ from qgis.core import (
 )
 
 import midvatten.definitions.midvatten_defs as defs
-from midvatten.tools.utils import common_utils, db_utils
+from midvatten.tools.utils import common_utils, db_utils, layer_utils
 from midvatten.tools.sectionplot._utils import (
     get_legend_items_labels,
     get_plot_label_name,
@@ -562,7 +562,7 @@ def paint_dems(
                 if settingsdict["secplot_apply_graded_dems"]:
                     secplot_color_layer_name = f"{layername}_secplotcolor"
                     try:
-                        common_utils.find_layer(secplot_color_layer_name)
+                        layer_utils.find_layer(secplot_color_layer_name)
                     except UsageError:
                         pass
                     else:
@@ -640,7 +640,7 @@ def paint_graded_dems(
         QGIS iface reference (needed for polygon render context).
     """
     try:
-        color_layer = common_utils.find_layer(layername)
+        color_layer = layer_utils.find_layer(layername)
     except UsageError:
         return
 

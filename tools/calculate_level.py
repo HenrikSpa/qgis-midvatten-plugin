@@ -33,7 +33,7 @@ from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QCoreApplication
 
 
-from midvatten.tools.utils import common_utils, db_utils
+from midvatten.tools.utils import common_utils, db_utils, layer_utils
 from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.common_utils import fn_timer
@@ -159,7 +159,7 @@ class CalculateLevel(
     @fn_timer
     def calcselected(self):
         obsids = ru(
-            common_utils.get_selected_object_names(self.layer), keep_containers=True
+            layer_utils.get_selected_object_names(self.layer), keep_containers=True
         )
         if not obsids:
             common_utils.pop_up_info(

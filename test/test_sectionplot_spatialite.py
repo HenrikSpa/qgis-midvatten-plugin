@@ -106,9 +106,9 @@ class SectionPlotIntegrationMixin:
         self._insert_stratigraphy()
         self._create_vlayer()
 
-        @mock.patch("midvatten.tools.sectionplot.common_utils.find_layer")
+        @mock.patch("midvatten.tools.utils.layer_utils.find_layer")
         @mock.patch(
-            "midvatten.tools.sectionplot.common_utils.get_selected_object_names",
+            "midvatten.tools.utils.layer_utils.get_selected_object_names",
             autospec=True,
         )
         @mock.patch("qgis.utils.iface", autospec=True)
@@ -151,9 +151,9 @@ class SectionPlotIntegrationMixin:
         self._insert_w_levels()
         self._create_vlayer()
 
-        @mock.patch("midvatten.tools.sectionplot.common_utils.find_layer")
+        @mock.patch("midvatten.tools.utils.layer_utils.find_layer")
         @mock.patch(
-            "midvatten.tools.sectionplot.common_utils.get_selected_object_names",
+            "midvatten.tools.utils.layer_utils.get_selected_object_names",
             autospec=True,
         )
         @mock.patch("qgis.utils.iface", autospec=True)
@@ -195,9 +195,9 @@ class SectionPlotIntegrationMixin:
         self._insert_stratigraphy()
         self._create_vlayer()
 
-        @mock.patch("midvatten.tools.sectionplot.common_utils.find_layer")
+        @mock.patch("midvatten.tools.utils.layer_utils.find_layer")
         @mock.patch(
-            "midvatten.tools.sectionplot.common_utils.get_selected_object_names",
+            "midvatten.tools.utils.layer_utils.get_selected_object_names",
             autospec=True,
         )
         @mock.patch("qgis.utils.iface", autospec=True)

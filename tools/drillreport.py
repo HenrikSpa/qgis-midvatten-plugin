@@ -28,7 +28,7 @@ from qgis.PyQt.QtGui import QDesktopServices
 
 from midvatten.tools.calculate_statistics import get_statistics_for_single_obsid
 from midvatten.tools.drillreport_models import ObsPointsRow, StratigraphyRow
-from midvatten.tools.utils import common_utils, midvatten_utils, db_utils
+from midvatten.tools.utils import common_utils, db_utils, layer_utils, midvatten_utils
 from midvatten.tools.utils.file_utils import templates_path
 from midvatten.tools.utils.string_utils import returnunicode as ru
 
@@ -42,7 +42,7 @@ class Drillreport:  # general observation point info for the selected object
 
     def show(self) -> None:
         layer = self._iface.activeLayer()
-        obsids = tuple(common_utils.get_selected_object_names(layer))
+        obsids = tuple(layer_utils.get_selected_object_names(layer))
         settingsdict = self._ms.settingsdict
         self._run_report(obsids, settingsdict)
 

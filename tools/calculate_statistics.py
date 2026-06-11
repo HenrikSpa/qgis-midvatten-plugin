@@ -24,7 +24,7 @@ import qgis.PyQt
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtWidgets import QMainWindow
 
-from midvatten.tools.utils import common_utils, gui_utils, db_utils
+from midvatten.tools.utils import common_utils, db_utils, gui_utils, layer_utils
 from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
 from midvatten.tools.utils.string_utils import returnunicode as ru
@@ -64,7 +64,7 @@ class CalculateStatisticsGui(
     def calculate(self):
         table = self.db_browser.table_list
         column = self.db_browser.column_list
-        obsids = common_utils.get_selected_features_as_tuple()
+        obsids = layer_utils.get_selected_features_as_tuple()
 
         if not all([table, column, obsids]):
             common_utils.MessagebarAndLog.critical(

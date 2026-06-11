@@ -31,7 +31,13 @@ from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtCore import QUrl, QDir
 from qgis.PyQt.QtGui import QDesktopServices
 
-from midvatten.tools.utils import common_utils, db_utils, exceptions, string_utils
+from midvatten.tools.utils import (
+    common_utils,
+    db_utils,
+    exceptions,
+    layer_utils,
+    string_utils,
+)
 from midvatten.tools.utils.file_utils import templates_path, ui_path
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
 from midvatten.tools.utils.string_utils import returnunicode as ru
@@ -81,7 +87,7 @@ class DrillreportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
         skip_empty = self.skip_empty.isChecked()
         include_comments = self.include_comments.isChecked()
         obsids = sorted(
-            common_utils.get_selected_object_names(qgis.utils.iface.activeLayer())
+            layer_utils.get_selected_object_names(qgis.utils.iface.activeLayer())
         )  # selected obs_point is now found in obsid[0]
         general_metadata_header = self.general_metadata_header.text()
         geo_metadata_header = self.geo_metadata_header.text()

@@ -25,7 +25,7 @@ from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools import import_data_to_db
-from midvatten.tools.utils import common_utils, db_utils
+from midvatten.tools.utils import common_utils, db_utils, layer_utils
 from midvatten.tools.utils.file_utils import ui_path
 
 Calc_Ui_Dialog = uic.loadUiType(ui_path("calc_aveflow_dialog.ui"))[0]
@@ -63,7 +63,7 @@ class CalculateAveflow(qgis.PyQt.QtWidgets.QDialog, Calc_Ui_Dialog):
         self.calc_aveflow(observations)
 
     def calcselected(self):
-        observations = common_utils.get_selected_object_names(
+        observations = layer_utils.get_selected_object_names(
             qgis.utils.iface.activeLayer()
         )
         self.calc_aveflow(observations)

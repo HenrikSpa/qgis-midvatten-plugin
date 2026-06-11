@@ -44,6 +44,7 @@ from midvatten.tools.utils import (
     gui_utils,
     exceptions,
     string_utils,
+    layer_utils,
 )
 from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.string_utils import returnunicode as ru
@@ -131,7 +132,7 @@ class ParameterGroup:
     def paste_from_selection(self):
         if self.obslayer.obs_from_vlayer.isChecked():
             self._obsid_list.paste_data(
-                common_utils.get_selected_features_as_tuple(
+                layer_utils.get_selected_features_as_tuple(
                     layer_name=self.obslayer.current_layer(),
                     column_name=self.obslayer.current_column(),
                 )
@@ -139,7 +140,7 @@ class ParameterGroup:
         else:
             try:
                 self._obsid_list.paste_data(
-                    common_utils.get_selected_features_as_tuple(
+                    layer_utils.get_selected_features_as_tuple(
                         layer_name="obs_points", column_name="obsid"
                     )
                 )

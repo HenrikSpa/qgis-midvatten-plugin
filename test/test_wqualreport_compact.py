@@ -66,9 +66,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
     """Tests for CompactWqualReportUi (compact water quality report)."""
 
     @mock.patch("midvatten.tools.wqualreport_compact.open_report_in_browser")
-    @mock.patch(
-        "midvatten.tools.wqualreport_compact.common_utils.get_selected_object_names"
-    )
+    @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
     def test_ok_button_generates_html_from_sql_table(
@@ -125,9 +123,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert "mg/l" in report
 
     @mock.patch("midvatten.tools.wqualreport_compact.open_report_in_browser")
-    @mock.patch(
-        "midvatten.tools.wqualreport_compact.common_utils.get_selected_object_names"
-    )
+    @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
     def test_combobox_data_column_affects_export(
@@ -155,9 +151,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
         print(f"{mock_messagebar.mock_calls=}")
 
     @mock.patch("midvatten.tools.wqualreport_compact.open_report_in_browser")
-    @mock.patch(
-        "midvatten.tools.wqualreport_compact.common_utils.get_selected_object_names"
-    )
+    @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
     def test_radio_empty_row_between_tables(
@@ -181,9 +175,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert "empty_row_between_tables" in report
 
     @mock.patch("midvatten.tools.wqualreport_compact.open_report_in_browser")
-    @mock.patch(
-        "midvatten.tools.wqualreport_compact.common_utils.get_selected_object_names"
-    )
+    @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
     def test_radio_page_break_between_tables(
@@ -206,9 +198,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert "page-break-before" in report
 
     @mock.patch("midvatten.tools.wqualreport_compact.open_report_in_browser")
-    @mock.patch(
-        "midvatten.tools.wqualreport_compact.common_utils.get_selected_object_names"
-    )
+    @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
     def test_line_edit_num_data_cols_affects_export(
@@ -251,9 +241,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert "reading_num" in data_col_items
         assert "parameter" in data_col_items
 
-    @mock.patch(
-        "midvatten.tools.wqualreport_compact.common_utils.get_selected_object_names"
-    )
+    @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
     def test_date_time_as_columns_without_sort_shows_message(

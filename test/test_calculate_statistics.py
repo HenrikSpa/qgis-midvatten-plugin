@@ -36,7 +36,7 @@ class CalculateStatisticsMixin:
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
     @mock.patch(
-        "midvatten.tools.utils.common_utils.get_selected_features_as_tuple",
+        "midvatten.tools.utils.layer_utils.get_selected_features_as_tuple",
         autospec=True,
     )
     def test_calculate_statistics(

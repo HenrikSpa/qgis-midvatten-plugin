@@ -151,7 +151,7 @@ class ExportMixin:
     ]
 
     @mock.patch(
-        "midvatten.tools.utils.common_utils.get_selected_features_as_tuple",
+        "midvatten.tools.utils.layer_utils.get_selected_features_as_tuple",
         mock_selection.get_v,
     )
     @mock.patch("midvatten.tools.export_data.ExportCsvDialog")
@@ -257,7 +257,7 @@ class ExportMixin:
         assert test_string == reference_string
 
     @mock.patch(
-        "midvatten.tools.utils.common_utils.get_selected_features_as_tuple",
+        "midvatten.tools.utils.layer_utils.get_selected_features_as_tuple",
         mock_no_selection.get_v,
     )
     @mock.patch("midvatten.tools.export_data.ExportCsvDialog")
@@ -363,7 +363,7 @@ class ExportMixin:
         assert test_string == reference_string
 
     @mock.patch(
-        "midvatten.tools.utils.common_utils.get_selected_features_as_tuple",
+        "midvatten.tools.utils.layer_utils.get_selected_features_as_tuple",
         mock_selection.get_v,
     )
     @mock.patch("midvatten.tools.export_data.ExportCsvDialog")
@@ -394,7 +394,7 @@ class ExportMixin:
         assert "\n" in com_html_value
 
     @mock.patch(
-        "midvatten.tools.utils.common_utils.get_selected_features_as_tuple",
+        "midvatten.tools.utils.layer_utils.get_selected_features_as_tuple",
         mock_selection.get_v,
     )
     @mock.patch("midvatten.tools.export_data.ExportCsvDialog")
@@ -424,7 +424,7 @@ class ExportMixin:
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.export_spatialite.NewSpatialiteDbDialog")
     @mock.patch(
-        "midvatten.tools.utils.common_utils.get_selected_features_as_tuple",
+        "midvatten.tools.utils.layer_utils.get_selected_features_as_tuple",
         mock_selection.get_v,
     )
     @mock.patch(
@@ -570,7 +570,7 @@ class ExportMixin:
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.export_spatialite.NewSpatialiteDbDialog")
     @mock.patch(
-        "midvatten.tools.utils.common_utils.get_selected_features_as_tuple",
+        "midvatten.tools.utils.layer_utils.get_selected_features_as_tuple",
         mock_no_selection.get_v,
     )
     @mock.patch(
@@ -710,7 +710,7 @@ class ExportMixin:
 
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.export_spatialite.NewSpatialiteDbDialog")
-    @mock.patch("midvatten.tools.utils.common_utils.get_selected_features_as_tuple")
+    @mock.patch("midvatten.tools.utils.layer_utils.get_selected_features_as_tuple")
     @mock.patch(
         "midvatten.tools.utils.midvatten_utils.verify_msettings_loaded_and_layer_edit_mode",
         autospec=True,
@@ -790,7 +790,7 @@ class ExportMixin:
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.export_spatialite.NewSpatialiteDbDialog")
     @mock.patch(
-        "midvatten.tools.utils.common_utils.get_selected_features_as_tuple",
+        "midvatten.tools.utils.layer_utils.get_selected_features_as_tuple",
         mock_selection.get_v,
     )
     @mock.patch(
@@ -946,7 +946,7 @@ class ExportMixin:
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.export_spatialite.NewSpatialiteDbDialog")
     @mock.patch(
-        "midvatten.tools.utils.common_utils.get_selected_features_as_tuple",
+        "midvatten.tools.utils.layer_utils.get_selected_features_as_tuple",
         mock_selection.get_v,
     )
     @mock.patch(
@@ -1066,7 +1066,7 @@ class ExportMixin:
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.export_spatialite.NewSpatialiteDbDialog")
     @mock.patch(
-        "midvatten.tools.utils.common_utils.get_selected_features_as_tuple",
+        "midvatten.tools.utils.layer_utils.get_selected_features_as_tuple",
         mock_selection.get_v,
     )
     @mock.patch(
@@ -1250,7 +1250,7 @@ class TestExportSpatialite(ExportMixin, utils_for_tests.MidvattenTestSpatialiteD
     @mock.patch("qgis.utils.iface", autospec=True)
     @mock.patch("midvatten.tools.export_data.common_utils.pop_up_info", autospec=True)
     @mock.patch(
-        "midvatten.tools.utils.common_utils.get_selected_features_as_tuple",
+        "midvatten.tools.utils.layer_utils.get_selected_features_as_tuple",
         ExportMixin.mock_no_selection.get_v,
     )
     @mock.patch(

@@ -34,6 +34,7 @@ from midvatten.tools.utils import (
     db_utils,
     gui_utils,
     exceptions,
+    layer_utils,
     string_utils,
 )
 from midvatten.tools.utils.file_utils import ui_path
@@ -420,7 +421,7 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
             df = self.get_data_from_qgislayer(w_qual_lab_layer, data_columns)
         else:
             df = self.get_data_from_sql(
-                sql_table, common_utils.get_selected_object_names(), data_columns
+                sql_table, layer_utils.get_selected_object_names(), data_columns
             )
 
         if "depth" in df.columns:

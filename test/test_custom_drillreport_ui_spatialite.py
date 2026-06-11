@@ -59,9 +59,7 @@ class TestDrillreportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
     """Tests for DrillreportUi (custom drill report)."""
 
     @mock.patch("midvatten.tools.custom_drillreport.QDesktopServices.openUrl")
-    @mock.patch(
-        "midvatten.tools.custom_drillreport.common_utils.get_selected_object_names"
-    )
+    @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
     def test_ok_button_generates_html(
@@ -85,9 +83,7 @@ class TestDrillreportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert "sand" in report
         assert "0" in report and "1" in report
 
-    @mock.patch(
-        "midvatten.tools.custom_drillreport.common_utils.get_selected_object_names"
-    )
+    @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
     def test_no_selection_shows_message(
@@ -115,9 +111,7 @@ class TestDrillreportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert not ui.isVisible()
 
     @mock.patch("midvatten.tools.custom_drillreport.QDesktopServices.openUrl")
-    @mock.patch(
-        "midvatten.tools.custom_drillreport.common_utils.get_selected_object_names"
-    )
+    @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
     def test_checkboxes_affect_export(
@@ -138,9 +132,7 @@ class TestDrillreportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert "empty_row_between_obsids" in report
 
     @mock.patch("midvatten.tools.custom_drillreport.QDesktopServices.openUrl")
-    @mock.patch(
-        "midvatten.tools.custom_drillreport.common_utils.get_selected_object_names"
-    )
+    @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
     def test_plain_text_metadata_columns_affect_export(
@@ -165,9 +157,7 @@ class TestDrillreportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert "633466" in report or "east" in report.lower()
 
     @mock.patch("midvatten.tools.custom_drillreport.QDesktopServices.openUrl")
-    @mock.patch(
-        "midvatten.tools.custom_drillreport.common_utils.get_selected_object_names"
-    )
+    @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
     def test_line_edit_headers_affect_export(
@@ -190,9 +180,7 @@ class TestDrillreportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert "Custom geo" in report
 
     @mock.patch("midvatten.tools.custom_drillreport.QDesktopServices.openUrl")
-    @mock.patch(
-        "midvatten.tools.custom_drillreport.common_utils.get_selected_object_names"
-    )
+    @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
     @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
     def test_decimal_separator_affect_export(

@@ -62,7 +62,7 @@ from midvatten.tools.sectionplot import SectionPlot
 from midvatten.tools.strat_symbology import StratSymbology
 from midvatten.tools.stratigraphy import Stratigraphy
 from midvatten.tools.tsplot import TimeSeriesPlot
-from midvatten.tools.utils import common_utils, db_utils, midvatten_utils
+from midvatten.tools.utils import common_utils, db_utils, layer_utils, midvatten_utils
 from midvatten.tools.utils import matplotlib_replacements
 from midvatten.tools.utils.util_translate import get_translate
 from midvatten.tools.w_flow_calc_aveflow import CalculateAveflow
@@ -522,7 +522,7 @@ class Midvatten:
             if err_flag:
                 return
         if spec.needs_selection:
-            err_flag = common_utils.verify_layer_selection(0, 0)
+            err_flag = layer_utils.verify_layer_selection(0, 0)
             if err_flag:
                 return
         if spec.needs_active_layer:

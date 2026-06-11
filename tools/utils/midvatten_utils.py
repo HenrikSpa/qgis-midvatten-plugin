@@ -50,6 +50,11 @@ else:
     pandas_on = True
 
 
+# The imports below double as PUBLIC re-exports for external consumers
+# (midv_addons imports these names via midvatten_utils). Do not remove or
+# rename them even when no in-repo caller remains. In-repo code should import
+# from the source modules instead. See docs/superpowers/plans/
+# 2026-06-10-maintainability-refactor-review.md (midv_addons contract).
 from midvatten.tools.utils.message_utils import MessagebarAndLog
 from midvatten.tools.utils.layer_utils import find_layer
 from midvatten.tools.utils.string_utils import (

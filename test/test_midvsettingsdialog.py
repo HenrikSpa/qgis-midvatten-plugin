@@ -1,6 +1,6 @@
 """Tests for midvsettingsdialog.MidvattenSettingsDock helpers."""
 
-from unittest import mock
+import types
 
 import pytest
 
@@ -27,9 +27,8 @@ class ComboStub:
 @pytest.mark.active
 class TestLoadAndSelectLastPiperSettings:
     def _make_stub_dock(self, settingsdict):
-        dock = mock.Mock(spec=[])
-        dock.ms = mock.Mock(spec=["settingsdict"])
-        dock.ms.settingsdict = settingsdict
+        dock = types.SimpleNamespace()
+        dock.ms = types.SimpleNamespace(settingsdict=settingsdict)
         dock.param_cl = ComboStub(["", "cl_col"])
         dock.param_hco3 = ComboStub(["", "hco3_col"])
         dock.param_so4 = ComboStub(["", "so4_col"])

@@ -321,9 +321,9 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
             ("piper_markers", self.marker_combo_box),
         )
         for setting_key, combobox in setting_comboboxes:
-            searchindex = combobox.findText(self.ms.settingsdict[setting_key])
-            if searchindex >= 0:
-                combobox.setCurrentIndex(searchindex)
+            gui_utils.set_combobox(
+                combobox, self.ms.settingsdict[setting_key], add_if_not_exists=False
+            )
 
     def load_and_select_last_ts_plot_settings(self):
         if len(

@@ -16,8 +16,8 @@ class TestReadlinesWithDetectedCharset:
 
     def test_cp1252_swedish_chars_fall_through(self, tmp_path):
         p = tmp_path / "f.csv"
-        # 'åäö…' in cp1252; the ellipsis byte 0x85 is invalid as utf-8 start of
-        # this sequence, forcing fallback to cp1252.
+        # 'åäö…' in cp1252; the 0xe5 byte ('å') is not valid utf-8 here,
+        # forcing fallback to cp1252.
         p.write_bytes("obsid;åäö…\n".encode("cp1252"))
         rows, encoding = file_utils.readlines_with_detected_charset(
             str(p), ["utf-8", "cp1252"]

@@ -34,7 +34,7 @@ from qgis.PyQt import QtCore, QtWidgets, uic
 from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools.base_importer import BaseImporter
-from midvatten.tools.utils import common_utils, midvatten_utils, db_utils
+from midvatten.tools.utils import common_utils, midvatten_utils, db_utils, file_utils
 import midvatten.tools.import_data_to_db as import_data_to_db
 from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.string_utils import returnunicode as ru
@@ -206,26 +206,20 @@ class FieldloggerImport(BaseImporter, import_fieldlogger_ui_dialog):
         observations = []
         for filename in filenames:
             filename = ru(filename)
-            supported_encodings = ["utf-8", "cp1252"]
-            for encoding in supported_encodings:
-                try:
-                    delimiter = common_utils.get_delimiter(
-                        filename=filename,
-                        charset=encoding,
-                        delimiters=[";", ","],
-                        num_fields=5,
-                    )
-                    if delimiter is None:
-                        return None
-
-                    with open(filename, encoding=encoding) as f:
-                        rows = f.readlines()
-                        observations.extend(row_parser(rows, delimiter))
-
-                except UnicodeDecodeError:
-                    continue
-                else:
-                    break
+            rows, encoding = file_utils.readlines_with_detected_charset(
+                filename, ["utf-8", "cp1252"]
+            )
+            if rows is None:
+                continue
+            delimiter = common_utils.get_delimiter(
+                filename=filename,
+                charset=encoding,
+                delimiters=[";", ","],
+                num_fields=5,
+            )
+            if delimiter is None:
+                return None
+            observations.extend(row_parser(rows, delimiter))
 
         # Remove duplicates
         observations_no_duplicates = []

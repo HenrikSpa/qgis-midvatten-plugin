@@ -34,6 +34,23 @@ def tempinput(data: str, charset: str = "UTF-8", suffix: str = ".csv") -> Iterat
     # os.unlink(temp.name) #TODO: This results in an error: WindowsError: [Error 32] Det går inte att komma åt filen eftersom den används av en annan process: 'c:\\users\\dator\\appdata\\local\\temp\\tmpxvcfna.csv'
 
 
+def readlines_with_detected_charset(filename: str, encodings: list[str]) -> tuple:
+    """Read all lines from filename, trying encodings in order.
+
+    Returns (rows, encoding) for the first encoding that decodes without
+    error, or (None, None) if none does. The encodings list is caller-owned:
+    importers have intentionally different lists (e.g. interlab4 files are
+    often utf-16) — never unify them here.
+    """
+    for encoding in encodings:
+        try:
+            with open(filename, encoding=encoding) as f:
+                return f.readlines(), encoding
+        except UnicodeDecodeError:
+            continue
+    return None, None
+
+
 def get_delimiter(
     filename: Optional[str] = None,
     rows: None = None,

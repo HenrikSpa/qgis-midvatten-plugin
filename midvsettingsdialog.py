@@ -339,11 +339,11 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
                 ):  # The index count stops when last selected table is found #MacOSX fix1
                     notfound = 1
                     self.ts_table_updated()  # Fill the given combobox with columns from the given table and also perform a sanity check of table
-                    searchindex = self.list_of_columns.findText(
-                        self.ms.settingsdict["tscolumn"]
+                    gui_utils.set_combobox(
+                        self.list_of_columns,
+                        self.ms.settingsdict["tscolumn"],
+                        add_if_not_exists=False,
                     )
-                    if searchindex >= 0:
-                        self.list_of_columns.setCurrentIndex(searchindex)
                 elif i > len(self.list_of_tables):
                     notfound = 1
                 i = i + 1
@@ -369,32 +369,32 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
             self.list_of_tables_wqual.setCurrentIndex(searchindexouter)
             self.wqual_table_updated()
             # and then check all possible last selected columns for parameters, values etc.
-            searchindex = self.list_of_columns_wqualparam.findText(
-                self.ms.settingsdict["wqual_paramcolumn"]
+            gui_utils.set_combobox(
+                self.list_of_columns_wqualparam,
+                self.ms.settingsdict["wqual_paramcolumn"],
+                add_if_not_exists=False,
             )
-            if searchindex >= 0:
-                self.list_of_columns_wqualparam.setCurrentIndex(searchindex)
-            searchindex = self.list_of_columns_wqualvalue.findText(
-                self.ms.settingsdict["wqual_valuecolumn"]
+            gui_utils.set_combobox(
+                self.list_of_columns_wqualvalue,
+                self.ms.settingsdict["wqual_valuecolumn"],
+                add_if_not_exists=False,
             )
-            if searchindex >= 0:
-                self.list_of_columns_wqualvalue.setCurrentIndex(searchindex)
             searchindex = self.list_ofdate_time_format.findText(
                 self.ms.settingsdict["wqual_date_time_format"]
             )
             if searchindex == -1:
                 searchindex = 1
             self.list_ofdate_time_format.setCurrentIndex(searchindex)
-            searchindex = self.list_of_columns_wqualunit.findText(
-                self.ms.settingsdict["wqual_unitcolumn"]
+            gui_utils.set_combobox(
+                self.list_of_columns_wqualunit,
+                self.ms.settingsdict["wqual_unitcolumn"],
+                add_if_not_exists=False,
             )
-            if searchindex >= 0:
-                self.list_of_columns_wqualunit.setCurrentIndex(searchindex)
-            searchindex = self.list_of_columns_wqualsorting.findText(
-                self.ms.settingsdict["wqual_sortingcolumn"]
+            gui_utils.set_combobox(
+                self.list_of_columns_wqualsorting,
+                self.ms.settingsdict["wqual_sortingcolumn"],
+                add_if_not_exists=False,
             )
-            if searchindex >= 0:
-                self.list_of_columns_wqualsorting.setCurrentIndex(searchindex)
 
     def load_and_select_last_xyplot_settings(self):
         if len(
@@ -412,26 +412,26 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
                 ):  # when last selected xytable found, it is selected in list and a lot of columns is searced for #MacOSX fix1
                     notfound = 1
                     self.xy_table_updated()  # Fill the given combobox with columns from the given table and performs a test
-                    searchindex = self.list_of_columns_2.findText(
-                        self.ms.settingsdict["xy_xcolumn"]
+                    gui_utils.set_combobox(
+                        self.list_of_columns_2,
+                        self.ms.settingsdict["xy_xcolumn"],
+                        add_if_not_exists=False,
                     )
-                    if searchindex >= 0:
-                        self.list_of_columns_2.setCurrentIndex(searchindex)
-                    searchindex = self.list_of_columns_3.findText(
-                        self.ms.settingsdict["xy_y1column"]
+                    gui_utils.set_combobox(
+                        self.list_of_columns_3,
+                        self.ms.settingsdict["xy_y1column"],
+                        add_if_not_exists=False,
                     )
-                    if searchindex >= 0:
-                        self.list_of_columns_3.setCurrentIndex(searchindex)
-                    searchindex = self.list_of_columns_4.findText(
-                        self.ms.settingsdict["xy_y2column"]
+                    gui_utils.set_combobox(
+                        self.list_of_columns_4,
+                        self.ms.settingsdict["xy_y2column"],
+                        add_if_not_exists=False,
                     )
-                    if searchindex >= 0:
-                        self.list_of_columns_4.setCurrentIndex(searchindex)
-                    searchindex = self.list_of_columns_5.findText(
-                        self.ms.settingsdict["xy_y3column"]
+                    gui_utils.set_combobox(
+                        self.list_of_columns_5,
+                        self.ms.settingsdict["xy_y3column"],
+                        add_if_not_exists=False,
                     )
-                    if searchindex >= 0:
-                        self.list_of_columns_5.setCurrentIndex(searchindex)
                 elif i > len(self.list_of_tables_2):
                     notfound = 1
                 i = i + 1

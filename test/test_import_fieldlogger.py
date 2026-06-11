@@ -13,7 +13,7 @@ from midvatten.tools.import_fieldlogger import (
     InputFields,
     DateTimeFilter,
 )
-from midvatten.tools.utils import common_utils, file_utils
+from midvatten.tools.utils import file_utils
 from midvatten.tools.utils.date_utils import to_date
 
 

@@ -53,16 +53,17 @@ def readlines_with_detected_charset(filename: str, encodings: list[str]) -> tupl
 
 def get_delimiter(
     filename: Optional[str] = None,
-    rows: None = None,
+    rows: Optional[List[str]] = None,
     charset: str = "utf-8",
     delimiters: Optional[List[str]] = None,
     num_fields: Optional[int] = None,
     skip_empty_rows: bool = True,
 ) -> Optional[str]:
-    if filename is None:
-        raise TypeError(tr("get_delimiter", "Must give filename or supply rows"))
-    with open(filename, encoding=charset) as f:
-        rows = f.readlines()
+    if rows is None:
+        if filename is None:
+            raise TypeError(tr("get_delimiter", "Must give filename or supply rows"))
+        with open(filename, encoding=charset) as f:
+            rows = f.readlines()
     if skip_empty_rows:
         rows = [row for row in rows if row.strip().strip("\r").strip("\n")]
     delimiter = get_delimiter_from_file_rows(

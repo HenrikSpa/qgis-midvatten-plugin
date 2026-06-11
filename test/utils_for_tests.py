@@ -42,7 +42,7 @@ from qgis.utils import spatialite_connect
 from midvatten.midvatten_plugin import Midvatten
 from midvatten.test.mocks_for_tests import DummyInterface2
 from midvatten.tools.import_data_to_db import MidvDataImporter
-from midvatten.tools.utils import common_utils, exceptions, string_utils
+from midvatten.tools.utils import exceptions, string_utils
 from midvatten.tools.utils import db_utils
 
 

@@ -28,7 +28,7 @@ from midvatten.test import utils_for_tests
 from midvatten.test import mocks_for_tests
 from midvatten.tools.import_interlab4 import Interlab4Import
 from midvatten.tools.obsid_assignment_dialog import DialogOutcome
-from midvatten.tools.utils import common_utils, db_utils, file_utils
+from midvatten.tools.utils import db_utils, file_utils
 
 
 @pytest.mark.spatialite

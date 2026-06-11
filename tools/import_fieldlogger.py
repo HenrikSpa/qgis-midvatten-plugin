@@ -220,7 +220,7 @@ class FieldloggerImport(BaseImporter, import_fieldlogger_ui_dialog):
                 continue
             delimiter = file_utils.get_delimiter(
                 filename=filename,
-                charset=encoding,
+                rows=rows,
                 delimiters=[";", ","],
                 num_fields=5,
             )

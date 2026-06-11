@@ -39,7 +39,7 @@ from qgis.core import (
 from midvatten.test import utils_for_tests
 from midvatten.test.mocks_for_tests import MockUsingReturnValue
 from midvatten.tools.import_general_csv_gui import GeneralCsvImportGui
-from midvatten.tools.utils import common_utils, file_utils
+from midvatten.tools.utils import file_utils
 from midvatten.tools.utils import db_utils
 from midvatten.tools.utils.date_utils import to_date
 

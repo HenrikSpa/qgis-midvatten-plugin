@@ -24,7 +24,7 @@ import pytest
 
 from midvatten.definitions import midvatten_defs as defs
 from midvatten.test import utils_for_tests
-from midvatten.tools.utils import common_utils, midvatten_utils, string_utils
+from midvatten.tools.utils import midvatten_utils, string_utils
 from midvatten.tools.utils import db_utils
 
 

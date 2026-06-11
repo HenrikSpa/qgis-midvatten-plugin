@@ -29,7 +29,7 @@ import pytest
 
 from midvatten.definitions import midvatten_defs as defs
 from midvatten.test import utils_for_tests
-from midvatten.tools.utils import common_utils, file_utils, string_utils
+from midvatten.tools.utils import file_utils, string_utils
 from midvatten.tools.utils.midvatten_utils import PlotTemplates
 
 

@@ -28,7 +28,7 @@ import pytest
 
 from midvatten.test import utils_for_tests
 from midvatten.tools.import_data_to_db import MidvDataImporterError
-from midvatten.tools.utils import db_utils, common_utils, string_utils
+from midvatten.tools.utils import db_utils, string_utils
 
 
 class GeneralImportMixin:

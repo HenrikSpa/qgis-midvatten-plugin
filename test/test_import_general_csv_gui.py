@@ -32,7 +32,7 @@ from midvatten.tools.import_general_csv_gui import (
     GeneralCsvImportGui,
     ImportTableChooser,
 )
-from midvatten.tools.utils import common_utils, file_utils, string_utils
+from midvatten.tools.utils import file_utils, string_utils
 from midvatten.tools.utils import db_utils
 
 

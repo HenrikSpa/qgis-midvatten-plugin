@@ -12,7 +12,7 @@ from midvatten.test.mocks_for_tests import (
     MockQgisUtilsIface,
     mock_answer,
 )
-from midvatten.tools.utils import common_utils, file_utils
+from midvatten.tools.utils import file_utils
 from midvatten.test import utils_for_tests
 from midvatten.test.utils_for_tests import create_test_string
 from midvatten.tools.import_fieldlogger import FieldloggerImport, DateTimeFilter

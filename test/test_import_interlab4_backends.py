@@ -27,7 +27,7 @@ from unittest import mock
 import pytest
 import qgis.PyQt.QtWidgets
 
-from midvatten.tools.utils import common_utils, gui_utils, db_utils, file_utils
+from midvatten.tools.utils import gui_utils, db_utils, file_utils
 from midvatten.test import mocks_for_tests, utils_for_tests
 from midvatten.tools.import_interlab4 import Interlab4Import
 from midvatten.tools.obsid_assignment_dialog import DialogOutcome

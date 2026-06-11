@@ -20,7 +20,7 @@ from midvatten.tools.import_logger import (
     _pivot_baro_to_meteo,
     LoggerImport,
 )
-from midvatten.tools.utils import common_utils, file_utils
+from midvatten.tools.utils import file_utils
 from midvatten.tools.utils import db_utils
 from midvatten.tools.utils.date_utils import to_date
 from midvatten.tools.utils.gui_utils import set_combobox

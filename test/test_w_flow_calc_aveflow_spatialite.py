@@ -23,7 +23,7 @@ import pytest
 
 from midvatten.test import utils_for_tests
 from midvatten.tools import w_flow_calc_aveflow
-from midvatten.tools.utils import common_utils, date_utils, db_utils, string_utils
+from midvatten.tools.utils import date_utils, db_utils, string_utils
 
 
 @pytest.mark.spatialite

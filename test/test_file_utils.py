@@ -33,3 +33,15 @@ class TestReadlinesWithDetectedCharset:
         )
         assert rows is None
         assert encoding is None
+
+
+@pytest.mark.active
+class TestGetDelimiterRows:
+    def test_rows_param_skips_file_read(self):
+        delimiter = file_utils.get_delimiter(
+            filename="not_opened.csv",
+            rows=["a;b;c;d;e\n", "1;2;3;4;5\n"],
+            delimiters=[";", ","],
+            num_fields=5,
+        )
+        assert delimiter == ";"

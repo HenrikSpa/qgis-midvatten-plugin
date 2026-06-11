@@ -3,7 +3,7 @@ import pytest
 from qgis.core import QgsProject
 
 from midvatten.test import utils_for_tests
-from midvatten.tools.utils import common_utils, string_utils
+from midvatten.tools.utils import string_utils
 from midvatten.tools.utils import db_utils
 
 

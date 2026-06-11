@@ -661,7 +661,6 @@ def to_float_or_none(anything) -> float | None:
     return float(result)
 
 
-
 def get_save_file_name_no_extension(**kwargs) -> str:
     filename = qgis.PyQt.QtWidgets.QFileDialog.getSaveFileName(**kwargs)
     if not filename[0]:

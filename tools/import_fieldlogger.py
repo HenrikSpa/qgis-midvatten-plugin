@@ -1672,17 +1672,6 @@ class WQualFieldImportFields(QtWidgets.QWidget):
 
         observations = copy.deepcopy(observations)
 
-        """
-        #Only for dev
-        adepth_dict = {}
-        try:
-            for obs in observations:
-                midvatten_utils.MessagebarAndLog.info(log_msg="Obs: " + str(obs))
-                if obs['parametername'] == self.depth:
-                    adepth_dict[obs['date_time']] = obs['value']
-        except TypeError, e:
-            raise Exception("Obs: " + str(obs) + " e " + str(e))
-        """
         for observation in observations:
             try:
                 if (

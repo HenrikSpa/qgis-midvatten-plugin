@@ -19,6 +19,7 @@
  ***************************************************************************/
 """
 
+import math
 from unittest import mock
 import numpy as np
 from cycler import cycler
@@ -705,3 +706,20 @@ class TestVersionComparisonLists:
             version_comparison_list("3.14.1b2"), version_comparison_list("3.16")
         )
         assert is_old
+
+
+@pytest.mark.active
+class TestCalcMeanDiff:
+    def test_basic_mean(self):
+        assert common_utils.calc_mean_diff([(5, 2), (8, 1)]) == 5.0
+
+    def test_nan_val_pairs_are_excluded(self):
+        # A NaN in either position must not poison the mean.
+        result = common_utils.calc_mean_diff(
+            [(5, 2), (8, 1), (float("nan"), 3), (4, float("nan"))]
+        )
+        assert result == 5.0
+
+    def test_all_nan_returns_nan(self):
+        result = common_utils.calc_mean_diff([(float("nan"), float("nan"))])
+        assert math.isnan(result)

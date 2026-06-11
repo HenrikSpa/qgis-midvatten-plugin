@@ -164,7 +164,7 @@ def calc_mean_diff(coupled_vals):
         [
             float(m) - float(val)
             for m, val in coupled_vals
-            if not math.isnan(m) or math.isnan(val)
+            if not (math.isnan(m) or math.isnan(val))
         ]
     )
 

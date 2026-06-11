@@ -23,7 +23,7 @@ import pytest
 
 from midvatten.test import utils_for_tests
 from midvatten.tools import w_flow_calc_aveflow
-from midvatten.tools.utils import common_utils, date_utils, db_utils
+from midvatten.tools.utils import common_utils, date_utils, db_utils, string_utils
 
 
 @pytest.mark.spatialite
@@ -48,16 +48,14 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
         )
 
         calcave = w_flow_calc_aveflow.CalculateAveflow(self.iface, self.midvatten.ms)
-        calcave.from_date_time.setDateTime(
-            date_utils.to_date("2000-01-01 00:00:00")
-        )
+        calcave.from_date_time.setDateTime(date_utils.to_date("2000-01-01 00:00:00"))
         calcave.calcall()
         print(f"{mock_messagebar.mock_calls=}")
         # insert or ignore into w_flow(obsid,instrumentid,flowtype,date_time,reading,unit) values('%s','%s','Aveflow','%s','%s','l/s')
         res = db_utils.sql_load_fr_db(
             """SELECT obsid, instrumentid, flowtype, date_time, ROUND(reading, 4), unit FROM w_flow ORDER BY obsid, flowtype, date_time"""
         )[1]
-        test = common_utils.anything_to_string_representation(res)
+        test = string_utils.anything_to_string_representation(res)
 
         reference = '[("1", "inst1", "Accvol", "2019-02-01 00:00", 1.0, "m3", ), ("1", "inst1", "Accvol", "2019-02-02 00:00", 2.0, "m3", ), ("1", "inst1", "Aveflow", "2019-02-02", 0.0116, "l/s", ), ("2", "inst2", "Accvol", "2019-02-03 00:00", 5.0, "m3", ), ("2", "inst2", "Accvol", "2019-02-04 00:00", 10.0, "m3", ), ("2", "inst2", "Aveflow", "2019-02-04", 0.0579, "l/s", )]'
         # result_list = self.calcave.observations
@@ -102,16 +100,14 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
         )
 
         calcave = w_flow_calc_aveflow.CalculateAveflow(self.iface, self.midvatten.ms)
-        calcave.from_date_time.setDateTime(
-            date_utils.to_date("2000-01-01 00:00:00")
-        )
+        calcave.from_date_time.setDateTime(date_utils.to_date("2000-01-01 00:00:00"))
         calcave.calcselected()
         print(f"{mock_messagebar.mock_calls=}")
         # insert or ignore into w_flow(obsid,instrumentid,flowtype,date_time,reading,unit) values('%s','%s','Aveflow','%s','%s','l/s')
         res = db_utils.sql_load_fr_db(
             """SELECT obsid, instrumentid, flowtype, date_time, ROUND(reading, 4), unit FROM w_flow ORDER BY obsid, flowtype, date_time"""
         )[1]
-        test = common_utils.anything_to_string_representation(res)
+        test = string_utils.anything_to_string_representation(res)
 
         reference = '[("1", "inst1", "Accvol", "2019-02-01 00:00", 1.0, "m3", ), ("1", "inst1", "Accvol", "2019-02-02 00:00", 2.0, "m3", ), ("1", "inst1", "Accvol", "2019-02-03 00:00", 5.0, "m3", ), ("1", "inst1", "Accvol", "2019-02-04 00:00", 10.0, "m3", ), ("1", "inst1", "Aveflow", "2019-02-02", 0.0116, "l/s", ), ("1", "inst1", "Aveflow", "2019-02-03", 0.0347, "l/s", ), ("1", "inst1", "Aveflow", "2019-02-04", 0.0579, "l/s", ), ("2", "inst2", "Accvol", "2019-02-03 00:00", 5.0, "m3", ), ("2", "inst2", "Accvol", "2019-02-04 00:00", 10.0, "m3", )]'
         # result_list = self.calcave.observations
@@ -161,16 +157,14 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
         )
 
         calcave = w_flow_calc_aveflow.CalculateAveflow(self.iface, self.midvatten.ms)
-        calcave.from_date_time.setDateTime(
-            date_utils.to_date("2000-01-01 00:00:00")
-        )
+        calcave.from_date_time.setDateTime(date_utils.to_date("2000-01-01 00:00:00"))
         calcave.calcselected()
         print(f"{mock_messagebar.mock_calls=}")
         # insert or ignore into w_flow(obsid,instrumentid,flowtype,date_time,reading,unit) values('%s','%s','Aveflow','%s','%s','l/s')
         res = db_utils.sql_load_fr_db(
             """SELECT obsid, instrumentid, flowtype, date_time, ROUND(reading, 4), unit FROM w_flow ORDER BY obsid, flowtype, date_time"""
         )[1]
-        test = common_utils.anything_to_string_representation(res)
+        test = string_utils.anything_to_string_representation(res)
 
         reference = '[("1", "inst1", "Accvol", "2019-02-01 00:00", 1.0, "m3", ), ("1", "inst1", "Accvol", "2019-02-02 00:00", 2.0, "m3", ), ("1", "inst1", "Accvol", "2019-02-03 00:00", 5.0, "m3", ), ("1", "inst1", "Accvol", "2019-02-04 00:00", 10.0, "m3", ), ("1", "inst1", "Aveflow", "2019-02-02", 0.0116, "l/s", ), ("1", "inst1", "Aveflow", "2019-02-03", 0.0347, "l/s", ), ("1", "inst1", "Aveflow", "2019-02-04", 0.0579, "l/s", ), ("2", "inst2", "Accvol", "2019-02-03 00:00", 5.0, "m3", ), ("2", "inst2", "Accvol", "2019-02-04 00:00", 10.0, "m3", )]'
         # result_list = self.calcave.observations
@@ -213,16 +207,14 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
         )
 
         calcave = w_flow_calc_aveflow.CalculateAveflow(self.iface, self.midvatten.ms)
-        calcave.from_date_time.setDateTime(
-            date_utils.to_date("2000-01-01 00:00:00")
-        )
+        calcave.from_date_time.setDateTime(date_utils.to_date("2000-01-01 00:00:00"))
         calcave.calcselected()
         print(f"{mock_messagebar.mock_calls=}")
         # insert or ignore into w_flow(obsid,instrumentid,flowtype,date_time,reading,unit) values('%s','%s','Aveflow','%s','%s','l/s')
         res = db_utils.sql_load_fr_db(
             """SELECT obsid, instrumentid, flowtype, date_time, ROUND(reading, 4), unit FROM w_flow ORDER BY obsid, flowtype, date_time"""
         )[1]
-        test = common_utils.anything_to_string_representation(res)
+        test = string_utils.anything_to_string_representation(res)
 
         # print(test)
         reference = '[("1", "inst1", "Accvol", "2019-02-01 23:59", 1.0, "m3", ), ("1", "inst1", "Accvol", "2019-02-02 23:59", 2.0, "m3", ), ("1", "inst1", "Accvol", "2019-02-03 23:59", 5.0, "m3", ), ("1", "inst1", "Accvol", "2019-02-04 23:59", 10.0, "m3", ), ("1", "inst1", "Aveflow", "2019-02-02 23:59:00", 0.0116, "l/s", ), ("1", "inst1", "Aveflow", "2019-02-03 23:59:00", 0.0347, "l/s", ), ("1", "inst1", "Aveflow", "2019-02-04 23:59:00", 0.0579, "l/s", ), ("2", "inst2", "Accvol", "2019-02-03 23:59", 5.0, "m3", ), ("2", "inst2", "Accvol", "2019-02-04 23:59", 10.0, "m3", ), ("2", "inst2", "Aveflow", "2019-02-04 23:59:00", 0.0579, "l/s", )]'

@@ -37,7 +37,7 @@ from qgis.PyQt.QtWidgets import (
     QVBoxLayout,
 )
 
-from midvatten.tools.utils import common_utils, db_utils
+from midvatten.tools.utils import common_utils, db_utils, file_utils
 from midvatten.definitions import midvatten_defs as defs
 
 _HTML_TAG_RE = re.compile(r"<[a-zA-Z][^>]*>")
@@ -300,4 +300,4 @@ class ExportData:
 
         printlist = [headers, *data]
         filename = os.path.join(self.exportfolder, tname + ".csv")
-        common_utils.write_printlist_to_file(filename, printlist)
+        file_utils.write_printlist_to_file(filename, printlist)

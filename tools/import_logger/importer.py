@@ -16,7 +16,7 @@ import pandas as pd  # pandas is a mandatory dependency of this plugin
 
 from midvatten.tools import import_data_to_db
 from midvatten.tools.base_importer import BaseImporter
-from midvatten.tools.utils import common_utils, db_utils, midvatten_utils
+from midvatten.tools.utils import common_utils, db_utils, midvatten_utils, file_utils
 from midvatten.tools.utils.exceptions import UserInterruptError
 from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.string_utils import returnunicode as ru
@@ -463,7 +463,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             extension = f"{exts[0].lstrip('.')} (*{exts[0]})"
         files = midvatten_utils.select_files(only_one_file=False, extension=extension)
         if not files:
-            raise common_utils.UserInterruptError()
+            raise UserInterruptError()
 
         self.files = files
         self._files_label.setText(
@@ -796,7 +796,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                     )
                     if path:
                         path = ru(path[0])
-                        common_utils.write_printlist_to_file(path, meteo_rows)
+                        file_utils.write_printlist_to_file(path, meteo_rows)
 
                 common_utils.stop_waiting_cursor()
                 if self.close_after_import.isChecked():
@@ -918,7 +918,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                 )
                 if path:
                     path = ru(path[0])
-                    common_utils.write_printlist_to_file(path, file_to_import_to_db)
+                    file_utils.write_printlist_to_file(path, file_to_import_to_db)
 
             common_utils.stop_waiting_cursor()
 

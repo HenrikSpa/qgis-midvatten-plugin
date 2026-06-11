@@ -42,7 +42,7 @@ from qgis.utils import spatialite_connect
 from midvatten.midvatten_plugin import Midvatten
 from midvatten.test.mocks_for_tests import DummyInterface2
 from midvatten.tools.import_data_to_db import MidvDataImporter
-from midvatten.tools.utils import common_utils
+from midvatten.tools.utils import common_utils, exceptions, string_utils
 from midvatten.tools.utils import db_utils
 
 
@@ -115,7 +115,7 @@ def dict_to_sorted_list(adict):
         for k in adict:
             result_list.extend(dict_to_sorted_list(k))
     else:
-        result_list.append(common_utils.returnunicode(adict))  # .encode('utf-8'))
+        result_list.append(string_utils.returnunicode(adict))  # .encode('utf-8'))
     return result_list
 
 
@@ -131,7 +131,7 @@ def create_test_string(anything=None):
      >>> create_test_string({3: 'a', 2: 'b', 1: ('c', 'd')})
      '{1: (c, d), 2: b, 3: a}'
     """
-    return common_utils.anything_to_string_representation(anything, compact=True)
+    return string_utils.anything_to_string_representation(anything, compact=True)
 
 
 class ContextualStringIO(io.StringIO):
@@ -435,7 +435,7 @@ class MidvattenTestPostgisNotCreated(MidvattenTestBase):
         QgsProject.instance().writeEntry(
             "Midvatten",
             "database",
-            common_utils.anything_to_string_representation(
+            string_utils.anything_to_string_representation(
                 MidvattenTestPostgisNotCreated.TEMP_DB_SETTINGS
             ),
         )
@@ -450,7 +450,7 @@ class MidvattenTestPostgisNotCreated(MidvattenTestBase):
             dbconn.execute_and_commit("DROP SCHEMA IF EXISTS public CASCADE;")
             dbconn.execute_and_commit("CREATE SCHEMA public;")
             dbconn.closedb()
-        except common_utils.UserInterruptError as e:
+        except exceptions.UserInterruptError as e:
             raise unittest.SkipTest("PostGIS not available (no password): %s" % e)
         except Exception as e:
             if (
@@ -467,7 +467,7 @@ class MidvattenTestPostgisNotCreated(MidvattenTestBase):
             dbconnection.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
             dbconnection.commit()
             dbconnection.closedb()
-        except common_utils.UserInterruptError:
+        except exceptions.UserInterruptError:
             raise
         except Exception as e:
             err = str(e).lower()
@@ -518,7 +518,7 @@ class MidvattenTestPostgisDbSv(MidvattenTestPostgisNotCreated):
         QgsProject.instance().writeEntry(
             "Midvatten",
             "database",
-            common_utils.anything_to_string_representation(
+            string_utils.anything_to_string_representation(
                 MidvattenTestPostgisNotCreated.TEMP_DB_SETTINGS
             ),
         )
@@ -528,7 +528,7 @@ class MidvattenTestPostgisDbSv(MidvattenTestPostgisNotCreated):
             dbconn.execute_and_commit("DROP SCHEMA IF EXISTS public CASCADE;")
             dbconn.execute_and_commit("CREATE SCHEMA public;")
             dbconn.closedb()
-        except common_utils.UserInterruptError as e:
+        except exceptions.UserInterruptError as e:
             raise unittest.SkipTest("PostGIS not available (no password): %s" % e)
         except Exception as e:
             if (
@@ -544,7 +544,7 @@ class MidvattenTestPostgisDbSv(MidvattenTestPostgisNotCreated):
             dbconnection.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
             dbconnection.commit()
             dbconnection.closedb()
-        except common_utils.UserInterruptError:
+        except exceptions.UserInterruptError:
             raise
         except Exception as e:
             err = str(e).lower()
@@ -603,7 +603,7 @@ class MidvattenTestPostgisDbSv(MidvattenTestPostgisNotCreated):
         QgsProject.instance().writeEntry(
             "Midvatten",
             "database",
-            common_utils.anything_to_string_representation(
+            string_utils.anything_to_string_representation(
                 MidvattenTestPostgisNotCreated.TEMP_DB_SETTINGS
             ),
         )
@@ -628,7 +628,7 @@ class MidvattenTestPostgisDbSv(MidvattenTestPostgisNotCreated):
         QgsProject.instance().writeEntry(
             "Midvatten",
             "database",
-            common_utils.anything_to_string_representation(
+            string_utils.anything_to_string_representation(
                 MidvattenTestPostgisNotCreated.TEMP_DB_SETTINGS
             ),
         )
@@ -692,7 +692,7 @@ class MidvattenTestPostgisDbEn(MidvattenTestPostgisNotCreated):
         QgsProject.instance().writeEntry(
             "Midvatten",
             "database",
-            common_utils.anything_to_string_representation(
+            string_utils.anything_to_string_representation(
                 MidvattenTestPostgisNotCreated.TEMP_DB_SETTINGS
             ),
         )
@@ -702,7 +702,7 @@ class MidvattenTestPostgisDbEn(MidvattenTestPostgisNotCreated):
             dbconn.execute_and_commit("DROP SCHEMA IF EXISTS public CASCADE;")
             dbconn.execute_and_commit("CREATE SCHEMA public;")
             dbconn.closedb()
-        except common_utils.UserInterruptError as e:
+        except exceptions.UserInterruptError as e:
             raise unittest.SkipTest("PostGIS not available (no password): %s" % e)
         except Exception as e:
             if (
@@ -718,7 +718,7 @@ class MidvattenTestPostgisDbEn(MidvattenTestPostgisNotCreated):
             dbconnection.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
             dbconnection.commit()
             dbconnection.closedb()
-        except common_utils.UserInterruptError:
+        except exceptions.UserInterruptError:
             raise
         except Exception as e:
             err = str(e).lower()
@@ -776,7 +776,7 @@ class MidvattenTestPostgisDbEn(MidvattenTestPostgisNotCreated):
         QgsProject.instance().writeEntry(
             "Midvatten",
             "database",
-            common_utils.anything_to_string_representation(
+            string_utils.anything_to_string_representation(
                 MidvattenTestPostgisNotCreated.TEMP_DB_SETTINGS
             ),
         )
@@ -799,7 +799,7 @@ class MidvattenTestPostgisDbEn(MidvattenTestPostgisNotCreated):
         QgsProject.instance().writeEntry(
             "Midvatten",
             "database",
-            common_utils.anything_to_string_representation(
+            string_utils.anything_to_string_representation(
                 MidvattenTestPostgisNotCreated.TEMP_DB_SETTINGS
             ),
         )

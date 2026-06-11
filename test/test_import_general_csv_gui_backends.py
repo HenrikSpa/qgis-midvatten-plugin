@@ -39,7 +39,7 @@ from qgis.core import (
 from midvatten.test import utils_for_tests
 from midvatten.test.mocks_for_tests import MockUsingReturnValue
 from midvatten.tools.import_general_csv_gui import GeneralCsvImportGui
-from midvatten.tools.utils import common_utils
+from midvatten.tools.utils import common_utils, file_utils
 from midvatten.tools.utils import db_utils
 from midvatten.tools.utils.date_utils import to_date
 
@@ -52,7 +52,7 @@ class GeneralCsvGuiMixin:
 
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb1')""")
 
-        with common_utils.tempinput("\n".join(file), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(file), "utf-8") as filename:
             utils_askuser_answer_no_obj = MockUsingReturnValue(None)
             utils_askuser_answer_no_obj.result = 0
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
@@ -136,7 +136,7 @@ class GeneralCsvGuiMixin:
 
         # utils.sql_alter_db('''INSERT INTO obs_points (obsid) VALUES ('rb1')''')
 
-        with common_utils.tempinput("\n".join(file), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(file), "utf-8") as filename:
             utils_askuser_answer_no_obj = MockUsingReturnValue(None)
             utils_askuser_answer_no_obj.result = 0
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
@@ -216,7 +216,7 @@ class GeneralCsvGuiMixin:
 
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb2')""")
 
-        with common_utils.tempinput("\n".join(file), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(file), "utf-8") as filename:
             utils_askuser_answer_no_obj = MockUsingReturnValue(None)
             utils_askuser_answer_no_obj.result = 0
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
@@ -310,7 +310,7 @@ class GeneralCsvGuiMixin:
 
         db_utils.sql_alter_db("""INSERT INTO obs_lines (obsid) VALUES ('obsid1')""")
 
-        with common_utils.tempinput("\n".join(file), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(file), "utf-8") as filename:
             utils_askuser_answer_no_obj = MockUsingReturnValue(None)
             utils_askuser_answer_no_obj.result = 0
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
@@ -406,7 +406,7 @@ class GeneralCsvGuiMixin:
 
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb1')""")
 
-        with common_utils.tempinput("\n".join(file), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(file), "utf-8") as filename:
             utils_askuser_answer_no_obj = MockUsingReturnValue(None)
             utils_askuser_answer_no_obj.result = 0
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
@@ -501,7 +501,7 @@ class GeneralCsvGuiMixin:
 
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb1')""")
 
-        with common_utils.tempinput("\n".join(file), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(file), "utf-8") as filename:
             utils_askuser_answer_no_obj = MockUsingReturnValue(None)
             utils_askuser_answer_no_obj.result = 0
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
@@ -582,7 +582,7 @@ class GeneralCsvGuiMixin:
 
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb2')""")
 
-        with common_utils.tempinput("\n".join(file), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(file), "utf-8") as filename:
             utils_askuser_answer_no_obj = MockUsingReturnValue(None)
             utils_askuser_answer_no_obj.result = 0
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
@@ -673,7 +673,7 @@ class GeneralCsvGuiMixin:
 
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb1')""")
 
-        with common_utils.tempinput("\n".join(file), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(file), "utf-8") as filename:
             utils_askuser_answer_no_obj = MockUsingReturnValue(None)
             utils_askuser_answer_no_obj.result = 0
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
@@ -767,7 +767,7 @@ class GeneralCsvGuiMixin:
 
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb1')""")
 
-        with common_utils.tempinput("\n".join(file), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(file), "utf-8") as filename:
             utils_askuser_answer_no_obj = MockUsingReturnValue(None)
             utils_askuser_answer_no_obj.result = 0
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
@@ -856,7 +856,7 @@ class GeneralCsvGuiMixin:
 
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb1')""")
 
-        with common_utils.tempinput("\n".join(file), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(file), "utf-8") as filename:
             utils_askuser_answer_no_obj = MockUsingReturnValue(None)
             utils_askuser_answer_no_obj.result = 0
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
@@ -939,7 +939,7 @@ class GeneralCsvGuiMixin:
 
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb1')""")
 
-        with common_utils.tempinput("\n".join(file), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(file), "utf-8") as filename:
             utils_askuser_answer_no_obj = MockUsingReturnValue(None)
             utils_askuser_answer_no_obj.result = 0
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
@@ -1022,7 +1022,7 @@ class GeneralCsvGuiMixin:
 
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb1')""")
 
-        with common_utils.tempinput("\n".join(file), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(file), "utf-8") as filename:
             utils_askuser_answer_no_obj = MockUsingReturnValue(None)
             utils_askuser_answer_no_obj.result = 0
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
@@ -1112,7 +1112,7 @@ class GeneralCsvGuiMixin:
 
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb1')""")
 
-        with common_utils.tempinput("\n".join(file), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(file), "utf-8") as filename:
             utils_askuser_answer_no_obj = MockUsingReturnValue(None)
             utils_askuser_answer_no_obj.result = 0
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
@@ -1195,7 +1195,7 @@ class GeneralCsvGuiMixin:
 
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb1')""")
 
-        with common_utils.tempinput("\n".join(file), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(file), "utf-8") as filename:
             utils_askuser_answer_no_obj = MockUsingReturnValue(None)
             utils_askuser_answer_no_obj.result = 0
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
@@ -1278,7 +1278,7 @@ class GeneralCsvGuiMixin:
 
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb1')""")
 
-        with common_utils.tempinput("\n".join(file), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(file), "utf-8") as filename:
             utils_askuser_answer_no_obj = MockUsingReturnValue(None)
             utils_askuser_answer_no_obj.result = 0
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
@@ -1368,7 +1368,7 @@ class GeneralCsvGuiMixin:
 
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb1')""")
 
-        with common_utils.tempinput("\n".join(file), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(file), "utf-8") as filename:
             utils_askuser_answer_no_obj = MockUsingReturnValue(None)
             utils_askuser_answer_no_obj.result = 0
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
@@ -1465,7 +1465,7 @@ class GeneralCsvGuiMixin:
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb1')""")
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb2')""")
 
-        with common_utils.tempinput("\n".join(file), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(file), "utf-8") as filename:
 
             @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
@@ -1575,7 +1575,7 @@ class GeneralCsvGuiMixin:
         ``configure(importer)`` wires column / series_columns mappings after the
         table is chosen and before start_import().
         """
-        with common_utils.tempinput("\n".join(file_lines), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(file_lines), "utf-8") as filename:
 
             @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)

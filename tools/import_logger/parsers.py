@@ -15,7 +15,7 @@ from qgis.PyQt.QtCore import QCoreApplication
 
 import pandas as pd  # pandas is a mandatory dependency of this plugin
 
-from midvatten.tools.utils import common_utils, date_utils
+from midvatten.tools.utils import common_utils, date_utils, file_utils
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.common_utils import format_timezone_string
 from midvatten.tools.utils.date_utils import to_date
@@ -365,7 +365,7 @@ class DiverOfficeParser:
             header_row_idx = data_start_row - 1
             if header_row_idx >= 0:
                 header_row = rows[header_row_idx]
-                hdr_delim = common_utils.get_delimiter_from_file_rows(
+                hdr_delim = file_utils.get_delimiter_from_file_rows(
                     rows[header_row_idx : header_row_idx + 2],
                     delimiters=["\t", ";", ","],
                     filename=filename,
@@ -391,7 +391,7 @@ class DiverOfficeParser:
                             data_headers[colidx] = keyword
                             break
 
-        delimiter = common_utils.get_delimiter_from_file_rows(
+        delimiter = file_utils.get_delimiter_from_file_rows(
             rows[data_start_row:stop_row] if stop_row else rows[data_start_row:],
             delimiters=[
                 "\t",
@@ -637,7 +637,7 @@ class LeveloggerParser:
             )
             return [], filename, location, timezone, serial_number
 
-        delimiter = common_utils.get_delimiter_from_file_rows(
+        delimiter = file_utils.get_delimiter_from_file_rows(
             rows_unsplit[data_header_idx:],
             filename=filename,
             delimiters=[";", ","],

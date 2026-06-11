@@ -25,7 +25,7 @@ from qgis.core import QgsProject, QgsVectorLayer
 
 from midvatten.test import utils_for_tests
 from midvatten.tools.stratigraphy import Stratigraphy
-from midvatten.tools.utils import common_utils
+from midvatten.tools.utils import common_utils, string_utils
 from midvatten.tools.utils import db_utils
 
 
@@ -103,12 +103,12 @@ class StratigraphyMixin:
         # print(str(mock_skippopup.mock_calls))
         dlg.show_survey()
         print(str(mock_skippopup.mock_calls))
-        test = common_utils.anything_to_string_representation(dlg.data)
-        test_survey = common_utils.anything_to_string_representation(
+        test = string_utils.anything_to_string_representation(dlg.data)
+        test_survey = string_utils.anything_to_string_representation(
             repr(dlg.data["1"])
         )
-        test_strata = common_utils.anything_to_string_representation(
-            common_utils.returnunicode(dlg.data["1"].strata, keep_containers=True)
+        test_strata = string_utils.anything_to_string_representation(
+            string_utils.returnunicode(dlg.data["1"].strata, keep_containers=True)
         )
 
         assert len(mock_skippopup.mock_calls) == 0
@@ -162,12 +162,12 @@ class StratigraphyMixin:
 
         dlg.show_survey()
         print(str(mock_skippopup.mock_calls))
-        test = common_utils.anything_to_string_representation(dlg.data)
-        test_survey = common_utils.anything_to_string_representation(
+        test = string_utils.anything_to_string_representation(dlg.data)
+        test_survey = string_utils.anything_to_string_representation(
             repr(dlg.data["8"])
         )
-        test_strata = common_utils.anything_to_string_representation(
-            common_utils.returnunicode(dlg.data["8"].strata, keep_containers=True)
+        test_strata = string_utils.anything_to_string_representation(
+            string_utils.returnunicode(dlg.data["8"].strata, keep_containers=True)
         )
 
         assert len(mock_skippopup.mock_calls) == 0
@@ -221,13 +221,13 @@ class StratigraphyMixin:
         print(f"{mock_messagebar.mock_calls=}")
         print(str(mock_skippopup.mock_calls))
         dlg.show_survey()
-        test = common_utils.anything_to_string_representation(dlg.data)
+        test = string_utils.anything_to_string_representation(dlg.data)
         print(str(dlg.data))
-        test_survey = common_utils.anything_to_string_representation(
+        test_survey = string_utils.anything_to_string_representation(
             repr(dlg.data["P1"])
         )
-        test_strata = common_utils.anything_to_string_representation(
-            common_utils.returnunicode(dlg.data["P1"].strata, keep_containers=True)
+        test_strata = string_utils.anything_to_string_representation(
+            string_utils.returnunicode(dlg.data["P1"].strata, keep_containers=True)
         )
 
         assert len(mock_skippopup.mock_calls) == 0
@@ -281,12 +281,12 @@ class StratigraphyMixin:
         print(f"{mock_messagebar.mock_calls=}")
         print(str(mock_skippopup.mock_calls))
         dlg.show_survey()
-        test = common_utils.anything_to_string_representation(dlg.data)
-        test_survey = common_utils.anything_to_string_representation(
+        test = string_utils.anything_to_string_representation(dlg.data)
+        test_survey = string_utils.anything_to_string_representation(
             repr(dlg.data["1"])
         )
-        test_strata = common_utils.anything_to_string_representation(
-            common_utils.returnunicode(dlg.data["1"].strata, keep_containers=True)
+        test_strata = string_utils.anything_to_string_representation(
+            string_utils.returnunicode(dlg.data["1"].strata, keep_containers=True)
         )
 
         assert len(mock_skippopup.mock_calls) == 0
@@ -347,12 +347,12 @@ class StratigraphyMixin:
         dlg.layer = self.vlayer
 
         dlg.show_survey()
-        test = common_utils.anything_to_string_representation(dlg.data)
-        test_survey = common_utils.anything_to_string_representation(
+        test = string_utils.anything_to_string_representation(dlg.data)
+        test_survey = string_utils.anything_to_string_representation(
             repr(dlg.data["1"])
         )
-        test_strata = common_utils.anything_to_string_representation(
-            common_utils.returnunicode(dlg.data["1"].strata, keep_containers=True)
+        test_strata = string_utils.anything_to_string_representation(
+            string_utils.returnunicode(dlg.data["1"].strata, keep_containers=True)
         )
 
         assert len(mock_skippopup.mock_calls) == 0

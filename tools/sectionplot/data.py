@@ -16,7 +16,7 @@ import pandas as pd
 from psycopg2.sql import SQL, Identifier
 from qgis.PyQt.QtCore import QCoreApplication
 
-from midvatten.tools.utils import common_utils, db_utils
+from midvatten.tools.utils import common_utils, db_utils, string_utils
 from midvatten.tools.utils.db_utils.dialect import ident
 from midvatten.tools.utils.string_utils import returnunicode as ru
 
@@ -155,16 +155,16 @@ def get_z_data(obsids_x_position: dict, dbconnection=None) -> dict:
         sql = f"SELECT h_toc, h_gs, length FROM obs_points WHERE obsid = {dbconnection.placeholder()}"
         recs = dbconnection.execute_and_fetchall(sql, (obs,))
         h_toc, h_gs, length = recs[0]
-        if common_utils.isfloat(str(h_gs)) and h_gs > -999:
+        if string_utils.isfloat(str(h_gs)) and h_gs > -999:
             z = h_gs
-        elif common_utils.isfloat(str(h_toc)) and h_toc > -999:
+        elif string_utils.isfloat(str(h_toc)) and h_toc > -999:
             z = h_toc
             fallback_htoc.append(obs)
         else:
             z = 0
             fallback_zero.append(obs)
 
-        if common_utils.isfloat(str(length)):
+        if string_utils.isfloat(str(length)):
             barheight = length
         else:
             barheight = 0

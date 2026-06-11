@@ -35,7 +35,13 @@ from midvatten.tools.obsid_assignment_dialog import (
     fan_out_filled_rows,
     group_editor_rows,
 )
-from midvatten.tools.utils import common_utils, db_utils, midvatten_utils
+from midvatten.tools.utils import (
+    common_utils,
+    db_utils,
+    midvatten_utils,
+    exceptions,
+    file_utils,
+)
 from midvatten.tools.utils.common_utils import Cancel
 from midvatten.tools.utils.date_utils import to_YmdHMS
 from midvatten.tools.utils.db_utils import sql_load_fr_db, tables_columns
@@ -664,7 +670,7 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
                     "Interlab4Import", "Charset not given, stopping."
                 )
             )
-            raise common_utils.UserInterruptError()
+            raise exceptions.UserInterruptError()
 
         # Parse the filedescriptor
         with open(filename, encoding=encoding) as f:
@@ -921,12 +927,12 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
                 ]
             )
 
-            common_utils.write_printlist_to_file(path, printlist)
+            file_utils.write_printlist_to_file(path, printlist)
         else:
             common_utils.MessagebarAndLog.info(
                 log_msg=QCoreApplication.translate("handle_save", "No file selected!")
             )
-            raise common_utils.UserInterruptError()
+            raise exceptions.UserInterruptError()
 
     def _on_dest_table_changed(self, checked: bool = True) -> None:
         if not self.radio_s_qual_lab.isChecked():

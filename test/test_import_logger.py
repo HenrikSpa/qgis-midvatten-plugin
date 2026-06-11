@@ -20,7 +20,7 @@ from midvatten.tools.import_logger import (
     _pivot_baro_to_meteo,
     LoggerImport,
 )
-from midvatten.tools.utils import common_utils
+from midvatten.tools.utils import common_utils, file_utils
 from midvatten.tools.utils import db_utils
 from midvatten.tools.utils.date_utils import to_date
 from midvatten.tools.utils.gui_utils import set_combobox
@@ -43,7 +43,7 @@ class TestDiverOfficeParser:
             "2016/03/15 10:30:00;1.0;10.0\n"
             "2016/03/15 11:00:00;2.0;11.0\n"
         )
-        with common_utils.tempinput(file_content, "utf-8") as f:
+        with file_utils.tempinput(file_content, "utf-8") as f:
             result = DiverOfficeParser.parse(
                 path=f,
                 charset="utf-8",
@@ -68,7 +68,7 @@ class TestDiverOfficeParser:
             "Date/time;Water head[cm];Temperature[\xb0C]\n"
             "2016/03/15 10:30:00;1.0;10.0\n"
         )
-        with common_utils.tempinput(file_content, "cp1252") as f:
+        with file_utils.tempinput(file_content, "cp1252") as f:
             result = DiverOfficeParser.parse(
                 path=f,
                 charset="cp1252",
@@ -90,7 +90,7 @@ class TestDiverOfficeParser:
             "Date/time;Temperature[\xb0C]\n"
             "2016/03/15 10:30:00;10.0\n"
         )
-        with common_utils.tempinput(file_content, "utf-8") as f:
+        with file_utils.tempinput(file_content, "utf-8") as f:
             result = DiverOfficeParser.parse(
                 path=f,
                 charset="utf-8",
@@ -113,7 +113,7 @@ class TestDiverOfficeParser:
             "Date/time;Water head[cm]\n"
             "2016/03/15 10:30:00;1.0\n"
         )
-        with common_utils.tempinput(file_content, "utf-8") as f:
+        with file_utils.tempinput(file_content, "utf-8") as f:
             result = DiverOfficeParser.parse(
                 path=f,
                 charset="utf-8",
@@ -133,7 +133,7 @@ class TestDiverOfficeParser:
             "Date/time;Water head[cm];Temperature[\u00b0C]\n"
             "2016/03/15 10:30:00;1.0;10.0\n"
         )
-        with common_utils.tempinput(file_content, "utf-8") as f:
+        with file_utils.tempinput(file_content, "utf-8") as f:
             result = DiverOfficeParser.parse(
                 path=f,
                 charset="utf-8",
@@ -152,7 +152,7 @@ class TestDiverOfficeParser:
             "Date/time;Water head[cm]\n"
             "2016/03/15 10:30:00;1.0\n"
         )
-        with common_utils.tempinput(file_content, "utf-8") as f:
+        with file_utils.tempinput(file_content, "utf-8") as f:
             result = DiverOfficeParser.parse(
                 path=f,
                 charset="utf-8",
@@ -171,7 +171,7 @@ class TestDiverOfficeParser:
             "2016/03/15 10:30:00,1.0,10.0\n"
             "2016/03/15 11:00:00,2.0,11.0\n"
         )
-        with common_utils.tempinput(file_content, "utf-8") as f:
+        with file_utils.tempinput(file_content, "utf-8") as f:
             result = DiverOfficeParser.parse(
                 path=f,
                 charset="utf-8",
@@ -218,7 +218,7 @@ class TestLeveloggerParser:
             "2016-03-15;10:30:00;0;1;10\n"
             "2016-03-15;11:00:00;0;2;20\n"
         )
-        with common_utils.tempinput(file_content, "utf-8") as f:
+        with file_utils.tempinput(file_content, "utf-8") as f:
             result = LeveloggerParser.parse(
                 path=f,
                 charset="utf-8",
@@ -243,7 +243,7 @@ class TestLeveloggerParser:
             "Date;Time;ms;LEVEL;TEMPERATURE\n"
             "2016-03-15;10:30:00;0;0.01;10\n"
         )
-        with common_utils.tempinput(file_content, "utf-8") as f:
+        with file_utils.tempinput(file_content, "utf-8") as f:
             result = LeveloggerParser.parse(
                 path=f,
                 charset="utf-8",
@@ -257,7 +257,7 @@ class TestLeveloggerParser:
     def test_returns_5_tuple(self):
         """LeveloggerParser.parse must always return a 5-tuple."""
         file_content = "Date;Time\n"
-        with common_utils.tempinput(file_content, "utf-8") as f:
+        with file_utils.tempinput(file_content, "utf-8") as f:
             result = LeveloggerParser.parse(
                 path=f,
                 charset="utf-8",
@@ -281,7 +281,7 @@ class TestLeveloggerParser:
             "Date;Time;ms;LEVEL\n"
             "2016-03-15;10:30:00;0;1\n"
         )
-        with common_utils.tempinput(file_content, "utf-8") as f:
+        with file_utils.tempinput(file_content, "utf-8") as f:
             result = LeveloggerParser.parse(
                 path=f,
                 charset="utf-8",
@@ -302,7 +302,7 @@ class TestLeveloggerParser:
             "Date;Time;ms;LEVEL\n"
             "2016-03-15;10:30:00;0;1\n"
         )
-        with common_utils.tempinput(file_content, "utf-8") as f:
+        with file_utils.tempinput(file_content, "utf-8") as f:
             result = LeveloggerParser.parse(
                 path=f,
                 charset="utf-8",
@@ -327,7 +327,7 @@ class TestHoboParser:
             '2,"07/19/18 11:00:00 fm",4.402\n'
         )
         tz_converter = TzConverter()
-        with common_utils.tempinput(file_content, "utf-8") as f:
+        with file_utils.tempinput(file_content, "utf-8") as f:
             result = HoboParser.parse(
                 path=f,
                 charset="utf-8",
@@ -354,7 +354,7 @@ class TestHoboParser:
         )
         tz_converter = TzConverter()
         tz_converter.target_tz = "GMT+1"
-        with common_utils.tempinput(file_content, "utf-8") as f:
+        with file_utils.tempinput(file_content, "utf-8") as f:
             result = HoboParser.parse(
                 path=f,
                 charset="utf-8",
@@ -370,7 +370,7 @@ class TestHoboParser:
         """HoboParser must return a 5-tuple even on parse failure."""
         file_content = '"Plot Title: temp"\n'
         tz_converter = TzConverter()
-        with common_utils.tempinput(file_content, "utf-8") as f:
+        with file_utils.tempinput(file_content, "utf-8") as f:
             result = HoboParser.parse(
                 path=f,
                 charset="utf-8",
@@ -390,7 +390,7 @@ class TestHoboParser:
             '1,"07/19/18 10:00:00 fm",4.558\n'
         )
         tz_converter = TzConverter()
-        with common_utils.tempinput(file_content, "utf-8") as f:
+        with file_utils.tempinput(file_content, "utf-8") as f:
             result = HoboParser.parse(
                 path=f,
                 charset="utf-8",
@@ -439,9 +439,9 @@ class TestLoggerImportDiverOfficeSpatialite(
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
 
         with (
-            common_utils.tempinput(files[0], "utf-8") as f1,
-            common_utils.tempinput(files[1], "utf-8") as f2,
-            common_utils.tempinput(files[2], "utf-8") as f3,
+            file_utils.tempinput(files[0], "utf-8") as f1,
+            file_utils.tempinput(files[1], "utf-8") as f2,
+            file_utils.tempinput(files[2], "utf-8") as f3,
         ):
             filenames = [f1, f2, f3]
 
@@ -513,7 +513,7 @@ class TestLoggerImportDiverOfficeSpatialite(
                 "2016/03/15 10:30:00;1.0;10.0",
             ]
         )
-        with common_utils.tempinput(file_content, "utf-8") as f:
+        with file_utils.tempinput(file_content, "utf-8") as f:
 
             @mock.patch(
                 "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
@@ -576,7 +576,7 @@ class TestLoggerImportDiverOfficeSpatialite(
                 "2016/03/15 11:00:00,11,101",
             ]
         )
-        with common_utils.tempinput(file_content, "utf-8") as f:
+        with file_utils.tempinput(file_content, "utf-8") as f:
 
             @mock.patch(
                 "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
@@ -648,7 +648,7 @@ class TestLoggerImportLeveloggerSpatialite(utils_for_tests.MidvattenTestSpatiali
                 "2016-03-15;11:00:00;0;11;101",
             ]
         )
-        with common_utils.tempinput(file_content, "cp1252") as f:
+        with file_utils.tempinput(file_content, "cp1252") as f:
 
             @mock.patch(
                 "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
@@ -714,7 +714,7 @@ class TestLoggerImportHoboSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
             '1,"07/19/18 10:00:00 fm",4.558\n'
             '2,"07/19/18 11:00:00 fm",4.402\n'
         )
-        with common_utils.tempinput(file_content, "utf-8") as f:
+        with file_utils.tempinput(file_content, "utf-8") as f:
 
             @mock.patch(
                 "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
@@ -811,7 +811,7 @@ class TestDiverOfficeParserOldFormat:
             "2016/03/15 11:00:00,157.7,0.6",
         )
         charset = "utf-8"
-        with common_utils.tempinput("\n".join(f), charset) as path:
+        with file_utils.tempinput("\n".join(f), charset) as path:
             file_data = DiverOfficeParser.parse(path, charset)
 
         test_string = utils_for_tests.create_test_string(file_data[0])
@@ -828,7 +828,7 @@ class TestDiverOfficeParserOldFormat:
             "2016/03/15 11:00:00,157.7,0.6",
         )
         charset = "cp1252"
-        with common_utils.tempinput("\n".join(f), charset) as path:
+        with file_utils.tempinput("\n".join(f), charset) as path:
             file_data = DiverOfficeParser.parse(path, charset)
 
         test_string = utils_for_tests.create_test_string(file_data[0])
@@ -845,7 +845,7 @@ class TestDiverOfficeParserOldFormat:
             "2016/03/15 11:00:00;157.7;0.6",
         )
         charset = "cp1252"
-        with common_utils.tempinput("\n".join(f), charset) as path:
+        with file_utils.tempinput("\n".join(f), charset) as path:
             file_data = DiverOfficeParser.parse(path, charset)
 
         test_string = utils_for_tests.create_test_string(file_data[0])
@@ -862,7 +862,7 @@ class TestDiverOfficeParserOldFormat:
             "2016/03/15 11:00:00;157,7;0,6",
         )
         charset = "cp1252"
-        with common_utils.tempinput("\n".join(f), charset) as path:
+        with file_utils.tempinput("\n".join(f), charset) as path:
             file_data = DiverOfficeParser.parse(path, charset)
 
         test_string = utils_for_tests.create_test_string(file_data[0])
@@ -881,7 +881,7 @@ class TestDiverOfficeParserOldFormat:
             "2016/03/15 11:00:00,157,7,0,6",
         )
         charset = "cp1252"
-        with common_utils.tempinput("\n".join(f), charset) as path:
+        with file_utils.tempinput("\n".join(f), charset) as path:
             file_data = DiverOfficeParser.parse(path, charset)
         # parse() cannot detect correct delimiter; returns a tuple (no crash)
         assert isinstance(file_data, tuple)
@@ -896,7 +896,7 @@ class TestDiverOfficeParserOldFormat:
             "2016/03/15 11:00:00;157,7;0,6",
         )
         charset = "cp1252"
-        with common_utils.tempinput("\n".join(f), charset) as path:
+        with file_utils.tempinput("\n".join(f), charset) as path:
             file_data = DiverOfficeParser.parse(path, charset)
         test_string = utils_for_tests.create_test_string(file_data[0])
         reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, 26.9, 5.18, None], [2016-03-15 11:00:00, 157.7, 0.6, None]]"
@@ -911,7 +911,7 @@ class TestDiverOfficeParserOldFormat:
             "0.6;3;2016/03/15 11:00:00;157.7",
         )
         charset = "cp1252"
-        with common_utils.tempinput("\n".join(f), charset) as path:
+        with file_utils.tempinput("\n".join(f), charset) as path:
             file_data = DiverOfficeParser.parse(path, charset)
 
         test_string = utils_for_tests.create_test_string(file_data[0])
@@ -929,7 +929,7 @@ class TestDiverOfficeParserOldFormat:
             "0.6;3;2016/03/15 11:00:00",
         )
         charset = "cp1252"
-        with common_utils.tempinput("\n".join(f), charset) as path:
+        with file_utils.tempinput("\n".join(f), charset) as path:
             file_data = DiverOfficeParser.parse(path, charset)
 
         test_string = utils_for_tests.create_test_string(file_data[0])
@@ -948,7 +948,7 @@ class TestDiverOfficeParserOldFormat:
             "0.6;3;2016/03/15 11:00:00",
         )
         charset = "cp1252"
-        with common_utils.tempinput("\n".join(f), charset) as path:
+        with file_utils.tempinput("\n".join(f), charset) as path:
             file_data = DiverOfficeParser.parse(path, charset)
 
         assert file_data[0] == []
@@ -964,7 +964,7 @@ class TestDiverOfficeParserOldFormat:
             "2016/03/15 11:00:00,157.7,0.6",
         )
         charset = "utf-8"
-        with common_utils.tempinput("\n".join(f), charset) as path:
+        with file_utils.tempinput("\n".join(f), charset) as path:
             file_data = DiverOfficeParser.parse(path, charset)
 
         test_string = utils_for_tests.create_test_string(file_data[0])
@@ -992,7 +992,7 @@ class TestDiverOfficeParserOldFormat:
             "    ",
         )
         charset = "utf-8"
-        with common_utils.tempinput("\n".join(f), charset, suffix=".csv") as path:
+        with file_utils.tempinput("\n".join(f), charset, suffix=".csv") as path:
             file_data = DiverOfficeParser.parse(
                 path=path,
                 charset=charset,
@@ -1028,7 +1028,7 @@ class TestHoboParserOldAPI:
         )
         charset = "utf-8"
         tzconverter = TzConverter()
-        with common_utils.tempinput("\n".join(f), charset) as path:
+        with file_utils.tempinput("\n".join(f), charset) as path:
             file_data = HoboParser.parse(
                 path, charset, tz_converter=tzconverter, begindate=None, enddate=None
             )
@@ -1052,7 +1052,7 @@ class TestHoboParserOldAPI:
         charset = "utf-8"
         tzconverter = TzConverter()
         tzconverter.target_tz = "GMT+01:00"
-        with common_utils.tempinput("\n".join(f), charset) as path:
+        with file_utils.tempinput("\n".join(f), charset) as path:
             file_data = HoboParser.parse(
                 path, charset, tz_converter=tzconverter, begindate=None, enddate=None
             )
@@ -1074,7 +1074,7 @@ class TestHoboParserOldAPI:
         )
         charset = "utf-8"
         tzconverter = TzConverter()
-        with common_utils.tempinput("\n".join(f), charset) as path:
+        with file_utils.tempinput("\n".join(f), charset) as path:
             file_data = HoboParser.parse(
                 path, charset, tz_converter=tzconverter, begindate=None, enddate=None
             )
@@ -1097,7 +1097,7 @@ class TestHoboParserOldAPI:
         )
         charset = "utf-8"
         tzconverter = TzConverter()
-        with common_utils.tempinput("\n".join(f), charset) as path:
+        with file_utils.tempinput("\n".join(f), charset) as path:
             file_data = HoboParser.parse(
                 path, charset, tz_converter=tzconverter, begindate=None, enddate=None
             )
@@ -1150,9 +1150,9 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
 
         with (
-            common_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
-            common_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
-            common_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
+            file_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
+            file_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
+            file_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
         ):
             filenames = [f1, f2, f3]
 
@@ -1228,9 +1228,9 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
         )
 
         with (
-            common_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
-            common_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
-            common_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
+            file_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
+            file_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
+            file_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
         ):
             filenames = [f1, f2, f3]
 
@@ -1306,9 +1306,9 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
         )
 
         with (
-            common_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
-            common_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
-            common_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
+            file_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
+            file_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
+            file_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
         ):
             filenames = [f1, f2, f3]
 
@@ -1387,9 +1387,9 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
         )
 
         with (
-            common_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
-            common_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
-            common_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
+            file_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
+            file_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
+            file_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
         ):
             filenames = [f1, f2, f3]
 
@@ -1451,7 +1451,7 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
         ]
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('Rb1')")
 
-        with common_utils.tempinput("\n".join(files[0]), _CHARSET) as f1:
+        with file_utils.tempinput("\n".join(files[0]), _CHARSET) as f1:
             filenames = [f1]
 
             @mock.patch(
@@ -1512,7 +1512,7 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
         ]
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('Rb1')")
 
-        with common_utils.tempinput("\n".join(files[0]), _CHARSET) as f1:
+        with file_utils.tempinput("\n".join(files[0]), _CHARSET) as f1:
             filenames = [f1]
 
             @mock.patch(
@@ -1591,9 +1591,9 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
         )
 
         with (
-            common_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
-            common_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
-            common_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
+            file_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
+            file_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
+            file_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
         ):
             filenames = [f1, f2, f3]
 
@@ -1674,9 +1674,9 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
         )
 
         with (
-            common_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
-            common_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
-            common_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
+            file_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
+            file_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
+            file_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
         ):
             filenames = [f1, f2, f3]
 
@@ -1751,8 +1751,8 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
         )
 
         with (
-            common_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
-            common_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
+            file_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
+            file_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
         ):
             filenames = [f1, f2]
 
@@ -1832,9 +1832,9 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb2')")
 
         with (
-            common_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
-            common_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
-            common_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
+            file_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
+            file_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
+            file_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
         ):
             filenames = [f1, f2, f3]
 
@@ -1932,11 +1932,11 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
             db_utils.sql_alter_db(f"INSERT INTO obs_points (obsid) VALUES ('{obsid}')")
 
         with (
-            common_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
-            common_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
-            common_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
-            common_utils.tempinput("\n".join(files[3]), _CHARSET) as f4,
-            common_utils.tempinput("\n".join(files[4]), _CHARSET) as f5,
+            file_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
+            file_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
+            file_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
+            file_utils.tempinput("\n".join(files[3]), _CHARSET) as f4,
+            file_utils.tempinput("\n".join(files[4]), _CHARSET) as f5,
         ):
             filenames = [f1, f2, f3, f4, f5]
 
@@ -2029,11 +2029,11 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
             db_utils.sql_alter_db(f"INSERT INTO obs_points (obsid) VALUES ('{obsid}')")
 
         with (
-            common_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
-            common_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
-            common_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
-            common_utils.tempinput("\n".join(files[3]), _CHARSET) as f4,
-            common_utils.tempinput("\n".join(files[4]), _CHARSET) as f5,
+            file_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
+            file_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
+            file_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
+            file_utils.tempinput("\n".join(files[3]), _CHARSET) as f4,
+            file_utils.tempinput("\n".join(files[4]), _CHARSET) as f5,
         ):
             filenames = [f1, f2, f3, f4, f5]
 
@@ -2149,11 +2149,11 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
             db_utils.sql_alter_db(f"INSERT INTO obs_points (obsid) VALUES ('{obsid}')")
 
         with (
-            common_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
-            common_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
-            common_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
-            common_utils.tempinput("\n".join(files[3]), _CHARSET) as f4,
-            common_utils.tempinput("\n".join(files[4]), _CHARSET) as f5,
+            file_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
+            file_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
+            file_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
+            file_utils.tempinput("\n".join(files[3]), _CHARSET) as f4,
+            file_utils.tempinput("\n".join(files[4]), _CHARSET) as f5,
         ):
             filenames = [f1, f2, f3, f4, f5]
 
@@ -2251,11 +2251,11 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
             db_utils.sql_alter_db(f"INSERT INTO obs_points (obsid) VALUES ('{obsid}')")
 
         with (
-            common_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
-            common_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
-            common_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
-            common_utils.tempinput("\n".join(files[3]), _CHARSET) as f4,
-            common_utils.tempinput("\n".join(files[4]), _CHARSET) as f5,
+            file_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
+            file_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
+            file_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
+            file_utils.tempinput("\n".join(files[3]), _CHARSET) as f4,
+            file_utils.tempinput("\n".join(files[4]), _CHARSET) as f5,
         ):
             filenames = [f1, f2, f3, f4, f5]
 
@@ -2357,11 +2357,11 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
         )
 
         with (
-            common_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
-            common_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
-            common_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
-            common_utils.tempinput("\n".join(files[3]), _CHARSET) as f4,
-            common_utils.tempinput("\n".join(files[4]), _CHARSET) as f5,
+            file_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
+            file_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
+            file_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
+            file_utils.tempinput("\n".join(files[3]), _CHARSET) as f4,
+            file_utils.tempinput("\n".join(files[4]), _CHARSET) as f5,
         ):
             filenames = [f1, f2, f3, f4, f5]
 
@@ -2430,7 +2430,7 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
         ]
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
 
-        with common_utils.tempinput("\n".join(files[0]), _CHARSET, ".csv") as f1:
+        with file_utils.tempinput("\n".join(files[0]), _CHARSET, ".csv") as f1:
             filenames = [f1]
 
             @mock.patch("midvatten.tools.utils.file_utils.ask_for_delimiter")
@@ -2507,7 +2507,7 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
         ]
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
 
-        with common_utils.tempinput("\n".join(files[0]), _CHARSET, ".mon") as f1:
+        with file_utils.tempinput("\n".join(files[0]), _CHARSET, ".mon") as f1:
             filenames = [f1]
 
             @mock.patch("midvatten.tools.utils.file_utils.ask_for_delimiter")
@@ -2610,9 +2610,9 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
 
         with (
-            common_utils.tempinput("\n".join(files[0]), _CHARSET, ".mon") as f1,
-            common_utils.tempinput("\n".join(files[1]), _CHARSET, ".mon") as f2,
-            common_utils.tempinput("\n".join(files[2]), _CHARSET, ".mon") as f3,
+            file_utils.tempinput("\n".join(files[0]), _CHARSET, ".mon") as f1,
+            file_utils.tempinput("\n".join(files[1]), _CHARSET, ".mon") as f2,
+            file_utils.tempinput("\n".join(files[2]), _CHARSET, ".mon") as f3,
         ):
             filenames = [f1, f2, f3]
 
@@ -2718,9 +2718,9 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
 
         with (
-            common_utils.tempinput("\n".join(files[0]), _CHARSET, ".mon") as f1,
-            common_utils.tempinput("\n".join(files[1]), _CHARSET, ".mon") as f2,
-            common_utils.tempinput("\n".join(files[2]), _CHARSET, ".mon") as f3,
+            file_utils.tempinput("\n".join(files[0]), _CHARSET, ".mon") as f1,
+            file_utils.tempinput("\n".join(files[1]), _CHARSET, ".mon") as f2,
+            file_utils.tempinput("\n".join(files[2]), _CHARSET, ".mon") as f3,
         ):
             filenames = [f1, f2, f3]
 
@@ -2801,9 +2801,9 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
 
         with (
-            common_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
-            common_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
-            common_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
+            file_utils.tempinput("\n".join(files[0]), _CHARSET) as f1,
+            file_utils.tempinput("\n".join(files[1]), _CHARSET) as f2,
+            file_utils.tempinput("\n".join(files[2]), _CHARSET) as f3,
         ):
             filenames = [f1, f2, f3]
 
@@ -3037,9 +3037,9 @@ class WlvllogImportFromLoggerLeveloggerMixin:
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
 
         with (
-            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[0]), _CHARSET) as f1,
-            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[1]), _CHARSET) as f2,
-            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[2]), _CHARSET) as f3,
+            file_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[0]), _CHARSET) as f1,
+            file_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[1]), _CHARSET) as f2,
+            file_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[2]), _CHARSET) as f3,
         ):
             self._run_levelogger([f1, f2, f3])
 
@@ -3058,9 +3058,9 @@ class WlvllogImportFromLoggerLeveloggerMixin:
         )
 
         with (
-            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[0]), _CHARSET) as f1,
-            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[1]), _CHARSET) as f2,
-            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[2]), _CHARSET) as f3,
+            file_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[0]), _CHARSET) as f1,
+            file_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[1]), _CHARSET) as f2,
+            file_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[2]), _CHARSET) as f3,
         ):
             self._run_levelogger([f1, f2, f3])
 
@@ -3079,9 +3079,9 @@ class WlvllogImportFromLoggerLeveloggerMixin:
         )
 
         with (
-            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[0]), _CHARSET) as f1,
-            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[1]), _CHARSET) as f2,
-            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[2]), _CHARSET) as f3,
+            file_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[0]), _CHARSET) as f1,
+            file_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[1]), _CHARSET) as f2,
+            file_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[2]), _CHARSET) as f3,
         ):
 
             def _setup(importer):
@@ -3106,9 +3106,9 @@ class WlvllogImportFromLoggerLeveloggerMixin:
         )
 
         with (
-            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[0]), _CHARSET) as f1,
-            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[1]), _CHARSET) as f2,
-            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[2]), _CHARSET) as f3,
+            file_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[0]), _CHARSET) as f1,
+            file_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[1]), _CHARSET) as f2,
+            file_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[2]), _CHARSET) as f3,
         ):
 
             def _setup(importer):
@@ -3128,7 +3128,7 @@ class WlvllogImportFromLoggerLeveloggerMixin:
     def test_wlvllogg_import_from_levelogger_files_try_capitalize(self):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('Rb1')")
 
-        with common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[0]), _CHARSET) as f1:
+        with file_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[0]), _CHARSET) as f1:
 
             def _setup(importer):
                 importer.import_all_data.checked = False
@@ -3165,7 +3165,7 @@ class WlvllogImportFromLoggerLeveloggerMixin:
         )
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('Rb1')")
 
-        with common_utils.tempinput("\n".join(cancel_file), _CHARSET) as f1:
+        with file_utils.tempinput("\n".join(cancel_file), _CHARSET) as f1:
 
             @mock.patch(
                 "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"
@@ -3227,9 +3227,9 @@ class WlvllogImportFromLoggerLeveloggerMixin:
         )
 
         with (
-            common_utils.tempinput("\n".join(missing_file), _CHARSET) as f1,
-            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[1]), _CHARSET) as f2,
-            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[2]), _CHARSET) as f3,
+            file_utils.tempinput("\n".join(missing_file), _CHARSET) as f1,
+            file_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[1]), _CHARSET) as f2,
+            file_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[2]), _CHARSET) as f3,
         ):
 
             def _setup(importer):
@@ -3259,9 +3259,9 @@ class WlvllogImportFromLoggerLeveloggerMixin:
         )
 
         with (
-            common_utils.tempinput("\n".join(missing_file), _CHARSET) as f1,
-            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[1]), _CHARSET) as f2,
-            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[2]), _CHARSET) as f3,
+            file_utils.tempinput("\n".join(missing_file), _CHARSET) as f1,
+            file_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[1]), _CHARSET) as f2,
+            file_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[2]), _CHARSET) as f3,
         ):
 
             def _setup(importer):
@@ -3291,8 +3291,8 @@ class WlvllogImportFromLoggerLeveloggerMixin:
         )
 
         with (
-            common_utils.tempinput("\n".join(files_with_extra), _CHARSET) as f1,
-            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[1]), _CHARSET) as f2,
+            file_utils.tempinput("\n".join(files_with_extra), _CHARSET) as f1,
+            file_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[1]), _CHARSET) as f2,
         ):
 
             @mock.patch(
@@ -3352,9 +3352,9 @@ class WlvllogImportFromLoggerLeveloggerMixin:
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb2')")
 
         with (
-            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[0]), _CHARSET) as f1,
-            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[1]), _CHARSET) as f2,
-            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[2]), _CHARSET) as f3,
+            file_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[0]), _CHARSET) as f1,
+            file_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[1]), _CHARSET) as f2,
+            file_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[2]), _CHARSET) as f3,
         ):
 
             @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
@@ -3433,9 +3433,9 @@ class WlvllogImportFromLoggerLeveloggerMixin:
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
 
         with (
-            common_utils.tempinput("\n".join(level_m_file), _CHARSET) as f1,
-            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[1]), _CHARSET) as f2,
-            common_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[2]), _CHARSET) as f3,
+            file_utils.tempinput("\n".join(level_m_file), _CHARSET) as f1,
+            file_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[1]), _CHARSET) as f2,
+            file_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[2]), _CHARSET) as f3,
         ):
             self._run_levelogger([f1, f2, f3])
 
@@ -3468,7 +3468,7 @@ class WlvllogImportFromLoggerLeveloggerMixin:
         )
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb3')")
 
-        with common_utils.tempinput("\n".join(cond_us_file), _CHARSET) as f1:
+        with file_utils.tempinput("\n".join(cond_us_file), _CHARSET) as f1:
             self._run_levelogger([f1])
 
         test_string = utils_for_tests.create_test_string(
@@ -3534,7 +3534,7 @@ class TestDiverOfficeBaroParser:
     )
 
     def test_parse_mon_extracts_pressure_and_temperature(self):
-        with common_utils.tempinput(self.MON_CONTENT, "utf-8", suffix=".mon") as f:
+        with file_utils.tempinput(self.MON_CONTENT, "utf-8", suffix=".mon") as f:
             result = DiverOfficeBaroParser.parse(path=f, charset="utf-8")
         filedata, filename, location, utc_offset, serial_number = result
         assert filedata[0] == ["date_time", "baro_cmh2o", "temperature"]
@@ -3544,7 +3544,7 @@ class TestDiverOfficeBaroParser:
         assert float(filedata[1][2]) == pytest.approx(9.470, rel=1e-3)
 
     def test_parse_csv_extracts_pressure_and_temperature(self):
-        with common_utils.tempinput(self.CSV_CONTENT, "utf-8", suffix=".csv") as f:
+        with file_utils.tempinput(self.CSV_CONTENT, "utf-8", suffix=".csv") as f:
             result = DiverOfficeBaroParser.parse(path=f, charset="utf-8")
         filedata, filename, location, utc_offset, serial_number = result
         assert filedata[0] == ["date_time", "baro_cmh2o", "temperature"]
@@ -3553,26 +3553,26 @@ class TestDiverOfficeBaroParser:
         assert float(filedata[1][1]) == pytest.approx(978.667, rel=1e-3)
 
     def test_parse_extracts_location(self):
-        with common_utils.tempinput(self.MON_CONTENT, "utf-8", suffix=".mon") as f:
+        with file_utils.tempinput(self.MON_CONTENT, "utf-8", suffix=".mon") as f:
             result = DiverOfficeBaroParser.parse(path=f, charset="utf-8")
         _, _, location, _, _ = result
         assert location == "Rb1Baro"
 
     def test_parse_extracts_serial_number(self):
-        with common_utils.tempinput(self.MON_CONTENT, "utf-8", suffix=".mon") as f:
+        with file_utils.tempinput(self.MON_CONTENT, "utf-8", suffix=".mon") as f:
             result = DiverOfficeBaroParser.parse(path=f, charset="utf-8")
         _, _, _, _, serial_number = result
         assert serial_number == "DA123"
 
     def test_parse_extracts_utc_offset(self):
-        with common_utils.tempinput(self.MON_CONTENT, "utf-8", suffix=".mon") as f:
+        with file_utils.tempinput(self.MON_CONTENT, "utf-8", suffix=".mon") as f:
             result = DiverOfficeBaroParser.parse(path=f, charset="utf-8")
         _, _, _, utc_offset, _ = result
         assert utc_offset is not None
         assert "UTC+1" in utc_offset or "+1" in utc_offset
 
     def test_parse_date_filter(self):
-        with common_utils.tempinput(self.MON_CONTENT, "utf-8", suffix=".mon") as f:
+        with file_utils.tempinput(self.MON_CONTENT, "utf-8", suffix=".mon") as f:
             result = DiverOfficeBaroParser.parse(
                 path=f,
                 charset="utf-8",
@@ -3591,7 +3591,7 @@ class TestDiverOfficeBaroParser:
             "1\n"
             "2023/10/05 13:00:00.0       9.470\n"
         )
-        with common_utils.tempinput(content, "utf-8", suffix=".mon") as f:
+        with file_utils.tempinput(content, "utf-8", suffix=".mon") as f:
             result = DiverOfficeBaroParser.parse(path=f, charset="utf-8")
         # Temperature-only file: temp_degc column present, baro_cmh2o absent
         filedata, *_ = result
@@ -3675,7 +3675,7 @@ class TestLoggerImportBaroSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
     def _run_baro_import(self, mock_messagebar):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('Rb1Baro')")
 
-        with common_utils.tempinput(self._BARO_MON, "utf-8", suffix=".mon") as f:
+        with file_utils.tempinput(self._BARO_MON, "utf-8", suffix=".mon") as f:
 
             @mock.patch(
                 "midvatten.tools.import_data_to_db.common_utils.NotFoundQuestion"

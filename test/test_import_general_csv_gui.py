@@ -32,7 +32,7 @@ from midvatten.tools.import_general_csv_gui import (
     GeneralCsvImportGui,
     ImportTableChooser,
 )
-from midvatten.tools.utils import common_utils
+from midvatten.tools.utils import common_utils, file_utils, string_utils
 from midvatten.tools.utils import db_utils
 
 
@@ -66,7 +66,7 @@ class TestStaticMethods:
             (0, "obsid", "text", 0, None, 0),
             (1, "reading", "double", 0, None, 0),
         )
-        test_string = common_utils.anything_to_string_representation(
+        test_string = string_utils.anything_to_string_representation(
             GeneralCsvImportGui.convert_comma_to_points_for_double_columns(
                 file_data, tables_columns
             )
@@ -102,7 +102,7 @@ class TestGeneralCsvImportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
 
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
 
-        with common_utils.tempinput(csv_text, "utf-8", suffix=".csv") as filename:
+        with file_utils.tempinput(csv_text, "utf-8", suffix=".csv") as filename:
 
             @mock.patch("midvatten.tools.import_data_to_db.common_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)

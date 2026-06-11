@@ -41,7 +41,7 @@ from matplotlib.widgets import MultiCursor, RectangleSelector
 
 from qgis.PyQt import uic
 from midvatten.definitions import midvatten_defs as defs
-from midvatten.tools.utils import common_utils, db_utils
+from midvatten.tools.utils import common_utils, db_utils, exceptions
 from midvatten.tools.utils.common_utils import fn_timer
 from midvatten.tools.utils.db_utils.dialect import ident
 from midvatten.tools.utils.db_utils.execution import use_or_create_connection
@@ -2788,7 +2788,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             # so it must be validated like any other external input.
             try:
                 agg = defs.validate_resample_how(s.get("resample_agg"))
-            except common_utils.UsageError as e:
+            except exceptions.UsageError as e:
                 common_utils.MessagebarAndLog.critical(bar_msg=str(e))
                 return
             df = getattr(df.resample(s["resample"]), agg)()

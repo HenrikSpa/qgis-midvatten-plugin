@@ -38,7 +38,13 @@ from qgis.core import (
 from qgis.gui import QgsMapLayerComboBox
 
 import midvatten.definitions.midvatten_defs as defs
-from midvatten.tools.utils import common_utils, db_utils, gui_utils
+from midvatten.tools.utils import (
+    common_utils,
+    db_utils,
+    gui_utils,
+    exceptions,
+    string_utils,
+)
 from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.common_utils import start_waiting_cursor, stop_waiting_cursor
@@ -137,7 +143,7 @@ class ParameterGroup:
                         layer_name="obs_points", column_name="obsid"
                     )
                 )
-            except common_utils.UsageError as e:
+            except exceptions.UsageError as e:
                 common_utils.MessagebarAndLog.warning(bar_msg=str(e))
 
     def get_settings(self):
@@ -227,7 +233,7 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
 
         try:
             tables_columns = db_utils.tables_columns()
-        except common_utils.UsageError as e:
+        except exceptions.UsageError as e:
             tables_columns = {}
             common_utils.MessagebarAndLog.info(bar_msg=str(e))
 
@@ -680,7 +686,7 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
 
     def ask_and_update_settings(self, objects_with_get_settings, settingskey, msg=""):
 
-        old_string = common_utils.anything_to_string_representation(
+        old_string = string_utils.anything_to_string_representation(
             self.update_stored_settings(objects_with_get_settings)
         )
 
@@ -727,7 +733,7 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         if self.obs_from_obs_points.isChecked():
             try:
                 latlons = db_utils.get_latlon_for_all_obsids()
-            except common_utils.UsageError as e:
+            except exceptions.UsageError as e:
                 common_utils.MessagebarAndLog.warning(bar_msg=str(e))
                 latlons = {}
         else:

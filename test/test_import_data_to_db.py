@@ -28,7 +28,7 @@ import pytest
 
 from midvatten.test import utils_for_tests
 from midvatten.tools.import_data_to_db import MidvDataImporterError
-from midvatten.tools.utils import db_utils, common_utils
+from midvatten.tools.utils import db_utils, common_utils, string_utils
 
 
 class GeneralImportMixin:
@@ -1493,7 +1493,7 @@ class WqualfieldImportMixin:
         for test_call in test_calls_list:
             assert test_call in mock_messagebar.mock_calls
 
-        test_string = common_utils.anything_to_string_representation(
+        test_string = string_utils.anything_to_string_representation(
             db_utils.sql_load_fr_db("""select * from w_qual_field""")
         )
         print(str(test_string))

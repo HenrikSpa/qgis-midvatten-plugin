@@ -29,7 +29,13 @@ import qgis
 import qgis.PyQt
 from qgis.PyQt.QtCore import QCoreApplication
 
-from midvatten.tools.utils import common_utils, db_utils, gui_utils
+from midvatten.tools.utils import (
+    common_utils,
+    db_utils,
+    gui_utils,
+    exceptions,
+    string_utils,
+)
 from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
 from midvatten.tools.utils.string_utils import returnunicode as ru
@@ -315,7 +321,7 @@ class CompactWqualReportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_d
         )
 
     def ask_for_stored_settings(self, stored_settings):
-        old_string = common_utils.anything_to_string_representation(
+        old_string = string_utils.anything_to_string_representation(
             stored_settings,
             itemjoiner=",\n",
             pad="    ",
@@ -337,7 +343,7 @@ class CompactWqualReportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_d
             old_string,
         )
         if not new_string[1]:
-            raise common_utils.UserInterruptError()
+            raise exceptions.UserInterruptError()
 
         new_string_text = ru(new_string[0])
         if not new_string_text:
@@ -356,7 +362,7 @@ class CompactWqualReportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_d
                 ),
                 log_msg=str(e),
             )
-            raise common_utils.UsageError()
+            raise exceptions.UsageError()
         else:
             return as_dict
 
@@ -404,7 +410,7 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
         if from_active_layer:
             w_qual_lab_layer = qgis.utils.iface.activeLayer()
             if w_qual_lab_layer is None:
-                raise common_utils.UsageError(
+                raise exceptions.UsageError(
                     QCoreApplication.translate(
                         "CompactWqualReport", "Must select a layer!"
                     )
@@ -512,7 +518,7 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
         missing = [column not in fieldnames for column in columns if column != "report"]
         columns = [column for column in columns if column in fieldnames]
         if any(missing):
-            raise common_utils.UsageError(
+            raise exceptions.UsageError(
                 QCoreApplication.translate(
                     "CompactWqualReport", "The chosen table must contain columns %s"
                 )
@@ -549,7 +555,7 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
         columns = [column for column in columns if column in fieldnames]
 
         if any(missing):
-            raise common_utils.UsageError(
+            raise exceptions.UsageError(
                 QCoreApplication.translate(
                     "CompactWqualReport", "The chosen layer must contain columns %s"
                 )

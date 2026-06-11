@@ -12,7 +12,7 @@ from midvatten.test.mocks_for_tests import (
     MockQgisUtilsIface,
     mock_answer,
 )
-from midvatten.tools.utils import common_utils
+from midvatten.tools.utils import common_utils, file_utils
 from midvatten.test import utils_for_tests
 from midvatten.test.utils_for_tests import create_test_string
 from midvatten.tools.import_fieldlogger import FieldloggerImport, DateTimeFilter
@@ -52,7 +52,7 @@ class FieldLoggerImporterDbMixin:
             "Rb1512.quality;30-03-2016;15:30:40;58;q.syre.%\n",
         ]
 
-        with common_utils.tempinput("".join(f)) as filename:
+        with file_utils.tempinput("".join(f)) as filename:
 
             @mock.patch(
                 "midvatten.tools.import_fieldlogger.midvatten_utils.QtWidgets.QFileDialog.getOpenFileNames"
@@ -107,7 +107,7 @@ class FieldLoggerImporterDbMixin:
             "Rb1512.quality;30-03-2016;15:30:40;58;q.syre.%\n",
         ]
 
-        with common_utils.tempinput("".join(f)) as filename:
+        with file_utils.tempinput("".join(f)) as filename:
 
             @mock.patch("midvatten.tools.import_fieldlogger.common_utils.Askuser")
             @mock.patch(
@@ -280,7 +280,7 @@ class FieldLoggerImporterDbMixin:
             "Rb1512.quality;30-03-2016;15:30:40;58;q.syre.%\n",
         ]
 
-        with common_utils.tempinput("".join(f)) as filename:
+        with file_utils.tempinput("".join(f)) as filename:
 
             @mock.patch("midvatten.tools.import_fieldlogger.common_utils.Askuser")
             @mock.patch(
@@ -456,7 +456,7 @@ class FieldLoggerImporterDbMixin:
             "Rb1512.quality;30-03-2016;15:30:40;58;q.syre.%\n",
         ]
 
-        with common_utils.tempinput("".join(f)) as filename:
+        with file_utils.tempinput("".join(f)) as filename:
 
             @mock.patch("midvatten.tools.import_fieldlogger.common_utils.Askuser")
             @mock.patch(
@@ -633,7 +633,7 @@ class FieldLoggerImporterDbMixin:
             "Rb1512.quality;30-03-2016;15:30:40;58;q.syre.%\n",
         ]
 
-        with common_utils.tempinput("".join(f)) as filename:
+        with file_utils.tempinput("".join(f)) as filename:
 
             @mock.patch("midvatten.tools.import_fieldlogger.common_utils.Askuser")
             @mock.patch(
@@ -813,7 +813,7 @@ class FieldLoggerImporterDbMixin:
             "Rb1512.quality;30-03-2016;15:30:40;58;q.syre.%\n",
         ]
 
-        with common_utils.tempinput("".join(f)) as filename:
+        with file_utils.tempinput("".join(f)) as filename:
 
             @mock.patch("midvatten.tools.import_fieldlogger.common_utils.Askuser")
             @mock.patch(
@@ -993,7 +993,7 @@ class FieldLoggerImporterDbMixin:
             "Rb1512.quality;30-03-2016;15:30:40;58;q.syre.%\n",
         ]
 
-        with common_utils.tempinput("".join(f)) as filename:
+        with file_utils.tempinput("".join(f)) as filename:
 
             @mock.patch("midvatten.tools.import_fieldlogger.common_utils.Askuser")
             @mock.patch(
@@ -1193,7 +1193,7 @@ class FieldLoggerImporterDbMixin:
             "Rb1512.quality;30-03-2016;15:30:40;58;q.syre.%\n",
         ]
 
-        with common_utils.tempinput("".join(f)) as filename:
+        with file_utils.tempinput("".join(f)) as filename:
 
             @mock.patch("midvatten.tools.import_fieldlogger.common_utils.Askuser")
             @mock.patch(
@@ -1399,7 +1399,7 @@ class FieldLoggerImporterDbMixin:
             "Rb1512.quality;30-03-2016;15:30:40;58;q.syre.%\n",
         ]
 
-        with common_utils.tempinput("".join(f)) as filename:
+        with file_utils.tempinput("".join(f)) as filename:
 
             @mock.patch("midvatten.tools.import_fieldlogger.common_utils.Askuser")
             @mock.patch(
@@ -1551,7 +1551,7 @@ class FieldLoggerImporterDbMixin:
             "2.2892.comment;12-12-2016;10:03:24;onlycomment;comment\n",
         ]
 
-        with common_utils.tempinput("".join(f)) as filename:
+        with file_utils.tempinput("".join(f)) as filename:
 
             @mock.patch("midvatten.tools.import_fieldlogger.common_utils.Askuser")
             @mock.patch(
@@ -1678,7 +1678,7 @@ class FieldLoggerImporterDbMixin:
             "Rb1615.level;31-03-2016;15:34:13;111;l.meas.m\n",
         ]
 
-        with common_utils.tempinput("".join(f)) as filename:
+        with file_utils.tempinput("".join(f)) as filename:
 
             @mock.patch("midvatten.tools.import_fieldlogger.common_utils.Askuser")
             @mock.patch(
@@ -1835,7 +1835,7 @@ class FieldLoggerImporterDbMixin:
             "Rb1512.quality;30-03-2016;15:30:40;1.23;q.depth.m\n",
         ]
 
-        with common_utils.tempinput("".join(f)) as filename:
+        with file_utils.tempinput("".join(f)) as filename:
 
             @mock.patch("midvatten.tools.import_fieldlogger.common_utils.Askuser")
             @mock.patch(

@@ -38,7 +38,7 @@ import matplotlib.ticker as tick
 
 from qgis.PyQt.QtWidgets import QApplication
 
-from midvatten.tools.utils import common_utils, midvatten_utils, db_utils
+from midvatten.tools.utils import common_utils, midvatten_utils, db_utils, exceptions
 from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.common_utils import LEGEND_NCOL_KEY
@@ -693,7 +693,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             self.used_format = flag_time_xy
         else:
             if self.used_format != flag_time_xy:
-                raise common_utils.UsageError(
+                raise exceptions.UsageError(
                     QCoreApplication.translate(
                         "CustomPlot",
                         "Plotting both xy and time plot at the same time doesn't work! Check the x-y axix settings in all tabs!",
@@ -1447,7 +1447,7 @@ class PandasCalculations:
         if rule:
             try:
                 how = defs.validate_resample_how(self.how.text())
-            except common_utils.UsageError as e:
+            except exceptions.UsageError as e:
                 # Skip resampling, mirroring the bad-base handling above.
                 common_utils.MessagebarAndLog.critical(bar_msg=str(e))
             else:

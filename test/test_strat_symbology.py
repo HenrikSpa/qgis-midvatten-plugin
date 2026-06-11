@@ -3,7 +3,7 @@ import pytest
 from qgis.core import QgsProject
 
 from midvatten.test import utils_for_tests
-from midvatten.tools.utils import common_utils
+from midvatten.tools.utils import common_utils, string_utils
 from midvatten.tools.utils import db_utils
 
 
@@ -34,7 +34,7 @@ class StratSymbologyMixin:
 
         _test(self)
         root = QgsProject.instance().layerTreeRoot()
-        test = common_utils.anything_to_string_representation(
+        test = string_utils.anything_to_string_representation(
             utils_for_tests.recursive_children(root)
         )
         ref = '["", "", [["Midvatten strat symbology", "", [["Bars", "", [["Obsid label", True, []], ["Layer texts", True, []], ["W levels", "", [["W levels label", True, []], ["W levels", True, []]]], ["Bedrock", "", [["Bedrock label", True, []], ["Bedrock", True, []]]], ["Frame", True, []], ["Layers", "", [["Geology", True, []], ["Hydro", True, []]]], ["Shadow", True, []]]], ["Static bars", "", [["Obsid label", True, []], ["Layer texts", True, []], ["W levels", "", [["W levels label", True, []], ["W levels", True, []]]], ["Bedrock", "", [["Bedrock label", True, []], ["Bedrock", True, []]]], ["Frame", True, []], ["Layers", "", [["Geology", True, []], ["Hydro", True, []]]], ["Shadow", True, []]]], ["Rings", "", [["Bedrock", "", [["Bedrock", True, []]]], ["Layers", "", [["Geology", True, []], ["Hydro", True, []]]]]]]]]]'

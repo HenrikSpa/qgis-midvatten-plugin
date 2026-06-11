@@ -28,7 +28,7 @@ from midvatten.test import utils_for_tests
 from midvatten.test import mocks_for_tests
 from midvatten.tools.import_interlab4 import Interlab4Import
 from midvatten.tools.obsid_assignment_dialog import DialogOutcome
-from midvatten.tools.utils import common_utils, db_utils
+from midvatten.tools.utils import common_utils, db_utils, file_utils
 
 
 @pytest.mark.spatialite
@@ -47,7 +47,7 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
             "#Provadm",
             "Lablittera;Namn;Adress;Postnr;Ort;Kommunkod;Projekt;Laboratorium;Provtyp;Provtagare;Registertyp;ProvplatsID;Provplatsn",
         )
-        with common_utils.tempinput("\n".join(interlab4_lines), "utf-16") as testfile:
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-16") as testfile:
             result_string = str(
                 utils_for_tests.dict_to_sorted_list(
                     self.importinstance.parse_filesettings(testfile)
@@ -69,7 +69,7 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
             "#Provadm",
             "Lablittera;Namn;Adress;Postnr;Ort;Kommunkod;Projekt;Laboratorium;Provtyp;Provtagare;Registertyp;ProvplatsID;Provplatsn",
         )
-        with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
             result_string = str(
                 utils_for_tests.dict_to_sorted_list(
                     self.importinstance.parse_filesettings(testfile)
@@ -113,7 +113,7 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
             "#Slut",
         )
 
-        with common_utils.tempinput("\n".join(interlab4_lines), "utf-16") as testfile:
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-16") as testfile:
             result = self.importinstance.parse([testfile])
         result_string = ";".join(
             utils_for_tests.dict_to_sorted_list(self.importinstance.parse([testfile]))
@@ -153,9 +153,7 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
             "#Slut",
         )
 
-        with common_utils.tempinput(
-            "\n".join(interlab4_lines), "iso-8859-1"
-        ) as testfile:
+        with file_utils.tempinput("\n".join(interlab4_lines), "iso-8859-1") as testfile:
             result = self.importinstance.parse([testfile])
         result_string = ";".join(
             utils_for_tests.dict_to_sorted_list(self.importinstance.parse([testfile]))
@@ -194,7 +192,7 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
             "#Slut",
         )
 
-        with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
             result = self.importinstance.parse([testfile])
         result_string = ";".join(
             utils_for_tests.dict_to_sorted_list(self.importinstance.parse([testfile]))
@@ -234,7 +232,7 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
             "#Slut",
         )
 
-        with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
             result = self.importinstance.parse([testfile])
         result_string = ";".join(
             utils_for_tests.dict_to_sorted_list(self.importinstance.parse([testfile]))
@@ -259,7 +257,7 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
             "#Slut",
         )
 
-        with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
             result = self.importinstance.parse([testfile])
         result_string = ";".join(
             utils_for_tests.dict_to_sorted_list(self.importinstance.parse([testfile]))
@@ -283,7 +281,7 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
             "#Slut",
         )
 
-        with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
             result = self.importinstance.parse([testfile])
         result_string = "|".join(
             utils_for_tests.dict_to_sorted_list(self.importinstance.parse([testfile]))
@@ -308,7 +306,7 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
             "#Slut",
         )
 
-        with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
             parsed_result = self.importinstance.parse([testfile])
 
         result_string = utils_for_tests.create_test_string(
@@ -338,7 +336,7 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
         )
         mock_getcurrentlocale.return_value = ["en_US", "UTF-8"]
 
-        with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
             parsed_result = self.importinstance.parse([testfile])
 
         result_string = utils_for_tests.create_test_string(
@@ -372,7 +370,7 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
         )
         mock_getcurrentlocale.return_value = ["en_US", "UTF-8"]
 
-        with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
             parsed_result = self.importinstance.parse([testfile])
 
         result_string = utils_for_tests.create_test_string(
@@ -406,7 +404,7 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
         )
         mock_getcurrentlocale.return_value = ["en_US", "UTF-8"]
 
-        with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
             parsed_result = self.importinstance.parse([testfile])
 
         result_string = utils_for_tests.create_test_string(
@@ -438,7 +436,7 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
         )
         mock_getcurrentlocale.return_value = ["en_US", "UTF-8"]
 
-        with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
             parsed_result = self.importinstance.parse([testfile])
 
         result_string = utils_for_tests.create_test_string(
@@ -473,7 +471,7 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
 
         mock_getcurrentlocale.return_value = ["en_US", "UTF-8"]
 
-        with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
             parsed_result = self.importinstance.parse([testfile])
 
         result_string = utils_for_tests.create_test_string(
@@ -503,7 +501,7 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
             "#Slut",
         )
 
-        with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
             parsed_result = self.importinstance.parse([testfile])
 
         result_string = utils_for_tests.create_test_string(
@@ -530,7 +528,7 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
             "#Slut",
         )
 
-        with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
             parsed_result = self.importinstance.parse([testfile])
 
         result_string = utils_for_tests.create_test_string(
@@ -564,7 +562,7 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
 
         mock_getcurrentlocale.return_value = ["en_US", "UTF-8"]
 
-        with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
             parsed_result = self.importinstance.parse([testfile])
 
         result_string = utils_for_tests.create_test_string(
@@ -603,7 +601,7 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
 
         mock_getcurrentlocale.return_value = ["en_US", "UTF-8"]
 
-        with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
             parsed_result = self.importinstance.parse([testfile])
 
         result_string = utils_for_tests.create_test_string(
@@ -652,7 +650,7 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
         )
         mock_getcurrentlocale.return_value = ["sv_SE", "UTF-8"]
 
-        with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
             parsed_result = self.importinstance.parse([testfile])
 
         result_string = utils_for_tests.create_test_string(
@@ -705,7 +703,7 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
         )
         mock_getcurrentlocale.return_value = ["sv_SE", "UTF-8"]
 
-        with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
             parsed_result = self.importinstance.parse([testfile])
 
         result_string = utils_for_tests.create_test_string(
@@ -757,7 +755,7 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
         )
         mock_getcurrentlocale.return_value = ["sv_SE", "UTF-8"]
 
-        with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
             parsed_result = self.importinstance.parse([testfile])
 
         result_string = utils_for_tests.create_test_string(
@@ -877,7 +875,7 @@ class TestInterlab4ImportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv)
             fake.exec_ = lambda: None
             return fake
 
-        with common_utils.tempinput(
+        with file_utils.tempinput(
             "\n".join(self._INTERLAB4_LINES), "utf-8", suffix=".lab"
         ) as filename:
 

@@ -29,7 +29,14 @@ from qgis.PyQt.QtCore import QCoreApplication
 
 import midvatten.definitions.midvatten_defs as defs
 from midvatten.tools import import_data_to_db
-from midvatten.tools.utils import common_utils, midvatten_utils, db_utils, date_utils
+from midvatten.tools.utils import (
+    common_utils,
+    midvatten_utils,
+    db_utils,
+    date_utils,
+    exceptions,
+    file_utils,
+)
 from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.gui_utils import (
@@ -178,7 +185,7 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
     def load_files(self):
         charset = midvatten_utils.ask_for_charset()
         if not charset:
-            raise common_utils.UserInterruptError()
+            raise exceptions.UserInterruptError()
         filename = midvatten_utils.select_files(
             only_one_file=True,
             extension=QCoreApplication.translate(
@@ -192,7 +199,7 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
 
         filename = ru(filename)
 
-        delimiter = common_utils.get_delimiter(
+        delimiter = file_utils.get_delimiter(
             filename=filename, charset=charset, delimiters=[",", ";"]
         )
         self.file_data = self.file_to_list(filename, charset, delimiter)
@@ -317,7 +324,7 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         :return:
         """
         if self.file_data is None:
-            raise common_utils.UsageError(
+            raise exceptions.UsageError(
                 QCoreApplication.translate(
                     "GeneralCsvImportGui", "Error, must select a file first!"
                 )
@@ -773,7 +780,7 @@ class ImportTableChooser(VRowEntry):
         import_method_name = self.import_method
         try:
             layer = common_utils.find_layer(import_method_name)
-        except common_utils.UsageError:
+        except exceptions.UsageError:
             pass
         else:
             if layer is not None:
@@ -1043,7 +1050,7 @@ class ColumnEntry:
             and not selected
             and not self._ignore_not_null_checkbox.isChecked()
         ):
-            raise common_utils.UsageError(
+            raise exceptions.UsageError(
                 QCoreApplication.translate(
                     "ColumnEntry", "Import error, the column %s must have a value"
                 )
@@ -1055,7 +1062,7 @@ class ColumnEntry:
             and not self.static_checkbox.isChecked()
             and selected not in self.file_header
         ):
-            raise common_utils.UsageError(
+            raise exceptions.UsageError(
                 QCoreApplication.translate(
                     "ColumnEntry",
                     "Import error, the chosen file column for the column %s did not exist in the file header.",

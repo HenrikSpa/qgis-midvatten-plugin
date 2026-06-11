@@ -15,7 +15,7 @@ import pytest
 
 from midvatten.test import utils_for_tests
 from midvatten.tools.obsid_assignment_dialog import DialogOutcome
-from midvatten.tools.utils import common_utils, db_utils
+from midvatten.tools.utils import common_utils, db_utils, file_utils
 
 
 # ---------------------------------------------------------------------------
@@ -114,7 +114,7 @@ class TestInterlab4BulkEditorIntegration(utils_for_tests.MidvattenTestSpatialite
         importer = Interlab4Import(self.iface, self.midvatten.ms)
 
         with (
-            common_utils.tempinput(
+            file_utils.tempinput(
                 "\n".join(self._INTERLAB4_LINES_2ROWS), "utf-8"
             ) as filename,
             mock.patch(
@@ -171,7 +171,7 @@ class TestInterlab4BulkEditorIntegration(utils_for_tests.MidvattenTestSpatialite
         importer = Interlab4Import(self.iface, self.midvatten.ms)
 
         with (
-            common_utils.tempinput(
+            file_utils.tempinput(
                 "\n".join(self._INTERLAB4_LINES_2ROWS), "utf-8"
             ) as filename,
             mock.patch(
@@ -232,7 +232,7 @@ class TestInterlab4BulkEditorIntegration(utils_for_tests.MidvattenTestSpatialite
         importer = Interlab4Import(self.iface, self.midvatten.ms)
 
         with (
-            common_utils.tempinput(
+            file_utils.tempinput(
                 "\n".join(self._INTERLAB4_LINES_2ROWS), "utf-8"
             ) as filename,
             mock.patch(
@@ -284,7 +284,7 @@ class TestInterlab4BulkEditorIntegration(utils_for_tests.MidvattenTestSpatialite
         importer = Interlab4Import(self.iface, self.midvatten.ms)
 
         with (
-            common_utils.tempinput(
+            file_utils.tempinput(
                 "\n".join(self._INTERLAB4_LINES_2ROWS), "utf-8"
             ) as filename,
             mock.patch(

@@ -23,7 +23,7 @@
 from unittest import mock
 import pytest
 
-from midvatten.tools.utils import common_utils
+from midvatten.tools.utils import common_utils, string_utils
 from midvatten.tools.utils import db_utils
 from midvatten.test import utils_for_tests
 from midvatten.tools import piper
@@ -50,7 +50,7 @@ class PiperPlotDbMixin:
         piperplot.ms = mock_ms
         piperplot.create_parameter_selection()
 
-        test = common_utils.anything_to_string_representation(piperplot.parameters)
+        test = string_utils.anything_to_string_representation(piperplot.parameters)
         ref = """{"piper_ca": ["%kalcium%", "%calcium%"], "piper_cl": ["%klorid%", "%chloride%"], "piper_hco3": ["%alkalinitet%", "%alcalinity%"], "piper_k": ["%kalium%", "%potassium%"], "piper_mg": ["%magnesium%"], "piper_na": ["%natrium%"], "piper_so4": ["%sulfat%", "%sulphat%"]}"""
         print("Test:")
         print(test)
@@ -74,7 +74,7 @@ class PiperPlotDbMixin:
         piperplot.ms = mock_ms
         piperplot.create_parameter_selection()
 
-        test = common_utils.anything_to_string_representation(piperplot.parameters)
+        test = string_utils.anything_to_string_representation(piperplot.parameters)
         ref = """{"piper_ca": ["ca"], "piper_cl": ["cl"], "piper_hco3": ["hco3"], "piper_k": ["k"], "piper_mg": ["mg"], "piper_na": ["na"], "piper_so4": ["so4"]}"""
         print("Test")
         print(test)
@@ -187,7 +187,7 @@ class PiperPlotDbMixin:
                 row[idx] = f"{float(row[idx]):.10f}"
         # print("data: " + str(data))
 
-        test_parameters = common_utils.anything_to_string_representation(
+        test_parameters = string_utils.anything_to_string_representation(
             piperplot.parameters
         )
         ref_parameters = """{"piper_ca": ["%kalcium%", "%calcium%"], "piper_cl": ["%klorid%", "%chloride%"], "piper_hco3": ["%alkalinitet%", "%alcalinity%"], "piper_k": ["%kalium%", "%potassium%"], "piper_mg": ["%magnesium%"], "piper_na": ["%natrium%"], "piper_so4": ["%sulfat%", "%sulphat%"]}"""

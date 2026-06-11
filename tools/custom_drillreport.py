@@ -31,7 +31,7 @@ from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtCore import QUrl, QDir
 from qgis.PyQt.QtGui import QDesktopServices
 
-from midvatten.tools.utils import common_utils, db_utils
+from midvatten.tools.utils import common_utils, db_utils, exceptions, string_utils
 from midvatten.tools.utils.file_utils import templates_path, ui_path
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
 from midvatten.tools.utils.string_utils import returnunicode as ru
@@ -99,7 +99,7 @@ class DrillreportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
                     "Must select at least 1 obsid in selected layer",
                 )
             )
-            raise common_utils.UsageError()
+            raise exceptions.UsageError()
         self.save_stored_settings()
         drillrep = Drillreport(
             obsids,
@@ -265,7 +265,7 @@ class DrillreportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
         )
 
     def ask_for_stored_settings(self, stored_settings):
-        old_string = common_utils.anything_to_string_representation(
+        old_string = string_utils.anything_to_string_representation(
             stored_settings,
             itemjoiner=",\n",
             pad="    ",
@@ -287,7 +287,7 @@ class DrillreportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
             old_string,
         )
         if not new_string[1]:
-            raise common_utils.UserInterruptError()
+            raise exceptions.UserInterruptError()
 
         new_string_text = ru(new_string[0])
         if not new_string_text:
@@ -306,7 +306,7 @@ class DrillreportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
                 ),
                 log_msg=str(e),
             )
-            raise common_utils.UsageError()
+            raise exceptions.UsageError()
         else:
             return as_dict
 

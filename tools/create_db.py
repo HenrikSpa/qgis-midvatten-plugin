@@ -27,7 +27,7 @@ import qgis.PyQt
 from qgis.PyQt.QtCore import QCoreApplication, QSettings
 from qgis.core import Qgis
 
-from midvatten.tools.utils import common_utils, db_utils
+from midvatten.tools.utils import common_utils, db_utils, exceptions, string_utils
 from midvatten.tools.utils.string_utils import returnunicode as ru, lstrip
 from midvatten.tools.utils.file_utils import definitions_path
 from midvatten.tools.utils.common_utils import format_timezone_string
@@ -93,7 +93,7 @@ class NewDb:
             epsg_id = epsg_code
 
         if epsg_id == "0" or not epsg_id:
-            raise common_utils.UserInterruptError()
+            raise exceptions.UserInterruptError()
         # If a CRS is selectd, go on and create the database
 
         # path and name of new db
@@ -144,7 +144,7 @@ class NewDb:
         conn.close()
 
         self.db_settings = ru(
-            common_utils.anything_to_string_representation(
+            string_utils.anything_to_string_representation(
                 {"spatialite": {"dbpath": dbpath}}
             )
         )
@@ -272,12 +272,12 @@ class NewDb:
         db_settings = dbconnection.db_settings
         if not isinstance(db_settings, str):
             self.db_settings = ru(
-                common_utils.anything_to_string_representation(dbconnection.db_settings)
+                string_utils.anything_to_string_representation(dbconnection.db_settings)
             )
         else:
             self.db_settings = ru(db_settings)
         if not dbconnection.is_postgresql():
-            raise common_utils.UsageError(
+            raise exceptions.UsageError(
                 "Database type postgis not selected, check Midvatten settings!"
             )
 
@@ -315,7 +315,7 @@ class NewDb:
             epsg_id = epsg_code
 
         if epsg_id == "0" or not epsg_id:
-            raise common_utils.UserInterruptError()
+            raise exceptions.UserInterruptError()
 
         if w_levels_logger_timezone is None:
             common_utils.stop_waiting_cursor()
@@ -473,7 +473,7 @@ class NewDb:
         answer = question.answer
         submitted_value = ru(question.value)
         if answer == "cancel":
-            raise common_utils.UserInterruptError()
+            raise exceptions.UserInterruptError()
         elif answer == "ok":
             return submitted_value
 
@@ -493,7 +493,7 @@ class NewDb:
             default_crs,
         )
         if not epsg_id[1]:
-            raise common_utils.UserInterruptError()
+            raise exceptions.UserInterruptError()
         return epsg_id[0]
 
     def ask_for_timezone(self, table: str, default_tz: str = "") -> str:
@@ -526,7 +526,7 @@ class NewDb:
         answer = question.answer
         submitted_value = ru(question.value)
         if answer == "cancel":
-            raise common_utils.UserInterruptError()
+            raise exceptions.UserInterruptError()
         elif answer == "ok":
             return submitted_value
 

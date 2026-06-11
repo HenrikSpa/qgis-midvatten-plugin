@@ -29,7 +29,7 @@ import pytest
 
 from midvatten.definitions import midvatten_defs as defs
 from midvatten.test import utils_for_tests
-from midvatten.tools.utils import common_utils
+from midvatten.tools.utils import common_utils, file_utils, string_utils
 from midvatten.tools.utils.midvatten_utils import PlotTemplates
 
 
@@ -80,7 +80,7 @@ class TestSecplotTemplates(utils_for_tests.MidvattenTestSpatialiteNotCreated):
             in mock_messagebar.mock_calls
         )
         assert (
-            common_utils.anything_to_string_representation(
+            string_utils.anything_to_string_representation(
                 secplottemplates.loaded_template
             )
             == test_str
@@ -92,7 +92,7 @@ class TestSecplotTemplates(utils_for_tests.MidvattenTestSpatialiteNotCreated):
 
         self.midvatten.ms.settingsdict["secplot_loaded_template"] = ""
 
-        with common_utils.tempinput(default_file, "utf-8") as f1:
+        with file_utils.tempinput(default_file, "utf-8") as f1:
 
             @mock.patch("midvatten.tools.utils.midvatten_utils.MessagebarAndLog")
             @mock.patch("os.path.join")
@@ -122,9 +122,9 @@ class TestSecplotTemplates(utils_for_tests.MidvattenTestSpatialiteNotCreated):
             call.info(log_msg="Loaded template from default template file.")
             in mock_messagebar.mock_calls
         )
-        assert common_utils.anything_to_string_representation(
+        assert string_utils.anything_to_string_representation(
             secplottemplates.loaded_template
-        ) == common_utils.anything_to_string_representation(as_dict)
+        ) == string_utils.anything_to_string_representation(as_dict)
 
     def test_import_files_load(self):
         afile = """{"loaded_file": 2}"""
@@ -132,7 +132,7 @@ class TestSecplotTemplates(utils_for_tests.MidvattenTestSpatialiteNotCreated):
 
         self.midvatten.ms.settingsdict["secplot_loaded_template"] = ""
 
-        with common_utils.tempinput(afile, "utf-8") as f1:
+        with file_utils.tempinput(afile, "utf-8") as f1:
 
             @mock.patch("midvatten.tools.utils.midvatten_utils.select_files")
             @mock.patch("midvatten.tools.utils.midvatten_utils.MessagebarAndLog")
@@ -173,10 +173,10 @@ class TestSecplotTemplates(utils_for_tests.MidvattenTestSpatialiteNotCreated):
         filename = items[0].filename
         assert filename == reference_filename
 
-        test = common_utils.anything_to_string_representation(
+        test = string_utils.anything_to_string_representation(
             secplottemplates.loaded_template
         )
-        reference = common_utils.anything_to_string_representation(as_dict)
+        reference = string_utils.anything_to_string_representation(as_dict)
         assert test == reference
 
     def test_remove(self):
@@ -184,7 +184,7 @@ class TestSecplotTemplates(utils_for_tests.MidvattenTestSpatialiteNotCreated):
 
         self.midvatten.ms.settingsdict["secplot_loaded_template"] = ""
 
-        with common_utils.tempinput(default_file, "utf-8") as f1:
+        with file_utils.tempinput(default_file, "utf-8") as f1:
 
             @mock.patch("midvatten.tools.utils.midvatten_utils.MessagebarAndLog")
             @mock.patch("os.path.join")
@@ -225,8 +225,8 @@ class TestSecplotTemplates(utils_for_tests.MidvattenTestSpatialiteNotCreated):
 
         self.midvatten.ms.settingsdict["secplot_loaded_template"] = ""
 
-        with common_utils.tempinput("", "utf-8") as save_file:
-            with common_utils.tempinput(afile, "utf-8") as f1:
+        with file_utils.tempinput("", "utf-8") as save_file:
+            with file_utils.tempinput(afile, "utf-8") as f1:
 
                 @mock.patch("qgis.PyQt.QtWidgets.QFileDialog.getSaveFileName")
                 @mock.patch("midvatten.tools.utils.midvatten_utils.select_files")
@@ -306,10 +306,10 @@ class TestSecplotTemplates(utils_for_tests.MidvattenTestSpatialiteNotCreated):
             defs.secplot_default_template(),
             self.midvatten.ms,
         )
-        test = common_utils.anything_to_string_representation(
+        test = string_utils.anything_to_string_representation(
             secplottemplates.loaded_template
         )
-        reference = common_utils.anything_to_string_representation(test_dict)
+        reference = string_utils.anything_to_string_representation(test_dict)
 
         assert (
             call.warning(

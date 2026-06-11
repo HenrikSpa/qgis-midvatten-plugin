@@ -24,7 +24,7 @@ import pytest
 
 from midvatten.definitions import midvatten_defs as defs
 from midvatten.test import utils_for_tests
-from midvatten.tools.utils import common_utils, midvatten_utils
+from midvatten.tools.utils import common_utils, midvatten_utils, string_utils
 from midvatten.tools.utils import db_utils
 
 
@@ -120,7 +120,7 @@ class TestFillDb(utils_for_tests.MidvattenTestPostgisNotCreated):
             "SELECT tablename, columnname, data_type, not_null, default_value, primary_key, foreign_key, description, upd_date, upd_sign FROM about_db WHERE tablename NOT IN %s OFFSET 1"
             % db_utils.postgis_internal_tables()
         )
-        test_string = common_utils.anything_to_string_representation(result)
+        test_string = string_utils.anything_to_string_representation(result)
         print(f"Test:")
         print(test_string)
 
@@ -151,7 +151,7 @@ class TestFillDb(utils_for_tests.MidvattenTestPostgisNotCreated):
         result = db_utils.sql_load_fr_db(
             "SELECT tablename, columnname, data_type, not_null, default_value, primary_key, foreign_key, description, upd_date, upd_sign FROM about_db LIMIT 1"
         )
-        test_string = common_utils.anything_to_string_representation(result)
+        test_string = string_utils.anything_to_string_representation(result)
         print(test_string)
 
         ref_strings = [

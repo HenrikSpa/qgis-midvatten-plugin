@@ -13,7 +13,7 @@ from midvatten.tools.import_fieldlogger import (
     InputFields,
     DateTimeFilter,
 )
-from midvatten.tools.utils import common_utils
+from midvatten.tools.utils import common_utils, file_utils
 from midvatten.tools.utils.date_utils import to_date
 
 
@@ -257,7 +257,7 @@ class TestFieldLoggerImporterNoDb:
             "Rb1512.quality;30-03-2016;15:30:40;58;q.syre.%\n",
         ]
 
-        with common_utils.tempinput("".join(f)) as filename:
+        with file_utils.tempinput("".join(f)) as filename:
 
             @mock.patch(
                 "midvatten.tools.import_fieldlogger.midvatten_utils.QtWidgets.QFileDialog.getOpenFileNames"
@@ -390,7 +390,7 @@ class TestFieldLoggerImporterNoDb:
             "Rb1512.quality;30-03-2016;15:30:40;58;q.syre.%\n",
         ]
 
-        with common_utils.tempinput("".join(f), charset="cp1252") as filename:
+        with file_utils.tempinput("".join(f), charset="cp1252") as filename:
 
             @mock.patch(
                 "midvatten.tools.import_fieldlogger.midvatten_utils.QtWidgets.QFileDialog.getOpenFileNames"
@@ -525,7 +525,7 @@ class TestFieldLoggerImporterNoDb:
             "Rb1512.quality,30-03-2016,15:30:40,58,q.syre.%\n",
         ]
 
-        with common_utils.tempinput("".join(f)) as filename:
+        with file_utils.tempinput("".join(f)) as filename:
 
             @mock.patch(
                 "midvatten.tools.import_fieldlogger.midvatten_utils.QtWidgets.QFileDialog.getOpenFileNames"
@@ -658,7 +658,7 @@ class TestFieldLoggerImporterNoDb:
             "Rb1512.quality,30-03-2016,15:30:40,58,q.syre.%\n",
         ]
 
-        with common_utils.tempinput("".join(f)) as filename:
+        with file_utils.tempinput("".join(f)) as filename:
 
             @mock.patch("midvatten.tools.utils.file_utils.ask_for_delimiter")
             @mock.patch(
@@ -881,7 +881,7 @@ class TestFieldLoggerImporterNoDb:
             "Rb1512.quality;2016-03-30;15:30:40;q.syre.%;58\n",
         ]
 
-        with common_utils.tempinput("".join(f)) as filename:
+        with file_utils.tempinput("".join(f)) as filename:
 
             @mock.patch(
                 "midvatten.tools.import_fieldlogger.midvatten_utils.QtWidgets.QFileDialog.getOpenFileNames"
@@ -1210,18 +1210,14 @@ class TestDateTimeFilter:
         datetimefilter = DateTimeFilter()
         datetimefilter.from_date = "2016-01-01"
         datetimefilter.to_date = "2016-01-10"
-        observation = datetimefilter.alter_data(
-            {"date_time": to_date("2015-01-01")}
-        )
+        observation = datetimefilter.alter_data({"date_time": to_date("2015-01-01")})
         assert observation is None
 
     def test_date_time_filter_observation_return_observation(self):
         datetimefilter = DateTimeFilter()
         datetimefilter.from_date = "2016-01-01"
         datetimefilter.to_date = "2016-01-10"
-        observation = datetimefilter.alter_data(
-            {"date_time": to_date("2016-01-05")}
-        )
+        observation = datetimefilter.alter_data({"date_time": to_date("2016-01-05")})
         test_string = create_test_string(observation)
         reference = "{date_time: 2016-01-05 00:00:00}"
         assert test_string == reference
@@ -1241,16 +1237,12 @@ class TestDateTimeFilter:
         datetimefilter = DateTimeFilter()
         datetimefilter.from_date = "2016-01-01"
         datetimefilter.to_date = "2016-01-10"
-        observation = datetimefilter.alter_data(
-            {"date_time": to_date("2016-01-01")}
-        )
+        observation = datetimefilter.alter_data({"date_time": to_date("2016-01-01")})
         assert observation is None
 
     def test_date_time_filter_observation_skip_to(self):
         datetimefilter = DateTimeFilter()
         datetimefilter.from_date = "2016-01-01"
         datetimefilter.to_date = "2016-01-10"
-        observation = datetimefilter.alter_data(
-            {"date_time": to_date("2016-01-10")}
-        )
+        observation = datetimefilter.alter_data({"date_time": to_date("2016-01-10")})
         assert observation is None

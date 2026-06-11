@@ -47,7 +47,7 @@ from qgis.PyQt import QtPrintSupport, QtWidgets, QtCore, QtGui
 from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.definitions import midvatten_defs as defs
-from midvatten.tools.utils import common_utils, db_utils
+from midvatten.tools.utils import common_utils, db_utils, string_utils
 from midvatten.tools.utils.string_utils import returnunicode as ru
 
 log = logging.getLogger(__name__)
@@ -295,9 +295,9 @@ class SurveyStore:
             prev_depthbot = 0
             for record in recs:
                 if (
-                    common_utils.isinteger(record[0])
-                    and common_utils.isfloat(record[1])
-                    and common_utils.isfloat(record[2])
+                    string_utils.isinteger(record[0])
+                    and string_utils.isfloat(record[1])
+                    and string_utils.isfloat(record[2])
                 ):
                     stratigaphy_id = record[0]  # Stratigraphy layer no
                     depthtotop = record[1]  # depth to top of stratrigraphy layer

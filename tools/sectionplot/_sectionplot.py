@@ -50,7 +50,7 @@ import datetime  # noqa: E402
 import matplotlib.dates as mdates  # noqa: E402
 from copy import deepcopy  # noqa: E402
 
-from midvatten.tools.utils import common_utils, db_utils  # noqa: E402
+from midvatten.tools.utils import common_utils, db_utils, exceptions  # noqa: E402
 from midvatten.tools.utils.string_utils import returnunicode as ru  # noqa: E402
 from midvatten.tools.utils.midvatten_utils import PlotTemplates  # noqa: E402
 from midvatten.tools.utils.gui_utils import DetachFigureButton, ReverseSectionButton  # noqa: E402
@@ -215,7 +215,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
                 ),
                 duration=10,
             )
-            raise common_utils.UsageError()
+            raise exceptions.UsageError()
 
         nrofselected = selected_layer.selectedFeatureCount()
         if not isinstance(selected_layer, QgsVectorLayer):
@@ -230,7 +230,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
                 )
                 % str(type(selected_layer)),
             )
-            raise common_utils.UsageError()
+            raise exceptions.UsageError()
         selected_obspoints = None
         for feat in selected_layer.getSelectedFeatures():
             geom = feat.geometry()
@@ -259,11 +259,11 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
                             "You must select only one line feature that defines the section",
                         )
                     )
-                    raise common_utils.UsageError()
+                    raise exceptions.UsageError()
                 else:
                     try:
                         obs_points_layer = common_utils.find_layer("obs_points")
-                    except common_utils.UsageError as e:
+                    except exceptions.UsageError as e:
                         common_utils.MessagebarAndLog.critical(
                             bar_msg=QCoreApplication.translate(
                                 "Midvatten",
@@ -299,7 +299,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
                     )
                     try:
                         obs_points_layer = common_utils.find_layer("obs_points")
-                    except common_utils.UsageError:
+                    except exceptions.UsageError:
                         common_utils.MessagebarAndLog.warning(
                             bar_msg=QCoreApplication.translate(
                                 "Midvatten",
@@ -328,7 +328,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
                 ),
                 duration=10,
             )
-            raise common_utils.UsageError()
+            raise exceptions.UsageError()
         elif not selected_layer:
             common_utils.MessagebarAndLog.info(
                 bar_msg=QCoreApplication.translate(
@@ -1296,7 +1296,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
     def plot_water_level_interactive(self):
         try:
             resample_how = defs.validate_resample_how(self.resample_how.text())
-        except common_utils.UsageError as e:
+        except exceptions.UsageError as e:
             common_utils.MessagebarAndLog.critical(bar_msg=str(e))
             return
         placeholders = self.dbconnection.placeholders(len(self.obsids_x_position))

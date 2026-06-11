@@ -25,7 +25,7 @@ import pytest
 from midvatten.definitions import midvatten_defs as defs
 from midvatten.test import utils_for_tests
 from midvatten.tools.create_db_dialogs import NewSpatialiteDbDialog
-from midvatten.tools.utils import common_utils, midvatten_utils
+from midvatten.tools.utils import common_utils, midvatten_utils, string_utils
 from midvatten.tools.utils import db_utils
 
 
@@ -136,7 +136,7 @@ class TestCreateDb(utils_for_tests.MidvattenTestSpatialiteNotCreated):
             row = list(row)
             row[2] = row[2].lower()
             aslist[1][idx] = tuple(row)
-        test_string = common_utils.anything_to_string_representation(aslist)"""
+        test_string = string_utils.anything_to_string_representation(aslist)"""
 
         # print("Test")
         # print(str(test_string))
@@ -182,7 +182,7 @@ class TestCreateDb(utils_for_tests.MidvattenTestSpatialiteNotCreated):
             "select tablename, columnname, data_type, not_null, default_value, primary_key, foreign_key, description, upd_date, upd_sign from about_db WHERE rowid != 1 and tablename not in %s"
             % db_utils.sqlite_internal_tables()
         )
-        test_string = common_utils.anything_to_string_representation(result)
+        test_string = string_utils.anything_to_string_representation(result)
         # print(str(result))
         print("Test:")
         print(str(test_string))
@@ -229,7 +229,7 @@ class TestCreateDb(utils_for_tests.MidvattenTestSpatialiteNotCreated):
 
         print(f"{mock_messagebar.mock_calls=}")
         # print(str(db_utils.sql_load_fr_db("SELECT * FROM geometry_columns")))
-        test_string = common_utils.anything_to_string_representation(result)
+        test_string = string_utils.anything_to_string_representation(result)
         print(test_string)
 
         ref_strings = ["running QGIS version", "on top of SpatiaLite version"]

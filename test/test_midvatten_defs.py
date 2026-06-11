@@ -22,7 +22,7 @@
 import pytest
 from unittest import mock
 
-from midvatten.tools.utils import common_utils
+from midvatten.tools.utils import common_utils, string_utils
 from midvatten.tools.utils import db_utils
 from midvatten.test import utils_for_tests
 from midvatten.definitions import midvatten_defs
@@ -69,7 +69,7 @@ class GeocolorsymbolsMixin:
             """INSERT INTO zz_stratigraphy_plots(strata, color_mplot, hatch_mplot, color_qt, brush_qt) VALUES('morän', 'theMPcolor', '/', 'theQTcolor', 'thePattern')"""
         )
 
-        test_string = common_utils.anything_to_string_representation(
+        test_string = string_utils.anything_to_string_representation(
             midvatten_defs.geocolorsymbols()
         )
         reference_string = """{"moran": ("thePattern", "theQTcolor", ), "morän": ("thePattern", "theQTcolor", )}"""
@@ -86,7 +86,7 @@ class GeocolorsymbolsMixin:
             """INSERT INTO zz_stratigraphy_plots(strata, color_mplot, hatch_mplot, color_qt, brush_qt) VALUES('moran', 'theMPcolor', '/', 'theQTcolor', 'thePattern')"""
         )
 
-        test_string = common_utils.anything_to_string_representation(
+        test_string = string_utils.anything_to_string_representation(
             midvatten_defs.geocolorsymbols()
         )
         reference_string = """{"nostrata": ("NoBrush", "white", )}"""

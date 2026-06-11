@@ -34,7 +34,13 @@ from qgis.PyQt import QtCore, QtWidgets, uic
 from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools.base_importer import BaseImporter
-from midvatten.tools.utils import common_utils, midvatten_utils, db_utils, file_utils
+from midvatten.tools.utils import (
+    common_utils,
+    midvatten_utils,
+    db_utils,
+    file_utils,
+    exceptions,
+)
 import midvatten.tools.import_data_to_db as import_data_to_db
 from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.string_utils import returnunicode as ru
@@ -211,7 +217,7 @@ class FieldloggerImport(BaseImporter, import_fieldlogger_ui_dialog):
             )
             if rows is None:
                 continue
-            delimiter = common_utils.get_delimiter(
+            delimiter = file_utils.get_delimiter(
                 filename=filename,
                 charset=encoding,
                 delimiters=[";", ","],
@@ -449,7 +455,7 @@ class FieldloggerImport(BaseImporter, import_fieldlogger_ui_dialog):
                 )
                 answer = question.answer
                 if answer == "cancel":
-                    raise common_utils.UserInterruptError()
+                    raise exceptions.UserInterruptError()
                 instrumentid = ru(question.value)
                 already_asked_instruments[sublocation] = instrumentid
 
@@ -686,7 +692,7 @@ class ObsidFilter:
             ]
 
         if len(observations) == 0:
-            raise common_utils.UsageError(
+            raise exceptions.UsageError(
                 QCoreApplication.translate(
                     "ObsidFilter",
                     "No observations returned from obsid verification. Were all skipped?",
@@ -721,7 +727,7 @@ class StaffQuestion(QtWidgets.QWidget):
     def alter_data(self, observation: Dict[str, str]) -> Dict[str, str]:
         observation = copy.deepcopy(observation)
         if self.staff is None or not self.staff:
-            raise common_utils.UsageError(
+            raise exceptions.UsageError(
                 QCoreApplication.translate(
                     "StaffQuestion", "Import error, staff not given"
                 )
@@ -772,18 +778,18 @@ class DateShiftQuestion(QtWidgets.QWidget):
 
         if len(step_steplength) != 2:
             common_utils.MessagebarAndLog.warning(bar_msg=bar_msg, log_msg=log_msg)
-            raise common_utils.UsageError()
+            raise exceptions.UsageError()
         try:
             step = float(step_steplength[0])
             steplength = step_steplength[1]
         except Exception:
             common_utils.MessagebarAndLog.warning(bar_msg=bar_msg, log_msg=log_msg)
-            raise common_utils.UsageError()
+            raise exceptions.UsageError()
 
         test_shift = dateshift("2015-02-01", step, steplength)
         if test_shift is None:
             common_utils.MessagebarAndLog.warning(bar_msg=bar_msg, log_msg=log_msg)
-            raise common_utils.UsageError()
+            raise exceptions.UsageError()
 
         observation["date_time"] = dateshift(observation["date_time"], step, steplength)
 
@@ -1440,13 +1446,13 @@ class WFlowImportFields(QtWidgets.QWidget):
 
     def alter_data(self, observations):
         if not self.flowtype:
-            raise common_utils.UsageError(
+            raise exceptions.UsageError(
                 QCoreApplication.translate(
                     "WFlowImportFields", "Import error, flowtype not given"
                 )
             )
         if not self.unit:
-            raise common_utils.UsageError(
+            raise exceptions.UsageError(
                 QCoreApplication.translate(
                     "WFlowImportFields", "Import error, unit not given"
                 )
@@ -1658,7 +1664,7 @@ class WQualFieldImportFields(QtWidgets.QWidget):
 
     def alter_data(self, observations):
         if not self.parameter:
-            raise common_utils.UsageError(
+            raise exceptions.UsageError(
                 QCoreApplication.translate(
                     "WQualFieldImportFields", "Import error, parameter not given"
                 )

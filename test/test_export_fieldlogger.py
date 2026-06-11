@@ -31,7 +31,7 @@ from qgis.PyQt.QtCore import QMetaType
 from qgis.core import QgsField, QgsGeometry
 from qgis.core import QgsProject
 
-from midvatten.tools.utils import common_utils
+from midvatten.tools.utils import common_utils, file_utils
 from midvatten.test.utils_for_tests import (
     create_test_string,
     create_vectorlayer,
@@ -808,7 +808,7 @@ class TestExportFieldloggerNoDb(MidvattenTestBase):
             "Location2;Location2_1;60.532112200075446;15.509033761918545;Value|Comment",
         )
 
-        with common_utils.tempinput("", "utf-8") as testfile:
+        with file_utils.tempinput("", "utf-8") as testfile:
             mock_get_save_file_name_no_extension.return_value = testfile
 
             export_fieldlogger.ExportToFieldLogger.write_to_file("\n".join(lines))

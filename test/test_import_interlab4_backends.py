@@ -27,7 +27,7 @@ from unittest import mock
 import pytest
 import qgis.PyQt.QtWidgets
 
-from midvatten.tools.utils import common_utils, gui_utils, db_utils
+from midvatten.tools.utils import common_utils, gui_utils, db_utils, file_utils
 from midvatten.test import mocks_for_tests, utils_for_tests
 from midvatten.tools.import_interlab4 import Interlab4Import
 from midvatten.tools.obsid_assignment_dialog import DialogOutcome
@@ -77,7 +77,7 @@ class Interlab4ImporterDBMixin:
             "#Slut",
         )
 
-        with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-8") as filename:
 
             @mock.patch(
                 "midvatten.tools.import_interlab4.ObsidAssignmentDialog",
@@ -144,7 +144,7 @@ class Interlab4ImporterDBMixin:
             "#Slut",
         )
 
-        with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-8") as filename:
 
             @mock.patch(
                 "midvatten.tools.import_interlab4.ObsidAssignmentDialog",
@@ -220,7 +220,7 @@ class Interlab4ImporterDBMixin:
             "#Slut",
         )
 
-        with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-8") as filename:
 
             @mock.patch(
                 "midvatten.tools.import_interlab4.ObsidAssignmentDialog",
@@ -299,7 +299,7 @@ class Interlab4ImporterDBMixin:
             "#Slut",
         )
 
-        with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-8") as filename:
 
             @mock.patch(
                 "midvatten.tools.import_interlab4.ObsidAssignmentDialog",
@@ -375,7 +375,7 @@ class Interlab4ImporterDBMixin:
             "#Slut",
         )
 
-        with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-8") as filename:
 
             @mock.patch(
                 "midvatten.tools.import_interlab4.ObsidAssignmentDialog",
@@ -452,7 +452,7 @@ class Interlab4ImporterDBMixin:
 
         patterns = ["DM-990908-2773"]
 
-        with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-8") as filename:
 
             @mock.patch("midvatten.tools.utils.common_utils.NotFoundQuestion")
             @mock.patch(
@@ -515,7 +515,7 @@ class Interlab4ImporterDBMixin:
 
         patterns = ["DM-990908-1000"]
 
-        with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-8") as filename:
 
             @mock.patch("midvatten.tools.utils.common_utils.NotFoundQuestion")
             @mock.patch(
@@ -578,7 +578,7 @@ class Interlab4ImporterDBMixin:
 
         patterns = ["DM-990908-2773", "DM-990908-1000"]
 
-        with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-8") as filename:
 
             @mock.patch("midvatten.tools.utils.common_utils.NotFoundQuestion")
             @mock.patch(
@@ -640,7 +640,7 @@ class Interlab4ImporterDBMixin:
         )
 
         patterns = ["ABCDE"]
-        with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-8") as filename:
 
             @mock.patch("midvatten.tools.utils.common_utils.NotFoundQuestion")
             @mock.patch(
@@ -712,7 +712,7 @@ class Interlab4ImporterDBMixin:
 
         patterns = uuids[:1000]
         # print(str(patterns))
-        with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-8") as filename:
 
             @mock.patch("midvatten.tools.utils.common_utils.NotFoundQuestion")
             @mock.patch(
@@ -786,7 +786,7 @@ class Interlab4ImporterDBMixin:
             "#Slut",
         )
 
-        with common_utils.tempinput("\n".join(interlab4_lines), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-8") as filename:
 
             @mock.patch(
                 "midvatten.tools.import_interlab4.ObsidAssignmentDialog",

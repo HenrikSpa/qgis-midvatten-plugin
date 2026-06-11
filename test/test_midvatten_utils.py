@@ -29,7 +29,13 @@ import pytest
 from midvatten.test.mocks_for_tests import MockUsingReturnValue
 from midvatten.test.utils_for_tests import create_test_string
 from midvatten.tools import import_data_to_db
-from midvatten.tools.utils import common_utils, db_utils, midvatten_utils
+from midvatten.tools.utils import (
+    common_utils,
+    db_utils,
+    midvatten_utils,
+    file_utils,
+    exceptions,
+)
 from midvatten.tools.utils.db_utils import execution
 from midvatten.tools.utils.common_utils import dict_to_tuple
 from midvatten.tools.utils.matplotlib_replacements import perform_all_replacements
@@ -97,7 +103,7 @@ class TestFilterNonexistingObsidsAndAsk:
             ["21", "h"],
         ]
         existing_obsids = ["2", "3", "10", "1_g", "1 a"]
-        with pytest.raises(common_utils.UserInterruptError):
+        with pytest.raises(exceptions.UserInterruptError):
             common_utils.filter_nonexisting_values_and_ask(
                 file_data,
                 "obsid",
@@ -307,7 +313,7 @@ class TestFilterNonexistingObsidsAndAsk:
 class TestTempinput:
     def test_tempinput(self):
         rows = "543\n21"
-        with common_utils.tempinput(rows) as filename:
+        with file_utils.tempinput(rows) as filename:
             with open(filename, encoding="utf-8") as f:
                 res = f.readlines()
         reference_list = ["543\n", "21"]
@@ -377,7 +383,7 @@ class TestGetDelimiter:
     def test_get_delimiter_only_one_column(self, mock_messagebar):
         file = ["obsid", "rb1"]
 
-        with common_utils.tempinput("\n".join(file), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(file), "utf-8") as filename:
 
             @mock.patch(
                 "midvatten.tools.utils.file_utils.qgis.PyQt.QtWidgets.QInputDialog.getText"
@@ -385,7 +391,7 @@ class TestGetDelimiter:
             @mock.patch("qgis.utils.iface", autospec=True)
             def _test(filename, mock_iface, mock_get_text):
                 mock_get_text.return_value = (";", True)
-                delimiter = common_utils.get_delimiter(filename, "utf-8")
+                delimiter = file_utils.get_delimiter(filename, "utf-8")
                 print(f"{mock_messagebar.mock_calls=}")
                 assert delimiter == ";"
 
@@ -395,7 +401,7 @@ class TestGetDelimiter:
     def test_get_delimiter_delimiter_not_found(self, mock_messagebar):
         file = ["obsid;acol,acol2", "rb1;1,2"]
 
-        with common_utils.tempinput("\n".join(file), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(file), "utf-8") as filename:
 
             @mock.patch(
                 "midvatten.tools.utils.file_utils.qgis.PyQt.QtWidgets.QInputDialog.getText"
@@ -403,7 +409,7 @@ class TestGetDelimiter:
             @mock.patch("qgis.utils.iface", autospec=True)
             def _test(filename, mock_iface, mock_get_text):
                 mock_get_text.return_value = (",", True)
-                delimiter = common_utils.get_delimiter(filename, "utf-8")
+                delimiter = file_utils.get_delimiter(filename, "utf-8")
                 print(f"{mock_messagebar.mock_calls=}")
                 assert delimiter == ","
 
@@ -413,7 +419,7 @@ class TestGetDelimiter:
     def test_get_delimiter_semicolon(self, mock_messagebar):
         file = ["obsid;acol;acol2", "rb1;1;2"]
 
-        with common_utils.tempinput("\n".join(file), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(file), "utf-8") as filename:
 
             @mock.patch(
                 "midvatten.tools.utils.file_utils.qgis.PyQt.QtWidgets.QInputDialog.getText"
@@ -421,7 +427,7 @@ class TestGetDelimiter:
             @mock.patch("qgis.utils.iface", autospec=True)
             def _test(filename, mock_iface, mock_get_text):
                 mock_get_text.return_value = (";", True)
-                delimiter = common_utils.get_delimiter(filename, "utf-8")
+                delimiter = file_utils.get_delimiter(filename, "utf-8")
                 print(f"{mock_messagebar.mock_calls=}")
                 assert delimiter == ";"
 
@@ -431,7 +437,7 @@ class TestGetDelimiter:
     def test_get_delimiter_comma(self, mock_messagebar):
         file = ["obsid,acol,acol2", "rb1,1,2"]
 
-        with common_utils.tempinput("\n".join(file), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(file), "utf-8") as filename:
 
             @mock.patch(
                 "midvatten.tools.utils.file_utils.qgis.PyQt.QtWidgets.QInputDialog.getText"
@@ -439,7 +445,7 @@ class TestGetDelimiter:
             @mock.patch("qgis.utils.iface", autospec=True)
             def _test(filename, mock_iface, mock_get_text):
                 mock_get_text.return_value = (",", True)
-                delimiter = common_utils.get_delimiter(filename, "utf-8")
+                delimiter = file_utils.get_delimiter(filename, "utf-8")
                 print(f"{mock_messagebar.mock_calls=}")
                 assert delimiter == ","
 
@@ -449,14 +455,14 @@ class TestGetDelimiter:
     def test_get_delimiter_quoted_comma_in_semicolon_data(self, mock_messagebar):
         file = ['"hello, world";42;foo', '"test, data";99;bar']
 
-        with common_utils.tempinput("\n".join(file), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(file), "utf-8") as filename:
 
             @mock.patch(
                 "midvatten.tools.utils.file_utils.qgis.PyQt.QtWidgets.QInputDialog.getText"
             )
             @mock.patch("qgis.utils.iface", autospec=True)
             def _test(filename, mock_iface, mock_get_text):
-                delimiter = common_utils.get_delimiter(filename, "utf-8")
+                delimiter = file_utils.get_delimiter(filename, "utf-8")
                 print(f"{mock_messagebar.mock_calls=}")
                 assert delimiter == ";"
 
@@ -466,14 +472,14 @@ class TestGetDelimiter:
     def test_get_delimiter_quoted_semicolon_in_comma_data(self, mock_messagebar):
         file = ['"hello; world",42,foo', '"test; data",99,bar']
 
-        with common_utils.tempinput("\n".join(file), "utf-8") as filename:
+        with file_utils.tempinput("\n".join(file), "utf-8") as filename:
 
             @mock.patch(
                 "midvatten.tools.utils.file_utils.qgis.PyQt.QtWidgets.QInputDialog.getText"
             )
             @mock.patch("qgis.utils.iface", autospec=True)
             def _test(filename, mock_iface, mock_get_text):
-                delimiter = common_utils.get_delimiter(filename, "utf-8")
+                delimiter = file_utils.get_delimiter(filename, "utf-8")
                 print(f"{mock_messagebar.mock_calls=}")
                 assert delimiter == ","
 

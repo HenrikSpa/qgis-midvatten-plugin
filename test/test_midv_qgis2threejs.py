@@ -24,7 +24,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from midvatten.test import utils_for_tests
-from midvatten.tools.utils import common_utils
+from midvatten.tools.utils import common_utils, string_utils
 from midvatten.tools.utils import db_utils
 
 
@@ -95,7 +95,7 @@ class PrepareQgis2ThreejsMixin:
             )
         finally:
             dbconnection.closedb()
-        test = common_utils.anything_to_string_representation(view_contents)
+        test = string_utils.anything_to_string_representation(view_contents)
         print(str(test))
         ref = """[[(1, "1", 1.0, -1.0, "POINT(1 1)", )], [(1, "1", 0.0, -1.0, "POINT(1 1)", )], [], [], [], [], [], [], [], [], [], [], [], [], [(1, "1", "POINT(1 1)", )]]"""
         print(f"{mock_messagebar.mock_calls=}")

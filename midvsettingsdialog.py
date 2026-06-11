@@ -27,7 +27,7 @@ from qgis.PyQt.QtWidgets import QDockWidget, QFileDialog
 from qgis.PyQt.QtWidgets import QGridLayout, QMainWindow
 
 from midvatten.tools.midvsettings import MidvSettings
-from midvatten.tools.utils import common_utils, gui_utils, db_utils
+from midvatten.tools.utils import common_utils, gui_utils, db_utils, string_utils
 from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
 from midvatten.tools.utils.midvatten_utils import warn_about_old_database
@@ -675,11 +675,11 @@ class DatabaseSettings:
 
     @property
     def dbtype_combobox(self):
-        return common_utils.returnunicode(self._dbtype_combobox.currentText())
+        return string_utils.returnunicode(self._dbtype_combobox.currentText())
 
     @dbtype_combobox.setter
     def dbtype_combobox(self, value):
-        index = self._dbtype_combobox.findText(common_utils.returnunicode(value))
+        index = self._dbtype_combobox.findText(string_utils.returnunicode(value))
         if index != -1:
             self._dbtype_combobox.setCurrentIndex(index)
 
@@ -811,11 +811,11 @@ class SpatialiteSettings(gui_utils.RowEntryGrid):
 
     @property
     def dbpath(self):
-        return common_utils.returnunicode(self._dbpath.text())
+        return string_utils.returnunicode(self._dbpath.text())
 
     @dbpath.setter
     def dbpath(self, value):
-        self._dbpath.setText(common_utils.returnunicode(value))
+        self._dbpath.setText(string_utils.returnunicode(value))
 
     def select_file(self):
         """Open a dialog to locate the sqlite file and some more..."""
@@ -829,7 +829,7 @@ class SpatialiteSettings(gui_utils.RowEntryGrid):
                     "SpatialiteSettings",
                     "DB selection cancelled and still using database path %s",
                 )
-                % common_utils.returnunicode(
+                % string_utils.returnunicode(
                     self.midvsettingsdialogdock.ms.settingsdict["database"]
                 )
             )
@@ -840,7 +840,7 @@ class SpatialiteSettings(gui_utils.RowEntryGrid):
 
         dbpath = self.dbpath
         self.midvsettingsdialogdock.ms.settingsdict["database"] = (
-            common_utils.anything_to_string_representation(
+            string_utils.anything_to_string_representation(
                 {"spatialite": {"dbpath": dbpath}}
             )
         )
@@ -910,11 +910,11 @@ class PostgisSettings(gui_utils.RowEntryGrid):
 
     @property
     def connection(self):
-        return common_utils.returnunicode(self._connection.currentText())
+        return string_utils.returnunicode(self._connection.currentText())
 
     @connection.setter
     def connection(self, value):
-        index = self._connection.findText(common_utils.returnunicode(value))
+        index = self._connection.findText(string_utils.returnunicode(value))
         if index != -1:
             self._connection.setCurrentIndex(index)
 
@@ -967,7 +967,7 @@ class PostgisSettings(gui_utils.RowEntryGrid):
     def _save_db_settings(self) -> None:
         if self.connection:
             self.midvsettingsdialogdock.ms.settingsdict["database"] = (
-                common_utils.anything_to_string_representation(
+                string_utils.anything_to_string_representation(
                     {"postgis": {"connection": self.connection, "schema": self.schema}}
                 )
             )

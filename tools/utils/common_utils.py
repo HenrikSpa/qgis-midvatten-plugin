@@ -489,6 +489,7 @@ def general_exception_handler(func: Callable) -> Callable:
     :return:
     """
 
+    @wraps(func)
     def new_func(*args, **kwargs):
         try:
             result = func(*args, **kwargs)

@@ -723,3 +723,14 @@ class TestCalcMeanDiff:
     def test_all_nan_returns_nan(self):
         result = common_utils.calc_mean_diff([(float("nan"), float("nan"))])
         assert math.isnan(result)
+
+
+@pytest.mark.active
+class TestDecoratorMetadata:
+    def test_general_exception_handler_preserves_metadata(self):
+        @common_utils.general_exception_handler
+        def my_decorated_func():
+            """My docstring."""
+
+        assert my_decorated_func.__name__ == "my_decorated_func"
+        assert my_decorated_func.__doc__ == "My docstring."

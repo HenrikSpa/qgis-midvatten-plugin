@@ -53,11 +53,11 @@ def readlines_with_detected_charset(filename: str, encodings: list[str]) -> tupl
 
 def get_delimiter(
     filename: Optional[str] = None,
-    rows: Optional[List[str]] = None,
     charset: str = "utf-8",
     delimiters: Optional[List[str]] = None,
     num_fields: Optional[int] = None,
     skip_empty_rows: bool = True,
+    rows: Optional[List[str]] = None,
 ) -> Optional[str]:
     if rows is None:
         if filename is None:

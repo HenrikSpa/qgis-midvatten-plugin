@@ -129,6 +129,9 @@ class TestLoadAndSelectLastWqualSettings:
         )
         MidvattenSettingsDock.load_and_select_last_wqual_settings(dock)
         assert dock.list_ofdate_time_format.current_index == 1  # fallback
+        # The columns after the fallback block must still be selected.
+        assert dock.list_of_columns_wqualunit.current_index == 1
+        assert dock.list_of_columns_wqualsorting.current_index == 1
 
     def test_missing_table_touches_nothing(self):
         dock = self._make_stub_dock(

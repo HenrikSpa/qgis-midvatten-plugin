@@ -310,32 +310,20 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
         self.tab_widget.setCurrentIndex(int(self.ms.settingsdict["tabwidget"]))
 
     def load_and_select_last_piper_settings(self):
-        searchindex = self.param_cl.findText(self.ms.settingsdict["piper_cl"])
-        if searchindex >= 0:
-            self.param_cl.setCurrentIndex(searchindex)
-        searchindex = self.param_hco3.findText(self.ms.settingsdict["piper_hco3"])
-        if searchindex >= 0:
-            self.param_hco3.setCurrentIndex(searchindex)
-        searchindex = self.param_so4.findText(self.ms.settingsdict["piper_so4"])
-        if searchindex >= 0:
-            self.param_so4.setCurrentIndex(searchindex)
-        searchindex = self.param_na.findText(self.ms.settingsdict["piper_na"])
-        if searchindex >= 0:
-            self.param_na.setCurrentIndex(searchindex)
-        searchindex = self.param_k.findText(self.ms.settingsdict["piper_k"])
-        if searchindex >= 0:
-            self.param_k.setCurrentIndex(searchindex)
-        searchindex = self.param_ca.findText(self.ms.settingsdict["piper_ca"])
-        if searchindex >= 0:
-            self.param_ca.setCurrentIndex(searchindex)
-        searchindex = self.param_mg.findText(self.ms.settingsdict["piper_mg"])
-        if searchindex >= 0:
-            self.param_mg.setCurrentIndex(searchindex)
-        searchindex = self.marker_combo_box.findText(
-            self.ms.settingsdict["piper_markers"]
+        setting_comboboxes = (
+            ("piper_cl", self.param_cl),
+            ("piper_hco3", self.param_hco3),
+            ("piper_so4", self.param_so4),
+            ("piper_na", self.param_na),
+            ("piper_k", self.param_k),
+            ("piper_ca", self.param_ca),
+            ("piper_mg", self.param_mg),
+            ("piper_markers", self.marker_combo_box),
         )
-        if searchindex >= 0:
-            self.marker_combo_box.setCurrentIndex(searchindex)
+        for setting_key, combobox in setting_comboboxes:
+            searchindex = combobox.findText(self.ms.settingsdict[setting_key])
+            if searchindex >= 0:
+                combobox.setCurrentIndex(searchindex)
 
     def load_and_select_last_ts_plot_settings(self):
         if len(

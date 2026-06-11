@@ -21,6 +21,7 @@
 
 import io
 import traceback
+from functools import wraps
 from operator import itemgetter
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
@@ -1023,6 +1024,7 @@ class MidvDataImporterError(Exception):
 
 
 def import_exception_handler(func: Callable) -> Callable:
+    @wraps(func)
     def new_func(*args, **kwargs):
         try:
             result = func(*args, **kwargs)

@@ -28,6 +28,7 @@ import pytest
 
 from midvatten.test.mocks_for_tests import MockUsingReturnValue
 from midvatten.test.utils_for_tests import create_test_string
+from midvatten.tools import import_data_to_db
 from midvatten.tools.utils import common_utils, db_utils, midvatten_utils
 from midvatten.tools.utils.db_utils import execution
 from midvatten.tools.utils.common_utils import dict_to_tuple
@@ -743,3 +744,11 @@ class TestDecoratorMetadata:
 
         assert my_db_func.__name__ == "my_db_func"
         assert my_db_func.__doc__ == "Db docstring."
+
+    def test_import_exception_handler_preserves_metadata(self):
+        @import_data_to_db.import_exception_handler
+        def my_import_func():
+            """Import docstring."""
+
+        assert my_import_func.__name__ == "my_import_func"
+        assert my_import_func.__doc__ == "Import docstring."

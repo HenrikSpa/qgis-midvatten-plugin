@@ -22,8 +22,7 @@
 import pytest
 from unittest import mock
 
-from midvatten.tools.utils import string_utils
-from midvatten.tools.utils import db_utils
+from midvatten.tools.utils import db_utils, string_utils
 from midvatten.test import utils_for_tests
 from midvatten.definitions import midvatten_defs
 

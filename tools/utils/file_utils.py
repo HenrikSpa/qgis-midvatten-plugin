@@ -59,13 +59,19 @@ def get_delimiter(
     skip_empty_rows: bool = True,
     rows: Optional[List[str]] = None,
 ) -> Optional[str]:
+    """Detect the delimiter, asking the user if detection fails.
+
+    Two modes: pass `rows` (already-read lines; `charset` is then unused) or
+    pass `filename` alone to read the file with `charset`. `filename` is also
+    used in the ask-the-user message, so pass it in both modes if available.
+    """
     if rows is None:
         if filename is None:
             raise TypeError(tr("get_delimiter", "Must give filename or supply rows"))
         with open(filename, encoding=charset) as f:
             rows = f.readlines()
     if skip_empty_rows:
-        rows = [row for row in rows if row.strip().strip("\r").strip("\n")]
+        rows = [row for row in rows if row.strip()]
     delimiter = get_delimiter_from_file_rows(
         rows, filename=filename, delimiters=delimiters, num_fields=num_fields
     )
@@ -77,7 +83,7 @@ def get_delimiter(
                     "Delimiter couldn't be found automatically for %s. Give the correct one (ex ';'):",
                 )
             )
-            % filename
+            % (filename if filename is not None else tr("get_delimiter", "the rows"))
         )
         delimiter = _result[0]
     return delimiter

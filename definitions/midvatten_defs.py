@@ -27,7 +27,7 @@ from midvatten.tools.utils.string_utils import (
     returnunicode as ru,
     anything_to_string_representation,
 )
-from midvatten.tools.utils.message_utils import MessagebarAndLog
+from midvatten.tools.utils import message_utils
 from midvatten.tools.utils.layer_specs import LayerSpec
 from midvatten.tools.utils.db_utils import (
     get_sql_result_as_dict,
@@ -174,7 +174,7 @@ def geocolorsymbols():
     # fallback method to maintain backwards compatibility
     if not (res1 and res2):
         # Fallback method - if using old databases where zz_strat is missing, then you may change the code below to reflect your own GEOLOGIC CODES, SYMBOLS AND COLORS
-        MessagebarAndLog.info(
+        message_utils.MessagebarAndLog.info(
             bar_msg=QCoreApplication.translate(
                 "geocolorsymbols",
                 "Reading zz_strat* tables failed. Using default dictionary instead",
@@ -338,7 +338,7 @@ def geocolorsymbols():
                     try:
                         dictionary[geoshort] = dict_qt[ru(strata)][0]
                     except Exception as c:
-                        MessagebarAndLog.warning(
+                        message_utils.MessagebarAndLog.warning(
                             log_msg=QCoreApplication.translate(
                                 "geocolorsymbols",
                                 'Error in geocolorsymbols, setting brush and color for strata "%s" using geoshort %s failed. Msg1:\n%s\nMsg2:\n%s\\Msg3:\n%s',
@@ -498,7 +498,7 @@ def hydrocolors():
             print("using fallback method for backwards compat.")
         except Exception:
             pass
-        MessagebarAndLog.warning(
+        message_utils.MessagebarAndLog.warning(
             bar_msg=QCoreApplication.translate(
                 "hydrocolors",
                 "Getting hydrocolors from database failed, using fallback method!",
@@ -550,7 +550,7 @@ def plot_types_dict(international="no"):
         "select strata from zz_stratigraphy_plots order by %s" % rowid_string()
     )
     if not success:
-        MessagebarAndLog.info(
+        message_utils.MessagebarAndLog.info(
             log_msg=QCoreApplication.translate(
                 "PlotTypesDict",
                 "Getting strata and geoshort from zz_strat failed, fallback method using PlotTypesDict from code",
@@ -655,7 +655,7 @@ def plot_colors_dict():
         ("strata", "color_mplot", "zz_stratigraphy_plots")
     )
     if not success:
-        MessagebarAndLog.info(
+        message_utils.MessagebarAndLog.info(
             log_msg=QCoreApplication.translate(
                 "PlotColorDict",
                 "Getting strata and color_mplot form zz_stratigraphy_plots failed, fallback method with PlotColorDict from code",
@@ -714,7 +714,7 @@ def plot_hatch_dict():
         ("strata", "hatch_mplot", "zz_stratigraphy_plots")
     )
     if not success:
-        MessagebarAndLog.info(
+        message_utils.MessagebarAndLog.info(
             bar_msg=QCoreApplication.translate(
                 "PlotHatchDict",
                 "Getting strata and hatch_mplot from zz_stratigraphy_plots failed, fallback method with PlotHatchDict from code",
@@ -779,7 +779,7 @@ def screen_style_dict() -> Dict[str, Dict[str, Any]]:
     sql = "SELECT screenshort, color_mplot, edgecolor_mplot, hatch_mplot, linewidth_mplot FROM zz_screen_plots"
     connection_ok, result_list = sql_load_fr_db(sql)
     if not connection_ok or not result_list:
-        MessagebarAndLog.warning(
+        message_utils.MessagebarAndLog.warning(
             bar_msg=QCoreApplication.translate(
                 "screen_style_dict",
                 "Getting screen styles from zz_screen_plots failed, using fallback",
@@ -814,7 +814,7 @@ def staff_list():
     connection_ok, result_list = sql_result
 
     if not connection_ok:
-        MessagebarAndLog.warning(
+        message_utils.MessagebarAndLog.warning(
             bar_msg=QCoreApplication.translate(
                 "staff_list", "Sql failed, see log message panel"
             ),
@@ -838,7 +838,7 @@ def w_flow_flowtypes_units():
     connection_ok, result_dict = get_sql_result_as_dict(sql)
 
     if not connection_ok:
-        MessagebarAndLog.warning(
+        message_utils.MessagebarAndLog.warning(
             bar_msg=QCoreApplication.translate(
                 "w_flow_flowtypes_units", "Error, sql failed, see log message panel"
             ),
@@ -857,7 +857,7 @@ def w_qual_field_parameter_units():
     connection_ok, result_dict = get_sql_result_as_dict(sql)
 
     if not connection_ok:
-        MessagebarAndLog.warning(
+        message_utils.MessagebarAndLog.warning(
             bar_msg=QCoreApplication.translate(
                 "w_qual_field_parameter_units",
                 "Error, sql failed, see log message panel",

@@ -13,7 +13,7 @@ import psycopg2.sql
 from qgis.PyQt.QtCore import QCoreApplication, QFile
 from qgis.core import QgsCredentials, QgsDataSourceUri
 
-from midvatten.tools.utils.message_utils import MessagebarAndLog
+from midvatten.tools.utils import message_utils
 from midvatten.tools.utils.exceptions import UserInterruptError
 from midvatten.tools.utils.db_utils.backends.base import Backend
 from midvatten.tools.utils.db_utils.dialect import UnsafeIdentifierError
@@ -80,7 +80,7 @@ def _clear_ssl_temp_certs_if_any(connection_info: str) -> None:
             # A lingering temp SSL key/cert on disk is security-relevant, so warn
             # rather than info — but never raise (this runs inside a finally and
             # must not mask the real connection error).
-            MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 log_msg=f"Could not remove temporary SSL cert {file.fileName()}: "
                 f"error code: {file.error()}"
             )
@@ -159,7 +159,7 @@ class PostgreSQLBackend(Backend):
             _clear_ssl_temp_certs_if_any(expanded_conn_info)
         if last_error:
             if "no password supplied" in str(last_error):
-                MessagebarAndLog.warning(
+                message_utils.MessagebarAndLog.warning(
                     bar_msg=QCoreApplication.translate(
                         "DbConnectionManager",
                         "No password supplied for postgis connection",
@@ -247,7 +247,7 @@ class PostgreSQLBackend(Backend):
                 )
             )
         except Exception:
-            MessagebarAndLog.warning(log_msg=traceback.format_exc())
+            message_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
     def check_db_is_locked(self) -> None:
         pass
@@ -350,10 +350,9 @@ class PostgreSQLBackend(Backend):
         return sql, (obsid,)
 
     def backup(self, dbconnection: Any) -> None:
-        from midvatten.tools.utils.message_utils import MessagebarAndLog
         from qgis.PyQt.QtCore import QCoreApplication
 
-        MessagebarAndLog.info(
+        message_utils.MessagebarAndLog.info(
             bar_msg=QCoreApplication.translate(
                 "backup_db",
                 "Backup of PostGIS database not supported yet!",

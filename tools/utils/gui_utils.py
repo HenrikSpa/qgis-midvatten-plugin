@@ -35,7 +35,7 @@ from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QComboBox
 
 from midvatten.tools.utils.string_utils import returnunicode as ru
-from midvatten.tools.utils.message_utils import MessagebarAndLog, sql_failed_msg
+from midvatten.tools.utils import message_utils
 from midvatten.tools.utils.date_utils import to_date
 from midvatten.tools.utils.db_utils import DbConnectionManager
 from midvatten.tools.utils.mpl_compat import qt_backend
@@ -276,11 +276,11 @@ class DistinctValuesBrowser(VRowEntry):
             try:
                 dbconnection.closedb()
             except Exception:
-                MessagebarAndLog.info(log_msg=traceback.format_exc())
+                message_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
 
         if not connection_ok:
-            MessagebarAndLog.critical(
-                bar_msg=sql_failed_msg(),
+            message_utils.MessagebarAndLog.critical(
+                bar_msg=message_utils.sql_failed_msg(),
                 log_msg=QCoreApplication.translate(
                     "DistinctValuesBrowser", """Cannot get data from sql %s"""
                 )

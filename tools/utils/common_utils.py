@@ -70,7 +70,7 @@ from midvatten.tools.utils.layer_utils import (
     verify_layer_selection,  # noqa: F401
 )
 from midvatten.tools.utils.message_utils import (
-    MessagebarAndLog,
+    MessagebarAndLog,  # noqa: F401
     pop_up_info,  # noqa: F401
     show_message_log,  # noqa: F401
     sql_failed_msg,  # noqa: F401
@@ -87,6 +87,7 @@ from midvatten.tools.utils.string_utils import (
     tr,
     unicode_2_utf8,  # noqa: F401
 )
+from midvatten.tools.utils import message_utils
 from cycler import Cycler
 from itertools import cycle
 from numpy import ndarray
@@ -113,7 +114,7 @@ def verify_this_layer_selected_and_not_in_edit_mode(errorsignal, layername):
     layer = get_active_layer()
     if not layer:  # check there is actually a layer selected
         errorsignal += 1
-        MessagebarAndLog.critical(
+        message_utils.MessagebarAndLog.critical(
             bar_msg=returnunicode(
                 tr(
                     "verify_this_layer_selected_and_not_in_edit_mode",
@@ -124,7 +125,7 @@ def verify_this_layer_selected_and_not_in_edit_mode(errorsignal, layername):
         )
     elif layer.isEditable():
         errorsignal += 1
-        MessagebarAndLog.critical(
+        message_utils.MessagebarAndLog.critical(
             bar_msg=returnunicode(
                 tr(
                     "verify_this_layer_selected_and_not_in_edit_mode",
@@ -134,7 +135,7 @@ def verify_this_layer_selected_and_not_in_edit_mode(errorsignal, layername):
         )
     elif not (layer.name() == layername):
         errorsignal += 1
-        MessagebarAndLog.critical(
+        message_utils.MessagebarAndLog.critical(
             bar_msg=returnunicode(
                 tr(
                     "verify_this_layer_selected_and_not_in_edit_mode",
@@ -506,7 +507,7 @@ def general_exception_handler(func: Callable) -> Callable:
         except UsageError as e:
             msg = str(e)
             if msg:
-                MessagebarAndLog.critical(
+                message_utils.MessagebarAndLog.critical(
                     bar_msg=returnunicode(
                         tr("general_exception_handler", "Usage error: %s")
                     )
@@ -552,7 +553,7 @@ def save_stored_settings(ms, stored_settings, settingskey, skip_ast=False):
         settings_string = stored_settings
     ms.settingsdict[settingskey] = settings_string
     ms.save_settings(settingskey)
-    MessagebarAndLog.info(
+    message_utils.MessagebarAndLog.info(
         log_msg=returnunicode(
             tr("save_stored_settings", "Settings %s stored for key %s.")
         )
@@ -572,7 +573,7 @@ def get_stored_settings(ms, settingskey, default=None, skip_ast=False):
         default = []
     settings_string_raw = ms.settingsdict.get(settingskey, None)
     if settings_string_raw is None:
-        MessagebarAndLog.info(
+        message_utils.MessagebarAndLog.info(
             bar_msg=returnunicode(
                 tr(
                     "get_stored_settings",
@@ -583,7 +584,7 @@ def get_stored_settings(ms, settingskey, default=None, skip_ast=False):
         )
         return default
     if not settings_string_raw:
-        MessagebarAndLog.info(
+        message_utils.MessagebarAndLog.info(
             log_msg=returnunicode(
                 tr("get_stored_settings", "Settings key %s was empty.")
             )
@@ -594,14 +595,14 @@ def get_stored_settings(ms, settingskey, default=None, skip_ast=False):
     settings_string_raw = returnunicode(settings_string_raw)
 
     try:
-        MessagebarAndLog.info(
+        message_utils.MessagebarAndLog.info(
             log_msg=returnunicode(
                 tr("get_stored_settings", 'Reading stored settings "%s":\n%s')
             )
             % (settingskey, settings_string_raw)
         )
     except Exception:
-        MessagebarAndLog.warning(log_msg=traceback.format_exc())
+        message_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
     if skip_ast:
         stored_settings = settings_string_raw
@@ -616,7 +617,7 @@ def get_stored_settings(ms, settingskey, default=None, skip_ast=False):
             stored_settings = ast.literal_eval(settings_string_raw)
         except SyntaxError as e:
             stored_settings = default
-            MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=returnunicode(
                     tr(
                         "get_stored_settings",
@@ -634,7 +635,7 @@ def get_stored_settings(ms, settingskey, default=None, skip_ast=False):
             )
         except ValueError as e:
             stored_settings = default
-            MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=returnunicode(
                     tr(
                         "get_stored_settings",
@@ -711,7 +712,7 @@ class ContinuousColorCycle:
                     self.used_style_color_combo.add(next_combo_str)
                     return next_combo
         else:
-            MessagebarAndLog.info(
+            message_utils.MessagebarAndLog.info(
                 bar_msg=returnunicode(
                     tr(
                         "Customplot",
@@ -738,7 +739,9 @@ class PickAnnotator:
 
         canvas.mpl_connect("pick_event", lambda event: self.identify_plot(event))
         canvas.mpl_connect("figure_enter_event", self.remove_annotation)
-        MessagebarAndLog.info(log_msg=tr("PickAnnotator", "PickAnnotator initialized."))
+        message_utils.MessagebarAndLog.info(
+            log_msg=tr("PickAnnotator", "PickAnnotator initialized.")
+        )
 
     def identify_plot(self, event):
         try:
@@ -787,7 +790,7 @@ class PickAnnotator:
             self.fig.canvas.draw()
             self.fig.canvas.flush_events()
         except Exception as e:
-            MessagebarAndLog.info(
+            message_utils.MessagebarAndLog.info(
                 log_msg=tr("PickAnnotator", "Adding annotation failed, msg: %s.")
                 % str(e)
             )
@@ -801,7 +804,7 @@ class PickAnnotator:
                 self.fig.canvas.draw()
                 self.fig.canvas.flush_events()
             except Exception as e:
-                MessagebarAndLog.info(
+                message_utils.MessagebarAndLog.info(
                     log_msg=tr("PickAnnotator", "Removing annotation failed, msg: %s.")
                     % str(e)
                 )
@@ -817,7 +820,7 @@ class Timer:
 
     def stop(self):
         t = time.time()
-        MessagebarAndLog.info(
+        message_utils.MessagebarAndLog.info(
             log_msg=tr("Timer", "Total time running %s: %s seconds")
             % (self.name, str(t - self.t0))
         )
@@ -826,7 +829,7 @@ class Timer:
         t = time.time()
         diff = time.time() - self.t1
         self.t1 = t
-        MessagebarAndLog.info(
+        message_utils.MessagebarAndLog.info(
             log_msg=tr("Timer", "Current time running %s%s: %s seconds")
             % (self.name, info, str(diff))
         )
@@ -838,7 +841,7 @@ def timer(name):
     t0 = time.time()
     yield
     t1 = time.time()
-    MessagebarAndLog.info(
+    message_utils.MessagebarAndLog.info(
         log_msg=tr("timer", "Total time running %s: %s seconds") % (name, str(t1 - t0))
     )
 

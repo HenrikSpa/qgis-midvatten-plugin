@@ -9,7 +9,7 @@ from collections.abc import Sequence
 
 from qgis.PyQt.QtCore import QCoreApplication
 
-from midvatten.tools.utils.message_utils import MessagebarAndLog, sql_failed_msg
+from midvatten.tools.utils import message_utils
 from midvatten.tools.utils.db_utils.connection import DbConnectionManager
 from midvatten.tools.utils.db_utils.execution import (
     sql_load_fr_db,
@@ -80,8 +80,8 @@ def get_table_info(
             try:
                 columns = dbconnection.execute_and_fetchall(columns_sql)
             except Exception as e:
-                MessagebarAndLog.warning(
-                    bar_msg=sql_failed_msg(),
+                message_utils.MessagebarAndLog.warning(
+                    bar_msg=message_utils.sql_failed_msg(),
                     log_msg=QCoreApplication.translate(
                         "get_table_info", "Sql failed: %s\nmsg:%s"
                     )
@@ -303,7 +303,7 @@ def db_tables_columns_info(
             except Exception:
                 columns = None
             if columns is None:
-                MessagebarAndLog.warning(
+                message_utils.MessagebarAndLog.warning(
                     log_msg=QCoreApplication.translate(
                         "db_tables_columns_info",
                         "Getting columns from table %s failed!",

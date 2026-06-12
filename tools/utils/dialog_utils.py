@@ -12,7 +12,7 @@ except ImportError:
 
 from midvatten.tools.utils.exceptions import UserInterruptError
 from midvatten.tools.utils.file_utils import ui_path
-from midvatten.tools.utils.message_utils import pop_up_info
+from midvatten.tools.utils import message_utils
 from midvatten.tools.utils.string_utils import returnunicode, tr
 
 not_found_dialog = uic.loadUiType(ui_path("not_found_gui.ui"))[0]
@@ -93,7 +93,7 @@ class Askuser(QtWidgets.QDialog):
                             self.result = adjustment_unit
                             break
                         else:
-                            pop_up_info(
+                            message_utils.pop_up_info(
                                 returnunicode(
                                     tr(
                                         "askuser",
@@ -103,7 +103,7 @@ class Askuser(QtWidgets.QDialog):
                                 % ", ".join(supported_units)
                             )
                     else:
-                        pop_up_info(
+                        message_utils.pop_up_info(
                             tr(
                                 "askuser",
                                 "Failure:\nMust write time resolution also.\n",

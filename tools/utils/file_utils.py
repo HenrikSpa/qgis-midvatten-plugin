@@ -12,7 +12,7 @@ from collections.abc import Iterator
 import qgis.PyQt
 
 from midvatten.tools.utils.exceptions import UserInterruptError
-from midvatten.tools.utils.message_utils import MessagebarAndLog
+from midvatten.tools.utils import message_utils
 from midvatten.tools.utils.string_utils import returnunicode, tr
 
 
@@ -116,7 +116,7 @@ def get_delimiter_from_file_rows(
                 if col_counts.pop() == num_fields:
                     return candidate
         if any_consistent:
-            MessagebarAndLog.critical(
+            message_utils.MessagebarAndLog.critical(
                 returnunicode(
                     tr(
                         "get_delimiter_from_file_rows",
@@ -171,7 +171,7 @@ def ask_for_delimiter(
         default,
     )
     if not _delimiter[1]:
-        MessagebarAndLog.info(
+        message_utils.MessagebarAndLog.info(
             bar_msg=returnunicode(
                 tr("ask_for_delimiter", "Delimiter not given. Stopping.")
             )
@@ -194,7 +194,7 @@ def write_printlist_to_file(
         csvwriter = csv.writer(csvfile, delimiter=delimiter, dialect=dialect, **kwds)
         # csvwriter.writerows([[bytes(returnunicode(col), encoding) for col in row] for row in printlist])
         csvwriter.writerows(returnunicode(printlist, keep_containers=True))
-    MessagebarAndLog.info(
+    message_utils.MessagebarAndLog.info(
         bar_msg=returnunicode(tr("write_printlist_to_file", "Data written to file %s."))
         % filename
     )

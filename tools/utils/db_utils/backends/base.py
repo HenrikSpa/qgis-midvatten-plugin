@@ -11,6 +11,7 @@ from collections.abc import Iterable, Sequence
 from typing import Any, Optional, Union
 
 from midvatten.tools.utils.file_utils import write_printlist_to_file
+from midvatten.tools.utils import message_utils
 
 # Optional to avoid hard dependency on psycopg2 at import
 try:
@@ -305,8 +306,7 @@ class Backend(ABC):
 
     @staticmethod
     def log_execute_error(sql: Union[str, Composable], args: Any, e: Exception) -> None:
-        """Log a DB execute error via MessagebarAndLog."""
-        from midvatten.tools.utils.message_utils import MessagebarAndLog, sql_failed_msg
+        """Log a DB execute error via message_utils.MessagebarAndLog."""
         from midvatten.tools.utils.string_utils import returnunicode as ru
         from qgis.PyQt.QtCore import QCoreApplication
 
@@ -321,7 +321,9 @@ class Backend(ABC):
                 "sql_load_fr_db",
                 """DB error!\n SQL causing this error:%s\nusing args %s\nMsg:\n%s""",
             ) % (ru(sql_text), ru(args), str(e))
-        MessagebarAndLog.warning(bar_msg=sql_failed_msg(), log_msg=textstring)
+        message_utils.MessagebarAndLog.warning(
+            bar_msg=message_utils.sql_failed_msg(), log_msg=textstring
+        )
 
     def connect2db(self) -> bool:
         """Check connection is ok (e.g. not locked). Return True if ok."""

@@ -7,7 +7,7 @@ import re
 from typing import Callable
 
 from midvatten.tools.utils.string_utils import lstrip, returnunicode as ru
-from midvatten.tools.utils.message_utils import MessagebarAndLog, sql_failed_msg
+from midvatten.tools.utils import message_utils
 from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools.utils.db_utils.connection import DbConnectionManager
@@ -87,8 +87,8 @@ def execute_sqlfile(
             try:
                 dbconnection.execute(line)
             except Exception as e:
-                MessagebarAndLog.critical(
-                    bar_msg=sql_failed_msg(),
+                message_utils.MessagebarAndLog.critical(
+                    bar_msg=message_utils.sql_failed_msg(),
                     log_msg=QCoreApplication.translate(
                         "NewDb", "sql failed:\n%s\nerror msg:\n%s\n"
                     )

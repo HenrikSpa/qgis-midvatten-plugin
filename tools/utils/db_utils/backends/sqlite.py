@@ -15,7 +15,7 @@ from qgis.utils import spatialite_connect
 
 import sqlite3 as sqlite
 
-from midvatten.tools.utils.message_utils import MessagebarAndLog
+from midvatten.tools.utils import message_utils
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.exceptions import UsageError
 from midvatten.tools.utils.db_utils.backends.base import Backend
@@ -104,7 +104,7 @@ class SQLiteBackend(Backend):
                     detect_types=sqlite.PARSE_DECLTYPES | sqlite.PARSE_COLNAMES,
                 )
             except Exception as e:
-                MessagebarAndLog.critical(
+                message_utils.MessagebarAndLog.critical(
                     bar_msg=QCoreApplication.translate(
                         "DbConnectionManager",
                         "Connecting to spatialite db %s failed! Check that the file or path exists.",
@@ -163,7 +163,7 @@ class SQLiteBackend(Backend):
             self._cursor.execute("""ATTACH DATABASE ':memory:' AS mem""")
         except Exception as e:
             if "database mem is already in use" not in str(e):
-                MessagebarAndLog.info(
+                message_utils.MessagebarAndLog.info(
                     log_msg=QCoreApplication.translate(
                         "create_temporary_table_for_import",
                         "attaching memory database failed, %s",
@@ -194,7 +194,7 @@ class SQLiteBackend(Backend):
             )
             self.execute(self.sql_ident("DROP VIEW IF EXISTS {v}", v=view_name))
         except Exception:
-            MessagebarAndLog.warning(log_msg=traceback.format_exc())
+            message_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
     def check_db_is_locked(self) -> None:
         for ext in ("journal", "wal"):
@@ -288,7 +288,6 @@ class SQLiteBackend(Backend):
         import datetime
         import zipfile
 
-        from midvatten.tools.utils.message_utils import MessagebarAndLog
         from qgis.PyQt.QtCore import QCoreApplication
 
         try:
@@ -305,7 +304,7 @@ class SQLiteBackend(Backend):
                 zf.write(self._dbpath, compress_type=compression)
         finally:
             self._conn.rollback()
-        MessagebarAndLog.info(
+        message_utils.MessagebarAndLog.info(
             bar_msg=QCoreApplication.translate(
                 "backup_db", "Database backup was written to %s "
             )

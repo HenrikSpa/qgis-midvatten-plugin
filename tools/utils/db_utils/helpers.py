@@ -15,7 +15,7 @@ except ImportError:
     psycopg2 = None
 from qgis.PyQt.QtCore import QCoreApplication
 
-from midvatten.tools.utils.message_utils import MessagebarAndLog, sql_failed_msg
+from midvatten.tools.utils import message_utils
 from midvatten.tools.utils.common_utils import waiting_cursor
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.db_utils.connection import DbConnectionManager
@@ -112,7 +112,7 @@ def get_spatialite_db_path_from_dbsettings_string(db_settings: str) -> str:
                     "Error message failed! Could not be converted to string!",
                 )
 
-            MessagebarAndLog.info(
+            message_utils.MessagebarAndLog.info(
                 log_msg=QCoreApplication.translate(
                     "get_spatialite_db_path_from_dbsettings_string",
                     '%s error msg from db_settings string "%s": %s',
@@ -237,7 +237,7 @@ def create_dict_from_db_2_cols(params: tuple) -> tuple:
             "create_dict_from_db_2_cols",
             """Cannot create dictionary from columns %s and %s in table %s!""",
         ) % (col1, col2, table)
-        MessagebarAndLog.warning(
+        message_utils.MessagebarAndLog.warning(
             bar_msg=QCoreApplication.translate(
                 "create_dict_from_db_2_cols",
                 "Some sql failure, see log for additional info.",
@@ -308,7 +308,7 @@ def calculate_median_value(
         try:
             return median_value[0][0] if median_value else None
         except (IndexError, TypeError):
-            MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "calculate_median_value",
                     "Median calculation error, see log message panel",
@@ -339,12 +339,12 @@ def delete_srids(
     try:
         execute_able_object.execute(delete_srid_sql_aux, args=(keep_epsg_code,))
     except Exception:
-        MessagebarAndLog.info(log_msg=traceback.format_exc())
+        message_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
     delete_srid_sql = f"DELETE FROM spatial_ref_sys WHERE srid NOT IN ({ph}, '4326')"
     try:
         execute_able_object.execute(delete_srid_sql, args=(keep_epsg_code,))
     except Exception:
-        MessagebarAndLog.info(
+        message_utils.MessagebarAndLog.info(
             log_msg=QCoreApplication.translate(
                 "delete_srids", "Removing srids failed using: %s"
             )
@@ -392,8 +392,8 @@ def get_quality_instruments() -> tuple:
     sql = "SELECT distinct instrument from w_qual_field"
     connection_ok, result_list = sql_load_fr_db(sql)
     if not connection_ok:
-        MessagebarAndLog.critical(
-            bar_msg=sql_failed_msg(),
+        message_utils.MessagebarAndLog.critical(
+            bar_msg=message_utils.sql_failed_msg(),
             log_msg=QCoreApplication.translate(
                 "get_quality_instruments",
                 "Failed to get quality instruments from sql\n%s",
@@ -419,8 +419,8 @@ def calculate_db_table_rows() -> None:
             results[tablename] = str(nr_of_rows[0][0])
 
     if sql_failed:
-        MessagebarAndLog.warning(
-            bar_msg=sql_failed_msg(),
+        message_utils.MessagebarAndLog.warning(
+            bar_msg=message_utils.sql_failed_msg(),
             log_msg=QCoreApplication.translate(
                 "calculate_db_table_rows", "Sql failed:\n%s\n"
             )
@@ -435,7 +435,7 @@ def calculate_db_table_rows() -> None:
                 for table_name, _nr_of_rows in sorted(results.items())
             ]
         )
-        MessagebarAndLog.info(
+        message_utils.MessagebarAndLog.info(
             bar_msg=QCoreApplication.translate(
                 "calculate_db_table_rows", "Calculation done, see log for results."
             ),
@@ -465,7 +465,7 @@ def refresh_spatialite_layer_statistics() -> None:
     """
     with use_or_create_connection(None) as dbconnection:
         if not dbconnection.is_sqlite():
-            MessagebarAndLog.info(
+            message_utils.MessagebarAndLog.info(
                 bar_msg=QCoreApplication.translate(
                     "refresh_spatialite_layer_statistics",
                     "This fix only applies to SpatiaLite databases. No action taken.",
@@ -479,7 +479,7 @@ def refresh_spatialite_layer_statistics() -> None:
                 "coord_dimension, srid FROM geometry_columns"
             )
         except Exception:
-            MessagebarAndLog.critical(
+            message_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
                     "refresh_spatialite_layer_statistics",
                     "Could not read geometry_columns — is this a SpatiaLite database?",
@@ -512,7 +512,7 @@ def refresh_spatialite_layer_statistics() -> None:
             dbconnection.execute_and_fetchall("SELECT UpdateLayerStatistics()")
             dbconnection.commit()
         except Exception:
-            MessagebarAndLog.critical(
+            message_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
                     "refresh_spatialite_layer_statistics",
                     "Failed to refresh SpatiaLite layer statistics. The "
@@ -529,7 +529,7 @@ def refresh_spatialite_layer_statistics() -> None:
     if failed:
         log_lines.append(f"Failed on {len(failed)}: {', '.join(failed)}")
 
-    MessagebarAndLog.info(
+    message_utils.MessagebarAndLog.info(
         bar_msg=QCoreApplication.translate(
             "refresh_spatialite_layer_statistics",
             "Layer statistics refreshed. Reload the default layers (or the "

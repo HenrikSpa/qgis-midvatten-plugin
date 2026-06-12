@@ -6,7 +6,7 @@ import qgis.utils
 from qgis.core import QgsMapLayer, QgsProject
 
 from midvatten.tools.utils.exceptions import UsageError
-from midvatten.tools.utils.message_utils import MessagebarAndLog, pop_up_info
+from midvatten.tools.utils import message_utils
 from midvatten.tools.utils.string_utils import returnunicode, tr
 
 
@@ -91,14 +91,14 @@ def selection_check(
         ):
             return "ok"
         elif selectedfeatures == 0 and not (layer.selectedFeatureCount() > 0):
-            MessagebarAndLog.critical(
+            message_utils.MessagebarAndLog.critical(
                 bar_msg=tr(
                     "selection_check",
                     "Error, select at least one object in the qgis layer!",
                 )
             )
         else:
-            MessagebarAndLog.critical(
+            message_utils.MessagebarAndLog.critical(
                 bar_msg=returnunicode(
                     tr(
                         "selection_check",
@@ -108,7 +108,7 @@ def selection_check(
                 % str(selectedfeatures)
             )
     else:
-        pop_up_info(
+        message_utils.pop_up_info(
             tr("selection_check", "Select a qgis layer that has a field obsid!")
         )
 
@@ -121,7 +121,7 @@ def strat_selection_check(layer=""):
     ):  # SURF_LVL to enable backwards compatibility
         return "ok"
     else:
-        MessagebarAndLog.critical(
+        message_utils.MessagebarAndLog.critical(
             bar_msg=returnunicode(
                 tr(
                     "strat_selection_check",
@@ -142,7 +142,7 @@ def get_selected_features_as_tuple(layer_name=None, column_name=None):
         elif isinstance(layer_name, QgsMapLayer):
             obs_points_layer = layer_name
         else:
-            MessagebarAndLog.info(
+            message_utils.MessagebarAndLog.info(
                 log_msg=tr(
                     "get_selected_features_as_tuple",
                     'Programming error: The layername "%s" was not str or QgsMapLayer!',
@@ -178,14 +178,14 @@ def verify_layer_selection(
         if not (selection_check(layer) == "ok"):
             current_error_signal += 1
             if required_number_of_selected_features == 0:
-                MessagebarAndLog.critical(
+                message_utils.MessagebarAndLog.critical(
                     bar_msg=tr(
                         "verify_layer_selection",
                         "Error, you have to select some features!",
                     )
                 )
             else:
-                MessagebarAndLog.critical(
+                message_utils.MessagebarAndLog.critical(
                     bar_msg=returnunicode(
                         tr(
                             "verify_layer_selection",
@@ -195,7 +195,7 @@ def verify_layer_selection(
                     % str(required_number_of_selected_features)
                 )
     else:
-        MessagebarAndLog.critical(
+        message_utils.MessagebarAndLog.critical(
             bar_msg=tr(
                 "verify_layer_selection", "Error, you have to select a relevant layer!"
             )

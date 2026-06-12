@@ -16,7 +16,7 @@ from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import QgsProject
 
 from midvatten.definitions import midvatten_defs
-from midvatten.tools.utils.message_utils import MessagebarAndLog
+from midvatten.tools.utils import message_utils
 
 log = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ class MidvSettings:
             self.load_settings()
 
         except Exception:
-            MessagebarAndLog.warning(log_msg=traceback.format_exc())
+            message_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
     def createsettingsdict(
         self,
@@ -68,7 +68,7 @@ class MidvSettings:
                 if found:
                     self.settingsdict[key] = loaded_value
             except KeyError:
-                MessagebarAndLog.warning(
+                message_utils.MessagebarAndLog.warning(
                     bar_msg=QCoreApplication.translate(
                         "midvsettings",
                         "Settings key %s does not exist in project file. Maybe this file was last used with old Midvatten plugin?",

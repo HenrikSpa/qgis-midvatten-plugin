@@ -55,7 +55,7 @@ else:
 # rename them even when no in-repo caller remains. In-repo code should import
 # these specific names from the source modules instead. See docs/superpowers/plans/
 # 2026-06-10-maintainability-refactor-review.md (midv_addons contract).
-from midvatten.tools.utils.message_utils import MessagebarAndLog
+from midvatten.tools.utils.message_utils import MessagebarAndLog  # noqa: F401
 from midvatten.tools.utils.layer_utils import find_layer
 from midvatten.tools.utils.string_utils import (
     returnunicode as ru,
@@ -74,6 +74,7 @@ from midvatten.tools.utils.common_utils import (
 from midvatten.definitions.db_defs import latest_database_version
 
 from midvatten.tools.utils import db_utils
+from midvatten.tools.utils import message_utils
 
 log = logging.getLogger(__name__)
 
@@ -98,7 +99,7 @@ def verify_msettings_loaded_and_layer_edit_mode(
         except UsageError:
             if not only_error_if_editing_enabled:
                 errorsignal += 1
-                MessagebarAndLog.warning(
+                message_utils.MessagebarAndLog.warning(
                     bar_msg=QCoreApplication.translate(
                         "verify_msettings_loaded_and_layer_edit_mode",
                         "Error layer %s is required but missing!",
@@ -109,18 +110,18 @@ def verify_msettings_loaded_and_layer_edit_mode(
         else:
             if layerexists:
                 if layerexists.isEditable():
-                    MessagebarAndLog.warning(
+                    message_utils.MessagebarAndLog.warning(
                         bar_msg=QCoreApplication.translate(
                             "verify_msettings_loaded_and_layer_edit_mode",
                             "Error %s is currently in editing mode.\nPlease exit this mode before proceeding with this operation.",
                         )
                         % str(layerexists.name())
                     )
-                    # pop_up_info("Layer " + str(layerexists.name()) + " is currently in editing mode.\nPlease exit this mode before proceeding with this operation.", "Warning")
+                    # message_utils.pop_up_info("Layer " + str(layerexists.name()) + " is currently in editing mode.\nPlease exit this mode before proceeding with this operation.", "Warning")
                     errorsignal += 1
 
     if not mset.settingsdict["database"]:
-        MessagebarAndLog.warning(
+        message_utils.MessagebarAndLog.warning(
             bar_msg=QCoreApplication.translate(
                 "verify_msettings_loaded_and_layer_edit_mode",
                 "Error, No database found. Please check your Midvatten Settings. Reset if needed.",
@@ -131,7 +132,7 @@ def verify_msettings_loaded_and_layer_edit_mode(
         try:
             connection_ok = db_utils.check_connection_ok()
         except db_utils.DatabaseLockedError:
-            MessagebarAndLog.critical(
+            message_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
                     "verify_msettings_loaded_and_layer_edit_mode",
                     "Databas is already in use",
@@ -140,7 +141,7 @@ def verify_msettings_loaded_and_layer_edit_mode(
             errorsignal += 1
         else:
             if not connection_ok:
-                MessagebarAndLog.warning(
+                message_utils.MessagebarAndLog.warning(
                     bar_msg=QCoreApplication.translate(
                         "verify_msettings_loaded_and_layer_edit_mode",
                         "Error, The selected database doesn't exist. Please check your Midvatten Settings and database location. Reset if needed.",
@@ -332,7 +333,7 @@ def get_locale_from_db(
         else:
             return locale_setting
     else:
-        MessagebarAndLog.info(
+        message_utils.MessagebarAndLog.info(
             log_msg=QCoreApplication.translate(
                 "get_locale_from_db",
                 "Connection to db failed when getting locale from db.",
@@ -390,7 +391,7 @@ def warn_about_old_database() -> None:
             dbconnection.cursor.execute("""SELECT description FROM about_db LIMIT 1""")
             rows = dbconnection.cursor.fetchall()
         except Exception as e:
-            MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "warn_about_old_database",
                     "Database might not be a valid Midvatten database!",
@@ -403,7 +404,7 @@ def warn_about_old_database() -> None:
         try:
             row = rows[0][0]
         except Exception:
-            MessagebarAndLog.info(
+            message_utils.MessagebarAndLog.info(
                 log_msg=QCoreApplication.translate(
                     "warn_about_old_database",
                     "No row returned from about_db when searching for version.",
@@ -431,7 +432,7 @@ def warn_about_old_database() -> None:
                 )
 
                 if is_old:
-                    MessagebarAndLog.info(
+                    message_utils.MessagebarAndLog.info(
                         bar_msg=QCoreApplication.translate(
                             "warn_about_old_database",
                             """The database version appears to be older than %s. An upgrade is suggested! See %s""",
@@ -466,7 +467,7 @@ def compare_verson_lists(
 def add_view_obs_points_obs_lines() -> None:
     dbconnection = db_utils.DbConnectionManager()
     if not dbconnection.is_sqlite():
-        MessagebarAndLog.info(
+        message_utils.MessagebarAndLog.info(
             bar_msg=QCoreApplication.translate(
                 "Midvatten", "Views not added for PostGIS databases (not needed)!"
             )
@@ -483,7 +484,7 @@ def add_view_obs_points_obs_lines() -> None:
         )
         db_utils.execute_sqlfile(definitions_path("qgis3_obsp_fix.sql"), dbconnection)
         dbconnection.commit_and_closedb()
-        MessagebarAndLog.info(
+        message_utils.MessagebarAndLog.info(
             bar_msg=QCoreApplication.translate(
                 "Midvatten",
                 'Views added. Please reload layers (Midvatten>Load default db-layers to qgis or "F7").',
@@ -507,7 +508,7 @@ def add_non_essential_tables(
                 dbconnection,
                 merge_newlines=True,
             )
-        MessagebarAndLog.info(
+        message_utils.MessagebarAndLog.info(
             bar_msg=QCoreApplication.translate(
                 "Midvatten",
                 "Tables added. Load tables using Midvatten>Utilities>Load data tables to qgis.",
@@ -528,7 +529,7 @@ def select_files(
             )
         )
     except Exception as e:
-        MessagebarAndLog.info(
+        message_utils.MessagebarAndLog.info(
             log_msg=returnunicode(
                 QCoreApplication.translate(
                     "select_files",
@@ -557,7 +558,7 @@ def select_files(
         )[0]
     csvpath = [returnunicode(p) for p in csvpath if p]
     if not csvpath:
-        MessagebarAndLog.info(
+        message_utils.MessagebarAndLog.info(
             log_msg=returnunicode(
                 QCoreApplication.translate("select_files", "No file selected!")
             )
@@ -647,7 +648,7 @@ class PlotTemplates:
                 self.ms.settingsdict[self.loaded_template_settingskey]
             )
         except Exception:
-            MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=returnunicode(
                     QCoreApplication.translate(
                         "PlotTemplates",
@@ -656,7 +657,7 @@ class PlotTemplates:
                 )
             )
         if self.loaded_template:
-            MessagebarAndLog.info(
+            message_utils.MessagebarAndLog.info(
                 log_msg=returnunicode(
                     QCoreApplication.translate(
                         "PlotTemplates", "Loaded template from midvatten settings %s."
@@ -669,7 +670,7 @@ class PlotTemplates:
 
         if not self.loaded_template:
             if not os.path.isfile(default_filename):
-                MessagebarAndLog.warning(
+                message_utils.MessagebarAndLog.warning(
                     bar_msg=returnunicode(
                         QCoreApplication.translate(
                             "PlotTemplates",
@@ -681,7 +682,7 @@ class PlotTemplates:
                 try:
                     self.load(self.templates[default_filename]["template"])
                 except Exception as e:
-                    MessagebarAndLog.warning(
+                    message_utils.MessagebarAndLog.warning(
                         bar_msg=returnunicode(
                             QCoreApplication.translate(
                                 "PlotTemplates",
@@ -694,7 +695,7 @@ class PlotTemplates:
                         % str(e),
                     )
             if self.loaded_template:
-                MessagebarAndLog.info(
+                message_utils.MessagebarAndLog.info(
                     log_msg=returnunicode(
                         QCoreApplication.translate(
                             "PlotTemplates",
@@ -706,7 +707,7 @@ class PlotTemplates:
         if not self.loaded_template:
             self.loaded_template = self.fallback_template
             if self.loaded_template:
-                MessagebarAndLog.info(
+                message_utils.MessagebarAndLog.info(
                     log_msg=returnunicode(
                         QCoreApplication.translate(
                             "PlotTemplates",
@@ -829,7 +830,7 @@ class PlotTemplates:
             x for x in self.ms.settingsdict[self.templates_settingskey].split(";") if x
         ]
         if filenames:
-            MessagebarAndLog.info(
+            message_utils.MessagebarAndLog.info(
                 log_msg=returnunicode(
                     QCoreApplication.translate("", "Loading saved templates %s")
                 )
@@ -850,7 +851,7 @@ class PlotTemplates:
             with open(filename, encoding="utf-8") as f:
                 lines = "".join([line for line in f if line])
         except Exception as e:
-            MessagebarAndLog.critical(
+            message_utils.MessagebarAndLog.critical(
                 bar_msg=returnunicode(
                     QCoreApplication.translate(
                         "PlotTemplates",
@@ -871,7 +872,7 @@ class PlotTemplates:
             try:
                 template = self.string_to_dict("".join(lines))
             except Exception as e:
-                MessagebarAndLog.critical(
+                message_utils.MessagebarAndLog.critical(
                     bar_msg=returnunicode(
                         QCoreApplication.translate(
                             "PlotTemplates",
@@ -930,7 +931,7 @@ class PlotTemplates:
             except (json.JSONDecodeError, ValueError):
                 as_dict = ast.literal_eval(the_string)
         except Exception as e:
-            MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=returnunicode(
                     QCoreApplication.translate(
                         "StoredSettings",
@@ -1107,7 +1108,7 @@ class _FixStylesDialog(QtWidgets.QDialog):
                 fixed.append(os.path.splitext(fname)[0])
                 self.fixed_any = True
             except Exception as e:
-                MessagebarAndLog.warning(
+                message_utils.MessagebarAndLog.warning(
                     bar_msg=QCoreApplication.translate(
                         "_FixStylesDialog", "Failed to fix style file '%s'."
                     )
@@ -1115,7 +1116,7 @@ class _FixStylesDialog(QtWidgets.QDialog):
                     log_msg=str(e),
                 )
         if fixed:
-            MessagebarAndLog.info(
+            message_utils.MessagebarAndLog.info(
                 bar_msg=QCoreApplication.translate(
                     "_FixStylesDialog",
                     "Fixed %d style file(s): %s",
@@ -1153,7 +1154,7 @@ class MatplotlibStyles:
         if os.path.isdir(mpl.get_configdir()):
             if os.path.exists(self.style_folder):
                 if not os.path.isdir(self.style_folder):
-                    MessagebarAndLog.warning(
+                    message_utils.MessagebarAndLog.warning(
                         bar_msg=returnunicode(
                             QCoreApplication.translate(
                                 "MatplotlibStyles",
@@ -1166,7 +1167,7 @@ class MatplotlibStyles:
                 try:
                     os.makedirs(self.style_folder)
                 except Exception as e:
-                    MessagebarAndLog.warning(
+                    message_utils.MessagebarAndLog.warning(
                         bar_msg=returnunicode(
                             QCoreApplication.translate(
                                 "MatplotlibStyles",
@@ -1177,7 +1178,7 @@ class MatplotlibStyles:
                         log_msg=str(e),
                     )
                 else:
-                    MessagebarAndLog.info(
+                    message_utils.MessagebarAndLog.info(
                         bar_msg=returnunicode(
                             QCoreApplication.translate(
                                 "MatplotlibStyles",
@@ -1187,7 +1188,7 @@ class MatplotlibStyles:
                         % self.style_folder
                     )
         else:
-            MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=returnunicode(
                     QCoreApplication.translate(
                         "MatplotlibStyles",
@@ -1211,7 +1212,7 @@ class MatplotlibStyles:
         try:
             last_used_style = self.ms.settingsdict[self.last_used_style_settingskey]
         except Exception:
-            MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=returnunicode(
                     QCoreApplication.translate(
                         "MatplotlibStyles",
@@ -1242,7 +1243,7 @@ class MatplotlibStyles:
         filename = self.filename_from_style(stylestring_stylename[1])
         content, skipped = _sanitize_mplstyle_content(stylestring_stylename[0])
         if skipped:
-            MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=returnunicode(
                     QCoreApplication.translate(
                         "MatplotlibStyles",
@@ -1308,7 +1309,7 @@ class MatplotlibStyles:
                             mpl.style.reload_library()
                             with plt.style.context(_style):
                                 pass
-                            MessagebarAndLog.warning(
+                            message_utils.MessagebarAndLog.warning(
                                 bar_msg=returnunicode(
                                     QCoreApplication.translate(
                                         "MatplotlibStyles",
@@ -1328,7 +1329,7 @@ class MatplotlibStyles:
                             break
                     except Exception:
                         pass
-                MessagebarAndLog.warning(
+                message_utils.MessagebarAndLog.warning(
                     bar_msg=returnunicode(
                         QCoreApplication.translate(
                             "MatplotlibStyles",
@@ -1387,7 +1388,7 @@ class MatplotlibStyles:
                 with open(new_fullname, "w", encoding="utf-8") as wf:
                     wf.write(content)
                 if skipped:
-                    MessagebarAndLog.warning(
+                    message_utils.MessagebarAndLog.warning(
                         bar_msg=returnunicode(
                             QCoreApplication.translate(
                                 "MatplotlibStyles",
@@ -1448,7 +1449,7 @@ class MatplotlibStyles:
 
     def available_settings_to_log(self) -> None:
         rows = self.rcparams()
-        MessagebarAndLog.info(
+        message_utils.MessagebarAndLog.info(
             bar_msg=returnunicode(
                 QCoreApplication.translate(
                     "MatplotlibStyles", "rcParams written to log, see log messages"

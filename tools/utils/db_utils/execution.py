@@ -10,7 +10,7 @@ from typing import Callable, Any, Optional
 
 from qgis.PyQt.QtCore import QCoreApplication
 
-from midvatten.tools.utils.message_utils import MessagebarAndLog, sql_failed_msg
+from midvatten.tools.utils import message_utils
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.db_utils.connection import DbConnectionManager
 
@@ -47,8 +47,10 @@ def sql_load_fr_db(
                 """DB error!\n SQL causing this error:%s\nMsg:\n%s""",
             ) % (ru(sql), str(e))
             if print_error_message_in_bar:
-                MessagebarAndLog.warning(bar_msg=sql_failed_msg(), duration=4)
-            MessagebarAndLog.warning(log_msg=textstring)
+                message_utils.MessagebarAndLog.warning(
+                    bar_msg=message_utils.sql_failed_msg(), duration=4
+                )
+            message_utils.MessagebarAndLog.warning(log_msg=textstring)
             return (False, [])
         return (True, result)
 
@@ -68,7 +70,7 @@ def sql_alter_db(
             try:
                 dbconnection.execute("PRAGMA foreign_keys = ON")
             except Exception:
-                MessagebarAndLog.info(log_msg=traceback.format_exc())
+                message_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
         try:
             dbconnection.execute_and_commit(sql, args=args)
         except Exception as e:
@@ -76,7 +78,7 @@ def sql_alter_db(
                 "sql_alter_db",
                 """DB error!\n SQL causing this error:%s\nMsg:\n%s""",
             ) % (ru(sql), str(e))
-            MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "sql_alter_db",
                     "Some sql failure, see log for additional info.",
@@ -106,7 +108,7 @@ def check_connection_ok(write_error_msg: bool = True) -> bool:
 
     if not db_settings:
         if write_error_msg:
-            MessagebarAndLog.critical(
+            message_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
                     "DbConnectionManager",
                     "Database setting was empty. Check DB tab in Midvatten settings.",
@@ -121,7 +123,7 @@ def check_connection_ok(write_error_msg: bool = True) -> bool:
         dbconnection.closedb()
     except Exception as e:
         if write_error_msg:
-            MessagebarAndLog.critical(
+            message_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
                     "check_connection_ok", "Could not connect to db: %s"
                 )

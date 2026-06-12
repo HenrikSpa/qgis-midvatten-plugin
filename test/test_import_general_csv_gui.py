@@ -242,3 +242,29 @@ class TestGeneralCsvImportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
         chooser.import_method = "w_levels_logger"
         assert chooser.series_columns == []
         assert "source" in [c.db_column for c in chooser.columns]
+
+
+@pytest.mark.spatialite
+class TestShowIsIdempotent(utils_for_tests.MidvattenTestSpatialiteDbSv):
+    """Re-showing the same instance must not rebuild widgets or re-connect
+    button signals (GeneralCsvImportGui is constructed directly by external
+    callers that own the instance lifetime)."""
+
+    def test_second_show_does_not_duplicate_gui(self):
+        ms = MagicMock()
+        ms.settingsdict = OrderedDict()
+        gui = GeneralCsvImportGui(self.iface, ms)
+
+        gui.show()
+        button_rows = gui.grid_layout_buttons.count()
+        select_button = gui.select_file_button
+
+        gui.show()
+
+        assert gui.grid_layout_buttons.count() == button_rows
+        assert gui.select_file_button is select_button
+        # One connection: one slot invocation per click
+        calls = []
+        with mock.patch.object(gui, "select_file", side_effect=lambda: calls.append(1)):
+            gui.select_file_button.clicked.emit(False)
+        assert len(calls) == 1

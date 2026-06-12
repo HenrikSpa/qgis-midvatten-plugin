@@ -82,13 +82,18 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         self.file_data = None
         self.srid = None
         self.dbconnection = dbconnection
+        self._gui_loaded = False
 
     def show(self) -> None:
-        self.load_gui()
+        # Build once: re-showing the same instance must not stack a second
+        # set of widgets and button connections onto the layouts.
+        if not self._gui_loaded:
+            self.load_gui()
         super().show()
         self.activateWindow()
 
     def load_gui(self):
+        self._gui_loaded = True
         self.tables_columns_info = {
             k: v
             for (k, v) in db_utils.db_tables_columns_info(

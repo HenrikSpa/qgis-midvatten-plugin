@@ -111,3 +111,54 @@ class TestDrillreportSpatialite(
     DrillreportMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass
+
+
+class DrillreportEnglishMixin:
+    """Same scenario as DrillreportMixin but with the English (non-Swedish)
+    report path. Reference captured from the pre-dedup implementation; the
+    sv/en quadrant builders must stay byte-identical through refactors."""
+
+    @mock.patch("midvatten.tools.utils.midvatten_utils.is_locale_swedish")
+    @mock.patch("midvatten.tools.drillreport.QDesktopServices.openUrl")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
+    def test_drillreport_english(
+        self, mock_skippopup, mock_messagebar, openurl, mock_swedish
+    ):
+        mock_swedish.return_value = False
+        db_utils.sql_alter_db(
+            """INSERT INTO obs_points (obsid, h_gs, geometry) VALUES ('1', 5, ST_GeomFromText('POINT(633466 711659)', 3006))"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels (obsid, date_time, h_toc, level_masl) VALUES ('1', '2021-01-01 00:00', 20, 123)"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO stratigraphy (obsid, stratid, depthtop, depthbot, geology, geoshort, capacity, development) VALUES ('1', 1, 0, 1, 'sand', 'sand', '3', 'j')"""
+        )
+
+        dlg = Drillreport(self.iface, self.midvatten.ms)
+        dlg._run_report(("1",), self.midvatten.ms.settingsdict)
+
+        print(f"{mock_messagebar.mock_calls=}")
+        with open("/tmp/midvatten_reports/drill_report.html") as f:
+            report = "".join(f.readlines())
+        report = re.sub(
+            r"""src="[^"]+/templates/""",
+            """src="midvatten/tools/../templates/""",
+            report,
+        )
+        report = re.sub(
+            r"""src='[^']+/templates/""",
+            """src='midvatten/tools/../templates/""",
+            report,
+        )
+        ref = """<meta http-equiv="content-type" content="text/html; charset=utf-8" /><head><title>1 General report from Midvatten plugin for QGIS</title></head><html><TABLE WIDTH=100% BORDER=0 CELLPADDING=1 CELLSPACING=1><TR VALIGN=TOP><TD WIDTH=15%><h3 style="font-family:'arial';font-size:18pt; font-weight:600">1</h3><img src="midvatten/tools/../templates/for_general_report.png" /><br><img src='midvatten/tools/../templates/midvatten_logga.png' /></TD><TD WIDTH=85%><TABLE WIDTH=100% BORDER=1 CELLPADDING=4 CELLSPACING=3><TR VALIGN=TOP><TD WIDTH=50%><P><U><B>Allmän information</B></U></P><TABLE style="font-family:'arial'; font-size:10pt; font-weight:400; font-style:normal;" WIDTH=100% BORDER=0 CELLPADDING=0 CELLSPACING=1><COL WIDTH=43*><COL WIDTH=43*><p style="font-family:'arial'; font-size:8pt; font-weight:400; font-style:normal;"><TR VALIGN=TOP><TD WIDTH=33%>ground surface level, gs (masl)</TD><TD WIDTH=50%>5.0</TD></TR><TR VALIGN=TOP><TD WIDTH=33%>eastern coordinate</TD><TD WIDTH=50%>633466.0 (SWEREF99 TM, EPSG:3006)</TD></TR><TR VALIGN=TOP><TD WIDTH=33%>northern coordinate</TD><TD WIDTH=50%>711659.0 (SWEREF99 TM, EPSG:3006)</TD></TR></p></TABLE></TD><TD WIDTH=50%><P><U><B>Lagerföljd</B></U></P><TABLE style="font-family:'arial'; font-size:10pt; font-weight:400; font-style:normal;" WIDTH=100% BORDER=0 CELLPADDING=0 CELLSPACING=1><COL WIDTH=43*><COL WIDTH=43*><COL WIDTH=43*><COL WIDTH=43*><COL WIDTH=43*><COL WIDTH=43*><p style="font-family:'arial'; font-size:10pt; font-weight:400; font-style:normal;"><TR VALIGN=TOP><TD WIDTH=15%><P><u>nivå (mumy)</P></u></TD><TD WIDTH=27%><P><u>jordart, fullst beskrivn</P></u></TD><TD WIDTH=17%><P><u>huvudfraktion</P></u></TD><TD WIDTH=9%><P><u>kapacitet/vg på spetsnivå</P></u></TD><TD WIDTH=13%><P><u>vg</P></u></TD><TD WIDTH=21%><P><u>kommentar</P></u></TD></TR><TR VALIGN=TOP><TD WIDTH=15%><P>0.0 - 1.0</P></TD><TD WIDTH=27%><P>sand</P></TD><TD WIDTH=17%><P>sand</P></TD><TD WIDTH=9%><P>3</P></TD><TD WIDTH=13%><P>j</P></TD><TD WIDTH=21%><P></P></TD></TR></p></TABLE></TD></TR><TR VALIGN=TOP><TD WIDTH=50%><P><U><B>Kommentar</B></U></P><p style="font-family:'arial'; font-size:10pt; font-weight:400; font-style:normal;"></p></TD><TD WIDTH=50%><P><U><B>Water levels</B></U></P><p style="font-family:'arial'; font-size:10pt; font-weight:400; font-style:normal;">Number of water level measurements: 1<br>Highest measured water level: 123.0 m above sea level<br>Median water level: 123.0 m above sea level<br>Lowest measured water level: 123.0 m above sea level<br></p></TD></TR></TABLE></TD></TR></TABLE>
+</p></body></html>"""
+        assert report == ref
+
+
+@pytest.mark.spatialite
+class TestDrillreportEnglishSpatialite(
+    DrillreportEnglishMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
+):
+    pass

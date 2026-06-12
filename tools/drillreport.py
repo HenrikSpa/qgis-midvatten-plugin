@@ -671,13 +671,13 @@ class Drillreport:  # general observation point info for the selected object
                 + "</P></u></TD></TR>"
             )
         for row in strat_data:
-            col2 = "" if ru(row[2]) == "NULL" else ru(row[2])
-            col3 = "" if ru(row[3]) == "NULL" else ru(row[3])
-            col4 = "" if ru(row[4]) == "NULL" else ru(row[4])
-            col5 = "" if ru(row[5]) == "NULL" else ru(row[5])
-            col6 = "" if ru(row[6]) == "NULL" else ru(row[6])
-            col7 = "" if ru(row[7]) == "NULL" else ru(row[7])
-            col8 = "" if ru(row[8]) == "NULL" else ru(row[8])
+            col2 = "" if ru(row.depthtop) == "NULL" else ru(row.depthtop)
+            col3 = "" if ru(row.depthbot) == "NULL" else ru(row.depthbot)
+            col4 = "" if ru(row.geology) == "NULL" else ru(row.geology)
+            col5 = "" if ru(row.geoshort) == "NULL" else ru(row.geoshort)
+            col6 = "" if ru(row.capacity) == "NULL" else ru(row.capacity)
+            col7 = "" if ru(row.development) == "NULL" else ru(row.development)
+            col8 = "" if ru(row.comment) == "NULL" else ru(row.comment)
             rpt += r"""<TR VALIGN=TOP><TD WIDTH=15%><P>"""
             rpt += col2 + " - " + col3 + "</P></TD>"
             rpt += r"""<TD WIDTH=27%><P>""" + col4 + "</P></TD>"

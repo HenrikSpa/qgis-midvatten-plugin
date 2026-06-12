@@ -460,3 +460,79 @@ class TestLoggerEditorSeries(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert editor._schema_variant == "source_col"
         # The _series_tab attribute should not exist
         assert not hasattr(editor, "_series_tab")
+
+
+@pytest.mark.spatialite
+class TestSaveToDbFailureStages(utils_for_tests.MidvattenTestSpatialiteDbSv):
+    """save_to_db reports which stage failed and never raises to the caller."""
+
+    def teardown_method(self):
+        super().teardown_method()
+        gc.collect()
+
+    def _editor(self) -> LoggerEditor:
+        _insert_obs_point("rb1")
+        _insert_logger_row("rb1", "2024-01-01 00:00:00", 100.0, 10.0)
+        editor = _make_editor_with_buf(
+            self.iface,
+            self.midvatten.ms,
+            obsid="rb1",
+            dates=["2024-01-01 00:00:00"],
+            head_values=[1.0],
+            level_values=[10.0],
+            series_ids=[None],
+            sources=[""],
+            series_buf={},
+        )
+        editor._buf.loc[:, "level_masl"] = 11.0
+        return editor
+
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_compute_stage_failure_reports_and_returns_false(self, mock_messagebar):
+        editor = self._editor()
+        editor._original_buf = editor._original_buf.drop(columns=["date_time_raw"])
+
+        result = editor.save_to_db()
+
+        print(f"{mock_messagebar.mock_calls=}")
+        assert result is False
+        bar_msg = mock_messagebar.critical.call_args.kwargs["bar_msg"]
+        assert "computing changes" in bar_msg
+
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_connect_stage_failure_reports_and_returns_false(self, mock_messagebar):
+        editor = self._editor()
+
+        with mock.patch(
+            "midvatten.tools.loggereditor.db_utils.DbConnectionManager",
+            side_effect=Exception("no database"),
+        ):
+            result = editor.save_to_db()
+
+        print(f"{mock_messagebar.mock_calls=}")
+        assert result is False
+        bar_msg = mock_messagebar.critical.call_args.kwargs["bar_msg"]
+        assert "could not connect" in bar_msg
+
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_write_stage_failure_reports_rollback_and_returns_false(
+        self, mock_messagebar
+    ):
+        editor = self._editor()
+
+        with mock.patch.object(
+            editor,
+            "_compute_update_statements",
+            side_effect=Exception("boom in statement building"),
+        ):
+            result = editor.save_to_db()
+
+        print(f"{mock_messagebar.mock_calls=}")
+        assert result is False
+        bar_msg = mock_messagebar.critical.call_args.kwargs["bar_msg"]
+        assert "rolled back" in bar_msg
+        # Nothing was written: the row still holds its original value
+        rows = db_utils.sql_load_fr_db(
+            "SELECT level_masl FROM w_levels_logger WHERE obsid = 'rb1'"
+        )
+        assert rows[1][0][0] == 10.0

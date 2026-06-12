@@ -4,6 +4,7 @@ import json
 import logging
 import math
 import os
+import traceback
 
 import numpy as np
 import pandas as pd
@@ -1241,90 +1242,118 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         obsid = self._buf_obsid
         id_mapping: dict[int, int] = {}
 
-        # Duplicate instants (two rows with the same normalized datetime but
-        # different raw text) cannot be addressed individually by the editor.
-        # Drop them from the local diff buffers so the save targets only the
-        # unique rows, and warn the user. The real buffers keep the twins —
-        # a later plan adds a UI to resolve them.
-        dup_mask = self._buf.index.duplicated(keep=False)
-        has_dups = bool(dup_mask.any())
-        buf_raw = set(self._buf["date_time_raw"])
-        if has_dups:
-            dup_instants = self._buf.index[dup_mask].unique()
-            buf = self._buf[~dup_mask]
-            original_buf = self._original_buf[
-                ~self._original_buf.index.duplicated(keep=False)
-            ]
-            head = dup_instants[:5]
-            sample = ", ".join(head.strftime(_DT_FMT))
-            more = (
-                f" (+{len(dup_instants) - len(head)} more)"
-                if len(dup_instants) > len(head)
-                else ""
-            )
-            message_utils.MessagebarAndLog.warning(
-                bar_msg=QCoreApplication.translate(
-                    "LoggerEditor",
-                    "%s duplicate timestamp(s) were skipped while saving."
-                    " Resolve duplicates to save edits at those times.",
-                )
-                % len(dup_instants),
-                log_msg=f"Skipped duplicate instants for obsid {obsid}: {sample}{more}",
-            )
-        else:
-            buf = self._buf
-            # A resolved twin (one of a duplicate pair dropped from the buffer)
-            # leaves self._buf clean, but self._original_buf still carries the
-            # duplicate index label. Align original_buf to the surviving rows by
-            # raw text so the UPDATE diff compares identically-labeled Series.
-            original_buf = self._original_buf[
-                self._original_buf["date_time_raw"].isin(buf_raw)
-            ]
-
         common_utils.start_waiting_cursor()
         try:
-            # Compute deletions over the FULL buffers by raw date_time text so
-            # that dropping one twin (same normalized instant, different raw
-            # text) is caught -- a label set-difference on the deduped buffers
-            # would miss it because the surviving twin keeps the label.
-            orig_raw = self._original_buf["date_time_raw"]
-            deleted_raw = orig_raw[~orig_raw.isin(buf_raw)].tolist()
-            delete_params = [(obsid, raw) for raw in deleted_raw]
-
-            common_index = original_buf.index.intersection(buf.index)
-            orig_vals = original_buf.loc[common_index, "level_masl"]
-            new_vals = buf.loc[common_index, "level_masl"]
-            changed_mask = ~(
-                (orig_vals == new_vals) | (orig_vals.isna() & new_vals.isna())
-            )
-            changed_index = common_index[changed_mask]
-            orig_changed = orig_vals.loc[changed_index]
-            new_changed = new_vals.loc[changed_index]
-            head_changed = buf.loc[changed_index, "head_cm_m"]
-
-            dbconnection = db_utils.DbConnectionManager()
-            ph = dbconnection.placeholder()
-            tbl = ident("w_levels_logger")
-            # SQLite stores date_time as text; normalize both sides so that
-            # '2017-02-01 00:00' and '2017-02-01 00:00:00' compare equal.
-            is_sqlite = dbconnection.is_sqlite()
-            if is_sqlite:
-                dt_eq = f"datetime({ident('date_time')}) = datetime({ph})"
-            else:
-                dt_eq = f"{ident('date_time')}::timestamp = {ph}::timestamp"
-            range_stmts, per_row_params = self._compute_update_statements(
-                buf,
-                changed_index,
-                orig_changed,
-                new_changed,
-                head_changed,
-                obsid,
-                tbl,
-                ph,
-                is_sqlite,
-                force_per_row=has_dups,
-            )
             try:
+                # Duplicate instants (two rows with the same normalized
+                # datetime but different raw text) cannot be addressed
+                # individually by the editor. Drop them from the local diff
+                # buffers so the save targets only the unique rows, and warn
+                # the user. The real buffers keep the twins — a later plan
+                # adds a UI to resolve them.
+                dup_mask = self._buf.index.duplicated(keep=False)
+                has_dups = bool(dup_mask.any())
+                buf_raw = set(self._buf["date_time_raw"])
+                if has_dups:
+                    dup_instants = self._buf.index[dup_mask].unique()
+                    buf = self._buf[~dup_mask]
+                    original_buf = self._original_buf[
+                        ~self._original_buf.index.duplicated(keep=False)
+                    ]
+                    head = dup_instants[:5]
+                    sample = ", ".join(head.strftime(_DT_FMT))
+                    more = (
+                        f" (+{len(dup_instants) - len(head)} more)"
+                        if len(dup_instants) > len(head)
+                        else ""
+                    )
+                    message_utils.MessagebarAndLog.warning(
+                        bar_msg=QCoreApplication.translate(
+                            "LoggerEditor",
+                            "%s duplicate timestamp(s) were skipped while saving."
+                            " Resolve duplicates to save edits at those times.",
+                        )
+                        % len(dup_instants),
+                        log_msg=(
+                            f"Skipped duplicate instants for obsid {obsid}:"
+                            f" {sample}{more}"
+                        ),
+                    )
+                else:
+                    buf = self._buf
+                    # A resolved twin (one of a duplicate pair dropped from
+                    # the buffer) leaves self._buf clean, but
+                    # self._original_buf still carries the duplicate index
+                    # label. Align original_buf to the surviving rows by raw
+                    # text so the UPDATE diff compares identically-labeled
+                    # Series.
+                    original_buf = self._original_buf[
+                        self._original_buf["date_time_raw"].isin(buf_raw)
+                    ]
+
+                # Compute deletions over the FULL buffers by raw date_time text
+                # so that dropping one twin (same normalized instant, different
+                # raw text) is caught -- a label set-difference on the deduped
+                # buffers would miss it because the surviving twin keeps the
+                # label.
+                orig_raw = self._original_buf["date_time_raw"]
+                deleted_raw = orig_raw[~orig_raw.isin(buf_raw)].tolist()
+                delete_params = [(obsid, raw) for raw in deleted_raw]
+
+                common_index = original_buf.index.intersection(buf.index)
+                orig_vals = original_buf.loc[common_index, "level_masl"]
+                new_vals = buf.loc[common_index, "level_masl"]
+                changed_mask = ~(
+                    (orig_vals == new_vals) | (orig_vals.isna() & new_vals.isna())
+                )
+                changed_index = common_index[changed_mask]
+                orig_changed = orig_vals.loc[changed_index]
+                new_changed = new_vals.loc[changed_index]
+                head_changed = buf.loc[changed_index, "head_cm_m"]
+            except Exception as e:
+                message_utils.MessagebarAndLog.critical(
+                    bar_msg=QCoreApplication.translate(
+                        "LoggerEditor",
+                        "Save failed while computing changes;"
+                        " nothing was written to the database.",
+                    ),
+                    log_msg=f"{e}\n{traceback.format_exc()}",
+                )
+                return False
+
+            try:
+                dbconnection = db_utils.DbConnectionManager()
+            except Exception as e:
+                message_utils.MessagebarAndLog.critical(
+                    bar_msg=QCoreApplication.translate(
+                        "LoggerEditor", "Save failed: could not connect to database."
+                    ),
+                    log_msg=f"{e}\n{traceback.format_exc()}",
+                )
+                return False
+
+            try:
+                ph = dbconnection.placeholder()
+                tbl = ident("w_levels_logger")
+                # SQLite stores date_time as text; normalize both sides so that
+                # '2017-02-01 00:00' and '2017-02-01 00:00:00' compare equal.
+                is_sqlite = dbconnection.is_sqlite()
+                if is_sqlite:
+                    dt_eq = f"datetime({ident('date_time')}) = datetime({ph})"
+                else:
+                    dt_eq = f"{ident('date_time')}::timestamp = {ph}::timestamp"
+                range_stmts, per_row_params = self._compute_update_statements(
+                    buf,
+                    changed_index,
+                    orig_changed,
+                    new_changed,
+                    head_changed,
+                    obsid,
+                    tbl,
+                    ph,
+                    is_sqlite,
+                    force_per_row=has_dups,
+                )
                 with dbconnection.transaction():
                     if delete_params:
                         delete_sql = (
@@ -1452,8 +1481,11 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 dbconnection.closedb()
         except Exception as e:
             message_utils.MessagebarAndLog.critical(
-                bar_msg=QCoreApplication.translate("LoggerEditor", "Save failed."),
-                log_msg=str(e),
+                bar_msg=QCoreApplication.translate(
+                    "LoggerEditor",
+                    "Save failed while writing; the transaction was rolled back.",
+                ),
+                log_msg=f"{e}\n{traceback.format_exc()}",
             )
             return False
         finally:

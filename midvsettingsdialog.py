@@ -450,6 +450,12 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
             self.check_box_data_points_2.setChecked(False)
 
     def load_columns_from_table(self, table: str = "") -> List[Any]:
+        # Clearing the table comboboxes on a project reset fires the
+        # *_table_updated signal handlers while no database is configured.
+        # Without a database there are no columns to load, so bail out before
+        # DbConnectionManager raises UsageError on the empty DB setting.
+        if not self.ms.settingsdict.get("database"):
+            return []
         return db_utils.tables_columns().get(table, [])
 
     def load_tables_from_db(

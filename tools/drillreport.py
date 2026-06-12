@@ -218,13 +218,7 @@ class Drillreport:  # general observation point info for the selected object
 
     @staticmethod
     def _row(label: str, value: str, width: int = 50) -> str:
-        return (
-            r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-            + label
-            + f"</TD><TD WIDTH={width}%>"
-            + value
-            + "</TD></TR>"
-        )
+        return f"<TR VALIGN=TOP><TD WIDTH=33%>{label}</TD><TD WIDTH={width}%>{value}</TD></TR>"
 
     def write_obsid(
         self,
@@ -237,14 +231,7 @@ class Drillreport:  # general observation point info for the selected object
         spec = self._locale_spec()
         rpt += r"""<html><TABLE WIDTH=100% BORDER=0 CELLPADDING=1 CELLSPACING=1><TR VALIGN=TOP><TD WIDTH=15%><h3 style="font-family:'arial';font-size:18pt; font-weight:600">"""
         rpt += obsid
-        rpt += "".join(
-            [
-                r'''</h3><img src="''',
-                os.path.join(imgpath, spec["img"]),
-                r"""" /><br><img src=""",
-                r"""'""",
-            ]
-        )
+        rpt += f'</h3><img src="{os.path.join(imgpath, spec["img"])}" /><br><img src=\''
         rpt += logopath
         rpt += """' /></TD><TD WIDTH=85%><TABLE WIDTH=100% BORDER=1 CELLPADDING=4 CELLSPACING=3><TR VALIGN=TOP><TD WIDTH=50%><P><U><B>"""
         rpt += spec["general"]
@@ -252,9 +239,7 @@ class Drillreport:  # general observation point info for the selected object
         f.write(rpt)
 
         # GENERAL DATA UPPER LEFT QUADRANT
-        connection_ok, general_data = self.get_data(
-            obsid, "obs_points", "n"
-        )  # MacOSX fix1
+        connection_ok, general_data = self.get_data(obsid, "obs_points", "n")
         if connection_ok:
             result2 = db_utils.sql_load_fr_db(
                 r"""SELECT srid FROM geometry_columns where f_table_name = 'obs_points'"""
@@ -270,7 +255,7 @@ class Drillreport:  # general observation point info for the selected object
             f.write(rpt)
 
             # STRATIGRAPHY DATA UPPER RIGHT QUADRANT
-            strat_data = self.get_data(obsid, "stratigraphy", "n")[1]  # MacOSX fix1
+            strat_data = self.get_data(obsid, "stratigraphy", "n")[1]
             f.write(self.rpt_upper_right(strat_data, spec))
 
             rpt = r"""</TABLE></TD></TR><TR VALIGN=TOP><TD WIDTH=50%><P><U><B>"""
@@ -287,9 +272,7 @@ class Drillreport:  # general observation point info for the selected object
             f.write(rpt)
 
             # WATER LEVEL STATISTICS LOWER RIGHT QUADRANT
-            meas_or_level_masl, statistics = get_statistics_for_single_obsid(
-                obsid
-            )  # MacOSX fix1
+            meas_or_level_masl, statistics = get_statistics_for_single_obsid(obsid)
             f.write(self.rpt_lower_right(statistics, meas_or_level_masl, spec))
 
             f.write(r"""</TD></TR></TABLE></TD></TR></TABLE>""")
@@ -297,12 +280,10 @@ class Drillreport:  # general observation point info for the selected object
     def rpt_upper_left(
         self,
         general_data: List[ObsPointsRow],
-        crs: str = "",
-        crs_name: str = "",
-        spec: Optional[Dict[str, Any]] = None,
+        crs: str,
+        crs_name: str,
+        spec: Dict[str, Any],
     ) -> str:
-        if spec is None:
-            spec = self._locale_spec()
         labels = spec["upper_left"]
         r = general_data[0]
         h_syst_suffix = " (" + ru(r.h_syst) + ")" if ru(r.h_syst) != "" else ""
@@ -358,10 +339,8 @@ class Drillreport:  # general observation point info for the selected object
     def rpt_upper_right(
         self,
         strat_data: List[StratigraphyRow],
-        spec: Optional[Dict[str, Any]] = None,
+        spec: Dict[str, Any],
     ) -> str:
-        if spec is None:
-            spec = self._locale_spec()
         widths = spec["strat_widths"]
         rpt = r"""<p style="font-family:'arial'; font-size:10pt; font-weight:400; font-style:normal;">"""
         if len(strat_data) > 0:
@@ -407,10 +386,8 @@ class Drillreport:  # general observation point info for the selected object
         self,
         statistics: List[Optional[Union[float, int]]],
         meas_or_level_masl: str,
-        spec: Optional[Dict[str, Any]] = None,
+        spec: Dict[str, Any],
     ) -> str:
-        if spec is None:
-            spec = self._locale_spec()
         unit = spec["unit_meas"] if meas_or_level_masl == "meas" else spec["unit_masl"]
         rpt = r"""<p style="font-family:'arial'; font-size:10pt; font-weight:400; font-style:normal;">"""
         if ru(statistics[2]) != "" and ru(statistics[2]) != "0":

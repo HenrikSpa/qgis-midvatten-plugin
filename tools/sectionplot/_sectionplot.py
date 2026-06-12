@@ -58,7 +58,7 @@ from midvatten.tools.utils import (  # noqa: E402
     message_utils,
 )
 from midvatten.tools.utils.string_utils import returnunicode as ru  # noqa: E402
-from midvatten.tools.utils.midvatten_utils import PlotTemplates  # noqa: E402
+from midvatten.tools.utils.plot_templates import PlotTemplates  # noqa: E402
 from midvatten.tools.utils.gui_utils import DetachFigureButton, ReverseSectionButton  # noqa: E402
 import midvatten.definitions.midvatten_defs as defs  # noqa: E402
 from midvatten.tools.utils import matplotlib_replacements  # noqa: E402

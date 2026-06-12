@@ -45,6 +45,7 @@ from midvatten.tools.utils import (
     layer_utils,
     message_utils,
     midvatten_utils,
+    plot_templates,
 )
 from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.string_utils import returnunicode as ru
@@ -100,7 +101,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         self._connect_signals()
 
         self.custplot_last_used_style_settingskey = "custplot_last_used_template"
-        self.styles = midvatten_utils.MatplotlibStyles(
+        self.styles = plot_templates.MatplotlibStyles(
             self,
             self.template_list,
             self.import_button,

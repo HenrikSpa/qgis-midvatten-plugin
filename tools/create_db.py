@@ -39,6 +39,7 @@ from midvatten.tools.utils.file_utils import definitions_path
 from midvatten.tools.utils.common_utils import format_timezone_string
 from midvatten.tools.utils.date_utils import get_pytz_timezones
 from midvatten.tools.utils.db_utils import DbConnectionManager, execute_sqlfile
+from midvatten.tools.utils import message_utils
 
 log = logging.getLogger(__name__)
 
@@ -136,7 +137,7 @@ class NewDb:
             return
 
         if os.path.exists(dbpath):
-            common_utils.MessagebarAndLog.critical(
+            message_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
                     "NewDb",
                     "A database with the chosen name already existed. Cancelling...",
@@ -162,7 +163,7 @@ class NewDb:
             dbconnection.execute("PRAGMA foreign_keys = ON")
 
         except Exception as e:
-            common_utils.MessagebarAndLog.critical(
+            message_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
                     "NewDb",
                     "Impossible to connect to selected DataBase, see log message panel",
@@ -181,7 +182,7 @@ class NewDb:
         if (
             not int(versionstext[0][0]) > 3
         ):  # which file to use depends on spatialite version installed
-            common_utils.pop_up_info(
+            message_utils.pop_up_info(
                 QCoreApplication.translate(
                     "NewDb",
                     "Midvatten plugin needs spatialite4.\nDatabase can not be created",

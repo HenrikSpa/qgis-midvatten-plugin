@@ -32,7 +32,8 @@ from qgis.core import (
 )
 
 import midvatten.definitions.midvatten_defs as defs
-from midvatten.tools.utils import common_utils, db_utils, layer_utils
+from midvatten.tools.utils import message_utils
+from midvatten.tools.utils import db_utils, layer_utils
 from midvatten.tools.sectionplot._utils import (
     get_legend_items_labels,
     get_plot_label_name,
@@ -115,7 +116,7 @@ def paint_bars(
                 )
             )
         except Exception:
-            common_utils.MessagebarAndLog.info(
+            message_utils.MessagebarAndLog.info(
                 bar_msg=QCoreApplication.translate(
                     "Sectionplot",
                     "Type %s color %s could not be plotted. Default to white!. See message log",
@@ -202,7 +203,7 @@ def paint_screen_bars(
                 )
             )
         except Exception:
-            common_utils.MessagebarAndLog.info(
+            message_utils.MessagebarAndLog.info(
                 bar_msg=QCoreApplication.translate(
                     "Sectionplot",
                     "Screen type %s could not be plotted. See message log",
@@ -590,7 +591,7 @@ def paint_dems(
         try:
             QgsProject.instance().removeMapLayer(temp_memorylayer.id())
         except Exception:
-            common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
+            message_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
 
 
 def paint_graded_dems(
@@ -647,7 +648,7 @@ def paint_graded_dems(
     points_srid = temp_memorylayer.crs().authid()
     color_layer_srid = color_layer.crs().authid()
     if points_srid != color_layer_srid:
-        common_utils.MessagebarAndLog.warning(
+        message_utils.MessagebarAndLog.warning(
             bar_msg=QCoreApplication.translate(
                 "SectionPlot",
                 "Grade dem: Layer %s had wrong srid! Had '%s' but should have '%s'.",
@@ -947,7 +948,7 @@ def paint_tem(
         try:
             vmin = float(settingsdict["secplot_tem_vmin"].strip().replace(",", "."))
         except Exception:
-            common_utils.MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "SectionPlot",
                     "Error: Supplied vmin could not be interpreted as a number",
@@ -957,7 +958,7 @@ def paint_tem(
         try:
             vmax = float(settingsdict["secplot_tem_vmax"].strip().replace(",", "."))
         except Exception:
-            common_utils.MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "SectionPlot",
                     "Error: Supplied vmax could not be interpreted as a number",
@@ -1141,7 +1142,7 @@ def paint_images(
                         path = new_path
 
             if path is None:
-                common_utils.MessagebarAndLog.warning(
+                message_utils.MessagebarAndLog.warning(
                     bar_msg=QCoreApplication.translate(
                         "SectionPlot",
                         "Error: The image path '%s' could not be found!",

@@ -38,6 +38,7 @@ from qgis.core import (
 from qgis.gui import QgsMapLayerComboBox
 
 import midvatten.definitions.midvatten_defs as defs
+from midvatten.tools.utils import message_utils
 from midvatten.tools.utils import (
     common_utils,
     db_utils,
@@ -145,7 +146,7 @@ class ParameterGroup:
                     )
                 )
             except exceptions.UsageError as e:
-                common_utils.MessagebarAndLog.warning(bar_msg=str(e))
+                message_utils.MessagebarAndLog.warning(bar_msg=str(e))
 
     def get_settings(self):
         settings = (
@@ -236,7 +237,7 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
             tables_columns = db_utils.tables_columns()
         except exceptions.UsageError as e:
             tables_columns = {}
-            common_utils.MessagebarAndLog.info(bar_msg=str(e))
+            message_utils.MessagebarAndLog.info(bar_msg=str(e))
 
         self.parameter_groups = None
 
@@ -250,7 +251,7 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
             self.stored_settingskey_format,
         ]:
             if settingskey not in self.ms.settingsdict:
-                common_utils.MessagebarAndLog.warning(
+                message_utils.MessagebarAndLog.warning(
                     bar_msg=QCoreApplication.translate(
                         "ExportToFieldLogger", "%s did not exist in settingsdict"
                     )
@@ -584,7 +585,7 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
                     setattr(parameter_group, attr[0], attr[1])
                     attrs_set = True
                 else:
-                    common_utils.MessagebarAndLog.warning(
+                    message_utils.MessagebarAndLog.warning(
                         log_msg=QCoreApplication.translate(
                             "ExportToFieldLogger",
                             "Tried to load input field groups but the variable %s did not exist.",
@@ -613,7 +614,7 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
                             ru(attr[1], keep_containers=True),
                         )
                     else:
-                        common_utils.MessagebarAndLog.warning(
+                        message_utils.MessagebarAndLog.warning(
                             log_msg=QCoreApplication.translate(
                                 "ExportToFieldLogger",
                                 "Tried to load input field fields browser but the variable %s did not exist.",
@@ -621,7 +622,7 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
                             % attr[0]
                         )
                 except UnicodeEncodeError:
-                    common_utils.MessagebarAndLog.warning(
+                    message_utils.MessagebarAndLog.warning(
                         log_msg=QCoreApplication.translate(
                             "ExportToFieldLogger",
                             "Tried to load input field fields browser but the string %s could not be handled.",
@@ -652,7 +653,7 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
             skip_ast=True,
         )
 
-        common_utils.pop_up_info(
+        message_utils.pop_up_info(
             QCoreApplication.translate(
                 "ExportToFieldLogger",
                 'Input fields and "Create Input Fields" updated to default.\nRestart Export to Fieldlogger dialog to complete,\nor press "Save settings" to save current input fields settings again.',
@@ -678,7 +679,7 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
             self.parameter_groups, self.stored_settingskey, msg
         )
         if browser_updated or groups_updated:
-            common_utils.pop_up_info(
+            message_utils.pop_up_info(
                 QCoreApplication.translate(
                     "ExportToFieldLogger",
                     'Settings updated. Restart Export to Fieldlogger dialog\nor press "Save settings" to undo.',
@@ -713,7 +714,7 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
                 stored_settings = ast.literal_eval(new_string_text)
         except SyntaxError as e:
             stored_settings = []
-            common_utils.MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "ExportToFieldLogger",
                     "Parsing settings failed, see log message panel",
@@ -735,7 +736,7 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
             try:
                 latlons = db_utils.get_latlon_for_all_obsids()
             except exceptions.UsageError as e:
-                common_utils.MessagebarAndLog.warning(bar_msg=str(e))
+                message_utils.MessagebarAndLog.warning(bar_msg=str(e))
                 latlons = {}
         else:
             latlons = self.obslayer.get_latlon_for_features()
@@ -799,7 +800,7 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         for index, parameter_group in enumerate(parameter_groups):
             _parameters_inputtypes_hints = parameter_group.input_field_group_list
             if not _parameters_inputtypes_hints:
-                common_utils.MessagebarAndLog.warning(
+                message_utils.MessagebarAndLog.warning(
                     bar_msg=QCoreApplication.translate(
                         "ExportToFieldLogger",
                         "Warning: Empty input fields list for group nr %s",
@@ -818,7 +819,7 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
                 if location not in locations_lat_lon:
                     lat, lon = latlons.get(obsid, [None, None])
                     if not lat or not lon:
-                        common_utils.MessagebarAndLog.critical(
+                        message_utils.MessagebarAndLog.critical(
                             bar_msg=QCoreApplication.translate(
                                 "ExportToFieldLogger",
                                 "Critical: Obsid %s did not have lat-lon coordinates. Check obs_points table",
@@ -834,7 +835,7 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
                     existed_p_i_h = parameters_inputtypes_hints.get(_parameter, None)
                     if existed_p_i_h is not None:
                         if existed_p_i_h != _parameter_inputtype_hint:
-                            common_utils.MessagebarAndLog.warning(
+                            message_utils.MessagebarAndLog.warning(
                                 bar_msg=QCoreApplication.translate(
                                     "ExportToFieldLogger",
                                     "Warning, parameter error, see log message panel",
@@ -926,14 +927,14 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
             with open(filename, "w", encoding="utf8") as f:
                 f.write(out_string)
         except OSError as e:
-            common_utils.pop_up_info(
+            message_utils.pop_up_info(
                 QCoreApplication.translate(
                     "ExportToFieldLogger", "Writing of file failed!: %s "
                 )
                 % str(e)
             )
         except UnicodeDecodeError as e:
-            common_utils.pop_up_info(
+            message_utils.pop_up_info(
                 QCoreApplication.translate("ExportToFieldLogger", "Error writing %s")
                 % str(out_string)
             )
@@ -1002,7 +1003,7 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         common_utils.save_stored_settings(
             self.ms, "FieldLogger", self.stored_settingskey_format, skip_ast=True
         )
-        common_utils.pop_up_info(
+        message_utils.pop_up_info(
             QCoreApplication.translate(
                 "ExportToFieldLogger",
                 'Settings cleared. Restart Export to Fieldlogger dialog to complete,\nor press "Save settings" to save current input fields settings again.',
@@ -1158,7 +1159,7 @@ class ParameterBrowser(QtWidgets.QDialog, parameter_browser_dialog):
             )
 
         if not connection_ok:
-            common_utils.MessagebarAndLog.critical(
+            message_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
                     "ParameterBrowser", "Error, sql failed, see log message panel"
                 ),
@@ -1194,21 +1195,21 @@ class ParameterBrowser(QtWidgets.QDialog, parameter_browser_dialog):
                 input_field.split(";")[0] for input_field in self.input_field_list
             ]
             if not combined_name:
-                common_utils.MessagebarAndLog.critical(
+                message_utils.MessagebarAndLog.critical(
                     bar_msg=QCoreApplication.translate(
                         "ParameterBrowser", "Error, input name not set"
                     )
                 )
                 return
             elif not input_type:
-                common_utils.MessagebarAndLog.critical(
+                message_utils.MessagebarAndLog.critical(
                     bar_msg=QCoreApplication.translate(
                         "ParameterBrowser", "Error, input type not set"
                     )
                 )
                 return
             elif combined_name in unique_names:
-                common_utils.MessagebarAndLog.critical(
+                message_utils.MessagebarAndLog.critical(
                     bar_msg=QCoreApplication.translate(
                         "ParameterBrowser",
                         "Error, input name already existing. No duplicates allowed",
@@ -1217,7 +1218,7 @@ class ParameterBrowser(QtWidgets.QDialog, parameter_browser_dialog):
                 return
 
             if not hint:
-                common_utils.MessagebarAndLog.warning(
+                message_utils.MessagebarAndLog.warning(
                     bar_msg=QCoreApplication.translate(
                         "ParameterBrowser",
                         'Warning, hint not given and will be set to a space (" ") as it must exist',

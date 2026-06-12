@@ -33,10 +33,11 @@ from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QCoreApplication
 
 
-from midvatten.tools.utils import common_utils, db_utils, layer_utils
+from midvatten.tools.utils import db_utils, layer_utils
 from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.common_utils import fn_timer
+from midvatten.tools.utils import message_utils
 
 Calc_Ui_Dialog = uic.loadUiType(ui_path("calc_lvl_dialog.ui"))[0]
 
@@ -80,7 +81,7 @@ class CalculateLevel(
                         obsid for obsid in obsids if obsid in obsid_with_h_toc_null
                     ]
                     if any_nulls:
-                        common_utils.pop_up_info(
+                        message_utils.pop_up_info(
                             QCoreApplication.translate(
                                 "Calclvl",
                                 "Adjustment aborted! There seems to be NULL values in your table obs_points, column h_toc.",
@@ -95,7 +96,7 @@ class CalculateLevel(
                     ]
 
                 if not obsids:
-                    common_utils.pop_up_info(
+                    message_utils.pop_up_info(
                         QCoreApplication.translate(
                             "Calclvl", "Adjustment aborted! All h_tocs were NULL."
                         ),
@@ -125,7 +126,7 @@ class CalculateLevel(
             self.updated_level_masl = self.log_msg(where_sql, where_sql_args)
             db_utils.sql_alter_db(sql2, all_args=[where_sql_args])
 
-            common_utils.MessagebarAndLog.info(
+            message_utils.MessagebarAndLog.info(
                 bar_msg=QCoreApplication.translate(
                     "Calclvl", "Calculation done, see log message panel"
                 ),
@@ -140,7 +141,7 @@ class CalculateLevel(
             try:
                 dbconnection.closedb()
             except Exception:
-                common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
+                message_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
 
     @fn_timer
     def calcall(self):
@@ -149,7 +150,7 @@ class CalculateLevel(
             obsids = [x[0] for x in obsids]
             self.calc(obsids)
         else:
-            common_utils.pop_up_info(
+            message_utils.pop_up_info(
                 QCoreApplication.translate(
                     "Calclvl", "Adjustment aborted! No obsids in w_levels."
                 ),
@@ -162,7 +163,7 @@ class CalculateLevel(
             layer_utils.get_selected_object_names(self.layer), keep_containers=True
         )
         if not obsids:
-            common_utils.pop_up_info(
+            message_utils.pop_up_info(
                 QCoreApplication.translate(
                     "Calclvl", "Adjustment aborted! No obsids selected."
                 ),

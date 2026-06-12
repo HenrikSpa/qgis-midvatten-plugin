@@ -8,13 +8,13 @@ import csv
 import datetime
 import os
 import re
-from datetime import datetime as _datetime
 
 import qgis.PyQt.QtWidgets as QtWidgets
 from qgis.PyQt.QtCore import QCoreApplication
 
 import pandas as pd  # pandas is a mandatory dependency of this plugin
 
+from midvatten.tools.utils import message_utils
 from midvatten.tools.utils import common_utils, date_utils, dialog_utils, file_utils
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.common_utils import format_timezone_string
@@ -331,7 +331,7 @@ class DiverOfficeParser:
                     data_headers[int(secno)] = colname
 
         if data_start_row is None:
-            common_utils.MessagebarAndLog.critical(
+            message_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
                     "LoggerImport",
                     "Diveroffice import warning. See log message panel",
@@ -434,7 +434,7 @@ class DiverOfficeParser:
             colnames = [p[1] for p in sorted_pairs]
 
         if "head_cm" in _col_map.values() and "head_cm" not in colnames:
-            common_utils.MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "LoggerImport",
                     "Diveroffice import warning. See log message panel",
@@ -629,7 +629,7 @@ class LeveloggerParser:
                 if row.startswith("Date")
             ][0]
         except IndexError:
-            common_utils.MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "LoggerImport", """File %s could not be parsed."""
                 )
@@ -670,7 +670,7 @@ class LeveloggerParser:
                     level_unit_factor_to_cm = 100
                 else:
                     level_unit_factor_to_cm = 100
-                    common_utils.MessagebarAndLog.warning(
+                    message_utils.MessagebarAndLog.warning(
                         bar_msg=QCoreApplication.translate(
                             "LoggerImport",
                             """The unit for level wasn't m or cm, a factor of %s was used. Check the imported data.""",
@@ -708,7 +708,7 @@ class LeveloggerParser:
         try:
             first_data_row = rows[data_header_idx + 1]
         except IndexError:
-            common_utils.MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "LoggerImport", """No data in file %s."""
                 )
@@ -720,7 +720,7 @@ class LeveloggerParser:
                 [first_data_row[date_colnr], first_data_row[time_colnr]]
             )
             if date_utils.to_date(date_str) is None:
-                common_utils.MessagebarAndLog.warning(
+                message_utils.MessagebarAndLog.warning(
                     bar_msg=QCoreApplication.translate(
                         "LoggerImport",
                         """Dateformat in file %s could not be parsed.""",
@@ -832,7 +832,7 @@ class HoboParser:
                 rownr for rownr, row in enumerate(rows) if "Date Time" in "_".join(row)
             ][0]
         except IndexError:
-            common_utils.MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "LoggerImport", """File %s could not be parsed."""
                 )
@@ -852,7 +852,7 @@ class HoboParser:
         if tz_converter:
             tz_string = get_tz_string(rows[1][date_colnr])
             if tz_string is None:
-                common_utils.MessagebarAndLog.warning(
+                message_utils.MessagebarAndLog.warning(
                     bar_msg=QCoreApplication.translate(
                         "LoggerImport", "Timezone not found in %s"
                     )
@@ -885,7 +885,7 @@ class HoboParser:
         try:
             first_data_row = rows[data_header_idx + 1]
         except IndexError:
-            common_utils.MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "LoggerImport", """No data in file %s."""
                 )
@@ -897,7 +897,7 @@ class HoboParser:
             if date_utils.to_date(dt) is None:
                 dt = first_data_row[date_colnr][:-2].rstrip()
                 if date_utils.to_date(dt) is None:
-                    common_utils.MessagebarAndLog.warning(
+                    message_utils.MessagebarAndLog.warning(
                         bar_msg=QCoreApplication.translate(
                             "LoggerImport",
                             """Dateformat in file %s could not be parsed.""",

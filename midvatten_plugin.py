@@ -75,6 +75,7 @@ from midvatten.tools.w_flow_calc_aveflow import CalculateAveflow
 from midvatten.tools.wqualreport import Wqualreport
 from midvatten.tools.wqualreport_compact import CompactWqualReportUi
 from midvatten.tools.xyplot import XYPlot
+from midvatten.tools.utils import message_utils
 
 log = logging.getLogger(__name__)
 
@@ -768,7 +769,7 @@ class Midvatten:
         try:
             delattr(self, var)
         except Exception:
-            common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
+            message_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
 
     @common_utils.general_exception_handler
     def export_csv(self):

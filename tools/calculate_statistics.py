@@ -28,6 +28,7 @@ from midvatten.tools.utils import common_utils, db_utils, gui_utils, layer_utils
 from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
 from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils import message_utils
 
 calculate_statistics_dialog = qgis.PyQt.uic.loadUiType(
     ui_path("calculate_statistics_ui.ui")
@@ -67,7 +68,7 @@ class CalculateStatisticsGui(
         obsids = layer_utils.get_selected_features_as_tuple()
 
         if not all([table, column, obsids]):
-            common_utils.MessagebarAndLog.critical(
+            message_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
                     "CalculateStatisticsGui",
                     """Calculation failed, make sure you've selected a table, a column and features with a column obsid.""",
@@ -91,7 +92,7 @@ class CalculateStatisticsGui(
                 for obsid, v in sorted(stats.items())
             ]
         )
-        common_utils.MessagebarAndLog.info(
+        message_utils.MessagebarAndLog.info(
             bar_msg=QCoreApplication.translate(
                 "Midvatten",
                 "Statistics for table %s column %s done, see log for results.",
@@ -201,6 +202,6 @@ def get_statistics_for_single_obsid(
     try:
         dbconnection.closedb()
     except Exception:
-        common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
+        message_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
 
     return data_column, statistics_list

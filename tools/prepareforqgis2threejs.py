@@ -29,10 +29,11 @@ from qgis.PyQt.QtGui import QColor
 from qgis.core import QgsProject
 
 from midvatten.definitions import midvatten_defs as defs
-from midvatten.tools.utils import common_utils, db_utils, midvatten_utils
+from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.layer_build import build_layer
 from midvatten.tools.utils.layer_specs import LayerSpec
 from midvatten.tools.utils.string_utils import returnunicode as ru, lstrip
+from midvatten.tools.utils import message_utils
 
 log = logging.getLogger(__name__)
 
@@ -110,7 +111,7 @@ class PrepareForQgis2Threejs:
                         color = converter.to_rgb(supplied_color)
                         color = [x * 255 for x in color]
                     except Exception as e:
-                        common_utils.MessagebarAndLog.warning(
+                        message_utils.MessagebarAndLog.warning(
                             bar_msg=QCoreApplication.translate(
                                 "PrepareForQgis2Threejs",
                                 "Setting color from dict failed",
@@ -187,7 +188,7 @@ class PrepareForQgis2Threejs:
                     """
                 )
             except psycopg2.errors.DuplicateTable:
-                common_utils.MessagebarAndLog.info(
+                message_utils.MessagebarAndLog.info(
                     log_msg=QCoreApplication.translate(
                         "PrepareForQgis2Threejs",
                         "Table strat_obs_p_for_qgsi2threejs already existed and is not recreated.",
@@ -235,7 +236,7 @@ class PrepareForQgis2Threejs:
                     try:
                         self.dbconnection.execute(sqliteline)
                     except psycopg2.errors.DuplicateTable:
-                        common_utils.MessagebarAndLog.info(
+                        message_utils.MessagebarAndLog.info(
                             log_msg=QCoreApplication.translate(
                                 "PrepareForQgis2Threejs",
                                 "Table %s already existed and is not recreated.",

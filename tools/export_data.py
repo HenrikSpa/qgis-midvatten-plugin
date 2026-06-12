@@ -39,6 +39,7 @@ from qgis.PyQt.QtWidgets import (
 
 from midvatten.tools.utils import common_utils, db_utils, file_utils, layer_utils
 from midvatten.definitions import midvatten_defs as defs
+from midvatten.tools.utils import message_utils
 
 _HTML_TAG_RE = re.compile(r"<[a-zA-Z][^>]*>")
 _BLOCK_TAGS = frozenset(
@@ -230,7 +231,7 @@ class ExportData:
             if not db_utils.verify_table_exists(
                 tname, dbconnection=self.source_dbconnection
             ):
-                common_utils.MessagebarAndLog.info(
+                message_utils.MessagebarAndLog.info(
                     bar_msg=QCoreApplication.translate(
                         "ExportData", "Table %s didn't exist. Skipping it."
                     )

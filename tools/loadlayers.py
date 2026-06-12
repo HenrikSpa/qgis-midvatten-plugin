@@ -12,7 +12,7 @@ from qgis.core import (
 )
 from qgis.PyQt.QtCore import QCoreApplication
 
-from midvatten.tools.utils import common_utils, db_utils
+from midvatten.tools.utils import db_utils
 from midvatten.tools.utils.file_utils import definitions_path
 from midvatten.tools.utils.layer_build import build_layer
 from midvatten.tools.utils.layer_specs import (
@@ -22,6 +22,7 @@ from midvatten.tools.utils.layer_specs import (
     LayerSpec,
 )
 from midvatten.tools.utils.midvatten_utils import is_locale_swedish
+from midvatten.tools.utils import message_utils
 
 
 class LoadLayers:
@@ -90,7 +91,7 @@ class LoadLayers:
                 layer.loadNamedStyle(path)
                 return
             except Exception:
-                common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
+                message_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
 
     def _register_relations(
         self,
@@ -119,7 +120,7 @@ class LoadLayers:
         if rel.isValid():
             QgsProject.instance().relationManager().addRelation(rel)
             return True
-        common_utils.MessagebarAndLog.warning(
+        message_utils.MessagebarAndLog.warning(
             bar_msg=QCoreApplication.translate(
                 "LoadLayers",
                 "Failed to create obs_points_screen relation",

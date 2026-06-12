@@ -29,6 +29,7 @@ import qgis
 import qgis.PyQt
 from qgis.PyQt.QtCore import QCoreApplication
 
+from midvatten.tools.utils import message_utils
 from midvatten.tools.utils import (
     common_utils,
     db_utils,
@@ -216,7 +217,7 @@ class CompactWqualReportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_d
         ]
         date_time_as_columns = self.date_time_as_columns.isChecked()
         if date_time_as_columns and not sort_order:
-            common_utils.MessagebarAndLog.critical(
+            message_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
                     "CompactWqualReportUi",
                     "Must give at least one column to sort by!",
@@ -285,7 +286,7 @@ class CompactWqualReportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_d
             try:
                 attr = getattr(self, attrname)
             except Exception:
-                common_utils.MessagebarAndLog.info(
+                message_utils.MessagebarAndLog.info(
                     log_msg=QCoreApplication.translate(
                         "DrillreportUi",
                         "Programming error. Attribute name %s didn't exist in self.",
@@ -305,7 +306,7 @@ class CompactWqualReportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_d
                 elif isinstance(attr, qgis.PyQt.QtWidgets.QComboBox):
                     val = attr.currentText()
                 else:
-                    common_utils.MessagebarAndLog.info(
+                    message_utils.MessagebarAndLog.info(
                         log_msg=QCoreApplication.translate(
                             "DrillreportUi",
                             "Programming error. The Qt-type %s is unhandled.",
@@ -356,7 +357,7 @@ class CompactWqualReportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_d
             except (json.JSONDecodeError, ValueError):
                 as_dict = ast.literal_eval(new_string_text)
         except Exception as e:
-            common_utils.MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "CompactWqualReportUi",
                     "Translating string to dict failed, see log message panel",
@@ -586,9 +587,9 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
         num_features = len(file_data) - 1
         invalid_features = len(features) - num_features
         if invalid_features:
-            msgfunc = common_utils.MessagebarAndLog.warning
+            msgfunc = message_utils.MessagebarAndLog.warning
         else:
-            msgfunc = common_utils.MessagebarAndLog.info
+            msgfunc = message_utils.MessagebarAndLog.info
 
         msgfunc(
             bar_msg=QCoreApplication.translate(

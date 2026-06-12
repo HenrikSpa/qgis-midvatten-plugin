@@ -25,6 +25,7 @@ import pandas as pd
 import qgis.PyQt
 from matplotlib import container, patches
 
+from midvatten.tools.utils import message_utils
 from midvatten.tools.utils.mpl_compat import FigureCanvas, NavigationToolbar
 from qgis.PyQt import QtWidgets
 from qgis.PyQt import uic
@@ -208,7 +209,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
         """
         selected_layer = self.iface.mapCanvas().currentLayer()  # MUST BE LINE VECTOR LAYER WITH SAME EPSG as MIDV_OBSDB AND THERE MUST BE ONLY ONE SELECTED FEATURE
         if not selected_layer:
-            common_utils.MessagebarAndLog.critical(
+            message_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
                     "Midvatten",
                     "You must select at least one layer and one feature!",
@@ -219,7 +220,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
 
         nrofselected = selected_layer.selectedFeatureCount()
         if not isinstance(selected_layer, QgsVectorLayer):
-            common_utils.MessagebarAndLog.critical(
+            message_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
                     "Midvatten",
                     "You must activate the vector line layer that defines the section.",
@@ -253,7 +254,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
                 3005,
             ):
                 if nrofselected != 1:
-                    common_utils.MessagebarAndLog.critical(
+                    message_utils.MessagebarAndLog.critical(
                         bar_msg=QCoreApplication.translate(
                             "Midvatten",
                             "You must select only one line feature that defines the section",
@@ -264,7 +265,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
                     try:
                         obs_points_layer = layer_utils.find_layer("obs_points")
                     except exceptions.UsageError as e:
-                        common_utils.MessagebarAndLog.critical(
+                        message_utils.MessagebarAndLog.critical(
                             bar_msg=QCoreApplication.translate(
                                 "Midvatten",
                                 "%s. Plotting without observations!",
@@ -274,7 +275,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
                         break
                     else:
                         if obs_points_layer.isEditable():
-                            common_utils.MessagebarAndLog.warning(
+                            message_utils.MessagebarAndLog.warning(
                                 bar_msg=QCoreApplication.translate(
                                     "Midvatten",
                                     "Layer obs_points is in editing mode! Plotting without observations!",
@@ -291,7 +292,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
                     layer_utils.get_selected_object_names()
                 )  # Finding obsid from currently selected layer
                 if not selected_obspoints:
-                    common_utils.MessagebarAndLog.warning(
+                    message_utils.MessagebarAndLog.warning(
                         bar_msg=QCoreApplication.translate(
                             "Midvatten",
                             "The current layer had no selected obsids. Trying to plot from layer obs_points!",
@@ -300,7 +301,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
                     try:
                         obs_points_layer = layer_utils.find_layer("obs_points")
                     except exceptions.UsageError:
-                        common_utils.MessagebarAndLog.warning(
+                        message_utils.MessagebarAndLog.warning(
                             bar_msg=QCoreApplication.translate(
                                 "Midvatten",
                                 "Layer obs_points is not found. Plotting without observations!",
@@ -309,7 +310,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
                         break
                     else:
                         if obs_points_layer.isEditable():
-                            common_utils.MessagebarAndLog.warning(
+                            message_utils.MessagebarAndLog.warning(
                                 bar_msg=QCoreApplication.translate(
                                     "Midvatten",
                                     "Layer obs_points is in editing mode! Plotting without observations!",
@@ -322,7 +323,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
                             )
 
         if not selected_layer and not selected_obspoints:
-            common_utils.MessagebarAndLog.critical(
+            message_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
                     "Midvatten", "You must select at least one feature!"
                 ),
@@ -330,7 +331,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
             )
             raise exceptions.UsageError()
         elif not selected_layer:
-            common_utils.MessagebarAndLog.info(
+            message_utils.MessagebarAndLog.info(
                 bar_msg=QCoreApplication.translate(
                     "Midvatten",
                     "No line layer was selected. The stratigraphy bars will be lined up from south-north or west-east and no DEMS will be plotted.",
@@ -354,7 +355,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
         if line_layer:
             selected_features = [f for f in line_layer.getSelectedFeatures()]
             if len(selected_features) != 1:
-                common_utils.MessagebarAndLog.critical(
+                message_utils.MessagebarAndLog.critical(
                     bar_msg=QCoreApplication.translate(
                         "SectionPlot",
                         "Must select only one feature in qgis layer: %s)",
@@ -591,7 +592,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
             try:
                 mpl.rcParams[k] = v
             except KeyError:
-                common_utils.MessagebarAndLog.info(
+                message_utils.MessagebarAndLog.info(
                     log_msg=QCoreApplication.translate(
                         "SectionPlot", "rcParams key %s didn't exist"
                     )
@@ -599,14 +600,14 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
                 )
 
         try:
-            common_utils.MessagebarAndLog.info(
+            message_utils.MessagebarAndLog.info(
                 log_msg=QCoreApplication.translate(
                     "SectionPlot", "Plotting using settings:\n%s"
                 )
                 % self.secplot_templates.readable_output()
             )
         except Exception:
-            common_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
+            message_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
         if not isinstance(self.dbconnection, db_utils.DbConnectionManager):
             self.dbconnection = db_utils.DbConnectionManager()
 
@@ -876,7 +877,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
             self.dbconnection.closedb()
             self.dbconnection = None
         except KeyError:
-            common_utils.MessagebarAndLog.critical(
+            message_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
                     "SectionPlot",
                     'Section plot optional settings error, press "Restore defaults"',
@@ -889,7 +890,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
             self.dbconnection = None
 
         except Exception:
-            common_utils.MessagebarAndLog.critical(
+            message_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
                     "SectionPlot", "An error occured, see log message panel!"
                 ),
@@ -966,7 +967,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
                 mpltoolbar
             )
         except Exception as e:
-            common_utils.MessagebarAndLog.info(
+            message_utils.MessagebarAndLog.info(
                 log_msg=QCoreApplication.translate(
                     "SectionPlot", "Could not alter NavigationToolbar, msg: %s"
                 )
@@ -1297,7 +1298,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
         try:
             resample_how = defs.validate_resample_how(self.resample_how.text())
         except exceptions.UsageError as e:
-            common_utils.MessagebarAndLog.critical(bar_msg=str(e))
+            message_utils.MessagebarAndLog.critical(bar_msg=str(e))
             return
         placeholders = self.dbconnection.placeholders(len(self.obsids_x_position))
         sql = self.dbconnection.sql_ident(
@@ -1315,7 +1316,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
             chunksize=None,
         )
         if df.empty:
-            common_utils.MessagebarAndLog.info(
+            message_utils.MessagebarAndLog.info(
                 log_msg=QCoreApplication.translate(
                     "SectionPlot",
                     "Interactive plot: No waterlevels found for chosen obsids in %s.",

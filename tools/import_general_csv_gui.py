@@ -28,6 +28,7 @@ import qgis.PyQt
 from qgis.PyQt.QtCore import QCoreApplication
 
 import midvatten.definitions.midvatten_defs as defs
+from midvatten.tools.utils import message_utils
 from midvatten.tools import import_data_to_db
 from midvatten.tools.utils import (
     common_utils,
@@ -270,7 +271,7 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
 
         active_layer = layer_utils.get_active_layer()
         if not active_layer:
-            common_utils.MessagebarAndLog.critical(
+            message_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
                     "GeneralCsvImportGui", "Import error, no layer selected."
                 )
@@ -372,7 +373,7 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
             if isinstance(file_column, Obsids_from_selection):
                 selected = layer_utils.get_selected_features_as_tuple()
                 if len(selected) != 1:
-                    common_utils.MessagebarAndLog.critical(
+                    message_utils.MessagebarAndLog.critical(
                         bar_msg=QCoreApplication.translate(
                             "GeneralCsvImportGui",
                             "Import error, must select 1 obsid",
@@ -471,7 +472,7 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
             for row in rows:
                 if idx < len(row):
                     row.pop(idx)
-            common_utils.MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 log_msg=QCoreApplication.translate(
                     "GeneralCsvImportGui",
                     "Ignoring 'series_id' column from CSV on import to"
@@ -497,7 +498,7 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         if "series_id" not in existing_tables.get("w_levels_logger", []):
             return _stripped()
         if "obsid" not in header:
-            common_utils.MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 log_msg=QCoreApplication.translate(
                     "GeneralCsvImportGui",
                     "Logger series metadata supplied but no 'obsid' column;"
@@ -666,7 +667,7 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
 
         num_removed_rows = num_rows_before - len(new_file_data)
         if num_removed_rows > 0:
-            common_utils.MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "GeneralCsvImportGui",
                     "%s rows without parsable date_time format skipped during import",
@@ -787,7 +788,7 @@ class ImportTableChooser(VRowEntry):
         else:
             if layer is not None:
                 if layer.isEditable():
-                    common_utils.pop_up_info(
+                    message_utils.pop_up_info(
                         QCoreApplication.translate(
                             "ImportTableChooser",
                             "Layer %s is currently in editing mode.\nPlease exit this mode before proceeding with this operation.",

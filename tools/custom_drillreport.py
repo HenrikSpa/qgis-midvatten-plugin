@@ -41,6 +41,7 @@ from midvatten.tools.utils import (
 from midvatten.tools.utils.file_utils import templates_path, ui_path
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
 from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils import message_utils
 
 _EMPTY_VALS = ("", "NULL")
 
@@ -99,7 +100,7 @@ class DrillreportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
         geo_colwidth = self.geo_colwidth.text().split(";")
         decimal_separator = self.decimal_separator.text()
         if not obsids:
-            common_utils.MessagebarAndLog.critical(
+            message_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
                     "DrillreportUi",
                     "Must select at least 1 obsid in selected layer",
@@ -239,7 +240,7 @@ class DrillreportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
             try:
                 attr = getattr(self, attrname)
             except Exception:
-                common_utils.MessagebarAndLog.info(
+                message_utils.MessagebarAndLog.info(
                     log_msg=QCoreApplication.translate(
                         "DrillreportUi",
                         "Programming error. Attribute name %s didn't exist in self.",
@@ -254,7 +255,7 @@ class DrillreportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
                 elif isinstance(attr, qgis.PyQt.QtWidgets.QLineEdit):
                     val = attr.text()
                 else:
-                    common_utils.MessagebarAndLog.info(
+                    message_utils.MessagebarAndLog.info(
                         log_msg=QCoreApplication.translate(
                             "DrillreportUi",
                             "Programming error. The Qt-type %s is unhandled.",
@@ -305,7 +306,7 @@ class DrillreportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
             except (json.JSONDecodeError, ValueError):
                 as_dict = ast.literal_eval(new_string_text)
         except Exception as e:
-            common_utils.MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "DrillreportUi",
                     "Translating string to dict failed, see log message panel",
@@ -347,7 +348,7 @@ class Drillreport:  # general observation point info for the selected object
         imgpath = templates_path()
 
         if len(obsids) == 0:
-            common_utils.pop_up_info(
+            message_utils.pop_up_info(
                 QCoreApplication.translate(
                     "Drillreport", "Must select one or more obsids!"
                 )
@@ -729,7 +730,7 @@ class Drillreport:  # general observation point info for the selected object
             rpt = r""
 
         if not col_widths or len(col_widths) != 2:
-            common_utils.MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "Drillreport2",
                     "Column width not entered correctly, must be like x;y. Was %s"
@@ -784,7 +785,7 @@ class Drillreport:  # general observation point info for the selected object
             try:
                 rpt += rf"""<TR VALIGN=TOP><TD WIDTH=33%><P><font size=1>{header}</font></P></TD><TD WIDTH=50%><P><font size=1>{value}</font></P></TD></TR>"""
             except UnicodeEncodeError:
-                common_utils.MessagebarAndLog.critical(
+                message_utils.MessagebarAndLog.critical(
                     bar_msg=QCoreApplication.translate(
                         "custom_drillreport",
                         "Writing drillreport failed, see log message panel",
@@ -884,7 +885,7 @@ class Drillreport:  # general observation point info for the selected object
                             depthtop_idx = strat_sql_columns_list.index("depthtop")
                             depthbot_idx = strat_sql_columns_list.index("depthbot")
                         except ValueError:
-                            common_utils.MessagebarAndLog.critical(
+                            message_utils.MessagebarAndLog.critical(
                                 bar_msg=QCoreApplication.translate(
                                     "Drillreport2",
                                     "Programming error, depthtop and depthbot columns was supposed to exist",

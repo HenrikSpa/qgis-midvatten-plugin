@@ -43,6 +43,7 @@ from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
 from midvatten.tools.utils.layer_build import build_layer
 from midvatten.tools.utils.layer_specs import LayerSpec
 from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils import message_utils
 
 log = logging.getLogger(__name__)
 
@@ -107,7 +108,7 @@ def strat_symbology(
     try:
         add_views_to_db(dbconnection, bedrock_geoshort)
     except Exception:
-        common_utils.MessagebarAndLog.critical(
+        message_utils.MessagebarAndLog.critical(
             bar_msg=QCoreApplication.translate(
                 "strat_symbology",
                 """Creating database views failed, see log message panel""",
@@ -206,9 +207,9 @@ def strat_symbology(
                     group, layers[symbology], symbology_stylename[symbology]
                 )
             except StyleNotFoundError as e:
-                common_utils.MessagebarAndLog.info(bar_msg=str(e))
+                message_utils.MessagebarAndLog.info(bar_msg=str(e))
             except Exception:
-                common_utils.MessagebarAndLog.info(bar_msg=traceback.format_exc())
+                message_utils.MessagebarAndLog.info(bar_msg=traceback.format_exc())
 
         symbology = "Layer texts"
         if symbology in symbology_stylename:
@@ -220,9 +221,9 @@ def strat_symbology(
                     checked=False,
                 )
             except StyleNotFoundError as e:
-                common_utils.MessagebarAndLog.info(bar_msg=str(e))
+                message_utils.MessagebarAndLog.info(bar_msg=str(e))
             except Exception:
-                common_utils.MessagebarAndLog.info(bar_msg=traceback.format_exc())
+                message_utils.MessagebarAndLog.info(bar_msg=traceback.format_exc())
 
         symbology = "W levels"
         if symbology in symbology_stylename:
@@ -239,9 +240,9 @@ def strat_symbology(
                             checked=False,
                         )
                     except StyleNotFoundError as e:
-                        common_utils.MessagebarAndLog.info(bar_msg=str(e))
+                        message_utils.MessagebarAndLog.info(bar_msg=str(e))
                     except Exception:
-                        common_utils.MessagebarAndLog.info(
+                        message_utils.MessagebarAndLog.info(
                             bar_msg=traceback.format_exc()
                         )
                 try:
@@ -249,9 +250,9 @@ def strat_symbology(
                         wlvls_group, wlvls_layer, symbology_stylename[symbology]
                     )
                 except StyleNotFoundError as e:
-                    common_utils.MessagebarAndLog.info(bar_msg=str(e))
+                    message_utils.MessagebarAndLog.info(bar_msg=str(e))
                 except Exception:
-                    common_utils.MessagebarAndLog.info(bar_msg=traceback.format_exc())
+                    message_utils.MessagebarAndLog.info(bar_msg=traceback.format_exc())
 
         symbology = "Bedrock"
         if symbology in symbology_stylename:
@@ -266,9 +267,9 @@ def strat_symbology(
                         checked=False,
                     )
                 except StyleNotFoundError as e:
-                    common_utils.MessagebarAndLog.info(bar_msg=str(e))
+                    message_utils.MessagebarAndLog.info(bar_msg=str(e))
                 except Exception:
-                    common_utils.MessagebarAndLog.info(bar_msg=traceback.format_exc())
+                    message_utils.MessagebarAndLog.info(bar_msg=traceback.format_exc())
                 else:
                     _bedrock_label = """LOWER("drillstop") LIKE '%{}%' """
                     for child in (
@@ -289,9 +290,9 @@ def strat_symbology(
             except RuleDiscrepancyError:
                 del layers[symbology]
             except StyleNotFoundError as e:
-                common_utils.MessagebarAndLog.info(bar_msg=str(e))
+                message_utils.MessagebarAndLog.info(bar_msg=str(e))
             except Exception:
-                common_utils.MessagebarAndLog.info(bar_msg=traceback.format_exc())
+                message_utils.MessagebarAndLog.info(bar_msg=traceback.format_exc())
 
         symbology = "Frame"
         if symbology in symbology_stylename:
@@ -300,9 +301,9 @@ def strat_symbology(
                     group, layers[symbology], symbology_stylename[symbology]
                 )
             except StyleNotFoundError as e:
-                common_utils.MessagebarAndLog.info(bar_msg=str(e))
+                message_utils.MessagebarAndLog.info(bar_msg=str(e))
             except Exception:
-                common_utils.MessagebarAndLog.info(bar_msg=traceback.format_exc())
+                message_utils.MessagebarAndLog.info(bar_msg=traceback.format_exc())
 
         layers_group = add_group(group, "Layers", checked=True)
         try:
@@ -316,9 +317,9 @@ def strat_symbology(
                 symbology_stylename["Geology"],
             )
         except StyleNotFoundError as e:
-            common_utils.MessagebarAndLog.info(bar_msg=str(e))
+            message_utils.MessagebarAndLog.info(bar_msg=str(e))
         except Exception:
-            common_utils.MessagebarAndLog.info(bar_msg=traceback.format_exc())
+            message_utils.MessagebarAndLog.info(bar_msg=traceback.format_exc())
 
         symbology = "Shadow"
         if symbology in symbology_stylename:
@@ -327,9 +328,9 @@ def strat_symbology(
                     group, layers[symbology], symbology_stylename[symbology]
                 )
             except StyleNotFoundError as e:
-                common_utils.MessagebarAndLog.info(bar_msg=str(e))
+                message_utils.MessagebarAndLog.info(bar_msg=str(e))
             except Exception:
-                common_utils.MessagebarAndLog.info(bar_msg=traceback.format_exc())
+                message_utils.MessagebarAndLog.info(bar_msg=traceback.format_exc())
 
         if any([spec.get("xfactor"), spec.get("yfactor"), spec.get("use_map_scale")]):
             for layer in layers.values():
@@ -475,7 +476,7 @@ def add_bedrock_symbology(
             f"""LOWER("drillstop") NOT LIKE '%{bedrock_geoshort}%' OR "drillstop" IS NULL """
         )
     else:
-        common_utils.MessagebarAndLog.warning(
+        message_utils.MessagebarAndLog.warning(
             bar_msg=QCoreApplication.translate(
                 "strat_symbology",
                 "Style and code discrepancy! The style %s has an unsupported number of rules!",
@@ -643,7 +644,7 @@ def add_views_to_db(dbconnection, bedrock_geoshort):
     try:
         dbconnection.drop_view(view_name)
     except Exception:
-        midvatten_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
+        message_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
     def insert_view(view_name):
         cur.execute(
@@ -680,7 +681,7 @@ def add_views_to_db(dbconnection, bedrock_geoshort):
     try:
         cur.execute(sql)
     except Exception:
-        midvatten_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
+        message_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
     if view_name not in list(db_utils.tables_columns(dbconnection=dbconnection).keys()):
         raise NotFoundError(
@@ -698,7 +699,7 @@ def add_views_to_db(dbconnection, bedrock_geoshort):
     try:
         dbconnection.drop_view(view_name)
     except Exception:
-        midvatten_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
+        message_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
     try:
         if dbconnection.is_sqlite():
             cur.execute(
@@ -722,7 +723,7 @@ def add_views_to_db(dbconnection, bedrock_geoshort):
                 ).format(Identifier(view_name))
             )
     except Exception:
-        midvatten_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
+        message_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
     view_found = False
     if view_name in list(db_utils.tables_columns(dbconnection=dbconnection).keys()):
@@ -746,7 +747,7 @@ def add_views_to_db(dbconnection, bedrock_geoshort):
     try:
         dbconnection.drop_view(view_name)
     except Exception:
-        midvatten_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
+        message_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
     # Hard coded the strata to ('rock', 'berg') to make the view query safe from sql
     # injection.
@@ -805,13 +806,13 @@ def add_views_to_db(dbconnection, bedrock_geoshort):
     try:
         cur.execute(_bergy)
     except Exception:
-        midvatten_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
+        message_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
     if dbconnection.is_sqlite():
         insert_view(view_name)
 
     if view_name not in list(db_utils.tables_columns(dbconnection=dbconnection).keys()):
-        midvatten_utils.MessagebarAndLog.critical(
+        message_utils.MessagebarAndLog.critical(
             bar_msg=QCoreApplication.translate(
                 "strat_symbology",
                 "Stratsymbology failed. The view %s could not be found. See log for info.",

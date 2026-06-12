@@ -22,9 +22,10 @@ from qgis.PyQt.QtCore import QCoreApplication, QVariant
 from qgis.PyQt.QtWidgets import QApplication
 from qgis.core import QgsVectorLayer
 
-from midvatten.tools.utils import common_utils, db_utils, gui_utils, layer_utils
+from midvatten.tools.utils import db_utils, gui_utils, layer_utils
 from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
+from midvatten.tools.utils import message_utils
 
 selected_features_dialog = qgis.PyQt.uic.loadUiType(ui_path("selected_features.ui"))[0]
 
@@ -56,7 +57,7 @@ class ValuesFromSelectedFeaturesGui(
     def reload_combobox(self):
         self.activelayer = layer_utils.get_active_layer()
         if not isinstance(self.activelayer, QgsVectorLayer):
-            common_utils.MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "ValuesFromSelectedFeaturesGui", "Must select a vector layer!"
                 )
@@ -80,7 +81,7 @@ class ValuesFromSelectedFeaturesGui(
         activelayer = layer_utils.get_active_layer()
         if activelayer is not self.activelayer:
             self.reload_combobox()
-            common_utils.MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "ValuesFromSelectedFeaturesGui",
                     "Column list reloaded. Select column and press Ok.",
@@ -102,7 +103,7 @@ class ValuesFromSelectedFeaturesGui(
         selected_feature_ids = [f.id() for f in selected]
 
         if not selected_values:
-            common_utils.MessagebarAndLog.info(
+            message_utils.MessagebarAndLog.info(
                 bar_msg=QCoreApplication.translate(
                     "ValuesFromSelectedFeaturesGui", "No features selected!"
                 )
@@ -146,7 +147,7 @@ class ValuesFromSelectedFeaturesGui(
 
             activelayer.selectByIds(selected_feature_ids)
 
-            common_utils.MessagebarAndLog.info(
+            message_utils.MessagebarAndLog.info(
                 bar_msg=QCoreApplication.translate(
                     "ValuesFromSelectedFeaturesGui",
                     bar_prefix + "List of %s selected %s written to log",

@@ -10,6 +10,7 @@ from midvatten.tools.create_db import NewDb
 from midvatten.tools.create_db_dialogs import NewSpatialiteDbDialog
 from midvatten.tools.export_worker import ExportWorker
 from midvatten.tools.utils import common_utils, db_utils, layer_utils
+from midvatten.tools.utils import message_utils
 
 log = logging.getLogger(__name__)
 
@@ -126,7 +127,7 @@ class ExportSpatialite:
             return
 
         if not dialog.dbpath:
-            common_utils.MessagebarAndLog.critical(
+            message_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
                     "export_spatialite", "No destination path specified."
                 )
@@ -170,7 +171,7 @@ class ExportSpatialite:
             progress.close()
 
         if not newdbinstance.db_settings:
-            common_utils.MessagebarAndLog.critical(
+            message_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
                     "export_spatialite",
                     "Export to spatialite failed, see log message panel",
@@ -183,7 +184,7 @@ class ExportSpatialite:
             newdbinstance.db_settings
         )
         if not new_dbpath:
-            common_utils.MessagebarAndLog.critical(
+            message_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
                     "export_spatialite",
                     "Export to spatialite failed, see log message panel",
@@ -267,7 +268,7 @@ class ExportSpatialite:
         progress.close()
 
         if not _signal_received:
-            common_utils.MessagebarAndLog.critical(
+            message_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
                     "ExportSpatialite", "Export failed unexpectedly."
                 ),
@@ -275,20 +276,20 @@ class ExportSpatialite:
             )
             return
         if _stats is None:
-            common_utils.MessagebarAndLog.critical(
+            message_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
                     "ExportSpatialite", "Export failed, see log message panel"
                 ),
                 button=True,
             )
         elif _stats == "":
-            common_utils.MessagebarAndLog.info(
+            message_utils.MessagebarAndLog.info(
                 bar_msg=QCoreApplication.translate(
                     "ExportSpatialite", "Export cancelled."
                 )
             )
         else:
-            common_utils.MessagebarAndLog.info(
+            message_utils.MessagebarAndLog.info(
                 bar_msg=QCoreApplication.translate(
                     "ExportSpatialite",
                     "Export done, see differences in log message panel",

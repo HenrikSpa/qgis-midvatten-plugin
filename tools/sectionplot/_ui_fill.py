@@ -16,9 +16,10 @@ from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import QgsProject
 
 from midvatten.tools.sectionplot.data import get_line_feature_obsid
-from midvatten.tools.utils import common_utils, db_utils
+from midvatten.tools.utils import db_utils
 from midvatten.tools.utils.gui_utils import set_combobox
 from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils import message_utils
 
 
 def fill_tem(ui, ms, dbconnection, line_feature=None):
@@ -169,7 +170,7 @@ def fill_dem_list(ui, ms, line_layer=None):
                     item.setSelected(True)
 
     if msg:
-        common_utils.MessagebarAndLog.info(
+        message_utils.MessagebarAndLog.info(
             bar_msg=QCoreApplication.translate(
                 "SectionPlot",
                 "One or more layers were omitted due to unfulfilled requirements, see log message panel.",

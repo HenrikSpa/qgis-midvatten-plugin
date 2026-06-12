@@ -22,7 +22,8 @@ import matplotlib.ticker as tick
 import numpy as np
 from qgis.PyQt.QtCore import QCoreApplication
 
-from midvatten.tools.utils import common_utils, db_utils
+from midvatten.tools.utils import db_utils
+from midvatten.tools.utils import message_utils
 
 
 class XYPlot:
@@ -192,7 +193,7 @@ class XYPlot:
                         p, plabel, loc=0
                     )  # leg = fig.legend(p, plabel, 'right')
                 except ValueError as e:
-                    common_utils.MessagebarAndLog.info(
+                    message_utils.MessagebarAndLog.info(
                         log_msg=f"Figure legend didn't work, using axis legend instead, msg: {e}"
                     )
                     leg = ax.legend(
@@ -218,13 +219,13 @@ class XYPlot:
                 fig.show()  # causes conflict with plugins "statist" and "chartmaker"
                 dbconnection.closedb()
             else:
-                common_utils.pop_up_info(
+                message_utils.pop_up_info(
                     QCoreApplication.translate(
                         "XYPlot", "Please select at least one point with xy data"
                     )
                 )
         else:
-            common_utils.pop_up_info(
+            message_utils.pop_up_info(
                 QCoreApplication.translate(
                     "XYPlot",
                     "Please select a layer containing observations with xy data",

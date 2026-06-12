@@ -24,6 +24,7 @@ import time  # for debugging
 from qgis.PyQt.QtCore import QCoreApplication
 
 # midvatten modules
+from midvatten.tools.utils import message_utils
 from midvatten.tools.utils import common_utils, db_utils
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.wqualreport_core import (
@@ -66,7 +67,7 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
             label for key, label in required.items() if not self.settingsdict.get(key)
         ]
         if missing:
-            common_utils.MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "Wqualreport",
                     "Water quality report is missing required settings: %s. Please configure them in Midvatten Settings.",
@@ -135,7 +136,7 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
             sql, dbconnection, execute_args=(obsid,)
         )
         if not parameters:
-            common_utils.MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "Wqualreport",
                     "Debug, something is wrong, no parameters are found in table w_qual_lab for %s",
@@ -170,7 +171,7 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
             + str(time.time())
         )
         if not date_times:
-            common_utils.MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "Wqualreport",
                     "Debug, Something is wrong, no parameters are found in table w_qual_lab for %s",
@@ -180,7 +181,7 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
             return
         else:
             if any([x[1] is None for x in date_times]):
-                common_utils.MessagebarAndLog.warning(
+                message_utils.MessagebarAndLog.warning(
                     bar_msg=QCoreApplication.translate(
                         "Wqualreport",
                         "Warning: Found rows with datetime = NULL. Column without date_time might be aggregated from multiple reports!",
@@ -284,7 +285,7 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
                         report_table[parametercounter][datecounter] = ru(recs[0][0])
                     except Exception:
                         report_table[parametercounter][datecounter] = ""
-                        common_utils.MessagebarAndLog.warning(
+                        message_utils.MessagebarAndLog.warning(
                             bar_msg=QCoreApplication.translate(
                                 "Wqualreport",
                                 "Note!, the value for %s [%s] at %s, %s was not readable. Check your data!",

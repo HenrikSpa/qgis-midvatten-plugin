@@ -14,6 +14,7 @@ from qgis.PyQt.QtCore import QCoreApplication, Qt
 
 import pandas as pd  # pandas is a mandatory dependency of this plugin
 
+from midvatten.tools.utils import message_utils
 from midvatten.tools import import_data_to_db
 from midvatten.tools.base_importer import BaseImporter
 from midvatten.tools.utils import (
@@ -43,10 +44,7 @@ from .parsers import (
     LeveloggerParser,
     HoboParser,
     TzConverter,
-    FileError,
     filter_dates_from_filedata,
-    _DIVEROFFICE_DEFAULT_COL_MAP,
-    _DIVEROFFICE_BARO_COL_MAP,
     _pivot_baro_to_meteo,
     _BARO_METEO_PARAMS,
 )
@@ -557,7 +555,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                     try:
                         res = parse_func(charset=fallback_charset, **parse_kwargs)
                     except UnicodeDecodeError:
-                        common_utils.MessagebarAndLog.warning(
+                        message_utils.MessagebarAndLog.warning(
                             bar_msg=QCoreApplication.translate(
                                 "LoggerImport",
                                 "Could not read %s — is this a %s file?",
@@ -566,7 +564,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                         )
                         continue
                 except Exception:
-                    common_utils.MessagebarAndLog.critical(
+                    message_utils.MessagebarAndLog.critical(
                         bar_msg=QCoreApplication.translate(
                             "LoggerImport", "Error on file %s."
                         )
@@ -585,7 +583,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                 try:
                     file_data, filename, location, file_utc_offset, serial_number = res
                 except Exception as e:
-                    common_utils.MessagebarAndLog.warning(
+                    message_utils.MessagebarAndLog.warning(
                         bar_msg=QCoreApplication.translate(
                             "LoggerImport", "Import error, see log message panel"
                         ),
@@ -611,7 +609,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                     and utc_widget.currentText()
                 ):
                     if not file_utc_offset:
-                        common_utils.MessagebarAndLog.warning(
+                        message_utils.MessagebarAndLog.warning(
                             log_msg=QCoreApplication.translate(
                                 "LoggerImport", "UTC-offset not found in file %s"
                             )
@@ -660,7 +658,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                 parsed_files.append((file_data, filename, location, serial_number))
 
             if len(parsed_files) == 0:
-                common_utils.MessagebarAndLog.critical(
+                message_utils.MessagebarAndLog.critical(
                     bar_msg=QCoreApplication.translate(
                         "LoggerImport", "Import Failure: No files imported"
                     )
@@ -691,7 +689,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             common_utils.start_waiting_cursor()
 
             if len(filename_location_obsid) < 2:
-                common_utils.MessagebarAndLog.warning(
+                message_utils.MessagebarAndLog.warning(
                     bar_msg=QCoreApplication.translate(
                         "LoggerImport",
                         "Warning. All files were skipped, nothing imported!",
@@ -705,7 +703,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             parsed_files_with_obsid = []
             for file_data, filename, location, serial_number in parsed_files:
                 if not file_data:
-                    common_utils.MessagebarAndLog.warning(
+                    message_utils.MessagebarAndLog.warning(
                         bar_msg=QCoreApplication.translate(
                             "LoggerImport",
                             "Diveroffice import warning. See log message panel",
@@ -729,7 +727,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                     )
 
             if not parsed_files_with_obsid:
-                common_utils.MessagebarAndLog.warning(
+                message_utils.MessagebarAndLog.warning(
                     bar_msg=QCoreApplication.translate(
                         "LoggerImport",
                         "Warning. All files were skipped, nothing imported!",
@@ -754,7 +752,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                         meteo_rows.extend(pivoted[1:])
 
                 if len(meteo_rows) < 2:
-                    common_utils.MessagebarAndLog.info(
+                    message_utils.MessagebarAndLog.info(
                         bar_msg=QCoreApplication.translate(
                             "LoggerImport",
                             "DiverOffice Baro: no data to import.",
@@ -791,7 +789,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                             progress_callback=_progress_callback,
                         )
                     except Exception:
-                        common_utils.MessagebarAndLog.warning(
+                        message_utils.MessagebarAndLog.warning(
                             log_msg=f"Got error {traceback.format_exc()}"
                         )
                         raise
@@ -881,7 +879,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                     file_to_import_to_db, db_utils.get_last_logger_dates()
                 )
             if len(file_to_import_to_db) < 2:
-                common_utils.MessagebarAndLog.info(
+                message_utils.MessagebarAndLog.info(
                     bar_msg=QCoreApplication.translate(
                         "LoggerImport",
                         "No new data existed in the files. Nothing imported.",
@@ -914,7 +912,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                         progress_callback=_progress_callback,
                     )
                 except Exception:
-                    common_utils.MessagebarAndLog.warning(
+                    message_utils.MessagebarAndLog.warning(
                         log_msg=f"Got error {traceback.format_exc()}"
                     )
                     raise

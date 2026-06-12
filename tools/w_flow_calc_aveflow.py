@@ -27,6 +27,7 @@ from qgis.PyQt.QtCore import QCoreApplication
 from midvatten.tools import import_data_to_db
 from midvatten.tools.utils import common_utils, db_utils, layer_utils
 from midvatten.tools.utils.file_utils import ui_path
+from midvatten.tools.utils import message_utils
 
 Calc_Ui_Dialog = uic.loadUiType(ui_path("calc_aveflow_dialog.ui"))[0]
 
@@ -52,7 +53,7 @@ class CalculateAveflow(qgis.PyQt.QtWidgets.QDialog, Calc_Ui_Dialog):
             """SELECT DISTINCT obsid FROM w_flow WHERE flowtype = 'Accvol' """
         )
         if not obsar:
-            common_utils.MessagebarAndLog.critical(
+            message_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
                     "Calcave",
                     "No observations with Accvol found, nothing calculated!",
@@ -102,7 +103,7 @@ class CalculateAveflow(qgis.PyQt.QtWidgets.QDialog, Calc_Ui_Dialog):
         df["aveflow"] = (grouped["reading"].diff() / grouped["dt"].diff()) * 1000
 
         if (df["aveflow"] < 0).any():
-            common_utils.MessagebarAndLog.info(
+            message_utils.MessagebarAndLog.info(
                 bar_msg=QCoreApplication.translate(
                     "Calcave", "Please notice that negative flow was encountered."
                 )

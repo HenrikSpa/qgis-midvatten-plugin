@@ -15,6 +15,7 @@ from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools.utils import common_utils
 from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils import message_utils
 
 log = logging.getLogger(__name__)
 
@@ -49,13 +50,13 @@ def parse_recs_to_recarray(
             my_timestring
         )  # conv list of strings to numpy.ndarray of floats
     except Exception as e:
-        common_utils.MessagebarAndLog.warning(
+        message_utils.MessagebarAndLog.warning(
             log_msg=QCoreApplication.translate(
                 "plotsqlitewindow", "Plotting date_time failed, msg: %s"
             )
             % str(e)
         )
-        common_utils.MessagebarAndLog.info(
+        message_utils.MessagebarAndLog.info(
             log_msg=QCoreApplication.translate(
                 "plotsqlitewindow",
                 "Customplot, transforming to recarray with date_time as x-axis failed, msg: %s",
@@ -162,7 +163,7 @@ def transform_values(
     """
     if flag_time_xy == "time" and plottype == "frequency":
         if len(table2) < 2:
-            common_utils.MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "plotsqlitewindow",
                     "Frequency plot failed for %s. The timeseries must be longer than 1 value!",
@@ -225,14 +226,14 @@ def apply_pandas_calculations(
                 try:
                     table = np.array(list(zip(df.index, df["values"])), dtype=my_format)
                 except TypeError:
-                    common_utils.MessagebarAndLog.info(log_msg=str(df))
+                    message_utils.MessagebarAndLog.info(log_msg=str(df))
                     raise
                 table2 = table.view(
                     np.recarray
                 )  # RECARRAY transform the 2 cols into callable objects
                 numtime = table2.date_time
             else:
-                common_utils.MessagebarAndLog.info(
+                message_utils.MessagebarAndLog.info(
                     bar_msg=QCoreApplication.translate(
                         "plotsqlitewindow", "Pandas calculate failed."
                     )

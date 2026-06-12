@@ -29,6 +29,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import qgis.PyQt
 
+from midvatten.tools.utils import message_utils
 from midvatten.tools.utils.mpl_compat import FigureCanvas, NavigationToolbar
 from matplotlib.dates import datestr2num
 from qgis.PyQt import QtGui, QtCore, uic, QtWidgets  # , QtSql
@@ -420,7 +421,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             return data
         else:
             if not self.p:
-                common_utils.MessagebarAndLog.warning(
+                message_utils.MessagebarAndLog.warning(
                     bar_msg=QCoreApplication.translate(
                         "CustomPlot", "Plot not updated."
                     )
@@ -446,7 +447,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                     16,
                 ]  # Fix to not have the date ticks overlap at month end/start
             except Exception as e:
-                common_utils.MessagebarAndLog.warning(
+                message_utils.MessagebarAndLog.warning(
                     log_msg=QCoreApplication.translate(
                         "Customplot", "Setting intervald failed! msg:\n%s "
                     )
@@ -604,7 +605,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                             )
                             label = str(item1.text()) + """, """ + str(item2.text())
                             if not recs:
-                                common_utils.MessagebarAndLog.info(
+                                message_utils.MessagebarAndLog.info(
                                     log_msg=QCoreApplication.translate(
                                         "CustomPlot", "No plottable data for %s."
                                     )
@@ -645,7 +646,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                                 )
                                 label = str(item.text())
                                 if not recs:
-                                    common_utils.MessagebarAndLog.warning(
+                                    message_utils.MessagebarAndLog.warning(
                                         log_msg=QCoreApplication.translate(
                                             "CustomPlot",
                                             "No plottable data for %s.",
@@ -1094,7 +1095,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             try:
                 dbconnection.closedb()
             except Exception:
-                common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
+                message_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
 
         for post in list_data:
             item = QtWidgets.QListWidgetItem(str(post[0]))
@@ -1107,7 +1108,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
     @common_utils.general_exception_handler
     def refresh_plot(self):
         # If the user has not pressed "draw" before, do nothing
-        common_utils.MessagebarAndLog.info(
+        message_utils.MessagebarAndLog.info(
             log_msg=QCoreApplication.translate("Customplot", "Loaded style:\n%s ")
             % (self.styles.rcparams())
         )
@@ -1143,7 +1144,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
                 else:
                     self.xaxis_formatters[1].__dict__["interval_multiples"] = True
             except Exception as e:
-                common_utils.MessagebarAndLog.warning(
+                message_utils.MessagebarAndLog.warning(
                     log_msg=QCoreApplication.translate(
                         "Customplot",
                         "Setting regular xaxis interval failed! msg:\n%s ",
@@ -1417,7 +1418,7 @@ class PandasCalculations:
                 col1.setMaximumHeight(27)
                 col2.setMaximumHeight(27)
             except Exception:
-                common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
+                message_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
 
             gridlayout.addWidget(col1, current_row, 0)
             gridlayout.addWidget(col2, current_row, 1)
@@ -1438,7 +1439,7 @@ class PandasCalculations:
             try:
                 base = int(base)
             except ValueError:
-                common_utils.MessagebarAndLog.critical(
+                message_utils.MessagebarAndLog.critical(
                     bar_msg=QCoreApplication.translate(
                         "PandasCalculations", "Resample base must be an integer"
                     )
@@ -1455,7 +1456,7 @@ class PandasCalculations:
                 how = defs.validate_resample_how(self.how.text())
             except exceptions.UsageError as e:
                 # Skip resampling, mirroring the bad-base handling above.
-                common_utils.MessagebarAndLog.critical(bar_msg=str(e))
+                message_utils.MessagebarAndLog.critical(bar_msg=str(e))
             else:
                 if pd.__version__ > "0.18.0":
                     # new api for pandas >=0.18
@@ -1470,7 +1471,7 @@ class PandasCalculations:
             try:
                 window = int(window)
             except ValueError:
-                common_utils.MessagebarAndLog.critical(
+                message_utils.MessagebarAndLog.critical(
                     bar_msg=QCoreApplication.translate(
                         "PandasCalculations",
                         "Rolling mean window must be an integer",
@@ -1538,7 +1539,7 @@ class SaveToCsvDialog(QtWidgets.QDialog):
     def save_data(self, *args):
         filename = self.filename.filePath()
         if not filename:
-            common_utils.MessagebarAndLog.critical(
+            message_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
                     "SaveToCsvDialog", "Must give filename"
                 )
@@ -1565,7 +1566,7 @@ class SaveToCsvDialog(QtWidgets.QDialog):
                     columns=[series[1]],
                 )
                 if not len(df) == len(df.loc[~df.index.duplicated(keep="first")]):
-                    common_utils.MessagebarAndLog.critical(
+                    message_utils.MessagebarAndLog.critical(
                         bar_msg=QCoreApplication.translate(
                             "SaveToCsvDialog",
                             "Unable to export as columns (the x-axis contained duplicates)",

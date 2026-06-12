@@ -49,6 +49,7 @@ from qgis.PyQt.QtCore import QCoreApplication
 from midvatten.definitions import midvatten_defs as defs
 from midvatten.tools.utils import common_utils, db_utils, string_utils
 from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils import message_utils
 
 log = logging.getLogger(__name__)
 
@@ -81,7 +82,7 @@ class Stratigraphy:
         lyr = self.layer
         ids = lyr.selectedFeatureIds()
         if len(ids) == 0:
-            common_utils.pop_up_info(
+            message_utils.pop_up_info(
                 QCoreApplication.translate(" Stratigraphy", "No selection"),
                 QCoreApplication.translate(" Stratigraphy", "No features are selected"),
             )
@@ -94,7 +95,7 @@ class Stratigraphy:
         except DataSanityError as e:  # if an object 'e' belonging to DataSanityError is created, then do following
             log.warning("DataSanityError %s" % str(e))
             common_utils.stop_waiting_cursor()
-            common_utils.pop_up_info(
+            message_utils.pop_up_info(
                 QCoreApplication.translate(
                     " Stratigraphy", "Data sanity problem, obsid: %s\n%s"
                 )
@@ -103,7 +104,7 @@ class Stratigraphy:
             return
         except Exception as e:  # if an object 'e' belonging to DataSanityError is created, then do following
             common_utils.stop_waiting_cursor()
-            common_utils.MessagebarAndLog.critical(
+            message_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
                     " Stratigraphy",
                     "The stratigraphy plot failed, check Midvatten plugin settings and your data!",
@@ -189,7 +190,7 @@ class SurveyStore:
             data_loading_status, surveys = self._get_data_step2(surveys)
         except Exception as e:
             log.error("_get_data_step2 failed: %s", str(e))
-            common_utils.MessagebarAndLog.warning(log_msg=str(e))
+            message_utils.MessagebarAndLog.warning(log_msg=str(e))
             data_loading_status = False
         if data_loading_status:
             surveys = self.sanity_check(surveys)
@@ -258,7 +259,7 @@ class SurveyStore:
                         obsid_list[i], toplvl_list[i], coord_list[i], length=length
                     )
                 if fallback_obsids:
-                    common_utils.MessagebarAndLog.info(
+                    message_utils.MessagebarAndLog.info(
                         bar_msg=QCoreApplication.translate(
                             "Stratigraphy",
                             "%s obsids: h_gs missing, used h_toc or -1 instead.",
@@ -271,7 +272,7 @@ class SurveyStore:
                         % ", ".join(fallback_obsids),
                     )
         else:
-            common_utils.pop_up_info(
+            message_utils.pop_up_info(
                 QCoreApplication.translate("Stratigraphy", "getDataStep1 failed")
             )
         return surveys
@@ -544,7 +545,7 @@ class SurveyWidget(QtWidgets.QFrame):
                 if d_bed < depth_bot:
                     depth_bot = d_bed
             except Exception:
-                common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
+                message_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
 
         # draw surveys
         for survey in self.order:
@@ -560,7 +561,7 @@ class SurveyWidget(QtWidgets.QFrame):
             try:
                 self.draw_survey(painter, sond, r, column_width, (depth_bot, depth_top))
             except Exception:
-                common_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
+                message_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
     def draw_survey(self, p, sond, s_rect, column_width, interval):
         """draws one survey to rectangle in widget specified by s_rect"""

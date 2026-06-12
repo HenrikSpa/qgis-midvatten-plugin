@@ -54,6 +54,7 @@ from midvatten.tools.utils.gui_utils import (
     get_line,
 )
 from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils import message_utils
 from qgis.PyQt.QtCore import QCoreApplication, QItemSelectionModel
 
 import_fieldlogger_ui_dialog = qgis.PyQt.uic.loadUiType(ui_path("import_interlab4.ui"))[
@@ -330,7 +331,7 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
                 return Cancel()
             elif not answer:
                 self.status = False
-                common_utils.MessagebarAndLog.critical(
+                message_utils.MessagebarAndLog.critical(
                     bar_msg=QCoreApplication.translate(
                         "Interlab4Import",
                         "Error, no observations remain. No import done.",
@@ -417,7 +418,7 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
                     dbconnection.execute(sql, args=cache_row)
         finally:
             dbconnection.closedb()
-        common_utils.MessagebarAndLog.info(
+        message_utils.MessagebarAndLog.info(
             bar_msg=QCoreApplication.translate(
                 "Interlab4Import",
                 "Obsid assignments added to table %s.",
@@ -470,7 +471,7 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
             file_settings = self.parse_filesettings(filename)
             file_error, version, encoding, decimalsign, quotechar = file_settings
             if file_error:
-                common_utils.pop_up_info(
+                message_utils.pop_up_info(
                     QCoreApplication.translate(
                         "Interlab4Import",
                         "Warning: The file information %s could not be read. Skipping file",
@@ -566,7 +567,7 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
                                 )
 
                             if "parameter" not in data:
-                                common_utils.pop_up_info(
+                                message_utils.pop_up_info(
                                     QCoreApplication.translate(
                                         "Interlab4Import",
                                         "WARNING: Parsing error. The parameter is missing on row %s",
@@ -576,7 +577,7 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
                                 continue
 
                             if data["lablittera"] not in lab_results:
-                                common_utils.pop_up_info(
+                                message_utils.pop_up_info(
                                     QCoreApplication.translate(
                                         "Interlab4Import",
                                         "WARNING: Parsing error. Data for %s read before it's metadata.",
@@ -665,7 +666,7 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
                 % filename,
             )
         if encoding is None or not encoding:
-            common_utils.MessagebarAndLog.info(
+            message_utils.MessagebarAndLog.info(
                 bar_msg=QCoreApplication.translate(
                     "Interlab4Import", "Charset not given, stopping."
                 )
@@ -736,7 +737,7 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
 
             sampledate = metadata.get("provtagningsdatum", None)
             if sampledate is None:
-                common_utils.MessagebarAndLog.info(
+                message_utils.MessagebarAndLog.info(
                     log_msg=QCoreApplication.translate(
                         "Interlab4Import",
                         'Interlab4 import: There was no sample date found (column "provtagningsdatum") for lablittera %s. Importing without it.',
@@ -750,7 +751,7 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
                     date_time = to_YmdHMS(" ".join([sampledate, sampletime]))
                 else:
                     date_time = to_YmdHMS(sampledate)
-                    common_utils.MessagebarAndLog.info(
+                    message_utils.MessagebarAndLog.info(
                         log_msg=QCoreApplication.translate(
                             "Interlab4Import",
                             'Interlab4 import: There was no sample time found (column "provtagningstid") for lablittera %s. Importing without it.',
@@ -807,7 +808,7 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
                     except ValueError:
                         reading_num = None
                         if parameter not in parameter_report_warning_messages:
-                            common_utils.MessagebarAndLog.warning(
+                            message_utils.MessagebarAndLog.warning(
                                 bar_msg=QCoreApplication.translate(
                                     "Interlab4Import",
                                     "Import interlab4 warning, see log message panel",
@@ -889,7 +890,7 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
                 )
 
         for parameter, reports in sorted(parameter_report_warning_messages.items()):
-            common_utils.MessagebarAndLog.info(
+            message_utils.MessagebarAndLog.info(
                 log_msg=QCoreApplication.translate(
                     "Interlab4Import",
                     "reading_num could not be set for parameter %s for reports %s",
@@ -929,7 +930,7 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
 
             file_utils.write_printlist_to_file(path, printlist)
         else:
-            common_utils.MessagebarAndLog.info(
+            message_utils.MessagebarAndLog.info(
                 log_msg=QCoreApplication.translate("handle_save", "No file selected!")
             )
             raise exceptions.UserInterruptError()
@@ -951,7 +952,7 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
             try:
                 self._create_s_qual_lab()
             except Exception as e:
-                common_utils.MessagebarAndLog.critical(
+                message_utils.MessagebarAndLog.critical(
                     bar_msg=QCoreApplication.translate(
                         "Interlab4Import", "Could not create s_qual_lab, see log."
                     ),
@@ -1112,7 +1113,7 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
                             primary_unit = existing_unit
                             duplicate_data = new_data
 
-            common_utils.MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 log_msg=QCoreApplication.translate(
                     "Interlab4Import",
                     """Duplicate parameter '%s' found! Value and unit ('%s', '%s') was saved as primary parameter out of ('%s', '%s') and ('%s', '%s').""",

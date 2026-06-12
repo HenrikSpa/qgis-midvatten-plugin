@@ -33,6 +33,7 @@ import qgis.PyQt
 from qgis.PyQt import QtCore, QtWidgets, uic
 from qgis.PyQt.QtCore import QCoreApplication
 
+from midvatten.tools.utils import message_utils
 from midvatten.tools.base_importer import BaseImporter
 from midvatten.tools.utils import (
     common_utils,
@@ -167,7 +168,7 @@ class FieldloggerImport(BaseImporter, import_fieldlogger_ui_dialog):
                     lambda: common_utils.save_stored_settings(
                         self.ms, [], self.stored_settingskey
                     ),
-                    lambda: common_utils.pop_up_info(
+                    lambda: message_utils.pop_up_info(
                         QCoreApplication.translate(
                             "FieldloggerImport",
                             "Settings cleared. Restart import Fieldlogger dialog",
@@ -571,13 +572,13 @@ class FieldloggerImport(BaseImporter, import_fieldlogger_ui_dialog):
             if import_method_chooser.import_method
         ]
         if not chosen_methods:
-            common_utils.pop_up_info(
+            message_utils.pop_up_info(
                 QCoreApplication.translate(
                     "FieldloggerImport",
                     "Must choose at least one parameter import method",
                 )
             )
-            common_utils.MessagebarAndLog.critical(
+            message_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
                     "FieldloggerImport", "No parameter import method chosen"
                 )
@@ -595,7 +596,7 @@ class FieldloggerImport(BaseImporter, import_fieldlogger_ui_dialog):
         observations = self.input_fields.update_observations(observations)
 
         if not observations:
-            common_utils.MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "FieldloggerImport",
                     "No observations left to import after filtering",
@@ -778,18 +779,18 @@ class DateShiftQuestion(QtWidgets.QWidget):
         )
 
         if len(step_steplength) != 2:
-            common_utils.MessagebarAndLog.warning(bar_msg=bar_msg, log_msg=log_msg)
+            message_utils.MessagebarAndLog.warning(bar_msg=bar_msg, log_msg=log_msg)
             raise exceptions.UsageError()
         try:
             step = float(step_steplength[0])
             steplength = step_steplength[1]
         except Exception:
-            common_utils.MessagebarAndLog.warning(bar_msg=bar_msg, log_msg=log_msg)
+            message_utils.MessagebarAndLog.warning(bar_msg=bar_msg, log_msg=log_msg)
             raise exceptions.UsageError()
 
         test_shift = dateshift("2015-02-01", step, steplength)
         if test_shift is None:
-            common_utils.MessagebarAndLog.warning(bar_msg=bar_msg, log_msg=log_msg)
+            message_utils.MessagebarAndLog.warning(bar_msg=bar_msg, log_msg=log_msg)
             raise exceptions.UsageError()
 
         observation["date_time"] = dateshift(observation["date_time"], step, steplength)
@@ -1024,7 +1025,7 @@ class InputFields(QtWidgets.QWidget):
         :param stored_settings: alist like [['parametername', [['attr1', 'val1'], ...]], ...]
         :return:
         """
-        common_utils.MessagebarAndLog.info(
+        message_utils.MessagebarAndLog.info(
             log_msg=QCoreApplication.translate(
                 "InputFields", "Setting parameters using stored settings: %s"
             )
@@ -1052,7 +1053,7 @@ class InputFields(QtWidgets.QWidget):
                     v if v else None for k, v in settings if k == "import_method"
                 ][0]
             except ValueError:
-                common_utils.MessagebarAndLog.info(
+                message_utils.MessagebarAndLog.info(
                     log_msg=QCoreApplication.translate(
                         "InputFields",
                         'Could not parse setting "%s". The stored settings probably use an old format. This will be corrected automatically.',
@@ -1073,7 +1074,7 @@ class InputFields(QtWidgets.QWidget):
                 try:
                     setattr(import_method_chooser.parameter_import_fields, attr, val)
                 except Exception as e:
-                    common_utils.MessagebarAndLog.info(
+                    message_utils.MessagebarAndLog.info(
                         log_msg=QCoreApplication.translate(
                             "InputFields",
                             "Setting parameter %s for %s to value %s failed, msg:\n%s",
@@ -1106,7 +1107,7 @@ class InputFields(QtWidgets.QWidget):
             try:
                 settings = parameter_import_fields.get_settings()
             except AttributeError as e:
-                common_utils.MessagebarAndLog.info(
+                message_utils.MessagebarAndLog.info(
                     log_msg=QCoreApplication.translate(
                         "InputFields", "Getting attribute failed: %s, msg: %s"
                     )
@@ -1683,7 +1684,7 @@ class WQualFieldImportFields(QtWidgets.QWidget):
                     observation["instrument"] = self.instrument
                     observation["unit"] = self.unit
             except TypeError:
-                common_utils.MessagebarAndLog.critical(
+                message_utils.MessagebarAndLog.critical(
                     bar_msg=QCoreApplication.translate(
                         "WQualFieldImportFields",
                         "Import error. See message log panel",

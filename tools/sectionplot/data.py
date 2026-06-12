@@ -19,6 +19,7 @@ from qgis.PyQt.QtCore import QCoreApplication
 from midvatten.tools.utils import common_utils, db_utils, string_utils
 from midvatten.tools.utils.db_utils.dialect import ident
 from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils import message_utils
 
 
 def get_line_feature_obsid(line_feature) -> Optional[str]:
@@ -55,7 +56,7 @@ def prepare_obsid_positions(
                 dbconnection=dbconnection,
                 temptable_name=temptable_name,
             )
-            common_utils.MessagebarAndLog.info(
+            message_utils.MessagebarAndLog.info(
                 log_msg=QCoreApplication.translate(
                     "SectionPlot",
                     "Hidden features, obsids and length along section:\n%s\\%s",
@@ -107,7 +108,7 @@ def get_length_along(
                                                          WHERE lower(proname) LIKE '%line%locate%point%';"""
             )
         except Exception:
-            common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
+            message_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
         else:
             if _funcname:
                 _funcname = _funcname[0][0]
@@ -124,7 +125,7 @@ def get_length_along(
                 tuple(obsidtuple),
             )
         except Exception:
-            common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
+            message_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
         else:
             res = cur.fetchall()
             break
@@ -174,7 +175,7 @@ def get_z_data(obsids_x_position: dict, dbconnection=None) -> dict:
         z_data[obs] = {"z": z, "barheight": barheight, "bottom": bottom}
 
     if fallback_htoc:
-        common_utils.MessagebarAndLog.info(
+        message_utils.MessagebarAndLog.info(
             bar_msg=QCoreApplication.translate(
                 "SectionPlot",
                 "%s obsids: h_gs missing, used h_toc instead.",
@@ -187,7 +188,7 @@ def get_z_data(obsids_x_position: dict, dbconnection=None) -> dict:
             % ", ".join(fallback_htoc),
         )
     if fallback_zero:
-        common_utils.MessagebarAndLog.info(
+        message_utils.MessagebarAndLog.info(
             bar_msg=QCoreApplication.translate(
                 "SectionPlot",
                 "%s obsids: both h_gs and h_toc missing, used 0.",
@@ -517,7 +518,7 @@ def get_water_levels_from_df(
             try:
                 _obs = obs.encode("utf8").decode("utf8")
             except Exception:
-                common_utils.MessagebarAndLog.info(
+                message_utils.MessagebarAndLog.info(
                     log_msg=QCoreApplication.translate(
                         "SectionPlot", "Encoding string failed for %s"
                     )

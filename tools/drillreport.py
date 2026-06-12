@@ -28,9 +28,10 @@ from qgis.PyQt.QtGui import QDesktopServices
 
 from midvatten.tools.calculate_statistics import get_statistics_for_single_obsid
 from midvatten.tools.drillreport_models import ObsPointsRow, StratigraphyRow
-from midvatten.tools.utils import common_utils, db_utils, layer_utils, midvatten_utils
+from midvatten.tools.utils import db_utils, layer_utils, midvatten_utils
 from midvatten.tools.utils.file_utils import templates_path
 from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils import message_utils
 
 _EMPTY_VALS = ("", "NULL")
 
@@ -63,7 +64,7 @@ class Drillreport:  # general observation point info for the selected object
         imgpath = templates_path()
 
         if len(obsids) == 0:
-            common_utils.pop_up_info(
+            message_utils.pop_up_info(
                 QCoreApplication.translate(
                     "Drillreport", "Must select one or more obsids!"
                 )
@@ -783,7 +784,7 @@ class Drillreport:  # general observation point info for the selected object
         if tablename == "stratigraphy":
             sql += " ORDER BY stratid"
         if debug == "y":
-            common_utils.pop_up_info(sql)
+            message_utils.pop_up_info(sql)
         connection_ok, raw_rows = db_utils.sql_load_fr_db(sql, dbconnection)
         if not connection_ok or not raw_rows:
             return connection_ok, []

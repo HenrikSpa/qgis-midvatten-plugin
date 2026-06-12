@@ -56,6 +56,7 @@ from midvatten.tools.utils.gui_utils import NavigationButton, WA_DeleteOnClose
 from midvatten.tools.loggereditor_refseries import RefSeriesDialog
 from midvatten.tools.loggereditor_resolve_dupes import ResolveDuplicatesDialog
 from midvatten.tools.trend_math import apply_trend_correction
+from midvatten.tools.utils import message_utils
 
 log = logging.getLogger(__name__)
 
@@ -606,7 +607,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             return
         head_valid = buf["head_cm_m"].dropna()
         if head_valid.empty:
-            common_utils.MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "Calibrlogger", "No head values to normalize against."
                 )
@@ -618,7 +619,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         meas_vals = self.meas_ts.values.astype(float, copy=False)
         meas_valid = meas_vals[~np.isnan(meas_vals)]
         if level_valid.empty and meas_valid.size == 0:
-            common_utils.MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "Calibrlogger",
                     "No calibrated level_masl values to normalize against.",
@@ -1256,7 +1257,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 if len(dup_instants) > len(head)
                 else ""
             )
-            common_utils.MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "LoggerEditor",
                     "%s duplicate timestamp(s) were skipped while saving."
@@ -1445,7 +1446,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             finally:
                 dbconnection.closedb()
         except Exception as e:
-            common_utils.MessagebarAndLog.critical(
+            message_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate("LoggerEditor", "Save failed."),
                 log_msg=str(e),
             )
@@ -1983,7 +1984,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         """Create a new series from the form fields and assign selected points."""
         source = self._series_source_edit.text().strip()
         if not source:
-            common_utils.MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "LoggerEditor", "Source is required to create a series."
                 )
@@ -2064,7 +2065,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         """Edit metadata for the single fully-selected series."""
         source = self._series_source_edit.text().strip()
         if not source:
-            common_utils.MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "LoggerEditor", "Source is required."
                 )
@@ -2179,7 +2180,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         :return: None
         """
         if self._buf is None:
-            common_utils.MessagebarAndLog.warning(bar_msg="No data loaded")
+            message_utils.MessagebarAndLog.warning(bar_msg="No data loaded")
             return
         mask = self._build_edit_mask(
             fr_d_t.replace(tzinfo=None),
@@ -2199,7 +2200,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         :return: None
         """
         if self._buf is None:
-            common_utils.MessagebarAndLog.warning(bar_msg="No data loaded")
+            message_utils.MessagebarAndLog.warning(bar_msg="No data loaded")
             return
         mask = self._build_edit_mask(
             fr_d_t.replace(tzinfo=None),
@@ -2789,7 +2790,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             try:
                 agg = defs.validate_resample_how(s.get("resample_agg"))
             except exceptions.UsageError as e:
-                common_utils.MessagebarAndLog.critical(bar_msg=str(e))
+                message_utils.MessagebarAndLog.critical(bar_msg=str(e))
                 return
             df = getattr(df.resample(s["resample"]), agg)()
         if s.get("interpolate"):
@@ -2922,7 +2923,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 self.logger_elevation.setText("")
                 self.from_date_time.setDateTime(to_date("2099-12-31 23:59:59"))
         except Exception as e:
-            common_utils.MessagebarAndLog.info(
+            message_utils.MessagebarAndLog.info(
                 log_msg=QCoreApplication.translate(
                     "Calibrlogger",
                     "Getting last calibration failed for obsid %s, msg: %s",
@@ -2977,7 +2978,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
         coupled_vals = self.match_ts_values(self.meas_ts, logger_ts, search_radius)
         if not coupled_vals:
-            common_utils.pop_up_info(
+            message_utils.pop_up_info(
                 QCoreApplication.translate(
                     "Calibrlogger",
                     "There was no match found between measurements and logger values inside the chosen period.\n Try to increase the search radius or adjust the period!",
@@ -2986,13 +2987,13 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         else:
             calculated_diff = str(common_utils.calc_mean_diff(coupled_vals))
             if not calculated_diff or calculated_diff.lower() == "nan":
-                common_utils.pop_up_info(
+                message_utils.pop_up_info(
                     QCoreApplication.translate(
                         "Calibrlogger",
                         "There was no matched measurements or logger values inside the chosen period.\n Try to increase the search radius!",
                     )
                 )
-                common_utils.MessagebarAndLog.info(
+                message_utils.MessagebarAndLog.info(
                     log_msg=QCoreApplication.translate(
                         "Calibrlogger",
                         "Calculated water level from logger: midvatten_utils.calc_mean_diff(coupled_vals) didn't return a useable value.",
@@ -3093,7 +3094,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
         search_radius_splitted = ru(search_radius).split()
         if len(search_radius_splitted) != 2:
-            common_utils.pop_up_info(
+            message_utils.pop_up_info(
                 QCoreApplication.translate(
                     "Calibrlogger", "Must write time resolution also, ex. %s"
                 )
@@ -3120,13 +3121,13 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         :return: None
         """
         if self._buf is None:
-            common_utils.MessagebarAndLog.warning(bar_msg="No data loaded")
+            message_utils.MessagebarAndLog.warning(bar_msg="No data loaded")
             return
 
         current_loaded_obsid = self.obsid
         selected_obsid = self.selected_obsid
         if current_loaded_obsid != selected_obsid:
-            common_utils.pop_up_info(
+            message_utils.pop_up_info(
                 QCoreApplication.translate(
                     "Calibrlogger",
                     "Error!\n The obsid selection has been changed but the plot has not been updated. No deletion done.\nUpdating plot.",
@@ -3135,7 +3136,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self.update_plot()
             return
         elif selected_obsid is None:
-            common_utils.pop_up_info(
+            message_utils.pop_up_info(
                 QCoreApplication.translate(
                     "Calibrlogger",
                     "Error!\n No obsid was selected. No deletion done.\nUpdating plot.",
@@ -3502,7 +3503,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             obsid = self._buf_obsid or ""
             delta_start = new_start_y - original_start_y
             delta_end = new_end_y - original_end_y
-            common_utils.MessagebarAndLog.info(
+            message_utils.MessagebarAndLog.info(
                 log_msg=QCoreApplication.translate(
                     "Calibrlogger",
                     "Trend adjusted for %s (%s to %s): Δ_start=%.4f, Δ_end=%.4f",

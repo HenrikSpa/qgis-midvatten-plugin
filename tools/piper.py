@@ -34,6 +34,7 @@ from midvatten.definitions.midvatten_defs import piperplot2_style
 from midvatten.tools.utils import common_utils, db_utils, layer_utils
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.common_utils import LEGEND_NCOL_KEY
+from midvatten.tools.utils import message_utils
 
 log = logging.getLogger(__name__)
 
@@ -284,7 +285,7 @@ class PiperPlot:
             try:
                 dbconnection.closedb()
             except Exception:
-                common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
+                message_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
         self.typedict = dict(types)  # make it a dictionary
         dbconnection = db_utils.DbConnectionManager()
         try:
@@ -297,7 +298,7 @@ class PiperPlot:
             try:
                 dbconnection.closedb()
             except Exception:
-                common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
+                message_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
 
     def get_piper_data(self):
         # These observations are supposed to be in mg/l and must be stored in a Midvatten database, table w_qual_lab
@@ -1026,13 +1027,13 @@ class PiperPlot:
                 self.l1.remove()
                 self.l1 = None
             except Exception:
-                common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
+                message_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
         if isinstance(self.l2, mpl.lines.Line2D):
             try:
                 self.l2.remove()
                 self.l2 = None
             except Exception:
-                common_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
+                message_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
 
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()

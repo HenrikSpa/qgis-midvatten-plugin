@@ -26,8 +26,9 @@ import numpy as np
 from matplotlib.dates import datestr2num
 from qgis.PyQt.QtCore import QCoreApplication
 
-from midvatten.tools.utils import common_utils, db_utils
+from midvatten.tools.utils import db_utils
 from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils import message_utils
 
 
 class TimeSeriesPlot:
@@ -143,7 +144,7 @@ class TimeSeriesPlot:
                         p, plabel, loc=0
                     )  # leg = fig.legend(p, plabel, 'right')
                 except ValueError as e:
-                    common_utils.MessagebarAndLog.info(
+                    message_utils.MessagebarAndLog.info(
                         log_msg="""Figure legend didn't work, using axis legend instead, msg: %s"""
                         % str(e)
                     )
@@ -175,14 +176,14 @@ class TimeSeriesPlot:
                 # plt.draw()
                 dbconnection.closedb()
             else:
-                common_utils.pop_up_info(
+                message_utils.pop_up_info(
                     QCoreApplication.translate(
                         "TimeSeriesPlot",
                         "Please select at least one point with time series data",
                     )
                 )
         else:
-            common_utils.pop_up_info(
+            message_utils.pop_up_info(
                 QCoreApplication.translate(
                     "TimeSeriesPlot",
                     "Please select a layer with time series observation points",

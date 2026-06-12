@@ -31,6 +31,7 @@ from midvatten.tools.utils import common_utils, gui_utils, db_utils, string_util
 from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
 from midvatten.tools.utils.midvatten_utils import warn_about_old_database
+from midvatten.tools.utils import message_utils
 
 log = logging.getLogger(__name__)
 
@@ -727,7 +728,7 @@ class DatabaseSettings:
         try:
             db_settings = ast.literal_eval(_db_settings)
         except Exception:
-            common_utils.MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 log_msg=QCoreApplication.translate(
                     "DatabaseSettings", "Reading db_settings failed using string %s"
                 )
@@ -753,7 +754,7 @@ class DatabaseSettings:
                         if hasattr(self.db_settings_obj, str(setting_name)):
                             setattr(self.db_settings_obj, str(setting_name), value)
                         else:
-                            common_utils.MessagebarAndLog.warning(
+                            message_utils.MessagebarAndLog.warning(
                                 log_msg=QCoreApplication.translate(
                                     "DatabaseSettings",
                                     "Databasetype %s didn' t have setting %s",
@@ -764,7 +765,7 @@ class DatabaseSettings:
                         log.debug(str(setting_name))
                         raise
         else:
-            common_utils.MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "DatabaseSettings",
                     "Could not load database settings. Select database again!",
@@ -824,7 +825,7 @@ class SpatialiteSettings(gui_utils.RowEntryGrid):
             self.dbpath = dbpath
 
         else:  # debug
-            common_utils.MessagebarAndLog.info(
+            message_utils.MessagebarAndLog.info(
                 log_msg=QCoreApplication.translate(
                     "SpatialiteSettings",
                     "DB selection cancelled and still using database path %s",
@@ -848,7 +849,7 @@ class SpatialiteSettings(gui_utils.RowEntryGrid):
         try:
             self.midvsettingsdialogdock.load_plot_settings()
         except db_utils.DatabaseLockedError as e:
-            common_utils.MessagebarAndLog.warning(
+            message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "SpatialiteSettings",
                     "Database is locked (a journal file was found). Close other programs using this database and try again.",

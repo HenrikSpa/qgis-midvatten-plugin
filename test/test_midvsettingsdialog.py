@@ -1,10 +1,48 @@
 """Tests for midvsettingsdialog.MidvattenSettingsDock helpers."""
 
 import types
+from unittest import mock
 
 import pytest
 
+from midvatten import midvsettingsdialog
 from midvatten.midvsettingsdialog import MidvattenSettingsDock
+from midvatten.tools.utils.exceptions import UsageError
+
+
+@pytest.mark.active
+class TestLoadColumnsFromTable:
+    """Clearing the table comboboxes on a project reset fires the
+    *_table_updated signal handlers while no database is configured. Those
+    handlers funnel through load_columns_from_table, which must not blow up
+    when there is no database to read columns from."""
+
+    @staticmethod
+    def _make_stub_dock(database):
+        dock = types.SimpleNamespace()
+        dock.ms = types.SimpleNamespace(settingsdict={"database": database})
+        return dock
+
+    def test_returns_empty_without_touching_db_when_no_database(self):
+        dock = self._make_stub_dock("")
+        with mock.patch.object(
+            midvsettingsdialog.db_utils,
+            "tables_columns",
+            side_effect=UsageError("Database setting was empty."),
+        ) as mock_tables_columns:
+            result = MidvattenSettingsDock.load_columns_from_table(dock, "w_levels")
+        assert result == []
+        mock_tables_columns.assert_not_called()
+
+    def test_returns_columns_when_database_is_configured(self):
+        dock = self._make_stub_dock("{'spatialite': {'dbpath': '/tmp/db.sqlite'}}")
+        with mock.patch.object(
+            midvsettingsdialog.db_utils,
+            "tables_columns",
+            return_value={"w_levels": ["obsid", "date_time"]},
+        ):
+            result = MidvattenSettingsDock.load_columns_from_table(dock, "w_levels")
+        assert result == ["obsid", "date_time"]
 
 
 class ComboStub:

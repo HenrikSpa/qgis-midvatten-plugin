@@ -3657,6 +3657,12 @@ class MultiCursorButton(NavigationButton):
             fig.canvas, fig.axes, horizOn=True, vertOn=True, color="k", lw=0.8, ls="--"
         )
         self.mc.visible = False
+        # MultiCursor's invisible cursor lines expand dataLim to datenum 0.5
+        # (= 1970-01-01) while the axes still have default (0, 1) limits; via
+        # sharex the stale ref_axes dataLim then drags the autoscaled xlim
+        # back to ~1970 for every obsid (ref_axes rarely gets real data).
+        for ax in fig.axes:
+            ax.relim(visible_only=True)
 
     def clicked(self):
         self.mc.visible = self.button().isChecked()

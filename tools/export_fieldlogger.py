@@ -38,13 +38,13 @@ from qgis.core import (
 from qgis.gui import QgsMapLayerComboBox
 
 import midvatten.definitions.midvatten_defs as defs
-from midvatten.tools.utils import message_utils
 from midvatten.tools.utils import (
     common_utils,
     db_utils,
     gui_utils,
     exceptions,
     string_utils,
+    message_utils,
     layer_utils,
 )
 from midvatten.tools.utils.file_utils import ui_path

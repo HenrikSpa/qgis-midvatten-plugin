@@ -47,9 +47,8 @@ from qgis.PyQt import QtPrintSupport, QtWidgets, QtCore, QtGui
 from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.definitions import midvatten_defs as defs
-from midvatten.tools.utils import common_utils, db_utils, string_utils
+from midvatten.tools.utils import common_utils, db_utils, message_utils, string_utils
 from midvatten.tools.utils.string_utils import returnunicode as ru
-from midvatten.tools.utils import message_utils
 
 log = logging.getLogger(__name__)
 

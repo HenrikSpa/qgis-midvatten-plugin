@@ -41,7 +41,13 @@ from matplotlib.widgets import MultiCursor, RectangleSelector
 
 from qgis.PyQt import uic
 from midvatten.definitions import midvatten_defs as defs
-from midvatten.tools.utils import common_utils, db_utils, dialog_utils, exceptions
+from midvatten.tools.utils import (
+    common_utils,
+    db_utils,
+    dialog_utils,
+    exceptions,
+    message_utils,
+)
 from midvatten.tools.utils.common_utils import fn_timer
 from midvatten.tools.utils.db_utils.dialect import ident
 from midvatten.tools.utils.db_utils.execution import use_or_create_connection
@@ -56,7 +62,6 @@ from midvatten.tools.utils.gui_utils import NavigationButton, WA_DeleteOnClose
 from midvatten.tools.loggereditor_refseries import RefSeriesDialog
 from midvatten.tools.loggereditor_resolve_dupes import ResolveDuplicatesDialog
 from midvatten.tools.trend_math import apply_trend_correction
-from midvatten.tools.utils import message_utils
 
 log = logging.getLogger(__name__)
 

@@ -24,8 +24,7 @@ import time  # for debugging
 from qgis.PyQt.QtCore import QCoreApplication
 
 # midvatten modules
-from midvatten.tools.utils import message_utils
-from midvatten.tools.utils import common_utils, db_utils
+from midvatten.tools.utils import common_utils, db_utils, message_utils
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.wqualreport_core import (
     report_path,

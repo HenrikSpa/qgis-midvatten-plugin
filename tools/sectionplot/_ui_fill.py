@@ -16,10 +16,9 @@ from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import QgsProject
 
 from midvatten.tools.sectionplot.data import get_line_feature_obsid
-from midvatten.tools.utils import db_utils
+from midvatten.tools.utils import db_utils, message_utils
 from midvatten.tools.utils.gui_utils import set_combobox
 from midvatten.tools.utils.string_utils import returnunicode as ru
-from midvatten.tools.utils import message_utils
 
 
 def fill_tem(ui, ms, dbconnection, line_feature=None):

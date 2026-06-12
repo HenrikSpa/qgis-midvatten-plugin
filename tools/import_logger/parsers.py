@@ -14,8 +14,13 @@ from qgis.PyQt.QtCore import QCoreApplication
 
 import pandas as pd  # pandas is a mandatory dependency of this plugin
 
-from midvatten.tools.utils import message_utils
-from midvatten.tools.utils import common_utils, date_utils, dialog_utils, file_utils
+from midvatten.tools.utils import (
+    common_utils,
+    date_utils,
+    dialog_utils,
+    file_utils,
+    message_utils,
+)
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.common_utils import format_timezone_string
 from midvatten.tools.utils.date_utils import to_date

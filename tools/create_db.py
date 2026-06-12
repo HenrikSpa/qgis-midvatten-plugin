@@ -32,6 +32,7 @@ from midvatten.tools.utils import (
     db_utils,
     dialog_utils,
     exceptions,
+    message_utils,
     string_utils,
 )
 from midvatten.tools.utils.string_utils import returnunicode as ru, lstrip
@@ -39,7 +40,6 @@ from midvatten.tools.utils.file_utils import definitions_path
 from midvatten.tools.utils.common_utils import format_timezone_string
 from midvatten.tools.utils.date_utils import get_pytz_timezones
 from midvatten.tools.utils.db_utils import DbConnectionManager, execute_sqlfile
-from midvatten.tools.utils import message_utils
 
 log = logging.getLogger(__name__)
 

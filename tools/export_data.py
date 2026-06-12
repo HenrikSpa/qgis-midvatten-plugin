@@ -37,9 +37,14 @@ from qgis.PyQt.QtWidgets import (
     QVBoxLayout,
 )
 
-from midvatten.tools.utils import common_utils, db_utils, file_utils, layer_utils
+from midvatten.tools.utils import (
+    common_utils,
+    db_utils,
+    file_utils,
+    layer_utils,
+    message_utils,
+)
 from midvatten.definitions import midvatten_defs as defs
-from midvatten.tools.utils import message_utils
 
 _HTML_TAG_RE = re.compile(r"<[a-zA-Z][^>]*>")
 _BLOCK_TAGS = frozenset(

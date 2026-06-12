@@ -2897,9 +2897,7 @@ class WlvllogImportFromLoggerLeveloggerMixin:
         @mock.patch("midvatten.tools.utils.common_utils.NotFoundQuestion")
         @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
         @mock.patch("qgis.utils.iface", autospec=True)
-        @mock.patch(
-            "midvatten.tools.utils.message_utils.pop_up_info", autospec=True
-        )
+        @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
         @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
         def _inner(
             self,
@@ -2939,9 +2937,7 @@ class WlvllogImportFromLoggerLeveloggerMixin:
         @mock.patch("midvatten.tools.utils.common_utils.NotFoundQuestion")
         @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
         @mock.patch("qgis.utils.iface", autospec=True)
-        @mock.patch(
-            "midvatten.tools.utils.message_utils.pop_up_info", autospec=True
-        )
+        @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
         @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
         def _inner(
             self,

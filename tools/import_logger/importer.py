@@ -14,7 +14,6 @@ from qgis.PyQt.QtCore import QCoreApplication, Qt
 
 import pandas as pd  # pandas is a mandatory dependency of this plugin
 
-from midvatten.tools.utils import message_utils
 from midvatten.tools import import_data_to_db
 from midvatten.tools.base_importer import BaseImporter
 from midvatten.tools.utils import (
@@ -22,6 +21,7 @@ from midvatten.tools.utils import (
     db_utils,
     dialog_utils,
     midvatten_utils,
+    message_utils,
     file_utils,
 )
 from midvatten.tools.utils.exceptions import UserInterruptError

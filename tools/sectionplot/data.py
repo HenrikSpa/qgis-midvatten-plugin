@@ -16,10 +16,9 @@ import pandas as pd
 from psycopg2.sql import SQL, Identifier
 from qgis.PyQt.QtCore import QCoreApplication
 
-from midvatten.tools.utils import common_utils, db_utils, string_utils
+from midvatten.tools.utils import common_utils, db_utils, message_utils, string_utils
 from midvatten.tools.utils.db_utils.dialect import ident
 from midvatten.tools.utils.string_utils import returnunicode as ru
-from midvatten.tools.utils import message_utils
 
 
 def get_line_feature_obsid(line_feature) -> Optional[str]:

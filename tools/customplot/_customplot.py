@@ -29,7 +29,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import qgis.PyQt
 
-from midvatten.tools.utils import message_utils
 from midvatten.tools.utils.mpl_compat import FigureCanvas, NavigationToolbar
 from matplotlib.dates import datestr2num
 from qgis.PyQt import QtGui, QtCore, uic, QtWidgets  # , QtSql
@@ -44,6 +43,7 @@ from midvatten.tools.utils import (
     db_utils,
     exceptions,
     layer_utils,
+    message_utils,
     midvatten_utils,
 )
 from midvatten.tools.utils.file_utils import ui_path

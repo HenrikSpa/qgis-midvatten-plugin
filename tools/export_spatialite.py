@@ -9,8 +9,7 @@ from qgis.PyQt.QtWidgets import QApplication, QDialog, QMessageBox, QProgressDia
 from midvatten.tools.create_db import NewDb
 from midvatten.tools.create_db_dialogs import NewSpatialiteDbDialog
 from midvatten.tools.export_worker import ExportWorker
-from midvatten.tools.utils import common_utils, db_utils, layer_utils
-from midvatten.tools.utils import message_utils
+from midvatten.tools.utils import common_utils, db_utils, layer_utils, message_utils
 
 log = logging.getLogger(__name__)
 

@@ -73,8 +73,7 @@ from midvatten.tools.utils.common_utils import (
 
 from midvatten.definitions.db_defs import latest_database_version
 
-from midvatten.tools.utils import db_utils
-from midvatten.tools.utils import message_utils
+from midvatten.tools.utils import db_utils, message_utils
 
 log = logging.getLogger(__name__)
 
@@ -117,7 +116,6 @@ def verify_msettings_loaded_and_layer_edit_mode(
                         )
                         % str(layerexists.name())
                     )
-                    # message_utils.pop_up_info("Layer " + str(layerexists.name()) + " is currently in editing mode.\nPlease exit this mode before proceeding with this operation.", "Warning")
                     errorsignal += 1
 
     if not mset.settingsdict["database"]:

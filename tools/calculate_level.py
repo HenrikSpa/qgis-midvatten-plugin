@@ -33,11 +33,10 @@ from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QCoreApplication
 
 
-from midvatten.tools.utils import db_utils, layer_utils
+from midvatten.tools.utils import db_utils, layer_utils, message_utils
 from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.common_utils import fn_timer
-from midvatten.tools.utils import message_utils
 
 Calc_Ui_Dialog = uic.loadUiType(ui_path("calc_lvl_dialog.ui"))[0]
 

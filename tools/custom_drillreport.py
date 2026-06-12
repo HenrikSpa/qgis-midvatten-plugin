@@ -36,12 +36,12 @@ from midvatten.tools.utils import (
     db_utils,
     exceptions,
     layer_utils,
+    message_utils,
     string_utils,
 )
 from midvatten.tools.utils.file_utils import templates_path, ui_path
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
 from midvatten.tools.utils.string_utils import returnunicode as ru
-from midvatten.tools.utils import message_utils
 
 _EMPTY_VALS = ("", "NULL")
 

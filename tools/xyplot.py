@@ -22,8 +22,7 @@ import matplotlib.ticker as tick
 import numpy as np
 from qgis.PyQt.QtCore import QCoreApplication
 
-from midvatten.tools.utils import db_utils
-from midvatten.tools.utils import message_utils
+from midvatten.tools.utils import db_utils, message_utils
 
 
 class XYPlot:

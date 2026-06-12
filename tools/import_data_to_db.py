@@ -30,11 +30,10 @@ import psycopg2
 import psycopg2.extras
 from qgis.PyQt.QtCore import QCoreApplication
 
-from midvatten.tools.utils import common_utils, db_utils, dialog_utils
+from midvatten.tools.utils import common_utils, db_utils, dialog_utils, message_utils
 from midvatten.tools.utils.exceptions import UserInterruptError
 from midvatten.tools.utils.db_utils import DbConnectionManager
 from midvatten.tools.utils.date_utils import instant_key
-from midvatten.tools.utils import message_utils
 
 
 class MidvDataImporter:  # this class is intended to be a multipurpose import class  BUT loggerdata probably needs specific importer or its own subfunction

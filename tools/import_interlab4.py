@@ -40,6 +40,7 @@ from midvatten.tools.utils import (
     db_utils,
     midvatten_utils,
     exceptions,
+    message_utils,
     file_utils,
 )
 from midvatten.tools.utils.common_utils import Cancel
@@ -54,7 +55,6 @@ from midvatten.tools.utils.gui_utils import (
     get_line,
 )
 from midvatten.tools.utils.string_utils import returnunicode as ru
-from midvatten.tools.utils import message_utils
 from qgis.PyQt.QtCore import QCoreApplication, QItemSelectionModel
 
 import_fieldlogger_ui_dialog = qgis.PyQt.uic.loadUiType(ui_path("import_interlab4.ui"))[

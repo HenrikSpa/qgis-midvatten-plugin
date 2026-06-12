@@ -69,13 +69,12 @@ from midvatten.tools.utils import (
     layer_utils,
     midvatten_utils,
 )
-from midvatten.tools.utils import matplotlib_replacements
+from midvatten.tools.utils import matplotlib_replacements, message_utils
 from midvatten.tools.utils.util_translate import get_translate
 from midvatten.tools.w_flow_calc_aveflow import CalculateAveflow
 from midvatten.tools.wqualreport import Wqualreport
 from midvatten.tools.wqualreport_compact import CompactWqualReportUi
 from midvatten.tools.xyplot import XYPlot
-from midvatten.tools.utils import message_utils
 
 log = logging.getLogger(__name__)
 

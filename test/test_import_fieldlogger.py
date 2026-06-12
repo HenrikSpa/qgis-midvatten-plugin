@@ -265,9 +265,7 @@ class TestFieldLoggerImporterNoDb:
             @mock.patch(
                 "midvatten.tools.import_fieldlogger.midvatten_utils.QtWidgets.QInputDialog.getText"
             )
-            @mock.patch(
-                "midvatten.tools.utils.message_utils.MessagebarAndLog"
-            )
+            @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
             def _test(self, filename, mock_messagebar, mock_charset, mock_savefilename):
                 mock_charset.return_value = ("utf-8", True)
                 mock_savefilename.return_value = [[filename]]
@@ -398,9 +396,7 @@ class TestFieldLoggerImporterNoDb:
             @mock.patch(
                 "midvatten.tools.import_fieldlogger.midvatten_utils.QtWidgets.QInputDialog.getText"
             )
-            @mock.patch(
-                "midvatten.tools.utils.message_utils.MessagebarAndLog"
-            )
+            @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
             def _test(self, filename, mock_messagebar, mock_charset, mock_savefilename):
                 mock_charset.return_value = ("utf-8", True)
                 mock_savefilename.return_value = [[filename]]
@@ -533,9 +529,7 @@ class TestFieldLoggerImporterNoDb:
             @mock.patch(
                 "midvatten.tools.import_fieldlogger.midvatten_utils.QtWidgets.QInputDialog.getText"
             )
-            @mock.patch(
-                "midvatten.tools.utils.message_utils.MessagebarAndLog"
-            )
+            @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
             def _test(self, filename, mock_messagebar, mock_charset, mock_savefilename):
                 mock_charset.return_value = ("utf-8", True)
                 mock_savefilename.return_value = [[filename]]
@@ -667,9 +661,7 @@ class TestFieldLoggerImporterNoDb:
             @mock.patch(
                 "midvatten.tools.import_fieldlogger.midvatten_utils.QtWidgets.QInputDialog.getText"
             )
-            @mock.patch(
-                "midvatten.tools.utils.message_utils.MessagebarAndLog"
-            )
+            @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
             def _test(
                 self,
                 filename,
@@ -889,9 +881,7 @@ class TestFieldLoggerImporterNoDb:
             @mock.patch(
                 "midvatten.tools.import_fieldlogger.midvatten_utils.QtWidgets.QInputDialog.getText"
             )
-            @mock.patch(
-                "midvatten.tools.utils.message_utils.MessagebarAndLog"
-            )
+            @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
             def _test(self, filename, mock_messagebar, mock_charset, mock_savefilename):
                 mock_charset.return_value = ("utf-8", True)
                 mock_savefilename.return_value = [[filename]]

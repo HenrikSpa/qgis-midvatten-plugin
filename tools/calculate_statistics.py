@@ -24,11 +24,16 @@ import qgis.PyQt
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtWidgets import QMainWindow
 
-from midvatten.tools.utils import common_utils, db_utils, gui_utils, layer_utils
+from midvatten.tools.utils import (
+    common_utils,
+    db_utils,
+    gui_utils,
+    layer_utils,
+    message_utils,
+)
 from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
 from midvatten.tools.utils.string_utils import returnunicode as ru
-from midvatten.tools.utils import message_utils
 
 calculate_statistics_dialog = qgis.PyQt.uic.loadUiType(
     ui_path("calculate_statistics_ui.ui")

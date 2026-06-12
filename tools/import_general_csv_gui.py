@@ -28,7 +28,6 @@ import qgis.PyQt
 from qgis.PyQt.QtCore import QCoreApplication
 
 import midvatten.definitions.midvatten_defs as defs
-from midvatten.tools.utils import message_utils
 from midvatten.tools import import_data_to_db
 from midvatten.tools.utils import (
     common_utils,
@@ -38,6 +37,7 @@ from midvatten.tools.utils import (
     exceptions,
     file_utils,
     layer_utils,
+    message_utils,
     midvatten_utils,
 )
 from midvatten.tools.utils.file_utils import ui_path

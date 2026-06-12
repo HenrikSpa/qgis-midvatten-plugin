@@ -28,10 +28,9 @@ from qgis.PyQt.QtGui import QDesktopServices
 
 from midvatten.tools.calculate_statistics import get_statistics_for_single_obsid
 from midvatten.tools.drillreport_models import ObsPointsRow, StratigraphyRow
-from midvatten.tools.utils import db_utils, layer_utils, midvatten_utils
+from midvatten.tools.utils import db_utils, layer_utils, message_utils, midvatten_utils
 from midvatten.tools.utils.file_utils import templates_path
 from midvatten.tools.utils.string_utils import returnunicode as ru
-from midvatten.tools.utils import message_utils
 
 _EMPTY_VALS = ("", "NULL")
 

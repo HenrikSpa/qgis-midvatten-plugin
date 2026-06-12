@@ -33,7 +33,6 @@ import qgis.PyQt
 from qgis.PyQt import QtCore, QtWidgets, uic
 from qgis.PyQt.QtCore import QCoreApplication
 
-from midvatten.tools.utils import message_utils
 from midvatten.tools.base_importer import BaseImporter
 from midvatten.tools.utils import (
     common_utils,
@@ -41,6 +40,7 @@ from midvatten.tools.utils import (
     midvatten_utils,
     db_utils,
     file_utils,
+    message_utils,
     exceptions,
 )
 import midvatten.tools.import_data_to_db as import_data_to_db

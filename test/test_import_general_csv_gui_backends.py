@@ -1816,9 +1816,7 @@ class GeneralCsvGuiFromLayerMixin:
 
         @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
         @mock.patch("qgis.utils.iface", autospec=True)
-        @mock.patch(
-            "midvatten.tools.utils.message_utils.pop_up_info", autospec=True
-        )
+        @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
         def _test(self, mock_skippopup, mock_iface, mock_askuser):
 
             def side_effect(*args, **kwargs):
@@ -1899,9 +1897,7 @@ class GeneralCsvGuiFromLayerMixin:
 
         @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
         @mock.patch("qgis.utils.iface", autospec=True)
-        @mock.patch(
-            "midvatten.tools.utils.message_utils.pop_up_info", autospec=True
-        )
+        @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
         def _test(self, mock_skippopup, mock_iface, mock_askuser):
 
             def side_effect(*args, **kwargs):

@@ -12,7 +12,7 @@ from qgis.core import (
 )
 from qgis.PyQt.QtCore import QCoreApplication
 
-from midvatten.tools.utils import db_utils
+from midvatten.tools.utils import db_utils, message_utils
 from midvatten.tools.utils.file_utils import definitions_path
 from midvatten.tools.utils.layer_build import build_layer
 from midvatten.tools.utils.layer_specs import (
@@ -22,7 +22,6 @@ from midvatten.tools.utils.layer_specs import (
     LayerSpec,
 )
 from midvatten.tools.utils.midvatten_utils import is_locale_swedish
-from midvatten.tools.utils import message_utils
 
 
 class LoadLayers:

@@ -27,11 +27,16 @@ from qgis.PyQt.QtWidgets import QDockWidget, QFileDialog
 from qgis.PyQt.QtWidgets import QGridLayout, QMainWindow
 
 from midvatten.tools.midvsettings import MidvSettings
-from midvatten.tools.utils import common_utils, gui_utils, db_utils, string_utils
+from midvatten.tools.utils import (
+    common_utils,
+    db_utils,
+    gui_utils,
+    message_utils,
+    string_utils,
+)
 from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
 from midvatten.tools.utils.midvatten_utils import warn_about_old_database
-from midvatten.tools.utils import message_utils
 
 log = logging.getLogger(__name__)
 

@@ -31,10 +31,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from midvatten.definitions.midvatten_defs import piperplot2_style
-from midvatten.tools.utils import common_utils, db_utils, layer_utils
+from midvatten.tools.utils import common_utils, db_utils, layer_utils, message_utils
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.common_utils import LEGEND_NCOL_KEY
-from midvatten.tools.utils import message_utils
 
 log = logging.getLogger(__name__)
 

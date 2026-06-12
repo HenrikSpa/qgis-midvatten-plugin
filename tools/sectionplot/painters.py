@@ -32,8 +32,7 @@ from qgis.core import (
 )
 
 import midvatten.definitions.midvatten_defs as defs
-from midvatten.tools.utils import message_utils
-from midvatten.tools.utils import db_utils, layer_utils
+from midvatten.tools.utils import db_utils, layer_utils, message_utils
 from midvatten.tools.sectionplot._utils import (
     get_legend_items_labels,
     get_plot_label_name,

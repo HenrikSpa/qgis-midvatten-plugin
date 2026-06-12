@@ -22,10 +22,9 @@ from qgis.PyQt.QtCore import QCoreApplication, QVariant
 from qgis.PyQt.QtWidgets import QApplication
 from qgis.core import QgsVectorLayer
 
-from midvatten.tools.utils import db_utils, gui_utils, layer_utils
+from midvatten.tools.utils import db_utils, gui_utils, layer_utils, message_utils
 from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
-from midvatten.tools.utils import message_utils
 
 selected_features_dialog = qgis.PyQt.uic.loadUiType(ui_path("selected_features.ui"))[0]
 

@@ -1191,16 +1191,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self._ref_subplot_dirty = True
             buf = self._buf
 
-        self.head_ts = self._build_ts_recarray(buf, "head_cm_m")
-        self.level_masl_ts = self._build_ts_recarray(buf, "level_masl")
-        self._build_head_ts_for_plot(buf)
-        # Snapshotted with the recarrays so plot x, y and key codes always
-        # agree, even if _buf is replaced behind the cache's back.
-        self._plot_x = buf.index.to_numpy()
-        self._line_codes, self._line_key_to_code = self._line_key_codes(
-            self.level_masl_ts.line_key
-        )
-        self._ts_dates_filled = False
+        self._rebuild_ts_caches(buf)
 
         self.obsid = obsid
 
@@ -1212,9 +1203,22 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         )
 
         self.setlastcalibration(obsid)
-        self._ts_version = self._buf_version
         common_utils.stop_waiting_cursor()
         return obsid
+
+    def _rebuild_ts_caches(self, buf: pd.DataFrame) -> None:
+        """Rebuild the plotting recarrays and their snapshots from ``buf``."""
+        self.head_ts = self._build_ts_recarray(buf, "head_cm_m")
+        self.level_masl_ts = self._build_ts_recarray(buf, "level_masl")
+        self._build_head_ts_for_plot(buf)
+        # Snapshotted with the recarrays so plot x, y and key codes always
+        # agree, even if _buf is replaced behind the cache's back.
+        self._plot_x = buf.index.to_numpy()
+        self._line_codes, self._line_key_to_code = self._line_key_codes(
+            self.level_masl_ts.line_key
+        )
+        self._ts_dates_filled = False
+        self._ts_version = self._buf_version
 
     @fn_timer
     def setlastcalibration(self, obsid):
@@ -2590,15 +2594,23 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                     if progress.wasCanceled():
                         break
             if progress is not None and progress.wasCanceled():
-                if self.separate_created_at_cb.isChecked():
-                    self.separate_created_at_cb.blockSignals(True)
-                    self.separate_created_at_cb.setChecked(False)
-                    self.separate_created_at_cb.blockSignals(False)
-                elif self.separate_dt_precision_cb.isChecked():
-                    self.separate_dt_precision_cb.blockSignals(True)
-                    self.separate_dt_precision_cb.setChecked(False)
-                    self.separate_dt_precision_cb.blockSignals(False)
+                # Drop one separation dimension per cancel; source last, so a
+                # final cancel always collapses to a single merged line.
+                for checkbox in (
+                    self.separate_created_at_cb,
+                    self.separate_dt_precision_cb,
+                    self.separate_source_cb,
+                ):
+                    if checkbox.isChecked():
+                        checkbox.blockSignals(True)
+                        checkbox.setChecked(False)
+                        checkbox.blockSignals(False)
+                        break
                 self._recompute_line_keys()
+                # The recarrays and key-code snapshot still hold the old keys;
+                # rebuild them or the redraw re-enumerates the same lines and
+                # re-shows the dialog (with nothing left to uncheck: forever).
+                self._rebuild_ts_caches(self._buf)
                 for a in list(self.logger_plot_artists):
                     try:
                         a.remove()

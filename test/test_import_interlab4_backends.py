@@ -90,7 +90,7 @@ class Interlab4ImporterDBMixin:
             )
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch(
@@ -157,7 +157,7 @@ class Interlab4ImporterDBMixin:
             )
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch(
@@ -233,7 +233,7 @@ class Interlab4ImporterDBMixin:
             )
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch(
@@ -312,7 +312,7 @@ class Interlab4ImporterDBMixin:
             )
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch(
@@ -388,7 +388,7 @@ class Interlab4ImporterDBMixin:
             )
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch(
@@ -461,7 +461,7 @@ class Interlab4ImporterDBMixin:
             )
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch(
@@ -524,7 +524,7 @@ class Interlab4ImporterDBMixin:
             )
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch(
@@ -587,7 +587,7 @@ class Interlab4ImporterDBMixin:
             )
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch(
@@ -649,7 +649,7 @@ class Interlab4ImporterDBMixin:
             )
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch(
@@ -681,7 +681,7 @@ class Interlab4ImporterDBMixin:
         print(str(lablitteras))
         assert not lablitteras
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_interlab4_filter_many_filters(self, mock_messagebar):
 
         admheader = "Lablittera;Namn;Adress;Postnr;Ort;Kommunkod;Projekt;Laboratorium;Provtyp;Provtagare;Registertyp;ProvplatsID;Provplatsnamn;Specifik provplats;Provtagningsorsak;Provtyp;Provtypspecifikation;Bedömning;Kemisk bedömning;Mikrobiologisk bedömning;Kommentar;År;Provtagningsdatum;Provtagningstid;Inlämningsdatum;Inlämningstid;"
@@ -721,7 +721,7 @@ class Interlab4ImporterDBMixin:
             )
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch(
@@ -799,7 +799,7 @@ class Interlab4ImporterDBMixin:
             )
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch(
@@ -836,7 +836,7 @@ class Interlab4ImporterDBMixin:
         print(test_string)
         assert test_string == reference_string
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch(
         "qgis.PyQt.QtWidgets.QMessageBox.question",
         return_value=qgis.PyQt.QtWidgets.QMessageBox.Yes,
@@ -851,7 +851,7 @@ class Interlab4ImporterDBMixin:
         assert "s_qual_lab" in db_utils.tables_columns()
         assert self.importinstance.dest_table == "s_qual_lab"
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch(
         "qgis.PyQt.QtWidgets.QMessageBox.question",
         return_value=qgis.PyQt.QtWidgets.QMessageBox.No,

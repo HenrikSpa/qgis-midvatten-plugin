@@ -74,7 +74,7 @@ class TestWqualreportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv):
     @mock.patch("midvatten.tools.wqualreport.open_report_in_browser")
     @mock.patch("midvatten.tools.wqualreport.common_utils.start_waiting_cursor")
     @mock.patch("midvatten.tools.wqualreport.common_utils.stop_waiting_cursor")
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_show_generates_html_with_selected_obsid(
         self, mock_messagebar, mock_stop, mock_start, mock_openurl
     ):
@@ -106,7 +106,7 @@ class TestWqualreportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv):
     @mock.patch("midvatten.tools.wqualreport.open_report_in_browser")
     @mock.patch("midvatten.tools.wqualreport.common_utils.start_waiting_cursor")
     @mock.patch("midvatten.tools.wqualreport.common_utils.stop_waiting_cursor")
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_show_two_obsids_both_appear_in_report(
         self, mock_messagebar, mock_stop, mock_start, mock_openurl
     ):
@@ -136,7 +136,7 @@ class TestWqualreportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv):
     # Secondary: helper-method tests to cover branches not reachable via show()
     # -----------------------------------------------------------------------
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_get_data_returns_correct_shape(self, mock_messagebar):
         """get_data() returns a list with nr_header_rows + n_params rows."""
         _insert_wqual_data("OBS1")
@@ -159,7 +159,7 @@ class TestWqualreportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert table[1][0] == "date_time"
         assert table[0][1] == "OBS1"
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_get_data_no_parameters_returns_false(self, mock_messagebar):
         """get_data() returns False when obsid has no rows in w_qual_lab."""
         db_utils.sql_alter_db(
@@ -179,7 +179,7 @@ class TestWqualreportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv):
         print(f"{mock_messagebar.mock_calls=}")
         assert result is False
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_get_data_with_sorting_column_has_three_header_rows(self, mock_messagebar):
         """When wqual_sortingcolumn is set, nr_header_rows == 3."""
         _insert_wqual_data("OBS1")
@@ -202,7 +202,7 @@ class TestWqualreportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert table[2][0] == "report"  # third header row label
         assert len(table) == 5  # 3 headers + 2 params
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_run_report_warns_and_returns_when_wqualtable_is_empty(
         self, mock_messagebar
     ):
@@ -219,7 +219,7 @@ class TestWqualreportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv):
         warning_msg = mock_messagebar.warning.call_args[1]["bar_msg"]
         assert "water quality table" in warning_msg
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_write_html_report_uses_th_for_headers_td_for_data(self, mock_messagebar):
         """write_html_report() uses <th> for header rows and <td> for data rows."""
         _insert_wqual_data("OBS1")

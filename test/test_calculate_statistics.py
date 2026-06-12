@@ -33,7 +33,7 @@ from midvatten.tools import calculate_statistics
 
 
 class CalculateStatisticsMixin:
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
     @mock.patch(
         "midvatten.tools.utils.layer_utils.get_selected_features_as_tuple",

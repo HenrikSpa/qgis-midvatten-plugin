@@ -95,7 +95,7 @@ class SectionPlotIntegrationMixin:
     # Tests
     # ------------------------------------------------------------------
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_draw_stratigraphy_pipeline(self, mock_messagebar):
         """Basic draw pipeline: stratigraphy bars are rendered without errors.
 
@@ -139,7 +139,7 @@ class SectionPlotIntegrationMixin:
         # Obsids must be positioned.
         assert set(secplot.figure.obsids_x_position.keys()) == {"P1", "P2"}
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_draw_stratigraphy_and_water_level_pipeline(self, mock_messagebar):
         """Draw pipeline with both stratigraphy bars and a water-level date.
 
@@ -182,7 +182,7 @@ class SectionPlotIntegrationMixin:
         # Should have both stratigraphy handles and a water-level line handle.
         assert len(secplot.figure.plot_handles) >= 2
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_legend_rebuild_after_artists_added(self, mock_messagebar):
         """Legend rebuild path: update_legend populates an actual legend object.
 

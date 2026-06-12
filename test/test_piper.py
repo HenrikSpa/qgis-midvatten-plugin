@@ -82,7 +82,7 @@ class PiperPlotDbMixin:
         print(ref)
         assert test == ref
 
-    @mock.patch("midvatten.tools.piper.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
     @mock.patch("matplotlib.pyplot.Figure.show")
     def test_piper_plot_get_data(self, mock_showplot, mock_selected, mock_messagebar):

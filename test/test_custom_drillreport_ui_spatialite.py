@@ -60,7 +60,7 @@ class TestDrillreportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
     @mock.patch("midvatten.tools.custom_drillreport.QDesktopServices.openUrl")
     @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
     def test_ok_button_generates_html(
         self, mock_iface, mock_messagebar, mock_getselected, mock_openurl
@@ -84,7 +84,7 @@ class TestDrillreportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert "0" in report and "1" in report
 
     @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
     def test_no_selection_shows_message(
         self, mock_iface, mock_messagebar, mock_getselected
@@ -112,7 +112,7 @@ class TestDrillreportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
     @mock.patch("midvatten.tools.custom_drillreport.QDesktopServices.openUrl")
     @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
     def test_checkboxes_affect_export(
         self, mock_iface, mock_messagebar, mock_getselected, mock_openurl
@@ -133,7 +133,7 @@ class TestDrillreportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
     @mock.patch("midvatten.tools.custom_drillreport.QDesktopServices.openUrl")
     @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
     def test_plain_text_metadata_columns_affect_export(
         self, mock_iface, mock_messagebar, mock_getselected, mock_openurl
@@ -158,7 +158,7 @@ class TestDrillreportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
     @mock.patch("midvatten.tools.custom_drillreport.QDesktopServices.openUrl")
     @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
     def test_line_edit_headers_affect_export(
         self, mock_iface, mock_messagebar, mock_getselected, mock_openurl
@@ -181,7 +181,7 @@ class TestDrillreportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
     @mock.patch("midvatten.tools.custom_drillreport.QDesktopServices.openUrl")
     @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
     def test_decimal_separator_affect_export(
         self, mock_iface, mock_messagebar, mock_getselected, mock_openurl
@@ -205,7 +205,7 @@ class TestDrillreportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
     @mock.patch(
         "midvatten.tools.custom_drillreport.qgis.PyQt.QtWidgets.QInputDialog.getText"
     )
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_update_settings_from_string(self, mock_messagebar, mock_gettext):
         mock_gettext.return_value = (
             (

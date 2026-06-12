@@ -111,7 +111,7 @@ class PlotFallbackDictsMixin:
 
     # ── plot_types_dict ──────────────────────────────────────────────────────
 
-    @mock.patch("midvatten.definitions.midvatten_defs.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch(
         "midvatten.definitions.midvatten_defs.is_locale_swedish", return_value=True
     )
@@ -130,7 +130,7 @@ class PlotFallbackDictsMixin:
         assert "Rock" not in result
         assert "Unknown" not in result
 
-    @mock.patch("midvatten.definitions.midvatten_defs.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch(
         "midvatten.definitions.midvatten_defs.is_locale_swedish", return_value=False
     )
@@ -151,7 +151,7 @@ class PlotFallbackDictsMixin:
 
     # ── plot_colors_dict ─────────────────────────────────────────────────────
 
-    @mock.patch("midvatten.definitions.midvatten_defs.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch(
         "midvatten.definitions.midvatten_defs.is_locale_swedish", return_value=True
     )
@@ -169,7 +169,7 @@ class PlotFallbackDictsMixin:
         assert "okänt" in result
         assert "rock" not in result
 
-    @mock.patch("midvatten.definitions.midvatten_defs.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch(
         "midvatten.definitions.midvatten_defs.is_locale_swedish", return_value=False
     )
@@ -189,7 +189,7 @@ class PlotFallbackDictsMixin:
 
     # ── plot_hatches_dict ────────────────────────────────────────────────────
 
-    @mock.patch("midvatten.definitions.midvatten_defs.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch(
         "midvatten.definitions.midvatten_defs.is_locale_swedish", return_value=True
     )
@@ -207,7 +207,7 @@ class PlotFallbackDictsMixin:
         assert "okänt" in result
         assert "rock" not in result
 
-    @mock.patch("midvatten.definitions.midvatten_defs.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch(
         "midvatten.definitions.midvatten_defs.is_locale_swedish", return_value=False
     )

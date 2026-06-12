@@ -29,7 +29,7 @@ from midvatten.tools.utils import db_utils, midvatten_utils, string_utils
 
 @pytest.mark.postgis
 class TestFillDb(utils_for_tests.MidvattenTestPostgisNotCreated):
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface")
     @mock.patch("midvatten.midvatten_plugin.NewPostgisDbDialog")
     def test_create_db_locale_sv(self, mock_dialog_cls, mock_iface, mocked_messagebar):
@@ -166,7 +166,7 @@ class TestFillDb(utils_for_tests.MidvattenTestPostgisNotCreated):
 class TestObsPointsTriggers(utils_for_tests.MidvattenTestPostgisDbSv):
     def setup_method(self):
         with mock.patch(
-            "midvatten.tools.utils.common_utils.MessagebarAndLog"
+            "midvatten.tools.utils.message_utils.MessagebarAndLog"
         ) as mock_messagebar:
             super().setup_method()
             db_utils.sql_alter_db(
@@ -197,7 +197,7 @@ class TestObsPointsTriggers(utils_for_tests.MidvattenTestPostgisDbSv):
             if mock_calls != "[]":
                 print(mock_calls)
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_add_triggers_not_change_existing(self, mock_messagebar):
         """Adding triggers should not automatically change the db"""
         db_utils.sql_alter_db(
@@ -636,7 +636,7 @@ class TestObsPointsTriggers(utils_for_tests.MidvattenTestPostgisDbSv):
 
 @pytest.mark.postgis
 class TestSqls(utils_for_tests.MidvattenTestPostgisDbSvImportInstance):
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_import_null_as_double(self, mock_messagebar):
         """Adding triggers should not automatically change the db"""
         sql = (

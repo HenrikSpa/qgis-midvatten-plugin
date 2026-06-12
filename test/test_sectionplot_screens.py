@@ -47,7 +47,7 @@ class GetScreenPlotDataMixin:
         secplot.z_data = {"P1": {"z": 100.0, "barheight": 20.0, "bottom": 80.0}}
         return secplot
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_get_screen_plot_data_basic(self, mock_messagebar):
         """get_screen_plot_data returns correct keys, heights, and bottoms."""
         self._insert_obs_points()
@@ -75,7 +75,7 @@ class GetScreenPlotDataMixin:
         assert bars["pvc solid"]["height"] == [4.0]
         assert bars["pvc solid"]["bottom"] == [88.0]
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_get_screen_plot_data_graceful_skip_no_table(self, mock_messagebar):
         """get_screen_plot_data returns {} silently when screen table is absent."""
         self._insert_obs_points()
@@ -95,7 +95,7 @@ class GetScreenPlotDataMixin:
         assert bars == {}
         assert not mock_messagebar.critical.called
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_get_screen_plot_data_empty_obsids(self, mock_messagebar):
         """get_screen_plot_data returns {} for empty obsids_x_position."""
         secplot = self._make_secplot()
@@ -106,7 +106,7 @@ class GetScreenPlotDataMixin:
 
         assert bars == {}
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_get_screen_plot_data_skips_null_depths(self, mock_messagebar):
         """Rows with NULL depthtop or depthbot are silently skipped."""
         self._insert_obs_points()
@@ -137,7 +137,7 @@ class GetScreenPlotDataMixin:
         assert bars["jws"]["height"] == [3.0]
         assert bars["jws"]["bottom"] == [95.0]
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_get_screen_plot_data_skips_obsid_not_in_z_data(self, mock_messagebar):
         """Obsids absent from z_data are skipped defensively."""
         self._insert_obs_points()
@@ -166,7 +166,7 @@ class GetScreenPlotDataMixin:
                VALUES ('P1', 2, 8.0, 12.0, 'PVC solid', NULL, '')"""
         )
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_get_screen_text_data_basic(self, mock_messagebar):
         """get_screen_text_data returns {col: {(x,z): text}} with correct positions."""
         from midvatten.tools.sectionplot.data import get_screen_text_data
@@ -193,7 +193,7 @@ class GetScreenPlotDataMixin:
         # Row 2 had NULL screen → should be absent
         assert len(texts) == 1
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_get_screen_text_data_comment_column(self, mock_messagebar):
         """get_screen_text_data works for comment column, filters empty strings."""
         from midvatten.tools.sectionplot.data import get_screen_text_data
@@ -218,7 +218,7 @@ class GetScreenPlotDataMixin:
         assert texts[(1.0, 96.5)] == "Good condition"
         assert len(texts) == 1
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_get_screen_text_data_empty_result(self, mock_messagebar):
         """get_screen_text_data returns {} for empty obsids."""
         from midvatten.tools.sectionplot.data import get_screen_text_data
@@ -233,7 +233,7 @@ class GetScreenPlotDataMixin:
 
         assert result == {}
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_get_screen_text_data_no_screen_table(self, mock_messagebar):
         """get_screen_text_data returns {} when screen table is absent."""
         from midvatten.tools.sectionplot.data import get_screen_text_data

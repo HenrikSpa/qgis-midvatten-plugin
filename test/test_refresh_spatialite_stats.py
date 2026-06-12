@@ -16,7 +16,7 @@ from midvatten.tools.utils import db_utils
 
 @pytest.mark.spatialite
 class TestRefreshSpatialiteLayerStatistics(utils_for_tests.MidvattenTestSpatialiteDbSv):
-    @mock.patch("midvatten.tools.utils.db_utils.helpers.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_refresh_populates_stats_row_when_missing(self, mock_messagebar):
         """Deleting the stats row and calling refresh must put it back."""
         dbconnection = db_utils.DbConnectionManager()

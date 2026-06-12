@@ -13,7 +13,7 @@ from midvatten.tools.utils import dialog_utils
 class TestNotFoundQuestion:
     """Test NotFoundQuestion dialog construction and setupUi (self.dialog)."""
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.utils.dialog_utils.QtWidgets.QWidget.show")
     @mock.patch(
         "midvatten.tools.utils.dialog_utils.QtWidgets.QDialog.exec", return_value=0
@@ -41,7 +41,7 @@ class TestNotFoundQuestion:
         assert d.ignore_layout is not None
         assert mock_exec.called
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.utils.dialog_utils.QtWidgets.QWidget.show")
     @mock.patch(
         "midvatten.tools.utils.dialog_utils.QtWidgets.QDialog.exec", return_value=0

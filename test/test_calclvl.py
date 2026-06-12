@@ -35,7 +35,7 @@ class CalclvlMixin:
         self.calclvl = CalculateLevel(self.iface, self.midvatten.ms)
         self.calclvl.layer = self.iface.activeLayer()
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_calcall(self, mock_messagebar):
         db_utils.sql_alter_db(
             """INSERT INTO obs_points (obsid, h_toc) VALUES ('rb1', 1)"""
@@ -123,7 +123,7 @@ class CalclvlMixin:
         print(reference_string)
         assert test_string == reference_string
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
     def test_calc_selected_dont_overwrite(self, mock_selected_obsids, mock_messagebar):
         mock_selected_obsids.return_value = ["rb1", "rb2"]
@@ -160,8 +160,8 @@ class CalclvlMixin:
         print(test_string)
         assert test_string == reference_string
 
-    @mock.patch("midvatten.tools.loggereditor.common_utils.pop_up_info", autospec=True)
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
     def test_calc_selected_dont_overwrite_dont_skip_nulls(
         self, mock_selected_obsids, mock_messagebar, mock_skippopup
@@ -201,8 +201,8 @@ class CalclvlMixin:
         print(test_string)
         assert test_string == reference_string
 
-    @mock.patch("midvatten.tools.loggereditor.common_utils.pop_up_info", autospec=True)
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
     def test_calc_selected_dont_overwrite_skip_nulls(
         self, mock_selected_obsids, mock_messagebar, mock_skippopup

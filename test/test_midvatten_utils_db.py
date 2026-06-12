@@ -56,7 +56,7 @@ class GetFunctionsMixin:
 
 
 class CalculateDbTableRowsMixin:
-    @mock.patch("midvatten.tools.utils.db_utils.helpers.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_get_db_statistics(self, mock_messagebar):
         """
         Test that calculate_db_table_rows can be run without major error
@@ -72,7 +72,7 @@ class CalculateDbTableRowsMixin:
 
 class WarnAboutOldDatabaseMixin:
     @mock.patch("midvatten.tools.utils.midvatten_utils.latest_database_version")
-    @mock.patch("midvatten.tools.utils.midvatten_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_warn_about_old_database(self, mock_messagebar, mock_latest_version):
         mock_latest_version.return_value = "999.999.999"
         midvatten_utils.warn_about_old_database()
@@ -86,7 +86,7 @@ class WarnAboutOldDatabaseMixin:
         )
 
     @mock.patch("midvatten.tools.utils.midvatten_utils.latest_database_version")
-    @mock.patch("midvatten.tools.utils.midvatten_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_warn_about_old_database_not_old(
         self, mock_messagebar, mock_latest_version
     ):
@@ -96,7 +96,7 @@ class WarnAboutOldDatabaseMixin:
         assert not mock_messagebar.mock_calls
 
     @mock.patch("midvatten.tools.utils.midvatten_utils.latest_database_version")
-    @mock.patch("midvatten.tools.utils.midvatten_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_warn_about_view_obs_points_missing_assert_no_msg(
         self, mock_messagebar, mock_latest_version
     ):
@@ -105,7 +105,7 @@ class WarnAboutOldDatabaseMixin:
         assert not mock_messagebar.mock_calls
 
     @mock.patch("midvatten.tools.utils.midvatten_utils.latest_database_version")
-    @mock.patch("midvatten.tools.utils.midvatten_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_warn_about_view_obs_lines_missing_assert_no_msg(
         self, mock_messagebar, mock_latest_version
     ):
@@ -117,7 +117,7 @@ class WarnAboutOldDatabaseMixin:
 class AddViewObsPointsObsLinesMixin:
     expected_views_message = "Views not added for PostGIS databases (not needed)!"
 
-    @mock.patch("midvatten.tools.utils.midvatten_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_add_view_obs_points_obs_lines(self, mock_messagebar):
         midvatten_utils.add_view_obs_points_obs_lines()
         print(f"{mock_messagebar.mock_calls=}")

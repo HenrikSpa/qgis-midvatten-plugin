@@ -57,7 +57,7 @@ class SectionPlotMixin:
         print(str(feature_ids))
         self.vlayer.selectByIds(feature_ids)
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_plot_section(self, mock_messagebar):
         """For now, the test only initiates the plot. Check that it does not crash"""
         db_utils.sql_alter_db(
@@ -121,7 +121,7 @@ class SectionPlotMixin:
             get_legend_items_labels(self.sectionplot.figure.plot_handles)[0]
         )  # The bars should not be labeled, so there is one less label than plot.
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_plot_section_no_linelayer_message(self, mock_messagebar):
 
         @mock.patch("midvatten.tools.sectionplot.SectionPlot.create_new_plot")
@@ -153,7 +153,7 @@ class SectionPlotMixin:
         assert not mock_messagebar.warning.called
         assert not mock_messagebar.critical.called
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_plot_section_with_string_obsid(self, mock_messagebar):
         """For now, the test only initiates the plot. Check that it does not crash with string obsid"""
         db_utils.sql_alter_db(
@@ -205,7 +205,7 @@ class SectionPlotMixin:
         assert not mock_messagebar.warning.called
         assert not mock_messagebar.critical.called
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_plot_section_with_depth(self, mock_messagebar):
         db_utils.sql_alter_db(
             """INSERT INTO obs_lines (obsid, geometry) VALUES ('1', ST_GeomFromText('LINESTRING(633466.711659 6720684.24498, 633599.530455 6720727.016568)', 3006))"""
@@ -222,7 +222,7 @@ class SectionPlotMixin:
 
         self.create_and_select_vlayer()
 
-        @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+        @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
         @mock.patch("midvatten.tools.utils.layer_utils.find_layer")
         @mock.patch(
             "midvatten.tools.utils.layer_utils.get_selected_object_names",
@@ -252,7 +252,7 @@ class SectionPlotMixin:
         assert not mock_messagebar.warning.called
         assert not mock_messagebar.critical.called
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_plot_section_with_w_levels(self, mock_messagebar):
         db_utils.sql_alter_db(
             """INSERT INTO obs_lines (obsid, geometry) VALUES ('1', ST_GeomFromText('LINESTRING(633466.711659 6720684.24498, 633599.530455 6720727.016568)', 3006))"""
@@ -300,7 +300,7 @@ class SectionPlotMixin:
         assert not mock_messagebar.warning.called
         assert not mock_messagebar.critical.called
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_plot_section_with_w_levels_duplicate_label(self, mock_messagebar):
         db_utils.sql_alter_db(
             """INSERT INTO obs_lines (obsid, geometry) VALUES ('1', ST_GeomFromText('LINESTRING(633466.711659 6720684.24498, 633599.530455 6720727.016568)', 3006))"""
@@ -387,7 +387,7 @@ class SectionPlotMixin:
             == """["2015", "2015_2"]"""
         )
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_plot_section_length_along_slope(self, mock_messagebar):
         """For now, the test only initiates the plot. Check that it does not crash"""
 
@@ -440,7 +440,7 @@ class SectionPlotMixin:
         assert not mock_messagebar.warning.called
         assert not mock_messagebar.critical.called
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_plot_section_length_along(self, mock_messagebar):
         """For now, the test only initiates the plot. Check that it does not crash"""
         db_utils.sql_alter_db(
@@ -495,7 +495,7 @@ class SectionPlotMixin:
         assert not mock_messagebar.warning.called
         assert not mock_messagebar.critical.called
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_plot_section_p_label_lengths(self, mock_messagebar):
         db_utils.sql_alter_db(
             """INSERT INTO obs_lines (obsid, geometry) VALUES ('1', ST_GeomFromText('LINESTRING(633466.711659 6720684.24498, 633599.530455 6720727.016568)', 3006))"""
@@ -548,7 +548,7 @@ class SectionPlotMixin:
         )
         # assert False
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_plot_section_p_label_lengths_with_geology(self, mock_messagebar):
         db_utils.sql_alter_db(
             """INSERT INTO obs_lines (obsid, geometry) VALUES ('1', ST_GeomFromText('LINESTRING(633466.711659 6720684.24498, 633599.530455 6720727.016568)', 3006))"""
@@ -610,7 +610,7 @@ class SectionPlotMixin:
             len(get_legend_items_labels(self.sectionplot.figure.plot_handles)[0]) == 4
         )
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_plot_section_p_label_lengths_with_geology_changed_label(
         self, mock_messagebar
     ):
@@ -698,7 +698,7 @@ class SectionPlotMixin:
             == """["2015"]"""
         )
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_plot_section_with_w_levels_animation(self, mock_messagebar):
         db_utils.sql_alter_db(
             """INSERT INTO obs_lines (obsid, geometry) VALUES ('1', ST_GeomFromText('LINESTRING(633466.711659 6720684.24498, 633599.530455 6720727.016568)', 3006))"""
@@ -756,7 +756,7 @@ class SectionPlotMixin:
         assert not mock_messagebar.warning.called
         assert not mock_messagebar.critical.called
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_plot_section_interactive_invalid_resample_how_skips_with_message(
         self, mock_messagebar
     ):
@@ -805,7 +805,7 @@ class SectionPlotMixin:
         # The interactive water level subplot must not be created.
         assert len(myplot.figure.axes) == 1
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_plot_section_obsids(self, mock_messagebar):
         db_utils.sql_alter_db(
             """INSERT INTO obs_lines (obsid, geometry) VALUES ('1', ST_GeomFromText('LINESTRING(1 0, 4 0)', 3006))"""
@@ -864,7 +864,7 @@ class SectionPlotMixin:
         assert mock_messagebar.info.called
         assert not mock_messagebar.critical.called
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_plot_section_h_gs_h_toc_failed(self, mock_messagebar):
         db_utils.sql_alter_db(
             """INSERT INTO obs_lines (obsid, geometry) VALUES ('1', ST_GeomFromText('LINESTRING(633466.711659 6720684.24498, 633599.530455 6720727.016568)', 3006))"""
@@ -918,7 +918,7 @@ class SectionPlotMixin:
         assert "h_toc" in info_calls
         assert "used 0" in info_calls
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_plot_section_detach_fig_when_pyplot_backend_is_agg(self, mock_messagebar):
         """Detaching must not depend on pyplot's global backend.
 
@@ -974,7 +974,7 @@ class SectionPlotMixin:
         finally:
             plt.switch_backend(old_backend)
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_plot_section_detach_fig(self, mock_messagebar):
         """Test that detatching figure works and that the legend still has a working signal for edit_parameters"""
         db_utils.sql_alter_db(

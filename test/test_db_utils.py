@@ -163,7 +163,7 @@ class GetTimezoneFromDbMixin:
 
 
 class SqlInjectionHardeningMixin:
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_in_clause_does_not_expand_scope(self, mock_messagebar):
         dbconnection = db_utils.DbConnectionManager()
         ph = dbconnection.placeholder()
@@ -186,7 +186,7 @@ class SqlInjectionHardeningMixin:
         finally:
             dbconnection.closedb()
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_ident_rejects_unsafe_identifier(self, mock_messagebar):
         dbconnection = db_utils.DbConnectionManager()
         try:
@@ -344,7 +344,7 @@ class TestSQLiteBackendClosedb:
 
 @pytest.mark.spatialite
 class TestBackendPredicatesSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv):
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_is_sqlite_returns_true_for_spatialite(self, mock_messagebar):
         conn = db_utils.DbConnectionManager(self._class_db_settings)
         conn.connect2db()

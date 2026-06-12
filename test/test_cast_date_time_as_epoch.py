@@ -22,7 +22,7 @@ FIXED_INPUT = "2024-06-15 12:00:00"
 
 
 class CastDateTimeAsEpochMixin:
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_literal_path_utc_interpretation(self, mock_messagebar):
         """Calling cast_date_time_as_epoch with a fixed datetime literal
         must produce 1718452800 (UTC interpretation)."""
@@ -37,7 +37,7 @@ class CastDateTimeAsEpochMixin:
         finally:
             conn.closedb()
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_column_path_utc_interpretation(self, mock_messagebar):
         """Calling cast_date_time_as_epoch() with no arg (column mode) on
         a row where date_time='2024-06-15 12:00:00' must produce

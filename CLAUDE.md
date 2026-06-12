@@ -66,7 +66,8 @@ Each feature is a standalone module. Major categories:
 
 ### Shared Utilities (`tools/utils/`)
 
-- **`common_utils.py`** — `MessagebarAndLog` (user messaging), exceptions, file I/O
+- **`message_utils.py`** — `MessagebarAndLog` (user messaging), `pop_up_info`
+- **`common_utils.py`** — Misc shared helpers; re-exports for midv_addons backward compatibility
 - **`midvatten_utils.py`** — Domain-specific utilities; re-exports functions from `db_utils/helpers.py` for backward compatibility
 - **`gui_utils.py`** — PyQt widget helpers
 - **`date_utils.py`** — Date parsing and timezone handling
@@ -109,7 +110,7 @@ git merge ai_test
 
 ### Testing Conventions
 
-- Mock `MessagebarAndLog` in tests: `@mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")` with param name `mock_messagebar`
+- Mock `MessagebarAndLog` in tests: `@mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")` with param name `mock_messagebar` (production code calls it module-qualified via `message_utils`, so this single target intercepts everything)
 - Print `mock_messagebar.mock_calls` before assert groups to surface hidden errors
 - Don't print asserted values to stdout (pytest shows assertion details on failure)
 - Never change test reference data unless explicitly told to — find the real bug instead

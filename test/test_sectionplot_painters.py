@@ -110,7 +110,7 @@ class TestQgisColorStrToMpl:
 # ---------------------------------------------------------------------------
 
 
-@mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+@mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
 class TestPaintBars:
     def test_adds_one_handle_per_type(self, mock_messagebar):
         """paint_bars appends one BarContainer per bar type."""
@@ -165,7 +165,7 @@ class TestPaintBars:
 # ---------------------------------------------------------------------------
 
 
-@mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+@mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
 class TestPaintScreenBars:
     def test_adds_handle_per_screenshort(self, mock_messagebar):
         fig = _make_figure()
@@ -214,7 +214,7 @@ class TestPaintScreenBars:
 # ---------------------------------------------------------------------------
 
 
-@mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+@mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
 class TestPaintDrillStop:
     def test_adds_one_line_handle(self, mock_messagebar):
         fig = _make_figure()
@@ -243,7 +243,7 @@ class TestPaintDrillStop:
 # ---------------------------------------------------------------------------
 
 
-@mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+@mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
 class TestPaintLayerText:
     def test_annotates_non_none_texts(self, mock_messagebar):
         fig = _make_figure()
@@ -316,7 +316,7 @@ class TestPaintLayerText:
 # ---------------------------------------------------------------------------
 
 
-@mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+@mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
 class TestPaintObsids:
     def test_frame_bar_added_when_stratigraphy_enabled(self, mock_messagebar):
         fig = _make_figure()

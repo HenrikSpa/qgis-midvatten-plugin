@@ -67,7 +67,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
     @mock.patch("midvatten.tools.wqualreport_compact.open_report_in_browser")
     @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
     def test_ok_button_generates_html_from_sql_table(
         self, mock_iface, mock_messagebar, mock_getselected, mock_openurl
@@ -95,7 +95,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert "mg/l" in report
 
     @mock.patch("midvatten.tools.wqualreport_compact.open_report_in_browser")
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
     def test_ok_button_generates_html_from_active_layer(
         self, mock_iface, mock_messagebar, mock_openurl
@@ -124,7 +124,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
     @mock.patch("midvatten.tools.wqualreport_compact.open_report_in_browser")
     @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
     def test_combobox_data_column_affects_export(
         self, mock_iface, mock_messagebar, mock_getselected, mock_openurl
@@ -152,7 +152,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
     @mock.patch("midvatten.tools.wqualreport_compact.open_report_in_browser")
     @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
     def test_radio_empty_row_between_tables(
         self, mock_iface, mock_messagebar, mock_getselected, mock_openurl
@@ -176,7 +176,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
     @mock.patch("midvatten.tools.wqualreport_compact.open_report_in_browser")
     @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
     def test_radio_page_break_between_tables(
         self, mock_iface, mock_messagebar, mock_getselected, mock_openurl
@@ -199,7 +199,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
 
     @mock.patch("midvatten.tools.wqualreport_compact.open_report_in_browser")
     @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
     def test_line_edit_num_data_cols_affects_export(
         self, mock_iface, mock_messagebar, mock_getselected, mock_openurl
@@ -242,7 +242,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert "parameter" in data_col_items
 
     @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
     def test_date_time_as_columns_without_sort_shows_message(
         self, mock_iface, mock_messagebar, mock_getselected
@@ -267,7 +267,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
     @mock.patch(
         "midvatten.tools.wqualreport_compact.qgis.PyQt.QtWidgets.QInputDialog.getText"
     )
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_update_settings_from_string(self, mock_messagebar, mock_gettext):
         mock_gettext.return_value = (
             "{'num_data_cols': '5', 'rowheader_colwidth_percent': '20', "
@@ -305,7 +305,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert ui2.data_column.currentText() == "reading_num"
 
     @mock.patch("midvatten.tools.wqualreport_compact.open_report_in_browser")
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface", autospec=True)
     def test_from_active_layer_no_layer_shows_error(
         self, mock_iface, mock_messagebar, mock_openurl

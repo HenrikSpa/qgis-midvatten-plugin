@@ -137,7 +137,7 @@ class TestTemRenderSpatialite(
     TemSpatialiteMixin,
     utils_for_tests.MidvattenTestSpatialiteDbSv,
 ):
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_plain_format_renders_pcolormesh(self, mock_messagebar):
         """The documented [1.0, 4.0, 5.0] format renders a TEM mesh cleanly."""
         self._insert_line_and_points()
@@ -155,7 +155,7 @@ class TestTemRenderSpatialite(
         assert not mock_messagebar.warning.called
         assert not mock_messagebar.critical.called
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_numpy_repr_renders_identically_to_plain(self, mock_messagebar):
         """np.float64(...) reprs must produce the same mesh data as plain text."""
         self._insert_line_and_points()

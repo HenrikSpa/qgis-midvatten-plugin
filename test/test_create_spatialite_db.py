@@ -51,7 +51,7 @@ class TestCreateMemoryDb(utils_for_tests.MidvattenTestSpatialiteNotCreated):
 
 @pytest.mark.spatialite
 class TestCreateDb(utils_for_tests.MidvattenTestSpatialiteNotCreated):
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface")
     @mock.patch("midvatten.midvatten_plugin.NewSpatialiteDbDialog")
     def test_create_db_locale_sv(
@@ -201,7 +201,7 @@ class TestCreateDb(utils_for_tests.MidvattenTestSpatialiteNotCreated):
         # print(test_string)
         assert test_string == reference
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("qgis.utils.iface")
     @mock.patch("midvatten.midvatten_plugin.NewSpatialiteDbDialog")
     def test_about_db_creation_version_string(
@@ -678,7 +678,7 @@ class TestNewSpatialiteDbDialog(utils_for_tests.MidvattenTestSpatialiteNotCreate
 
 @pytest.mark.spatialite
 class TestSqls(utils_for_tests.MidvattenTestSpatialiteDbSv):
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_import_null_as_double(self, mock_messagebar):
         """Adding triggers should not automatically change the db"""
         sql = (

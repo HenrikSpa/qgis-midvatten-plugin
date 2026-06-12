@@ -87,7 +87,7 @@ def _configure_customplot_tab1_tab2(customplot, tab2=False, tab3=False):
 class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
     """ """
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_save_to_csv_columns(self, mock_messagebar):
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('o1')""")
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('o2')""")
@@ -158,7 +158,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
             ("7", "2026-01-02 14:00:00", "", "10.0"),
         )
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_save_to_csv_rows(self, mock_messagebar):
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('o1')""")
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('o2')""")
@@ -230,7 +230,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
             ("5", "2026-01-02 14:00:00", "10.0", "o2"),
         )
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_save_to_csv_1d(self, mock_messagebar):
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('o1')""")
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('o2')""")
@@ -300,7 +300,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
             ("1", "2026-01-02", "", "7.0"),
         )
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_save_to_csv_columns_tab1_two_filters(self, mock_messagebar):
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('o1')""")
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('o2')""")
@@ -373,7 +373,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
             ("7", "2026-01-02 14:00:00", "", "10.0"),
         )
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_save_to_csv_columns_tab2_two_filters(self, mock_messagebar):
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('o1')""")
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('o2')""")
@@ -446,7 +446,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
             ("7", "2026-01-02 14:00:00", "", "10.0"),
         )
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_save_to_csv_columns_tab3_two_filters(self, mock_messagebar):
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('o1')""")
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('o2')""")
@@ -519,7 +519,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
             ("7", "2026-01-02 14:00:00", "", "10.0"),
         )
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_plot_button_draws_lines(self, mock_messagebar):
         _insert_w_levels_logger_data()
         self.midvatten.plot_sqlite()
@@ -532,7 +532,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         xdata, ydata = lines[0].get_data()
         assert len(xdata) > 0 and len(ydata) > 0
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_plot_type_line(self, mock_messagebar):
         _insert_w_levels_logger_data()
         self.midvatten.plot_sqlite()
@@ -548,7 +548,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert marker in (None, "None", "none")
         assert linestyle not in (None, "None", "none", "")
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_plot_type_marker(self, mock_messagebar):
         _insert_w_levels_logger_data()
         self.midvatten.plot_sqlite()
@@ -564,7 +564,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert linestyle in (None, "None", "none", "")
         assert marker not in (None, "None", "none")
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_plot_type_line_and_cross(self, mock_messagebar):
         _insert_w_levels_logger_data()
         self.midvatten.plot_sqlite()
@@ -577,7 +577,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert len(lines) >= 1
         assert lines[0].get_marker() == "x"
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_plot_type_step_pre(self, mock_messagebar):
         _insert_w_levels_logger_data()
         self.midvatten.plot_sqlite()
@@ -591,7 +591,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert lines[0].get_drawstyle() == "steps-pre"
         assert lines[0].get_marker() in (None, "None", "none")
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_remove_mean_checkbox(self, mock_messagebar):
         _insert_w_levels_logger_data()
         self.midvatten.plot_sqlite()
@@ -606,7 +606,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert abs(float(np.mean(ydata_after))) < 1e-10
         assert abs(float(np.mean(ydata_before))) > 0.1
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_grid_checkbox(self, mock_messagebar):
         _insert_w_levels_logger_data()
         self.midvatten.plot_sqlite()
@@ -623,7 +623,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         customplot.refresh_plot()
         assert not customplot.axes.xaxis.get_gridlines()[0].get_visible()
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_legend_checkbox(self, mock_messagebar):
         _insert_w_levels_logger_data()
         self.midvatten.plot_sqlite()
@@ -637,7 +637,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         customplot.refresh_plot()
         assert customplot.axes.legend_ is None
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_redraw_after_draw(self, mock_messagebar):
         _insert_w_levels_logger_data()
         self.midvatten.plot_sqlite()
@@ -651,7 +651,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         print(f"{mock_messagebar.mock_calls=}")
         assert len(gridlines) > 0 and gridlines[0].get_visible()
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_plot_type_combobox_tab2(self, mock_messagebar):
         _insert_w_levels_logger_data()
         self.midvatten.plot_sqlite()
@@ -665,7 +665,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert lines[1].get_linestyle() in (None, "None", "none", "")
         assert lines[1].get_marker() not in (None, "None", "none")
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_plot_type_combobox_tab3(self, mock_messagebar):
         _insert_w_levels_logger_data()
         self.midvatten.plot_sqlite()
@@ -679,7 +679,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert lines[1].get_linestyle() in (None, "None", "none", "")
         assert lines[1].get_marker() not in (None, "None", "none")
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_remove_mean_tab2(self, mock_messagebar):
         _insert_w_levels_logger_data()
         self.midvatten.plot_sqlite()
@@ -694,7 +694,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert abs(float(np.mean(ydata_after))) < 1e-10
         assert abs(float(np.mean(ydata_before))) > 0.1
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_remove_mean_tab3(self, mock_messagebar):
         _insert_w_levels_logger_data()
         self.midvatten.plot_sqlite()
@@ -709,7 +709,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert abs(float(np.mean(ydata_after))) < 1e-10
         assert abs(float(np.mean(ydata_before))) > 0.1
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_pandas_resample_rule_how_changes_line_data(self, mock_messagebar):
         _insert_w_levels_logger_data()
         self.midvatten.plot_sqlite()
@@ -726,7 +726,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         # o1: 5.0, 10.0, 17.0 on 2026-01-01 -> daily mean = 32/3
         assert np.isclose(float(ydata[0]), 32.0 / 3.0)
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_pandas_resample_how_default_mean(self, mock_messagebar):
         _insert_w_levels_logger_data()
         self.midvatten.plot_sqlite()
@@ -743,7 +743,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         # default how is mean; o1 daily mean = 32/3
         assert np.isclose(float(ydata[0]), 32.0 / 3.0)
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_pandas_resample_how_sum_different_from_mean(self, mock_messagebar):
         _insert_w_levels_logger_data()
         self.midvatten.plot_sqlite()
@@ -759,7 +759,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         print(f"{mock_messagebar.mock_calls=}")
         assert not np.isclose(float(ydata_mean[0]), float(ydata_sum[0]))
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_pandas_resample_how_invalid_skips_resample_with_message(
         self, mock_messagebar
     ):
@@ -778,7 +778,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         # Resampling must be skipped: o1 keeps its 3 raw points.
         assert len(xdata) == 3 and len(ydata) == 3
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_pandas_rolling_window_smooths_line_data(self, mock_messagebar):
         _insert_w_levels_logger_data()
         self.midvatten.plot_sqlite()
@@ -795,7 +795,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         raw = np.array([5.0, 10.0, 17.0])
         assert not np.allclose(ydata, raw)
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_pandas_rolling_center_checkbox(self, mock_messagebar):
         _insert_w_levels_logger_data()
         self.midvatten.plot_sqlite()
@@ -811,7 +811,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         print(f"{mock_messagebar.mock_calls=}")
         assert not np.allclose(ydata_center, ydata_no_center)
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_pandas_no_rule_no_window_uses_raw_data(self, mock_messagebar):
         _insert_w_levels_logger_data()
         self.midvatten.plot_sqlite()
@@ -826,7 +826,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         xdata, ydata = lines[0].get_data()
         assert len(xdata) == 3 and len(ydata) == 3
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_pandas_resample_plus_rolling(self, mock_messagebar):
         _insert_w_levels_logger_data()
         self.midvatten.plot_sqlite()
@@ -842,7 +842,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         xdata, ydata = lines[0].get_data()
         assert len(xdata) == 1 and len(ydata) == 1
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_pandas_invalid_window_critical_message(self, mock_messagebar):
         _insert_w_levels_logger_data()
         self.midvatten.plot_sqlite()
@@ -859,7 +859,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         _, ydata = lines[0].get_data()
         assert len(ydata) == 3
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_pandas_tab2_widgets_affect_second_line(self, mock_messagebar):
         _insert_w_levels_logger_data()
         self.midvatten.plot_sqlite()
@@ -881,7 +881,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert np.isclose(float(y2[0]), 5.75)
         assert np.isclose(float(y2[1]), 7.0)
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_pandas_tab3_resample_changes_third_line(self, mock_messagebar):
         _insert_w_levels_logger_data()
         self.midvatten.plot_sqlite()
@@ -915,7 +915,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
     # has the expected axes/lines after createsingleplotobject() runs.
     # -------------------------------------------------------------------------
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_createsingleplotobject_xy_fallback(self, mock_messagebar):
         """When x-column is numeric (not datetime), createsingleplotobject falls back to XY mode."""
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('o1')""")
@@ -943,7 +943,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert len(xdata) == 3
         assert list(ydata) == [9.0, 8.0, 7.0]
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_createsingleplotobject_step_post(self, mock_messagebar):
         """step-post plot type produces steps-post drawstyle."""
         _insert_w_levels_logger_data()
@@ -958,7 +958,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert lines[0].get_drawstyle() == "steps-post"
         assert lines[0].get_marker() in (None, "None", "none")
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_createsingleplotobject_factor_and_offset(self, mock_messagebar):
         """Factor and offset are applied to y values."""
         _insert_w_levels_logger_data()
@@ -976,7 +976,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         # scaled = raw * 2.0 + 1.0
         assert np.allclose(ydata_scaled, ydata_raw * 2.0 + 1.0)
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_createsingleplotobject_max_tstep_inserts_gaps(self, mock_messagebar):
         """When max timestep is set, gaps are inserted between distant points.
         o2 has data on 2026-01-01 and 2026-01-02 (>= 1 day apart), which triggers
@@ -1006,7 +1006,7 @@ class TestCustomPlot(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert len(ydata_with_gap) > len(ydata_no_gap)
         assert np.any(np.isnan(ydata_with_gap))
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_createsingleplotobject_frequency_plot(self, mock_messagebar):
         """Frequency plot type computes rate-of-change values."""
         _insert_w_levels_logger_data()

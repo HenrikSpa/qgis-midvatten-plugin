@@ -28,7 +28,7 @@ class TestVerifyMsettings:
         """No layer tuple: only checks that settings are loaded."""
         with (
             mock.patch(
-                "midvatten.tools.utils.common_utils.MessagebarAndLog"
+                "midvatten.tools.utils.message_utils.MessagebarAndLog"
             ) as mock_messagebar,
             mock.patch(
                 "midvatten.tools.utils.midvatten_utils.db_utils.check_connection_ok",
@@ -44,7 +44,7 @@ class TestVerifyMsettings:
     def test_returns_nonzero_when_settings_not_loaded(self):
         """Missing database path means err_flag != 0."""
         with mock.patch(
-            "midvatten.tools.utils.common_utils.MessagebarAndLog"
+            "midvatten.tools.utils.message_utils.MessagebarAndLog"
         ) as mock_messagebar:
             ms = mock.MagicMock()
             ms.settingsdict = {"database": ""}

@@ -29,7 +29,7 @@ from midvatten.tools.utils import date_utils, db_utils, string_utils
 @pytest.mark.spatialite
 class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
     @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_calcall(self, mock_messagebar):
 
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('1')""")
@@ -72,7 +72,7 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
         "midvatten.tools.utils.layer_utils.get_selected_object_names",
         autospec=True,
     )
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_calselected(
         self, mock_messagebar, mock_getselectedobjectnames, mock_iface
     ):
@@ -122,7 +122,7 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
         "midvatten.tools.utils.layer_utils.get_selected_object_names",
         autospec=True,
     )
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_calselected_pandas_one_selected(
         self, mock_messagebar, mock_getselectedobjectnames, mock_iface
     ):
@@ -179,7 +179,7 @@ class TestWFlowCalcAveflow(utils_for_tests.MidvattenTestSpatialiteDbSv):
         "midvatten.tools.utils.layer_utils.get_selected_object_names",
         autospec=True,
     )
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_calselected_pandas_two_selected(
         self, mock_messagebar, mock_getselectedobjectnames, mock_iface
     ):

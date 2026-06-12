@@ -68,8 +68,8 @@ class StratigraphyMixin:
             + str([x.id() for x in self.vlayer.getFeatures(feature_ids)])
         )
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch("midvatten.tools.stratigraphy.common_utils.pop_up_info", autospec=True)
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
     def test_stratigraphy(self, mock_skippopup, mock_messagebar):
         """
         :param mock_skippopup:
@@ -129,8 +129,8 @@ class StratigraphyMixin:
             == """["strata(1, '3', 'sand', 'sand', 0.000000-1.000000)", "strata(2, '3', 'morän', 'moran', 1.000000-4.500000)"]"""
         )
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch("midvatten.tools.stratigraphy.common_utils.pop_up_info", autospec=True)
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
     def test_stratigraphy_with_other_obsid_numbers(
         self, mock_skippopup, mock_messagebar
     ):
@@ -186,8 +186,8 @@ class StratigraphyMixin:
             == """["strata(1, '3', 'sand', 'sand', 0.000000-1.000000)", "strata(2, '3', 'morän', 'moran', 1.000000-4.500000)"]"""
         )
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch("midvatten.tools.stratigraphy.common_utils.pop_up_info", autospec=True)
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
     def test_stratigraphy_with_string_obsid(self, mock_skippopup, mock_messagebar):
         """
         :param mock_skippopup:
@@ -247,8 +247,8 @@ class StratigraphyMixin:
             == """["strata(1, '3', 'sand', 'sand', 0.000000-1.000000)", "strata(2, '3', 'morän', 'moran', 1.000000-4.500000)"]"""
         )
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch("midvatten.tools.stratigraphy.common_utils.pop_up_info", autospec=True)
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
     def test_stratigraphy_gap(self, mock_skippopup, mock_messagebar):
         """
         :param mock_skippopup:
@@ -305,8 +305,8 @@ class StratigraphyMixin:
             == """["strata(1, '3', 'sand', 'sand', 0.000000-1.000000)", "strata(2, '', '', '', 1.000000-2.000000)", "strata(3, '3', 'morän', 'moran', 2.000000-4.500000)"]"""
         )
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch("midvatten.tools.stratigraphy.common_utils.pop_up_info", autospec=True)
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
     def test_stratigraphy_missing_h_gs(self, mock_skippopup, mock_messagebar):
         """
 

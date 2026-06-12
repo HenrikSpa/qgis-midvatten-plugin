@@ -8,7 +8,7 @@ from midvatten.tools.utils import db_utils
 
 
 class StratSymbologyMixin:
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_strat_symbology(self, mock_messagebar):
         db_utils.sql_alter_db(
             """INSERT INTO obs_points (obsid, h_gs, geometry) VALUES ('1', 5, ST_GeomFromText('POINT(1 2)', 3006))"""

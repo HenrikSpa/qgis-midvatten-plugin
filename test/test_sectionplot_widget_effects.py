@@ -159,7 +159,7 @@ class SectionPlotWidgetEffectsMixin:
     # Tests
     # ------------------------------------------------------------------
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_legend_on(self, mock_messagebar):
         """Widget: create_legend — checked → legend is present on ax_main."""
         secplot = self._run_base_plot(mock_messagebar)
@@ -172,7 +172,7 @@ class SectionPlotWidgetEffectsMixin:
         leg = secplot.figure.ax_main.get_legend()
         assert leg is not None, "Legend must be present when create_legend is checked"
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_legend_off(self, mock_messagebar):
         """Widget: create_legend — unchecked → no legend on ax_main."""
         secplot = self._run_base_plot(mock_messagebar)
@@ -185,7 +185,7 @@ class SectionPlotWidgetEffectsMixin:
         leg = secplot.figure.ax_main.get_legend()
         assert leg is None, "Legend must be absent when create_legend is unchecked"
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_stratigraphy_on(self, mock_messagebar):
         """Widget: plot_stratigraphy — checked → plot_handles contains stratigraphy geoshorts."""
         secplot = self._run_base_plot(mock_messagebar)
@@ -205,7 +205,7 @@ class SectionPlotWidgetEffectsMixin:
             f"Expected at least one stratigraphy geoshort label in {labels}"
         )
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_stratigraphy_off(self, mock_messagebar):
         """Widget: radio_button (None) — selected → no geological bars in plot_handles.
 
@@ -232,7 +232,7 @@ class SectionPlotWidgetEffectsMixin:
             f"Expected no non-frame plot handles, got: {[h.get_label() for h in non_frame_handles]}"
         )
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_hydrology_on(self, mock_messagebar):
         """Widget: hydrology_radio_button — checked → hydrology capacity bars appear in plot_handles."""
         secplot = self._run_base_plot(mock_messagebar)
@@ -246,7 +246,7 @@ class SectionPlotWidgetEffectsMixin:
             "plot_handles must be populated when hydrology is on"
         )
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_labels_on(self, mock_messagebar):
         """Widget: labels_check_box — checked → obsid text annotations appear on ax_main.
 
@@ -271,7 +271,7 @@ class SectionPlotWidgetEffectsMixin:
             f"Expected obsid labels in ax_main.texts, got: {label_texts}"
         )
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_labels_off(self, mock_messagebar):
         """Widget: labels_check_box — unchecked → no obsid text annotations on ax_main.
 
@@ -293,7 +293,7 @@ class SectionPlotWidgetEffectsMixin:
             f"got: {label_texts}"
         )
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_bar_width_changes(self, mock_messagebar):
         """Widget: barwidthdouble_spin_box — higher value → wider bar patches."""
         secplot = self._run_base_plot(mock_messagebar)
@@ -322,7 +322,7 @@ class SectionPlotWidgetEffectsMixin:
             f"Wide bar ({max(wide_widths)}) should be wider than narrow bar ({max(narrow_widths)})"
         )
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_screen_bars_on(self, mock_messagebar):
         """Widget: screens_mode_combo — 'Behind' → screen bars appear in plot_handles."""
         secplot = self._run_base_plot(mock_messagebar)
@@ -346,7 +346,7 @@ class SectionPlotWidgetEffectsMixin:
             f"without={handles_without_screens}, with={handles_with_screens}"
         )
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_screen_bars_off(self, mock_messagebar):
         """Widget: screens_mode_combo — 'None' → screen bars absent from plot_handles."""
         secplot = self._run_base_plot(mock_messagebar)
@@ -364,7 +364,7 @@ class SectionPlotWidgetEffectsMixin:
             f"{[h.get_label() for h in non_frame_handles]}"
         )
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_water_level_plotted(self, mock_messagebar):
         """Widget: wlvltable + datetime — w_levels date → water level line in plot_handles."""
         secplot = self._run_base_plot(mock_messagebar)
@@ -382,7 +382,7 @@ class SectionPlotWidgetEffectsMixin:
             "Expected at least one water-level handle in plot_handles"
         )
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_drillstop_shows_bar(self, mock_messagebar):
         """Widget: drillstop — non-empty pattern with matching data → drillstop handle in plot_handles.
 
@@ -408,7 +408,7 @@ class SectionPlotWidgetEffectsMixin:
             "Expected a drillstop handle in plot_handles when pattern matches data"
         )
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_drillstop_no_match(self, mock_messagebar):
         """Widget: drillstop — empty string → drillstop bar suppressed even when drillstops exist.
 
@@ -435,7 +435,7 @@ class SectionPlotWidgetEffectsMixin:
             "Expected no drillstop handles when drillstop text is empty"
         )
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_include_views_off_no_views_in_combo(self, mock_messagebar):
         """Widget: include_views_check_box — unchecked → wlvltable combo has no view names."""
         secplot = self._run_base_plot(mock_messagebar)
@@ -453,7 +453,7 @@ class SectionPlotWidgetEffectsMixin:
             f"got: {view_items}"
         )
 
-    @mock.patch("midvatten.tools.sectionplot.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_bar_width_factor_screen_width(self, mock_messagebar):
         """Widget: screen_width_factor_spin — higher factor → wider screen bar patches.
 

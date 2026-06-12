@@ -80,7 +80,7 @@ class TestDiverOfficeParser:
         assert location == "rb1"
         assert len(filedata) == 2  # header + 1 data row
 
-    @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_parse_warning_missing_head_cm(self, mock_messagebar):
         """File with only Temperature column — warns and still returns data."""
         file_content = (
@@ -102,7 +102,7 @@ class TestDiverOfficeParser:
         assert location == "rb1"
         assert mock_messagebar.warning.called
 
-    @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_parse_get_timezone(self, mock_messagebar):
         """UTC offset is extracted from file header."""
         file_content = (
@@ -318,7 +318,7 @@ class TestLeveloggerParser:
 class TestHoboParser:
     """Unit tests for HoboParser.parse."""
 
-    @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_parse_utf8(self, mock_messagebar):
         file_content = (
             '"Plot Title: temp"\n'
@@ -344,7 +344,7 @@ class TestHoboParser:
         assert filedata[1][0] == "2018-07-19 10:00:00"
         assert float(filedata[1][2]) == pytest.approx(4.558)
 
-    @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_parse_convert_tz(self, mock_messagebar):
         """Timezone conversion: GMT+03:00 source → GMT+01:00 target shifts time -2h."""
         file_content = (
@@ -365,7 +365,7 @@ class TestHoboParser:
         filedata, _, _, _, _ = result
         assert filedata[1][0] == "2018-07-19 08:00:00"
 
-    @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_parse_always_returns_5_tuple(self, mock_messagebar):
         """HoboParser must return a 5-tuple even on parse failure."""
         file_content = '"Plot Title: temp"\n'
@@ -382,7 +382,7 @@ class TestHoboParser:
         assert result[3] is None
         assert result[4] is None
 
-    @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_parse_serial_number(self, mock_messagebar):
         file_content = (
             '"Plot Title: temp"\n'
@@ -449,7 +449,7 @@ class TestLoggerImportDiverOfficeSpatialite(
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
@@ -517,7 +517,7 @@ class TestLoggerImportDiverOfficeSpatialite(
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
@@ -578,7 +578,7 @@ class TestLoggerImportDiverOfficeSpatialite(
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
@@ -648,7 +648,7 @@ class TestLoggerImportLeveloggerSpatialite(utils_for_tests.MidvattenTestSpatiali
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
@@ -697,7 +697,7 @@ class TestLoggerImportLeveloggerSpatialite(utils_for_tests.MidvattenTestSpatiali
 class TestLoggerImportHoboSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv):
     """Integration tests for LoggerImport with HOBO format (also tests the 4-tuple bug fix)."""
 
-    @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_basic_hobo_import(self, mock_messagebar):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('Rb1')")
         file_content = (
@@ -712,7 +712,7 @@ class TestLoggerImportHoboSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
@@ -861,7 +861,7 @@ class TestDiverOfficeParserOldFormat:
         assert os.path.basename(path) == file_data[1]
         assert file_data[2] == "rb1"
 
-    @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_parse_old_comma_sep_comma_dec_failed(self, mock_messagebar):
         """Ambiguous format (comma sep + comma decimal): delimiter cannot be reliably detected."""
         f = (
@@ -910,7 +910,7 @@ class TestDiverOfficeParserOldFormat:
         assert os.path.basename(path) == file_data[1]
         assert file_data[2] == "rb1"
 
-    @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_parse_old_warning_missing_head_cm(self, mock_messagebar):
         f = (
             "Location=rb1",
@@ -929,7 +929,7 @@ class TestDiverOfficeParserOldFormat:
         assert os.path.basename(path) == file_data[1]
         assert file_data[2] == "rb1"
 
-    @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_parse_old_warning_missing_date_time(self, mock_messagebar):
         f = (
             "Location=rb1",
@@ -944,7 +944,7 @@ class TestDiverOfficeParserOldFormat:
         assert file_data[0] == []
         assert len(mock_messagebar.mock_calls) == 1
 
-    @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_parse_old_get_timezone(self, mock_messagebar):
         f = (
             "Location=rb1",
@@ -964,7 +964,7 @@ class TestDiverOfficeParserOldFormat:
         assert file_data[2] == "rb1"
         assert file_data[3] == "UTC+1"
 
-    @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_parse_comma_missing_head_cm_value(self, mock_messagebar):
         """parse() (new-style .csv/.mon) with missing head_cm value."""
         f = (
@@ -1006,7 +1006,7 @@ class TestHoboParserOldAPI:
     """Parser unit tests ported from TestParseHobologgerFile in test_import_hobologger.py.
     These test HoboParser.parse() (which replaced HobologgerImport.parse_hobologger_file)."""
 
-    @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_parse_hobologger_file_utf8(self, mock_messagelog):
         f = (
             '\ufeff"Plot Title: temp"',
@@ -1029,7 +1029,7 @@ class TestHoboParserOldAPI:
         assert os.path.basename(path) == file_data[1]
         assert file_data[2] == "Rb1"
 
-    @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_parse_hobologger_file_convert_tz(self, mock_messagelog):
         f = (
             '\ufeff"Plot Title: temp"',
@@ -1075,7 +1075,7 @@ class TestHoboParserOldAPI:
         assert os.path.basename(path) == file_data[1]
         assert file_data[2] == "Rb1"
 
-    @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_parse_hobologger_file_other_dateformat(self, mock_messagelog):
         f = (
             '\ufeff"Plot Title: temp"',
@@ -1150,7 +1150,7 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
@@ -1226,7 +1226,7 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
@@ -1302,7 +1302,7 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
@@ -1381,7 +1381,7 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
@@ -1440,7 +1440,7 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
@@ -1499,7 +1499,7 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
@@ -1579,7 +1579,7 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
@@ -1660,7 +1660,7 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
@@ -1734,7 +1734,7 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
@@ -1810,12 +1810,12 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
         ):
             filenames = [f1, f2, f3]
 
-            @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+            @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
             @mock.patch("midvatten.tools.utils.common_utils.NotFoundQuestion")
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
@@ -1914,7 +1914,7 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
@@ -2009,7 +2009,7 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
@@ -2127,7 +2127,7 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
@@ -2229,7 +2229,7 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
             @mock.patch("midvatten.tools.utils.common_utils.NotFoundQuestion")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
@@ -2331,7 +2331,7 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
@@ -2394,12 +2394,12 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
             filenames = [f1]
 
             @mock.patch("midvatten.tools.utils.file_utils.ask_for_delimiter")
-            @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+            @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
             @mock.patch("midvatten.tools.utils.common_utils.NotFoundQuestion")
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
@@ -2469,12 +2469,12 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
             filenames = [f1]
 
             @mock.patch("midvatten.tools.utils.file_utils.ask_for_delimiter")
-            @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+            @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
             @mock.patch("midvatten.tools.utils.common_utils.NotFoundQuestion")
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
@@ -2573,12 +2573,12 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
             filenames = [f1, f2, f3]
 
             @mock.patch("midvatten.tools.utils.file_utils.ask_for_delimiter")
-            @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+            @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
             @mock.patch("midvatten.tools.utils.common_utils.NotFoundQuestion")
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
@@ -2679,12 +2679,12 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
             filenames = [f1, f2, f3]
 
             @mock.patch("midvatten.tools.utils.file_utils.ask_for_delimiter")
-            @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+            @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
             @mock.patch("midvatten.tools.utils.common_utils.NotFoundQuestion")
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
@@ -2763,7 +2763,7 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
@@ -2898,7 +2898,7 @@ class WlvllogImportFromLoggerLeveloggerMixin:
         @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
         @mock.patch("qgis.utils.iface", autospec=True)
         @mock.patch(
-            "midvatten.tools.import_data_to_db.common_utils.pop_up_info", autospec=True
+            "midvatten.tools.utils.message_utils.pop_up_info", autospec=True
         )
         @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
         def _inner(
@@ -2935,12 +2935,12 @@ class WlvllogImportFromLoggerLeveloggerMixin:
     def _run_levelogger_with_messagebar(self, filenames, extra_setup=None):
         """Runner that also mocks MessagebarAndLog and returns mock_notfoundquestion side_effect support."""
 
-        @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+        @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
         @mock.patch("midvatten.tools.utils.common_utils.NotFoundQuestion")
         @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
         @mock.patch("qgis.utils.iface", autospec=True)
         @mock.patch(
-            "midvatten.tools.import_data_to_db.common_utils.pop_up_info", autospec=True
+            "midvatten.tools.utils.message_utils.pop_up_info", autospec=True
         )
         @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
         def _inner(
@@ -3121,7 +3121,7 @@ class WlvllogImportFromLoggerLeveloggerMixin:
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
@@ -3247,7 +3247,7 @@ class WlvllogImportFromLoggerLeveloggerMixin:
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
@@ -3303,12 +3303,12 @@ class WlvllogImportFromLoggerLeveloggerMixin:
             file_utils.tempinput("\n".join(_LEVELOGGER_FILES_3[2]), _CHARSET) as f3,
         ):
 
-            @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+            @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
             @mock.patch("midvatten.tools.utils.common_utils.NotFoundQuestion")
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
@@ -3526,7 +3526,7 @@ class TestDiverOfficeBaroParser:
         assert len(filedata) == 2  # header + 1 row (second row only)
         assert filedata[1][0] == "2023-10-05 14:00:00"
 
-    @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_parse_no_pressure_column_warns(self, mock_messagebar):
         content = (
             "[Channel 1]\n"
@@ -3625,7 +3625,7 @@ class TestLoggerImportBaroSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
@@ -3662,7 +3662,7 @@ class TestLoggerImportBaroSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
 
         print(mock_messagebar.mock_calls)
 
-    @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_baro_import_inserts_into_meteo(self, mock_messagebar):
         self._run_baro_import(mock_messagebar)
 
@@ -3685,7 +3685,7 @@ class TestLoggerImportBaroSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
         assert rows[0][2] == "2023-10-05 13:00:00"
         assert rows[0][4] == "cmH2O"
 
-    @mock.patch("midvatten.tools.import_logger.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_baro_import_does_not_write_to_wlevels_logger(self, mock_messagebar):
         """Baro data must go to meteo only, not to w_levels_logger."""
         self._run_baro_import(mock_messagebar)

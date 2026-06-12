@@ -61,7 +61,7 @@ class FieldLoggerImporterDbMixin:
                 "midvatten.tools.import_fieldlogger.midvatten_utils.QtWidgets.QInputDialog.getText"
             )
             @mock.patch(
-                "midvatten.tools.import_fieldlogger.common_utils.MessagebarAndLog"
+                "midvatten.tools.utils.message_utils.MessagebarAndLog"
             )
             def _test_staff_not_given(
                 self, filename, mock_messagebar, mock_charset, mock_savefilename
@@ -118,7 +118,7 @@ class FieldLoggerImporterDbMixin:
                 "midvatten.tools.import_fieldlogger.midvatten_utils.QtWidgets.QInputDialog.getText"
             )
             @mock.patch(
-                "midvatten.tools.import_fieldlogger.common_utils.MessagebarAndLog"
+                "midvatten.tools.utils.message_utils.MessagebarAndLog"
             )
             def _test(
                 self,
@@ -289,7 +289,7 @@ class FieldLoggerImporterDbMixin:
                 "midvatten.tools.import_fieldlogger.midvatten_utils.QtWidgets.QInputDialog.getText"
             )
             @mock.patch(
-                "midvatten.tools.import_fieldlogger.common_utils.MessagebarAndLog"
+                "midvatten.tools.utils.message_utils.MessagebarAndLog"
             )
             def _test(
                 self,
@@ -463,7 +463,7 @@ class FieldLoggerImporterDbMixin:
                 "midvatten.tools.import_fieldlogger.midvatten_utils.QtWidgets.QInputDialog.getText"
             )
             @mock.patch(
-                "midvatten.tools.import_fieldlogger.common_utils.MessagebarAndLog"
+                "midvatten.tools.utils.message_utils.MessagebarAndLog"
             )
             def _test(
                 self,
@@ -638,7 +638,7 @@ class FieldLoggerImporterDbMixin:
                 "midvatten.tools.import_fieldlogger.midvatten_utils.QtWidgets.QInputDialog.getText"
             )
             @mock.patch(
-                "midvatten.tools.import_fieldlogger.common_utils.MessagebarAndLog"
+                "midvatten.tools.utils.message_utils.MessagebarAndLog"
             )
             def _test(
                 self,
@@ -816,7 +816,7 @@ class FieldLoggerImporterDbMixin:
                 "midvatten.tools.import_fieldlogger.midvatten_utils.QtWidgets.QInputDialog.getText"
             )
             @mock.patch(
-                "midvatten.tools.import_fieldlogger.common_utils.MessagebarAndLog"
+                "midvatten.tools.utils.message_utils.MessagebarAndLog"
             )
             def _test(
                 self,
@@ -994,7 +994,7 @@ class FieldLoggerImporterDbMixin:
                 "midvatten.tools.import_fieldlogger.midvatten_utils.QtWidgets.QInputDialog.getText"
             )
             @mock.patch(
-                "midvatten.tools.import_fieldlogger.common_utils.MessagebarAndLog"
+                "midvatten.tools.utils.message_utils.MessagebarAndLog"
             )
             def _test(
                 self,
@@ -1192,7 +1192,7 @@ class FieldLoggerImporterDbMixin:
                 "midvatten.tools.import_fieldlogger.midvatten_utils.QtWidgets.QInputDialog.getText"
             )
             @mock.patch(
-                "midvatten.tools.import_fieldlogger.common_utils.MessagebarAndLog"
+                "midvatten.tools.utils.message_utils.MessagebarAndLog"
             )
             def _test(
                 self,
@@ -1396,7 +1396,7 @@ class FieldLoggerImporterDbMixin:
                 "midvatten.tools.import_fieldlogger.midvatten_utils.QtWidgets.QInputDialog.getText"
             )
             @mock.patch(
-                "midvatten.tools.import_fieldlogger.common_utils.MessagebarAndLog"
+                "midvatten.tools.utils.message_utils.MessagebarAndLog"
             )
             def _test(
                 self,
@@ -1546,7 +1546,7 @@ class FieldLoggerImporterDbMixin:
                 "midvatten.tools.import_fieldlogger.midvatten_utils.QtWidgets.QInputDialog.getText"
             )
             @mock.patch(
-                "midvatten.tools.import_fieldlogger.common_utils.MessagebarAndLog"
+                "midvatten.tools.utils.message_utils.MessagebarAndLog"
             )
             # p_question = common_utils.Askuser("YesNo", '\n'.join(import_messages), ru(QCoreApplication.translate('MidvDataImporter', "Info")))
             def _test(
@@ -1671,7 +1671,7 @@ class FieldLoggerImporterDbMixin:
                 "midvatten.tools.import_fieldlogger.midvatten_utils.QtWidgets.QInputDialog.getText"
             )
             @mock.patch(
-                "midvatten.tools.import_fieldlogger.common_utils.MessagebarAndLog"
+                "midvatten.tools.utils.message_utils.MessagebarAndLog"
             )
             def _test(
                 self,
@@ -1826,7 +1826,7 @@ class FieldLoggerImporterDbMixin:
                 "midvatten.tools.import_fieldlogger.midvatten_utils.QtWidgets.QInputDialog.getText"
             )
             @mock.patch(
-                "midvatten.tools.import_fieldlogger.common_utils.MessagebarAndLog"
+                "midvatten.tools.utils.message_utils.MessagebarAndLog"
             )
             def _test(
                 self,

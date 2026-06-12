@@ -51,7 +51,7 @@ class TestResolveUiSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv):
         super().teardown_method()
         gc.collect()
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_focus_plot_on_instants_sets_range_and_separation(self, mock_messagebar):
         _setup_twin_obsid()
         editor = LoggerEditor(self.iface, self.midvatten.ms)
@@ -70,7 +70,7 @@ class TestResolveUiSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv):
             "2024-01-01 00:00:00"
         )
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_dupe_banner_visible_only_when_duplicates(self, mock_messagebar):
         _setup_twin_obsid()
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('clean1')")
@@ -91,7 +91,7 @@ class TestResolveUiSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv):
         editor.update_plot()
         assert editor._dupe_banner.isVisibleTo(editor) is False
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_duplicate_marker_drawn_and_shrinks(self, mock_messagebar):
         _setup_twin_obsid()  # rb1: one duplicated instant at 2024-01-01 + a clean row
         editor = LoggerEditor(self.iface, self.midvatten.ms)
@@ -116,7 +116,7 @@ class TestResolveUiSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv):
         editor._resolve_dupes_btn.click()
         return editor._resolve_dialog
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_banner_button_opens_nonmodal_tool_dialog(self, mock_messagebar):
         from qgis.PyQt.QtCore import Qt
 
@@ -137,7 +137,7 @@ class TestResolveUiSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv):
         editor._resolve_dupes_btn.click()
         assert editor._resolve_dialog is dlg
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_dialog_stay_open_resolves_two_periods(self, mock_messagebar):
         from qgis.PyQt.QtWidgets import QPushButton
 
@@ -170,7 +170,7 @@ class TestResolveUiSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert jan["source"].tolist() == ["a"]
         assert jun["source"].tolist() == ["b"]
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_whole_dataset_button_widens_scope(self, mock_messagebar):
         from qgis.PyQt.QtWidgets import QPushButton
 
@@ -191,7 +191,7 @@ class TestResolveUiSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv):
                 break
         assert len(dlg._groups()) == 2  # both periods now in scope
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_changing_obsid_closes_dialog(self, mock_messagebar):
         _setup_twin_obsid()
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('clean1')")

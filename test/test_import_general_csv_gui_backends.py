@@ -61,7 +61,7 @@ class GeneralCsvGuiMixin:
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
@@ -145,7 +145,7 @@ class GeneralCsvGuiMixin:
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
@@ -228,7 +228,7 @@ class GeneralCsvGuiMixin:
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
@@ -322,7 +322,7 @@ class GeneralCsvGuiMixin:
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
@@ -415,7 +415,7 @@ class GeneralCsvGuiMixin:
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
@@ -510,7 +510,7 @@ class GeneralCsvGuiMixin:
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
@@ -594,7 +594,7 @@ class GeneralCsvGuiMixin:
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
@@ -685,7 +685,7 @@ class GeneralCsvGuiMixin:
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
@@ -776,7 +776,7 @@ class GeneralCsvGuiMixin:
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
@@ -865,7 +865,7 @@ class GeneralCsvGuiMixin:
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
@@ -948,7 +948,7 @@ class GeneralCsvGuiMixin:
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
@@ -1031,7 +1031,7 @@ class GeneralCsvGuiMixin:
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
@@ -1121,7 +1121,7 @@ class GeneralCsvGuiMixin:
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
@@ -1204,7 +1204,7 @@ class GeneralCsvGuiMixin:
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
@@ -1283,12 +1283,12 @@ class GeneralCsvGuiMixin:
             utils_askuser_answer_no_obj.result = 0
             utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
 
-            @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+            @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
@@ -1377,7 +1377,7 @@ class GeneralCsvGuiMixin:
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
@@ -1471,7 +1471,7 @@ class GeneralCsvGuiMixin:
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
@@ -1581,7 +1581,7 @@ class GeneralCsvGuiMixin:
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
@@ -1817,7 +1817,7 @@ class GeneralCsvGuiFromLayerMixin:
         @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
         @mock.patch("qgis.utils.iface", autospec=True)
         @mock.patch(
-            "midvatten.tools.import_data_to_db.common_utils.pop_up_info", autospec=True
+            "midvatten.tools.utils.message_utils.pop_up_info", autospec=True
         )
         def _test(self, mock_skippopup, mock_iface, mock_askuser):
 
@@ -1900,7 +1900,7 @@ class GeneralCsvGuiFromLayerMixin:
         @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
         @mock.patch("qgis.utils.iface", autospec=True)
         @mock.patch(
-            "midvatten.tools.import_data_to_db.common_utils.pop_up_info", autospec=True
+            "midvatten.tools.utils.message_utils.pop_up_info", autospec=True
         )
         def _test(self, mock_skippopup, mock_iface, mock_askuser):
 

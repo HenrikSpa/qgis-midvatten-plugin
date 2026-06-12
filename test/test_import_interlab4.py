@@ -578,7 +578,7 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
         assert result_string == reference_string
 
     @mock.patch("midvatten.tools.utils.midvatten_utils.getcurrentlocale")
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_interlab4_to_table_duplicate_parameters_mg_l_en(
         self, mock_messagebar, mock_getcurrentlocale
     ):
@@ -628,7 +628,7 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
         )
 
     @mock.patch("midvatten.tools.utils.midvatten_utils.getcurrentlocale")
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_interlab4_to_table_duplicate_parameters_mg_l_sv(
         self, mock_messagebar, mock_getcurrentlocale
     ):
@@ -680,7 +680,7 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
         )
 
     @mock.patch("midvatten.tools.utils.midvatten_utils.getcurrentlocale")
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_interlab4_to_table_duplicate_parameters_mg_l_sv_with_color(
         self, mock_messagebar, mock_getcurrentlocale
     ):
@@ -733,7 +733,7 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
         )
 
     @mock.patch("midvatten.tools.utils.midvatten_utils.getcurrentlocale")
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_interlab4_to_table_duplicate_parameters_mg_l_sv_no_float(
         self, mock_messagebar, mock_getcurrentlocale
     ):
@@ -783,7 +783,7 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
         self.importinstance.radio_s_qual_lab.setChecked(True)
         assert self.importinstance.dest_table == "s_qual_lab"
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch(
         "midvatten.tools.import_interlab4.midvatten_utils.select_files",
         return_value=[],
@@ -880,7 +880,7 @@ class TestInterlab4ImportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv)
         ) as filename:
 
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch(
@@ -924,7 +924,7 @@ class TestInterlab4ImportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv)
 
         print(f"{mock_messagebar.mock_calls=}")
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_interlab4_start_import_inserts_into_w_qual_lab(self, mock_messagebar):
         self._run_interlab4_import(mock_messagebar)
 

@@ -107,7 +107,7 @@ class TestGeneralCsvImportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
             @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
@@ -179,7 +179,7 @@ class TestGeneralCsvImportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
 
         print(f"{mock_messagebar.mock_calls=}")
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_start_import_into_w_levels_logger_routes_source_to_series(
         self, mock_messagebar
     ):

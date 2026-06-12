@@ -32,8 +32,8 @@ from midvatten.tools.utils import db_utils
 
 class DrillreportMixin:
     @mock.patch("midvatten.tools.drillreport.QDesktopServices.openUrl")
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
-    @mock.patch("midvatten.tools.stratigraphy.common_utils.pop_up_info", autospec=True)
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
     def test_drillreport(self, mock_skippopup, mock_messagebar, openurl):
         """
         :param mock_skippopup:

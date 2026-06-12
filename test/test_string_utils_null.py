@@ -25,13 +25,13 @@ class _FakeNull:
         return True
 
 
-@mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+@mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
 def test_returnunicode_python_none_returns_empty_string(mock_messagebar):
     print(f"{mock_messagebar.mock_calls=}")
     assert returnunicode(None) == ""
 
 
-@mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+@mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
 def test_returnunicode_qgis_null_returns_empty_string(mock_messagebar):
     from qgis.core import NULL
 
@@ -39,7 +39,7 @@ def test_returnunicode_qgis_null_returns_empty_string(mock_messagebar):
     assert returnunicode(NULL) == ""
 
 
-@mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+@mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
 def test_returnunicode_fake_object_with_isnull_true_returns_empty(mock_messagebar):
     print(f"{mock_messagebar.mock_calls=}")
     assert returnunicode(_FakeNull()) == ""

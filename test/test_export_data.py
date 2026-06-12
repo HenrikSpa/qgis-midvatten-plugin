@@ -421,7 +421,7 @@ class ExportMixin:
 
         assert geom_value.startswith("POINT")
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.export_spatialite.NewSpatialiteDbDialog")
     @mock.patch(
         "midvatten.tools.utils.layer_utils.get_selected_features_as_tuple",
@@ -433,7 +433,7 @@ class ExportMixin:
     )
     @mock.patch("midvatten.tools.utils.midvatten_utils.find_layer", autospec=True)
     @mock.patch("qgis.utils.iface", autospec=True)
-    @mock.patch("midvatten.tools.export_data.common_utils.pop_up_info", autospec=True)
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
     def test_export_spatialite(
         self,
         mock_skip_popup,
@@ -567,7 +567,7 @@ class ExportMixin:
         print(str(test_string))
         assert test_string == reference_string
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.export_spatialite.NewSpatialiteDbDialog")
     @mock.patch(
         "midvatten.tools.utils.layer_utils.get_selected_features_as_tuple",
@@ -579,7 +579,7 @@ class ExportMixin:
     )
     @mock.patch("midvatten.tools.utils.midvatten_utils.find_layer", autospec=True)
     @mock.patch("qgis.utils.iface", autospec=True)
-    @mock.patch("midvatten.tools.export_data.common_utils.pop_up_info", autospec=True)
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
     def test_export_spatialite_no_selected(
         self,
         mock_skip_popup,
@@ -708,7 +708,7 @@ class ExportMixin:
         print(str(mock_messagebar.mock_calls))
         assert test_string == reference_string
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.export_spatialite.NewSpatialiteDbDialog")
     @mock.patch("midvatten.tools.utils.layer_utils.get_selected_features_as_tuple")
     @mock.patch(
@@ -717,7 +717,7 @@ class ExportMixin:
     )
     @mock.patch("midvatten.tools.utils.midvatten_utils.find_layer", autospec=True)
     @mock.patch("qgis.utils.iface", autospec=True)
-    @mock.patch("midvatten.tools.export_data.common_utils.pop_up_info", autospec=True)
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
     def test_export_spatialite_with_umlauts(
         self,
         mock_skip_popup,
@@ -787,7 +787,7 @@ class ExportMixin:
         print(str(mock_messagebar.mock_calls))
         assert test_string == reference_string
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.export_spatialite.NewSpatialiteDbDialog")
     @mock.patch(
         "midvatten.tools.utils.layer_utils.get_selected_features_as_tuple",
@@ -799,7 +799,7 @@ class ExportMixin:
     )
     @mock.patch("midvatten.tools.utils.midvatten_utils.find_layer", autospec=True)
     @mock.patch("qgis.utils.iface", autospec=True)
-    @mock.patch("midvatten.tools.export_data.common_utils.pop_up_info", autospec=True)
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
     def test_export_spatialite_transform_coordinates(
         self,
         mock_skip_popup,
@@ -943,7 +943,7 @@ class ExportMixin:
         print("Ref\n" + reference_string)
         assert test_string == reference_string
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.export_spatialite.NewSpatialiteDbDialog")
     @mock.patch(
         "midvatten.tools.utils.layer_utils.get_selected_features_as_tuple",
@@ -955,7 +955,7 @@ class ExportMixin:
     )
     @mock.patch("midvatten.tools.utils.midvatten_utils.find_layer", autospec=True)
     @mock.patch("qgis.utils.iface", autospec=True)
-    @mock.patch("midvatten.tools.export_data.common_utils.pop_up_info", autospec=True)
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
     def test_export_spatialite_zz_tables(
         self,
         mock_skip_popup,
@@ -1063,7 +1063,7 @@ class ExportMixin:
         print(str(reference_string))
         assert test_string == reference_string
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.export_spatialite.NewSpatialiteDbDialog")
     @mock.patch(
         "midvatten.tools.utils.layer_utils.get_selected_features_as_tuple",
@@ -1075,7 +1075,7 @@ class ExportMixin:
     )
     @mock.patch("midvatten.tools.utils.midvatten_utils.find_layer", autospec=True)
     @mock.patch("qgis.utils.iface", autospec=True)
-    @mock.patch("midvatten.tools.export_data.common_utils.pop_up_info", autospec=True)
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
     def test_export_spatialite_extra_tables(
         self,
         mock_skip_popup,
@@ -1240,7 +1240,7 @@ class TestExportPostgis(ExportMixin, utils_for_tests.MidvattenTestPostgisDbEn):
 
 @pytest.mark.spatialite
 class TestExportSpatialite(ExportMixin, utils_for_tests.MidvattenTestSpatialiteDbEn):
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.export_spatialite.NewSpatialiteDbDialog")
     @mock.patch(
         "midvatten.tools.utils.midvatten_utils.verify_msettings_loaded_and_layer_edit_mode",
@@ -1248,7 +1248,7 @@ class TestExportSpatialite(ExportMixin, utils_for_tests.MidvattenTestSpatialiteD
     )
     @mock.patch("midvatten.tools.utils.midvatten_utils.find_layer", autospec=True)
     @mock.patch("qgis.utils.iface", autospec=True)
-    @mock.patch("midvatten.tools.export_data.common_utils.pop_up_info", autospec=True)
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
     @mock.patch(
         "midvatten.tools.utils.layer_utils.get_selected_features_as_tuple",
         ExportMixin.mock_no_selection.get_v,

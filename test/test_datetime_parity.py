@@ -49,7 +49,7 @@ class DatetimeParityMixin:
     # Test 1: same-instant pair collapses; distinct second is kept
     # ------------------------------------------------------------------
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_same_instant_collapses_distinct_second_kept(self, mock_messagebar):
         """Same-instant pair ('hh:mm' and 'hh:mm:ss') collapses to ONE row.
@@ -99,7 +99,7 @@ class DatetimeParityMixin:
     # Test 2: date-only value is stored verbatim (not padded)
     # ------------------------------------------------------------------
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_date_only_stored_verbatim(self, mock_messagebar):
         """A date-only value ('yyyy-mm-dd') must be stored exactly as given.
@@ -133,7 +133,7 @@ class DatetimeParityMixin:
     # Test 3: malformed date values are stored verbatim; not merged
     # ------------------------------------------------------------------
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_distinct_malformed_dates_both_stored(self, mock_messagebar):
         """Malformed / unparseable date_time strings are stored verbatim.
@@ -182,7 +182,7 @@ class DatetimeParityMixin:
     # Test 4: re-importing a parseable file is idempotent
     # ------------------------------------------------------------------
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
     def test_reimport_is_idempotent(self, mock_messagebar):
         """Importing the same parseable file twice leaves row count unchanged.

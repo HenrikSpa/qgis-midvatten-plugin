@@ -25,12 +25,12 @@ class LoadLayersScreenRelationMixin:
     def _call_load_layers(self):
         """Invoke LoadLayers for the OBS_DB group using a mocked iface."""
         with mock.patch(
-            "midvatten.tools.utils.common_utils.MessagebarAndLog"
+            "midvatten.tools.utils.message_utils.MessagebarAndLog"
         ) as mock_messagebar:
             ll = loadlayers.LoadLayers(self.iface, self.midvatten.ms.settingsdict)
         return ll, mock_messagebar
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_relation_registered_after_load(self, mock_messagebar):
         """relationManager contains 'obs_points_screen' after LoadLayers."""
         loadlayers.LoadLayers(self.iface, self.midvatten.ms.settingsdict)
@@ -42,7 +42,7 @@ class LoadLayersScreenRelationMixin:
             f"Expected 'obs_points_screen' in relations, got: {list(relations.keys())}"
         )
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_relation_referenced_layer_is_obs_points(self, mock_messagebar):
         """The relation's referenced layer is obs_points."""
         loadlayers.LoadLayers(self.iface, self.midvatten.ms.settingsdict)
@@ -52,7 +52,7 @@ class LoadLayersScreenRelationMixin:
         rel = QgsProject.instance().relationManager().relations()["obs_points_screen"]
         assert rel.referencedLayer().name() == "obs_points"
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_relation_referencing_layer_is_screen(self, mock_messagebar):
         """The relation's referencing layer is screen."""
         loadlayers.LoadLayers(self.iface, self.midvatten.ms.settingsdict)
@@ -62,7 +62,7 @@ class LoadLayersScreenRelationMixin:
         rel = QgsProject.instance().relationManager().relations()["obs_points_screen"]
         assert rel.referencingLayer().name() == "screen"
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_relation_field_pair(self, mock_messagebar):
         """The relation links obsid (referenced) → obsid (referencing)."""
         loadlayers.LoadLayers(self.iface, self.midvatten.ms.settingsdict)
@@ -74,7 +74,7 @@ class LoadLayersScreenRelationMixin:
         # fieldPairs() returns {referencing_field: referenced_field}
         assert field_pairs == {"obsid": "obsid"}
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_no_relation_when_screen_table_absent(self, mock_messagebar):
         """No relation is registered and no exception raised when screen table absent."""
         # Drop the screen table to simulate an older DB without the feature.

@@ -60,7 +60,7 @@ class TestLoggerEditorDupes(utils_for_tests.MidvattenTestSpatialiteDbSv):
         result = editor.getlastcalibration("rb_empty")
         assert result == []
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_reset_settings_no_calibration_no_failure_log(self, mock_messagebar):
         """reset_settings with no calibrated rows must not log a failure message.
 
@@ -118,7 +118,7 @@ class TestLoggerEditorDupes(utils_for_tests.MidvattenTestSpatialiteDbSv):
         )
         assert len(editor._duplicate_instants()) == 0
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_save_with_duplicate_instant_does_not_crash_or_corrupt(
         self, mock_messagebar
     ):
@@ -178,7 +178,7 @@ class TestLoggerEditorDupes(utils_for_tests.MidvattenTestSpatialiteDbSv):
             "2024-01-06 00:00:00",
         ]
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_save_does_not_range_over_skipped_twin(self, mock_messagebar):
         """A duplicate instant between two edited clean rows must not be
         swept up by a BETWEEN range UPDATE."""
@@ -223,7 +223,7 @@ class TestLoggerEditorDupes(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert by_dt["2024-01-02 00:00:00"] == 21.0
         assert mock_messagebar.warning.called
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_save_series_id_change_with_twin_present(self, mock_messagebar):
         """Assigning a series_id to a clean row while twins exist must persist
         the assignment (series_join path) and leave both twin rows untouched."""
@@ -276,7 +276,7 @@ class TestLoggerEditorDupes(utils_for_tests.MidvattenTestSpatialiteDbSv):
         # A warning was emitted about the skipped duplicate instants
         assert mock_messagebar.warning.called
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_save_persists_removed_twin(self, mock_messagebar):
         """Dropping one twin row from the buffer deletes exactly that DB row on save."""
         _insert_obs_point("rb1")

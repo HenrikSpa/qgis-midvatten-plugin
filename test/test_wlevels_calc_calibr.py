@@ -34,7 +34,7 @@ from midvatten.test import utils_for_tests
 class CalibrloggerMixin:
     """Test to make sure wlvllogg_import goes all the way to the end without errors"""
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_calibrlogger_last_calibration(self, mock_messagebar):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
         db_utils.sql_alter_db(
@@ -55,7 +55,7 @@ class CalibrloggerMixin:
         print(f"{mock_messagebar.mock_calls=}")
         assert test == ref
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_editor_starts_without_loading_an_obsid(self, mock_messagebar):
         """Editor starts clean: obsids are available but none is selected or
         loaded until the user picks one."""
@@ -76,7 +76,7 @@ class CalibrloggerMixin:
         assert calibrlogger.obsid == ""
         assert calibrlogger._buf is None
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_calibrlogger_set_log_pos(self, mock_messagebar):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
         db_utils.sql_alter_db(
@@ -109,7 +109,7 @@ class CalibrloggerMixin:
         print(f"{mock_messagebar.mock_calls=}")
         assert test == ref
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_calibrlogger_add_to_level_masl(self, mock_messagebar):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
         db_utils.sql_alter_db(
@@ -139,8 +139,8 @@ class CalibrloggerMixin:
         print(f"{mock_messagebar.mock_calls=}")
         assert test == ref
 
-    @mock.patch("midvatten.tools.loggereditor.common_utils.pop_up_info", autospec=True)
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_calibrlogger_calc_best_fit_add_out_of_radius(
         self, mock_messagebar, skip_popup
     ):
@@ -174,8 +174,8 @@ class CalibrloggerMixin:
         print(test)
         assert test == ref
 
-    @mock.patch("midvatten.tools.loggereditor.common_utils.pop_up_info", autospec=True)
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_calibrlogger_calc_best_fit_add(self, mock_messagebar, skip_popup):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
         db_utils.sql_alter_db(
@@ -209,8 +209,8 @@ class CalibrloggerMixin:
         print(f"{mock_messagebar.mock_calls=}")
         assert test == ref
 
-    @mock.patch("midvatten.tools.loggereditor.common_utils.pop_up_info", autospec=True)
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_calibrlogger_calc_best_fit_add_matches_same_from_date(
         self, mock_messagebar, skip_popup
     ):
@@ -244,8 +244,8 @@ class CalibrloggerMixin:
         print(f"{mock_messagebar.mock_calls=}")
         assert test == ref
 
-    @mock.patch("midvatten.tools.loggereditor.common_utils.pop_up_info", autospec=True)
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_calibrlogger_calc_best_fit_add_matches_same_to_date(
         self, mock_messagebar, skip_popup
     ):
@@ -280,7 +280,7 @@ class CalibrloggerMixin:
         print(f"{mock_messagebar.mock_calls=}")
         assert test == ref
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_calibrlogger_set_last_calibration(self, mock_messagebar):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
         db_utils.sql_alter_db(
@@ -303,7 +303,7 @@ class CalibrloggerMixin:
         print(f"{mock_messagebar.mock_calls=}")
         assert test == ref
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_calibrlogger_set_last_calibration_zero(self, mock_messagebar):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
         db_utils.sql_alter_db(
@@ -325,7 +325,7 @@ class CalibrloggerMixin:
         print(f"{mock_messagebar.mock_calls=}")
         assert test == ref
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_calibrlogger_calibrinfolast_calibration(self, mock_messagebar):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb2')")
@@ -349,7 +349,7 @@ class CalibrloggerMixin:
         assert test == ref
 
     @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_delete_range(self, mock_messagebar, askuser):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
         db_utils.sql_alter_db(
@@ -381,7 +381,7 @@ class CalibrloggerMixin:
         ref = "(True, [(2017-01-28 00:00), (2017-02-10 00:00)])"
         assert test == ref
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_change_timezone_no_w_levels_tz(self, mock_messagebar):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
         db_utils.sql_alter_db(
@@ -399,7 +399,7 @@ class CalibrloggerMixin:
         print(f"{mock_messagebar.mock_calls=}")
         assert tuple(calibrlogger.meas_ts.tolist()) == (("2017-02-01 00:00", 2.0),)
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_change_timezone_w_levels_tz_no_conversion(self, mock_messagebar):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
         db_utils.sql_alter_db(
@@ -429,7 +429,7 @@ class CalibrloggerMixin:
             (datetime.datetime(2017, 2, 1, 0, 0), 2.0),
         )
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_change_timezone_w_levels_tz_convert(self, mock_messagebar):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
         db_utils.sql_alter_db(
@@ -459,7 +459,7 @@ class CalibrloggerMixin:
             (datetime.datetime(2017, 4, 30, 23, 0), 2.0),
         )
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_change_timezone_no_w_levels_logger_tz(self, mock_messagebar):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
         db_utils.sql_alter_db(
@@ -487,7 +487,7 @@ class CalibrloggerMixin:
         print(f"{mock_messagebar.mock_calls=}")
         assert tuple(calibrlogger.meas_ts.tolist()) == (("2017-05-01 00:00", 2.0),)
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_calibrlogger_normalize_against_logger(self, mock_messagebar):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
         db_utils.sql_alter_db(
@@ -520,7 +520,7 @@ class CalibrloggerMixin:
 
         assert test == ref
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_calibrlogger_normalize_against_meas(self, mock_messagebar):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
         db_utils.sql_alter_db(
@@ -553,7 +553,7 @@ class CalibrloggerMixin:
 
         assert test == ref
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_update_plot_calls_draw_reference_subplot(self, mock_messagebar):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
         db_utils.sql_alter_db(
@@ -570,7 +570,7 @@ class CalibrloggerMixin:
         print(f"{mock_messagebar.mock_calls=}")
         mock_draw_ref.assert_called_once_with()
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_buffer_fast_path(self, mock_messagebar):
         """After update_plot, _buf is populated and _buf_obsid is set."""
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
@@ -589,7 +589,7 @@ class CalibrloggerMixin:
         assert calibrlogger._buf_obsid == "rb1"
         assert calibrlogger._buf["level_masl"].tolist() == [100.0]
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_undo_reverts_buffer(self, mock_messagebar):
         """undo() restores level_masl to the pre-edit state."""
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
@@ -632,7 +632,7 @@ class CalibrloggerMixin:
         )
         assert calibrlogger._history_pos == 0
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_redo_after_undo(self, mock_messagebar):
         """redo() re-applies the edit after undo()."""
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
@@ -661,7 +661,7 @@ class CalibrloggerMixin:
         assert calibrlogger._buf["level_masl"].tolist() == edited_values
         assert calibrlogger._history_pos == 1
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_save_to_db_writes_changes(self, mock_messagebar):
         """save_to_db() persists level_masl edits to DB and clears dirty flag."""
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
@@ -697,7 +697,7 @@ class CalibrloggerMixin:
         assert _ok
         assert rows[0][0] == expected_level
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_close_event_dirty_cancel(self, mock_messagebar):
         """closeEvent with dirty buffer and 'cancel' response ignores the event."""
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
@@ -729,7 +729,7 @@ class CalibrloggerMixin:
         event.ignore.assert_called_once()
         event.accept.assert_not_called()
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_obsid_switch_dirty_cancel_reverts_combobox(self, mock_messagebar):
         """_on_obsid_changed with 'cancel' restores the previous combobox selection."""
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
@@ -764,7 +764,7 @@ class CalibrloggerMixin:
         print(f"{mock_messagebar.mock_calls=}")
         assert calibrlogger.combobox_obsid.currentIndex() == prev_index
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_save_to_db_multi_period_range_sql(self, mock_messagebar):
         """save_to_db uses range SQL for multiple distinct calibration periods."""
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
@@ -825,7 +825,7 @@ class CalibrloggerMixin:
 class CalibrloggerPostgisMixin(CalibrloggerMixin):
     """Postgis-specific tests for calibrlogger."""
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_calibrlogger_adjust_trend(self, mock_messagebar):
         """Interactive trend: drag start up by 5, end stays (pivot)."""
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
@@ -859,7 +859,7 @@ class CalibrloggerPostgisMixin(CalibrloggerMixin):
         ref = "(True, [(rb1, 2017-02-01 00:00, 105.0), (rb1, 2017-02-10 00:00, 200.0)])"
         assert test == ref
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_calibrlogger_plot_source_postgres(self, mock_messagebar):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
         db_utils.sql_alter_db(
@@ -1072,7 +1072,7 @@ class CalibrloggerPostgisMixin(CalibrloggerMixin):
 class CalibrloggerSpatialiteMixin(CalibrloggerMixin):
     """Spatialite-specific tests for calibrlogger."""
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_calibrlogger_adjust_trend(self, mock_messagebar):
         """Interactive trend: drag start up by 5, end stays (pivot)."""
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
@@ -1106,7 +1106,7 @@ class CalibrloggerSpatialiteMixin(CalibrloggerMixin):
         ref = "(True, [(rb1, 2017-02-01 00:00, 105.0), (rb1, 2017-02-10 00:00, 200.0)])"
         assert test == ref
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_calibrlogger_adjust_trend_undo(self, mock_messagebar):
         """Undo should restore level_masl to pre-trend values."""
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
@@ -1137,7 +1137,7 @@ class CalibrloggerSpatialiteMixin(CalibrloggerMixin):
         print(f"{mock_messagebar.mock_calls=}")
         assert (calibrlogger._buf["level_masl"] == original_values).all()
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_calibrlogger_adjust_trend_drag_flow(self, mock_messagebar):
         """Full event-handler flow: enter trend mode, pick, drag, release."""
         from unittest.mock import MagicMock
@@ -1191,7 +1191,7 @@ class CalibrloggerSpatialiteMixin(CalibrloggerMixin):
         assert calibrlogger._trend_line is not None
         assert calibrlogger._trend_start_marker is not None
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_calibrlogger_plot_source_sqlite(self, mock_messagebar):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
         db_utils.sql_alter_db(

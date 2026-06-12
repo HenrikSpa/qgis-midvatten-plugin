@@ -94,7 +94,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
         engine = ExportEngine()
         assert engine.CHUNK_SIZE == 5_000
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_count_source_rows_no_filter(self, mock_messagebar):
         """Returns total row count when no obsid filter is given."""
         from midvatten.tools.export_engine import ExportEngine
@@ -113,7 +113,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
         finally:
             src.closedb()
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_count_source_rows_with_filter(self, mock_messagebar):
         """Returns count only for matching obsids."""
         from midvatten.tools.export_engine import ExportEngine
@@ -133,7 +133,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
         finally:
             src.closedb()
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_get_columns(self, mock_messagebar):
         from midvatten.tools.export_engine import ExportEngine
 
@@ -145,7 +145,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
         finally:
             src.closedb()
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_build_select_sql_non_geometry(self, mock_messagebar):
         """Plain column refs for non-geometry tables."""
         from midvatten.tools.export_engine import ExportEngine
@@ -161,7 +161,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
         finally:
             src.closedb()
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_build_select_sql_geometry(self, mock_messagebar):
         """Geometry column wrapped in ST_AsBinary(ST_Transform(..., ?)) with SRID bound."""
         from midvatten.tools.export_engine import ExportEngine
@@ -179,7 +179,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
         finally:
             src.closedb()
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_build_select_sql_with_obsid_filter(self, mock_messagebar):
         from midvatten.tools.export_engine import ExportEngine
 
@@ -193,7 +193,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
         finally:
             src.closedb()
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_build_insert_sql_non_geometry(self, mock_messagebar):
         from midvatten.tools.export_engine import ExportEngine
 
@@ -209,7 +209,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
         finally:
             dest.closedb()
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_build_insert_sql_geometry(self, mock_messagebar):
         from midvatten.tools.export_engine import ExportEngine
 
@@ -226,7 +226,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
         finally:
             dest.closedb()
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_get_exportable_columns_same_schema(self, mock_messagebar):
         """When schemas match, source and dest cols are identical."""
         from midvatten.tools.export_engine import ExportEngine
@@ -243,7 +243,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
             src.closedb()
             dest.closedb()
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_export_table_basic_copies_rows(self, mock_messagebar):
         """Copies rows from source w_levels to dest; no geometry, no special cases."""
         from midvatten.tools.export_engine import ExportEngine
@@ -308,7 +308,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
         assert progress_calls[0] == ("w_levels", 0, 2)
         assert progress_calls[-1][1] == 2
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_export_table_cancel_raises(self, mock_messagebar):
         """ExportCancelledError raised when cancel flag is set."""
         from midvatten.tools.export_engine import ExportEngine, ExportCancelledError
@@ -356,7 +356,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
             src.closedb()
             dest.closedb()
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_export_table_geometry_reprojected(self, mock_messagebar):
         """obs_points geometry is exported correctly via ST_AsBinary/ST_GeomFromWKB."""
         from midvatten.tools.export_engine import ExportEngine
@@ -396,7 +396,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
         assert "633466" in rows[0][1]
         assert "711659" in rows[0][1]
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_zz_merge_source_overrides_dest(self, mock_messagebar):
         """Source row wins over matching dest row."""
         from midvatten.tools.export_engine import ExportEngine
@@ -438,7 +438,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
         # Source name wins
         assert rows == [("s1", "Source Name")]
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_zz_merge_dest_only_row_survives(self, mock_messagebar):
         """A dest-only row (not in source) is preserved after merge."""
         from midvatten.tools.export_engine import ExportEngine
@@ -483,7 +483,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
         assert "src_only" in units
         assert "dest_only" in units
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_export_preserves_fk_referenced_zz_snapshot(self, mock_messagebar):
         """A zz_* lookup row referenced by a data row (w_flow→zz_flowtype)
         must survive the snapshot/clear/reinsert cycle, even though the DELETE
@@ -559,7 +559,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
         # No FK violations left dangling by the export.
         assert integrity_violations == []
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_needs_logger_migration_same_schema(self, mock_messagebar):
         """Returns False when source already has series_id (new schema)."""
         from midvatten.tools.export_engine import ExportEngine
@@ -573,7 +573,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
             dest.closedb()
         assert result is False
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_logger_migration_creates_series_rows_and_maps_ids(self, mock_messagebar):
         """Old-schema source (source col) → w_logger_series rows created, series_id mapped."""
         from midvatten.tools.export_engine import ExportEngine
@@ -679,7 +679,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
         ]
         assert p1a_ids[0][0] == p1a_ids[1][0]  # same series_id for same (obsid, source)
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_export_full_round_trip(self, mock_messagebar):
         """Full export: data in source appears in dest."""
         from midvatten.tools.export_engine import ExportEngine
@@ -728,7 +728,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
         assert ("P1", "2020-01-01 00:00:00", 1.5) in wlevel
         assert isinstance(stats, str)
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_export_obsid_filter(self, mock_messagebar):
         """Only selected obsids appear in dest."""
         from midvatten.tools.export_engine import ExportEngine
@@ -780,7 +780,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
         assert obsids == {"P1"}
         assert wlevel_obsids == {"P1"}
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_export_fk_order_no_violations(self, mock_messagebar):
         """Full export with FK constraints ON produces no constraint violations."""
         from midvatten.tools.export_engine import ExportEngine
@@ -825,7 +825,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
 
         assert integrity_violations == []
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_worker_emits_signals(self, mock_messagebar):
         """ExportWorker emits table_started, rows_written, finished in correct order."""
         conn = db_utils.DbConnectionManager(self._class_db_settings)
@@ -857,7 +857,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
         assert len(finished) == 1
         assert len(started) > 0  # at least one table signal
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_worker_cancel_deletes_dest_file(self, mock_messagebar):
         """Cancelling the worker causes the partial dest file to be deleted."""
         conn = db_utils.DbConnectionManager(self._class_db_settings)
@@ -888,7 +888,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
 
     # ------------------------------------------------------------------ Critical fix
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.utils.db_utils.export_bytea_as_bytes")
     def test_worker_calls_export_bytea_as_bytes(self, mock_bytea, mock_messagebar):
         """ExportWorker calls export_bytea_as_bytes on the source connection."""
@@ -904,7 +904,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
 
         assert mock_bytea.call_count == 1
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_worker_error_path_emits_error_signal(self, mock_messagebar):
         """ExportWorker emits the error signal when source connect2db() fails."""
         worker = ExportWorker(
@@ -928,7 +928,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
 
     # ------------------------------------------------------------------ Row-count warning
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.export_engine.log")
     def test_export_table_warns_on_pk_conflict(self, mock_log, mock_messagebar):
         """Logs a warning when INSERT OR IGNORE silently drops a row due to PK conflict."""
@@ -986,7 +986,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
 
     # ------------------------------------------------------------------ Cross-CRS coverage
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_export_table_cross_crs_reprojection(self, mock_messagebar):
         """Exports geometry from SRID 3006 source into a SRID 4326 dest via WGS84 intermediate."""
         from midvatten.tools.export_engine import ExportEngine
@@ -1029,7 +1029,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
 
     # ------------------------------------------------------------------ obs_lines filter
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_export_obsid_lines_filter(self, mock_messagebar):
         """Only the selected obs_lines obsids are exported."""
         from midvatten.tools.export_engine import ExportEngine
@@ -1069,7 +1069,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
 
     # ------------------------------------------------------------------ SRID binding
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_export_engine_srid_placeholder_binding(self, mock_messagebar):
         """SpatiaLite accepts ? placeholders for ST_Transform/ST_GeomFromWKB
         SRID arguments — the invariant ExportEngine now relies on.
@@ -1112,7 +1112,7 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
         assert "633466" not in transformed[0]
         assert wkb_round is not None and "633466" in wkb_round[0]
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_export_empty_selection_exports_all_obs_points_and_lines(
         self, mock_messagebar
     ):
@@ -1177,7 +1177,7 @@ class TestExportEnginePostgisSource(_ExportDestMixin, MidvattenTestPostgisDbSv):
         db_utils.export_bytea_as_bytes(conn)
         return conn
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_postgis_source_basic_data_exported(self, mock_messagebar):
         """Non-geometry data from PostGIS source arrives in SpatiaLite dest."""
         from midvatten.tools.export_engine import ExportEngine
@@ -1215,7 +1215,7 @@ class TestExportEnginePostgisSource(_ExportDestMixin, MidvattenTestPostgisDbSv):
 
         assert ("P1", "2020-01-01 00:00:00", 1.5) in wlevel
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_postgis_source_geometry_exported(self, mock_messagebar):
         """Geometry from PostGIS source is correctly transferred to SpatiaLite dest."""
         from midvatten.tools.export_engine import ExportEngine
@@ -1251,7 +1251,7 @@ class TestExportEnginePostgisSource(_ExportDestMixin, MidvattenTestPostgisDbSv):
         assert rows[0][0] == "P1"
         assert "633466" in rows[0][1]
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_postgis_source_obsid_filter(self, mock_messagebar):
         """ObsId filter works correctly with PostGIS source."""
         from midvatten.tools.export_engine import ExportEngine

@@ -331,7 +331,7 @@ class TestExportFieldloggerNoDb(MidvattenTestBase):
         assert test_string == reference_string
 
     @staticmethod
-    @mock.patch("midvatten.tools.export_fieldlogger.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_create_export_printlist_assert_empty_input_field_group_list(
         mock_messagebar,
     ):
@@ -365,7 +365,7 @@ class TestExportFieldloggerNoDb(MidvattenTestBase):
         )
 
     @staticmethod
-    @mock.patch("midvatten.tools.export_fieldlogger.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_create_export_printlist_assert_no_latlon(mock_messagebar):
         latlons = {"1": (None, None)}
         tables_columns = OrderedDict([("testtable", ("col1", "col2"))])
@@ -398,7 +398,7 @@ class TestExportFieldloggerNoDb(MidvattenTestBase):
         )
 
     @staticmethod
-    @mock.patch("midvatten.tools.export_fieldlogger.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_create_export_printlist(mock_messagebar):
         latlons = {"1": ("lat1", "lon1"), "2": ("lat2", "lon2"), "4": ("lat4", "lon4")}
         tables_columns = OrderedDict([("testtable", ("col1", "col2"))])
@@ -439,7 +439,7 @@ class TestExportFieldloggerNoDb(MidvattenTestBase):
         assert reference_string == test_string
 
     @staticmethod
-    @mock.patch("midvatten.tools.export_fieldlogger.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_create_export_printlist_duplicate_parameters(mock_messagebar):
         latlons = {"1": ("lat1", "lon1")}
         tables_columns = OrderedDict([("testtable", ("col1", "col2"))])
@@ -480,7 +480,7 @@ class TestExportFieldloggerNoDb(MidvattenTestBase):
         assert reference_string == test_string
 
     @staticmethod
-    @mock.patch("midvatten.tools.export_fieldlogger.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_create_export_printlist_duplicate_sub_location_suffixes(
         mock_messagebar,
     ):
@@ -522,7 +522,7 @@ class TestExportFieldloggerNoDb(MidvattenTestBase):
         assert test_string == reference
 
     @staticmethod
-    @mock.patch("midvatten.tools.export_fieldlogger.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_create_export_printlist_assert_no_critical_msg(mock_messagebar):
         latlons = {"1": (123, 465), "2": (123, 465), "3": (123, 465)}
 
@@ -566,7 +566,7 @@ class TestExportFieldloggerNoDb(MidvattenTestBase):
         assert test_string == reference_string
 
     @staticmethod
-    @mock.patch("midvatten.tools.export_fieldlogger.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_create_export_printlist_not_same_latlon(mock_messagebar):
         latlons = {"1": ("lat1", "lon1"), "2": ("lat2", "lon2"), "4": ("lat4", "lon4")}
         tables_columns = OrderedDict([("testtable", ("col1", "col2"))])
@@ -607,7 +607,7 @@ class TestExportFieldloggerNoDb(MidvattenTestBase):
         assert reference_string == test_string
 
     @staticmethod
-    @mock.patch("midvatten.tools.export_fieldlogger.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_create_export_printlist_not_same_latlon2(mock_messagebar):
         latlons = {"1": ("lat1", "lon1"), "2": ("lat2", "lon2"), "4": ("lat4", "lon4")}
         tables_columns = OrderedDict([("testtable", ("col1", "col2"))])
@@ -657,7 +657,7 @@ class TestExportFieldloggerNoDb(MidvattenTestBase):
         assert reference_string == test_string
 
     @staticmethod
-    @mock.patch("midvatten.tools.export_fieldlogger.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_create_export_printlist_not_same_latlon3(mock_messagebar):
         latlons = {"1": ("lat1", "lon1"), "2": ("lat2", "lon2"), "4": ("lat4", "lon4")}
         tables_columns = OrderedDict([("testtable", ("col1", "col2"))])
@@ -700,8 +700,8 @@ class TestExportFieldloggerNoDb(MidvattenTestBase):
         print(f"{mock_messagebar.mock_calls=}")
         assert reference_string == test_string
 
-    @mock.patch("midvatten.tools.export_fieldlogger.common_utils.pop_up_info")
-    @mock.patch("midvatten.tools.export_fieldlogger.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch(
         "midvatten.tools.export_fieldlogger.qgis.PyQt.QtWidgets.QInputDialog.getText"
     )
@@ -750,7 +750,7 @@ class TestExportFieldloggerNoDb(MidvattenTestBase):
         )
 
     @staticmethod
-    @mock.patch("midvatten.tools.export_fieldlogger.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_create_export_printlist_correct_order(mock_messagebar):
         latlons = {"1": ("lat1", "lon1"), "2": ("lat2", "lon2"), "4": ("lat4", "lon4")}
         tables_columns = OrderedDict([("testtable", ("col1", "col2"))])
@@ -797,7 +797,7 @@ class TestExportFieldloggerNoDb(MidvattenTestBase):
     @mock.patch(
         "midvatten.tools.export_fieldlogger.common_utils.get_save_file_name_no_extension"
     )
-    @mock.patch("midvatten.tools.export_fieldlogger.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_write_to_file(mock_messagebar, mock_get_save_file_name_no_extension):
         lines = (
             "NAME;INPUTTYPE;HINT",
@@ -821,7 +821,7 @@ class TestExportFieldloggerNoDb(MidvattenTestBase):
 
     @mock.patch("midvatten.tools.export_fieldlogger.db_utils.tables_columns")
     @mock.patch("midvatten.tools.export_fieldlogger.ExportToFieldLogger.write_to_file")
-    @mock.patch("midvatten.tools.export_fieldlogger.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_laton_from_vectorlayer(
         self, mock_tables_columns, mock_write_to_file, mock_messagebar
     ):
@@ -938,7 +938,7 @@ class TestExportFieldloggerNoDb(MidvattenTestBase):
 
     @mock.patch("midvatten.tools.export_fieldlogger.db_utils.tables_columns")
     @mock.patch("midvatten.tools.export_fieldlogger.ExportToFieldLogger.write_to_file")
-    @mock.patch("midvatten.tools.export_fieldlogger.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_laton_from_vectorlayer_fieldform(
         self, mock_tables_columns, mock_write_printlist_to_file, mock_messagebar
     ):

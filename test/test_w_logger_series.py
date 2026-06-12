@@ -20,7 +20,7 @@ from midvatten.tools.utils.db_utils import schema
 
 
 class WLoggerSeriesMixin:
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_table_exists_with_expected_columns(self, mock_messagebar):
         tables = schema.get_tables(skip_views=True)
         assert "w_logger_series" in tables
@@ -43,7 +43,7 @@ class WLoggerSeriesMixin:
         assert "created_at" in levels_cols
         assert "source" not in levels_cols
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_insert_series_and_linked_logger_rows(self, mock_messagebar):
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb1')""")
         db_utils.sql_alter_db(
@@ -85,7 +85,7 @@ class WLoggerSeriesMixin:
             ("rb1", "2026-01-01 01:00:00", 101.0, "Diver file A"),
         ]
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_series_id_is_nullable(self, mock_messagebar):
         # Direct SQL inserts without a series must still work.
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb2')""")
@@ -101,7 +101,7 @@ class WLoggerSeriesMixin:
         assert rows[0][0] == "rb2"
         assert rows[0][2] is None
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_created_at_has_default(self, mock_messagebar):
         # Direct SQL insert without created_at should get a non-null value.
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb3')""")
@@ -116,7 +116,7 @@ class WLoggerSeriesMixin:
         assert rows[0][0] is not None
         assert str(rows[0][0]).strip() != ""
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_cascade_delete_removes_linked_rows(self, mock_messagebar):
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb4')""")
         db_utils.sql_alter_db(
@@ -162,7 +162,7 @@ class WLoggerSeriesMixin:
             ("2026-01-01 02:00:00", 3.0, None),
         ]
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_series_without_linked_rows(self, mock_messagebar):
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb5')""")
         db_utils.sql_alter_db(

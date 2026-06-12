@@ -98,7 +98,7 @@ class TestInterlab4BulkEditorIntegration(utils_for_tests.MidvattenTestSpatialite
 
     # -- tests ----------------------------------------------------------
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_cached_rows_imported_directly_without_notfoundquestion(
         self, mock_messagebar
     ):
@@ -133,7 +133,7 @@ class TestInterlab4BulkEditorIntegration(utils_for_tests.MidvattenTestSpatialite
                 "midvatten.tools.utils.common_utils.NotFoundQuestion"
             ) as mock_nfq,
             mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             ),
         ):
@@ -159,7 +159,7 @@ class TestInterlab4BulkEditorIntegration(utils_for_tests.MidvattenTestSpatialite
         assert reports.get("DM-2773") == "obsid1"
         assert reports.get("DM-2774") == "obsid2"
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_uncached_rows_fall_through_to_notfoundquestion(self, mock_messagebar):
         """When the dialog returns APPLY with no obsids set (no cache), unfilled
         rows fall through to the NotFoundQuestion fallback and are imported."""
@@ -190,7 +190,7 @@ class TestInterlab4BulkEditorIntegration(utils_for_tests.MidvattenTestSpatialite
                 "midvatten.tools.utils.common_utils.NotFoundQuestion"
             ) as mock_nfq,
             mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             ),
         ):
@@ -220,7 +220,7 @@ class TestInterlab4BulkEditorIntegration(utils_for_tests.MidvattenTestSpatialite
         for obsid, _ in rows:
             assert obsid == "anobsid"
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_cancel_dialog_aborts_import(self, mock_messagebar):
         """When the dialog returns CANCEL, start_import bails out and nothing
         is written to w_qual_lab."""
@@ -244,7 +244,7 @@ class TestInterlab4BulkEditorIntegration(utils_for_tests.MidvattenTestSpatialite
                 return_value=[[filename]],
             ),
             mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             ),
         ):
@@ -258,7 +258,7 @@ class TestInterlab4BulkEditorIntegration(utils_for_tests.MidvattenTestSpatialite
         result = db_utils.sql_load_fr_db("SELECT COUNT(*) FROM w_qual_lab")
         assert result[1][0][0] == 0, "No rows should be imported after CANCEL"
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_new_cache_rows_written_after_apply(self, mock_messagebar):
         """fan_out_filled_rows new (non-cached) rows written by the dialog are
         stored in zz_interlab4_obsid_assignment after APPLY."""
@@ -300,7 +300,7 @@ class TestInterlab4BulkEditorIntegration(utils_for_tests.MidvattenTestSpatialite
                 mocks_for_tests.mock_askuser.get_v,
             ),
             mock.patch(
-                "midvatten.tools.import_data_to_db.common_utils.pop_up_info",
+                "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             ),
         ):

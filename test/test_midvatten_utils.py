@@ -379,7 +379,7 @@ class TestGetCurrentLocale:
 
 @pytest.mark.active
 class TestGetDelimiter:
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_get_delimiter_only_one_column(self, mock_messagebar):
         file = ["obsid", "rb1"]
 
@@ -397,7 +397,7 @@ class TestGetDelimiter:
 
             _test(filename)
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_get_delimiter_delimiter_not_found(self, mock_messagebar):
         file = ["obsid;acol,acol2", "rb1;1,2"]
 
@@ -415,7 +415,7 @@ class TestGetDelimiter:
 
             _test(filename)
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_get_delimiter_semicolon(self, mock_messagebar):
         file = ["obsid;acol;acol2", "rb1;1;2"]
 
@@ -433,7 +433,7 @@ class TestGetDelimiter:
 
             _test(filename)
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_get_delimiter_comma(self, mock_messagebar):
         file = ["obsid,acol,acol2", "rb1,1,2"]
 
@@ -451,7 +451,7 @@ class TestGetDelimiter:
 
             _test(filename)
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_get_delimiter_quoted_comma_in_semicolon_data(self, mock_messagebar):
         file = ['"hello, world";42;foo', '"test, data";99;bar']
 
@@ -468,7 +468,7 @@ class TestGetDelimiter:
 
             _test(filename)
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_get_delimiter_quoted_semicolon_in_comma_data(self, mock_messagebar):
         file = ['"hello; world",42,foo', '"test; data",99,bar']
 
@@ -619,7 +619,7 @@ class TestContinuousColorCycle:
             (("color", "r"), ("linestyle", "--"), ("marker", "o")),
         )
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.utils.common_utils.np.random.rand")
     def test_continous_color_cycle_ran_out(self, mock_np_random_rand, mock_messagebar):
         """Test that i can also cycle line and markers. I mean the product line_cycler * marker_cycler"""

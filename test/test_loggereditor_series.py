@@ -127,7 +127,7 @@ class TestLoggerEditorSeries(utils_for_tests.MidvattenTestSpatialiteDbSv):
         super().teardown_method()
         gc.collect()
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_create_series(self, mock_messagebar):
         """Create a new series from selected rows with NULL series_id."""
         _insert_obs_point("rb1")
@@ -189,7 +189,7 @@ class TestLoggerEditorSeries(utils_for_tests.MidvattenTestSpatialiteDbSv):
         # Verify the editor's _buf was remapped from temp_id to real_id
         assert (editor._buf["series_id"] == real_id).all()
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_assign_series(self, mock_messagebar):
         """Assign NULL rows to an existing series."""
         _insert_obs_point("rb1")
@@ -240,7 +240,7 @@ class TestLoggerEditorSeries(utils_for_tests.MidvattenTestSpatialiteDbSv):
         for row in logger_rows:
             assert row[1] == sid
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_edit_series_metadata(self, mock_messagebar):
         """Change series metadata (source) and verify DB update."""
         _insert_obs_point("rb1")
@@ -295,7 +295,7 @@ class TestLoggerEditorSeries(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert series_rows[0][0] == "new_source"
         assert series_rows[0][1] == "new_instrument"
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_undo_restore_series_id(self, mock_messagebar):
         """Undo restores series_id to the previous history state."""
         _insert_obs_point("rb1")
@@ -355,7 +355,7 @@ class TestLoggerEditorSeries(utils_for_tests.MidvattenTestSpatialiteDbSv):
         restored_series_ids = editor._buf["series_id"].tolist()
         assert restored_series_ids == original_series_ids
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_orphan_cleanup(self, mock_messagebar):
         """Reassigning all rows from series 2 to series 1 deletes orphaned series 2."""
         _insert_obs_point("rb1")
@@ -422,7 +422,7 @@ class TestLoggerEditorSeries(utils_for_tests.MidvattenTestSpatialiteDbSv):
         for row in logger_rows:
             assert row[0] == sid1
 
-    @mock.patch("midvatten.tools.utils.common_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_series_tab_not_shown_for_legacy_schema(self, mock_messagebar):
         """A DB without w_logger_series table should not get the Series tab."""
 

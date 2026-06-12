@@ -300,6 +300,35 @@ class TestIntrospectQuotedTableNamePostgis(utils_for_tests.MidvattenTestPostgisD
 
 
 @pytest.mark.postgis
+class TestGetTablesMatviewQuotedNamePostgis(utils_for_tests.MidvattenTestPostgisDbSv):
+    """get_tables must list a materialized view in a non-public schema even
+    when its name needs quoting. The old query extracted the schema from
+    ``oid::regclass::text`` by string-mangling (REPLACE/TRIM), which silently
+    dropped such views; the fix compares ``pg_namespace.nspname`` directly."""
+
+    schema_name = "other_schema"
+    matview_name = "Mat brunnar 2022-2026"
+
+    def test_quoted_matview_in_nonpublic_schema_is_listed(self):
+        ident_schema = db_utils.quote_ident(self.schema_name)
+        ident_matview = db_utils.quote_ident(self.matview_name)
+        dbconn = db_utils.DbConnectionManager()
+        try:
+            dbconn.execute_and_commit(f"CREATE SCHEMA {ident_schema};")
+            dbconn.execute_and_commit(
+                f"CREATE MATERIALIZED VIEW {ident_schema}.{ident_matview} "
+                "AS SELECT 1 AS x;"
+            )
+
+            dbconn.schema = self.schema_name
+            tables = db_utils.get_tables(dbconnection=dbconn)
+            assert self.matview_name in tables
+        finally:
+            dbconn.execute_and_commit(f"DROP SCHEMA IF EXISTS {ident_schema} CASCADE;")
+            dbconn.closedb()
+
+
+@pytest.mark.postgis
 class TestVerifyTableExistPostgis(
     VerifyTableExistMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):

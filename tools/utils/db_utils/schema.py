@@ -42,13 +42,13 @@ def get_tables(
                 pg_mat_views = ""
             else:
                 tabletype = ""
-                pg_mat_views = "UNION SELECT relname FROM pg_class WHERE relkind = 'm'"
+                pg_mat_views = (
+                    "UNION SELECT c.relname FROM pg_class c "
+                    "JOIN pg_namespace n ON n.oid = c.relnamespace "
+                    "WHERE c.relkind = 'm'"
+                )
                 if dbconnection.schema.lower() != "public":
-                    pg_mat_views += (
-                        " AND TRIM(TRIM(REPLACE(oid::regclass::text, relname, ''), '.'), '\"') = "
-                        + ph
-                        + " "
-                    )
+                    pg_mat_views += " AND n.nspname = " + ph + " "
                     args_list.append(dbconnection.schema)
             tables_sql = (
                 "SELECT table_name FROM ("

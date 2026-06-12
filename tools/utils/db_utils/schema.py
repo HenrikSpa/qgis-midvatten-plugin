@@ -106,7 +106,7 @@ def get_table_info(
                 "SELECT a.attname, format_type(a.atttypid, a.atttypmod) AS data_type "
                 "FROM pg_index i "
                 "JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey) "
-                "WHERE i.indrelid = (SELECT (n.nspname || '.' || c.relname)::regclass FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = "
+                "WHERE i.indrelid = (SELECT c.oid FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = "
                 + ph
                 + " AND c.relname = "
                 + ph
@@ -158,22 +158,22 @@ def get_foreign_keys(
             ph = dbconnection.placeholder()
             sql = (
                 "SELECT "
-                "  conrelid::regclass AS table_from, "
-                "  conname, "
                 "  pg_get_constraintdef(c.oid) AS cdef "
                 "FROM pg_constraint c "
                 "JOIN pg_namespace n "
                 "  ON n.oid = c.connamespace "
+                "JOIN pg_class cl "
+                "  ON cl.oid = c.conrelid "
                 "WHERE contype IN ('f') "
                 "AND n.nspname = " + ph + " "
-                "AND conrelid::regclass::text = " + ph + " "
-                "ORDER BY conrelid::regclass::text, contype DESC;"
+                "AND cl.relname = " + ph + " "
+                "ORDER BY conname, contype DESC;"
             )
             result_list = dbconnection.execute_and_fetchall(
                 sql, args=(dbconnection.schema, table)
             )
             for row in result_list:
-                info = row[2]
+                info = row[0]
                 m = re.search(
                     r"FOREIGN KEY \(([a-zA-ZåäöÅÄÖ0-9\-\_]+)\) REFERENCES ([a-zA-ZåäöÅÄÖ0-9\-\_\.]+)\(([a-zA-ZåäöÅÄÖ0-9\-\_]+)\)",
                     info,

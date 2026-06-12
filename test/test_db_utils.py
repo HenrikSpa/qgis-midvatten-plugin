@@ -265,6 +265,41 @@ class TestGetForeignKeysSpatialite(
 
 
 @pytest.mark.postgis
+class TestIntrospectQuotedTableNamePostgis(utils_for_tests.MidvattenTestPostgisDbSv):
+    """A user's own table whose name needs quoting (spaces, dashes, mixed case)
+    must not crash PostgreSQL introspection. Previously the primary-key query
+    string-concatenated schema.table into a ``::regclass`` cast, raising
+    "invalid name syntax" on such names."""
+
+    table_name = "Vattenanalyser brunnar 2022-2026"
+
+    def test_quoted_name_table_info_and_foreign_keys(self):
+        quoted = db_utils.quote_ident(self.table_name)
+        dbconn = db_utils.DbConnectionManager()
+        try:
+            dbconn.execute_and_commit(
+                f"CREATE TABLE {quoted} "
+                "(id integer PRIMARY KEY, "
+                "obsid text REFERENCES obs_points(obsid));"
+            )
+
+            # get_table_info must return columns (no crash) and flag the PK.
+            columns = db_utils.get_table_info(self.table_name, dbconnection=dbconn)
+            assert columns is not None
+            pk_cols = [col[1] for col in columns if int(col[5]) == 1]
+            assert pk_cols == ["id"]
+
+            # get_foreign_keys must find the FK despite the quoted name.
+            foreign_keys = db_utils.get_foreign_keys(
+                self.table_name, dbconnection=dbconn
+            )
+            assert foreign_keys == {"obs_points": [("obsid", "obsid")]}
+        finally:
+            dbconn.execute_and_commit(f"DROP TABLE IF EXISTS {quoted} CASCADE;")
+            dbconn.closedb()
+
+
+@pytest.mark.postgis
 class TestVerifyTableExistPostgis(
     VerifyTableExistMixin, utils_for_tests.MidvattenTestPostgisDbSv
 ):

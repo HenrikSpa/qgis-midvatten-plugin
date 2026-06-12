@@ -25,7 +25,6 @@ import pandas as pd
 import qgis.PyQt
 from matplotlib import container, patches
 
-from midvatten.tools.utils import message_utils
 from midvatten.tools.utils.mpl_compat import FigureCanvas, NavigationToolbar
 from qgis.PyQt import QtWidgets
 from qgis.PyQt import uic
@@ -51,7 +50,13 @@ import datetime  # noqa: E402
 import matplotlib.dates as mdates  # noqa: E402
 from copy import deepcopy  # noqa: E402
 
-from midvatten.tools.utils import common_utils, db_utils, exceptions, layer_utils  # noqa: E402
+from midvatten.tools.utils import (  # noqa: E402
+    common_utils,
+    db_utils,
+    exceptions,
+    layer_utils,
+    message_utils,
+)
 from midvatten.tools.utils.string_utils import returnunicode as ru  # noqa: E402
 from midvatten.tools.utils.midvatten_utils import PlotTemplates  # noqa: E402
 from midvatten.tools.utils.gui_utils import DetachFigureButton, ReverseSectionButton  # noqa: E402

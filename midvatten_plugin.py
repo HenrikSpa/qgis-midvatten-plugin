@@ -67,9 +67,10 @@ from midvatten.tools.utils import (
     db_utils,
     dialog_utils,
     layer_utils,
+    matplotlib_replacements,
+    message_utils,
     midvatten_utils,
 )
-from midvatten.tools.utils import matplotlib_replacements, message_utils
 from midvatten.tools.utils.util_translate import get_translate
 from midvatten.tools.w_flow_calc_aveflow import CalculateAveflow
 from midvatten.tools.wqualreport import Wqualreport

@@ -93,7 +93,6 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
         self.activateWindow()
 
     def load_gui(self):
-        self._gui_loaded = True
         self.tables_columns_info = {
             k: v
             for (k, v) in db_utils.db_tables_columns_info(
@@ -169,6 +168,8 @@ class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
 
         self.grid_layout_buttons.setRowStretch(9, 1)
         self.setGeometry(100, 100, 1800, 800)
+        # Last: a failed (partial) build must stay retryable on the next show()
+        self._gui_loaded = True
 
     @common_utils.general_exception_handler
     def select_file(self):

@@ -515,9 +515,9 @@ class TestSaveToDbFailureStages(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert "could not connect" in bar_msg
 
     @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
-    def test_write_stage_failure_reports_rollback_and_returns_false(
-        self, mock_messagebar
-    ):
+    def test_statement_prep_failure_reports_compute_stage(self, mock_messagebar):
+        """Statement building precedes the transaction: its failure must not
+        claim a rollback."""
         editor = self._editor()
 
         with mock.patch.object(
@@ -530,9 +530,25 @@ class TestSaveToDbFailureStages(utils_for_tests.MidvattenTestSpatialiteDbSv):
         print(f"{mock_messagebar.mock_calls=}")
         assert result is False
         bar_msg = mock_messagebar.critical.call_args.kwargs["bar_msg"]
-        assert "rolled back" in bar_msg
+        assert "computing changes" in bar_msg
         # Nothing was written: the row still holds its original value
         rows = db_utils.sql_load_fr_db(
             "SELECT level_masl FROM w_levels_logger WHERE obsid = 'rb1'"
         )
         assert rows[1][0][0] == 10.0
+
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_write_stage_failure_reports_rollback_and_returns_false(
+        self, mock_messagebar
+    ):
+        editor = self._editor()
+        # Make the UPDATE inside the transaction genuinely fail
+        db_utils.sql_alter_db("ALTER TABLE w_levels_logger RENAME TO w_levels_x")
+
+        result = editor.save_to_db()
+
+        db_utils.sql_alter_db("ALTER TABLE w_levels_x RENAME TO w_levels_logger")
+        print(f"{mock_messagebar.mock_calls=}")
+        assert result is False
+        bar_msg = mock_messagebar.critical.call_args.kwargs["bar_msg"]
+        assert "rolled back" in bar_msg

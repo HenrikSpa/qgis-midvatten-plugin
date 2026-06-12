@@ -264,7 +264,6 @@ class TestShowIsIdempotent(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert gui.grid_layout_buttons.count() == button_rows
         assert gui.select_file_button is select_button
         # One connection: one slot invocation per click
-        calls = []
-        with mock.patch.object(gui, "select_file", side_effect=lambda: calls.append(1)):
+        with mock.patch.object(gui, "select_file") as select_file:
             gui.select_file_button.clicked.emit(False)
-        assert len(calls) == 1
+        assert select_file.call_count == 1

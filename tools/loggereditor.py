@@ -1235,6 +1235,14 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         if self.save_to_db():
             self.update_plot()
 
+    @staticmethod
+    def _report_save_failure(bar_msg: str) -> bool:
+        """Log the active exception and report a failed save; returns False."""
+        message_utils.MessagebarAndLog.critical(
+            bar_msg=bar_msg, log_msg=traceback.format_exc()
+        )
+        return False
+
     def save_to_db(self) -> bool:
         """Compute diff between _buf and _original_buf and write minimal DB changes."""
         if self._buf is None or self._original_buf is None or self._buf_obsid is None:
@@ -1310,184 +1318,199 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 orig_changed = orig_vals.loc[changed_index]
                 new_changed = new_vals.loc[changed_index]
                 head_changed = buf.loc[changed_index, "head_cm_m"]
-            except Exception as e:
-                message_utils.MessagebarAndLog.critical(
-                    bar_msg=QCoreApplication.translate(
+            except Exception:
+                return self._report_save_failure(
+                    QCoreApplication.translate(
                         "LoggerEditor",
                         "Save failed while computing changes;"
                         " nothing was written to the database.",
-                    ),
-                    log_msg=f"{e}\n{traceback.format_exc()}",
+                    )
                 )
-                return False
 
             try:
                 dbconnection = db_utils.DbConnectionManager()
-            except Exception as e:
-                message_utils.MessagebarAndLog.critical(
-                    bar_msg=QCoreApplication.translate(
+            except Exception:
+                return self._report_save_failure(
+                    QCoreApplication.translate(
                         "LoggerEditor", "Save failed: could not connect to database."
-                    ),
-                    log_msg=f"{e}\n{traceback.format_exc()}",
+                    )
                 )
-                return False
 
             try:
-                ph = dbconnection.placeholder()
-                tbl = ident("w_levels_logger")
-                # SQLite stores date_time as text; normalize both sides so that
-                # '2017-02-01 00:00' and '2017-02-01 00:00:00' compare equal.
-                is_sqlite = dbconnection.is_sqlite()
-                if is_sqlite:
-                    dt_eq = f"datetime({ident('date_time')}) = datetime({ph})"
-                else:
-                    dt_eq = f"{ident('date_time')}::timestamp = {ph}::timestamp"
-                range_stmts, per_row_params = self._compute_update_statements(
-                    buf,
-                    changed_index,
-                    orig_changed,
-                    new_changed,
-                    head_changed,
-                    obsid,
-                    tbl,
-                    ph,
-                    is_sqlite,
-                    force_per_row=has_dups,
-                )
-                with dbconnection.transaction():
-                    if delete_params:
-                        delete_sql = (
-                            f"DELETE FROM {tbl} WHERE {ident('obsid')} = {ph}"
-                            f" AND {ident('date_time')} = {ph}"
+                try:
+                    ph = dbconnection.placeholder()
+                    tbl = ident("w_levels_logger")
+                    # SQLite stores date_time as text; normalize both sides so
+                    # that '2017-02-01 00:00' and '2017-02-01 00:00:00' compare
+                    # equal.
+                    is_sqlite = dbconnection.is_sqlite()
+                    if is_sqlite:
+                        dt_eq = f"datetime({ident('date_time')}) = datetime({ph})"
+                    else:
+                        dt_eq = f"{ident('date_time')}::timestamp = {ph}::timestamp"
+                    range_stmts, per_row_params = self._compute_update_statements(
+                        buf,
+                        changed_index,
+                        orig_changed,
+                        new_changed,
+                        head_changed,
+                        obsid,
+                        tbl,
+                        ph,
+                        is_sqlite,
+                        force_per_row=has_dups,
+                    )
+                except Exception:
+                    return self._report_save_failure(
+                        QCoreApplication.translate(
+                            "LoggerEditor",
+                            "Save failed while computing changes;"
+                            " nothing was written to the database.",
                         )
-                        dbconnection.executemany(delete_sql, delete_params)
-                    for sql, params in range_stmts:
-                        dbconnection.execute(sql, params)
-                    if per_row_params:
-                        update_sql = (
-                            f"UPDATE {tbl} SET {ident('level_masl')} = {ph}"
-                            f" WHERE {ident('obsid')} = {ph}"
-                            f" AND {dt_eq}"
-                        )
-                        dbconnection.executemany(update_sql, per_row_params)
-
-                    # --- Series CRUD (only for series_join schema) ---
-                    if self._schema_variant == "series_join":
-                        series_tbl = ident("w_logger_series")
-                        logger_tbl = ident("w_levels_logger")
-
-                        # 1. INSERT new series (negative temporary IDs)
-                        new_series = {
-                            k: v
-                            for k, v in self._series_buf.items()
-                            if k < 0 and (buf["series_id"] == k).any()
-                        }
-                        for temp_id, meta in new_series.items():
-                            rows = dbconnection.execute_and_fetchall(
-                                f"INSERT INTO {series_tbl}"
-                                f" ({ident('obsid')}, {ident('source')},"
-                                f" {ident('instrument')},"
-                                f" {ident('description')},"
-                                f" {ident('comment')})"
-                                f" VALUES ({ph}, {ph}, {ph}, {ph}, {ph})"
-                                f" RETURNING {ident('id')}",
-                                (
-                                    meta["obsid"],
-                                    meta["source"],
-                                    meta.get("instrument"),
-                                    meta.get("description"),
-                                    meta.get("comment"),
-                                ),
+                    )
+                try:
+                    with dbconnection.transaction():
+                        if delete_params:
+                            delete_sql = (
+                                f"DELETE FROM {tbl} WHERE {ident('obsid')} = {ph}"
+                                f" AND {ident('date_time')} = {ph}"
                             )
-                            id_mapping[temp_id] = rows[0][0]
-
-                        # 2. UPDATE existing series with changed metadata
-                        for sid, meta in self._series_buf.items():
-                            if sid < 0:
-                                continue
-                            orig = self._original_series_buf.get(sid)
-                            if orig is None or meta == orig:
-                                continue
-                            dbconnection.execute(
-                                f"UPDATE {series_tbl}"
-                                f" SET {ident('source')} = {ph},"
-                                f" {ident('instrument')} = {ph},"
-                                f" {ident('description')} = {ph},"
-                                f" {ident('comment')} = {ph}"
-                                f" WHERE {ident('id')} = {ph}",
-                                (
-                                    meta["source"],
-                                    meta.get("instrument"),
-                                    meta.get("description"),
-                                    meta.get("comment"),
-                                    sid,
-                                ),
+                            dbconnection.executemany(delete_sql, delete_params)
+                        for sql, params in range_stmts:
+                            dbconnection.execute(sql, params)
+                        if per_row_params:
+                            update_sql = (
+                                f"UPDATE {tbl} SET {ident('level_masl')} = {ph}"
+                                f" WHERE {ident('obsid')} = {ph}"
+                                f" AND {dt_eq}"
                             )
+                            dbconnection.executemany(update_sql, per_row_params)
 
-                        # 3. UPDATE series_id on rows where it changed
-                        common = original_buf.index.intersection(buf.index)
-                        if len(common) > 0:
-                            orig_sid = original_buf.loc[common, "series_id"]
-                            new_sid = buf.loc[common, "series_id"]
-                            sid_changed = (
-                                ~(
-                                    (orig_sid == new_sid)
-                                    | (orig_sid.isna() & new_sid.isna())
-                                )
-                            ).fillna(True)
-                            changed_idx = common[sid_changed]
-                            if len(changed_idx) > 0:
-                                sid_update_params = []
-                                for dt_idx in changed_idx:
-                                    raw_sid = buf.loc[dt_idx, "series_id"]
-                                    if pd.notna(raw_sid):
-                                        int_sid = int(raw_sid)
-                                        resolved = id_mapping.get(int_sid, int_sid)
-                                    else:
-                                        resolved = None
-                                    dt_str = dt_idx.strftime(_DT_FMT)
-                                    sid_update_params.append((resolved, obsid, dt_str))
-                                sid_update_sql = (
-                                    f"UPDATE {logger_tbl}"
-                                    f" SET {ident('series_id')} = {ph}"
-                                    f" WHERE {ident('obsid')} = {ph}"
-                                    f" AND {dt_eq}"
-                                )
-                                dbconnection.executemany(
-                                    sid_update_sql, sid_update_params
-                                )
+                        # --- Series CRUD (only for series_join schema) ---
+                        if self._schema_variant == "series_join":
+                            series_tbl = ident("w_logger_series")
+                            logger_tbl = ident("w_levels_logger")
 
-                        # 4. DELETE orphaned series
-                        for sid in list(self._original_series_buf.keys()):
-                            if sid not in self._series_buf:
+                            # 1. INSERT new series (negative temporary IDs)
+                            new_series = {
+                                k: v
+                                for k, v in self._series_buf.items()
+                                if k < 0 and (buf["series_id"] == k).any()
+                            }
+                            for temp_id, meta in new_series.items():
+                                rows = dbconnection.execute_and_fetchall(
+                                    f"INSERT INTO {series_tbl}"
+                                    f" ({ident('obsid')}, {ident('source')},"
+                                    f" {ident('instrument')},"
+                                    f" {ident('description')},"
+                                    f" {ident('comment')})"
+                                    f" VALUES ({ph}, {ph}, {ph}, {ph}, {ph})"
+                                    f" RETURNING {ident('id')}",
+                                    (
+                                        meta["obsid"],
+                                        meta["source"],
+                                        meta.get("instrument"),
+                                        meta.get("description"),
+                                        meta.get("comment"),
+                                    ),
+                                )
+                                id_mapping[temp_id] = rows[0][0]
+
+                            # 2. UPDATE existing series with changed metadata
+                            for sid, meta in self._series_buf.items():
+                                if sid < 0:
+                                    continue
+                                orig = self._original_series_buf.get(sid)
+                                if orig is None or meta == orig:
+                                    continue
                                 dbconnection.execute(
-                                    f"DELETE FROM {series_tbl}"
+                                    f"UPDATE {series_tbl}"
+                                    f" SET {ident('source')} = {ph},"
+                                    f" {ident('instrument')} = {ph},"
+                                    f" {ident('description')} = {ph},"
+                                    f" {ident('comment')} = {ph}"
                                     f" WHERE {ident('id')} = {ph}",
-                                    (sid,),
+                                    (
+                                        meta["source"],
+                                        meta.get("instrument"),
+                                        meta.get("description"),
+                                        meta.get("comment"),
+                                        sid,
+                                    ),
                                 )
-                            elif sid >= 0:
-                                remaining = dbconnection.execute_and_fetchall(
-                                    f"SELECT COUNT(*) FROM {logger_tbl}"
-                                    f" WHERE {ident('series_id')} = {ph}",
-                                    (sid,),
-                                )
-                                if remaining[0][0] == 0:
+
+                            # 3. UPDATE series_id on rows where it changed
+                            common = original_buf.index.intersection(buf.index)
+                            if len(common) > 0:
+                                orig_sid = original_buf.loc[common, "series_id"]
+                                new_sid = buf.loc[common, "series_id"]
+                                sid_changed = (
+                                    ~(
+                                        (orig_sid == new_sid)
+                                        | (orig_sid.isna() & new_sid.isna())
+                                    )
+                                ).fillna(True)
+                                changed_idx = common[sid_changed]
+                                if len(changed_idx) > 0:
+                                    sid_update_params = []
+                                    for dt_idx in changed_idx:
+                                        raw_sid = buf.loc[dt_idx, "series_id"]
+                                        if pd.notna(raw_sid):
+                                            int_sid = int(raw_sid)
+                                            resolved = id_mapping.get(int_sid, int_sid)
+                                        else:
+                                            resolved = None
+                                        dt_str = dt_idx.strftime(_DT_FMT)
+                                        sid_update_params.append(
+                                            (resolved, obsid, dt_str)
+                                        )
+                                    sid_update_sql = (
+                                        f"UPDATE {logger_tbl}"
+                                        f" SET {ident('series_id')} = {ph}"
+                                        f" WHERE {ident('obsid')} = {ph}"
+                                        f" AND {dt_eq}"
+                                    )
+                                    dbconnection.executemany(
+                                        sid_update_sql, sid_update_params
+                                    )
+
+                            # 4. DELETE orphaned series
+                            for sid in list(self._original_series_buf.keys()):
+                                if sid not in self._series_buf:
                                     dbconnection.execute(
                                         f"DELETE FROM {series_tbl}"
                                         f" WHERE {ident('id')} = {ph}",
                                         (sid,),
                                     )
+                                elif sid >= 0:
+                                    remaining = dbconnection.execute_and_fetchall(
+                                        f"SELECT COUNT(*) FROM {logger_tbl}"
+                                        f" WHERE {ident('series_id')} = {ph}",
+                                        (sid,),
+                                    )
+                                    if remaining[0][0] == 0:
+                                        dbconnection.execute(
+                                            f"DELETE FROM {series_tbl}"
+                                            f" WHERE {ident('id')} = {ph}",
+                                            (sid,),
+                                        )
+                except Exception:
+                    return self._report_save_failure(
+                        QCoreApplication.translate(
+                            "LoggerEditor",
+                            "Save failed while writing;"
+                            " the transaction was rolled back.",
+                        )
+                    )
             finally:
                 dbconnection.closedb()
-        except Exception as e:
-            message_utils.MessagebarAndLog.critical(
-                bar_msg=QCoreApplication.translate(
-                    "LoggerEditor",
-                    "Save failed while writing; the transaction was rolled back.",
-                ),
-                log_msg=f"{e}\n{traceback.format_exc()}",
+        except Exception:
+            # Safety net for failures outside the staged handlers (e.g.
+            # closedb() raising — possibly after a successful commit, so no
+            # rollback claim is made here).
+            return self._report_save_failure(
+                QCoreApplication.translate("LoggerEditor", "Save failed.")
             )
-            return False
         finally:
             common_utils.stop_waiting_cursor()
 

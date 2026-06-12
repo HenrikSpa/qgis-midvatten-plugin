@@ -728,21 +728,6 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
             f.write("""<p style="page-break-before: always"></p>""")
 
 
-def isnan(x):
-    if x is None:
-        return True
-    try:
-        answer = np.isnan(x)
-    except TypeError:
-        return False
-    else:
-        return answer
-
-
-def sql_list(alist):
-    return ", ".join([f"'{x}'" for x in alist])
-
-
 def floatable(anything):
     if isinstance(anything, (pd.DataFrame, pd.Series)):
         try:

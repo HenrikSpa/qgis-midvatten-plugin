@@ -140,6 +140,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self._buf_version: int = 0
         self._ts_version: int = -1
         self._last_saved_history_pos: int | None = None
+        self._legend_picker = None
+        self._plot_x: np.ndarray | None = None
+        self._ts_dates_filled: bool = False
 
         text = QCoreApplication.translate(
             "Calibrlogger",
@@ -373,7 +376,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
             self._created_at_grouping: str | None = None
             self._selected_line_keys: set = set()
-            self._legend_picker = None
 
             self.separate_created_at_cb.stateChanged.connect(
                 lambda _: self._on_created_at_toggled()
@@ -570,13 +572,26 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
             self.combobox_obsid.setItemText(idx, new_text)
 
+    @staticmethod
+    def _line_key_codes(line_keys: np.ndarray) -> tuple[np.ndarray, dict]:
+        """Factorize line keys: (integer code per row, {key: code}).
+
+        Integer-code comparisons replace per-row Python tuple comparisons when
+        masking rows per key."""
+        codes, uniques = pd.factorize(line_keys)
+        return codes, {key: code for code, key in enumerate(uniques)}
+
     def _build_ts_recarray(
         self,
         buf: pd.DataFrame,
         col: str,
         values_override: np.ndarray | None = None,
     ) -> np.recarray:
-        """Build a (date_time, values, source, line_key) recarray from a DataFrame column."""
+        """Build a (date_time, values, source, line_key) recarray from a DataFrame column.
+
+        date_time starts empty: only the best-fit matching reads it, and
+        _fill_ts_date_strings fills it on demand, so plotting skips the
+        strftime cost."""
         n = len(buf)
         sources = buf["source"].to_numpy()
         max_src_len = int(buf["source"].str.len().max() or 0)
@@ -593,7 +608,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 ("line_key", object),
             ],
         )
-        arr["date_time"] = buf.index.strftime(_DT_FMT).to_numpy()
+        arr["date_time"] = ""
         arr["values"] = (
             values_override
             if values_override is not None
@@ -602,6 +617,17 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         arr["source"] = sources
         arr["line_key"] = line_keys
         return arr.view(np.recarray)
+
+    def _fill_ts_date_strings(self) -> None:
+        """Fill the cached recarrays' date_time strings on demand (they are
+        only read by the best-fit matching)."""
+        if self._ts_dates_filled or self._buf is None:
+            return
+        dt_strings = self._buf.index.strftime(_DT_FMT).to_numpy()
+        for arr in (self.head_ts, self.level_masl_ts, self.head_ts_for_plot):
+            if arr is not None and len(arr) == len(dt_strings):
+                arr["date_time"] = dt_strings
+        self._ts_dates_filled = True
 
     def _build_head_ts_for_plot(self, buf: pd.DataFrame) -> None:
         """Set self.head_ts_for_plot; handles normalize_head using DataFrame ops."""
@@ -727,22 +753,11 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         if self._buf is None or self._buf.empty:
             return []
         distinct = self._buf.index.unique().sort_values()
-        dup_set = set(self._duplicate_instants())
-        runs = []
-        run_start = None
-        prev = None
-        for ts in distinct:
-            if ts in dup_set:
-                if run_start is None:
-                    run_start = ts
-                prev = ts
-            else:
-                if run_start is not None:
-                    runs.append((run_start, prev))
-                    run_start = None
-        if run_start is not None:
-            runs.append((run_start, prev))
-        return runs
+        dup_pos = np.flatnonzero(distinct.isin(self._duplicate_instants()))
+        if dup_pos.size == 0:
+            return []
+        runs = np.split(dup_pos, np.flatnonzero(np.diff(dup_pos) > 1) + 1)
+        return [(distinct[r[0]], distinct[r[-1]]) for r in runs]
 
     def _classify_duplicates(self, fr=None, to=None) -> list[dict]:
         """Classify each duplicated instant in _buf.
@@ -1026,8 +1041,14 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         if obsid == self._buf_obsid and self._buf is not None:
             self._ensure_meas_ts(obsid)
             self._recompute_line_keys()  # updates _line_key + bumps _buf_version
-            if self._ts_version == self._buf_version:
+            if (
+                self._ts_version == self._buf_version
+                and self.level_masl_ts is not None
+                and len(self.level_masl_ts) == len(self._buf)
+            ):
                 # Buffer unchanged since last plot — reuse cached recarrays.
+                # The length check catches direct _buf mutations that skipped
+                # the _buf_version bump, which would leave stale recarrays.
                 self.obsid = obsid
                 self.setlastcalibration(obsid)
                 common_utils.stop_waiting_cursor()
@@ -1163,6 +1184,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self.head_ts = self._build_ts_recarray(buf, "head_cm_m")
         self.level_masl_ts = self._build_ts_recarray(buf, "level_masl")
         self._build_head_ts_for_plot(buf)
+        # Snapshotted with the recarrays so plot x and y always agree, even if
+        # _buf is replaced behind the cache's back.
+        self._plot_x = buf.index.to_numpy()
+        self._ts_dates_filled = False
 
         self.obsid = obsid
 
@@ -2382,8 +2407,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 zorder=5,
             )
             self._dupe_marker_artists.append(line)
-        # The markers are added after _finish_plot's canvas.draw(); repaint so
-        # they appear immediately rather than at the next incidental paint event.
+        # Coalesces with _finish_plot's pending draw_idle into one render.
         self.canvas.draw_idle()
 
     def _open_resolve_dupes_dialog(self) -> None:
@@ -2420,18 +2444,12 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
         self.logger_artist.set_ydata(new_values)
 
-        line_keys = self.level_masl_ts.line_key
-        n = len(new_values)
-        key_to_indices: dict = {}
-        for i, k in enumerate(line_keys):
-            key_to_indices.setdefault(k, []).append(i)
+        codes, key_codes = self._line_key_codes(self.level_masl_ts.line_key)
         for key, artist in self._line_key_to_artist.items():
-            masked = np.full(n, np.nan)
-            indices = key_to_indices.get(key)
-            if indices is not None:
-                idx = np.asarray(indices)
-                masked[idx] = new_values[idx]
-            artist.set_ydata(masked)
+            # Keys absent from the buffer get code -1, which matches no row.
+            artist.set_ydata(
+                np.where(codes == key_codes.get(key, -1), new_values, np.nan)
+            )
 
         self.plot_or_update_selected_line()
         self.setlastcalibration(self.obsid)
@@ -2483,9 +2501,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         logger_head_colors = [str(x / 10) for x in reversed(list(range(1, 10)))]
 
         self.logger_plot_artists = []
-        logger_time_list = self.timestring_list_to_time_list(
-            self.a_recarray_to_timestring_list(self.level_masl_ts)
-        )
+        # datetime64 goes through matplotlib's vectorized date converter; the
+        # old string round-trip re-parsed every row with dateutil.
+        logger_time_list = self._plot_x
         if self.level_masl_ts.size and self.contains_more_than_nan(self.level_masl_ts):
             self.logger_artist = self.plot_recarray(
                 self.axes,
@@ -2496,10 +2514,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 ),
                 time_list=logger_time_list,
                 style=dict(
+                    # No line, no marker: the artist renders nothing (it exists
+                    # only for picking, which tests point proximity directly).
                     linestyle="none",
                     picker=5,
-                    marker=".",
-                    markersize=0.01,
                     alpha=0,
                     zorder=10,
                 ),
@@ -2524,29 +2542,28 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 progress.setWindowModality(Qt.WindowModal)
             else:
                 progress = None
+            # Vectorized per-key masks: integer codes compare in C instead of
+            # one Python tuple comparison per row per key.
+            codes, key_codes = self._line_key_codes(self.level_masl_ts.line_key)
+            base_vals = self.level_masl_ts.values.astype(float, copy=False)
             for idx, key in enumerate(unique_keys):
                 label = self._label_for_line_key(obsid, key)
-                ts = self.level_masl_ts.copy()
-                mask = np.array([k != key for k in ts.line_key])
-                ts.values[mask] = np.nan
+                vals = np.where(codes == key_codes[key], base_vals, np.nan)
                 try:
                     color = logger_level_masl_colors[idx]
                 except IndexError:
                     color = np.random.rand(3, 1).ravel()
-                a = self.plot_recarray(
-                    self.axes,
-                    ts,
-                    label,
-                    time_list=logger_time_list,
-                    style=dict(
-                        linestyle="-",
-                        picker=0,
-                        markersize=3,
-                        marker=marker,
-                        zorder=10,
-                        color=color,
-                    ),
-                )[0]
+                (a,) = self.axes.plot(
+                    logger_time_list,
+                    vals,
+                    label=label,
+                    linestyle="-",
+                    picker=0,
+                    markersize=3,
+                    marker=marker,
+                    zorder=10,
+                    color=color,
+                )
                 a._line_key = key
                 self.logger_plot_artists.append(a)
                 self._line_key_to_artist[key] = a
@@ -2590,6 +2607,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 dict.fromkeys(self.head_ts_for_plot.line_key),
                 key=lambda k: (bool(k[0] and str(k[0]).strip()), k),
             )
+            head_codes, head_key_codes = self._line_key_codes(
+                self.head_ts_for_plot.line_key
+            )
+            head_base_vals = self.head_ts_for_plot.values.astype(float, copy=False)
             for idx, key in enumerate(head_unique_keys):
                 try:
                     color = logger_head_colors[idx]
@@ -2597,17 +2618,18 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                     color = np.random.rand(3, 1).ravel()
 
                 label = self._label_for_head_key(obsid, key)
-                ts = self.head_ts_for_plot.copy()
-                mask = np.array([k != key for k in ts.line_key])
-                ts.values[mask] = np.nan
-
-                a = self.plot_recarray(
-                    self.axes,
-                    ts,
-                    label,
-                    style=dict(linestyle="--", zorder=5, color=color, marker=""),
-                    time_list=logger_time_list,
-                )[0]
+                vals = np.where(
+                    head_codes == head_key_codes[key], head_base_vals, np.nan
+                )
+                (a,) = self.axes.plot(
+                    logger_time_list,
+                    vals,
+                    label=label,
+                    linestyle="--",
+                    zorder=5,
+                    color=color,
+                    marker="",
+                )
                 handles.append(a)
                 labels.append(label)
 
@@ -2654,7 +2676,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         else:
             self._legend_picker = None
 
-        self.canvas.draw()
+        # draw_idle: later update_plot steps queue more draw_idle calls, so all
+        # of them coalesce into a single render of the (large) scene.
+        self.canvas.draw_idle()
         self.statusbar.clearMessage()
 
     def _setup_ref_dock(self) -> None:
@@ -2807,7 +2831,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self._ref_gs.set_height_ratios([1, 0.001])
             self.ref_axes.set_visible(False)
             self._restore_main_xticklabels()
-            self.canvas.draw()
+            self.canvas.draw_idle()
             return
         self._ref_gs.set_height_ratios([3, 1])
         self.ref_axes.set_visible(True)
@@ -2826,7 +2850,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             label.set_ha("right")
         for label in self.ref_axes.yaxis.get_ticklabels():
             label.set_fontsize(8)
-        self.canvas.draw()
+        self.canvas.draw_idle()
 
     def _plot_ref_series(self, conn, s: dict) -> None:
         combos = list(_iter_filter_combos(s.get("filters", [])))
@@ -2952,7 +2976,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         date_holder: a QDateTimeEdit object.
         """
         if from_node:
-            found_date = num2date(event.artist.get_xdata()[event.ind[0]])
+            # orig=False yields the unit-converted float days that num2date
+            # expects, whatever type the artist was plotted with.
+            found_date = num2date(event.artist.get_xdata(orig=False)[event.ind[0]])
         else:
             found_date = num2date(event.xdata)
 
@@ -2999,6 +3025,11 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         for x in self.cid:
             self.canvas.mpl_disconnect(x)
         self.cid = []
+        if self._legend_picker is not None:
+            # Exclusive pick modes (date-from-plot, move nodes) suspend the
+            # series selector; every mode entry/exit funnels through here, so
+            # reattach it (modes that need it off disconnect afterwards).
+            self._legend_picker.connect()
 
     @fn_timer
     def logger_pos_best_fit(self):
@@ -3026,6 +3057,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         obsid = self.load_obsid_and_init()
         common_utils.start_waiting_cursor()
         self.reset_plot_selects_and_calib_help()
+        self._fill_ts_date_strings()
         search_radius = self.get_search_radius()
         if self.loggerpos_masl_or_offset_state == 1:
             logger_ts = self.head_ts
@@ -3261,6 +3293,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         """Used to set the self.to_date_time by clicking on a line node in the plot self.canvas"""
         self.reset_plot_selects_and_calib_help()
         self.deactivate_pan_zoom()
+        if self._legend_picker is not None:
+            # A plot click must only pick a date here — not select a series.
+            # reset_cid (run on mode exit) reconnects the picker.
+            self._legend_picker.disconnect()
         if help_msg:
             self.statusbar.showMessage(help_msg, 0)
         self.canvas.setFocusPolicy(Qt.FocusPolicy.ClickFocus)

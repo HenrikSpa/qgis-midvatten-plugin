@@ -112,6 +112,120 @@ class Drillreport:  # general observation point info for the selected object
         url_status = QDesktopServices.openUrl(QUrl.fromLocalFile(reportpath))
         return url_status
 
+    def _locale_spec(self) -> Dict[str, Any]:
+        """All locale-dependent report content in one place.
+
+        The two locales deliberately keep their historical quirks so output
+        stays byte-identical with the pre-dedup implementation: stratigraphy
+        column widths differ, and the Swedish coordinate rows omit the comma
+        when the CRS has no name.
+        """
+        if midvatten_utils.is_locale_swedish():
+            return {
+                "img": "for_general_report_sv.png",
+                "general": "Allmän information",
+                "strat": "Lagerföljd",
+                "comments": "Kommentarer",
+                "wlevels": "Vattennivåer",
+                "upper_left": {
+                    "name": "originalbenämning",
+                    "type": "obstyp",
+                    "length": "djup (m fr my t botten)",
+                    "h_toc": "röröverkant (möh)",
+                    "h_tocags": "rörövermått (m ö my)",
+                    "h_gs": "markytans nivå, my (möh)",
+                    "h_accur": "onoggrannhet i höjd, avser rök (m)",
+                    "east": "östlig koordinat",
+                    "north": "nordlig koordinat",
+                    "ne_accur": "lägesonoggrannhet",
+                    "material": "material",
+                    "diam": "innerdiameter (mm)",
+                    "drillstop": "borrningens avslut",
+                    "screen": "filter/spets",
+                    "drilldate": "borrningen avslutades",
+                    "capacity": "kapacitet/vg på spetsnivå",
+                    "place": "fastighet/plats",
+                    "source": "referens",
+                    "ne_source": "lägesangivelsens ursprung",
+                    "h_source": "höjdangivelsens ursprung",
+                },
+                "crs_omit_empty_name": True,
+                "strat_widths": (17, 27, 17, 5, 9, 27),
+                "strat_headers": (
+                    "nivå (mumy)",
+                    "jordart, fullst beskrivn",
+                    "huvudfraktion",
+                    "vg",
+                    "stänger?",
+                    "kommentar",
+                ),
+                "unit_meas": " m u rök<br>",
+                "unit_masl": " m ö h<br>",
+                "stat_count": "Antal nivåmätningar: ",
+                "stat_max": "Högsta uppmätta nivå: ",
+                "stat_median": "Medianvärde för nivå: ",
+                "stat_min": "Lägsta uppmätta nivå: ",
+            }
+
+        def tr(text: str) -> str:
+            return QCoreApplication.translate("Drillreport", text)
+
+        return {
+            "img": "for_general_report.png",
+            "general": tr("General information"),
+            "strat": tr("Stratigraphy"),
+            "comments": tr("Comments"),
+            "wlevels": tr("Water levels"),
+            "upper_left": {
+                "name": tr("original name"),
+                "type": tr("obs type"),
+                "length": tr("depth (m fr gs to bottom)"),
+                "h_toc": tr("top of casing, toc (masl)"),
+                "h_tocags": tr("distance toc-gs, tocags (mags)"),
+                "h_gs": tr("ground surface level, gs (masl)"),
+                "h_accur": tr("elevation accuracy (m)"),
+                "east": tr("eastern coordinate"),
+                "north": tr("northern coordinate"),
+                "ne_accur": tr("position accuracy"),
+                "material": tr("material"),
+                "diam": tr("inner diameter (mm)"),
+                "drillstop": tr("drill stop"),
+                "screen": tr("screen type"),
+                "drilldate": tr("drill date"),
+                "capacity": tr("capacity"),
+                "place": tr("place"),
+                "source": tr("reference"),
+                "ne_source": tr("source for position"),
+                "h_source": tr("source for elevation"),
+            },
+            "crs_omit_empty_name": False,
+            "strat_widths": (15, 27, 17, 9, 13, 21),
+            "strat_headers": (
+                tr("level (m b gs)"),
+                tr("geology, full text"),
+                tr("geology, short"),
+                tr("capacity"),
+                tr("development"),
+                tr("comment"),
+            ),
+            "unit_meas": tr(" m below toc") + "<br>",
+            "unit_masl": tr(" m above sea level") + "<br>",
+            "stat_count": tr("Number of water level measurements: "),
+            "stat_max": tr("Highest measured water level: "),
+            "stat_median": tr("Median water level: "),
+            "stat_min": tr("Lowest measured water level: "),
+        }
+
+    @staticmethod
+    def _row(label: str, value: str, width: int = 50) -> str:
+        return (
+            r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
+            + label
+            + f"</TD><TD WIDTH={width}%>"
+            + value
+            + "</TD></TR>"
+        )
+
     def write_obsid(
         self,
         obsid: str,
@@ -120,34 +234,20 @@ class Drillreport:  # general observation point info for the selected object
         logopath: str,
         f: codecs.StreamReaderWriter,
     ) -> None:
+        spec = self._locale_spec()
         rpt += r"""<html><TABLE WIDTH=100% BORDER=0 CELLPADDING=1 CELLSPACING=1><TR VALIGN=TOP><TD WIDTH=15%><h3 style="font-family:'arial';font-size:18pt; font-weight:600">"""
         rpt += obsid
-        if midvatten_utils.is_locale_swedish():
-            rpt += "".join(
-                [
-                    r'''</h3><img src="''',
-                    os.path.join(imgpath, "for_general_report_sv.png"),
-                    r"""" /><br><img src=""",
-                    r"""'""",
-                ]
-            )
-            # rpt += r"""</h3><img src="for_general_report_sv.png" /><br><img src='"""
-        else:
-            rpt += "".join(
-                [
-                    r'''</h3><img src="''',
-                    os.path.join(imgpath, "for_general_report.png"),
-                    r"""" /><br><img src=""",
-                    r"""'""",
-                ]
-            )
-            # rpt += r"""</h3><img src="for_general_report.png" /><br><img src='"""
+        rpt += "".join(
+            [
+                r'''</h3><img src="''',
+                os.path.join(imgpath, spec["img"]),
+                r"""" /><br><img src=""",
+                r"""'""",
+            ]
+        )
         rpt += logopath
         rpt += """' /></TD><TD WIDTH=85%><TABLE WIDTH=100% BORDER=1 CELLPADDING=4 CELLSPACING=3><TR VALIGN=TOP><TD WIDTH=50%><P><U><B>"""
-        if midvatten_utils.is_locale_swedish():
-            rpt += "Allmän information"
-        else:
-            rpt += QCoreApplication.translate("Drillreport", "General information")
+        rpt += spec["general"]
         rpt += r"""</B></U></P><TABLE style="font-family:'arial'; font-size:10pt; font-weight:400; font-style:normal;" WIDTH=100% BORDER=0 CELLPADDING=0 CELLSPACING=1><COL WIDTH=43*><COL WIDTH=43*>"""
         f.write(rpt)
 
@@ -155,7 +255,6 @@ class Drillreport:  # general observation point info for the selected object
         connection_ok, general_data = self.get_data(
             obsid, "obs_points", "n"
         )  # MacOSX fix1
-        # utils.pop_up_info(str(connection_ok))#debug
         if connection_ok:
             result2 = db_utils.sql_load_fr_db(
                 r"""SELECT srid FROM geometry_columns where f_table_name = 'obs_points'"""
@@ -163,45 +262,27 @@ class Drillreport:  # general observation point info for the selected object
             crs = ru(result2)  # 1st we need crs
             result3 = db_utils.get_srid_name(result2)
             crs_name = ru(result3)  # and crs name
-            if midvatten_utils.is_locale_swedish():
-                reportdata_1 = self.rpt_upper_left_sv(general_data, crs, crs_name)
-            else:
-                reportdata_1 = self.rpt_upper_left(general_data, crs, crs_name)
-            f.write(reportdata_1)
+            f.write(self.rpt_upper_left(general_data, crs, crs_name, spec))
 
             rpt = r"""</TABLE></TD><TD WIDTH=50%><P><U><B>"""
-            if midvatten_utils.is_locale_swedish():
-                rpt += "Lagerföljd"
-            else:
-                rpt += QCoreApplication.translate("Drillreport", "Stratigraphy")
+            rpt += spec["strat"]
             rpt += r"""</B></U></P><TABLE style="font-family:'arial'; font-size:10pt; font-weight:400; font-style:normal;" WIDTH=100% BORDER=0 CELLPADDING=0 CELLSPACING=1><COL WIDTH=43*><COL WIDTH=43*><COL WIDTH=43*><COL WIDTH=43*><COL WIDTH=43*><COL WIDTH=43*>"""
             f.write(rpt)
 
             # STRATIGRAPHY DATA UPPER RIGHT QUADRANT
             strat_data = self.get_data(obsid, "stratigraphy", "n")[1]  # MacOSX fix1
-            if midvatten_utils.is_locale_swedish():
-                reportdata_2 = self.rpt_upper_right_sv(strat_data)
-            else:
-                reportdata_2 = self.rpt_upper_right(strat_data)
-            f.write(reportdata_2)
+            f.write(self.rpt_upper_right(strat_data, spec))
 
             rpt = r"""</TABLE></TD></TR><TR VALIGN=TOP><TD WIDTH=50%><P><U><B>"""
-            if midvatten_utils.is_locale_swedish():
-                rpt += "Kommentarer"
-            else:
-                rpt += QCoreApplication.translate("Drillreport", "Comments")
+            rpt += spec["comments"]
             rpt += r"""</B></U></P>"""
             f.write(rpt)
 
             # COMMENTS LOWER LEFT QUADRANT
-            reportdata_3 = self.rpt_lower_left(general_data)
-            f.write(reportdata_3)
+            f.write(self.rpt_lower_left(general_data))
 
             rpt = r"""</TD><TD WIDTH=50%><P><U><B>"""
-            if midvatten_utils.is_locale_swedish():
-                rpt += "Vattennivåer"
-            else:
-                rpt += QCoreApplication.translate("Drillreport", "Water levels")
+            rpt += spec["wlevels"]
             rpt += r"""</B></U></P>"""
             f.write(rpt)
 
@@ -209,482 +290,103 @@ class Drillreport:  # general observation point info for the selected object
             meas_or_level_masl, statistics = get_statistics_for_single_obsid(
                 obsid
             )  # MacOSX fix1
-            if midvatten_utils.is_locale_swedish():
-                reportdata_4 = self.rpt_lower_right_sv(statistics, meas_or_level_masl)
-            else:
-                reportdata_4 = self.rpt_lower_right(statistics, meas_or_level_masl)
-            f.write(reportdata_4)
+            f.write(self.rpt_lower_right(statistics, meas_or_level_masl, spec))
 
             f.write(r"""</TD></TR></TABLE></TD></TR></TABLE>""")
-
-    def rpt_upper_left_sv(
-        self,
-        general_data: List[ObsPointsRow],
-        crs: str = "",
-        crs_name: str = "",
-    ) -> str:
-        r = general_data[0]
-        rpt = r"""<p style="font-family:'arial'; font-size:8pt; font-weight:400; font-style:normal;">"""
-        if ru(r.name) != "" and ru(r.name) != "NULL" and ru(r.name) != ru(r.obsid):
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + "originalbenämning"
-                + r"""</TD><TD WIDTH=67%>"""
-                + ru(r.name)
-                + "</TD></TR>"
-            )
-        if ru(r.type) != "" and ru(r.type) != "NULL":
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + "obstyp"
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.type)
-                + "</TD></TR>"
-            )
-        if ru(r.length) != "" and ru(r.length) != "NULL":
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + "djup (m fr my t botten)"
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.length)
-                + "</TD></TR>"
-            )
-        if ru(r.h_toc) != "" and ru(r.h_toc) != "NULL":
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + "röröverkant (möh)"
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.h_toc)
-            )
-            if ru(r.h_syst) != "":
-                rpt += " (" + ru(r.h_syst) + ")"
-            rpt += "</TD></TR>"
-        if (
-            ru(r.h_tocags) != ""
-            and ru(r.h_tocags) != "NULL"
-            and ru(r.h_tocags) != "0"
-            and ru(r.h_tocags) != "0.0"
-        ):
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + "rörövermått (m ö my)"
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.h_tocags)
-                + "</TD></TR>"
-            )
-        if ru(r.h_gs) != "" and ru(r.h_gs) != "NULL":
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + "markytans nivå, my (möh)"
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.h_gs)
-            )
-            if ru(r.h_syst) != "":
-                rpt += " (" + ru(r.h_syst) + ")"
-            rpt += "</TD></TR>"
-        if ru(r.h_accur) != "" and ru(r.h_accur) != "NULL":
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + "onoggrannhet i höjd, avser rök (m)"
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.h_accur)
-                + "</TD></TR>"
-            )
-        if ru(r.east) != "" and ru(r.east) != "NULL":
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + "östlig koordinat"
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.east)
-                + " ("
-                + "%s" % ("%s, " % crs_name if crs_name else "")
-                + "EPSG:"
-                + crs
-                + ")</TD></TR>"
-            )
-        if ru(r.north) != "" and ru(r.north) != "NULL":
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + "nordlig koordinat"
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.north)
-                + " ("
-                + "%s" % ("%s, " % crs_name if crs_name else "")
-                + "EPSG:"
-                + crs
-                + ")</TD></TR>"
-            )
-        if (
-            ru(r.east) != ""
-            and ru(r.east) != "NULL"
-            and ru(r.north) != ""
-            and ru(r.ne_accur) != ""
-        ):
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + "lägesonoggrannhet"
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.ne_accur)
-                + "</TD></TR>"
-            )
-        if ru(r.material) != "" and ru(r.material) != "NULL":
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + "material"
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.material)
-                + "</TD></TR>"
-            )
-        if ru(r.diam) != "" and ru(r.diam) != "NULL":
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + "innerdiameter (mm)"
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.diam)
-                + "</TD></TR>"
-            )
-        if ru(r.drillstop) != "" and ru(r.drillstop) != "NULL":
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + "borrningens avslut"
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.drillstop)
-                + "</TD></TR>"
-            )
-        if ru(r.screen) != "" and ru(r.screen) != "NULL":
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + "filter/spets"
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.screen)
-                + "</TD></TR>"
-            )
-        if ru(r.drilldate) != "" and ru(r.drilldate) != "NULL":
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + "borrningen avslutades"
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.drilldate)
-                + "</TD></TR>"
-            )
-        if ru(r.capacity) != "" and ru(r.capacity) != "NULL":
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + "kapacitet/vg på spetsnivå"
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.capacity)
-                + "</TD></TR>"
-            )
-        if ru(r.place) != "" and ru(r.place) != "NULL":
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + "fastighet/plats"
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.place)
-                + "</TD></TR>"
-            )
-        if ru(r.source) != "" and ru(r.source) != "NULL":
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + "referens"
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.source)
-                + "</TD></TR>"
-            )
-        rpt += r"""</p>"""
-        if ru(r.ne_source) != "" and ru(r.ne_source) != "NULL":
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + "lägesangivelsens ursprung"
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.ne_source)
-                + "</TD></TR>"
-            )
-        if ru(r.h_source) != "" and ru(r.h_source) != "NULL":
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + "höjdangivelsens ursprung"
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.h_source)
-                + "</TD></TR>"
-            )
-        return rpt
 
     def rpt_upper_left(
         self,
         general_data: List[ObsPointsRow],
         crs: str = "",
         crs_name: str = "",
+        spec: Optional[Dict[str, Any]] = None,
     ) -> str:
+        if spec is None:
+            spec = self._locale_spec()
+        labels = spec["upper_left"]
         r = general_data[0]
+        h_syst_suffix = " (" + ru(r.h_syst) + ")" if ru(r.h_syst) != "" else ""
+        if crs_name or not spec["crs_omit_empty_name"]:
+            crs_suffix = " (" + crs_name + ", EPSG:" + crs + ")"
+        else:
+            crs_suffix = " (EPSG:" + crs + ")"
+
         rpt = r"""<p style="font-family:'arial'; font-size:8pt; font-weight:400; font-style:normal;">"""
-        if ru(r.name) != "" and ru(r.name) != "NULL" and ru(r.name) != ru(r.obsid):
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + QCoreApplication.translate("Drillreport", "original name")
-                + r"""</TD><TD WIDTH=67%>"""
-                + ru(r.name)
-                + "</TD></TR>"
-            )
+        if ru(r.name) not in _EMPTY_VALS and ru(r.name) != ru(r.obsid):
+            rpt += self._row(labels["name"], ru(r.name), width=67)
         if ru(r.type) not in _EMPTY_VALS:
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + QCoreApplication.translate("Drillreport", "obs type")
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.type)
-                + "</TD></TR>"
-            )
+            rpt += self._row(labels["type"], ru(r.type))
         if ru(r.length) not in _EMPTY_VALS:
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + QCoreApplication.translate("Drillreport", "depth (m fr gs to bottom)")
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.length)
-                + "</TD></TR>"
-            )
+            rpt += self._row(labels["length"], ru(r.length))
         if ru(r.h_toc) not in _EMPTY_VALS:
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + QCoreApplication.translate("Drillreport", "top of casing, toc (masl)")
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.h_toc)
-            )
-            if ru(r.h_syst) != "":
-                rpt += " (" + ru(r.h_syst) + ")"
-            rpt += "</TD></TR>"
-        if (
-            ru(r.h_tocags) not in _EMPTY_VALS
-            and ru(r.h_tocags) != "0"
-            and ru(r.h_tocags) != "0.0"
-        ):
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + QCoreApplication.translate(
-                    "Drillreport", "distance toc-gs, tocags (mags)"
-                )
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.h_tocags)
-                + "</TD></TR>"
-            )
+            rpt += self._row(labels["h_toc"], ru(r.h_toc) + h_syst_suffix)
+        if ru(r.h_tocags) not in _EMPTY_VALS and ru(r.h_tocags) not in ("0", "0.0"):
+            rpt += self._row(labels["h_tocags"], ru(r.h_tocags))
         if ru(r.h_gs) not in _EMPTY_VALS:
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + QCoreApplication.translate(
-                    "Drillreport", "ground surface level, gs (masl)"
-                )
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.h_gs)
-            )
-            if ru(r.h_syst) != "":
-                rpt += " (" + ru(r.h_syst) + ")"
-            rpt += "</TD></TR>"
+            rpt += self._row(labels["h_gs"], ru(r.h_gs) + h_syst_suffix)
         if ru(r.h_accur) not in _EMPTY_VALS:
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + QCoreApplication.translate("Drillreport", "elevation accuracy (m)")
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.h_accur)
-                + "</TD></TR>"
-            )
+            rpt += self._row(labels["h_accur"], ru(r.h_accur))
         if ru(r.east) not in _EMPTY_VALS:
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + QCoreApplication.translate("Drillreport", "eastern coordinate")
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.east)
-                + " ("
-                + crs_name
-                + ", EPSG:"
-                + crs
-                + ")</TD></TR>"
-            )
+            rpt += self._row(labels["east"], ru(r.east) + crs_suffix)
         if ru(r.north) not in _EMPTY_VALS:
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + QCoreApplication.translate("Drillreport", "northern coordinate")
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.north)
-                + " ("
-                + crs_name
-                + ", EPSG:"
-                + crs
-                + ")</TD></TR>"
-            )
+            rpt += self._row(labels["north"], ru(r.north) + crs_suffix)
         if ru(r.east) not in _EMPTY_VALS and ru(r.north) != "" and ru(r.ne_accur) != "":
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + QCoreApplication.translate("Drillreport", "position accuracy")
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.ne_accur)
-                + "</TD></TR>"
-            )
+            rpt += self._row(labels["ne_accur"], ru(r.ne_accur))
         if ru(r.material) not in _EMPTY_VALS:
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + QCoreApplication.translate("Drillreport", "material")
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.material)
-                + "</TD></TR>"
-            )
+            rpt += self._row(labels["material"], ru(r.material))
         if ru(r.diam) not in _EMPTY_VALS:
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + QCoreApplication.translate("Drillreport", "inner diameter (mm)")
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.diam)
-                + "</TD></TR>"
-            )
+            rpt += self._row(labels["diam"], ru(r.diam))
         if ru(r.drillstop) not in _EMPTY_VALS:
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + QCoreApplication.translate("Drillreport", "drill stop")
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.drillstop)
-                + "</TD></TR>"
-            )
+            rpt += self._row(labels["drillstop"], ru(r.drillstop))
         if ru(r.screen) not in _EMPTY_VALS:
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + QCoreApplication.translate("Drillreport", "screen type")
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.screen)
-                + "</TD></TR>"
-            )
+            rpt += self._row(labels["screen"], ru(r.screen))
         if ru(r.drilldate) not in _EMPTY_VALS:
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + QCoreApplication.translate("Drillreport", "drill date")
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.drilldate)
-                + "</TD></TR>"
-            )
+            rpt += self._row(labels["drilldate"], ru(r.drilldate))
         if ru(r.capacity) not in _EMPTY_VALS:
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + QCoreApplication.translate("Drillreport", "capacity")
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.capacity)
-                + "</TD></TR>"
-            )
+            rpt += self._row(labels["capacity"], ru(r.capacity))
         if ru(r.place) not in _EMPTY_VALS:
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + QCoreApplication.translate("Drillreport", "place")
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.place)
-                + "</TD></TR>"
-            )
+            rpt += self._row(labels["place"], ru(r.place))
         if ru(r.source) not in _EMPTY_VALS:
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + QCoreApplication.translate("Drillreport", "reference")
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.source)
-                + "</TD></TR>"
-            )
+            rpt += self._row(labels["source"], ru(r.source))
         rpt += r"""</p>"""
         if ru(r.ne_source) not in _EMPTY_VALS:
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + QCoreApplication.translate("Drillreport", "source for position")
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.ne_source)
-                + "</TD></TR>"
-            )
+            rpt += self._row(labels["ne_source"], ru(r.ne_source))
         if ru(r.h_source) not in _EMPTY_VALS:
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=33%>"""
-                + QCoreApplication.translate("Drillreport", "source for elevation")
-                + r"""</TD><TD WIDTH=50%>"""
-                + ru(r.h_source)
-                + "</TD></TR>"
-            )
+            rpt += self._row(labels["h_source"], ru(r.h_source))
         return rpt
 
-    def rpt_upper_right_sv(
+    def rpt_upper_right(
         self,
         strat_data: List[StratigraphyRow],
+        spec: Optional[Dict[str, Any]] = None,
     ) -> str:
+        if spec is None:
+            spec = self._locale_spec()
+        widths = spec["strat_widths"]
         rpt = r"""<p style="font-family:'arial'; font-size:10pt; font-weight:400; font-style:normal;">"""
         if len(strat_data) > 0:
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=17%><P><u>""" + "nivå (mumy)</P></u></TD>"
-            )
-            rpt += (
-                r"""<TD WIDTH=27%><P><u>"""
-                + "jordart, fullst beskrivn"
-                + "</P></u></TD>"
-            )
-            rpt += r"""<TD WIDTH=17%><P><u>""" + "huvudfraktion" + "</P></u></TD>"
-            rpt += r"""<TD WIDTH=5%><P><u>""" + "vg" + "</P></u></TD>"
-            rpt += r"""<TD WIDTH=9%><P><u>""" + "stänger?" + "</P></u></TD>"
-            rpt += r"""<TD WIDTH=27%><P><u>""" + "kommentar" + "</P></u></TD></TR>"
+            rpt += r"""<TR VALIGN=TOP>"""
+            for width, header in zip(widths, spec["strat_headers"]):
+                rpt += f"<TD WIDTH={width}%><P><u>" + header + "</P></u></TD>"
+            rpt += "</TR>"
         for row in strat_data:
-            col2 = "" if ru(row.depthtop) == "NULL" else ru(row.depthtop)
-            col3 = "" if ru(row.depthbot) == "NULL" else ru(row.depthbot)
-            col4 = "" if ru(row.geology) == "NULL" else ru(row.geology)
-            col5 = "" if ru(row.geoshort) == "NULL" else ru(row.geoshort)
-            col6 = "" if ru(row.capacity) == "NULL" else ru(row.capacity)
-            col7 = "" if ru(row.development) == "NULL" else ru(row.development)
-            col8 = "" if ru(row.comment) == "NULL" else ru(row.comment)
-            rpt += r"""<TR VALIGN=TOP><TD WIDTH=17%><P>"""
-            rpt += col2 + " - " + col3 + "</P></TD>"
-            rpt += r"""<TD WIDTH=27%><P>""" + col4 + "</P></TD>"
-            rpt += r"""<TD WIDTH=17%><P>""" + col5 + "</P></TD>"
-            rpt += r"""<TD WIDTH=5%><P>""" + col6 + "</P></TD>"
-            rpt += r"""<TD WIDTH=9%><P>""" + col7 + "</P></TD>"
-            rpt += r"""<TD WIDTH=27%><P>""" + col8 + "</P></TD></TR>"
-        rpt += r"""</p>"""
-        return rpt
-
-    def rpt_upper_right(self, strat_data: List[StratigraphyRow]) -> str:
-        rpt = r"""<p style="font-family:'arial'; font-size:10pt; font-weight:400; font-style:normal;">"""
-        if len(strat_data) > 0:
-            rpt += (
-                r"""<TR VALIGN=TOP><TD WIDTH=15%><P><u>"""
-                + QCoreApplication.translate("Drillreport", "level (m b gs)")
-                + "</P></u></TD>"
-            )
-            rpt += (
-                r"""<TD WIDTH=27%><P><u>"""
-                + QCoreApplication.translate("Drillreport", "geology, full text")
-                + "</P></u></TD>"
-            )
-            rpt += (
-                r"""<TD WIDTH=17%><P><u>"""
-                + QCoreApplication.translate("Drillreport", "geology, short")
-                + "</P></u></TD>"
-            )
-            rpt += (
-                r"""<TD WIDTH=9%><P><u>"""
-                + QCoreApplication.translate("Drillreport", "capacity")
-                + "</P></u></TD>"
-            )
-            rpt += (
-                r"""<TD WIDTH=13%><P><u>"""
-                + QCoreApplication.translate("Drillreport", "development")
-                + "</P></u></TD>"
-            )
-            rpt += (
-                r"""<TD WIDTH=21%><P><u>"""
-                + QCoreApplication.translate("Drillreport", "comment")
-                + "</P></u></TD></TR>"
-            )
-        for row in strat_data:
-            col2 = "" if ru(row.depthtop) == "NULL" else ru(row.depthtop)
-            col3 = "" if ru(row.depthbot) == "NULL" else ru(row.depthbot)
-            col4 = "" if ru(row.geology) == "NULL" else ru(row.geology)
-            col5 = "" if ru(row.geoshort) == "NULL" else ru(row.geoshort)
-            col6 = "" if ru(row.capacity) == "NULL" else ru(row.capacity)
-            col7 = "" if ru(row.development) == "NULL" else ru(row.development)
-            col8 = "" if ru(row.comment) == "NULL" else ru(row.comment)
-            rpt += r"""<TR VALIGN=TOP><TD WIDTH=15%><P>"""
-            rpt += col2 + " - " + col3 + "</P></TD>"
-            rpt += r"""<TD WIDTH=27%><P>""" + col4 + "</P></TD>"
-            rpt += r"""<TD WIDTH=17%><P>""" + col5 + "</P></TD>"
-            rpt += r"""<TD WIDTH=9%><P>""" + col6 + "</P></TD>"
-            rpt += r"""<TD WIDTH=13%><P>""" + col7 + "</P></TD>"
-            rpt += r"""<TD WIDTH=21%><P>""" + col8 + "</P></TD></TR>"
+            cells = [
+                "" if ru(value) == "NULL" else ru(value)
+                for value in (
+                    row.depthtop,
+                    row.depthbot,
+                    row.geology,
+                    row.geoshort,
+                    row.capacity,
+                    row.development,
+                    row.comment,
+                )
+            ]
+            columns = [cells[0] + " - " + cells[1]] + cells[2:]
+            rpt += r"""<TR VALIGN=TOP>"""
+            for width, column in zip(widths, columns):
+                rpt += f"<TD WIDTH={width}%><P>" + column + "</P></TD>"
+            rpt += "</TR>"
         rpt += r"""</p>"""
         return rpt
 
@@ -694,75 +396,31 @@ class Drillreport:  # general observation point info for the selected object
     ) -> str:
         r = general_data[0]
         rpt = r"""<p style="font-family:'arial'; font-size:10pt; font-weight:400; font-style:normal;">"""
-        if ru(r.com_onerow) not in _EMPTY_VALS and ru(r.com_html) not in _EMPTY_VALS:
+        if ru(r.com_onerow) not in _EMPTY_VALS:
             rpt += ru(r.com_onerow)
+        if ru(r.com_html) not in _EMPTY_VALS:
             rpt += ru(r.com_html)
-        elif ru(r.com_onerow) not in _EMPTY_VALS:
-            rpt += ru(r.com_onerow)
-        elif ru(r.com_html) not in _EMPTY_VALS:
-            rpt += ru(r.com_html)
-        rpt += r"""</p>"""
-        return rpt
-
-    def rpt_lower_right_sv(
-        self, statistics: List[Optional[Union[float, int]]], meas_or_level_masl: str
-    ) -> str:
-        if meas_or_level_masl == "meas":
-            unit = " m u rök<br>"
-        else:
-            unit = " m ö h<br>"
-        rpt = r"""<p style="font-family:'arial'; font-size:10pt; font-weight:400; font-style:normal;">"""
-        if ru(statistics[2]) != "" and ru(statistics[2]) != "0":
-            rpt += "Antal nivåmätningar: " + ru(statistics[2]) + "<br>"
-            if ru(statistics[0]) != "":
-                rpt += "Högsta uppmätta nivå: " + ru(statistics[0]) + unit
-            if ru(statistics[1]) != "":
-                rpt += "Medianvärde för nivå: " + ru(statistics[1]) + unit
-            if ru(statistics[3]) != "":
-                rpt += "Lägsta uppmätta nivå: " + ru(statistics[3]) + unit
         rpt += r"""</p>"""
         return rpt
 
     def rpt_lower_right(
-        self, statistics: list[Optional[Union[float, int]]], meas_or_level_masl: str
+        self,
+        statistics: List[Optional[Union[float, int]]],
+        meas_or_level_masl: str,
+        spec: Optional[Dict[str, Any]] = None,
     ) -> str:
-        if meas_or_level_masl == "meas":
-            unit = QCoreApplication.translate("Drillreport", " m below toc") + "<br>"
-        else:
-            unit = (
-                QCoreApplication.translate("Drillreport", " m above sea level") + "<br>"
-            )
+        if spec is None:
+            spec = self._locale_spec()
+        unit = spec["unit_meas"] if meas_or_level_masl == "meas" else spec["unit_masl"]
         rpt = r"""<p style="font-family:'arial'; font-size:10pt; font-weight:400; font-style:normal;">"""
         if ru(statistics[2]) != "" and ru(statistics[2]) != "0":
-            rpt += (
-                QCoreApplication.translate(
-                    "Drillreport", "Number of water level measurements: "
-                )
-                + ru(statistics[2])
-                + "<br>"
-            )
+            rpt += spec["stat_count"] + ru(statistics[2]) + "<br>"
             if ru(statistics[0]) != "":
-                rpt += (
-                    QCoreApplication.translate(
-                        "Drillreport", "Highest measured water level: "
-                    )
-                    + ru(statistics[0])
-                    + unit
-                )
+                rpt += spec["stat_max"] + ru(statistics[0]) + unit
             if ru(statistics[1]) != "":
-                rpt += (
-                    QCoreApplication.translate("Drillreport", "Median water level: ")
-                    + ru(statistics[1])
-                    + unit
-                )
+                rpt += spec["stat_median"] + ru(statistics[1]) + unit
             if ru(statistics[3]) != "":
-                rpt += (
-                    QCoreApplication.translate(
-                        "Drillreport", "Lowest measured water level: "
-                    )
-                    + ru(statistics[3])
-                    + unit
-                )
+                rpt += spec["stat_min"] + ru(statistics[3]) + unit
         rpt += r"""</p>"""
         return rpt
 

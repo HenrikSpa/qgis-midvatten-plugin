@@ -1,8 +1,7 @@
 """GUI classes for managing plot templates and matplotlib styles.
 
-Extracted from midvatten_utils (plan item 13): PlotTemplates backs the
-template chooser in the section plot, MatplotlibStyles the style chooser in
-the custom plot. Pure move — no logic change.
+PlotTemplates backs the template chooser in the section plot,
+MatplotlibStyles the style chooser in the custom plot.
 """
 
 import ast
@@ -12,7 +11,6 @@ import os
 from typing import Callable, Optional, TYPE_CHECKING
 
 import matplotlib as mpl
-import qgis.PyQt
 from matplotlib import pyplot as plt
 from qgis.PyQt import QtCore, QtWidgets
 from qgis.PyQt.QtCore import QCoreApplication
@@ -162,13 +160,13 @@ class PlotTemplates:
                 "Replace the settings string with a new settings string.",
             )
         )
-        new_string = qgis.PyQt.QtWidgets.QInputDialog.getText(
+        new_string = QtWidgets.QInputDialog.getText(
             None,
             returnunicode(
                 QCoreApplication.translate("StoredSettings", "Edit settings")
             ),
             msg,
-            qgis.PyQt.QtWidgets.QLineEdit.Normal,
+            QtWidgets.QLineEdit.Normal,
             old_string,
         )
         if not new_string[1]:
@@ -334,7 +332,7 @@ class PlotTemplates:
         for filename, template in sorted(
             iter(self.templates.items()), key=lambda x: os.path.basename(x[0])
         ):
-            qlistwidgetitem = qgis.PyQt.QtWidgets.QListWidgetItem()
+            qlistwidgetitem = QtWidgets.QListWidgetItem()
             qlistwidgetitem.setText(template["name"])
             qlistwidgetitem.filename = template["filename"]
             self.template_list.addItem(qlistwidgetitem)
@@ -871,7 +869,7 @@ class MatplotlibStyles:
         selected_style = self.get_selected_style()
         self.style_list.clear()
         for style in sorted(plt.style.available):
-            qlistwidgetitem = qgis.PyQt.QtWidgets.QListWidgetItem()
+            qlistwidgetitem = QtWidgets.QListWidgetItem()
             qlistwidgetitem.setText(style)
             self.style_list.addItem(qlistwidgetitem)
             if style == selected_style:

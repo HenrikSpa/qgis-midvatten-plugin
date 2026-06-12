@@ -70,6 +70,7 @@ Each feature is a standalone module. Major categories:
 - **`common_utils.py`** — Misc shared helpers; re-exports for midv_addons backward compatibility
 - **`midvatten_utils.py`** — Domain-specific utilities; re-exports functions from `db_utils/helpers.py` for backward compatibility
 - **`gui_utils.py`** — PyQt widget helpers
+- **`plot_templates.py`** — `PlotTemplates` (section plot template chooser), `MatplotlibStyles` (custom plot style chooser)
 - **`date_utils.py`** — Date parsing and timezone handling
 
 ### Definitions (`definitions/`)

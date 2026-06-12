@@ -25,7 +25,7 @@ import re
 from typing import List, Optional, Tuple, TYPE_CHECKING
 
 from packaging.version import Version, InvalidVersion
-import qgis.PyQt
+import qgis.gui
 from qgis.PyQt import QtWidgets
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import QgsProject
@@ -35,14 +35,6 @@ from midvatten.tools.utils.db_utils import DbConnectionManager
 
 if TYPE_CHECKING:
     from midvatten.tools.midvsettings import MidvSettings
-
-try:
-    pass
-except Exception:
-    pandas_on = False
-else:
-    pandas_on = True
-
 
 # The imports below double as PUBLIC re-exports for external consumers
 # (midv_addons imports these names via midvatten_utils). Do not remove or

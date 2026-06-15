@@ -35,7 +35,6 @@ if TYPE_CHECKING:
 class PlotTemplates:
     def __init__(
         self,
-        plot_object,
         template_list,
         edit_button,
         load_button,
@@ -65,8 +64,6 @@ class PlotTemplates:
         self.fallback_template = fallback_template
         self.templates_settingskey = templates_settingskey
         self.loaded_template_settingskey = loaded_template_settingskey
-
-        self.templates = {}
 
         self.import_saved_templates()
         self.import_from_template_folder()
@@ -557,7 +554,6 @@ class _FixStylesDialog(QtWidgets.QDialog):
 class MatplotlibStyles:
     def __init__(
         self,
-        plot_object,
         style_list,
         import_button,
         open_folder_button,

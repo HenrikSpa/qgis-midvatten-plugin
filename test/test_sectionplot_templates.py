@@ -59,7 +59,6 @@ class TestSecplotTemplates(utils_for_tests.MidvattenTestSpatialiteNotCreated):
         self.midvatten.ms.settingsdict["secplot_templates"] = ""
 
         secplottemplates = PlotTemplates(
-            self.sectionplot,
             self.template_list,
             self.edit_button,
             self.load_button,
@@ -100,7 +99,6 @@ class TestSecplotTemplates(utils_for_tests.MidvattenTestSpatialiteNotCreated):
                 mock_join.return_value = filename
                 self.midvatten.ms.settingsdict["secplot_templates"] = filename
                 secplottemplates = PlotTemplates(
-                    self.sectionplot,
                     self.template_list,
                     self.edit_button,
                     self.load_button,
@@ -142,7 +140,6 @@ class TestSecplotTemplates(utils_for_tests.MidvattenTestSpatialiteNotCreated):
                 mock_select_files.return_value = [filename]
                 self.midvatten.ms.settingsdict["secplot_templates"] = ""
                 secplottemplates = PlotTemplates(
-                    self.sectionplot,
                     self.template_list,
                     self.edit_button,
                     self.load_button,
@@ -192,7 +189,6 @@ class TestSecplotTemplates(utils_for_tests.MidvattenTestSpatialiteNotCreated):
                 mock_join.return_value = filename
                 self.midvatten.ms.settingsdict["secplot_templates"] = filename
                 secplottemplates = PlotTemplates(
-                    self.sectionplot,
                     self.template_list,
                     self.edit_button,
                     self.load_button,
@@ -246,7 +242,6 @@ class TestSecplotTemplates(utils_for_tests.MidvattenTestSpatialiteNotCreated):
                     mock_save_filename.return_value = (save_file, 0)
                     self.midvatten.ms.settingsdict["secplot_templates"] = ""
                     secplottemplates = PlotTemplates(
-                        self.sectionplot,
                         self.template_list,
                         self.edit_button,
                         self.load_button,
@@ -293,7 +288,6 @@ class TestSecplotTemplates(utils_for_tests.MidvattenTestSpatialiteNotCreated):
         mock_hardcoded_template.return_value = test_dict
 
         secplottemplates = PlotTemplates(
-            self.sectionplot,
             self.template_list,
             self.edit_button,
             self.load_button,

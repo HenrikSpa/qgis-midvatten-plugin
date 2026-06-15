@@ -102,7 +102,6 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
 
         self.custplot_last_used_style_settingskey = "custplot_last_used_template"
         self.styles = plot_templates.MatplotlibStyles(
-            self,
             self.template_list,
             self.import_button,
             self.open_folder_button,

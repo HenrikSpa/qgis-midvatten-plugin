@@ -383,7 +383,6 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
             "secplot_templates",
         )
         self.secplot_templates = PlotTemplates(
-            self,
             self.template_list,
             self.edit_button,
             self.load_button,

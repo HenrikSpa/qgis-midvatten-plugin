@@ -205,7 +205,7 @@ header-row + observation-rows lists (w_levels, comments, w_flow, w_qual_field).
   Existing import tests with reference data cover this well.
 - **Effort:** Small-medium.
 
-## 12. `GeneralCsvImportGui` inherits `BaseImporter` — **Do**
+## 12. `GeneralCsvImportGui` inherits `BaseImporter` — **DONE 2026-06-15** (init-diff confirmed purely additive: the hand-rolled __init__ body was byte-identical to BaseImporter.__init__; now inherits BaseImporter like the other importers, gaining shared add_row (adopted for the table chooser). Contract preserved: constructor stays (iface, ms, dbconnection=None) and BaseImporter is a QMainWindow subclass, so midv_addons' direct construction + .show() + destroyed signal unaffected; dead WA_DeleteOnClose import dropped. Also corrected a doubly-stale CLAUDE.md importer line)
 
 `import_general_csv_gui.py:60` inherits `QMainWindow` directly and reimplements what
 `BaseImporter` provides; the other importers use the base class.

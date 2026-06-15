@@ -107,7 +107,7 @@ class GeneralCsvImportGui(BaseImporter, import_ui_dialog):
             file_header=None,
             embed_chooser_in_layout=False,
         )
-        self.main_vertical_layout.addWidget(self.table_chooser)
+        self.add_row(self.table_chooser)
         self.main_vertical_layout.addStretch()
         # General buttons
         self.select_file_button = qgis.PyQt.QtWidgets.QPushButton(

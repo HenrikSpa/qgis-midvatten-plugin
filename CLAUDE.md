@@ -59,7 +59,7 @@ Strategy pattern with abstract base + concrete backends:
 
 Each feature is a standalone module. Major categories:
 
-- **Import**: `import_diveroffice.py`, `import_fieldlogger.py`, `import_general_csv_gui.py`, `import_hobologger.py`, `import_interlab4.py`, `import_levelogger.py` — all inherit from `MidvDataImporter` in `import_data_to_db.py`
+- **Import**: `import_fieldlogger.py`, `import_general_csv_gui.py`, `import_interlab4.py`, `import_logger/importer.py` (unified DiverOffice/Levelogger/HOBO) — the importer dialogs all inherit `BaseImporter` (`base_importer.py`) and drive the data-layer helper `MidvDataImporter` in `import_data_to_db.py`
 - **Visualization**: `customplot.py` (time series), `sectionplot.py` (geological sections), `loggereditor.py` (logger editor), `piper.py` (piper diagrams), `stratigraphy.py`
 - **Export/Reports**: `export_data.py`, `export_fieldlogger.py`, `drillreport.py`, `wqualreport.py`
 - **DB management**: `create_db.py`, `loadlayers.py`

@@ -29,6 +29,7 @@ from qgis.PyQt.QtCore import QCoreApplication
 
 import midvatten.definitions.midvatten_defs as defs
 from midvatten.tools import import_data_to_db
+from midvatten.tools.base_importer import BaseImporter
 from midvatten.tools.utils import (
     common_utils,
     db_utils,
@@ -45,7 +46,6 @@ from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.gui_utils import (
     RowEntry,
     VRowEntry,
-    WA_DeleteOnClose,
     get_line,
     RowEntryGrid,
     DistinctValuesBrowser,
@@ -67,14 +67,11 @@ def series_carrier(field: str) -> str:
     return SERIES_CARRIER_PREFIX + field
 
 
-class GeneralCsvImportGui(qgis.PyQt.QtWidgets.QMainWindow, import_ui_dialog):
+class GeneralCsvImportGui(BaseImporter, import_ui_dialog):
     def __init__(self, iface, ms, dbconnection=None):
-        self.iface = iface
-        self.ms = ms
-        self.ms.load_settings()
-        qgis.PyQt.QtWidgets.QMainWindow.__init__(self, iface.mainWindow())
-        self.setAttribute(WA_DeleteOnClose)
-        self.setupUi(self)  # Required by Qt
+        # BaseImporter.__init__ sets iface/ms, loads settings, runs
+        # QMainWindow.__init__ + setupUi, and applies WA_DeleteOnClose.
+        super().__init__(iface, ms)
         self.setWindowTitle(
             QCoreApplication.translate("GeneralCsvImportGui", "Csv import")
         )

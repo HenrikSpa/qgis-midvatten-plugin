@@ -287,7 +287,7 @@ class GeneralImportMixin:
 
     @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
-    def test_modal_shown_once_when_rows_dropped(self, mock_askuser, mock_messagebar):
+    def test_modal_shown_when_rows_dropped(self, mock_askuser, mock_messagebar):
         mock_askuser.return_value.result = 1  # user clicks Yes
         file = [
             ("obsid", "date_time", "head_cm"),
@@ -338,6 +338,40 @@ class GeneralImportMixin:
         )
         reference_string = r"""(True, [(rb1, 2016-03-15 10:30:00, 1.0), (rb1, 2016-03-15 11:00:00, 3.0)])"""
         assert test_string == reference_string
+
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
+    def test_modal_asked_at_most_once_across_imports(
+        self, mock_askuser, mock_messagebar
+    ):
+        mock_askuser.return_value.result = 1  # user clicks Yes
+        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb1')""")
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels_logger (obsid, date_time, head_cm)"""
+            """ VALUES ('rb1', '2016-03-15 11:00:00', 3)"""
+        )
+        # First import: 11:00 duplicates the existing DB row -> 1 row dropped ->
+        # modal shown, latch set.
+        self.importinstance.general_import(
+            dest_table="w_levels_logger",
+            file_data=[
+                ("obsid", "date_time", "head_cm"),
+                ("rb1", "2016-03-15 10:30:00", "1"),
+                ("rb1", "2016-03-15 11:00:00", "2"),
+            ],
+        )
+        # Second import on the SAME instance: 10:30 now duplicates the row imported
+        # above -> rows dropped again, but the latch must suppress a second modal.
+        self.importinstance.general_import(
+            dest_table="w_levels_logger",
+            file_data=[
+                ("obsid", "date_time", "head_cm"),
+                ("rb1", "2016-03-15 10:30:00", "9"),
+                ("rb1", "2016-03-15 13:00:00", "5"),
+            ],
+        )
+        print(f"{mock_askuser.mock_calls=}")
+        assert mock_askuser.call_count == 1
 
 
 class ImportObsPointsObsLinesMixin:

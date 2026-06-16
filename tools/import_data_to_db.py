@@ -534,6 +534,8 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             "There are %s out of %s number of rows to import (see log for more info about removed rows).\n\nProceed with import?",
         ) % (str(len(remaining_rownumbers)), str(len(all_rownumbers)))
 
+        # Set before the dialog so a declined import also counts as "already
+        # asked" (the session aborts anyway via UserInterruptError).
         self.foreign_keys_import_question = 1
         stop_question = dialog_utils.Askuser(
             "YesNo",

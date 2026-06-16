@@ -36,6 +36,7 @@ from midvatten.tools.import_general_csv_gui import (
 from midvatten.tools.utils import db_utils, file_utils, string_utils
 
 
+@pytest.mark.active
 class TestCsvEncodingHelpers:
     def test_last_encoding_returns_stored_value(self):
         with mock.patch("midvatten.tools.import_general_csv_gui.QSettings") as mock_qs:
@@ -52,6 +53,17 @@ class TestCsvEncodingHelpers:
         ):
             mock_qs.return_value.value.return_value = None
             assert import_general_csv_gui._last_csv_encoding() == "iso-8859-1"
+
+    def test_last_encoding_falls_back_to_utf8_when_locale_encoding_is_none(self):
+        with (
+            mock.patch("midvatten.tools.import_general_csv_gui.QSettings") as mock_qs,
+            mock.patch(
+                "midvatten.tools.import_general_csv_gui.midvatten_utils.getcurrentlocale",
+                return_value=(None, None),
+            ),
+        ):
+            mock_qs.return_value.value.return_value = None
+            assert import_general_csv_gui._last_csv_encoding() == "utf-8"
 
     def test_save_encoding_writes_setting(self):
         with mock.patch("midvatten.tools.import_general_csv_gui.QSettings") as mock_qs:

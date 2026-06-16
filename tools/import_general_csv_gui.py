@@ -74,14 +74,15 @@ COMMON_ENCODINGS = ["utf-8", "iso-8859-1", "cp1250", "cp1252"]
 
 
 def _last_csv_encoding() -> str:
-    """Last-used encoding from QSettings, else the OS locale, else utf-8."""
+    """Last-used encoding from QSettings, else the OS locale encoding, else utf-8."""
     stored = QSettings().value(CSV_ENCODING_SETTING)
     if stored:
         return str(stored)
     try:
-        return midvatten_utils.getcurrentlocale()[1]
+        enc = midvatten_utils.getcurrentlocale()[1]
     except Exception:
         return "utf-8"
+    return enc or "utf-8"
 
 
 def _save_csv_encoding(encoding: str) -> None:

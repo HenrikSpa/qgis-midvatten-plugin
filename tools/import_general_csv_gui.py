@@ -333,37 +333,20 @@ class GeneralCsvImportGui(BaseImporter, import_ui_dialog):
         self._on_file_data_loaded()
 
     def load_files(self):
-        charset = midvatten_utils.ask_for_charset()
-        if not charset:
+        dlg = CsvFileLoadDialog(self)
+        if dlg.exec() != qgis.PyQt.QtWidgets.QDialog.Accepted:
             raise exceptions.UserInterruptError()
-        filename = midvatten_utils.select_files(
-            only_one_file=True,
-            extension=QCoreApplication.translate(
-                "GeneralCsvImportGui",
-                "Comma or semicolon separated csv file %s;;Comma or semicolon separated csv text file %s;;Comma or semicolon separated file %s",
-            )
-            % ("(*.csv)", "(*.txt)", "(*.*)"),
-        )
-        if isinstance(filename, (list, tuple)):
-            filename = filename[0]
 
-        filename = ru(filename)
+        filename = dlg.filename
+        charset = dlg.charset
+        has_header = dlg.has_header
 
         delimiter = file_utils.get_delimiter(
             filename=filename, charset=charset, delimiters=[",", ";"]
         )
         self.file_data = self.file_to_list(filename, charset, delimiter)
 
-        common_utils.stop_waiting_cursor()
-        header_question = dialog_utils.Askuser(
-            question="YesNo",
-            msg=QCoreApplication.translate(
-                "GeneralCsvImportGui", """Does the file contain a header?"""
-            ),
-        )
-        common_utils.start_waiting_cursor()
-
-        if header_question.result:
+        if has_header:
             # Remove duplicate header entries
             header = self.file_data[0]
             seen = set()
@@ -375,7 +358,6 @@ class GeneralCsvImportGui(BaseImporter, import_ui_dialog):
                 [col for idx, col in enumerate(row) if idx not in remove_cols]
                 for row in self.file_data
             ]
-
             self.table_chooser.file_header = self.file_data[0]
         else:
             header = ["Column " + str(colnr) for colnr in range(len(self.file_data[0]))]
@@ -383,7 +365,6 @@ class GeneralCsvImportGui(BaseImporter, import_ui_dialog):
             self.file_data.reverse()
             self.file_data.append(header)
             self.file_data.reverse()
-        common_utils.stop_waiting_cursor()
 
     def _on_file_data_loaded(self):
         if self.file_data is not None:

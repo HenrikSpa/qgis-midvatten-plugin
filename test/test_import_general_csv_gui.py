@@ -141,52 +141,18 @@ class TestGeneralCsvImportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
 
         with file_utils.tempinput(csv_text, "utf-8", suffix=".csv") as filename:
 
-            @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
+            @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
             @mock.patch("qgis.utils.iface", autospec=True)
-            @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
-                "midvatten.tools.utils.message_utils.pop_up_info",
-                autospec=True,
+                "midvatten.tools.utils.message_utils.pop_up_info", autospec=True
             )
-            @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
-            def _run(
-                self,
-                filename,
-                mock_filename,
-                mock_popup,
-                mock_encoding,
-                mock_iface,
-                mock_askuser,
-            ):
-                mock_filename.return_value = [filename]
-                mock_encoding.return_value = ["utf-8", True]
-
-                def side_effect(*args, **kwargs):
-                    mock_result = mock.MagicMock()
-                    if "msg" in kwargs and kwargs["msg"].startswith(
-                        "Does the file contain a header?"
-                    ):
-                        mock_result.result = 1
-                        return mock_result
-                    if len(args) > 1:
-                        if args[1].startswith("Do you want to confirm"):
-                            mock_result.result = 0
-                            return mock_result
-                        elif args[1].startswith("Do you want to import all"):
-                            mock_result.result = 0
-                            return mock_result
-                        elif args[1].startswith("Note:\nForeign keys"):
-                            mock_result.result = 1
-                            return mock_result
-                        elif args[1].startswith("Please note!\nThere are"):
-                            mock_result.result = 1
-                            return mock_result
-                        elif args[1].startswith("It is a strong recommendation"):
-                            mock_result.result = 0
-                            return mock_result
-                    return mock_result
-
-                mock_askuser.side_effect = side_effect
+            @mock.patch("midvatten.tools.import_general_csv_gui.CsvFileLoadDialog")
+            def _run(self, filename, mock_dialog, mock_popup, mock_iface):
+                instance = mock_dialog.return_value
+                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.filename = filename
+                instance.charset = "utf-8"
+                instance.has_header = True
 
                 ms = MagicMock()
                 ms.settingsdict = OrderedDict()

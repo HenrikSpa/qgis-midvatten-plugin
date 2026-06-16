@@ -59,31 +59,27 @@ class GeneralCsvGuiMixin:
 
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
-            @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
                 "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
-            @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
+            @mock.patch("midvatten.tools.import_general_csv_gui.CsvFileLoadDialog")
             def _test(
                 self,
                 filename,
-                mock_filename,
+                mock_dialog,
                 mock_skippopup,
-                mock_encoding,
                 mock_iface,
                 mock_askuser,
             ):
-
-                mock_filename.return_value = [filename]
-                mock_encoding.return_value = ["utf-8", True]
+                instance = mock_dialog.return_value
+                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.filename = filename
+                instance.charset = "utf-8"
+                instance.has_header = True
 
                 def side_effect(*args, **kwargs):
                     mock_result = mock.MagicMock()
-                    if "msg" in kwargs:
-                        if kwargs["msg"].startswith("Does the file contain a header?"):
-                            mock_result.result = 1
-                            return mock_result
                     if len(args) > 1:
                         if args[1].startswith("Do you want to confirm"):
                             mock_result.result = 0
@@ -143,31 +139,27 @@ class GeneralCsvGuiMixin:
 
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
-            @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
                 "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
-            @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
+            @mock.patch("midvatten.tools.import_general_csv_gui.CsvFileLoadDialog")
             def _test(
                 self,
                 filename,
-                mock_filename,
+                mock_dialog,
                 mock_skippopup,
-                mock_encoding,
                 mock_iface,
                 mock_askuser,
             ):
-
-                mock_filename.return_value = [filename]
-                mock_encoding.return_value = ["utf-8", True]
+                instance = mock_dialog.return_value
+                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.filename = filename
+                instance.charset = "utf-8"
+                instance.has_header = True
 
                 def side_effect(*args, **kwargs):
                     mock_result = mock.MagicMock()
-                    if "msg" in kwargs:
-                        if kwargs["msg"].startswith("Does the file contain a header?"):
-                            mock_result.result = 1
-                            return mock_result
                     if len(args) > 1:
                         if args[1].startswith("Do you want to confirm"):
                             mock_result.result = 0
@@ -226,25 +218,25 @@ class GeneralCsvGuiMixin:
             )
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
-            @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
                 "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
-            @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
+            @mock.patch("midvatten.tools.import_general_csv_gui.CsvFileLoadDialog")
             def _test(
                 self,
                 filename,
-                mock_filename,
+                mock_dialog,
                 mock_skippopup,
-                mock_encoding,
                 mock_iface,
                 mock_askuser,
                 mock_notfound,
             ):
-
-                mock_filename.return_value = [filename]
-                mock_encoding.return_value = ["utf-8", True]
+                instance = mock_dialog.return_value
+                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.filename = filename
+                instance.charset = "utf-8"
+                instance.has_header = True
 
                 mock_notfound.return_value.answer = "ok"
                 mock_checkbox = mock.Mock()
@@ -255,10 +247,6 @@ class GeneralCsvGuiMixin:
 
                 def side_effect(*args, **kwargs):
                     mock_result = mock.MagicMock()
-                    if "msg" in kwargs:
-                        if kwargs["msg"].startswith("Does the file contain a header?"):
-                            mock_result.result = 1
-                            return mock_result
                     if len(args) > 1:
                         if args[1].startswith("Do you want to confirm"):
                             mock_result.result = 0
@@ -320,25 +308,25 @@ class GeneralCsvGuiMixin:
             )
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
-            @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
                 "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
-            @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
+            @mock.patch("midvatten.tools.import_general_csv_gui.CsvFileLoadDialog")
             def _test(
                 self,
                 filename,
-                mock_filename,
+                mock_dialog,
                 mock_skippopup,
-                mock_encoding,
                 mock_iface,
                 mock_askuser,
                 mock_notfound,
             ):
-
-                mock_filename.return_value = [filename]
-                mock_encoding.return_value = ["utf-8", True]
+                instance = mock_dialog.return_value
+                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.filename = filename
+                instance.charset = "utf-8"
+                instance.has_header = True
 
                 mock_notfound.return_value.answer = "ok"
                 mock_checkbox = mock.Mock()
@@ -349,10 +337,6 @@ class GeneralCsvGuiMixin:
 
                 def side_effect(*args, **kwargs):
                     mock_result = mock.MagicMock()
-                    if "msg" in kwargs:
-                        if kwargs["msg"].startswith("Does the file contain a header?"):
-                            mock_result.result = 1
-                            return mock_result
                     if len(args) > 1:
                         if args[1].startswith("Do you want to confirm"):
                             mock_result.result = 0
@@ -413,31 +397,27 @@ class GeneralCsvGuiMixin:
 
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
-            @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
                 "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
-            @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
+            @mock.patch("midvatten.tools.import_general_csv_gui.CsvFileLoadDialog")
             def _test(
                 self,
                 filename,
-                mock_filename,
+                mock_dialog,
                 mock_skippopup,
-                mock_encoding,
                 mock_iface,
                 mock_askuser,
             ):
-
-                mock_filename.return_value = [filename]
-                mock_encoding.return_value = ["utf-8", True]
+                instance = mock_dialog.return_value
+                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.filename = filename
+                instance.charset = "utf-8"
+                instance.has_header = False
 
                 def side_effect(*args, **kwargs):
                     mock_result = mock.MagicMock()
-                    if "msg" in kwargs:
-                        if kwargs["msg"].startswith("Does the file contain a header?"):
-                            mock_result.result = 0
-                            return mock_result
                     if len(args) > 1:
                         if args[1].startswith("Do you want to confirm"):
                             mock_result.result = 0
@@ -508,31 +488,27 @@ class GeneralCsvGuiMixin:
 
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
-            @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
                 "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
-            @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
+            @mock.patch("midvatten.tools.import_general_csv_gui.CsvFileLoadDialog")
             def _test(
                 self,
                 filename,
-                mock_filename,
+                mock_dialog,
                 mock_skippopup,
-                mock_encoding,
                 mock_iface,
                 mock_askuser,
             ):
-
-                mock_filename.return_value = [filename]
-                mock_encoding.return_value = ["utf-8", True]
+                instance = mock_dialog.return_value
+                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.filename = filename
+                instance.charset = "utf-8"
+                instance.has_header = True
 
                 def side_effect(*args, **kwargs):
                     mock_result = mock.MagicMock()
-                    if "msg" in kwargs:
-                        if kwargs["msg"].startswith("Does the file contain a header?"):
-                            mock_result.result = 1
-                            return mock_result
                     if len(args) > 1:
                         if args[1].startswith("Do you want to confirm"):
                             mock_result.result = 0
@@ -592,34 +568,30 @@ class GeneralCsvGuiMixin:
             )
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
-            @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
                 "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
-            @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
+            @mock.patch("midvatten.tools.import_general_csv_gui.CsvFileLoadDialog")
             def _test(
                 self,
                 filename,
-                mock_filename,
+                mock_dialog,
                 mock_skippopup,
-                mock_encoding,
                 mock_iface,
                 mock_askuser,
                 mock_selectedobsids,
             ):
-
-                mock_filename.return_value = [filename]
-                mock_encoding.return_value = ["utf-8", True]
+                instance = mock_dialog.return_value
+                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.filename = filename
+                instance.charset = "utf-8"
+                instance.has_header = True
 
                 mock_selectedobsids.return_value = ("rb2",)
 
                 def side_effect(*args, **kwargs):
                     mock_result = mock.MagicMock()
-                    if "msg" in kwargs:
-                        if kwargs["msg"].startswith("Does the file contain a header?"):
-                            mock_result.result = 1
-                            return mock_result
                     if len(args) > 1:
                         if args[1].startswith("Do you want to confirm"):
                             mock_result.result = 0
@@ -683,34 +655,30 @@ class GeneralCsvGuiMixin:
             )
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
-            @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
                 "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
-            @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
+            @mock.patch("midvatten.tools.import_general_csv_gui.CsvFileLoadDialog")
             def _test(
                 self,
                 filename,
-                mock_filename,
+                mock_dialog,
                 mock_skippopup,
-                mock_encoding,
                 mock_iface,
                 mock_askuser,
                 mock_selectedobsids,
             ):
-
-                mock_filename.return_value = [filename]
-                mock_encoding.return_value = ["utf-8", True]
+                instance = mock_dialog.return_value
+                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.filename = filename
+                instance.charset = "utf-8"
+                instance.has_header = True
 
                 mock_selectedobsids.return_value = ("rb1",)
 
                 def side_effect(*args, **kwargs):
                     mock_result = mock.MagicMock()
-                    if "msg" in kwargs:
-                        if kwargs["msg"].startswith("Does the file contain a header?"):
-                            mock_result.result = 1
-                            return mock_result
                     if len(args) > 1:
                         if args[1].startswith("Do you want to confirm"):
                             mock_result.result = 0
@@ -774,31 +742,27 @@ class GeneralCsvGuiMixin:
 
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
-            @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
                 "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
-            @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
+            @mock.patch("midvatten.tools.import_general_csv_gui.CsvFileLoadDialog")
             def _test(
                 self,
                 filename,
-                mock_filename,
+                mock_dialog,
                 mock_skippopup,
-                mock_encoding,
                 mock_iface,
                 mock_askuser,
             ):
-
-                mock_filename.return_value = [filename]
-                mock_encoding.return_value = ["utf-8", True]
+                instance = mock_dialog.return_value
+                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.filename = filename
+                instance.charset = "utf-8"
+                instance.has_header = True
 
                 def side_effect(*args, **kwargs):
                     mock_result = mock.MagicMock()
-                    if "msg" in kwargs:
-                        if kwargs["msg"].startswith("Does the file contain a header?"):
-                            mock_result.result = 1
-                            return mock_result
                     if len(args) > 1:
                         if args[1].startswith("Do you want to confirm"):
                             mock_result.result = 0
@@ -863,31 +827,27 @@ class GeneralCsvGuiMixin:
 
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
-            @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
                 "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
-            @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
+            @mock.patch("midvatten.tools.import_general_csv_gui.CsvFileLoadDialog")
             def _test(
                 self,
                 filename,
-                mock_filename,
+                mock_dialog,
                 mock_skippopup,
-                mock_encoding,
                 mock_iface,
                 mock_askuser,
             ):
-
-                mock_filename.return_value = [filename]
-                mock_encoding.return_value = ["utf-8", True]
+                instance = mock_dialog.return_value
+                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.filename = filename
+                instance.charset = "utf-8"
+                instance.has_header = True
 
                 def side_effect(*args, **kwargs):
                     mock_result = mock.MagicMock()
-                    if "msg" in kwargs:
-                        if kwargs["msg"].startswith("Does the file contain a header?"):
-                            mock_result.result = 1
-                            return mock_result
                     if len(args) > 1:
                         if args[1].startswith("Do you want to confirm"):
                             mock_result.result = 0
@@ -946,31 +906,27 @@ class GeneralCsvGuiMixin:
 
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
-            @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
                 "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
-            @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
+            @mock.patch("midvatten.tools.import_general_csv_gui.CsvFileLoadDialog")
             def _test(
                 self,
                 filename,
-                mock_filename,
+                mock_dialog,
                 mock_skippopup,
-                mock_encoding,
                 mock_iface,
                 mock_askuser,
             ):
-
-                mock_filename.return_value = [filename]
-                mock_encoding.return_value = ["utf-8", True]
+                instance = mock_dialog.return_value
+                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.filename = filename
+                instance.charset = "utf-8"
+                instance.has_header = True
 
                 def side_effect(*args, **kwargs):
                     mock_result = mock.MagicMock()
-                    if "msg" in kwargs:
-                        if kwargs["msg"].startswith("Does the file contain a header?"):
-                            mock_result.result = 1
-                            return mock_result
                     if len(args) > 1:
                         if args[1].startswith("Do you want to confirm"):
                             mock_result.result = 0
@@ -1029,31 +985,27 @@ class GeneralCsvGuiMixin:
 
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
-            @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
                 "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
-            @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
+            @mock.patch("midvatten.tools.import_general_csv_gui.CsvFileLoadDialog")
             def _test(
                 self,
                 filename,
-                mock_filename,
+                mock_dialog,
                 mock_skippopup,
-                mock_encoding,
                 mock_iface,
                 mock_askuser,
             ):
-
-                mock_filename.return_value = [filename]
-                mock_encoding.return_value = ["utf-8", True]
+                instance = mock_dialog.return_value
+                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.filename = filename
+                instance.charset = "utf-8"
+                instance.has_header = True
 
                 def side_effect(*args, **kwargs):
                     mock_result = mock.MagicMock()
-                    if "msg" in kwargs:
-                        if kwargs["msg"].startswith("Does the file contain a header?"):
-                            mock_result.result = 1
-                            return mock_result
                     if len(args) > 1:
                         if args[1].startswith("Do you want to confirm"):
                             mock_result.result = 0
@@ -1119,31 +1071,27 @@ class GeneralCsvGuiMixin:
 
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
-            @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
                 "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
-            @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
+            @mock.patch("midvatten.tools.import_general_csv_gui.CsvFileLoadDialog")
             def _test(
                 self,
                 filename,
-                mock_filename,
+                mock_dialog,
                 mock_skippopup,
-                mock_encoding,
                 mock_iface,
                 mock_askuser,
             ):
-
-                mock_filename.return_value = [filename]
-                mock_encoding.return_value = ["utf-8", True]
+                instance = mock_dialog.return_value
+                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.filename = filename
+                instance.charset = "utf-8"
+                instance.has_header = True
 
                 def side_effect(*args, **kwargs):
                     mock_result = mock.MagicMock()
-                    if "msg" in kwargs:
-                        if kwargs["msg"].startswith("Does the file contain a header?"):
-                            mock_result.result = 1
-                            return mock_result
                     if len(args) > 1:
                         if args[1].startswith("Do you want to confirm"):
                             mock_result.result = 0
@@ -1202,31 +1150,27 @@ class GeneralCsvGuiMixin:
 
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
-            @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
                 "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
-            @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
+            @mock.patch("midvatten.tools.import_general_csv_gui.CsvFileLoadDialog")
             def _test(
                 self,
                 filename,
-                mock_filename,
+                mock_dialog,
                 mock_skippopup,
-                mock_encoding,
                 mock_iface,
                 mock_askuser,
             ):
-
-                mock_filename.return_value = [filename]
-                mock_encoding.return_value = ["utf-8", True]
+                instance = mock_dialog.return_value
+                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.filename = filename
+                instance.charset = "utf-8"
+                instance.has_header = True
 
                 def side_effect(*args, **kwargs):
                     mock_result = mock.MagicMock()
-                    if "msg" in kwargs:
-                        if kwargs["msg"].startswith("Does the file contain a header?"):
-                            mock_result.result = 1
-                            return mock_result
                     if len(args) > 1:
                         if args[1].startswith("Do you want to confirm"):
                             mock_result.result = 0
@@ -1286,32 +1230,28 @@ class GeneralCsvGuiMixin:
             @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
-            @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
                 "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
-            @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
+            @mock.patch("midvatten.tools.import_general_csv_gui.CsvFileLoadDialog")
             def _test(
                 self,
                 filename,
-                mock_filename,
+                mock_dialog,
                 mock_skippopup,
-                mock_encoding,
                 mock_iface,
                 mock_askuser,
                 mock_messagebar,
             ):
-
-                mock_filename.return_value = [filename]
-                mock_encoding.return_value = ["utf-8", True]
+                instance = mock_dialog.return_value
+                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.filename = filename
+                instance.charset = "utf-8"
+                instance.has_header = True
 
                 def side_effect(*args, **kwargs):
                     mock_result = mock.MagicMock()
-                    if "msg" in kwargs:
-                        if kwargs["msg"].startswith("Does the file contain a header?"):
-                            mock_result.result = 1
-                            return mock_result
                     if len(args) > 1:
                         if args[1].startswith("Do you want to confirm"):
                             mock_result.result = 0
@@ -1375,31 +1315,27 @@ class GeneralCsvGuiMixin:
 
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
-            @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
                 "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
-            @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
+            @mock.patch("midvatten.tools.import_general_csv_gui.CsvFileLoadDialog")
             def _test(
                 self,
                 filename,
-                mock_filename,
+                mock_dialog,
                 mock_skippopup,
-                mock_encoding,
                 mock_iface,
                 mock_askuser,
             ):
-
-                mock_filename.return_value = [filename]
-                mock_encoding.return_value = ["utf-8", True]
+                instance = mock_dialog.return_value
+                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.filename = filename
+                instance.charset = "utf-8"
+                instance.has_header = True
 
                 def side_effect(*args, **kwargs):
                     mock_result = mock.MagicMock()
-                    if "msg" in kwargs:
-                        if kwargs["msg"].startswith("Does the file contain a header?"):
-                            mock_result.result = 1
-                            return mock_result
                     if len(args) > 1:
                         if args[1].startswith("Do you want to confirm"):
                             mock_result.result = 0
@@ -1469,31 +1405,27 @@ class GeneralCsvGuiMixin:
 
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
-            @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
                 "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
-            @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
+            @mock.patch("midvatten.tools.import_general_csv_gui.CsvFileLoadDialog")
             def _test(
                 self,
                 filename,
-                mock_filename,
+                mock_dialog,
                 mock_skippopup,
-                mock_encoding,
                 mock_iface,
                 mock_askuser,
             ):
-                mock_filename.return_value = [filename]
-                mock_encoding.return_value = ["utf-8", True]
+                instance = mock_dialog.return_value
+                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.filename = filename
+                instance.charset = "utf-8"
+                instance.has_header = True
 
                 def side_effect(*args, **kwargs):
                     mock_result = mock.MagicMock()
-                    if "msg" in kwargs and kwargs["msg"].startswith(
-                        "Does the file contain a header?"
-                    ):
-                        mock_result.result = 1
-                        return mock_result
                     if len(args) > 1:
                         if args[1].startswith("Do you want to confirm"):
                             mock_result.result = 0
@@ -1579,31 +1511,27 @@ class GeneralCsvGuiMixin:
 
             @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
             @mock.patch("qgis.utils.iface", autospec=True)
-            @mock.patch("qgis.PyQt.QtWidgets.QInputDialog.getText")
             @mock.patch(
                 "midvatten.tools.utils.message_utils.pop_up_info",
                 autospec=True,
             )
-            @mock.patch.object(qgis.PyQt.QtWidgets.QFileDialog, "getOpenFileName")
+            @mock.patch("midvatten.tools.import_general_csv_gui.CsvFileLoadDialog")
             def _test(
                 self,
                 filename,
-                mock_filename,
+                mock_dialog,
                 mock_skippopup,
-                mock_encoding,
                 mock_iface,
                 mock_askuser,
             ):
-                mock_filename.return_value = [filename]
-                mock_encoding.return_value = ["utf-8", True]
+                instance = mock_dialog.return_value
+                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.filename = filename
+                instance.charset = "utf-8"
+                instance.has_header = True
 
                 def side_effect(*args, **kwargs):
                     mock_result = mock.MagicMock()
-                    if "msg" in kwargs and kwargs["msg"].startswith(
-                        "Does the file contain a header?"
-                    ):
-                        mock_result.result = 1
-                        return mock_result
                     if len(args) > 1:
                         if args[1].startswith("Do you want to confirm"):
                             mock_result.result = 0

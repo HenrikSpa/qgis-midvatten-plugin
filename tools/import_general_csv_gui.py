@@ -34,7 +34,6 @@ from midvatten.tools.utils import (
     common_utils,
     db_utils,
     date_utils,
-    dialog_utils,
     exceptions,
     file_utils,
     layer_utils,

@@ -82,7 +82,7 @@ class GeneralImportMixin:
         assert test_string == reference_string
         assert (
             call.info(
-                bar_msg="1 rows imported and 1 excluded for table w_levels_logger. See log message panel for details",
+                bar_msg="1 rows imported, 1 excluded for table w_levels_logger (1 already existed in the database). See log message panel for details.",
                 log_msg="--------------------",
             )
             in mock_messagebar.mock_calls
@@ -655,7 +655,7 @@ class ImportObsPointsObsLinesMixin:
         print(f"{mock_messagebar.mock_calls=}")
         assert (
             call.info(
-                bar_msg="1 rows imported and 2 excluded for table obs_points. See log message panel for details",
+                bar_msg="1 rows imported, 2 excluded for table obs_points (2 duplicated within the file). See log message panel for details.",
                 log_msg="--------------------",
             )
             in mock_messagebar.mock_calls
@@ -2107,6 +2107,95 @@ class DeleteExistingDateTimesFromTemptableMixin:
             dbconnection.closedb()
         print(mock_messagebar.mock_calls)
         assert rows_deleted == 1  # same instant (different format) IS a duplicate
+
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_message_in_file_duplicates_only(self, mock_messagebar):
+        """In-file dups (no pre-existing DB rows): message and summary attribute
+        the removal to duplication WITHIN the file, not the database."""
+        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('o1')""")
+        f = [
+            ["obsid", "date_time", "level_masl"],
+            ["o1", "2016-01-01 00:00", "1"],
+            ["o1", "2016-01-01 00:00:00", "2"],  # same instant -> in-file dup
+            ["o1", "2016-01-01 01:00:00", "3"],  # distinct -> kept
+        ]
+        self.importinstance.general_import(dest_table="w_levels", file_data=f)
+
+        calls = str(mock_messagebar.mock_calls)
+        print(calls)
+        assert "duplicated within the file" in calls
+        assert "already exist" not in calls  # DB process must NOT be blamed
+        assert (
+            call.info(
+                bar_msg="2 rows imported, 1 excluded for table w_levels "
+                "(1 duplicated within the file). See log message panel for details.",
+                log_msg="--------------------",
+            )
+            in mock_messagebar.mock_calls
+        )
+
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_message_already_in_database_only(self, mock_messagebar):
+        """Rows already present in the DB: message and summary attribute the
+        removal to the database, not the file."""
+        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('o1')""")
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels (obsid, date_time, level_masl) "
+            "VALUES ('o1', '2016-01-01 00:00:00', '9')"
+        )
+        f = [
+            ["obsid", "date_time", "level_masl"],
+            ["o1", "2016-01-01 00:00", "5"],  # matches existing instant -> DB dup
+            ["o1", "2016-01-01 01:00:00", "6"],  # new -> kept
+        ]
+        self.importinstance.general_import(dest_table="w_levels", file_data=f)
+
+        calls = str(mock_messagebar.mock_calls)
+        print(calls)
+        assert "already exists in the database" in calls
+        assert "duplicated within the file" not in calls  # file process not blamed
+        assert (
+            call.info(
+                bar_msg="1 rows imported, 1 excluded for table w_levels "
+                "(1 already existed in the database). See log message panel for details.",
+                log_msg="--------------------",
+            )
+            in mock_messagebar.mock_calls
+        )
+
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_message_both_processes(self, mock_messagebar):
+        """Both processes fire: summary breaks the excluded count into both causes."""
+        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('o1')""")
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels (obsid, date_time, level_masl) "
+            "VALUES ('o1', '2016-01-01 00:00:00', '9')"
+        )
+        f = [
+            ["obsid", "date_time", "level_masl"],
+            ["o1", "2016-01-01 00:00", "5"],  # matches existing -> DB dup
+            ["o1", "2016-01-01 02:00", "7"],  # new
+            ["o1", "2016-01-01 02:00:00", "8"],  # in-file dup of previous
+            ["o1", "2016-01-01 03:00:00", "9"],  # new distinct
+        ]
+        self.importinstance.general_import(dest_table="w_levels", file_data=f)
+
+        calls = str(mock_messagebar.mock_calls)
+        print(calls)
+        assert "already exists in the database" in calls
+        assert "duplicated within the file" in calls
+        assert (
+            call.info(
+                bar_msg="2 rows imported, 2 excluded for table w_levels "
+                "(1 already existed in the database, 1 duplicated within the file). "
+                "See log message panel for details.",
+                log_msg="--------------------",
+            )
+            in mock_messagebar.mock_calls
+        )
 
 
 @pytest.mark.postgis

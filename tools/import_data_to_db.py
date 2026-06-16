@@ -130,7 +130,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                     )
                 )
 
-            self.list_to_table(
+            in_file_dups, in_file_dup_rownumbers = self.list_to_table(
                 dbconnection, dest_table, file_data, primary_keys_for_concat
             )
 
@@ -158,7 +158,11 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 )
 
             # Delete records from self.temptable where yyyy-mm-dd hh:mm or yyyy-mm-dd hh:mm:ss already exist for the same date.
-            remaining_rownumbers, import_messages = self._remove_duplicate_datetimes(
+            (
+                remaining_rownumbers,
+                import_messages,
+                already_in_db,
+            ) = self._remove_duplicate_datetimes(
                 dbconnection,
                 dest_table,
                 primary_keys,
@@ -167,6 +171,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 get_remaining_rownumbers,
                 get_removed_rownumbers,
                 get_row_subset,
+                in_file_dup_rownumbers,
                 import_messages,
             )
             if remaining_rownumbers is None:
@@ -221,11 +226,9 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
 
             nr_excluded = recsinfile - nr_imported
             message_utils.MessagebarAndLog.info(
-                bar_msg=QCoreApplication.translate(
-                    "midv_data_importer",
-                    "%s rows imported and %s excluded for table %s. See log message panel for details",
-                )
-                % (nr_imported, nr_excluded, dest_table),
+                bar_msg=self._import_summary_bar_msg(
+                    nr_imported, nr_excluded, dest_table, already_in_db, in_file_dups
+                ),
                 log_msg="--------------------",
             )
 
@@ -234,6 +237,52 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             raise
         else:
             self._cleanup(dbconnection, _dbconnection, commit=not defer_commit)
+
+    def _import_summary_bar_msg(
+        self,
+        nr_imported: int,
+        nr_excluded: int,
+        dest_table: str,
+        already_in_db: int,
+        in_file_dups: int,
+    ) -> str:
+        """Build the final summary, naming each cause of exclusion.
+
+        When rows were removed by either dedup process, the excluded count is
+        broken down by cause; any remaining exclusions (e.g. missing required
+        values) are reported as "other reasons". Falls back to the plain message
+        when neither dedup process removed anything.
+        """
+        clauses = []
+        if already_in_db:
+            clauses.append(
+                QCoreApplication.translate(
+                    "midv_data_importer", "%s already existed in the database"
+                )
+                % str(already_in_db)
+            )
+        if in_file_dups:
+            clauses.append(
+                QCoreApplication.translate(
+                    "midv_data_importer", "%s duplicated within the file"
+                )
+                % str(in_file_dups)
+            )
+        remainder = nr_excluded - already_in_db - in_file_dups
+        if clauses and remainder > 0:
+            clauses.append(
+                QCoreApplication.translate("midv_data_importer", "%s for other reasons")
+                % str(remainder)
+            )
+        if clauses:
+            return QCoreApplication.translate(
+                "midv_data_importer",
+                "%s rows imported, %s excluded for table %s (%s). See log message panel for details.",
+            ) % (str(nr_imported), str(nr_excluded), dest_table, ", ".join(clauses))
+        return QCoreApplication.translate(
+            "midv_data_importer",
+            "%s rows imported and %s excluded for table %s. See log message panel for details",
+        ) % (str(nr_imported), str(nr_excluded), dest_table)
 
     def _validate_and_connect(
         self,
@@ -323,55 +372,70 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         get_remaining_rownumbers: Callable,
         get_removed_rownumbers: Callable,
         get_row_subset: Callable,
+        in_file_dup_rownumbers: List[int],
         import_messages: List[str],
     ) -> Tuple:
-        """Delete rows from the temp table that have duplicate date_times.
+        """Delete temp rows whose date_time already exists in the destination table.
 
-        Returns (remaining_rownumbers, import_messages), where remaining_rownumbers
-        is None if all rows were removed (caller should abort).
+        Returns (remaining_rownumbers, import_messages, already_in_db_count), where
+        remaining_rownumbers is None if all rows were removed (caller should abort).
+        already_in_db_count counts only rows removed here (already in the database),
+        never the in-file duplicates dropped earlier.
         """
         if "date_time" not in primary_keys:
-            return remaining_rownumbers, import_messages
+            return remaining_rownumbers, import_messages, 0
 
         rows_deleted = self.delete_existing_date_times_from_temptable(
             primary_keys, dest_table, dbconnection
         )
         if rows_deleted == 0:
             # Common case: no pre-existing data — skip the DB round-trip.
-            return remaining_rownumbers, import_messages
+            return remaining_rownumbers, import_messages, 0
 
         remaining_rownumbers = get_remaining_rownumbers()
         if not remaining_rownumbers:
             message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "midv_data_importer",
-                    "Nothing imported to %s after deleting duplicate date_times",
+                    "Nothing imported to %s: every row already exists in the database.",
                 )
                 % dest_table
             )
-            return None, import_messages
+            return None, import_messages, rows_deleted
 
-        removed_rownumbers = get_removed_rownumbers(
-            all_rownumbers, remaining_rownumbers
-        )
-        if removed_rownumbers:
-            removed_rows = get_row_subset(removed_rownumbers)
+        # rows_deleted is the authoritative count of rows already in the DB. For the
+        # log we also show a sample of WHICH rows: "all removed" MINUS the in-file
+        # duplicates dropped before the temp table was populated (those never reached
+        # the DB check, so showing them here would mis-attribute them).
+        in_file_dup_set = set(in_file_dup_rownumbers)
+        removed_rows_sample = [
+            rownr
+            for rownr in get_removed_rownumbers(all_rownumbers, remaining_rownumbers)
+            if rownr not in in_file_dup_set
+        ]
+        if removed_rows_sample:
             message_utils.MessagebarAndLog.info(
                 log_msg=QCoreApplication.translate(
                     "midv_data_importer",
-                    "Skipped %s rows with duplicate date_time but of different date format (yyyy-mm-dd hh:mm or yyyy-mm-dd hh:mm:ss). Subset of skipped rows:\n%s",
+                    "%s rows were skipped because a row with the same primary key "
+                    "already exists in the database table %s (date_time matched to "
+                    "the second). Subset of skipped rows:\n%s",
                 )
-                % (str(len(removed_rownumbers)), "\n".join(removed_rows))
+                % (
+                    str(rows_deleted),
+                    dest_table,
+                    "\n".join(get_row_subset(removed_rows_sample)),
+                )
             )
             import_messages.append(
                 QCoreApplication.translate(
                     "midv_data_importer",
-                    "Skipped %s rows with duplicate date_time.",
+                    "%s rows already exist in the database and were skipped.",
                 )
-                % str(len(removed_rownumbers))
+                % str(rows_deleted)
             )
 
-        return remaining_rownumbers, import_messages
+        return remaining_rownumbers, import_messages, rows_deleted
 
     def _handle_special_table_cases(
         self,
@@ -626,14 +690,14 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         destination_table: str,
         file_data: List[Any],
         primary_keys_for_concat: List[str],
-    ) -> None:
+    ) -> Tuple[int, List[int]]:
         """
         TODO: This method can be extremely slow sometimes.
         @param dbconnection:
         @param destination_table:
         @param file_data:
         @param primary_keys_for_concat:
-        @return:
+        @return: (number of in-file duplicates skipped, their original row-numbers)
         """
         # field_name comes from the imported file's header row (user-supplied),
         # so it must be safely quoted before being spliced into CREATE TABLE.
@@ -649,7 +713,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             tname, fieldnames_types
         )
 
-        numskipped = self.list_to_table_using_pandas(
+        numskipped, in_file_dup_rownumbers = self.list_to_table_using_pandas(
             dbconnection,
             self.temptable_name,
             self.temptable_rowid_name,
@@ -660,14 +724,19 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         if numskipped:
             message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
-                    "midv_data_importer", "Import warning, duplicates skipped"
-                ),
+                    "midv_data_importer",
+                    "%s rows skipped (duplicated within the file)",
+                )
+                % str(numskipped),
                 log_msg=QCoreApplication.translate(
                     "midv_data_importer",
-                    "%s nr of duplicate rows in file was skipped while importing.",
+                    "%s rows were skipped because they are duplicated within the "
+                    "imported file itself (same primary key, e.g. obsid + date_time). "
+                    "The database was not involved for these.",
                 )
                 % str(numskipped),
             )
+        return numskipped, in_file_dup_rownumbers
 
     def list_to_table_using_pandas(
         self,
@@ -676,13 +745,13 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         temptable_rowidcol: str,
         file_data: List[Any],
         primary_keys_for_concat: List[str],
-    ) -> int:
+    ) -> Tuple[int, List[int]]:
         numskipped = 0
+        in_file_dup_rownumbers: List[int] = []
         df = pd.DataFrame.from_records(file_data[1:], columns=file_data[0])
         df[temptable_rowidcol] = df.index
 
         if primary_keys_for_concat:
-            len_before = len(df)
             # Dedup key: normalize date_time to its second-instant so '00:00' and
             # '00:00:00' collapse, but fall back to the RAW text when unparseable so
             # distinct malformed dates are not merged (they escape the normalized
@@ -693,8 +762,12 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 key_df["date_time"] = key_df["date_time"].map(
                     lambda v: instant_key(v) or v
                 )
-            df = df[~key_df.duplicated(keep="first")].reset_index(drop=True)
-            numskipped = len_before - len(df)
+            duplicate_mask = key_df.duplicated(keep="first")
+            # Original file row-numbers of the in-file duplicates, so the caller can
+            # report them separately from rows that already exist in the database.
+            in_file_dup_rownumbers = df.loc[duplicate_mask, temptable_rowidcol].tolist()
+            numskipped = len(in_file_dup_rownumbers)
+            df = df[~duplicate_mask].reset_index(drop=True)
 
         for column in df.columns:
             try:
@@ -736,7 +809,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                     dbconnection.cursor, sql, data, template=f"({ph})"
                 )
 
-        return numskipped
+        return numskipped, in_file_dup_rownumbers
 
     def delete_existing_date_times_from_temptable(
         self,

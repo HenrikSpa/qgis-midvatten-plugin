@@ -503,43 +503,45 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         all_rownumbers: Tuple,
         import_messages: List[str],
     ) -> None:
-        """Assemble the confirmation message and ask the user whether to proceed.
+        """Confirm only when rows would actually be dropped (real data loss).
 
-        Raises UserInterruptError if the user chooses not to import.
+        When nothing is dropped, clicking "Start import" is itself the
+        go-ahead — no modal. Accumulated per-cause detail is always logged
+        quietly so it is never lost. Raises UserInterruptError if the user
+        declines. The ``foreign_keys_import_question`` latch preserves the
+        "ask at most once per import session" behaviour for multi-table
+        imports and ``skip_confirmation``.
         """
-        if self.foreign_keys_import_question:
-            if len(remaining_rownumbers) != len(all_rownumbers):
-                message_utils.MessagebarAndLog.info(
-                    log_msg=QCoreApplication.translate(
-                        "midv_data_importer",
-                        "Skipping confirmation dialog: %s out of %s rows to import (duplicates removed).",
-                    )
-                    % (str(len(remaining_rownumbers)), str(len(all_rownumbers)))
-                )
+        if import_messages:
+            message_utils.MessagebarAndLog.info(log_msg="\n".join(import_messages))
+
+        rows_dropped = len(remaining_rownumbers) != len(all_rownumbers)
+        if not rows_dropped:
             return
 
-        if len(remaining_rownumbers) == len(all_rownumbers):
-            import_messages.append(
-                QCoreApplication.translate("midv_data_importer", "Proceed with import?")
-            )
-            self.foreign_keys_import_question = 1
-        else:
-            import_messages.append(
-                QCoreApplication.translate(
+        if self.foreign_keys_import_question:
+            message_utils.MessagebarAndLog.info(
+                log_msg=QCoreApplication.translate(
                     "midv_data_importer",
-                    """There are %s out of %s number of rows to import (see log for more info about removed rows).\n\nProceed with import?""",
+                    "Skipping confirmation dialog: %s out of %s rows to import (duplicates removed).",
                 )
                 % (str(len(remaining_rownumbers)), str(len(all_rownumbers)))
             )
+            return
 
-        if import_messages:
-            stop_question = dialog_utils.Askuser(
-                "YesNo",
-                "\n".join(import_messages),
-                QCoreApplication.translate("midv_data_importer", "Info"),
-            )
-            if stop_question.result == 0:
-                raise UserInterruptError()
+        msg = QCoreApplication.translate(
+            "midv_data_importer",
+            "There are %s out of %s number of rows to import (see log for more info about removed rows).\n\nProceed with import?",
+        ) % (str(len(remaining_rownumbers)), str(len(all_rownumbers)))
+
+        self.foreign_keys_import_question = 1
+        stop_question = dialog_utils.Askuser(
+            "YesNo",
+            msg,
+            QCoreApplication.translate("midv_data_importer", "Info"),
+        )
+        if stop_question.result == 0:
+            raise UserInterruptError()
 
     def _handle_foreign_keys(
         self,

@@ -71,7 +71,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                               settings dialog.
         :param dump_temptable: True to create a csvfile from internal temporary table.
         :param source_srid: The srid of the source geometry column if the geometry is a WKT or WKB
-        :param skip_confirmation: True to not ask the user to import foreign keys.
+        :param skip_confirmation: True to suppress the row-drop confirmation dialog (e.g. headless/batch imports).
         :param binary_geometry: True if the source geometry column should be parsed as a WKB, else it's parsed as WKT.
         :return:
         """
@@ -565,7 +565,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 message_utils.MessagebarAndLog.info(
                     log_msg=QCoreApplication.translate(
                         "midv_data_importer",
-                        "Foreign keys for %s were imported automatically.",
+                        "Foreign keys for %s are imported automatically.",
                     )
                     % dest_table
                 )

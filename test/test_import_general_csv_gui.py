@@ -247,6 +247,18 @@ class TestGeneralCsvImportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
         assert chooser.series_columns == []
         assert "source" in [c.db_column for c in chooser.columns]
 
+    @mock.patch("midvatten.tools.import_general_csv_gui.CsvFileLoadDialog")
+    def test_load_files_cancel_raises_userinterrupt(self, mock_dialog):
+        mock_dialog.return_value.exec.return_value = (
+            qgis.PyQt.QtWidgets.QDialog.Rejected
+        )
+        ms = MagicMock()
+        ms.settingsdict = OrderedDict()
+        importer = GeneralCsvImportGui(self.iface, ms)
+        importer.load_gui()
+        with pytest.raises(exceptions.UserInterruptError):
+            importer.load_files()
+
 
 @pytest.mark.spatialite
 class TestShowIsIdempotent(utils_for_tests.MidvattenTestSpatialiteDbSv):

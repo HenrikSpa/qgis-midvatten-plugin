@@ -88,10 +88,9 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif args[1].startswith("Note:\nForeign keys"):
-                            mock_result.result = 1
-                            return mock_result
-                        elif args[1].startswith("Please note!\nThere are"):
+                        elif "(see log for more info about removed rows)" in args[
+                            1
+                        ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
                             return mock_result
                         elif args[1].startswith("It is a strong recommendation"):
@@ -168,10 +167,9 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif args[1].startswith("Note:\nForeign keys"):
-                            mock_result.result = 1
-                            return mock_result
-                        elif args[1].startswith("Please note!\nThere are"):
+                        elif "(see log for more info about removed rows)" in args[
+                            1
+                        ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
                             return mock_result
                         elif args[1].startswith("It is a strong recommendation"):
@@ -255,10 +253,9 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif args[1].startswith("Note:\nForeign keys"):
-                            mock_result.result = 1
-                            return mock_result
-                        elif args[1].startswith("Please note!\nThere are"):
+                        elif "(see log for more info about removed rows)" in args[
+                            1
+                        ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
                             return mock_result
                         elif args[1].startswith("It is a strong recommendation"):
@@ -345,10 +342,9 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif args[1].startswith("Note:\nForeign keys"):
-                            mock_result.result = 1
-                            return mock_result
-                        elif args[1].startswith("Please note!\nThere are"):
+                        elif "(see log for more info about removed rows)" in args[
+                            1
+                        ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
                             return mock_result
                         elif args[1].startswith("It is a strong recommendation"):
@@ -426,10 +422,9 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif args[1].startswith("Note:\nForeign keys"):
-                            mock_result.result = 1
-                            return mock_result
-                        elif args[1].startswith("Please note!\nThere are"):
+                        elif "(see log for more info about removed rows)" in args[
+                            1
+                        ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
                             return mock_result
                         elif args[1].startswith("It is a strong recommendation"):
@@ -517,10 +512,9 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif args[1].startswith("Note:\nForeign keys"):
-                            mock_result.result = 1
-                            return mock_result
-                        elif args[1].startswith("Please note!\nThere are"):
+                        elif "(see log for more info about removed rows)" in args[
+                            1
+                        ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
                             return mock_result
                         elif args[1].startswith("It is a strong recommendation"):
@@ -600,10 +594,9 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif args[1].startswith("Note:\nForeign keys"):
-                            mock_result.result = 1
-                            return mock_result
-                        elif args[1].startswith("Please note!\nThere are"):
+                        elif "(see log for more info about removed rows)" in args[
+                            1
+                        ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
                             return mock_result
                         elif args[1].startswith("It is a strong recommendation"):
@@ -687,10 +680,9 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif args[1].startswith("Note:\nForeign keys"):
-                            mock_result.result = 1
-                            return mock_result
-                        elif args[1].startswith("Please note!\nThere are"):
+                        elif "(see log for more info about removed rows)" in args[
+                            1
+                        ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
                             return mock_result
                         elif args[1].startswith("It is a strong recommendation"):
@@ -771,10 +763,9 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif args[1].startswith("Note:\nForeign keys"):
-                            mock_result.result = 1
-                            return mock_result
-                        elif args[1].startswith("Please note!\nThere are"):
+                        elif "(see log for more info about removed rows)" in args[
+                            1
+                        ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
                             return mock_result
                         elif args[1].startswith("It is a strong recommendation"):
@@ -856,10 +847,9 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif args[1].startswith("Note:\nForeign keys"):
-                            mock_result.result = 1
-                            return mock_result
-                        elif args[1].startswith("Please note!\nThere are"):
+                        elif "(see log for more info about removed rows)" in args[
+                            1
+                        ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
                             return mock_result
                         elif args[1].startswith("It is a strong recommendation"):
@@ -935,10 +925,9 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif args[1].startswith("Note:\nForeign keys"):
-                            mock_result.result = 1
-                            return mock_result
-                        elif args[1].startswith("Please note!\nThere are"):
+                        elif "(see log for more info about removed rows)" in args[
+                            1
+                        ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
                             return mock_result
                         elif args[1].startswith("It is a strong recommendation"):
@@ -1014,10 +1003,9 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif args[1].startswith("Note:\nForeign keys"):
-                            mock_result.result = 1
-                            return mock_result
-                        elif args[1].startswith("Please note!\nThere are"):
+                        elif "(see log for more info about removed rows)" in args[
+                            1
+                        ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
                             return mock_result
                         elif args[1].startswith("It is a strong recommendation"):
@@ -1100,10 +1088,9 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif args[1].startswith("Note:\nForeign keys"):
-                            mock_result.result = 1
-                            return mock_result
-                        elif args[1].startswith("Please note!\nThere are"):
+                        elif "(see log for more info about removed rows)" in args[
+                            1
+                        ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
                             return mock_result
                         elif args[1].startswith("It is a strong recommendation"):
@@ -1179,10 +1166,9 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif args[1].startswith("Note:\nForeign keys"):
-                            mock_result.result = 1
-                            return mock_result
-                        elif args[1].startswith("Please note!\nThere are"):
+                        elif "(see log for more info about removed rows)" in args[
+                            1
+                        ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
                             return mock_result
                         elif args[1].startswith("It is a strong recommendation"):
@@ -1260,10 +1246,9 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif args[1].startswith("Note:\nForeign keys"):
-                            mock_result.result = 1
-                            return mock_result
-                        elif args[1].startswith("Please note!\nThere are"):
+                        elif "(see log for more info about removed rows)" in args[
+                            1
+                        ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
                             return mock_result
                         elif args[1].startswith("It is a strong recommendation"):
@@ -1344,10 +1329,9 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif args[1].startswith("Note:\nForeign keys"):
-                            mock_result.result = 1
-                            return mock_result
-                        elif args[1].startswith("Please note!\nThere are"):
+                        elif "(see log for more info about removed rows)" in args[
+                            1
+                        ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
                             return mock_result
                         elif args[1].startswith("It is a strong recommendation"):
@@ -1433,10 +1417,9 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif args[1].startswith("Note:\nForeign keys"):
-                            mock_result.result = 1
-                            return mock_result
-                        elif args[1].startswith("Please note!\nThere are"):
+                        elif "(see log for more info about removed rows)" in args[
+                            1
+                        ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
                             return mock_result
                         elif args[1].startswith("It is a strong recommendation"):
@@ -1539,10 +1522,9 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif args[1].startswith("Note:\nForeign keys"):
-                            mock_result.result = 1
-                            return mock_result
-                        elif args[1].startswith("Please note!\nThere are"):
+                        elif "(see log for more info about removed rows)" in args[
+                            1
+                        ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
                             return mock_result
                         elif args[1].startswith("It is a strong recommendation"):
@@ -1761,10 +1743,9 @@ class GeneralCsvGuiFromLayerMixin:
                     elif args[1].startswith("Do you want to import all"):
                         mock_result.result = 0
                         return mock_result
-                    elif args[1].startswith("Note:\nForeign keys"):
-                        mock_result.result = 1
-                        return mock_result
-                    elif args[1].startswith("Please note!\nThere are"):
+                    elif "(see log for more info about removed rows)" in args[
+                        1
+                    ] or args[1].startswith("Please note!\nThere are"):
                         mock_result.result = 1
                         return mock_result
                     elif args[1].startswith("It is a strong recommendation"):
@@ -1842,10 +1823,9 @@ class GeneralCsvGuiFromLayerMixin:
                     elif args[1].startswith("Do you want to import all"):
                         mock_result.result = 0
                         return mock_result
-                    elif args[1].startswith("Note:\nForeign keys"):
-                        mock_result.result = 1
-                        return mock_result
-                    elif args[1].startswith("Please note!\nThere are"):
+                    elif "(see log for more info about removed rows)" in args[
+                        1
+                    ] or args[1].startswith("Please note!\nThere are"):
                         mock_result.result = 1
                         return mock_result
                     elif args[1].startswith("It is a strong recommendation"):

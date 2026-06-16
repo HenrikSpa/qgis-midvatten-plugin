@@ -154,7 +154,7 @@ class CsvFileLoadDialog(qgis.PyQt.QtWidgets.QDialog):
 
     def _browse(self):
         try:
-            # extension filter string is shared with GeneralCsvImportGui.select_file;
+            # Reuses the "GeneralCsvImportGui" translation context for i18n continuity.
             # select_files raises UserInterruptError when the user cancels.
             chosen = midvatten_utils.select_files(
                 only_one_file=True,

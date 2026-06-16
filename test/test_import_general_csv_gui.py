@@ -28,11 +28,37 @@ import pytest
 import qgis.PyQt
 
 from midvatten.test import utils_for_tests
+from midvatten.tools import import_general_csv_gui
 from midvatten.tools.import_general_csv_gui import (
     GeneralCsvImportGui,
     ImportTableChooser,
 )
 from midvatten.tools.utils import db_utils, file_utils, string_utils
+
+
+class TestCsvEncodingHelpers:
+    def test_last_encoding_returns_stored_value(self):
+        with mock.patch("midvatten.tools.import_general_csv_gui.QSettings") as mock_qs:
+            mock_qs.return_value.value.return_value = "cp1252"
+            assert import_general_csv_gui._last_csv_encoding() == "cp1252"
+
+    def test_last_encoding_falls_back_to_locale(self):
+        with (
+            mock.patch("midvatten.tools.import_general_csv_gui.QSettings") as mock_qs,
+            mock.patch(
+                "midvatten.tools.import_general_csv_gui.midvatten_utils.getcurrentlocale",
+                return_value=("sv_SE", "iso-8859-1"),
+            ),
+        ):
+            mock_qs.return_value.value.return_value = None
+            assert import_general_csv_gui._last_csv_encoding() == "iso-8859-1"
+
+    def test_save_encoding_writes_setting(self):
+        with mock.patch("midvatten.tools.import_general_csv_gui.QSettings") as mock_qs:
+            import_general_csv_gui._save_csv_encoding("utf-8")
+            mock_qs.return_value.setValue.assert_called_once_with(
+                import_general_csv_gui.CSV_ENCODING_SETTING, "utf-8"
+            )
 
 
 @pytest.mark.active

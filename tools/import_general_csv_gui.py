@@ -25,7 +25,7 @@ import csv
 from operator import itemgetter
 
 import qgis.PyQt
-from qgis.PyQt.QtCore import QCoreApplication
+from qgis.PyQt.QtCore import QCoreApplication, QSettings
 
 import midvatten.definitions.midvatten_defs as defs
 from midvatten.tools import import_data_to_db
@@ -65,6 +65,27 @@ SERIES_CARRIER_PREFIX = "__series_"
 
 def series_carrier(field: str) -> str:
     return SERIES_CARRIER_PREFIX + field
+
+
+# Persisted across sessions so the importer reopens with the user's last choice
+# (encoding cannot be reliably auto-detected, so we never guess silently).
+CSV_ENCODING_SETTING = "Midvatten/csv_import_encoding"
+COMMON_ENCODINGS = ["utf-8", "iso-8859-1", "cp1250", "cp1252"]
+
+
+def _last_csv_encoding() -> str:
+    """Last-used encoding from QSettings, else the OS locale, else utf-8."""
+    stored = QSettings().value(CSV_ENCODING_SETTING)
+    if stored:
+        return str(stored)
+    try:
+        return midvatten_utils.getcurrentlocale()[1]
+    except Exception:
+        return "utf-8"
+
+
+def _save_csv_encoding(encoding: str) -> None:
+    QSettings().setValue(CSV_ENCODING_SETTING, encoding)
 
 
 class GeneralCsvImportGui(BaseImporter, import_ui_dialog):

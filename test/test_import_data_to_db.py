@@ -373,6 +373,41 @@ class GeneralImportMixin:
         print(f"{mock_askuser.mock_calls=}")
         assert mock_askuser.call_count == 1
 
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
+    def test_fk_note_not_in_any_modal(self, mock_askuser, mock_messagebar):
+        mock_askuser.return_value.result = 1
+        file = [
+            ("obsid", "date_time", "head_cm"),
+            ("rb1", "2016-03-15 10:30:00", "1"),
+            ("rb1", "2016-03-15 11:00:00", "2"),
+        ]
+        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb1')""")
+        db_utils.sql_alter_db(
+            """INSERT INTO w_levels_logger (obsid, date_time, head_cm)"""
+            """ VALUES ('rb1', '2016-03-15 11:00:00', 3)"""
+        )
+
+        self.importinstance.general_import(dest_table="w_levels_logger", file_data=file)
+
+        for call in mock_askuser.call_args_list:
+            joined = " ".join(str(a) for a in call.args)
+            assert "Foreign keys will be imported" not in joined
+
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
+    def test_fk_import_logs_quiet_note(self, mock_messagebar):
+        file = [
+            ("obsid", "date_time", "head_cm"),
+            ("rb1", "2016-03-15 10:30:00", "1"),
+        ]
+        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb1')""")
+
+        self.importinstance.general_import(dest_table="w_levels_logger", file_data=file)
+
+        logged = " ".join(str(c) for c in mock_messagebar.mock_calls)
+        assert "imported automatically" in logged
+
 
 class ImportObsPointsObsLinesMixin:
     @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
@@ -2265,41 +2300,6 @@ class DeleteExistingDateTimesFromTemptableMixin:
             )
             in mock_messagebar.mock_calls
         )
-
-    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
-    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
-    def test_fk_note_not_in_any_modal(self, mock_askuser, mock_messagebar):
-        mock_askuser.return_value.result = 1
-        file = [
-            ("obsid", "date_time", "head_cm"),
-            ("rb1", "2016-03-15 10:30:00", "1"),
-            ("rb1", "2016-03-15 11:00:00", "2"),
-        ]
-        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb1')""")
-        db_utils.sql_alter_db(
-            """INSERT INTO w_levels_logger (obsid, date_time, head_cm)"""
-            """ VALUES ('rb1', '2016-03-15 11:00:00', 3)"""
-        )
-
-        self.importinstance.general_import(dest_table="w_levels_logger", file_data=file)
-
-        for call in mock_askuser.call_args_list:
-            joined = " ".join(str(a) for a in call.args)
-            assert "Foreign keys will be imported" not in joined
-
-    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
-    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
-    def test_fk_import_logs_quiet_note(self, mock_messagebar):
-        file = [
-            ("obsid", "date_time", "head_cm"),
-            ("rb1", "2016-03-15 10:30:00", "1"),
-        ]
-        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb1')""")
-
-        self.importinstance.general_import(dest_table="w_levels_logger", file_data=file)
-
-        logged = " ".join(str(c) for c in mock_messagebar.mock_calls)
-        assert "imported automatically" in logged
 
 
 @pytest.mark.postgis

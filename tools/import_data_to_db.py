@@ -77,12 +77,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         """
 
         self.temptable_name = None
-        import_messages = [
-            QCoreApplication.translate(
-                "midv_data_importer",
-                """Note:\nForeign keys will be imported silently.""",
-            )
-        ]
+        import_messages = []
 
         if skip_confirmation:
             self.foreign_keys_import_question = 1
@@ -560,6 +555,13 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                     if table in foreign_keys:
                         del foreign_keys[table]
             if foreign_keys:
+                message_utils.MessagebarAndLog.info(
+                    log_msg=QCoreApplication.translate(
+                        "midv_data_importer",
+                        "Foreign keys for %s were imported automatically.",
+                    )
+                    % dest_table
+                )
                 self.import_foreign_keys(
                     dbconnection,
                     dest_table,

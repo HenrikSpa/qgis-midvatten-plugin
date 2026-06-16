@@ -154,14 +154,19 @@ class CsvFileLoadDialog(qgis.PyQt.QtWidgets.QDialog):
         return self._buttons.button(qgis.PyQt.QtWidgets.QDialogButtonBox.Ok)
 
     def _browse(self):
-        chosen = midvatten_utils.select_files(
-            only_one_file=True,
-            extension=QCoreApplication.translate(
-                "GeneralCsvImportGui",
-                "Comma or semicolon separated csv file %s;;Comma or semicolon separated csv text file %s;;Comma or semicolon separated file %s",
+        try:
+            # extension filter string is shared with GeneralCsvImportGui.select_file;
+            # select_files raises UserInterruptError when the user cancels.
+            chosen = midvatten_utils.select_files(
+                only_one_file=True,
+                extension=QCoreApplication.translate(
+                    "GeneralCsvImportGui",
+                    "Comma or semicolon separated csv file %s;;Comma or semicolon separated csv text file %s;;Comma or semicolon separated file %s",
+                )
+                % ("(*.csv)", "(*.txt)", "(*.*)"),
             )
-            % ("(*.csv)", "(*.txt)", "(*.*)"),
-        )
+        except exceptions.UserInterruptError:
+            return
         if isinstance(chosen, (list, tuple)):
             chosen = chosen[0] if chosen else None
         if not chosen:

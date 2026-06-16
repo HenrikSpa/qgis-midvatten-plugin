@@ -33,7 +33,7 @@ from midvatten.tools.import_general_csv_gui import (
     GeneralCsvImportGui,
     ImportTableChooser,
 )
-from midvatten.tools.utils import db_utils, file_utils, string_utils
+from midvatten.tools.utils import db_utils, exceptions, file_utils, string_utils
 
 
 @pytest.mark.active
@@ -345,3 +345,22 @@ class TestCsvFileLoadDialog(utils_for_tests.MidvattenTestSpatialiteDbSv):
             preview = dlg._preview.toPlainText()
             assert "Björkån" not in preview
             assert "BjÃ" in preview  # mis-decoded utf-8 multibyte sequence
+
+    def test_browse_cancel_leaves_ok_disabled(self):
+        dlg = self._dialog()
+        with mock.patch(
+            "midvatten.tools.import_general_csv_gui.midvatten_utils.select_files",
+            side_effect=exceptions.UserInterruptError(),
+        ):
+            dlg._browse()
+        assert dlg._ok_button().isEnabled() is False
+        assert dlg.filename is None
+
+    def test_accept_saves_encoding(self):
+        dlg = self._dialog()
+        dlg._encoding.setEditText("iso-8859-1")
+        with mock.patch("midvatten.tools.import_general_csv_gui.QSettings") as mock_qs:
+            dlg.accept()
+        mock_qs.return_value.setValue.assert_called_once_with(
+            import_general_csv_gui.CSV_ENCODING_SETTING, "iso-8859-1"
+        )

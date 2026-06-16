@@ -390,6 +390,7 @@ class GeneralImportMixin:
 
         self.importinstance.general_import(dest_table="w_levels_logger", file_data=file)
 
+        mock_askuser.assert_called_once()
         for call in mock_askuser.call_args_list:
             joined = " ".join(str(a) for a in call.args)
             assert "Foreign keys will be imported" not in joined
@@ -405,8 +406,15 @@ class GeneralImportMixin:
 
         self.importinstance.general_import(dest_table="w_levels_logger", file_data=file)
 
-        logged = " ".join(str(c) for c in mock_messagebar.mock_calls)
-        assert "imported automatically" in logged
+        info_calls = mock_messagebar.info.call_args_list
+        assert any(
+            "imported automatically" in str(c.kwargs.get("log_msg", ""))
+            for c in info_calls
+        )
+        assert not any(
+            "imported automatically" in str(c.kwargs.get("bar_msg", ""))
+            for c in info_calls
+        )
 
 
 class ImportObsPointsObsLinesMixin:

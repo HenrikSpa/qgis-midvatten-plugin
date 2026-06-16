@@ -2044,12 +2044,6 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
                         ):
                             mock_result.result = 0
                             return mock_result
-                    if len(args) > 1:
-                        if args[1].startswith(
-                            "Note:\nForeign keys will be imported silently.\nProceed with import?"
-                        ):
-                            mock_result.result = 1
-                            return mock_result
 
                 mock_askuser.side_effect = side_effect
                 importer.start_import(

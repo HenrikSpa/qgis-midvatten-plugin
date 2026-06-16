@@ -555,19 +555,19 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                     if table in foreign_keys:
                         del foreign_keys[table]
             if foreign_keys:
-                message_utils.MessagebarAndLog.info(
-                    log_msg=QCoreApplication.translate(
-                        "midv_data_importer",
-                        "Foreign keys for %s were imported automatically.",
-                    )
-                    % dest_table
-                )
                 self.import_foreign_keys(
                     dbconnection,
                     dest_table,
                     self.temptable_name,
                     foreign_keys,
                     existing_columns_in_temptable,
+                )
+                message_utils.MessagebarAndLog.info(
+                    log_msg=QCoreApplication.translate(
+                        "midv_data_importer",
+                        "Foreign keys for %s were imported automatically.",
+                    )
+                    % dest_table
                 )
 
     def _build_and_execute_insert(

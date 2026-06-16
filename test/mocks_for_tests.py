@@ -198,7 +198,7 @@ mock_askuser = MockReturnUsingDictIn(
     {
         "It is a strong": answer_no.get_v(),
         "Please note!\nThere are ": answer_yes.get_v(),
-        "Note:\nForeign keys will be imported silently.": answer_yes.get_v(),
+        "There are ": answer_yes.get_v(),
     },
     1,
 )

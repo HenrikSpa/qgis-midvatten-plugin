@@ -361,9 +361,7 @@ class GeneralCsvImportGui(BaseImporter, import_ui_dialog):
         else:
             header = ["Column " + str(colnr) for colnr in range(len(self.file_data[0]))]
             self.table_chooser.file_header = header
-            self.file_data.reverse()
-            self.file_data.append(header)
-            self.file_data.reverse()
+            self.file_data.insert(0, header)
 
     def _on_file_data_loaded(self):
         if self.file_data is not None:

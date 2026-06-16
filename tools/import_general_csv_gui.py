@@ -89,6 +89,123 @@ def _save_csv_encoding(encoding: str) -> None:
     QSettings().setValue(CSV_ENCODING_SETTING, encoding)
 
 
+class CsvFileLoadDialog(qgis.PyQt.QtWidgets.QDialog):
+    """One dialog to choose a file, its encoding (with a live decoded preview),
+    and whether the first row is a header. Replaces three sequential popups."""
+
+    PREVIEW_LINES = 5
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(
+            QCoreApplication.translate("CsvFileLoadDialog", "Load data from file")
+        )
+        self._filename = None
+
+        self._path_edit = qgis.PyQt.QtWidgets.QLineEdit()
+        self._path_edit.setReadOnly(True)
+        browse_button = qgis.PyQt.QtWidgets.QPushButton(
+            QCoreApplication.translate("CsvFileLoadDialog", "Browse…")
+        )
+        browse_button.clicked.connect(lambda x: self._browse())
+        file_row = qgis.PyQt.QtWidgets.QHBoxLayout()
+        file_row.addWidget(self._path_edit)
+        file_row.addWidget(browse_button)
+
+        self._encoding = qgis.PyQt.QtWidgets.QComboBox()
+        self._encoding.setEditable(True)
+        self._encoding.addItems(COMMON_ENCODINGS)
+        self._encoding.setEditText(_last_csv_encoding())
+        self._encoding.currentTextChanged.connect(lambda x: self._refresh_preview())
+
+        self._header = qgis.PyQt.QtWidgets.QCheckBox(
+            QCoreApplication.translate("CsvFileLoadDialog", "First row is a header")
+        )
+        self._header.setChecked(True)
+
+        self._preview = qgis.PyQt.QtWidgets.QPlainTextEdit()
+        self._preview.setReadOnly(True)
+
+        self._buttons = qgis.PyQt.QtWidgets.QDialogButtonBox(
+            qgis.PyQt.QtWidgets.QDialogButtonBox.Ok
+            | qgis.PyQt.QtWidgets.QDialogButtonBox.Cancel
+        )
+        self._buttons.accepted.connect(self.accept)
+        self._buttons.rejected.connect(self.reject)
+        self._ok_button().setEnabled(False)
+
+        form = qgis.PyQt.QtWidgets.QFormLayout()
+        form.addRow(QCoreApplication.translate("CsvFileLoadDialog", "File:"), file_row)
+        form.addRow(
+            QCoreApplication.translate("CsvFileLoadDialog", "Encoding:"), self._encoding
+        )
+        form.addRow(self._header)
+        form.addRow(
+            QCoreApplication.translate("CsvFileLoadDialog", "Preview:"), self._preview
+        )
+
+        layout = qgis.PyQt.QtWidgets.QVBoxLayout()
+        layout.addLayout(form)
+        layout.addWidget(self._buttons)
+        self.setLayout(layout)
+        self.resize(700, 400)
+
+    def _ok_button(self):
+        return self._buttons.button(qgis.PyQt.QtWidgets.QDialogButtonBox.Ok)
+
+    def _browse(self):
+        chosen = midvatten_utils.select_files(
+            only_one_file=True,
+            extension=QCoreApplication.translate(
+                "GeneralCsvImportGui",
+                "Comma or semicolon separated csv file %s;;Comma or semicolon separated csv text file %s;;Comma or semicolon separated file %s",
+            )
+            % ("(*.csv)", "(*.txt)", "(*.*)"),
+        )
+        if isinstance(chosen, (list, tuple)):
+            chosen = chosen[0] if chosen else None
+        if not chosen:
+            return
+        self._filename = ru(chosen)
+        self._path_edit.setText(self._filename)
+        self._ok_button().setEnabled(True)
+        self._refresh_preview()
+
+    def _refresh_preview(self):
+        if not self._filename:
+            return
+        enc = self.charset
+        try:
+            # errors="replace" keeps a wrong charset visible as mojibake instead
+            # of raising, so the user can see the problem before importing.
+            with open(self._filename, encoding=enc, errors="replace") as f:
+                lines = [next(f, "") for _ in range(self.PREVIEW_LINES)]
+            self._preview.setPlainText("".join(lines))
+        except Exception as e:
+            self._preview.setPlainText(
+                QCoreApplication.translate(
+                    "CsvFileLoadDialog", "Cannot read file with encoding %s: %s"
+                )
+                % (enc, str(e))
+            )
+
+    def accept(self):
+        _save_csv_encoding(self.charset)
+        super().accept()
+
+    @property
+    def filename(self):
+        return self._filename
+
+    @property
+    def charset(self):
+        return ru(self._encoding.currentText()).strip()
+
+    @property
+    def has_header(self):
+        return self._header.isChecked()
+
+
 class GeneralCsvImportGui(BaseImporter, import_ui_dialog):
     def __init__(self, iface, ms, dbconnection=None):
         # BaseImporter.__init__ sets iface/ms, loads settings, runs

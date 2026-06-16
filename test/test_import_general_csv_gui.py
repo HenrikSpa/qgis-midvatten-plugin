@@ -305,3 +305,43 @@ class TestShowIsIdempotent(utils_for_tests.MidvattenTestSpatialiteDbSv):
         with mock.patch.object(gui, "select_file") as select_file:
             gui.select_file_button.clicked.emit(False)
         assert select_file.call_count == 1
+
+
+@pytest.mark.spatialite
+class TestCsvFileLoadDialog(utils_for_tests.MidvattenTestSpatialiteDbSv):
+    def _dialog(self):
+        with mock.patch("midvatten.tools.import_general_csv_gui.QSettings") as mock_qs:
+            mock_qs.return_value.value.return_value = "utf-8"
+            return import_general_csv_gui.CsvFileLoadDialog()
+
+    def test_ok_disabled_until_file_chosen(self):
+        dlg = self._dialog()
+        assert dlg._ok_button().isEnabled() is False
+
+    def test_properties_reflect_widgets(self):
+        dlg = self._dialog()
+        dlg._encoding.setEditText("cp1252")
+        dlg._header.setChecked(False)
+        assert dlg.charset == "cp1252"
+        assert dlg.has_header is False
+
+    def test_preview_renders_readable_text_with_correct_encoding(self):
+        csv_text = "obsid;date_time;level\nBjörkån;2024-01-01;3,14\n"
+        with file_utils.tempinput(csv_text, "utf-8", suffix=".csv") as filename:
+            dlg = self._dialog()
+            dlg._filename = filename
+            dlg._encoding.setEditText("utf-8")
+            dlg._refresh_preview()
+            assert "Björkån" in dlg._preview.toPlainText()
+
+    def test_preview_shows_mojibake_with_wrong_encoding(self):
+        # File written as utf-8, read as cp1252 -> the å/ä/ö become mojibake.
+        csv_text = "obsid\nBjörkån\n"
+        with file_utils.tempinput(csv_text, "utf-8", suffix=".csv") as filename:
+            dlg = self._dialog()
+            dlg._filename = filename
+            dlg._encoding.setEditText("cp1252")
+            dlg._refresh_preview()
+            preview = dlg._preview.toPlainText()
+            assert "Björkån" not in preview
+            assert "BjÃ" in preview  # mis-decoded utf-8 multibyte sequence

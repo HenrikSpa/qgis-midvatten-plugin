@@ -45,7 +45,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         self.recsinfile = 0
         self.temptable_name = None
         self.csvlayer = None
-        self.foreign_keys_import_question = None
+        self.confirmation_handled = None
 
     def general_import(
         self,
@@ -80,7 +80,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         import_messages = []
 
         if skip_confirmation:
-            self.foreign_keys_import_question = 1
+            self.confirmation_handled = 1
 
         dbconnection: Optional[DbConnectionManager] = None
         try:
@@ -503,7 +503,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         When nothing is dropped, clicking "Start import" is itself the
         go-ahead — no modal. Accumulated per-cause detail is always logged
         quietly so it is never lost. Raises UserInterruptError if the user
-        declines. The ``foreign_keys_import_question`` latch preserves the
+        declines. The ``confirmation_handled`` latch preserves the
         "ask at most once per import session" behaviour for multi-table
         imports and ``skip_confirmation``.
         """
@@ -514,7 +514,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         if not rows_dropped:
             return
 
-        if self.foreign_keys_import_question:
+        if self.confirmation_handled:
             message_utils.MessagebarAndLog.info(
                 log_msg=QCoreApplication.translate(
                     "midv_data_importer",
@@ -531,7 +531,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
 
         # Set before the dialog so a declined import also counts as "already
         # asked" (the session aborts anyway via UserInterruptError).
-        self.foreign_keys_import_question = 1
+        self.confirmation_handled = 1
         stop_question = dialog_utils.Askuser(
             "YesNo",
             msg,

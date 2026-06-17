@@ -163,6 +163,7 @@ class CsvFileLoadDialog(qgis.PyQt.QtWidgets.QDialog):
                     "Comma or semicolon separated csv file %s;;Comma or semicolon separated csv text file %s;;Comma or semicolon separated file %s",
                 )
                 % ("(*.csv)", "(*.txt)", "(*.*)"),
+                parent=self,
             )
         except exceptions.UserInterruptError:
             return

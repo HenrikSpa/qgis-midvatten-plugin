@@ -334,6 +334,19 @@ class TestCsvFileLoadDialog(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert dlg._ok_button().isEnabled() is False
         assert dlg.filename is None
 
+    def test_browse_passes_self_as_parent(self):
+        # The native file picker must be parented to the dialog (not a free
+        # top-level window), so select_files is called with parent=self.
+        csv_text = "a,b\n1,2\n"
+        with file_utils.tempinput(csv_text, "utf-8", suffix=".csv") as filename:
+            dlg = self._dialog()
+            with mock.patch(
+                "midvatten.tools.import_general_csv_gui.midvatten_utils.select_files",
+                return_value=[filename],
+            ) as mock_sel:
+                dlg._browse()
+            assert mock_sel.call_args.kwargs.get("parent") is dlg
+
     def test_accept_saves_encoding(self):
         dlg = self._dialog()
         dlg._encoding.setEditText("iso-8859-1")

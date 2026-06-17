@@ -499,7 +499,9 @@ def add_non_essential_tables(
 
 
 def select_files(
-    only_one_file: bool = True, extension: str = "csv (*.csv)"
+    only_one_file: bool = True,
+    extension: str = "csv (*.csv)",
+    parent: Optional[QtWidgets.QWidget] = None,
 ) -> List[str]:
     """Asks users to select file(s)"""
     try:
@@ -523,7 +525,7 @@ def select_files(
     if only_one_file:
         csvpath = [
             QtWidgets.QFileDialog.getOpenFileName(
-                parent=None,
+                parent=parent,
                 caption=QCoreApplication.translate("select_files", "Select file"),
                 directory=dir,
                 filter=extension,
@@ -531,7 +533,7 @@ def select_files(
         ]
     else:
         csvpath = QtWidgets.QFileDialog.getOpenFileNames(
-            parent=None,
+            parent=parent,
             caption=QCoreApplication.translate("select_files", "Select files"),
             directory=dir,
             filter=extension,

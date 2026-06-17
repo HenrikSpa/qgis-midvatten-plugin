@@ -340,6 +340,31 @@ class TestAskUser:
 
 
 @pytest.mark.active
+class TestSelectFiles:
+    @mock.patch(
+        "midvatten.tools.utils.message_utils.MessagebarAndLog", mock.MagicMock()
+    )
+    @mock.patch("qgis.PyQt.QtWidgets.QFileDialog.getOpenFileName")
+    def test_select_files_forwards_parent_to_qfiledialog(self, mock_getopen):
+        parent = object()
+        mock_getopen.return_value = ("/tmp/some.csv", "")
+        result = midvatten_utils.select_files(
+            only_one_file=True, extension="*", parent=parent
+        )
+        assert result == ["/tmp/some.csv"]
+        assert mock_getopen.call_args.kwargs.get("parent") is parent
+
+    @mock.patch(
+        "midvatten.tools.utils.message_utils.MessagebarAndLog", mock.MagicMock()
+    )
+    @mock.patch("qgis.PyQt.QtWidgets.QFileDialog.getOpenFileName")
+    def test_select_files_defaults_parent_to_none(self, mock_getopen):
+        mock_getopen.return_value = ("/tmp/some.csv", "")
+        midvatten_utils.select_files(only_one_file=True, extension="*")
+        assert mock_getopen.call_args.kwargs.get("parent") is None
+
+
+@pytest.mark.active
 class TestSqlToParametersUnitsTuple:
     @mock.patch("midvatten.tools.utils.db_utils.helpers.sql_load_fr_db", autospec=True)
     def test_sql_to_parameters_units_tuple(self, mock_sqlload):

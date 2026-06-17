@@ -344,3 +344,64 @@ def test_label_multi_single_col_no_user_label():
         {**_BASE, "label": ""}, {"obsid": "B"}, is_multi=True
     )
     assert label == "B"
+
+
+# ---------------------------------------------------------------------------
+# Date parsing in the real _plot_one_combo (regression: mixed dt precision)
+# ---------------------------------------------------------------------------
+
+
+class _RowsConn(_StubConn):
+    """Stub connection that returns canned (x, y) rows from fetchall."""
+
+    def __init__(self, rows, ph="?"):
+        super().__init__(ph)
+        self._rows = rows
+
+    def execute_and_fetchall(self, sql, params):
+        return self._rows
+
+
+def _plot_combo_xdata(rows, style="line"):
+    """Drive the real LoggerEditor._plot_one_combo and return the x-points
+    that actually made it onto the reference axes."""
+    pytest.importorskip("qgis.PyQt")
+    from matplotlib.figure import Figure
+
+    from midvatten.tools.loggereditor import LoggerEditor
+
+    ed = LoggerEditor.__new__(LoggerEditor)
+    ed.ref_axes = Figure().add_subplot(1, 1, 1)
+    s = {**_BASE, "table": "w_levels_logger", "y_col": "level_masl", "style": style}
+    ed._plot_one_combo(_RowsConn(rows), s, {}, is_multi=False)
+    lines = ed.ref_axes.get_lines()
+    return list(lines[0].get_xdata()) if lines else []
+
+
+def test_plot_one_combo_keeps_mixed_precision_rows():
+    """A same-obsid reference series stores date_time raw, so precision can
+    change partway (whole-second -> sub-second). Every row must be plotted;
+    the series must not end at the precision boundary (issue: truncated ref
+    plot caused by single-format datetime inference)."""
+    rows = [
+        ("2024-01-01 00:00:00", 1.0),
+        ("2024-01-01 01:00:00", 2.0),
+        ("2024-01-01 02:00:00", 3.0),
+        ("2024-01-01 03:00:00.500000", 4.0),
+        ("2024-01-01 04:00:00.500000", 5.0),
+        ("2024-01-01 05:00:00.500000", 6.0),
+    ]
+    xdata = _plot_combo_xdata(rows)
+    assert len(xdata) == len(rows)
+
+
+def test_plot_one_combo_coerces_unparseable_rows():
+    """Genuinely unparseable x values are still dropped (graceful coerce),
+    while the valid rows around them survive."""
+    rows = [
+        ("2024-01-01 00:00:00", 1.0),
+        ("not-a-date", 2.0),
+        ("2024-01-01 02:00:00.500000", 3.0),
+    ]
+    xdata = _plot_combo_xdata(rows)
+    assert len(xdata) == 2

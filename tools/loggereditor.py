@@ -2884,7 +2884,12 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         if not rows:
             return
         df = pd.DataFrame(rows, columns=["x", "y"])
-        df["x"] = pd.to_datetime(df["x"], errors="coerce")
+        # format="mixed" parses each row on its own terms; without it pandas
+        # locks onto the first row's precision and coerces every differently-
+        # formatted row (e.g. sub-second vs whole-second date_time strings) to
+        # NaT, truncating the series at the precision boundary. Matches the main
+        # plot's parsing at load_obsid_and_init.
+        df["x"] = pd.to_datetime(df["x"], format="mixed", errors="coerce")
         df = df.dropna(subset=["x", "y"]).set_index("x").sort_index()["y"]
         if df.empty:
             return

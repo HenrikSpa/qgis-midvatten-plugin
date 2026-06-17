@@ -117,6 +117,48 @@ def _setup_many_sources_obsid(n_sources: int = 16):
     )
 
 
+def _head_line_yvals(editor):
+    """Sorted non-NaN y-values of the dashed 'logger head' line(s)."""
+    out = []
+    for line in editor.axes.get_lines():
+        if line.get_linestyle() == "--" and "head" in (line.get_label() or "").lower():
+            ys = np.asarray(line.get_ydata(), dtype=float)
+            out.extend(round(float(y), 6) for y in ys if not np.isnan(y))
+    return sorted(out)
+
+
+@pytest.mark.spatialite
+class TestNormalizeHeadToggle(utils_for_tests.MidvattenTestSpatialiteDbSv):
+    def teardown_method(self):
+        super().teardown_method()
+        gc.collect()
+
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_normalize_head_toggle_updates_plot(self, mock_messagebar):
+        """Toggling 'Normalize head to logger line' and clicking Update plot must
+        change the plotted head series. Regression: the same-obsid cache
+        early-return in load_obsid_and_init skipped the head rebuild, so the
+        toggle (which only affects head_ts_for_plot) had no visible effect."""
+        _setup_simple_obsid()  # head_cm/100 = [1, 2, 3]; level_masl = [10, 20, 30]
+        editor = LoggerEditor(self.iface, self.midvatten.ms)
+        editor.show()
+        gui_utils.set_combobox(editor.combobox_obsid, "rb1")
+
+        editor.normalize_head.setChecked(True)
+        editor.update_plot()
+        normalized = _head_line_yvals(editor)
+
+        editor.normalize_head.setChecked(False)
+        editor.update_plot()
+        raw = _head_line_yvals(editor)
+
+        print(f"{mock_messagebar.mock_calls=}")
+        # Raw head is head_cm/100; normalized is shifted so its mean (2.0) meets
+        # the level_masl mean (20.0), i.e. +18 -> [19, 20, 21].
+        assert raw == [1.0, 2.0, 3.0]
+        assert normalized == [19.0, 20.0, 21.0]
+
+
 @pytest.mark.spatialite
 class TestDrawSeriesCancel(utils_for_tests.MidvattenTestSpatialiteDbSv):
     def teardown_method(self):

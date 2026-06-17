@@ -389,6 +389,17 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self.separate_created_at_cb.stateChanged.connect(
                 lambda _: self._on_created_at_toggled()
             )
+            # These two only affect head_ts_for_plot, which is (re)built inside
+            # _rebuild_ts_caches. Toggling them leaves the buffer untouched, so
+            # without invalidating the ts cache the same-obsid early-return in
+            # load_obsid_and_init would skip the rebuild and "Update plot" would
+            # show no change.
+            self.plot_logger_head.stateChanged.connect(
+                lambda _: self._invalidate_ts_cache()
+            )
+            self.normalize_head.stateChanged.connect(
+                lambda _: self._invalidate_ts_cache()
+            )
 
             # --- Save button in obsid row ---
             self._save_btn = QPushButton(
@@ -1205,6 +1216,12 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self.setlastcalibration(obsid)
         common_utils.stop_waiting_cursor()
         return obsid
+
+    def _invalidate_ts_cache(self) -> None:
+        """Force the next load_obsid_and_init to rebuild the plot recarrays.
+
+        _buf_version is always >= 0, so -1 reliably misses the cache check."""
+        self._ts_version = -1
 
     def _rebuild_ts_caches(self, buf: pd.DataFrame) -> None:
         """Rebuild the plotting recarrays and their snapshots from ``buf``."""

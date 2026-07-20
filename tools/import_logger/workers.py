@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 
 import pandas as pd
-from qgis.PyQt.QtCore import QObject, QCoreApplication, pyqtSignal, pyqtSlot
+from qgis.PyQt.QtCore import QCoreApplication, QObject, pyqtSignal, pyqtSlot
 
 from midvatten.tools import import_data_to_db
 from midvatten.tools.import_logger.parsers import (
@@ -18,13 +18,31 @@ from midvatten.tools.import_logger.parsers import (
     HoboParser,
     LeveloggerParser,
 )
-from midvatten.tools.utils import date_utils, message_utils
-from midvatten.tools.utils import db_utils
-from midvatten.tools.utils.exceptions import UserInterruptError
+from midvatten.tools.utils import date_utils, db_utils, message_utils
 
 
 class LoggerImportCancelledError(Exception):
     pass
+
+
+class LoggerWorker(QObject):
+    """Common signals and cooperative cancellation for logger workers."""
+
+    progress = pyqtSignal(str)
+    finished = pyqtSignal(object)
+    cancelled = pyqtSignal()
+    error = pyqtSignal(str)
+
+    def __init__(self):
+        super().__init__()
+        self._cancel_event = threading.Event()
+
+    def cancel(self) -> None:
+        self._cancel_event.set()
+
+    def _check_cancelled(self) -> None:
+        if self._cancel_event.is_set():
+            raise LoggerImportCancelledError()
 
 
 @dataclass
@@ -62,23 +80,10 @@ class _WorkerTzConverter:
         return value + (target - source)
 
 
-class LoggerParseWorker(QObject):
-    progress = pyqtSignal(str)
-    finished = pyqtSignal(object)
-    cancelled = pyqtSignal()
-    error = pyqtSignal(str)
-
+class LoggerParseWorker(LoggerWorker):
     def __init__(self, request: LoggerParseRequest):
         super().__init__()
         self.request = request
-        self._cancel_event = threading.Event()
-
-    def cancel(self) -> None:
-        self._cancel_event.set()
-
-    def _check_cancelled(self) -> None:
-        if self._cancel_event.is_set():
-            raise LoggerImportCancelledError()
 
     @pyqtSlot()
     def run(self) -> None:
@@ -196,13 +201,8 @@ class LoggerParseWorker(QObject):
         return shifted
 
 
-class LoggerDbImportWorker(QObject):
+class LoggerDbImportWorker(LoggerWorker):
     """Run the generic database importer on a worker-owned connection."""
-
-    progress = pyqtSignal(str)
-    finished = pyqtSignal()
-    cancelled = pyqtSignal()
-    error = pyqtSignal(str)
 
     def __init__(
         self,
@@ -216,12 +216,11 @@ class LoggerDbImportWorker(QObject):
         self._dest_table = dest_table
         self._file_data = file_data
         self._cleanup_series_ids = cleanup_series_ids
-        self._cancel_event = threading.Event()
         self._connection_lock = threading.Lock()
         self._connection = None
 
     def cancel(self) -> None:
-        self._cancel_event.set()
+        super().cancel()
         with self._connection_lock:
             connection = self._connection
         if connection is not None:
@@ -231,19 +230,22 @@ class LoggerDbImportWorker(QObject):
                 pass
 
     def _on_progress(self, message: str) -> None:
-        if self._cancel_event.is_set():
-            raise UserInterruptError()
+        self._check_cancelled()
         self.progress.emit(message)
 
-    def _delete_created_series(self, connection) -> None:
-        if not self._cleanup_series_ids:
+    def _cleanup_created_series(self, connection) -> None:
+        """Best-effort cleanup for series metadata committed before row import."""
+        if connection is None or not self._cleanup_series_ids:
             return
-        placeholders = connection.placeholders(len(self._cleanup_series_ids))
-        with connection.transaction():
-            connection.execute(
-                f"DELETE FROM w_logger_series WHERE id IN ({placeholders})",
-                self._cleanup_series_ids,
-            )
+        try:
+            placeholders = connection.placeholders(len(self._cleanup_series_ids))
+            with connection.transaction():
+                connection.execute(
+                    f"DELETE FROM w_logger_series WHERE id IN ({placeholders})",
+                    self._cleanup_series_ids,
+                )
+        except Exception:
+            message_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
     @pyqtSlot()
     def run(self) -> None:
@@ -253,8 +255,7 @@ class LoggerDbImportWorker(QObject):
             with self._connection_lock:
                 self._connection = connection
 
-            if self._cancel_event.is_set():
-                raise UserInterruptError()
+            self._check_cancelled()
 
             with connection.transaction():
                 importer = import_data_to_db.MidvDataImporter()
@@ -267,24 +268,10 @@ class LoggerDbImportWorker(QObject):
                     progress_callback=self._on_progress,
                     manage_wait_cursor=False,
                 )
-                if self._cancel_event.is_set():
-                    raise UserInterruptError()
-            self.finished.emit()
-        except UserInterruptError:
-            if connection is not None:
-                try:
-                    self._delete_created_series(connection)
-                except Exception:
-                    message_utils.MessagebarAndLog.warning(
-                        log_msg=traceback.format_exc()
-                    )
-            self.cancelled.emit()
+                self._check_cancelled()
+            self.finished.emit(None)
         except Exception:
-            if connection is not None:
-                try:
-                    self._delete_created_series(connection)
-                except Exception:
-                    pass
+            self._cleanup_created_series(connection)
             if self._cancel_event.is_set():
                 self.cancelled.emit()
             else:

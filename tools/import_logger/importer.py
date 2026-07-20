@@ -7,10 +7,10 @@ from __future__ import annotations
 import os
 from datetime import datetime as _datetime
 
-import qgis.PyQt
 import qgis.core
+import qgis.PyQt
 import qgis.PyQt.QtWidgets as QtWidgets
-from qgis.PyQt.QtCore import QCoreApplication, QEventLoop, QThread, Qt
+from qgis.PyQt.QtCore import QCoreApplication, QEventLoop, Qt, QThread
 
 from midvatten.tools import import_data_to_db
 from midvatten.tools.base_importer import BaseImporter
@@ -18,35 +18,34 @@ from midvatten.tools.utils import (
     common_utils,
     db_utils,
     dialog_utils,
-    midvatten_utils,
-    message_utils,
     file_utils,
+    message_utils,
+    midvatten_utils,
 )
+from midvatten.tools.utils.common_utils import format_timezone_string
 from midvatten.tools.utils.exceptions import UserInterruptError
 from midvatten.tools.utils.file_utils import ui_path
-from midvatten.tools.utils.string_utils import returnunicode as ru
-from midvatten.tools.utils.common_utils import format_timezone_string
 from midvatten.tools.utils.gui_utils import (
-    VRowEntry,
-    get_line,
     DateTimeFilter,
     RowEntry,
+    VRowEntry,
+    get_line,
     set_combobox,
 )
+from midvatten.tools.utils.string_utils import returnunicode as ru
+
 from .parsers import (
-    TzConverter,
-    filter_dates_from_filedata,
-    _pivot_baro_to_meteo,
     _BARO_METEO_PARAMS,
+    TzConverter,
+    _pivot_baro_to_meteo,
+    filter_dates_from_filedata,
 )
-
-
 from .workers import (
+    LoggerDbImportWorker,
     LoggerParseRequest,
     LoggerParseWorker,
-    LoggerDbImportWorker,
+    LoggerWorker,
 )
-
 
 import_ui_dialog = qgis.PyQt.uic.loadUiType(ui_path("import_fieldlogger.ui"))[0]
 
@@ -478,30 +477,28 @@ class LoggerImport(BaseImporter, import_ui_dialog):
 
     # ── Import logic ─────────────────────────────────────────────────────────
 
-    def _run_parse_worker(
-        self, request: LoggerParseRequest, progress: QtWidgets.QProgressDialog
-    ):
-        worker = LoggerParseWorker(request)
+    def _run_worker(self, worker: LoggerWorker, progress: QtWidgets.QProgressDialog):
+        """Run a logger worker while a nested event loop keeps QGIS responsive."""
         thread = QThread(self)
+        loop = QEventLoop(self)
+        outcome = {"result": None, "error": None, "cancelled": False}
+
         worker.moveToThread(thread)
         thread.started.connect(worker.run)
 
-        loop = QEventLoop(self)
-        state = {"result": None, "error": None, "cancelled": False}
-
         def on_finished(result) -> None:
-            state["result"] = result
+            outcome["result"] = result
             loop.quit()
 
         def on_error(error: str) -> None:
-            state["error"] = error
+            outcome["error"] = error
             loop.quit()
 
         def on_cancelled() -> None:
-            state["cancelled"] = True
+            outcome["cancelled"] = True
             loop.quit()
 
-        def cancel_parse() -> None:
+        def cancel_worker() -> None:
             progress.setLabelText(
                 QCoreApplication.translate("LoggerImport", "Cancelling...")
             )
@@ -511,24 +508,36 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         worker.finished.connect(on_finished)
         worker.error.connect(on_error)
         worker.cancelled.connect(on_cancelled)
-        worker.finished.connect(thread.quit, Qt.DirectConnection)
-        worker.error.connect(thread.quit, Qt.DirectConnection)
-        worker.cancelled.connect(thread.quit, Qt.DirectConnection)
-        progress.canceled.connect(cancel_parse)
+        for terminal_signal in (
+            worker.finished,
+            worker.error,
+            worker.cancelled,
+        ):
+            terminal_signal.connect(worker.deleteLater)
+            terminal_signal.connect(thread.quit, Qt.DirectConnection)
+        progress.canceled.connect(cancel_worker)
 
-        thread.start()
-        loop.exec_()
-        thread.wait()
         try:
-            progress.canceled.disconnect(cancel_parse)
-        except TypeError:
-            pass
+            thread.start()
+            loop.exec_()
+            thread.wait()
+            thread.deleteLater()
+        finally:
+            try:
+                progress.canceled.disconnect(cancel_worker)
+            except TypeError:
+                pass
 
-        if state["error"] is not None:
-            raise RuntimeError(state["error"])
-        if state["cancelled"]:
+        if outcome["error"] is not None:
+            raise RuntimeError(outcome["error"])
+        if outcome["cancelled"]:
             raise UserInterruptError()
-        return state["result"] or []
+        return outcome["result"]
+
+    def _run_parse_worker(
+        self, request: LoggerParseRequest, progress: QtWidgets.QProgressDialog
+    ) -> list:
+        return self._run_worker(LoggerParseWorker(request), progress) or []
 
     def _run_db_worker(
         self,
@@ -548,51 +557,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             file_data,
             cleanup_series_ids,
         )
-        thread = QThread(self)
-        worker.moveToThread(thread)
-        thread.started.connect(worker.run)
-
-        loop = QEventLoop(self)
-        state = {"error": None, "cancelled": False}
-
-        def on_finished() -> None:
-            loop.quit()
-
-        def on_error(error: str) -> None:
-            state["error"] = error
-            loop.quit()
-
-        def on_cancelled() -> None:
-            state["cancelled"] = True
-            loop.quit()
-
-        def cancel_import() -> None:
-            progress.setLabelText(
-                QCoreApplication.translate("LoggerImport", "Cancelling...")
-            )
-            worker.cancel()
-
-        worker.progress.connect(progress.setLabelText)
-        worker.finished.connect(on_finished)
-        worker.error.connect(on_error)
-        worker.cancelled.connect(on_cancelled)
-        worker.finished.connect(thread.quit, Qt.DirectConnection)
-        worker.error.connect(thread.quit, Qt.DirectConnection)
-        worker.cancelled.connect(thread.quit, Qt.DirectConnection)
-        progress.canceled.connect(cancel_import)
-
-        thread.start()
-        loop.exec_()
-        thread.wait()
-        try:
-            progress.canceled.disconnect(cancel_import)
-        except TypeError:
-            pass
-
-        if state["error"] is not None:
-            raise RuntimeError(state["error"])
-        if state["cancelled"]:
-            raise UserInterruptError()
+        self._run_worker(worker, progress)
 
     @common_utils.general_exception_handler
     @import_data_to_db.import_exception_handler

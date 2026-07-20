@@ -2309,6 +2309,75 @@ class DeleteExistingDateTimesFromTemptableMixin:
             in mock_messagebar.mock_calls
         )
 
+    def test_existing_normalized_index_is_reused(self):
+        dbconnection = db_utils.DbConnectionManager()
+        try:
+            table_info = db_utils.db_tables_columns_info(
+                table="w_levels_logger", dbconnection=dbconnection
+            )["w_levels_logger"]
+            primary_keys = [row[1] for row in table_info if int(row[5])]
+            assert self.importinstance.has_normalized_datetime_index(
+                dbconnection, "w_levels_logger", primary_keys
+            )
+            assert not self.importinstance.ensure_normalized_datetime_index(
+                dbconnection, "w_levels_logger", primary_keys
+            )
+        finally:
+            dbconnection.closedb()
+
+    def test_legacy_sqlite_gets_nonunique_normalized_lookup_index(self):
+        dbconnection = db_utils.DbConnectionManager()
+        if not dbconnection.is_sqlite():
+            dbconnection.closedb()
+            pytest.skip("SQLite query-plan regression test")
+        try:
+            dbconnection.execute("DROP INDEX IF EXISTS uq_w_levels_logger_obsid_dt")
+            dbconnection.execute(
+                "DROP INDEX IF EXISTS idx_midv_import_w_levels_logger_instant"
+            )
+            dbconnection.execute("INSERT INTO obs_points(obsid) VALUES ('legacy')")
+            dbconnection.execute(
+                "INSERT INTO w_levels_logger(obsid, date_time) "
+                "VALUES ('legacy', '2020-01-01 00:00')"
+            )
+            dbconnection.execute(
+                "INSERT INTO w_levels_logger(obsid, date_time) "
+                "VALUES ('legacy', '2020-01-01 00:00:00')"
+            )
+            primary_keys = ["obsid", "date_time"]
+
+            assert not self.importinstance.has_normalized_datetime_index(
+                dbconnection, "w_levels_logger", primary_keys
+            )
+            assert self.importinstance.ensure_normalized_datetime_index(
+                dbconnection, "w_levels_logger", primary_keys
+            )
+
+            definitions = dbconnection.execute_and_fetchall(
+                "SELECT sql FROM sqlite_master "
+                "WHERE name = 'idx_midv_import_w_levels_logger_instant'"
+            )
+            assert len(definitions) == 1
+            assert "CREATE INDEX" in definitions[0][0]
+            assert "CREATE UNIQUE INDEX" not in definitions[0][0]
+
+            plan = dbconnection.execute_and_fetchall(
+                "EXPLAIN QUERY PLAN SELECT 1 FROM w_levels_logger d "
+                "WHERE d.obsid = ? AND datetime(d.date_time) = datetime(?)",
+                ("legacy", "2021-01-01 00:00:00"),
+            )
+            assert any(
+                "idx_midv_import_w_levels_logger_instant" in row[3]
+                and "<expr>=?" in row[3]
+                for row in plan
+            )
+            assert not self.importinstance.ensure_normalized_datetime_index(
+                dbconnection, "w_levels_logger", primary_keys
+            )
+        finally:
+            dbconnection.conn.rollback()
+            dbconnection.closedb()
+
 
 @pytest.mark.postgis
 class TestGeneralImportPostgis(

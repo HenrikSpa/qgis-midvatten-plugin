@@ -144,6 +144,9 @@ class DbConnectionManager:
     def commit(self) -> None:
         self._backend.commit()
 
+    def cancel(self) -> None:
+        self._backend.cancel()
+
     def commit_and_closedb(self) -> None:
         self._backend.commit_and_closedb()
 

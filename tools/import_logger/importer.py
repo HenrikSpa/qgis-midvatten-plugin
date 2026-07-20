@@ -5,14 +5,12 @@ LoggerImport Qt dialog for unified DiverOffice, Levelogger, and HOBO imports.
 from __future__ import annotations
 
 import os
-import traceback
 from datetime import datetime as _datetime
 
 import qgis.PyQt
+import qgis.core
 import qgis.PyQt.QtWidgets as QtWidgets
-from qgis.PyQt.QtCore import QCoreApplication, Qt
-
-import pandas as pd  # pandas is a mandatory dependency of this plugin
+from qgis.PyQt.QtCore import QCoreApplication, QEventLoop, QThread, Qt
 
 from midvatten.tools import import_data_to_db
 from midvatten.tools.base_importer import BaseImporter
@@ -28,9 +26,6 @@ from midvatten.tools.utils.exceptions import UserInterruptError
 from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.common_utils import format_timezone_string
-from midvatten.tools.utils.date_utils import (
-    parse_timezone_to_timedelta,
-)
 from midvatten.tools.utils.gui_utils import (
     VRowEntry,
     get_line,
@@ -39,15 +34,19 @@ from midvatten.tools.utils.gui_utils import (
     set_combobox,
 )
 from .parsers import (
-    DiverOfficeParser,
-    DiverOfficeBaroParser,
-    LeveloggerParser,
-    HoboParser,
     TzConverter,
     filter_dates_from_filedata,
     _pivot_baro_to_meteo,
     _BARO_METEO_PARAMS,
 )
+
+
+from .workers import (
+    LoggerParseRequest,
+    LoggerParseWorker,
+    LoggerDbImportWorker,
+)
+
 
 import_ui_dialog = qgis.PyQt.uic.loadUiType(ui_path("import_fieldlogger.ui"))[0]
 
@@ -479,6 +478,122 @@ class LoggerImport(BaseImporter, import_ui_dialog):
 
     # ── Import logic ─────────────────────────────────────────────────────────
 
+    def _run_parse_worker(
+        self, request: LoggerParseRequest, progress: QtWidgets.QProgressDialog
+    ):
+        worker = LoggerParseWorker(request)
+        thread = QThread(self)
+        worker.moveToThread(thread)
+        thread.started.connect(worker.run)
+
+        loop = QEventLoop(self)
+        state = {"result": None, "error": None, "cancelled": False}
+
+        def on_finished(result) -> None:
+            state["result"] = result
+            loop.quit()
+
+        def on_error(error: str) -> None:
+            state["error"] = error
+            loop.quit()
+
+        def on_cancelled() -> None:
+            state["cancelled"] = True
+            loop.quit()
+
+        def cancel_parse() -> None:
+            progress.setLabelText(
+                QCoreApplication.translate("LoggerImport", "Cancelling...")
+            )
+            worker.cancel()
+
+        worker.progress.connect(progress.setLabelText)
+        worker.finished.connect(on_finished)
+        worker.error.connect(on_error)
+        worker.cancelled.connect(on_cancelled)
+        worker.finished.connect(thread.quit, Qt.DirectConnection)
+        worker.error.connect(thread.quit, Qt.DirectConnection)
+        worker.cancelled.connect(thread.quit, Qt.DirectConnection)
+        progress.canceled.connect(cancel_parse)
+
+        thread.start()
+        loop.exec_()
+        thread.wait()
+        try:
+            progress.canceled.disconnect(cancel_parse)
+        except TypeError:
+            pass
+
+        if state["error"] is not None:
+            raise RuntimeError(state["error"])
+        if state["cancelled"]:
+            raise UserInterruptError()
+        return state["result"] or []
+
+    def _run_db_worker(
+        self,
+        dest_table: str,
+        file_data: list,
+        progress: QtWidgets.QProgressDialog,
+        cleanup_series_ids: tuple[int, ...] = (),
+    ) -> None:
+        db_settings = self.ms.settingsdict.get("database")
+        if not db_settings:
+            db_settings = qgis.core.QgsProject.instance().readEntry(
+                "Midvatten", "database"
+            )[0]
+        worker = LoggerDbImportWorker(
+            db_settings,
+            dest_table,
+            file_data,
+            cleanup_series_ids,
+        )
+        thread = QThread(self)
+        worker.moveToThread(thread)
+        thread.started.connect(worker.run)
+
+        loop = QEventLoop(self)
+        state = {"error": None, "cancelled": False}
+
+        def on_finished() -> None:
+            loop.quit()
+
+        def on_error(error: str) -> None:
+            state["error"] = error
+            loop.quit()
+
+        def on_cancelled() -> None:
+            state["cancelled"] = True
+            loop.quit()
+
+        def cancel_import() -> None:
+            progress.setLabelText(
+                QCoreApplication.translate("LoggerImport", "Cancelling...")
+            )
+            worker.cancel()
+
+        worker.progress.connect(progress.setLabelText)
+        worker.finished.connect(on_finished)
+        worker.error.connect(on_error)
+        worker.cancelled.connect(on_cancelled)
+        worker.finished.connect(thread.quit, Qt.DirectConnection)
+        worker.error.connect(thread.quit, Qt.DirectConnection)
+        worker.cancelled.connect(thread.quit, Qt.DirectConnection)
+        progress.canceled.connect(cancel_import)
+
+        thread.start()
+        loop.exec_()
+        thread.wait()
+        try:
+            progress.canceled.disconnect(cancel_import)
+        except TypeError:
+            pass
+
+        if state["error"] is not None:
+            raise RuntimeError(state["error"])
+        if state["cancelled"]:
+            raise UserInterruptError()
+
     @common_utils.general_exception_handler
     @import_data_to_db.import_exception_handler
     def start_import(
@@ -504,158 +619,52 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         progress.setWindowModality(Qt.WindowModal)
         progress.setMinimumDuration(0)
         progress.show()
-        QtWidgets.QApplication.processEvents()
-
-        def _progress_callback(msg: str) -> None:
-            if progress.wasCanceled():
-                raise UserInterruptError()
-            progress.setLabelText(msg)
-            QtWidgets.QApplication.processEvents()
-
-        parsed_files = []
         format_name = self.format_combo.currentText()
-
-        default_charset = "utf-8"
-        fallback_charset = "cp1252"
+        utc_widget = (
+            self.baro_utc_offset
+            if format_name == self.FORMAT_DIVEROFFICE_BARO
+            else self.utc_offset
+        )
+        parse_request = LoggerParseRequest(
+            files=tuple(files),
+            format_name=format_name,
+            skip_rows_without_water_level=skip_rows_without_water_level,
+            from_date=from_date,
+            to_date=to_date,
+            requested_utc_offset=utc_widget.currentText(),
+            hobo_target_timezone=self.tz_converter.target_tz,
+        )
+        parsed_files = []
 
         try:
-            for file_idx, selected_file in enumerate(files):
-                _progress_callback(
-                    QCoreApplication.translate(
-                        "LoggerImport", "Parsing file %s of %s..."
-                    )
-                    % (file_idx + 1, len(files))
-                )
-                filename = os.path.basename(selected_file)
-
-                parse_kwargs = dict(
-                    path=selected_file,
-                    begindate=from_date,
-                    enddate=to_date,
-                )
-                if format_name == self.FORMAT_DIVEROFFICE:
-                    parse_func = DiverOfficeParser.parse
-                    parse_kwargs["skip_rows_without_water_level"] = (
-                        skip_rows_without_water_level
-                    )
-                elif format_name == self.FORMAT_DIVEROFFICE_BARO:
-                    parse_func = DiverOfficeBaroParser.parse
-                elif format_name == self.FORMAT_LEVELOGGER:
-                    parse_func = LeveloggerParser.parse
-                    parse_kwargs["skip_rows_without_water_level"] = (
-                        skip_rows_without_water_level
-                    )
-                else:  # FORMAT_HOBO
-                    parse_func = HoboParser.parse
-                    parse_kwargs["tz_converter"] = self.tz_converter
-
-                try:
-                    res = parse_func(charset=default_charset, **parse_kwargs)
-                except UnicodeDecodeError:
-                    try:
-                        res = parse_func(charset=fallback_charset, **parse_kwargs)
-                    except UnicodeDecodeError:
-                        message_utils.MessagebarAndLog.warning(
-                            bar_msg=QCoreApplication.translate(
-                                "LoggerImport",
-                                "Could not read %s — is this a %s file?",
-                            )
-                            % (filename, format_name)
-                        )
-                        continue
-                except Exception:
-                    message_utils.MessagebarAndLog.critical(
-                        bar_msg=QCoreApplication.translate(
-                            "LoggerImport", "Error on file %s."
-                        )
-                        % selected_file,
-                        log_msg=traceback.format_exc(),
-                    )
-                    raise
-
-                if res == "cancel":
-                    self.status = True
+            parsed_results = self._run_parse_worker(parse_request, progress)
+            for parsed in parsed_results:
+                if parsed.timezone_error:
+                    msg = QCoreApplication.translate(
+                        "LoggerImport",
+                        "Reading timezone in file %s failed,\n"
+                        " no conversion done:\n%s\n\nSkip file?",
+                    ) % (ru(parsed.filename), parsed.timezone_error)
                     common_utils.stop_waiting_cursor()
-                    return res
-                elif res in ("skip", "ignore"):
-                    continue
-
-                try:
-                    file_data, filename, location, file_utc_offset, serial_number = res
-                except Exception as e:
-                    message_utils.MessagebarAndLog.warning(
-                        bar_msg=QCoreApplication.translate(
-                            "LoggerImport", "Import error, see log message panel"
+                    question = dialog_utils.Askuser(
+                        question="YesNo",
+                        msg=msg,
+                        dialogtitle=QCoreApplication.translate(
+                            "askuser", "File timezone error!"
                         ),
-                        log_msg=QCoreApplication.translate(
-                            "LoggerImport", "File %s could not be parsed. Msg:\n%s"
-                        )
-                        % (selected_file, str(e)),
+                        include_cancel_button=True,
                     )
-                    continue
-
-                # UTC offset adjustment (DiverOffice and DiverOffice Baro)
-                utc_widget = (
-                    self.baro_utc_offset
-                    if format_name == self.FORMAT_DIVEROFFICE_BARO
-                    else self.utc_offset
+                    common_utils.start_waiting_cursor()
+                    if question.result:
+                        continue
+                parsed_files.append(
+                    (
+                        parsed.file_data,
+                        parsed.filename,
+                        parsed.location,
+                        parsed.serial_number,
+                    )
                 )
-                if (
-                    format_name
-                    in (
-                        self.FORMAT_DIVEROFFICE,
-                        self.FORMAT_DIVEROFFICE_BARO,
-                    )
-                    and utc_widget.currentText()
-                ):
-                    if not file_utc_offset:
-                        message_utils.MessagebarAndLog.warning(
-                            log_msg=QCoreApplication.translate(
-                                "LoggerImport", "UTC-offset not found in file %s"
-                            )
-                            % filename
-                        )
-                    else:
-                        requested_timedelta = parse_timezone_to_timedelta(
-                            utc_widget.currentText()
-                        )
-                        try:
-                            file_timedelta = parse_timezone_to_timedelta(
-                                file_utc_offset
-                            )
-                        except ValueError as e:
-                            msg = QCoreApplication.translate(
-                                "LoggerImport",
-                                "Reading timezone in file %s failed,\n"
-                                " no conversion done:\n%s\n\nSkip file?",
-                            ) % (ru(selected_file), str(e))
-                            common_utils.stop_waiting_cursor()
-                            question = dialog_utils.Askuser(
-                                question="YesNo",
-                                msg=msg,
-                                dialogtitle=QCoreApplication.translate(
-                                    "askuser", "File timezone error!"
-                                ),
-                                include_cancel_button=True,
-                            )
-                            common_utils.start_waiting_cursor()
-                            if question.result:
-                                continue
-                        else:
-                            if requested_timedelta != file_timedelta:
-                                td = file_timedelta - requested_timedelta
-                                df = pd.DataFrame.from_records(
-                                    file_data[1:],
-                                    index="date_time",
-                                    columns=file_data[0],
-                                )
-                                df.index = pd.to_datetime(df.index) - td
-                                df.index = df.index.strftime("%Y-%m-%d %H:%M:%S")
-                                file_data = [["date_time"]]
-                                file_data[0].extend(df.columns.tolist())
-                                file_data.extend([list(row) for row in df.itertuples()])
-
-                parsed_files.append((file_data, filename, location, serial_number))
 
             if len(parsed_files) == 0:
                 message_utils.MessagebarAndLog.critical(
@@ -780,19 +789,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                     finally:
                         dbconn.closedb()
 
-                    importer = import_data_to_db.MidvDataImporter()
-                    try:
-                        importer.general_import(
-                            "meteo",
-                            meteo_rows,
-                            skip_confirmation=True,
-                            progress_callback=_progress_callback,
-                        )
-                    except Exception:
-                        message_utils.MessagebarAndLog.warning(
-                            log_msg=f"Got error {traceback.format_exc()}"
-                        )
-                        raise
+                    self._run_db_worker("meteo", meteo_rows, progress)
 
                 if export_csv:
                     path = QtWidgets.QFileDialog.getSaveFileName(
@@ -824,9 +821,33 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                 self.source_edit.text().strip() if self.source_edit is not None else ""
             )
 
+            if not import_all_data:
+                last_dates = db_utils.get_last_logger_dates()
+                for parsed_file in parsed_files_with_obsid:
+                    parsed_file[0] = filter_dates_from_filedata(
+                        parsed_file[0], last_dates
+                    )
+                parsed_files_with_obsid = [
+                    parsed_file
+                    for parsed_file in parsed_files_with_obsid
+                    if len(parsed_file[0]) > 1
+                ]
+
+            if not parsed_files_with_obsid:
+                message_utils.MessagebarAndLog.info(
+                    bar_msg=QCoreApplication.translate(
+                        "LoggerImport",
+                        "No new data existed in the files. Nothing imported.",
+                    )
+                )
+                self.status = True
+                common_utils.stop_waiting_cursor()
+                return True
+
             # New-schema import path: create one w_logger_series row per imported
             # file and tag every row from that file with its new series_id and a
             # single batch-level created_at.
+            created_series_ids: list[int] = []
             if import_to_db and has_series_id:
                 source_for_series = source_text or None
                 batch_created_at = _datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -855,6 +876,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                                 ),
                             )
                             series_id = db_utils.get_last_insert_id(dbconn)
+                            created_series_ids.append(series_id)
                             file_data[0].append("series_id")
                             if has_created_at:
                                 file_data[0].append("created_at")
@@ -874,21 +896,6 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                 ]
             )
 
-            if not import_all_data:
-                file_to_import_to_db = filter_dates_from_filedata(
-                    file_to_import_to_db, db_utils.get_last_logger_dates()
-                )
-            if len(file_to_import_to_db) < 2:
-                message_utils.MessagebarAndLog.info(
-                    bar_msg=QCoreApplication.translate(
-                        "LoggerImport",
-                        "No new data existed in the files. Nothing imported.",
-                    )
-                )
-                self.status = True
-                common_utils.stop_waiting_cursor()
-                return True
-
             # Old-schema path: source is a column on w_levels_logger itself.
             # Only append it if we are NOT on the new schema (the new path
             # already put source on the w_logger_series row).
@@ -903,19 +910,12 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                     row.append(source_text)
 
             if import_to_db:
-                importer = import_data_to_db.MidvDataImporter()
-                try:
-                    importer.general_import(
-                        "w_levels_logger",
-                        file_to_import_to_db,
-                        skip_confirmation=True,
-                        progress_callback=_progress_callback,
-                    )
-                except Exception:
-                    message_utils.MessagebarAndLog.warning(
-                        log_msg=f"Got error {traceback.format_exc()}"
-                    )
-                    raise
+                self._run_db_worker(
+                    "w_levels_logger",
+                    file_to_import_to_db,
+                    progress,
+                    tuple(created_series_ids),
+                )
             if export_csv:
                 path = QtWidgets.QFileDialog.getSaveFileName(
                     self, "Save File", "", "CSV(*.csv)"

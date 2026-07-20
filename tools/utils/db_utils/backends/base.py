@@ -116,6 +116,16 @@ class Backend(ABC):
     def commit(self) -> None:
         self._conn.commit()
 
+    def cancel(self) -> None:
+        """Interrupt the statement currently running on this connection."""
+        interrupt = getattr(self._conn, "interrupt", None)
+        if interrupt is not None:
+            interrupt()
+            return
+        cancel = getattr(self._conn, "cancel", None)
+        if cancel is not None:
+            cancel()
+
     def closedb(self) -> None:
         """Close the database connection. Override in subclasses that need cleanup before close."""
         self._conn.close()

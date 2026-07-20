@@ -20,6 +20,7 @@
 """
 
 import io
+import re
 import traceback
 from functools import wraps
 from operator import itemgetter
@@ -59,6 +60,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         binary_geometry: bool = False,
         defer_commit: bool = False,
         progress_callback: Optional[Callable[[str], None]] = None,
+        manage_wait_cursor: bool = True,
     ) -> None:
         """General method for importing a list of list to a table
 
@@ -77,6 +79,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         """
 
         self.temptable_name = None
+        self._manage_wait_cursor = manage_wait_cursor
         import_messages = []
 
         if skip_confirmation:
@@ -94,7 +97,8 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 % dest_table
             )
 
-            common_utils.start_waiting_cursor()
+            if self._manage_wait_cursor:
+                common_utils.start_waiting_cursor()
 
             if progress_callback:
                 progress_callback(
@@ -113,6 +117,18 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 existing_columns_in_temptable,
                 primary_keys_for_concat,
             ) = self._validate_and_connect(dest_table, file_data, _dbconnection)
+
+            if "date_time" in primary_keys:
+                if progress_callback:
+                    progress_callback(
+                        QCoreApplication.translate(
+                            "midv_data_importer",
+                            "Optimizing duplicate timestamp lookup...",
+                        )
+                    )
+                self.ensure_normalized_datetime_index(
+                    dbconnection, dest_table, primary_keys
+                )
 
             recsinfile = len(file_data[1:])
             all_rownumbers = tuple(range(recsinfile))
@@ -675,7 +691,8 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
     ) -> None:
         """Commit or roll back and release resources after import succeeds or fails."""
         if dbconnection is None:
-            common_utils.stop_waiting_cursor()
+            if getattr(self, "_manage_wait_cursor", True):
+                common_utils.stop_waiting_cursor()
             return
         if commit:
             dbconnection.commit()
@@ -688,7 +705,8 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         else:
             if self.temptable_name is not None:
                 dbconnection.drop_temporary_table(self.temptable_name)
-        common_utils.stop_waiting_cursor()
+        if getattr(self, "_manage_wait_cursor", True):
+            common_utils.stop_waiting_cursor()
 
     def list_to_table(
         self,
@@ -852,6 +870,114 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         )
         dbconnection.execute(sql)
         return dbconnection.cursor.rowcount
+
+    @staticmethod
+    def _normalise_index_definition(definition: str) -> str:
+        """Return a comparison-friendly index definition."""
+        return re.sub(r'[\s"]+', "", definition).lower()
+
+    def has_normalized_datetime_index(
+        self,
+        dbconnection: DbConnectionManager,
+        dest_table: str,
+        primary_keys: List[str],
+    ) -> bool:
+        """Whether an index can satisfy the normalized duplicate lookup.
+
+        Definitions are inspected instead of trusting an index name. Some
+        legacy PostgreSQL databases contain the current canonical name on a
+        raw ``date_time`` index, which does not help the normalized query.
+        """
+        if "date_time" not in primary_keys:
+            return True
+
+        if dbconnection.is_sqlite():
+            rows = dbconnection.execute_and_fetchall(
+                "SELECT sql FROM sqlite_master "
+                "WHERE type = 'index' AND tbl_name = ? AND sql IS NOT NULL",
+                (dest_table,),
+            )
+            marker = "datetime(date_time)"
+        else:
+            ph = dbconnection.placeholder()
+            rows = dbconnection.execute_and_fetchall(
+                "SELECT indexdef FROM pg_indexes "
+                f"WHERE schemaname = {ph} AND tablename = {ph}",
+                (dbconnection.schema, dest_table),
+            )
+            marker = "midv_to_instant(date_time)"
+
+        required_columns = [
+            re.compile(rf"[(,]{re.escape(pk.lower())}[,)]")
+            for pk in primary_keys
+            if pk != "date_time"
+        ]
+        for row in rows:
+            definition = self._normalise_index_definition(str(row[0] or ""))
+            if marker not in definition:
+                continue
+            if all(pattern.search(definition) for pattern in required_columns):
+                return True
+        return False
+
+    def ensure_normalized_datetime_index(
+        self,
+        dbconnection: DbConnectionManager,
+        dest_table: str,
+        primary_keys: List[str],
+    ) -> bool:
+        """Create the lookup index required by normalized duplicate removal.
+
+        The supporting index is deliberately non-unique. Legacy databases may
+        already contain differently-formatted timestamps representing the same
+        instant; importing data must not silently delete those rows or fail an
+        otherwise safe performance migration. New databases retain their
+        schema-defined UNIQUE index, which is detected and reused.
+
+        Returns True when an index was created and False when a suitable index
+        already existed.
+        """
+        if "date_time" not in primary_keys or self.has_normalized_datetime_index(
+            dbconnection, dest_table, primary_keys
+        ):
+            return False
+
+        index_name = f"idx_midv_import_{dest_table}_instant"
+        table_ident = (
+            dbconnection.ident(f"{dbconnection.schema}.{dest_table}")
+            if dbconnection.is_postgresql()
+            else dbconnection.ident(dest_table)
+        )
+        expressions = []
+        for pk in primary_keys:
+            q = dbconnection.ident(pk)
+            expressions.append(
+                dbconnection.normalized_instant_sql(q) if pk == "date_time" else q
+            )
+        sql = (
+            f"CREATE INDEX IF NOT EXISTS {dbconnection.ident(index_name)} "
+            f"ON {table_ident} ({', '.join(expressions)})"
+        )
+        try:
+            dbconnection.execute(sql)
+            if not self.has_normalized_datetime_index(
+                dbconnection, dest_table, primary_keys
+            ):
+                raise RuntimeError(
+                    f"index name {index_name!r} already has another definition"
+                )
+        except Exception as e:
+            raise MidvDataImporterError(
+                QCoreApplication.translate(
+                    "midv_data_importer",
+                    "The normalized timestamp index required for importing to %s "
+                    "could not be created. The import was stopped to avoid a very "
+                    "slow duplicate scan. Error: %s",
+                )
+                % (dest_table, str(e))
+            ) from e
+
+        return True
 
     def create_geometry_sql(
         self,

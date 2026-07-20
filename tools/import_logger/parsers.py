@@ -299,6 +299,7 @@ class DiverOfficeParser:
         skip_rows_without_water_level: bool = False,
         begindate: str | None = None,
         enddate: str | None = None,
+        interactive: bool = True,
     ) -> tuple[list, str, str, str | None, str | None]:
         """Parse a Diver-Office .mon or .csv file.
 
@@ -577,6 +578,8 @@ class DiverOfficeParser:
                 df[col] = df[col].apply(lambda v: str(v) if v is not None else None)
         filedata.extend(df.loc[:, _output_cols].values.tolist())
         if len(filedata) < 2:
+            if not interactive:
+                return filedata, filename, location, utc_offset or None, serial_number
             return dialog_utils.ask_user_about_stopping(
                 QCoreApplication.translate(
                     "LoggerImport",
@@ -603,6 +606,7 @@ class DiverOfficeBaroParser:
         charset: str,
         begindate: str | None = None,
         enddate: str | None = None,
+        interactive: bool = True,
     ) -> tuple[list, str, str, str | None, str | None]:
         """Parse a DiverOffice baro file (.mon or .csv).
 
@@ -616,6 +620,7 @@ class DiverOfficeBaroParser:
             output_cols=["date_time", "baro_cmh2o", "temperature"],
             begindate=begindate,
             enddate=enddate,
+            interactive=interactive,
         )
 
 

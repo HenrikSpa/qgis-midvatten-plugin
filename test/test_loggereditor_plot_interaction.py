@@ -11,6 +11,7 @@ pytest.importorskip("qgis.PyQt")
 import numpy as np
 from matplotlib.backend_bases import MouseEvent
 from matplotlib.dates import date2num
+from qgis.PyQt.QtWidgets import QPushButton
 
 from midvatten.test import utils_for_tests
 from midvatten.tools.loggereditor import LoggerEditor
@@ -46,6 +47,27 @@ class TestPlotInteraction(utils_for_tests.MidvattenTestSpatialiteDbSv):
         editor = LoggerEditor(self.iface, self.midvatten.ms)
         assert editor.push_button_from_selection.text() == "From selection"
         assert editor.push_button_to_selection.text() == "From selection"
+
+    def test_left_panel_buttons_have_consistent_label_safe_sizes(self):
+        editor = LoggerEditor(self.iface, self.midvatten.ms)
+        editor.show()
+
+        left_panel = editor.tab_widget.parentWidget()
+        buttons = left_panel.findChildren(QPushButton)
+        assert len({button.height() for button in buttons}) == 1
+
+        period_buttons = (
+            editor.push_button_from,
+            editor.push_button_from_extent,
+            editor.push_button_from_selection,
+            editor.push_button_to,
+            editor.push_button_to_extent,
+            editor.push_button_to_selection,
+        )
+        assert all(
+            button.minimumWidth() >= button.sizeHint().width()
+            for button in period_buttons
+        )
 
     @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_date_pick_mode_suspends_series_selector(self, mock_messagebar):

@@ -67,6 +67,7 @@ from midvatten.tools.trend_math import apply_trend_correction
 log = logging.getLogger(__name__)
 
 _DT_FMT = "%Y-%m-%d %H:%M:%S"
+_LEFT_PANEL_BUTTON_MIN_HEIGHT = 30
 
 
 def _line_key_order(key: tuple):
@@ -474,12 +475,38 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 QCoreApplication.translate("LoggerEditor", "History"),
             )
 
+            self._normalize_left_panel_buttons()
             self._setup_ref_dock()
 
             self.update_plot()
 
         super().show()
         self.activateWindow()
+
+    def _normalize_left_panel_buttons(self) -> None:
+        """Give left-panel buttons consistent, label-safe dimensions."""
+        left_panel = self.tab_widget.parentWidget()
+        buttons = left_panel.findChildren(QPushButton)
+        button_height = max(
+            _LEFT_PANEL_BUTTON_MIN_HEIGHT,
+            *(button.sizeHint().height() for button in buttons),
+        )
+        for button in buttons:
+            button.setFixedHeight(button_height)
+
+        # These share grid columns with the date labels and editors. Their old
+        # 30 px minimum widths allowed the grid to squeeze the outer columns
+        # until translated labels were clipped.
+        for button in (
+            self.push_button_from,
+            self.push_button_from_extent,
+            self.push_button_from_selection,
+            self.push_button_to,
+            self.push_button_to_extent,
+            self.push_button_to_selection,
+        ):
+            button.setMinimumWidth(0)
+            button.setMinimumWidth(button.sizeHint().width())
 
     def update_date_from_extent(self, date_time_edit, xbound_min_or_max):
         date_time_edit.setDateTime(num2date(xbound_min_or_max))

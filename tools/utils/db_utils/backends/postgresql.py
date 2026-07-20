@@ -5,10 +5,12 @@ PostgreSQL (PostGIS) backend. Connection via psycopg2; connector logic merged in
 import os
 import re
 import traceback
+from collections.abc import Sequence
 from typing import Any, Optional
 
 import psycopg2
 import psycopg2.extensions
+import psycopg2.extras
 import psycopg2.sql
 from qgis.PyQt.QtCore import QCoreApplication, QFile
 from qgis.core import QgsCredentials, QgsDataSourceUri
@@ -18,6 +20,8 @@ from midvatten.tools.utils.exceptions import UserInterruptError
 from midvatten.tools.utils.db_utils.backends.base import Backend
 from midvatten.tools.utils.db_utils.dialect import UnsafeIdentifierError
 from midvatten.tools.utils.db_utils.settings import get_postgis_connections
+
+_EXECUTE_BATCH_PAGE_SIZE = 1000
 
 _ALLOWED_GEOM_TYPES: tuple[str, ...] = (
     "GEOMETRY",
@@ -190,6 +194,18 @@ class PostgreSQLBackend(Backend):
 
     def placeholder(self) -> str:
         return "%s"
+
+    def executemany(self, sql: Any, args_list: Sequence[Sequence[Any]]) -> None:
+        """Execute repeated statements in bounded PostgreSQL batch pages."""
+        if not args_list:
+            return
+        try:
+            psycopg2.extras.execute_batch(
+                self.cursor, sql, args_list, page_size=_EXECUTE_BATCH_PAGE_SIZE
+            )
+        except Exception as e:
+            Backend.log_execute_error(sql, args_list, e)
+            raise
 
     def internal_tables(self) -> str:
         return postgis_internal_tables()

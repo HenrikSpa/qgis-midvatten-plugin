@@ -41,6 +41,62 @@ def _fetch_col(obsid: str, col: str) -> dict:
     return {r[0]: r[1] for r in rows}
 
 
+def test_range_groups_split_at_full_buffer_gaps():
+    editor = LoggerEditor.__new__(LoggerEditor)
+    changed_index = pd.DatetimeIndex(["2024-01-01 00:00:00", "2024-01-03 00:00:00"])
+    raw = pd.Series(
+        ["2024-01-01 00:00:00", "2024-01-03 00:00:00"],
+        index=changed_index,
+    )
+
+    range_stmts, per_row = editor._compute_update_statements(
+        changed_index,
+        pd.Series([10.0, 30.0], index=changed_index),
+        pd.Series([None, None], index=changed_index),
+        pd.Series([1.0, 3.0], index=changed_index),
+        raw,
+        pd.array([0, 3]).to_numpy(),
+        "rb1",
+        '"w_levels_logger"',
+        "?",
+        'datetime("date_time")',
+        "datetime(?)",
+    )
+
+    assert len(range_stmts) == 2
+    assert per_row == []
+    assert all('datetime("date_time") BETWEEN' in sql for sql, _ in range_stmts)
+
+
+def test_per_row_fallback_preserves_raw_datetime_identity():
+    editor = LoggerEditor.__new__(LoggerEditor)
+    changed_index = pd.DatetimeIndex(["2024-01-01 00:00:00", "2024-01-02 00:00:00"])
+    raw = pd.Series(
+        ["2024-01-01 00:00", "2024-01-02 00:00:00"],
+        index=changed_index,
+    )
+
+    range_stmts, per_row = editor._compute_update_statements(
+        changed_index,
+        pd.Series([10.0, 20.0], index=changed_index),
+        pd.Series([11.0, 22.5], index=changed_index),
+        pd.Series([None, None], index=changed_index),
+        raw,
+        pd.array([0, 1]).to_numpy(),
+        "rb1",
+        '"w_levels_logger"',
+        "%s",
+        'midv_to_instant("date_time")',
+        "midv_to_instant(%s)",
+    )
+
+    assert range_stmts == []
+    assert per_row == [
+        (11.0, "rb1", "2024-01-01 00:00"),
+        (22.5, "rb1", "2024-01-02 00:00:00"),
+    ]
+
+
 @pytest.mark.spatialite
 class TestLoggerEditorDupes(utils_for_tests.MidvattenTestSpatialiteDbSv):
     def teardown_method(self):

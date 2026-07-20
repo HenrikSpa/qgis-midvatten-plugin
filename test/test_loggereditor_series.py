@@ -13,6 +13,27 @@ from midvatten.tools.loggereditor import LoggerEditor
 from midvatten.tools.utils import db_utils
 
 
+class _RecordingConnection:
+    def __init__(self, connection):
+        self._connection = connection
+        self.calls: list[tuple[str, str]] = []
+
+    def __getattr__(self, name):
+        return getattr(self._connection, name)
+
+    def execute(self, sql, args=None, all_args=None):
+        self.calls.append(("execute", str(sql)))
+        return self._connection.execute(sql, args=args, all_args=all_args)
+
+    def execute_and_fetchall(self, sql, args=None):
+        self.calls.append(("fetchall", str(sql)))
+        return self._connection.execute_and_fetchall(sql, args=args)
+
+    def executemany(self, sql, args_list):
+        self.calls.append(("executemany", str(sql)))
+        return self._connection.executemany(sql, args_list)
+
+
 def _insert_obs_point(obsid: str) -> None:
     db_utils.sql_alter_db(
         "INSERT INTO obs_points (obsid) VALUES (?)", all_args=[(obsid,)]
@@ -399,10 +420,21 @@ class TestLoggerEditorSeries(utils_for_tests.MidvattenTestSpatialiteDbSv):
         editor._buf.loc[editor._buf["source"] == "source_B", "source"] = "source_A"
         # Keep sid2 in _series_buf — orphan cleanup is triggered by zero remaining rows
 
-        result = editor.save_to_db()
+        recording = _RecordingConnection(db_utils.DbConnectionManager())
+        with mock.patch(
+            "midvatten.tools.loggereditor.db_utils.DbConnectionManager",
+            return_value=recording,
+        ):
+            result = editor.save_to_db()
 
         print(f"{mock_messagebar.mock_calls=}")
         assert result is True
+        cleanup_calls = [
+            sql
+            for _, sql in recording.calls
+            if sql.startswith('DELETE FROM "w_logger_series"')
+        ]
+        assert len(cleanup_calls) == 1
 
         # Verify DB: series 2 should be deleted (orphaned)
         dbconn = db_utils.DbConnectionManager()
@@ -421,6 +453,61 @@ class TestLoggerEditorSeries(utils_for_tests.MidvattenTestSpatialiteDbSv):
         # All logger rows should point to series 1
         for row in logger_rows:
             assert row[0] == sid1
+
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_level_only_save_skips_orphan_cleanup(self, mock_messagebar):
+        _insert_obs_point("rb1")
+        sid1 = _insert_series("rb1", "source_A")
+        sid2 = _insert_series("rb1", "source_B")
+        _insert_logger_row("rb1", "2024-01-01 00:00:00", 100.0, 10.0, sid1)
+        _insert_logger_row("rb1", "2024-01-02 00:00:00", 200.0, 20.0, sid2)
+
+        series_meta = {
+            sid: {
+                "obsid": "rb1",
+                "source": source,
+                "instrument": None,
+                "description": None,
+                "comment": None,
+            }
+            for sid, source in ((sid1, "source_A"), (sid2, "source_B"))
+        }
+        editor = _make_editor_with_buf(
+            self.iface,
+            self.midvatten.ms,
+            obsid="rb1",
+            dates=["2024-01-01 00:00:00", "2024-01-02 00:00:00"],
+            head_values=[1.0, 2.0],
+            level_values=[10.0, 20.0],
+            series_ids=[sid1, sid2],
+            sources=["source_A", "source_B"],
+            series_buf=series_meta,
+        )
+        editor._buf["level_masl"] = [11.0, 22.5]
+
+        recording = _RecordingConnection(db_utils.DbConnectionManager())
+        with mock.patch(
+            "midvatten.tools.loggereditor.db_utils.DbConnectionManager",
+            return_value=recording,
+        ):
+            result = editor.save_to_db()
+
+        print(f"{mock_messagebar.mock_calls=}")
+        assert result is True
+        sql_calls = [sql for _, sql in recording.calls]
+        level_updates = [
+            sql
+            for kind, sql in recording.calls
+            if kind == "executemany" and 'SET "level_masl"' in sql
+        ]
+        assert level_updates == [
+            'UPDATE "w_levels_logger" SET "level_masl" = ?'
+            ' WHERE "obsid" = ? AND "date_time" = ?'
+        ]
+        assert not any("SELECT COUNT(*)" in sql for sql in sql_calls)
+        assert not any(
+            sql.startswith('DELETE FROM "w_logger_series"') for sql in sql_calls
+        )
 
     @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_series_tab_not_shown_for_legacy_schema(self, mock_messagebar):

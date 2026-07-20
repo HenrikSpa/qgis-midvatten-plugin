@@ -24,6 +24,7 @@ supportsQt6=True
 
 changelog=
         Version 1.9.0b29:
+          - LoggerEditor: Faster saves on series-heavy and PostgreSQL datasets through indexed raw-row updates, set-based orphan cleanup, true batched writes, duplicate-aware range updates, and a lightweight post-save refresh.
           - Logger import: Parsing and database writes now run without blocking QGIS, Cancel interrupts active database work, and legacy databases automatically receive a non-unique normalized timestamp lookup index before duplicate checking.
           - Security: Section plot TEM data (thickness/resistivity) is now parsed safely instead of with eval(), so a malformed or malicious database can no longer execute code when a TEM section is drawn; bad values raise a clear error instead.
           - Internal: CSV import now quotes the destination table and not-null column names through the database identifier helper.

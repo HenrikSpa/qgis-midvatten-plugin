@@ -21,6 +21,7 @@
 
 import datetime
 import math
+from types import SimpleNamespace
 from unittest import mock
 
 import numpy as np
@@ -33,6 +34,47 @@ from midvatten.test import utils_for_tests
 
 class CalibrloggerMixin:
     """Test to make sure wlvllogg_import goes all the way to the end without errors"""
+
+    def test_save_clicked_uses_lightweight_refresh(self):
+        editor = LoggerEditor.__new__(LoggerEditor)
+        with (
+            mock.patch.object(editor, "save_to_db", return_value=True) as save,
+            mock.patch.object(editor, "_refresh_after_save") as refresh,
+            mock.patch.object(editor, "update_plot") as update_plot,
+        ):
+            editor._on_save_clicked()
+
+        save.assert_called_once_with()
+        refresh.assert_called_once_with()
+        update_plot.assert_not_called()
+
+    def test_failed_save_does_not_refresh(self):
+        editor = LoggerEditor.__new__(LoggerEditor)
+        with (
+            mock.patch.object(editor, "save_to_db", return_value=False),
+            mock.patch.object(editor, "_refresh_after_save") as refresh,
+        ):
+            editor._on_save_clicked()
+
+        refresh.assert_not_called()
+
+    def test_post_save_reference_refresh_is_dependency_aware(self):
+        editor = SimpleNamespace(
+            _ref_subplot_dirty=False,
+            _draw_reference_subplot=mock.Mock(),
+            _ref_series=[{"table": "w_levels"}],
+        )
+
+        LoggerEditor._refresh_after_save(editor)
+
+        assert editor._ref_subplot_dirty is False
+        editor._draw_reference_subplot.assert_not_called()
+
+        editor._ref_series = [{"table": "w_levels_logger"}]
+        LoggerEditor._refresh_after_save(editor)
+
+        assert editor._ref_subplot_dirty is True
+        editor._draw_reference_subplot.assert_called_once_with()
 
     @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_calibrlogger_last_calibration(self, mock_messagebar):

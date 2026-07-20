@@ -1319,7 +1319,22 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
     def _on_save_clicked(self) -> None:
         if self.save_to_db():
-            self.update_plot()
+            self._refresh_after_save()
+
+    def _refresh_after_save(self) -> None:
+        """Refresh only UI state whose database-backed data may have changed."""
+        if (
+            hasattr(self, "_series_tab")
+            and hasattr(self, "tab_widget")
+            and self.tab_widget.currentWidget() is self._series_tab
+        ):
+            self._update_series_tab()
+        if any(
+            series.get("table") == "w_levels_logger"
+            for series in getattr(self, "_ref_series", [])
+        ):
+            self._ref_subplot_dirty = True
+            self._draw_reference_subplot()
 
     @staticmethod
     def _report_save_failure(bar_msg: str) -> bool:
@@ -1335,6 +1350,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             return False
         obsid = self._buf_obsid
         id_mapping: dict[int, int] = {}
+        deleted_orphan_ids: set[int] = set()
 
         common_utils.start_waiting_cursor()
         try:
@@ -1404,6 +1420,33 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 orig_changed = orig_vals.loc[changed_index]
                 new_changed = new_vals.loc[changed_index]
                 head_changed = buf.loc[changed_index, "head_cm_m"]
+                changed_raw = buf.loc[changed_index, "date_time_raw"]
+                full_positions = pd.Series(
+                    np.arange(len(self._buf)),
+                    index=self._buf["date_time_raw"],
+                )
+                changed_positions = changed_raw.map(full_positions).to_numpy(
+                    dtype=np.int64
+                )
+
+                original_sids = {
+                    int(sid)
+                    for sid in self._original_buf["series_id"].dropna().unique()
+                    if int(sid) >= 0
+                }
+                current_sids = {
+                    int(sid)
+                    for sid in self._buf["series_id"].dropna().unique()
+                    if int(sid) >= 0
+                }
+                removed_metadata_sids = {
+                    sid
+                    for sid in self._original_series_buf.keys()
+                    if sid >= 0 and sid not in self._series_buf
+                }
+                orphan_candidates = (
+                    original_sids - current_sids
+                ) | removed_metadata_sids
             except Exception:
                 return self._report_save_failure(
                     QCoreApplication.translate(
@@ -1426,25 +1469,23 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 try:
                     ph = dbconnection.placeholder()
                     tbl = ident("w_levels_logger")
-                    # SQLite stores date_time as text; normalize both sides so
-                    # that '2017-02-01 00:00' and '2017-02-01 00:00:00' compare
-                    # equal.
-                    is_sqlite = dbconnection.is_sqlite()
-                    if is_sqlite:
-                        dt_eq = f"datetime({ident('date_time')}) = datetime({ph})"
-                    else:
-                        dt_eq = f"{ident('date_time')}::timestamp = {ph}::timestamp"
+                    dt_eq = f"{ident('date_time')} = {ph}"
+                    normalized_dt = dbconnection.normalized_instant_sql(
+                        ident("date_time")
+                    )
+                    normalized_ph = dbconnection.normalized_instant_sql(ph)
                     range_stmts, per_row_params = self._compute_update_statements(
-                        buf,
                         changed_index,
                         orig_changed,
                         new_changed,
                         head_changed,
+                        changed_raw,
+                        changed_positions,
                         obsid,
                         tbl,
                         ph,
-                        is_sqlite,
-                        force_per_row=has_dups,
+                        normalized_dt,
+                        normalized_ph,
                     )
                 except Exception:
                     return self._report_save_failure(
@@ -1546,9 +1587,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                                             resolved = id_mapping.get(int_sid, int_sid)
                                         else:
                                             resolved = None
-                                        dt_str = dt_idx.strftime(_DT_FMT)
+                                        dt_raw = buf.loc[dt_idx, "date_time_raw"]
                                         sid_update_params.append(
-                                            (resolved, obsid, dt_str)
+                                            (resolved, obsid, dt_raw)
                                         )
                                     sid_update_sql = (
                                         f"UPDATE {logger_tbl}"
@@ -1561,25 +1602,21 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                                     )
 
                             # 4. DELETE orphaned series
-                            for sid in list(self._original_series_buf.keys()):
-                                if sid not in self._series_buf:
-                                    dbconnection.execute(
-                                        f"DELETE FROM {series_tbl}"
-                                        f" WHERE {ident('id')} = {ph}",
-                                        (sid,),
-                                    )
-                                elif sid >= 0:
-                                    remaining = dbconnection.execute_and_fetchall(
-                                        f"SELECT COUNT(*) FROM {logger_tbl}"
-                                        f" WHERE {ident('series_id')} = {ph}",
-                                        (sid,),
-                                    )
-                                    if remaining[0][0] == 0:
-                                        dbconnection.execute(
-                                            f"DELETE FROM {series_tbl}"
-                                            f" WHERE {ident('id')} = {ph}",
-                                            (sid,),
-                                        )
+                            if orphan_candidates:
+                                clause, candidate_args = dbconnection.in_clause(
+                                    sorted(orphan_candidates)
+                                )
+                                deleted_rows = dbconnection.execute_and_fetchall(
+                                    f"DELETE FROM {series_tbl}"
+                                    f" WHERE {ident('id')} IN {clause}"
+                                    f" AND NOT EXISTS ("
+                                    f"SELECT 1 FROM {logger_tbl}"
+                                    f" WHERE {logger_tbl}.{ident('series_id')}"
+                                    f" = {series_tbl}.{ident('id')})"
+                                    f" RETURNING {ident('id')}",
+                                    candidate_args,
+                                )
+                                deleted_orphan_ids = {row[0] for row in deleted_rows}
                 except Exception:
                     return self._report_save_failure(
                         QCoreApplication.translate(
@@ -1599,6 +1636,12 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             )
         finally:
             common_utils.stop_waiting_cursor()
+
+        for sid in deleted_orphan_ids:
+            self._series_buf.pop(sid, None)
+        for sid in orphan_candidates - deleted_orphan_ids:
+            if sid not in self._series_buf and sid in self._original_series_buf:
+                self._series_buf[sid] = dict(self._original_series_buf[sid])
 
         # Remap temporary series IDs to real DB IDs after successful save
         if id_mapping:
@@ -1622,23 +1665,23 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self._original_series_buf = {k: dict(v) for k, v in self._series_buf.items()}
         self._last_saved_history_pos = self._history_pos
         self._dirty = False
-        self._ref_subplot_dirty = True
         self._refresh_window_title()
         self._refresh_history_widget()
         return True
 
     def _compute_update_statements(
         self,
-        buf: pd.DataFrame,
         changed_index: pd.DatetimeIndex,
         orig_changed: pd.Series,
         new_changed: pd.Series,
         head_changed: pd.Series,
+        changed_raw: pd.Series,
+        changed_positions: np.ndarray,
         obsid: str,
         tbl: str,
         ph: str,
-        is_sqlite: bool,
-        force_per_row: bool = False,
+        normalized_dt: str,
+        normalized_ph: str,
     ) -> tuple[list[tuple], list[tuple]]:
         """Group changed rows by contiguous buf-position; emit range or per-row SQL.
 
@@ -1651,33 +1694,22 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         UPDATE statement.  Groups that don't match — e.g. trend adjustments — fall
         back to one row per statement via executemany.
 
-        When ``force_per_row`` is True (duplicate instants present and dropped
-        from ``buf``), range merging is disabled: a BETWEEN range derived from
-        the deduped buffer could span a skipped twin's instant in the DB.
-        Per-row statements target exact instants and never touch a twin.
-        Note this disables range merging for ALL rows in the save, not just
-        those adjacent to a twin; Plan 2 (duplicate-resolve UI) should remove
-        the flag entirely once twins can no longer reach save.
+        Positions come from the full buffer, including unresolved duplicate
+        rows. A duplicate therefore creates a positional gap and prevents a
+        range statement from crossing an instant that must remain untouched.
         """
         if len(changed_index) == 0:
             return [], []
 
-        dt_col = ident("date_time")
         obsid_col = ident("obsid")
         level_col = ident("level_masl")
         head_col = ident("head_cm")
-        if is_sqlite:
-            dt_between = f"datetime({dt_col}) BETWEEN datetime({ph}) AND datetime({ph})"
-        else:
-            dt_between = (
-                f"{dt_col}::timestamp BETWEEN {ph}::timestamp AND {ph}::timestamp"
-            )
+        dt_between = f"{normalized_dt} BETWEEN {normalized_ph} AND {normalized_ph}"
         where_range = f"{obsid_col} = {ph} AND {dt_between}"
 
         # A BETWEEN range-query only touches the intended rows when there are no
         # unchanged rows between t1 and t2 in the buffer — split on gaps to enforce this.
-        buf_pos = buf.index.get_indexer(changed_index)
-        splits = (np.where(np.diff(buf_pos) > 1)[0] + 1).tolist()
+        splits = (np.where(np.diff(changed_positions) != 1)[0] + 1).tolist()
         group_slices = np.split(np.arange(len(changed_index)), splits)
 
         range_stmts: list[tuple] = []
@@ -1687,20 +1719,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             grp_changed = changed_index[grp_idx]
             grp_new = new_changed.iloc[grp_idx]
             grp_orig = orig_changed.iloc[grp_idx]
+            grp_raw = changed_raw.iloc[grp_idx]
             dt_strs = grp_changed.strftime(_DT_FMT)
             t1, t2 = dt_strs[0], dt_strs[-1]
-
-            if force_per_row:
-                # Duplicate instants dropped from buf — a BETWEEN range could
-                # span a skipped twin. Emit exact per-row updates only.
-                per_row_params.extend(
-                    zip(
-                        grp_new.to_numpy(dtype=object, na_value=None),
-                        itertools.repeat(obsid, len(grp_idx)),
-                        dt_strs,
-                    )
-                )
-                continue
 
             # Pattern: set to NULL
             if grp_new.isna().all():
@@ -1738,7 +1759,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 zip(
                     grp_new.to_numpy(dtype=object, na_value=None),
                     itertools.repeat(obsid, len(grp_idx)),
-                    dt_strs,
+                    grp_raw,
                 )
             )
 

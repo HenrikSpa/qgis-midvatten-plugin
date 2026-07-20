@@ -45,3 +45,15 @@ class TestGetDelimiterRows:
             num_fields=5,
         )
         assert delimiter == ";"
+
+    def test_tolerant_detection_uses_complete_rows(self):
+        delimiter = file_utils.get_delimiter_from_file_rows(
+            [
+                "2023/10/05 13:00:00;9.470\n",
+                "2023/10/05 14:00:00;978.667;12.110\n",
+            ],
+            delimiters=[";", ","],
+            num_fields=3,
+            allow_ragged_rows=True,
+        )
+        assert delimiter == ";"

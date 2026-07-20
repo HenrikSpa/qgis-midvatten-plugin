@@ -32,6 +32,39 @@ from midvatten.test.mocks_for_tests import MockReturnUsingDictIn
 class TestDiverOfficeParser:
     """Unit tests for DiverOfficeParser.parse — ported from TestParseDiverofficeFile."""
 
+    def test_parse_mon_first_rows_missing_water_head(self):
+        file_content = (
+            "[Logger settings]\n"
+            "  Location                =rb1\n"
+            "  Number of channels      =2\n"
+            "[Channel 1]\n"
+            "  Identification          =WATER HEAD (WC)\n"
+            "[Channel 2]\n"
+            "  Identification          =TEMPERATURE\n"
+            "[Data]\n"
+            "4\n"
+            "2025/05/05 13:00:00.0                    5.250\n"
+            "2025/05/05 14:00:00.0                    4.827\n"
+            "2025/05/05 15:00:00.0      409.667       4.820\n"
+            "2025/05/05 16:00:00.0      409.433       4.837\n"
+            "END OF DATA FILE OF DATALOGGER FOR WINDOWS\n"
+        )
+        with file_utils.tempinput(file_content, "utf-8", suffix=".MON") as f:
+            filedata, *_ = DiverOfficeParser.parse(f, "utf-8")
+            filtered_filedata, *_ = DiverOfficeParser.parse(
+                f, "utf-8", skip_rows_without_water_level=True
+            )
+
+        assert filedata[1] == ["2025-05-05 13:00:00", None, "5.25", None]
+        assert filedata[2] == ["2025-05-05 14:00:00", None, "4.827", None]
+        assert filedata[3] == [
+            "2025-05-05 15:00:00",
+            "409.667",
+            "4.82",
+            None,
+        ]
+        assert [row[1] for row in filtered_filedata[1:]] == ["409.667", "409.433"]
+
     def test_parse_utf8(self):
         file_content = (
             "[Channel identification]\n"
@@ -3485,6 +3518,30 @@ class TestDiverOfficeBaroParser:
         assert len(filedata) == 3
         assert filedata[1][0] == "2023-10-05 13:00:00"
         assert float(filedata[1][1]) == pytest.approx(978.667, rel=1e-3)
+
+    def test_parse_mon_first_row_missing_pressure_preserves_temperature(self):
+        content = (
+            "[Logger settings]\n"
+            "  Location                =Rb1Baro\n"
+            "  Number of channels      =2\n"
+            "[Channel 1]\n"
+            "  Identification          =PRESSURE\n"
+            "[Channel 2]\n"
+            "  Identification          =TEMPERATURE\n"
+            "[data]\n"
+            "2\n"
+            "2023/10/05 13:00:00.0                    9.470\n"
+            "2023/10/05 14:00:00.0      978.667      12.110\n"
+        )
+        with file_utils.tempinput(content, "utf-8", suffix=".mon") as f:
+            result = DiverOfficeBaroParser.parse(path=f, charset="utf-8")
+
+        filedata, *_ = result
+        assert filedata[0] == ["date_time", "baro_cmh2o", "temperature"]
+        assert filedata[1] == ["2023-10-05 13:00:00", None, "9.47"]
+        assert filedata[2][0] == "2023-10-05 14:00:00"
+        assert float(filedata[2][1]) == pytest.approx(978.667, rel=1e-3)
+        assert float(filedata[2][2]) == pytest.approx(12.110, rel=1e-3)
 
     def test_parse_extracts_location(self):
         with file_utils.tempinput(self.MON_CONTENT, "utf-8", suffix=".mon") as f:

@@ -58,6 +58,7 @@ def get_delimiter(
     num_fields: Optional[int] = None,
     skip_empty_rows: bool = True,
     rows: Optional[List[str]] = None,
+    allow_ragged_rows: bool = False,
 ) -> Optional[str]:
     """Detect the delimiter, asking the user if detection fails.
 
@@ -73,7 +74,11 @@ def get_delimiter(
     if skip_empty_rows:
         rows = [row for row in rows if row.strip()]
     delimiter = get_delimiter_from_file_rows(
-        rows, filename=filename, delimiters=delimiters, num_fields=num_fields
+        rows,
+        filename=filename,
+        delimiters=delimiters,
+        num_fields=num_fields,
+        allow_ragged_rows=allow_ragged_rows,
     )
     if delimiter is None:
         _result = ask_for_delimiter(
@@ -100,6 +105,7 @@ def get_delimiter_from_file_rows(
     filename: Optional[str] = None,
     delimiters: Optional[List[str]] = None,
     num_fields: Optional[int] = None,
+    allow_ragged_rows: bool = False,
 ) -> Optional[str]:
     if filename is None:
         filename = "the rows"
@@ -108,6 +114,19 @@ def get_delimiter_from_file_rows(
 
     # When num_fields is specified, test candidates in order (caller knows the structure)
     if num_fields is not None:
+        if allow_ragged_rows:
+            # A logger row may legitimately omit a measurement. Prefer the
+            # delimiter that produces the expected width on the most complete
+            # rows instead of requiring every row to have the same width.
+            scores = [
+                sum(_count_columns(row, candidate) == num_fields for row in rows)
+                for candidate in delimiters
+            ]
+            best_score = max(scores, default=0)
+            if best_score:
+                return delimiters[scores.index(best_score)]
+            return None
+
         any_consistent = False
         for candidate in delimiters:
             col_counts = {_count_columns(row, candidate) for row in rows}

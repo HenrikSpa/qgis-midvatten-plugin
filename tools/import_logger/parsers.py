@@ -8,6 +8,7 @@ import csv
 import datetime
 import os
 import re
+from io import StringIO
 
 import qgis.PyQt.QtWidgets as QtWidgets
 from qgis.PyQt.QtCore import QCoreApplication
@@ -229,6 +230,67 @@ class DiverOfficeParser:
         return _tail[0] if _tail else None
 
     @staticmethod
+    def _read_mon_data(
+        data_rows: list[str],
+        expected_num_fields: int,
+        usecols: list[int],
+        colnames: list[str],
+        filename: str,
+    ) -> pd.DataFrame:
+        """Read fixed-width MON rows without collapsing blank channel slots."""
+        if not data_rows:
+            return pd.DataFrame(columns=colnames)
+
+        # Put the row with the most populated fields inside the inference
+        # window even when the beginning of a long file contains blanks.
+        representative_row = max(
+            data_rows, key=lambda row: len(re.findall(r"\S+", row))
+        )
+        inference_rows = [representative_row, *data_rows]
+        raw_df = (
+            pd.read_fwf(
+                StringIO("\n".join(inference_rows)),
+                header=None,
+                dtype=str,
+                infer_nrows=min(len(inference_rows), 1000),
+            )
+            .iloc[1:]
+            .reset_index(drop=True)
+        )
+
+        # read_fwf treats the single space inside Date/time as a column break.
+        # Diver-Office channel values start after the time, so join those two
+        # fields before applying the channel indexes from the metadata.
+        if raw_df.shape[1] == expected_num_fields + 1:
+            date_time = (
+                raw_df.iloc[:, 0].fillna("").str.strip()
+                + " "
+                + raw_df.iloc[:, 1].fillna("").str.strip()
+            ).str.strip()
+            physical_df = pd.concat(
+                [date_time, raw_df.iloc[:, 2:].reset_index(drop=True)], axis=1
+            )
+        else:
+            message_utils.MessagebarAndLog.warning(
+                bar_msg=QCoreApplication.translate(
+                    "LoggerImport", "Diveroffice import warning. See log message panel"
+                ),
+                log_msg=QCoreApplication.translate(
+                    "LoggerImport",
+                    "Warning, fixed-width columns could not be determined for %s. "
+                    "Expected %s fields but found %s.",
+                )
+                % (filename, expected_num_fields, raw_df.shape[1] - 1),
+            )
+            return pd.DataFrame(columns=colnames)
+
+        physical_df.columns = range(expected_num_fields)
+        df = physical_df.loc[:, usecols].copy()
+        df.columns = colnames
+        df["date_time"] = pd.to_datetime(df["date_time"], errors="coerce")
+        return df.dropna(subset=["date_time"])
+
+    @staticmethod
     def parse(
         path: str,
         charset: str,
@@ -363,58 +425,63 @@ class DiverOfficeParser:
         else:
             skipfooter = 0
 
+        is_csv = path.lower().endswith(".csv")
+        data_rows = rows[data_start_row:stop_row] if stop_row else rows[data_start_row:]
         date_col_idx = 0  # .mon files: date/time is always at column index 0
-        # When no [Channel N] sections found, derive column names from the header row
-        if len(data_headers) == 1 and data_start_row is not None:
-            # data_start_row points to the first data row; header is one row before
+        delimiter = None
+        header_delimiter = None
+        expected_num_fields = max(data_headers) + 1
+
+        if is_csv:
+            # The CSV header is authoritative. A data row may legitimately have
+            # a missing measurement and must not influence header detection.
             header_row_idx = data_start_row - 1
             if header_row_idx >= 0:
                 header_row = rows[header_row_idx]
                 hdr_delim = file_utils.get_delimiter_from_file_rows(
-                    rows[header_row_idx : header_row_idx + 2],
+                    [header_row],
                     delimiters=["\t", ";", ","],
                     filename=filename,
                 )
                 if hdr_delim is None:
                     hdr_delim = ","
+                header_delimiter = hdr_delim
                 header_cols = [
                     c.strip()
                     for c in next(csv.reader([header_row], delimiter=hdr_delim))
                 ]
-                # legacy files may have Date/time at any column position
-                date_col_idx = next(
-                    (i for i, c in enumerate(header_cols) if c.lower() == "date/time"),
-                    0,
-                )
-                data_headers = {date_col_idx: "date_time"}
-                for colidx, colname in enumerate(header_cols):
-                    if colidx == date_col_idx:
-                        continue
-                    col_nospace = colname.lower().replace(" ", "")
-                    for keyword in _col_map:
-                        if keyword in col_nospace:
-                            data_headers[colidx] = keyword
-                            break
+                expected_num_fields = len(header_cols)
+
+                # When no [Channel N] sections were found, derive column names
+                # from the CSV header. Legacy files may put Date/time anywhere.
+                if len(data_headers) == 1:
+                    date_col_idx = next(
+                        (
+                            i
+                            for i, c in enumerate(header_cols)
+                            if c.lower() == "date/time"
+                        ),
+                        0,
+                    )
+                    data_headers = {date_col_idx: "date_time"}
+                    for colidx, colname in enumerate(header_cols):
+                        if colidx == date_col_idx:
+                            continue
+                        col_nospace = colname.lower().replace(" ", "")
+                        for keyword in _col_map:
+                            if keyword in col_nospace:
+                                data_headers[colidx] = keyword
+                                break
 
         delimiter = file_utils.get_delimiter_from_file_rows(
-            rows[data_start_row:stop_row] if stop_row else rows[data_start_row:],
-            delimiters=[
-                "\t",
-                ";",
-                ",",
-                "        ",
-                "       ",
-                "      ",
-                "     ",
-                "    ",
-                "   ",
-                "  ",
-            ],
-            num_fields=len(data_headers),
+            data_rows,
+            delimiters=["\t", ";", ","],
+            num_fields=expected_num_fields,
             filename=filename,
+            allow_ragged_rows=True,
         )
-        if delimiter is None:
-            return filedata, filename, location, utc_offset or None, serial_number
+        if delimiter is None and is_csv:
+            delimiter = header_delimiter
 
         usecols = []
         colnames = []
@@ -457,17 +524,26 @@ class DiverOfficeParser:
         if not colnames:
             return filedata, filename, location, utc_offset or None, serial_number
 
-        df = pd.read_csv(
-            path,
-            sep=delimiter,
-            encoding=charset,
-            usecols=usecols,
-            names=colnames,
-            skipfooter=skipfooter,
-            skiprows=data_start_row,
-            parse_dates=["date_time"],
-            engine="python",
-        )
+        if delimiter is not None:
+            df = pd.read_csv(
+                path,
+                sep=delimiter,
+                encoding=charset,
+                usecols=usecols,
+                names=colnames,
+                skipfooter=skipfooter,
+                skiprows=data_start_row,
+                parse_dates=["date_time"],
+                engine="python",
+            )
+        else:
+            df = DiverOfficeParser._read_mon_data(
+                data_rows,
+                expected_num_fields,
+                usecols,
+                colnames,
+                filename,
+            )
         for col in df.columns:
             if col == "date_time":
                 continue

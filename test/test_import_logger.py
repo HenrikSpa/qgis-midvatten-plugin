@@ -1126,10 +1126,8 @@ class TestDiverOfficeParserOldFormat:
         )
         charset = "cp1252"
         with file_utils.tempinput("\n".join(f), charset) as path:
-            file_data = DiverOfficeParser.parse(path, charset)
-        # parse() cannot detect correct delimiter; returns a tuple (no crash)
-        assert isinstance(file_data, tuple)
-        assert len(file_data) == 5
+            with pytest.raises(DiverOfficeParseError, match="delimited fields"):
+                DiverOfficeParser.parse(path, charset)
 
     def test_parse_old_different_separators(self):
         """parse() handles semicolon data with comma header: detects ';' from data rows."""

@@ -30,10 +30,7 @@ def build_mon(row_count: int, baro: bool = False) -> str:
     for index in range(row_count):
         stamp = start + timedelta(minutes=index)
         value = 100.308 if index == row_count - 1 else 99.900
-        rows.append(
-            f"{stamp:%Y/%m/%d %H:%M:%S}.0"
-            f"{value:13.3f}{5.0:12.3f}"
-        )
+        rows.append(f"{stamp:%Y/%m/%d %H:%M:%S}.0{value:13.3f}{5.0:12.3f}")
     rows.append("END OF DATA FILE OF DATALOGGER FOR WINDOWS")
     return "\n".join(rows) + "\n"
 
@@ -63,10 +60,7 @@ def main() -> None:
     parser.add_argument("--repeats", type=int, default=5)
     args = parser.parse_args()
     median = median_runtime(args.rows, args.repeats)
-    print(
-        f"rows={args.rows} repeats={args.repeats} "
-        f"median_seconds={median:.6f}"
-    )
+    print(f"rows={args.rows} repeats={args.repeats} median_seconds={median:.6f}")
 
 
 if __name__ == "__main__":

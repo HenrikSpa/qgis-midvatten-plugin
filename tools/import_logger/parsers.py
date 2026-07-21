@@ -237,7 +237,7 @@ class _ScannedMonRow:
     tokens: tuple[_MonToken, ...]
 
 
-class _IncompleteMonLayout(Exception):
+class _IncompleteMonLayoutError(Exception):
     """The right edges do not uniquely describe every declared channel."""
 
 
@@ -319,7 +319,7 @@ class DiverOfficeParser:
             {token.end for row in scanned_rows for token in row.tokens}
         )
         if len(right_edges) != channel_count:
-            raise _IncompleteMonLayout(
+            raise _IncompleteMonLayoutError(
                 f"expected {channel_count} channel end positions but found "
                 f"{len(right_edges)} ({right_edges})"
             )
@@ -479,7 +479,7 @@ class DiverOfficeParser:
             physical_df = DiverOfficeParser._read_mon_by_right_edge(
                 scanned_rows, expected_num_fields
             )
-        except _IncompleteMonLayout as error:
+        except _IncompleteMonLayoutError as error:
             physical_df = DiverOfficeParser._read_mon_fallback(
                 scanned_rows,
                 expected_num_fields,
@@ -700,10 +700,22 @@ class DiverOfficeParser:
             filename=filename,
             allow_ragged_rows=True,
         )
-        if count_row.isdigit():
-            # A classic MON count line is authoritative. Commas inside numeric
-            # values are decimal separators, not field separators.
-            delimiter = None
+        if count_row.isdigit() and delimiter is not None:
+            # Counted MON data can itself be delimited. Distinguish that from
+            # fixed-width values containing decimal commas at the unambiguous
+            # timestamp boundary.
+            delimiter_at_boundary = True
+            for source in source_lines:
+                timestamp = re.match(
+                    rf"^\s*\S+\s+[^\s{re.escape(delimiter)}]+", source.text
+                )
+                if timestamp is None or not source.text[timestamp.end() :].startswith(
+                    delimiter
+                ):
+                    delimiter_at_boundary = False
+                    break
+            if not delimiter_at_boundary:
+                delimiter = None
         if delimiter is None and is_csv:
             delimiter = header_delimiter
 

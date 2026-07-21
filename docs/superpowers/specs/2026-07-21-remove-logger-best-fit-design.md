@@ -19,8 +19,10 @@ Remove the **Calculate best fit (auto)** button from the “Calculate from water
 head” section. Keep the manual elevation field and **Calculate** button.
 
 Keep **Fit to measurements (auto)**, the offset field and **Add** button, and
-the search-radius input. Change the search-radius label from the plural
-“Auto methods search radius” to wording that refers only to the remaining
+the search-radius input. Remove the horizontal separator between **Fit to
+measurements (auto)** and the search-radius input so the setting reads as part
+of that action. Change the search-radius label from “Auto methods search
+radius” to **Auto-fit search radius**, which refers only to the remaining
 automatic fit method.
 
 No other layout or calibration controls change.

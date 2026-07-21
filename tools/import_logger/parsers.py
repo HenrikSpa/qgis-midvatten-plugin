@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import csv
 import datetime
+import itertools
 import os
 import re
 from dataclasses import dataclass
@@ -324,6 +325,19 @@ class DiverOfficeParser:
                 f"{len(right_edges)} ({right_edges})"
             )
 
+        observed_pairs = {
+            pair
+            for row in scanned_rows
+            for pair in itertools.combinations(
+                sorted({token.end for token in row.tokens}), 2
+            )
+        }
+        required_pairs = set(itertools.combinations(right_edges, 2))
+        if observed_pairs != required_pairs:
+            raise _IncompleteMonLayoutError(
+                "channel end positions lack pairwise co-occurrence evidence"
+            )
+
         channel_by_edge = {edge: index for index, edge in enumerate(right_edges, 1)}
         records: list[list[str | None]] = []
         for row in scanned_rows:
@@ -357,17 +371,30 @@ class DiverOfficeParser:
                 ),
             )
 
-        for row_index, scanned in enumerate(scanned_rows):
-            parsed_tokens = tuple(
-                str(value).strip()
-                for value in raw_df.iloc[row_index, 2:]
-                if pd.notna(value) and str(value).strip()
+        channel_count = expected_num_fields - 1
+        left_edges = sorted(
+            {token.start for row in scanned_rows for token in row.tokens}
+        )
+        if len(left_edges) != channel_count:
+            raise DiverOfficeParseError(
+                filename,
+                "fallback could not establish one stable start position per channel",
+                fallback_reason=primary_reason,
             )
-            source_tokens = tuple(token.text for token in scanned.tokens)
-            if parsed_tokens != source_tokens:
+        channel_by_start = {start: channel for channel, start in enumerate(left_edges)}
+
+        for row_index, scanned in enumerate(scanned_rows):
+            source_slots: list[str | None] = [None] * channel_count
+            for token in scanned.tokens:
+                source_slots[channel_by_start[token.start]] = token.text
+            parsed_slots = tuple(
+                None if pd.isna(value) or not str(value).strip() else str(value).strip()
+                for value in raw_df.iloc[row_index, 2:]
+            )
+            if parsed_slots != tuple(source_slots):
                 raise DiverOfficeParseError(
                     filename,
-                    "fixed-width fallback did not preserve every measurement token",
+                    "fixed-width fallback did not preserve measurement channel slots",
                     scanned.source.number,
                     scanned.source.text,
                     fallback_reason=primary_reason,
@@ -378,6 +405,15 @@ class DiverOfficeParser:
             + " "
             + raw_df.iloc[:, 1].fillna("").str.strip()
         ).str.strip()
+        for row_index, scanned in enumerate(scanned_rows):
+            if date_time.iloc[row_index] != scanned.date_time:
+                raise DiverOfficeParseError(
+                    filename,
+                    "fixed-width fallback did not preserve date/time",
+                    scanned.source.number,
+                    scanned.source.text,
+                    fallback_reason=primary_reason,
+                )
         physical_df = pd.concat(
             [date_time, raw_df.iloc[:, 2:].reset_index(drop=True)], axis=1
         )
@@ -485,6 +521,13 @@ class DiverOfficeParser:
                 expected_num_fields,
                 filename,
                 str(error),
+            )
+            message_utils.MessagebarAndLog.info(
+                log_msg=QCoreApplication.translate(
+                    "LoggerImport",
+                    "Accepted %s using the validated full-file fixed-width fallback: %s",
+                )
+                % (filename, error)
             )
 
         physical_df = DiverOfficeParser._strict_frame_conversion(
@@ -602,6 +645,26 @@ class DiverOfficeParser:
                 colname = data.get("identification", "")
                 if colname:
                     data_headers[int(secno)] = colname
+
+        declared_channels_raw = metadata.get("logger settings", {}).get(
+            "number of channels", ""
+        ) or metadata.get("series settings", {}).get("number of channels", "")
+        if declared_channels_raw:
+            try:
+                declared_channels = int(declared_channels_raw.strip())
+            except ValueError as error:
+                raise DiverOfficeParseError(
+                    filename,
+                    f"invalid declared channel count {declared_channels_raw!r}",
+                ) from error
+            identified_channels = set(data_headers) - {0}
+            expected_channels = set(range(1, declared_channels + 1))
+            if identified_channels != expected_channels:
+                raise DiverOfficeParseError(
+                    filename,
+                    f"file declares {declared_channels} channels but identifies "
+                    f"channels {sorted(identified_channels)}",
+                )
 
         if data_start_row is None:
             message_utils.MessagebarAndLog.critical(

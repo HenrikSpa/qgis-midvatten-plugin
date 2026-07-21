@@ -47,6 +47,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         self.temptable_name = None
         self.csvlayer = None
         self.confirmation_handled = None
+        self.last_insert_error: Exception | None = None
 
     def general_import(
         self,
@@ -61,7 +62,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         defer_commit: bool = False,
         progress_callback: Optional[Callable[[str], None]] = None,
         manage_wait_cursor: bool = True,
-    ) -> None:
+    ) -> int:
         """General method for importing a list of list to a table
 
             self.temptableName must be the name of the table containing the new data to import.
@@ -80,7 +81,9 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
 
         self.temptable_name = None
         self._manage_wait_cursor = manage_wait_cursor
+        self.last_insert_error = None
         import_messages = []
+        nr_imported = 0
 
         if skip_confirmation:
             self.confirmation_handled = 1
@@ -88,7 +91,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         dbconnection: Optional[DbConnectionManager] = None
         try:
             if file_data is None or not file_data:
-                return
+                return 0
             message_utils.MessagebarAndLog.info(
                 log_msg=QCoreApplication.translate(
                     "midv_data_importer",
@@ -186,7 +189,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 import_messages,
             )
             if remaining_rownumbers is None:
-                return
+                return 0
 
             # Special cases for some tables
             remaining_rownumbers, import_messages = self._handle_special_table_cases(
@@ -200,7 +203,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 import_messages,
             )
             if remaining_rownumbers is None:
-                return
+                return 0
 
             # Dump temptable to csv for debugging
             if dump_temptable:
@@ -248,6 +251,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             raise
         else:
             self._cleanup(dbconnection, _dbconnection, commit=not defer_commit)
+        return nr_imported
 
     def _import_summary_bar_msg(
         self,
@@ -654,6 +658,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         try:
             dbconnection.execute(sql)
         except Exception as e:
+            self.last_insert_error = e
             try:
                 str(e)
             except UnicodeDecodeError:

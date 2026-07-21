@@ -1,7 +1,9 @@
+import csv
 import threading
 from contextlib import contextmanager
 from unittest import mock
 
+import pytest
 from qgis.PyQt.QtCore import QEventLoop, QThread, QTimer
 
 from midvatten.tools.import_logger.workers import (
@@ -16,7 +18,14 @@ from midvatten.tools.import_logger.workers import (
 from midvatten.tools.import_logger.parsers import DiverOfficeParseError
 
 
-def test_parse_worker_collects_bad_file_and_continues():
+@pytest.mark.parametrize(
+    "parse_error",
+    [
+        DiverOfficeParseError("bad.mon", "ambiguous endpoints", 12),
+        csv.Error("malformed quoted field"),
+    ],
+)
+def test_parse_worker_collects_bad_file_and_continues(parse_error):
     request = LoggerParseRequest(
         files=("bad.mon", "good.mon"),
         format_name="DiverOffice",
@@ -42,7 +51,7 @@ def test_parse_worker_collects_bad_file_and_continues():
         worker,
         "_parse_file",
         side_effect=[
-            DiverOfficeParseError("bad.mon", "ambiguous endpoints", 12),
+            parse_error,
             good_file,
         ],
     ):
@@ -168,6 +177,37 @@ def test_database_worker_rolls_back_series_and_rows_together():
     assert results[0].filename == "bad.mon"
     assert not results[0].imported
     assert "insert failed" in results[0].reason
+
+
+def test_database_worker_detects_generic_importer_swallowed_insert_error():
+    connection = FakeConnection()
+    worker = LoggerDbImportWorker({}, make_db_request("swallowed.mon"))
+    results = []
+    worker.finished.connect(results.append)
+    fake_importer = mock.Mock()
+    fake_importer.last_insert_error = RuntimeError("SQL insert failed")
+    fake_importer.general_import.return_value = 0
+
+    with (
+        mock.patch(
+            "midvatten.tools.import_logger.workers.db_utils.DbConnectionManager",
+            return_value=connection,
+        ),
+        mock.patch(
+            "midvatten.tools.import_logger.workers.db_utils.get_last_insert_id",
+            return_value=7,
+        ),
+        mock.patch(
+            "midvatten.tools.import_logger.workers.import_data_to_db.MidvDataImporter",
+            return_value=fake_importer,
+        ),
+    ):
+        worker.run()
+
+    assert connection.rollbacks == 1
+    assert len(results) == 1
+    assert not results[0].imported
+    assert "SQL insert failed" in results[0].reason
 
 
 def test_database_worker_removes_series_when_all_rows_are_duplicates():

@@ -53,6 +53,7 @@ class ParsedLoggerFile:
     location: str | None
     serial_number: str | None
     timezone_error: str | None = None
+    source_path: str | None = None
 
 
 @dataclass(frozen=True)
@@ -114,10 +115,26 @@ class LoggerParseWorker(LoggerWorker):
                 )
                 try:
                     result = self._parse_file(selected_file)
+                except LoggerImportCancelledError:
+                    raise
                 except (DiverOfficeParseError, UnicodeDecodeError) as error:
                     failures.append(
                         LoggerFileFailure(
-                            filename=os.path.basename(selected_file),
+                            filename=selected_file,
+                            stage="parse",
+                            reason=str(error),
+                        )
+                    )
+                    continue
+                except Exception as error:
+                    if self.request.format_name not in (
+                        "DiverOffice",
+                        "DiverOffice Baro",
+                    ):
+                        raise
+                    failures.append(
+                        LoggerFileFailure(
+                            filename=selected_file,
                             stage="parse",
                             reason=str(error),
                         )
@@ -210,6 +227,7 @@ class LoggerParseWorker(LoggerWorker):
             location=location,
             serial_number=serial_number,
             timezone_error=timezone_error,
+            source_path=selected_file,
         )
 
     @staticmethod
@@ -310,7 +328,7 @@ class LoggerDbImportWorker(LoggerWorker):
             with connection.transaction():
                 file_data, series_id = self._prepare_file_data(connection)
                 importer = import_data_to_db.MidvDataImporter()
-                importer.general_import(
+                inserted_count = importer.general_import(
                     self.request.dest_table,
                     file_data,
                     _dbconnection=connection,
@@ -319,6 +337,8 @@ class LoggerDbImportWorker(LoggerWorker):
                     progress_callback=self._on_progress,
                     manage_wait_cursor=False,
                 )
+                if importer.last_insert_error is not None:
+                    raise importer.last_insert_error
                 self._check_cancelled()
                 result = LoggerDbImportResult(self.request.filename, True)
                 if series_id is not None:
@@ -328,7 +348,7 @@ class LoggerDbImportWorker(LoggerWorker):
                         f"WHERE series_id = {placeholder}",
                         (series_id,),
                     )[0][0]
-                    if count == 0:
+                    if inserted_count == 0 or count == 0:
                         connection.execute(
                             f"DELETE FROM w_logger_series WHERE id = {placeholder}",
                             (series_id,),
@@ -338,6 +358,12 @@ class LoggerDbImportWorker(LoggerWorker):
                             False,
                             "no non-duplicate rows",
                         )
+                elif inserted_count == 0:
+                    result = LoggerDbImportResult(
+                        self.request.filename,
+                        False,
+                        "no non-duplicate rows",
+                    )
             self.finished.emit(result)
         except Exception:
             if self._cancel_event.is_set():

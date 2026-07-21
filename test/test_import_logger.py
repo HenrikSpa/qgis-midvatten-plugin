@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import pandas as pd
 import pytest
 from unittest import mock
 from unittest.mock import MagicMock
@@ -26,6 +27,7 @@ from midvatten.tools.utils import file_utils
 from midvatten.tools.utils import db_utils
 from midvatten.tools.utils.date_utils import to_date
 from midvatten.tools.utils.gui_utils import set_combobox
+from midvatten.tools.import_logger.parsers import _SourceLine
 from midvatten.test import utils_for_tests
 from midvatten.test.mocks_for_tests import MockReturnUsingDictIn
 from scripts.benchmark_diveroffice_mon import build_mon
@@ -146,6 +148,14 @@ class TestDiverOfficeParser:
             with pytest.raises(DiverOfficeParseError, match="declared 2 data rows"):
                 DiverOfficeParser.parse(path, "utf-8")
 
+    def test_parse_mon_rejects_declared_channel_count_mismatch(self):
+        content = make_fixed_mon([("1.0", "2.0")]).replace(
+            "Number of channels      =2", "Number of channels      =3"
+        )
+        with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
+            with pytest.raises(DiverOfficeParseError, match="declares 3 channels"):
+                DiverOfficeParser.parse(path, "utf-8")
+
     def test_parse_mon_fallback_accepts_lossless_left_aligned_field(self):
         content = make_fixed_mon([("9.9",), ("100.308",)])
         content = content.replace(f"{'9.9':>12}", "    9.9     ").replace(
@@ -162,6 +172,31 @@ class TestDiverOfficeParser:
         with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
             with pytest.raises(DiverOfficeParseError, match="fallback"):
                 DiverOfficeParser.parse(path, "utf-8")
+
+    def test_parse_mon_rejects_width_change_as_fake_second_channel(self):
+        """Two widths in one sparse channel must not be mapped to two channels."""
+        content = make_fixed_mon([("9.9", None), ("10.0", None)]).replace(
+            "2025/01/01 00:00:00.0         9.9            \n"
+            "2025/01/01 00:00:00.0        10.0            ",
+            "2025/01/01 00:00:00.0    9.9\n2025/01/01 00:00:00.0    10.0",
+        )
+        with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
+            with pytest.raises(DiverOfficeParseError, match="fallback"):
+                DiverOfficeParser.parse(path, "utf-8")
+
+    def test_mon_fallback_rejects_compressed_blank_slot_comparison(self):
+        source_lines = [_SourceLine(1, "2025/01/01 00:00:00.0                2.0")]
+        scanned = DiverOfficeParser._scan_mon_rows(source_lines, "ambiguous.mon")
+        wrong_slots = pd.DataFrame([["2025/01/01", "00:00:00.0", "2.0", None]])
+
+        with mock.patch(
+            "midvatten.tools.import_logger.parsers.pd.read_fwf",
+            return_value=wrong_slots,
+        ):
+            with pytest.raises(DiverOfficeParseError, match="fallback"):
+                DiverOfficeParser._read_mon_fallback(
+                    scanned, 3, "ambiguous.mon", "ambiguous endpoints"
+                )
 
     def test_parse_utf8(self):
         file_content = (
@@ -876,6 +911,57 @@ class TestLoggerImportDiverOfficeSpatialite(
         assert rows == (True, [("2025-01-02 00:00:00", 2.0)])
         series = db_utils.sql_load_fr_db("SELECT COUNT(*) FROM w_logger_series")
         assert series == (True, [(1,)])
+
+    def test_same_basename_files_keep_distinct_obsid_assignments(self, tmp_path):
+        for obsid in ("rb1", "rb2"):
+            db_utils.sql_alter_db(f"INSERT INTO obs_points (obsid) VALUES ('{obsid}')")
+        first_dir = tmp_path / "first"
+        second_dir = tmp_path / "second"
+        first_dir.mkdir()
+        second_dir.mkdir()
+        first_file = first_dir / "logger.csv"
+        second_file = second_dir / "logger.csv"
+        first_file.write_text(
+            "Location=rb1\nDate/time,Water head[cm]\n2025/01/01 00:00:00,1\n",
+            encoding="utf-8",
+        )
+        second_file.write_text(
+            "Location=rb2\nDate/time,Water head[cm]\n2025/01/02 00:00:00,2\n",
+            encoding="utf-8",
+        )
+
+        with (
+            mock.patch(
+                "midvatten.tools.import_logger.midvatten_utils.select_files",
+                return_value=[str(first_file), str(second_file)],
+            ),
+            mock.patch("midvatten.tools.utils.dialog_utils.Askuser"),
+            mock.patch("qgis.utils.iface", autospec=True),
+        ):
+            ms = MagicMock()
+            ms.settingsdict = OrderedDict()
+            importer = LoggerImport(self.iface, ms)
+            importer.load_gui()
+            importer.confirm_names.checked = False
+            importer.import_all_data.checked = True
+            importer.select_files()
+            importer.start_import(
+                importer.files,
+                importer.skip_rows.checked,
+                importer.confirm_names.checked,
+                importer.import_all_data.checked,
+            )
+
+        rows = db_utils.sql_load_fr_db(
+            "SELECT obsid, date_time, head_cm FROM w_levels_logger ORDER BY obsid"
+        )
+        assert rows == (
+            True,
+            [
+                ("rb1", "2025-01-01 00:00:00", 1.0),
+                ("rb2", "2025-01-02 00:00:00", 2.0),
+            ],
+        )
 
 
 @pytest.mark.spatialite

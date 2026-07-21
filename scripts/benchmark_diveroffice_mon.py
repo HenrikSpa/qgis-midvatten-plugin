@@ -4,12 +4,20 @@ from __future__ import annotations
 
 import argparse
 import statistics
+import sys
 import tempfile
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from midvatten.tools.import_logger import DiverOfficeBaroParser, DiverOfficeParser
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPOSITORY_ROOT / "_pkgroot"))
+
+from midvatten.tools.import_logger import (  # noqa: E402
+    DiverOfficeBaroParser,
+    DiverOfficeParser,
+)
+from midvatten.tools.import_logger import parsers as logger_parsers  # noqa: E402
 
 
 def build_mon(row_count: int, baro: bool = False) -> str:
@@ -60,6 +68,7 @@ def main() -> None:
     parser.add_argument("--repeats", type=int, default=5)
     args = parser.parse_args()
     median = median_runtime(args.rows, args.repeats)
+    print(f"parser_module={logger_parsers.__file__}")
     print(f"rows={args.rows} repeats={args.repeats} median_seconds={median:.6f}")
 
 

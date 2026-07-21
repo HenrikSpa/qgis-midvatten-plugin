@@ -10,6 +10,7 @@ from collections import OrderedDict
 
 from qgis.PyQt import QtWidgets
 
+from midvatten.tools import import_data_to_db
 from midvatten.tools.import_logger import (
     DiverOfficeParser,
     DiverOfficeParseError,
@@ -40,9 +41,7 @@ def make_fixed_mon(
         f"  Number of channels      ={len(rows[0])}",
     ]
     for channel, name in enumerate(channel_names[: len(rows[0])], 1):
-        header.extend(
-            [f"[Channel {channel}]", f"  Identification          ={name}"]
-        )
+        header.extend([f"[Channel {channel}]", f"  Identification          ={name}"])
     header.extend(["[Data]", str(declared_count or len(rows))])
     for values in rows:
         fields = "".join(f"{value or '':>12}" for value in values)
@@ -754,6 +753,129 @@ class TestLoggerImportDiverOfficeSpatialite(
             r"(rb1, 2016-03-15 11:00:00, 11.0)])"
         )
         assert test_string == reference_string
+
+    @pytest.mark.parametrize("import_all_data", [False, True])
+    def test_overlapping_files_use_one_pre_import_date_snapshot(self, import_all_data):
+        """A late segment imported first must not hide earlier rows in a fuller file."""
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, head_cm) "
+            "VALUES ('rb1', '2025-01-01 00:00:00', 1)"
+        )
+        late_segment = "\n".join(
+            [
+                "Location=rb1",
+                "Date/time,Water head[cm]",
+                "2025/01/03 00:00:00,3",
+            ]
+        )
+        full_period = "\n".join(
+            [
+                "Location=rb1",
+                "Date/time,Water head[cm]",
+                "2025/01/01 00:00:00,1",
+                "2025/01/02 00:00:00,2",
+                "2025/01/03 00:00:00,3",
+            ]
+        )
+
+        with (
+            file_utils.tempinput(late_segment, "utf-8") as late_file,
+            file_utils.tempinput(full_period, "utf-8") as full_file,
+            mock.patch(
+                "midvatten.tools.import_logger.midvatten_utils.select_files",
+                return_value=[late_file, full_file],
+            ),
+            mock.patch("midvatten.tools.utils.dialog_utils.Askuser"),
+            mock.patch("qgis.utils.iface", autospec=True),
+        ):
+            ms = MagicMock()
+            ms.settingsdict = OrderedDict()
+            importer = LoggerImport(self.iface, ms)
+            importer.load_gui()
+            importer.confirm_names.checked = False
+            importer.import_all_data.checked = import_all_data
+            importer.select_files()
+            importer.start_import(
+                importer.files,
+                importer.skip_rows.checked,
+                importer.confirm_names.checked,
+                importer.import_all_data.checked,
+            )
+
+        result = db_utils.sql_load_fr_db(
+            "SELECT date_time FROM w_levels_logger "
+            "WHERE obsid = 'rb1' ORDER BY date_time"
+        )
+        assert result[0]
+        assert [row[0] for row in result[1]] == [
+            "2025-01-01 00:00:00",
+            "2025-01-02 00:00:00",
+            "2025-01-03 00:00:00",
+        ]
+
+    def test_database_failure_in_one_file_does_not_stop_next_file(self):
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        bad_file_data = "\n".join(
+            [
+                "Location=rb1",
+                "Date/time,Water head[cm]",
+                "2025/01/01 00:00:00,1",
+            ]
+        )
+        good_file_data = "\n".join(
+            [
+                "Location=rb1",
+                "Date/time,Water head[cm]",
+                "2025/01/02 00:00:00,2",
+            ]
+        )
+        original_import = import_data_to_db.MidvDataImporter.general_import
+        import_calls = 0
+
+        def fail_first_file(importer, destination, file_data, *args, **kwargs):
+            nonlocal import_calls
+            import_calls += 1
+            if import_calls == 1:
+                raise RuntimeError("deliberate first-file failure")
+            return original_import(importer, destination, file_data, *args, **kwargs)
+
+        with (
+            file_utils.tempinput(bad_file_data, "utf-8") as bad_file,
+            file_utils.tempinput(good_file_data, "utf-8") as good_file,
+            mock.patch(
+                "midvatten.tools.import_logger.midvatten_utils.select_files",
+                return_value=[bad_file, good_file],
+            ),
+            mock.patch.object(
+                import_data_to_db.MidvDataImporter,
+                "general_import",
+                autospec=True,
+                side_effect=fail_first_file,
+            ),
+            mock.patch("midvatten.tools.utils.dialog_utils.Askuser"),
+            mock.patch("qgis.utils.iface", autospec=True),
+        ):
+            ms = MagicMock()
+            ms.settingsdict = OrderedDict()
+            importer = LoggerImport(self.iface, ms)
+            importer.load_gui()
+            importer.confirm_names.checked = False
+            importer.import_all_data.checked = True
+            importer.select_files()
+            importer.start_import(
+                importer.files,
+                importer.skip_rows.checked,
+                importer.confirm_names.checked,
+                importer.import_all_data.checked,
+            )
+
+        rows = db_utils.sql_load_fr_db(
+            "SELECT date_time, head_cm FROM w_levels_logger ORDER BY date_time"
+        )
+        assert rows == (True, [("2025-01-02 00:00:00", 2.0)])
+        series = db_utils.sql_load_fr_db("SELECT COUNT(*) FROM w_logger_series")
+        assert series == (True, [(1,)])
 
 
 @pytest.mark.spatialite

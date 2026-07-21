@@ -54,12 +54,13 @@ def test_parse_worker_collects_bad_file_and_continues():
 
 
 class FakeConnection:
-    def __init__(self):
+    def __init__(self, imported_row_count=1):
         self.cancelled = threading.Event()
         self.commits = 0
         self.rollbacks = 0
         self.closed = False
         self.executed = []
+        self.imported_row_count = imported_row_count
 
     @contextmanager
     def transaction(self):
@@ -76,6 +77,10 @@ class FakeConnection:
 
     def execute(self, sql, parameters=()):
         self.executed.append((sql, parameters))
+
+    def execute_and_fetchall(self, sql, parameters=()):
+        self.executed.append((sql, parameters))
+        return [(self.imported_row_count,)]
 
     def cancel(self):
         self.cancelled.set()
@@ -163,6 +168,36 @@ def test_database_worker_rolls_back_series_and_rows_together():
     assert results[0].filename == "bad.mon"
     assert not results[0].imported
     assert "insert failed" in results[0].reason
+
+
+def test_database_worker_removes_series_when_all_rows_are_duplicates():
+    connection = FakeConnection(imported_row_count=0)
+    worker = LoggerDbImportWorker({}, make_db_request("duplicates.mon"))
+    results = []
+    worker.finished.connect(results.append)
+
+    with (
+        mock.patch(
+            "midvatten.tools.import_logger.workers.db_utils.DbConnectionManager",
+            return_value=connection,
+        ),
+        mock.patch(
+            "midvatten.tools.import_logger.workers.db_utils.get_last_insert_id",
+            return_value=7,
+        ),
+        mock.patch(
+            "midvatten.tools.import_logger.workers.import_data_to_db.MidvDataImporter.general_import"
+        ),
+    ):
+        worker.run()
+
+    assert connection.commits == 1
+    assert results == [
+        LoggerDbImportResult(
+            "duplicates.mon", imported=False, reason="no non-duplicate rows"
+        )
+    ]
+    assert any("DELETE FROM w_logger_series" in sql for sql, _ in connection.executed)
 
 
 def test_parse_worker_keeps_gui_event_loop_responsive_and_cancels():

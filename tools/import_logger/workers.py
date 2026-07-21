@@ -274,11 +274,11 @@ class LoggerDbImportWorker(LoggerWorker):
         self._check_cancelled()
         self.progress.emit(message)
 
-    def _prepare_file_data(self, connection) -> list[list]:
+    def _prepare_file_data(self, connection) -> tuple[list[list], int | None]:
         file_data = [list(row) for row in self.request.file_data]
         series = self.request.series
         if series is None:
-            return file_data
+            return file_data, None
 
         placeholder = connection.placeholder()
         connection.execute(
@@ -295,7 +295,7 @@ class LoggerDbImportWorker(LoggerWorker):
             row.append(series_id)
             if series.created_at is not None:
                 row.append(series.created_at)
-        return file_data
+        return file_data, series_id
 
     @pyqtSlot()
     def run(self) -> None:
@@ -308,7 +308,7 @@ class LoggerDbImportWorker(LoggerWorker):
             self._check_cancelled()
 
             with connection.transaction():
-                file_data = self._prepare_file_data(connection)
+                file_data, series_id = self._prepare_file_data(connection)
                 importer = import_data_to_db.MidvDataImporter()
                 importer.general_import(
                     self.request.dest_table,
@@ -320,7 +320,25 @@ class LoggerDbImportWorker(LoggerWorker):
                     manage_wait_cursor=False,
                 )
                 self._check_cancelled()
-            self.finished.emit(LoggerDbImportResult(self.request.filename, True))
+                result = LoggerDbImportResult(self.request.filename, True)
+                if series_id is not None:
+                    placeholder = connection.placeholder()
+                    count = connection.execute_and_fetchall(
+                        "SELECT COUNT(*) FROM w_levels_logger "
+                        f"WHERE series_id = {placeholder}",
+                        (series_id,),
+                    )[0][0]
+                    if count == 0:
+                        connection.execute(
+                            f"DELETE FROM w_logger_series WHERE id = {placeholder}",
+                            (series_id,),
+                        )
+                        result = LoggerDbImportResult(
+                            self.request.filename,
+                            False,
+                            "no non-duplicate rows",
+                        )
+            self.finished.emit(result)
         except Exception:
             if self._cancel_event.is_set():
                 self.cancelled.emit()

@@ -3143,8 +3143,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 )
             )
         else:
-            calculated_diff = str(common_utils.calc_mean_diff(coupled_vals))
-            if not calculated_diff or calculated_diff.lower() == "nan":
+            calculated_diff = common_utils.calc_mean_diff(coupled_vals)
+            if math.isnan(calculated_diff):
                 message_utils.pop_up_info(
                     QCoreApplication.translate(
                         "Calibrlogger",
@@ -3158,7 +3158,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                     )
                 )
             else:
-                self.offset.setText(calculated_diff)
+                self.offset.setText(str(calculated_diff))
                 self.add_to_level_masl(obsid)
 
         common_utils.stop_waiting_cursor()

@@ -6,6 +6,7 @@ from midvatten.tools.utils import midvatten_utils  # noqa: F401 — needed for m
 from .importer import LoggerImport
 from .parsers import (
     DiverOfficeParser,
+    DiverOfficeParseError,
     DiverOfficeBaroParser,
     LeveloggerParser,
     HoboParser,

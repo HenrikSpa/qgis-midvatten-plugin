@@ -8,6 +8,7 @@ import csv
 import datetime
 import os
 import re
+from dataclasses import dataclass
 from io import StringIO
 
 import qgis.PyQt.QtWidgets as QtWidgets
@@ -216,6 +217,55 @@ _DIVEROFFICE_BARO_COL_MAP: dict[str, str] = {
 }
 
 
+@dataclass(frozen=True)
+class _SourceLine:
+    number: int
+    text: str
+
+
+@dataclass(frozen=True)
+class _MonToken:
+    text: str
+    start: int
+    end: int
+
+
+@dataclass(frozen=True)
+class _ScannedMonRow:
+    source: _SourceLine
+    date_time: str
+    tokens: tuple[_MonToken, ...]
+
+
+class _IncompleteMonLayoutError(Exception):
+    """The right edges do not uniquely describe every declared channel."""
+
+
+class DiverOfficeParseError(ValueError):
+    """A DiverOffice file could not be parsed without risking data loss."""
+
+    def __init__(
+        self,
+        filename: str,
+        reason: str,
+        line_number: int | None = None,
+        raw_text: str | None = None,
+        fallback_reason: str | None = None,
+    ):
+        self.filename = filename
+        self.reason = reason
+        self.line_number = line_number
+        self.raw_text = raw_text
+        self.fallback_reason = fallback_reason
+        location = f" line {line_number}" if line_number is not None else ""
+        details = f"{filename}{location}: {reason}"
+        if raw_text is not None:
+            details += f" [raw={raw_text!r}]"
+        if fallback_reason is not None:
+            details += f" [fallback={fallback_reason}]"
+        super().__init__(details)
+
+
 class DiverOfficeParser:
     """Parser for Diver-Office .mon and .csv logger files.
 
@@ -230,65 +280,262 @@ class DiverOfficeParser:
         return _tail[0] if _tail else None
 
     @staticmethod
+    def _scan_mon_rows(
+        data_rows: list[_SourceLine], filename: str
+    ) -> list[_ScannedMonRow]:
+        scanned_rows = []
+        for source in data_rows:
+            match = re.match(r"^\s*(?P<date>\S+)\s+(?P<time>\S+)", source.text)
+            if match is None:
+                raise DiverOfficeParseError(
+                    filename,
+                    "data row does not start with a date and time",
+                    source.number,
+                    source.text,
+                )
+            tokens = tuple(
+                _MonToken(
+                    text=token.group(),
+                    start=match.end() + token.start(),
+                    end=match.end() + token.end(),
+                )
+                for token in re.finditer(r"\S+", source.text[match.end() :])
+            )
+            scanned_rows.append(
+                _ScannedMonRow(
+                    source=source,
+                    date_time=f"{match.group('date')} {match.group('time')}",
+                    tokens=tokens,
+                )
+            )
+        return scanned_rows
+
+    @staticmethod
+    def _read_mon_by_right_edge(
+        scanned_rows: list[_ScannedMonRow], expected_num_fields: int
+    ) -> pd.DataFrame:
+        channel_count = expected_num_fields - 1
+        right_edges = sorted(
+            {token.end for row in scanned_rows for token in row.tokens}
+        )
+        if len(right_edges) != channel_count:
+            raise _IncompleteMonLayoutError(
+                f"expected {channel_count} channel end positions but found "
+                f"{len(right_edges)} ({right_edges})"
+            )
+
+        required_edges = set(right_edges)
+        if not any(
+            {token.end for token in row.tokens} == required_edges
+            for row in scanned_rows
+        ):
+            raise _IncompleteMonLayoutError(
+                "channel end positions never occur together in the same row"
+            )
+
+        channel_by_edge = {edge: index for index, edge in enumerate(right_edges, 1)}
+        records: list[list[str | None]] = []
+        for row in scanned_rows:
+            record: list[str | None] = [row.date_time] + [None] * channel_count
+            for token in row.tokens:
+                channel = channel_by_edge[token.end]
+                if channel > 1 and token.start < right_edges[channel - 2]:
+                    raise _IncompleteMonLayoutError(
+                        "measurement token crosses a proven channel boundary"
+                    )
+                record[channel] = token.text
+            records.append(record)
+        return pd.DataFrame(records, columns=range(expected_num_fields))
+
+    @staticmethod
+    def _read_mon_fallback(
+        scanned_rows: list[_ScannedMonRow],
+        expected_num_fields: int,
+        filename: str,
+        primary_reason: str,
+    ) -> pd.DataFrame:
+        raw_df = pd.read_fwf(
+            StringIO("\n".join(row.source.text for row in scanned_rows)),
+            header=None,
+            dtype=str,
+            infer_nrows=len(scanned_rows),
+        )
+        expected_raw_fields = expected_num_fields + 1
+        if raw_df.shape != (len(scanned_rows), expected_raw_fields):
+            raise DiverOfficeParseError(
+                filename,
+                "fixed-width fallback produced an unexpected number of fields",
+                fallback_reason=(
+                    f"{primary_reason}; expected {expected_raw_fields} raw fields, "
+                    f"found {raw_df.shape[1]}"
+                ),
+            )
+
+        channel_count = expected_num_fields - 1
+        left_edges = sorted(
+            {token.start for row in scanned_rows for token in row.tokens}
+        )
+        if len(left_edges) != channel_count:
+            raise DiverOfficeParseError(
+                filename,
+                "fallback could not establish one stable start position per channel",
+                fallback_reason=primary_reason,
+            )
+        channel_by_start = {start: channel for channel, start in enumerate(left_edges)}
+
+        for row_index, scanned in enumerate(scanned_rows):
+            source_slots: list[str | None] = [None] * channel_count
+            for token in scanned.tokens:
+                source_slots[channel_by_start[token.start]] = token.text
+            parsed_slots = tuple(
+                None if pd.isna(value) or not str(value).strip() else str(value).strip()
+                for value in raw_df.iloc[row_index, 2:]
+            )
+            if parsed_slots != tuple(source_slots):
+                raise DiverOfficeParseError(
+                    filename,
+                    "fixed-width fallback did not preserve measurement channel slots",
+                    scanned.source.number,
+                    scanned.source.text,
+                    fallback_reason=primary_reason,
+                )
+
+        date_time = (
+            raw_df.iloc[:, 0].fillna("").str.strip()
+            + " "
+            + raw_df.iloc[:, 1].fillna("").str.strip()
+        ).str.strip()
+        for row_index, scanned in enumerate(scanned_rows):
+            if date_time.iloc[row_index] != scanned.date_time:
+                raise DiverOfficeParseError(
+                    filename,
+                    "fixed-width fallback did not preserve date/time",
+                    scanned.source.number,
+                    scanned.source.text,
+                    fallback_reason=primary_reason,
+                )
+        physical_df = pd.concat(
+            [date_time, raw_df.iloc[:, 2:].reset_index(drop=True)], axis=1
+        )
+        physical_df.columns = range(expected_num_fields)
+        return physical_df
+
+    @staticmethod
+    def _strict_frame_conversion(
+        frame: pd.DataFrame,
+        source_lines: list[_SourceLine],
+        filename: str,
+        date_col_idx: int = 0,
+    ) -> pd.DataFrame:
+        """Convert dates and numbers while rejecting every non-empty bad value."""
+        converted_frame = frame.copy()
+        parsed_dates = pd.to_datetime(
+            converted_frame.iloc[:, date_col_idx], errors="coerce"
+        )
+        invalid_dates = parsed_dates.isna()
+        if invalid_dates.any():
+            row_index = int(invalid_dates.to_numpy().nonzero()[0][0])
+            source = source_lines[row_index]
+            raise DiverOfficeParseError(
+                filename,
+                "invalid date/time value",
+                source.number,
+                source.text,
+            )
+        date_column = converted_frame.columns[date_col_idx]
+        converted_frame[date_column] = parsed_dates
+
+        for col_idx in range(converted_frame.shape[1]):
+            if col_idx == date_col_idx:
+                continue
+            raw = converted_frame.iloc[:, col_idx]
+            normalized = raw.astype("string").str.strip()
+            normalized = normalized.mask(normalized == "")
+            normalized = normalized.str.replace(",", ".", regex=False)
+            converted = pd.to_numeric(normalized, errors="coerce")
+            invalid = normalized.notna() & converted.isna()
+            if invalid.any():
+                row_index = int(invalid.to_numpy().nonzero()[0][0])
+                source = source_lines[row_index]
+                raise DiverOfficeParseError(
+                    filename,
+                    f"invalid numeric value {raw.iloc[row_index]!r}",
+                    source.number,
+                    source.text,
+                )
+            column = converted_frame.columns[col_idx]
+            converted_frame[column] = converted
+        return converted_frame
+
+    @staticmethod
+    def _read_delimited_data(
+        source_lines: list[_SourceLine],
+        delimiter: str,
+        expected_num_fields: int,
+        usecols: list[int],
+        colnames: list[str],
+        date_col_idx: int,
+        filename: str,
+    ) -> pd.DataFrame:
+        records: list[list[str | None]] = []
+        for source in source_lines:
+            values = next(csv.reader([source.text], delimiter=delimiter))
+            if len(values) != expected_num_fields:
+                raise DiverOfficeParseError(
+                    filename,
+                    f"expected {expected_num_fields} delimited fields but found "
+                    f"{len(values)}",
+                    source.number,
+                    source.text,
+                )
+            records.append([value.strip() or None for value in values])
+
+        physical_df = pd.DataFrame(records, columns=range(expected_num_fields))
+        physical_df = DiverOfficeParser._strict_frame_conversion(
+            physical_df, source_lines, filename, date_col_idx
+        )
+        df = physical_df.loc[:, usecols].copy()
+        df.columns = colnames
+        return df
+
+    @staticmethod
     def _read_mon_data(
-        data_rows: list[str],
+        data_rows: list[_SourceLine],
         expected_num_fields: int,
         usecols: list[int],
         colnames: list[str],
         filename: str,
     ) -> pd.DataFrame:
-        """Read fixed-width MON rows without collapsing blank channel slots."""
+        """Read fixed-width MON rows without altering any source token."""
         if not data_rows:
             return pd.DataFrame(columns=colnames)
 
-        # Put the row with the most populated fields inside the inference
-        # window even when the beginning of a long file contains blanks.
-        representative_row = max(
-            data_rows, key=lambda row: len(re.findall(r"\S+", row))
-        )
-        inference_rows = [representative_row, *data_rows]
-        raw_df = (
-            pd.read_fwf(
-                StringIO("\n".join(inference_rows)),
-                header=None,
-                dtype=str,
-                infer_nrows=min(len(inference_rows), 1000),
+        scanned_rows = DiverOfficeParser._scan_mon_rows(data_rows, filename)
+        try:
+            physical_df = DiverOfficeParser._read_mon_by_right_edge(
+                scanned_rows, expected_num_fields
             )
-            .iloc[1:]
-            .reset_index(drop=True)
-        )
-
-        # read_fwf treats the single space inside Date/time as a column break.
-        # Diver-Office channel values start after the time, so join those two
-        # fields before applying the channel indexes from the metadata.
-        if raw_df.shape[1] == expected_num_fields + 1:
-            date_time = (
-                raw_df.iloc[:, 0].fillna("").str.strip()
-                + " "
-                + raw_df.iloc[:, 1].fillna("").str.strip()
-            ).str.strip()
-            physical_df = pd.concat(
-                [date_time, raw_df.iloc[:, 2:].reset_index(drop=True)], axis=1
+        except _IncompleteMonLayoutError as error:
+            physical_df = DiverOfficeParser._read_mon_fallback(
+                scanned_rows,
+                expected_num_fields,
+                filename,
+                str(error),
             )
-        else:
-            message_utils.MessagebarAndLog.warning(
-                bar_msg=QCoreApplication.translate(
-                    "LoggerImport", "Diveroffice import warning. See log message panel"
-                ),
+            message_utils.MessagebarAndLog.info(
                 log_msg=QCoreApplication.translate(
                     "LoggerImport",
-                    "Warning, fixed-width columns could not be determined for %s. "
-                    "Expected %s fields but found %s.",
+                    "Accepted %s using the validated full-file fixed-width fallback: %s",
                 )
-                % (filename, expected_num_fields, raw_df.shape[1] - 1),
+                % (filename, error)
             )
-            return pd.DataFrame(columns=colnames)
 
-        physical_df.columns = range(expected_num_fields)
+        physical_df = DiverOfficeParser._strict_frame_conversion(
+            physical_df, data_rows, filename
+        )
         df = physical_df.loc[:, usecols].copy()
         df.columns = colnames
-        df["date_time"] = pd.to_datetime(df["date_time"], errors="coerce")
-        return df.dropna(subset=["date_time"])
+        return df
 
     @staticmethod
     def parse(
@@ -315,6 +562,14 @@ class DiverOfficeParser:
             if output_cols is not None
             else ["date_time", "head_cm", "temp_degc", "cond_mscm"]
         )
+
+        def mapped_output_name(header: str) -> str | None:
+            normalized = header.lower().replace(" ", "")
+            for keyword, outcol in _col_map.items():
+                if keyword in normalized:
+                    return outcol
+            return None
+
         filedata = []
         filename = os.path.basename(path)
         section = None
@@ -322,7 +577,8 @@ class DiverOfficeParser:
         metadata = {}
         # Parse metadata
         with open(path, encoding=str(charset)) as f:
-            rows = [ru(rawrow).rstrip("\n").rstrip("\r").strip() for rawrow in f]
+            raw_rows = [ru(rawrow).rstrip("\n").rstrip("\r") for rawrow in f]
+        rows = [rawrow.strip() for rawrow in raw_rows]
 
         for rownr, row in enumerate(rows):
             if (
@@ -398,6 +654,27 @@ class DiverOfficeParser:
                 if colname:
                     data_headers[int(secno)] = colname
 
+        declared_channels: int | None = None
+        declared_channels_raw = metadata.get("logger settings", {}).get(
+            "number of channels", ""
+        ) or metadata.get("series settings", {}).get("number of channels", "")
+        if declared_channels_raw:
+            try:
+                declared_channels = int(declared_channels_raw.strip())
+            except ValueError as error:
+                raise DiverOfficeParseError(
+                    filename,
+                    f"invalid declared channel count {declared_channels_raw!r}",
+                ) from error
+            identified_channels = set(data_headers) - {0}
+            expected_channels = set(range(1, declared_channels + 1))
+            if identified_channels != expected_channels:
+                raise DiverOfficeParseError(
+                    filename,
+                    f"file declares {declared_channels} channels but identifies "
+                    f"channels {sorted(identified_channels)}",
+                )
+
         if data_start_row is None:
             message_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
@@ -421,13 +698,22 @@ class DiverOfficeParser:
             if row.lower().strip().startswith("end of data"):
                 stop_row = true_rownr
                 break
-        if stop_row is not None:
-            skipfooter = len(rows) - stop_row
-        else:
-            skipfooter = 0
-
         is_csv = path.lower().endswith(".csv")
-        data_rows = rows[data_start_row:stop_row] if stop_row else rows[data_start_row:]
+        data_stop = stop_row if stop_row is not None else len(raw_rows)
+        source_lines = [
+            _SourceLine(number=index + 1, text=raw_rows[index])
+            for index in range(data_start_row, data_stop)
+        ]
+        data_rows = [source.text.strip() for source in source_lines]
+
+        count_row = rows[data_start_row - 1] if data_start_row > 0 else ""
+        if count_row.isdigit() and int(count_row) != len(source_lines):
+            raise DiverOfficeParseError(
+                filename,
+                f"declared {int(count_row)} data rows but found {len(source_lines)}",
+                data_start_row,
+                raw_rows[data_start_row - 1],
+            )
         date_col_idx = 0  # .mon files: date/time is always at column index 0
         delimiter = None
         header_delimiter = None
@@ -453,26 +739,61 @@ class DiverOfficeParser:
                 ]
                 expected_num_fields = len(header_cols)
 
-                # When no [Channel N] sections were found, derive column names
-                # from the CSV header. Legacy files may put Date/time anywhere.
-                if len(data_headers) == 1:
-                    date_col_idx = next(
-                        (
-                            i
-                            for i, c in enumerate(header_cols)
-                            if c.lower() == "date/time"
-                        ),
-                        0,
+                date_columns = [
+                    index
+                    for index, column in enumerate(header_cols)
+                    if column.lower() == "date/time"
+                ]
+                if len(date_columns) != 1:
+                    raise DiverOfficeParseError(
+                        filename,
+                        "CSV header must contain exactly one Date/time column",
+                        header_row_idx + 1,
+                        raw_rows[header_row_idx],
                     )
-                    data_headers = {date_col_idx: "date_time"}
-                    for colidx, colname in enumerate(header_cols):
-                        if colidx == date_col_idx:
-                            continue
-                        col_nospace = colname.lower().replace(" ", "")
-                        for keyword in _col_map:
-                            if keyword in col_nospace:
-                                data_headers[colidx] = keyword
-                                break
+                if (
+                    declared_channels is not None
+                    and expected_num_fields != declared_channels + 1
+                ):
+                    raise DiverOfficeParseError(
+                        filename,
+                        f"CSV header has {expected_num_fields - 1} channels but file "
+                        f"declares {declared_channels}",
+                        header_row_idx + 1,
+                        raw_rows[header_row_idx],
+                    )
+
+                metadata_outputs = {
+                    mapped
+                    for index, header in data_headers.items()
+                    if index != 0 and (mapped := mapped_output_name(header)) is not None
+                }
+                date_col_idx = date_columns[0]
+                header_data_headers = {date_col_idx: "date_time"}
+                header_outputs: set[str] = set()
+                for colidx, colname in enumerate(header_cols):
+                    if colidx == date_col_idx:
+                        continue
+                    mapped = mapped_output_name(colname)
+                    if mapped is None:
+                        continue
+                    if mapped in header_outputs:
+                        raise DiverOfficeParseError(
+                            filename,
+                            f"CSV header maps more than one column to {mapped}",
+                            header_row_idx + 1,
+                            raw_rows[header_row_idx],
+                        )
+                    header_outputs.add(mapped)
+                    header_data_headers[colidx] = colname
+                if metadata_outputs and metadata_outputs != header_outputs:
+                    raise DiverOfficeParseError(
+                        filename,
+                        "CSV header channels disagree with channel metadata",
+                        header_row_idx + 1,
+                        raw_rows[header_row_idx],
+                    )
+                data_headers = header_data_headers
 
         delimiter = file_utils.get_delimiter_from_file_rows(
             data_rows,
@@ -481,6 +802,22 @@ class DiverOfficeParser:
             filename=filename,
             allow_ragged_rows=True,
         )
+        if count_row.isdigit() and delimiter is not None:
+            # Counted MON data can itself be delimited. Distinguish that from
+            # fixed-width values containing decimal commas at the unambiguous
+            # timestamp boundary.
+            delimiter_at_boundary = True
+            for source in source_lines:
+                timestamp = re.match(
+                    rf"^\s*\S+\s+[^\s{re.escape(delimiter)}]+", source.text
+                )
+                if timestamp is None or not source.text[timestamp.end() :].startswith(
+                    delimiter
+                ):
+                    delimiter_at_boundary = False
+                    break
+            if not delimiter_at_boundary:
+                delimiter = None
         if delimiter is None and is_csv:
             delimiter = header_delimiter
 
@@ -490,13 +827,11 @@ class DiverOfficeParser:
         for k, v in sorted(data_headers.items()):
             if v == "date_time":
                 continue
-            v_nospace = v.lower().replace(" ", "")
-            for keyword, outcol in _col_map.items():
-                if keyword in v_nospace and outcol not in seen_outcols:
-                    usecols.append(k)
-                    colnames.append(outcol)
-                    seen_outcols.add(outcol)
-                    break
+            outcol = mapped_output_name(v)
+            if outcol is not None and outcol not in seen_outcols:
+                usecols.append(k)
+                colnames.append(outcol)
+                seen_outcols.add(outcol)
 
         if colnames:
             colnames.insert(0, "date_time")
@@ -526,32 +861,23 @@ class DiverOfficeParser:
             return filedata, filename, location, utc_offset or None, serial_number
 
         if delimiter is not None:
-            df = pd.read_csv(
-                path,
-                sep=delimiter,
-                encoding=charset,
-                usecols=usecols,
-                names=colnames,
-                skipfooter=skipfooter,
-                skiprows=data_start_row,
-                parse_dates=["date_time"],
-                engine="python",
+            df = DiverOfficeParser._read_delimited_data(
+                source_lines,
+                delimiter,
+                expected_num_fields,
+                usecols,
+                colnames,
+                date_col_idx,
+                filename,
             )
         else:
             df = DiverOfficeParser._read_mon_data(
-                data_rows,
+                source_lines,
                 expected_num_fields,
                 usecols,
                 colnames,
                 filename,
             )
-        for col in df.columns:
-            if col == "date_time":
-                continue
-            df[col] = pd.to_numeric(
-                df[col].astype(str).str.replace(",", ".").str.strip(), errors="coerce"
-            )
-
         if not df.empty:
             if begindate is not None:
                 df = df.loc[(df["date_time"] >= begindate), :]

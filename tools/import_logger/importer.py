@@ -5,6 +5,7 @@ LoggerImport Qt dialog for unified DiverOffice, Levelogger, and HOBO imports.
 from __future__ import annotations
 
 import os
+from dataclasses import dataclass, field
 from datetime import datetime as _datetime
 
 import qgis.core
@@ -41,13 +42,27 @@ from .parsers import (
     filter_dates_from_filedata,
 )
 from .workers import (
+    LoggerDbImportRequest,
+    LoggerDbImportResult,
+    LoggerFileFailure,
+    LoggerParseBatchResult,
     LoggerDbImportWorker,
     LoggerParseRequest,
     LoggerParseWorker,
+    LoggerSeriesSpec,
     LoggerWorker,
 )
 
 import_ui_dialog = qgis.PyQt.uic.loadUiType(ui_path("import_fieldlogger.ui"))[0]
+
+
+@dataclass
+class LoggerImportSummary:
+    imported: list[str] = field(default_factory=list)
+    no_new_rows: list[str] = field(default_factory=list)
+    skipped: list[str] = field(default_factory=list)
+    parse_failures: list[LoggerFileFailure] = field(default_factory=list)
+    database_failures: list[LoggerFileFailure] = field(default_factory=list)
 
 
 class CheckboxAndExplanation(VRowEntry):
@@ -536,28 +551,52 @@ class LoggerImport(BaseImporter, import_ui_dialog):
 
     def _run_parse_worker(
         self, request: LoggerParseRequest, progress: QtWidgets.QProgressDialog
-    ) -> list:
-        return self._run_worker(LoggerParseWorker(request), progress) or []
+    ) -> LoggerParseBatchResult:
+        return self._run_worker(
+            LoggerParseWorker(request), progress
+        ) or LoggerParseBatchResult([], [])
 
     def _run_db_worker(
         self,
-        dest_table: str,
-        file_data: list,
+        request: LoggerDbImportRequest,
         progress: QtWidgets.QProgressDialog,
-        cleanup_series_ids: tuple[int, ...] = (),
-    ) -> None:
+    ) -> LoggerDbImportResult:
         db_settings = self.ms.settingsdict.get("database")
         if not db_settings:
             db_settings = qgis.core.QgsProject.instance().readEntry(
                 "Midvatten", "database"
             )[0]
-        worker = LoggerDbImportWorker(
-            db_settings,
-            dest_table,
-            file_data,
-            cleanup_series_ids,
+        worker = LoggerDbImportWorker(db_settings, request)
+        return self._run_worker(worker, progress)
+
+    def _report_import_summary(self, summary: LoggerImportSummary) -> None:
+        failed_count = (
+            len(summary.no_new_rows)
+            + len(summary.skipped)
+            + len(summary.parse_failures)
+            + len(summary.database_failures)
         )
-        self._run_worker(worker, progress)
+        bar_message = QCoreApplication.translate(
+            "LoggerImport",
+            "Logger import complete: %s imported, %s skipped or failed.",
+        ) % (len(summary.imported), failed_count)
+        detail_lines = [f"Imported: {name}" for name in summary.imported]
+        detail_lines.extend(f"No new rows: {name}" for name in summary.no_new_rows)
+        detail_lines.extend(f"Skipped: {name}" for name in summary.skipped)
+        detail_lines.extend(
+            f"Parse failure: {failure.filename}: {failure.reason}"
+            for failure in summary.parse_failures
+        )
+        detail_lines.extend(
+            f"Database failure: {failure.filename}: {failure.reason}"
+            for failure in summary.database_failures
+        )
+        reporter = (
+            message_utils.MessagebarAndLog.info
+            if summary.imported
+            else message_utils.MessagebarAndLog.warning
+        )
+        reporter(bar_msg=bar_message, log_msg="\n".join(detail_lines))
 
     @common_utils.general_exception_handler
     @import_data_to_db.import_exception_handler
@@ -602,8 +641,16 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         parsed_files = []
 
         try:
-            parsed_results = self._run_parse_worker(parse_request, progress)
-            for parsed in parsed_results:
+            parse_batch = self._run_parse_worker(parse_request, progress)
+            summary = LoggerImportSummary(parse_failures=list(parse_batch.failures))
+            for failure in summary.parse_failures:
+                message_utils.MessagebarAndLog.warning(
+                    log_msg=QCoreApplication.translate(
+                        "LoggerImport", "%s failed during %s: %s"
+                    )
+                    % (failure.filename, failure.stage, failure.reason)
+                )
+            for parsed in parse_batch.parsed_files:
                 if parsed.timezone_error:
                     msg = QCoreApplication.translate(
                         "LoggerImport",
@@ -621,17 +668,20 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                     )
                     common_utils.start_waiting_cursor()
                     if question.result:
+                        summary.skipped.append(parsed.source_path or parsed.filename)
                         continue
                 parsed_files.append(
                     (
                         parsed.file_data,
                         parsed.filename,
+                        parsed.source_path or parsed.filename,
                         parsed.location,
                         parsed.serial_number,
                     )
                 )
 
             if len(parsed_files) == 0:
+                self._report_import_summary(summary)
                 message_utils.MessagebarAndLog.critical(
                     bar_msg=QCoreApplication.translate(
                         "LoggerImport", "Import Failure: No files imported"
@@ -644,7 +694,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             filename_location_obsid = [["filename", "location", "obsid"]]
             filename_location_obsid.extend(
                 [
-                    [parsed_file[1], parsed_file[2], parsed_file[2]]
+                    [parsed_file[2], parsed_file[3], parsed_file[3]]
                     for parsed_file in parsed_files
                 ]
             )
@@ -663,6 +713,8 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             common_utils.start_waiting_cursor()
 
             if len(filename_location_obsid) < 2:
+                summary.skipped.extend(parsed_file[2] for parsed_file in parsed_files)
+                self._report_import_summary(summary)
                 message_utils.MessagebarAndLog.warning(
                     bar_msg=QCoreApplication.translate(
                         "LoggerImport",
@@ -672,11 +724,18 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                 common_utils.stop_waiting_cursor()
                 return False
 
-            filenames_obsid = {x[0]: x[2] for x in filename_location_obsid[1:]}
+            paths_obsid = {x[0]: x[2] for x in filename_location_obsid[1:]}
 
             parsed_files_with_obsid = []
-            for file_data, filename, location, serial_number in parsed_files:
+            for (
+                file_data,
+                filename,
+                source_path,
+                location,
+                serial_number,
+            ) in parsed_files:
                 if not file_data:
+                    summary.skipped.append(source_path)
                     message_utils.MessagebarAndLog.warning(
                         bar_msg=QCoreApplication.translate(
                             "LoggerImport",
@@ -690,17 +749,20 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                     )
                     continue
 
-                if filename in filenames_obsid:
+                if source_path in paths_obsid:
                     file_data = list(file_data)
-                    obsid = filenames_obsid[filename]
+                    obsid = paths_obsid[source_path]
                     file_data[0].append("obsid")
                     for row in file_data[1:]:
                         row.append(obsid)
                     parsed_files_with_obsid.append(
-                        [file_data, filename, location, serial_number]
+                        [file_data, filename, source_path, location, serial_number]
                     )
+                else:
+                    summary.skipped.append(source_path)
 
             if not parsed_files_with_obsid:
+                self._report_import_summary(summary)
                 message_utils.MessagebarAndLog.warning(
                     bar_msg=QCoreApplication.translate(
                         "LoggerImport",
@@ -712,29 +774,6 @@ class LoggerImport(BaseImporter, import_ui_dialog):
 
             # ── DiverOffice Baro path: pivot to meteo long format and import ────────
             if format_name == self.FORMAT_DIVEROFFICE_BARO:
-                meteo_rows: list[list] = []
-                for (
-                    file_data,
-                    filename,
-                    location,
-                    serial_number,
-                ) in parsed_files_with_obsid:
-                    pivoted = _pivot_baro_to_meteo(file_data, serial_number, filename)
-                    if not meteo_rows:
-                        meteo_rows = pivoted
-                    else:
-                        meteo_rows.extend(pivoted[1:])
-
-                if len(meteo_rows) < 2:
-                    message_utils.MessagebarAndLog.info(
-                        bar_msg=QCoreApplication.translate(
-                            "LoggerImport",
-                            "DiverOffice Baro: no data to import.",
-                        )
-                    )
-                    common_utils.stop_waiting_cursor()
-                    return True
-
                 if import_to_db:
                     dbconn = db_utils.DbConnectionManager()
                     try:
@@ -754,7 +793,47 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                     finally:
                         dbconn.closedb()
 
-                    self._run_db_worker("meteo", meteo_rows, progress)
+                exported_rows: list[list] = []
+                for (
+                    file_data,
+                    filename,
+                    source_path,
+                    _location,
+                    serial_number,
+                ) in parsed_files_with_obsid:
+                    meteo_rows = _pivot_baro_to_meteo(
+                        file_data, serial_number, filename
+                    )
+                    if len(meteo_rows) < 2:
+                        summary.no_new_rows.append(source_path)
+                        continue
+                    if export_csv:
+                        if not exported_rows:
+                            exported_rows = [list(row) for row in meteo_rows]
+                        else:
+                            exported_rows.extend([list(row) for row in meteo_rows[1:]])
+
+                    if import_to_db:
+                        result = self._run_db_worker(
+                            LoggerDbImportRequest(
+                                filename=source_path,
+                                dest_table="meteo",
+                                file_data=meteo_rows,
+                            ),
+                            progress,
+                        )
+                        if result.imported:
+                            summary.imported.append(source_path)
+                        else:
+                            summary.database_failures.append(
+                                LoggerFileFailure(
+                                    source_path,
+                                    "database",
+                                    result.reason or "import failed",
+                                )
+                            )
+                    elif export_csv:
+                        summary.imported.append(source_path)
 
                 if export_csv:
                     path = QtWidgets.QFileDialog.getSaveFileName(
@@ -762,8 +841,9 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                     )
                     if path:
                         path = ru(path[0])
-                        file_utils.write_printlist_to_file(path, meteo_rows)
+                        file_utils.write_printlist_to_file(path, exported_rows)
 
+                self._report_import_summary(summary)
                 common_utils.stop_waiting_cursor()
                 if self.close_after_import.isChecked():
                     self.close()
@@ -787,18 +867,22 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             )
 
             if not import_all_data:
+                # This snapshot belongs to the whole selected batch. Never
+                # recalculate it after an earlier file has committed.
                 last_dates = db_utils.get_last_logger_dates()
+                filtered_files = []
                 for parsed_file in parsed_files_with_obsid:
                     parsed_file[0] = filter_dates_from_filedata(
                         parsed_file[0], last_dates
                     )
-                parsed_files_with_obsid = [
-                    parsed_file
-                    for parsed_file in parsed_files_with_obsid
-                    if len(parsed_file[0]) > 1
-                ]
+                    if len(parsed_file[0]) > 1:
+                        filtered_files.append(parsed_file)
+                    else:
+                        summary.no_new_rows.append(parsed_file[2])
+                parsed_files_with_obsid = filtered_files
 
             if not parsed_files_with_obsid:
+                self._report_import_summary(summary)
                 message_utils.MessagebarAndLog.info(
                     bar_msg=QCoreApplication.translate(
                         "LoggerImport",
@@ -809,86 +893,72 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                 common_utils.stop_waiting_cursor()
                 return True
 
-            # New-schema import path: create one w_logger_series row per imported
-            # file and tag every row from that file with its new series_id and a
-            # single batch-level created_at.
-            created_series_ids: list[int] = []
-            if import_to_db and has_series_id:
-                source_for_series = source_text or None
-                batch_created_at = _datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                dbconn = db_utils.DbConnectionManager()
-                try:
-                    ph = dbconn.placeholder()
-                    with dbconn.transaction():
-                        for (
-                            file_data,
-                            filename,
-                            location,
-                            serial_number,
-                        ) in parsed_files_with_obsid:
-                            obsid = filenames_obsid[filename]
-                            description = (
-                                os.path.basename(filename) if filename else None
+            batch_created_at = _datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            exported_data: list[list] = []
+            for (
+                file_data,
+                filename,
+                source_path,
+                _location,
+                serial_number,
+            ) in parsed_files_with_obsid:
+                # Old schemas store source directly on each reading.
+                if source_text and has_source_column and not has_series_id:
+                    file_data = [list(row) for row in file_data]
+                    file_data[0].append("source")
+                    for row in file_data[1:]:
+                        row.append(source_text)
+
+                if export_csv:
+                    if not exported_data:
+                        exported_data = [list(row) for row in file_data]
+                    else:
+                        exported_data.extend([list(row) for row in file_data[1:]])
+
+                series = None
+                if has_series_id:
+                    series = LoggerSeriesSpec(
+                        obsid=paths_obsid[source_path],
+                        source=source_text or None,
+                        description=os.path.basename(filename) if filename else None,
+                        instrument=serial_number,
+                        created_at=batch_created_at if has_created_at else None,
+                    )
+
+                if import_to_db:
+                    result = self._run_db_worker(
+                        LoggerDbImportRequest(
+                            filename=source_path,
+                            dest_table="w_levels_logger",
+                            file_data=file_data,
+                            series=series,
+                        ),
+                        progress,
+                    )
+                    if result.imported:
+                        summary.imported.append(source_path)
+                    elif result.reason == "no non-duplicate rows":
+                        summary.no_new_rows.append(source_path)
+                    else:
+                        summary.database_failures.append(
+                            LoggerFileFailure(
+                                source_path,
+                                "database",
+                                result.reason or "import failed",
                             )
-                            dbconn.execute(
-                                f"INSERT INTO w_logger_series "
-                                f"(obsid, source, description, instrument) VALUES ({ph}, {ph}, {ph}, {ph})",
-                                (
-                                    obsid,
-                                    source_for_series,
-                                    description,
-                                    serial_number,
-                                ),
-                            )
-                            series_id = db_utils.get_last_insert_id(dbconn)
-                            created_series_ids.append(series_id)
-                            file_data[0].append("series_id")
-                            if has_created_at:
-                                file_data[0].append("created_at")
-                            for row in file_data[1:]:
-                                row.append(series_id)
-                                if has_created_at:
-                                    row.append(batch_created_at)
-                finally:
-                    dbconn.closedb()
+                        )
+                elif export_csv:
+                    summary.imported.append(source_path)
 
-            file_to_import_to_db = [parsed_files_with_obsid[0][0][0]]
-            file_to_import_to_db.extend(
-                [
-                    row
-                    for parsed_file in parsed_files_with_obsid
-                    for row in parsed_file[0][1:]
-                ]
-            )
-
-            # Old-schema path: source is a column on w_levels_logger itself.
-            # Only append it if we are NOT on the new schema (the new path
-            # already put source on the w_logger_series row).
-            if (
-                source_text
-                and has_source_column
-                and not has_series_id
-                and self.source_edit is not None
-            ):
-                file_to_import_to_db[0].append("source")
-                for row in file_to_import_to_db[1:]:
-                    row.append(source_text)
-
-            if import_to_db:
-                self._run_db_worker(
-                    "w_levels_logger",
-                    file_to_import_to_db,
-                    progress,
-                    tuple(created_series_ids),
-                )
             if export_csv:
                 path = QtWidgets.QFileDialog.getSaveFileName(
                     self, "Save File", "", "CSV(*.csv)"
                 )
                 if path:
                     path = ru(path[0])
-                    file_utils.write_printlist_to_file(path, file_to_import_to_db)
+                    file_utils.write_printlist_to_file(path, exported_data)
 
+            self._report_import_summary(summary)
             common_utils.stop_waiting_cursor()
 
             if self.close_after_import.isChecked():

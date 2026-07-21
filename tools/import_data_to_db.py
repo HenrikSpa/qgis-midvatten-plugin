@@ -61,7 +61,8 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         defer_commit: bool = False,
         progress_callback: Optional[Callable[[str], None]] = None,
         manage_wait_cursor: bool = True,
-    ) -> None:
+        raise_insert_errors: bool = False,
+    ) -> int:
         """General method for importing a list of list to a table
 
             self.temptableName must be the name of the table containing the new data to import.
@@ -75,12 +76,14 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         :param source_srid: The srid of the source geometry column if the geometry is a WKT or WKB
         :param skip_confirmation: True to suppress the row-drop confirmation dialog (e.g. headless/batch imports).
         :param binary_geometry: True if the source geometry column should be parsed as a WKB, else it's parsed as WKT.
+        :param raise_insert_errors: Re-raise final INSERT errors after logging them.
         :return:
         """
 
         self.temptable_name = None
         self._manage_wait_cursor = manage_wait_cursor
         import_messages = []
+        nr_imported = 0
 
         if skip_confirmation:
             self.confirmation_handled = 1
@@ -88,7 +91,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         dbconnection: Optional[DbConnectionManager] = None
         try:
             if file_data is None or not file_data:
-                return
+                return 0
             message_utils.MessagebarAndLog.info(
                 log_msg=QCoreApplication.translate(
                     "midv_data_importer",
@@ -186,7 +189,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 import_messages,
             )
             if remaining_rownumbers is None:
-                return
+                return 0
 
             # Special cases for some tables
             remaining_rownumbers, import_messages = self._handle_special_table_cases(
@@ -200,7 +203,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 import_messages,
             )
             if remaining_rownumbers is None:
-                return
+                return 0
 
             # Dump temptable to csv for debugging
             if dump_temptable:
@@ -233,6 +236,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 not_null_columns,
                 source_srid,
                 binary_geometry,
+                raise_insert_errors,
             )
 
             nr_excluded = recsinfile - nr_imported
@@ -248,6 +252,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             raise
         else:
             self._cleanup(dbconnection, _dbconnection, commit=not defer_commit)
+        return nr_imported
 
     def _import_summary_bar_msg(
         self,
@@ -596,6 +601,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         not_null_columns: List[str],
         source_srid: Optional[int],
         binary_geometry: bool,
+        raise_insert_errors: bool,
     ) -> int:
         """Build and execute the INSERT … SELECT from the temp table to the destination.
 
@@ -680,6 +686,8 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                     % (sql, str(e)),
                     duration=999,
                 )
+            if raise_insert_errors:
+                raise
             return 0
         return dbconnection.cursor.rowcount
 

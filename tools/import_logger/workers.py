@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 import os
 import threading
 import traceback
@@ -14,6 +15,7 @@ from qgis.PyQt.QtCore import QCoreApplication, QObject, pyqtSignal, pyqtSlot
 from midvatten.tools import import_data_to_db
 from midvatten.tools.import_logger.parsers import (
     DiverOfficeBaroParser,
+    DiverOfficeParseError,
     DiverOfficeParser,
     HoboParser,
     LeveloggerParser,
@@ -52,6 +54,20 @@ class ParsedLoggerFile:
     location: str | None
     serial_number: str | None
     timezone_error: str | None = None
+    source_path: str | None = None
+
+
+@dataclass(frozen=True)
+class LoggerFileFailure:
+    filename: str
+    stage: str
+    reason: str
+
+
+@dataclass
+class LoggerParseBatchResult:
+    parsed_files: list[ParsedLoggerFile]
+    failures: list[LoggerFileFailure]
 
 
 @dataclass(frozen=True)
@@ -88,6 +104,7 @@ class LoggerParseWorker(LoggerWorker):
     @pyqtSlot()
     def run(self) -> None:
         parsed_files: list[ParsedLoggerFile] = []
+        failures: list[LoggerFileFailure] = []
         try:
             for file_idx, selected_file in enumerate(self.request.files):
                 self._check_cancelled()
@@ -97,12 +114,30 @@ class LoggerParseWorker(LoggerWorker):
                     )
                     % (file_idx + 1, len(self.request.files))
                 )
-                result = self._parse_file(selected_file)
+                try:
+                    result = self._parse_file(selected_file)
+                except LoggerImportCancelledError:
+                    raise
+                except (
+                    DiverOfficeParseError,
+                    UnicodeDecodeError,
+                    OSError,
+                    csv.Error,
+                    pd.errors.ParserError,
+                ) as error:
+                    failures.append(
+                        LoggerFileFailure(
+                            filename=selected_file,
+                            stage="parse",
+                            reason=str(error),
+                        )
+                    )
+                    continue
                 self._check_cancelled()
                 if result is None:
                     continue
                 parsed_files.append(result)
-            self.finished.emit(parsed_files)
+            self.finished.emit(LoggerParseBatchResult(parsed_files, failures))
         except LoggerImportCancelledError:
             self.cancelled.emit()
         except Exception:
@@ -147,7 +182,7 @@ class LoggerParseWorker(LoggerWorker):
                     )
                     % (os.path.basename(selected_file), self.request.format_name)
                 )
-                return None
+                raise
 
         if result in ("cancel", "skip", "ignore"):
             if result == "cancel":
@@ -185,6 +220,7 @@ class LoggerParseWorker(LoggerWorker):
             location=location,
             serial_number=serial_number,
             timezone_error=timezone_error,
+            source_path=selected_file,
         )
 
     @staticmethod
@@ -201,21 +237,37 @@ class LoggerParseWorker(LoggerWorker):
         return shifted
 
 
-class LoggerDbImportWorker(LoggerWorker):
-    """Run the generic database importer on a worker-owned connection."""
+@dataclass(frozen=True)
+class LoggerSeriesSpec:
+    obsid: str
+    source: str | None
+    description: str | None
+    instrument: str | None
+    created_at: str | None
 
-    def __init__(
-        self,
-        db_settings,
-        dest_table: str,
-        file_data: list,
-        cleanup_series_ids: tuple[int, ...] = (),
-    ):
+
+@dataclass(frozen=True)
+class LoggerDbImportRequest:
+    filename: str
+    dest_table: str
+    file_data: list
+    series: LoggerSeriesSpec | None = None
+
+
+@dataclass(frozen=True)
+class LoggerDbImportResult:
+    filename: str
+    imported: bool
+    reason: str | None = None
+
+
+class LoggerDbImportWorker(LoggerWorker):
+    """Import one file atomically on a worker-owned connection."""
+
+    def __init__(self, db_settings, request: LoggerDbImportRequest):
         super().__init__()
         self._db_settings = db_settings
-        self._dest_table = dest_table
-        self._file_data = file_data
-        self._cleanup_series_ids = cleanup_series_ids
+        self.request = request
         self._connection_lock = threading.Lock()
         self._connection = None
 
@@ -233,19 +285,28 @@ class LoggerDbImportWorker(LoggerWorker):
         self._check_cancelled()
         self.progress.emit(message)
 
-    def _cleanup_created_series(self, connection) -> None:
-        """Best-effort cleanup for series metadata committed before row import."""
-        if connection is None or not self._cleanup_series_ids:
-            return
-        try:
-            placeholders = connection.placeholders(len(self._cleanup_series_ids))
-            with connection.transaction():
-                connection.execute(
-                    f"DELETE FROM w_logger_series WHERE id IN ({placeholders})",
-                    self._cleanup_series_ids,
-                )
-        except Exception:
-            message_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
+    def _prepare_file_data(self, connection) -> tuple[list[list], int | None]:
+        file_data = [list(row) for row in self.request.file_data]
+        series = self.request.series
+        if series is None:
+            return file_data, None
+
+        placeholder = connection.placeholder()
+        connection.execute(
+            "INSERT INTO w_logger_series "
+            f"(obsid, source, description, instrument) VALUES ({placeholder}, "
+            f"{placeholder}, {placeholder}, {placeholder})",
+            (series.obsid, series.source, series.description, series.instrument),
+        )
+        series_id = db_utils.get_last_insert_id(connection)
+        file_data[0].append("series_id")
+        if series.created_at is not None:
+            file_data[0].append("created_at")
+        for row in file_data[1:]:
+            row.append(series_id)
+            if series.created_at is not None:
+                row.append(series.created_at)
+        return file_data, series_id
 
     @pyqtSlot()
     def run(self) -> None:
@@ -258,24 +319,55 @@ class LoggerDbImportWorker(LoggerWorker):
             self._check_cancelled()
 
             with connection.transaction():
+                file_data, series_id = self._prepare_file_data(connection)
                 importer = import_data_to_db.MidvDataImporter()
-                importer.general_import(
-                    self._dest_table,
-                    self._file_data,
+                inserted_count = importer.general_import(
+                    self.request.dest_table,
+                    file_data,
                     _dbconnection=connection,
                     skip_confirmation=True,
                     defer_commit=True,
                     progress_callback=self._on_progress,
                     manage_wait_cursor=False,
+                    raise_insert_errors=True,
                 )
                 self._check_cancelled()
-            self.finished.emit(None)
+                result = LoggerDbImportResult(self.request.filename, True)
+                if series_id is not None:
+                    placeholder = connection.placeholder()
+                    count = connection.execute_and_fetchall(
+                        "SELECT COUNT(*) FROM w_levels_logger "
+                        f"WHERE series_id = {placeholder}",
+                        (series_id,),
+                    )[0][0]
+                    if inserted_count == 0 or count == 0:
+                        connection.execute(
+                            f"DELETE FROM w_logger_series WHERE id = {placeholder}",
+                            (series_id,),
+                        )
+                        result = LoggerDbImportResult(
+                            self.request.filename,
+                            False,
+                            "no non-duplicate rows",
+                        )
+                elif inserted_count == 0:
+                    result = LoggerDbImportResult(
+                        self.request.filename,
+                        False,
+                        "no non-duplicate rows",
+                    )
+            self.finished.emit(result)
         except Exception:
-            self._cleanup_created_series(connection)
             if self._cancel_event.is_set():
                 self.cancelled.emit()
             else:
-                self.error.emit(traceback.format_exc())
+                self.finished.emit(
+                    LoggerDbImportResult(
+                        self.request.filename,
+                        False,
+                        traceback.format_exc(),
+                    )
+                )
         finally:
             with self._connection_lock:
                 self._connection = None

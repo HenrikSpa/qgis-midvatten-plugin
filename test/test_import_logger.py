@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import pandas as pd
 import pytest
 from unittest import mock
 from unittest.mock import MagicMock
@@ -10,8 +11,10 @@ from collections import OrderedDict
 
 from qgis.PyQt import QtWidgets
 
+from midvatten.tools import import_data_to_db
 from midvatten.tools.import_logger import (
     DiverOfficeParser,
+    DiverOfficeParseError,
     DiverOfficeBaroParser,
     LeveloggerParser,
     HoboParser,
@@ -24,8 +27,30 @@ from midvatten.tools.utils import file_utils
 from midvatten.tools.utils import db_utils
 from midvatten.tools.utils.date_utils import to_date
 from midvatten.tools.utils.gui_utils import set_combobox
+from midvatten.tools.import_logger.parsers import _SourceLine
+from midvatten.tools.import_logger.parsers import _IncompleteMonLayoutError
 from midvatten.test import utils_for_tests
 from midvatten.test.mocks_for_tests import MockReturnUsingDictIn
+from scripts.benchmark_diveroffice_mon import build_mon
+
+
+def make_fixed_mon(
+    rows: list[tuple[str | None, ...]], declared_count: int | None = None
+) -> str:
+    channel_names = ["WATER HEAD (WC)", "TEMPERATURE", "CONDUCTIVITY"]
+    header = [
+        "[Logger settings]",
+        "  Location                =rb1",
+        f"  Number of channels      ={len(rows[0])}",
+    ]
+    for channel, name in enumerate(channel_names[: len(rows[0])], 1):
+        header.extend([f"[Channel {channel}]", f"  Identification          ={name}"])
+    header.extend(["[Data]", str(declared_count or len(rows))])
+    for values in rows:
+        fields = "".join(f"{value or '':>12}" for value in values)
+        header.append(f"2025/01/01 00:00:00.0{fields}")
+    header.append("END OF DATA FILE OF DATALOGGER FOR WINDOWS")
+    return "\n".join(header) + "\n"
 
 
 @pytest.mark.active
@@ -65,6 +90,127 @@ class TestDiverOfficeParser:
         ]
         assert [row[1] for row in filtered_filedata[1:]] == ["409.667", "409.433"]
 
+    def test_parse_mon_preserves_wider_head_after_inference_window(self):
+        content = build_mon(1001)
+        with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
+            file_data, *_ = DiverOfficeParser.parse(path, "utf-8")
+
+        assert file_data[-1][1] == "100.308"
+
+    @pytest.mark.parametrize(
+        ("before", "after"),
+        [("9.999", "10.001"), ("99.999", "100.001"), ("999.999", "1000.001")],
+    )
+    def test_parse_mon_preserves_digit_width_crossings(self, before, after):
+        content = make_fixed_mon([(before,)] * 1000 + [(after,)])
+        with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
+            file_data, *_ = DiverOfficeParser.parse(path, "utf-8")
+
+        assert float(file_data[-1][1]) == pytest.approx(float(after))
+
+    def test_parse_mon_preserves_missing_channel_positions(self):
+        content = make_fixed_mon(
+            [("1.0", None, "3.0"), (None, "2.0", "3.0"), ("1.0", "2.0", None)]
+        )
+        with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
+            file_data, *_ = DiverOfficeParser.parse(path, "utf-8")
+
+        assert [row[1:] for row in file_data[1:]] == [
+            ["1.0", None, "3.0"],
+            [None, "2.0", "3.0"],
+            ["1.0", "2.0", None],
+        ]
+
+    @pytest.mark.parametrize("value", ["-100.308", "+1,25", "1.25e3"])
+    def test_parse_mon_accepts_supported_numeric_tokens(self, value):
+        content = make_fixed_mon([(value,)])
+        with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
+            file_data, *_ = DiverOfficeParser.parse(path, "utf-8")
+
+        assert float(file_data[1][1]) == pytest.approx(float(value.replace(",", ".")))
+
+    def test_parse_mon_rejects_invalid_date(self):
+        content = make_fixed_mon([("1.0",)]).replace(
+            "2025/01/01 00:00:00.0", "not-a-date 00:00:00.0"
+        )
+        with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
+            with pytest.raises(DiverOfficeParseError, match="date/time"):
+                DiverOfficeParser.parse(path, "utf-8")
+
+    def test_parse_mon_rejects_invalid_numeric_value(self):
+        content = make_fixed_mon([("invalid",)])
+        with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
+            with pytest.raises(DiverOfficeParseError, match="numeric"):
+                DiverOfficeParser.parse(path, "utf-8")
+
+    def test_parse_mon_rejects_declared_count_mismatch(self):
+        content = make_fixed_mon([("1.0",)], declared_count=2)
+        with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
+            with pytest.raises(DiverOfficeParseError, match="declared 2 data rows"):
+                DiverOfficeParser.parse(path, "utf-8")
+
+    def test_parse_mon_rejects_declared_channel_count_mismatch(self):
+        content = make_fixed_mon([("1.0", "2.0")]).replace(
+            "Number of channels      =2", "Number of channels      =3"
+        )
+        with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
+            with pytest.raises(DiverOfficeParseError, match="declares 3 channels"):
+                DiverOfficeParser.parse(path, "utf-8")
+
+    def test_parse_mon_fallback_accepts_lossless_left_aligned_field(self):
+        content = make_fixed_mon([("9.9",), ("100.308",)])
+        content = content.replace(f"{'9.9':>12}", "    9.9     ").replace(
+            f"{'100.308':>12}", "    100.308 "
+        )
+        with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
+            file_data, *_ = DiverOfficeParser.parse(path, "utf-8")
+
+        assert [float(row[1]) for row in file_data[1:]] == [9.9, 100.308]
+
+    def test_parse_mon_fallback_rejects_ambiguous_layout(self):
+        content = make_fixed_mon([("1.0", "2.0"), ("10.0", "20.0")])
+        content = content.replace("         1.0         2.0", "  1.0 2.0              ")
+        with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
+            with pytest.raises(DiverOfficeParseError, match="fallback"):
+                DiverOfficeParser.parse(path, "utf-8")
+
+    def test_parse_mon_rejects_width_change_as_fake_second_channel(self):
+        """Two widths in one sparse channel must not be mapped to two channels."""
+        content = make_fixed_mon([("9.9", None), ("10.0", None)]).replace(
+            "2025/01/01 00:00:00.0         9.9            \n"
+            "2025/01/01 00:00:00.0        10.0            ",
+            "2025/01/01 00:00:00.0    9.9\n2025/01/01 00:00:00.0    10.0",
+        )
+        with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
+            with pytest.raises(DiverOfficeParseError, match="fallback"):
+                DiverOfficeParser.parse(path, "utf-8")
+
+    def test_mon_primary_requires_all_channel_endpoints_in_one_row(self):
+        prefix = "2025/01/01 00:00:00.0"
+        source_lines = [
+            _SourceLine(1, prefix + "    1    2"),
+            _SourceLine(2, prefix + "    1         3"),
+            _SourceLine(3, prefix + "         2    3"),
+        ]
+        scanned = DiverOfficeParser._scan_mon_rows(source_lines, "ambiguous.mon")
+
+        with pytest.raises(_IncompleteMonLayoutError, match="same row"):
+            DiverOfficeParser._read_mon_by_right_edge(scanned, 4)
+
+    def test_mon_fallback_rejects_compressed_blank_slot_comparison(self):
+        source_lines = [_SourceLine(1, "2025/01/01 00:00:00.0                2.0")]
+        scanned = DiverOfficeParser._scan_mon_rows(source_lines, "ambiguous.mon")
+        wrong_slots = pd.DataFrame([["2025/01/01", "00:00:00.0", "2.0", None]])
+
+        with mock.patch(
+            "midvatten.tools.import_logger.parsers.pd.read_fwf",
+            return_value=wrong_slots,
+        ):
+            with pytest.raises(DiverOfficeParseError, match="fallback"):
+                DiverOfficeParser._read_mon_fallback(
+                    scanned, 3, "ambiguous.mon", "ambiguous endpoints"
+                )
+
     def test_parse_utf8(self):
         file_content = (
             "[Channel identification]\n"
@@ -90,6 +236,23 @@ class TestDiverOfficeParser:
         assert filedata[0] == ["date_time", "head_cm", "temp_degc", "cond_mscm"]
         assert filedata[1][0] == "2016-03-15 10:30:00"
         assert filedata[1][1] == "1.0"
+
+    def test_csv_header_order_is_authoritative_when_metadata_exists(self):
+        content = (
+            "[Logger settings]\n"
+            "  Location                =rb1\n"
+            "  Number of channels      =2\n"
+            "[Channel 1]\n"
+            "  Identification          =WATER HEAD (WC)\n"
+            "[Channel 2]\n"
+            "  Identification          =TEMPERATURE\n"
+            "Date/time;Temperature[°C];Water head[cm]\n"
+            "2025/01/01 00:00:00;10.0;123.4\n"
+        )
+        with file_utils.tempinput(content, "utf-8", suffix=".csv") as path:
+            filedata, *_ = DiverOfficeParser.parse(path, "utf-8")
+
+        assert filedata[1] == ["2025-01-01 00:00:00", "123.4", "10.0", None]
 
     def test_parse_cp1252(self):
         file_content = (
@@ -656,6 +819,180 @@ class TestLoggerImportDiverOfficeSpatialite(
         )
         assert test_string == reference_string
 
+    @pytest.mark.parametrize("import_all_data", [False, True])
+    def test_overlapping_files_use_one_pre_import_date_snapshot(self, import_all_data):
+        """A late segment imported first must not hide earlier rows in a fuller file."""
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, head_cm) "
+            "VALUES ('rb1', '2025-01-01 00:00:00', 1)"
+        )
+        late_segment = "\n".join(
+            [
+                "Location=rb1",
+                "Date/time,Water head[cm]",
+                "2025/01/03 00:00:00,3",
+            ]
+        )
+        full_period = "\n".join(
+            [
+                "Location=rb1",
+                "Date/time,Water head[cm]",
+                "2025/01/01 00:00:00,1",
+                "2025/01/02 00:00:00,2",
+                "2025/01/03 00:00:00,3",
+            ]
+        )
+
+        with (
+            file_utils.tempinput(late_segment, "utf-8") as late_file,
+            file_utils.tempinput(full_period, "utf-8") as full_file,
+            mock.patch(
+                "midvatten.tools.import_logger.midvatten_utils.select_files",
+                return_value=[late_file, full_file],
+            ),
+            mock.patch("midvatten.tools.utils.dialog_utils.Askuser"),
+            mock.patch("qgis.utils.iface", autospec=True),
+        ):
+            ms = MagicMock()
+            ms.settingsdict = OrderedDict()
+            importer = LoggerImport(self.iface, ms)
+            importer.load_gui()
+            importer.confirm_names.checked = False
+            importer.import_all_data.checked = import_all_data
+            importer.select_files()
+            importer.start_import(
+                importer.files,
+                importer.skip_rows.checked,
+                importer.confirm_names.checked,
+                importer.import_all_data.checked,
+            )
+
+        result = db_utils.sql_load_fr_db(
+            "SELECT date_time FROM w_levels_logger "
+            "WHERE obsid = 'rb1' ORDER BY date_time"
+        )
+        assert result[0]
+        assert [row[0] for row in result[1]] == [
+            "2025-01-01 00:00:00",
+            "2025-01-02 00:00:00",
+            "2025-01-03 00:00:00",
+        ]
+
+    def test_database_failure_in_one_file_does_not_stop_next_file(self):
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        bad_file_data = "\n".join(
+            [
+                "Location=rb1",
+                "Date/time,Water head[cm]",
+                "2025/01/01 00:00:00,1",
+            ]
+        )
+        good_file_data = "\n".join(
+            [
+                "Location=rb1",
+                "Date/time,Water head[cm]",
+                "2025/01/02 00:00:00,2",
+            ]
+        )
+        original_import = import_data_to_db.MidvDataImporter.general_import
+        import_calls = 0
+
+        def fail_first_file(importer, destination, file_data, *args, **kwargs):
+            nonlocal import_calls
+            import_calls += 1
+            if import_calls == 1:
+                raise RuntimeError("deliberate first-file failure")
+            return original_import(importer, destination, file_data, *args, **kwargs)
+
+        with (
+            file_utils.tempinput(bad_file_data, "utf-8") as bad_file,
+            file_utils.tempinput(good_file_data, "utf-8") as good_file,
+            mock.patch(
+                "midvatten.tools.import_logger.midvatten_utils.select_files",
+                return_value=[bad_file, good_file],
+            ),
+            mock.patch.object(
+                import_data_to_db.MidvDataImporter,
+                "general_import",
+                autospec=True,
+                side_effect=fail_first_file,
+            ),
+            mock.patch("midvatten.tools.utils.dialog_utils.Askuser"),
+            mock.patch("qgis.utils.iface", autospec=True),
+        ):
+            ms = MagicMock()
+            ms.settingsdict = OrderedDict()
+            importer = LoggerImport(self.iface, ms)
+            importer.load_gui()
+            importer.confirm_names.checked = False
+            importer.import_all_data.checked = True
+            importer.select_files()
+            importer.start_import(
+                importer.files,
+                importer.skip_rows.checked,
+                importer.confirm_names.checked,
+                importer.import_all_data.checked,
+            )
+
+        rows = db_utils.sql_load_fr_db(
+            "SELECT date_time, head_cm FROM w_levels_logger ORDER BY date_time"
+        )
+        assert rows == (True, [("2025-01-02 00:00:00", 2.0)])
+        series = db_utils.sql_load_fr_db("SELECT COUNT(*) FROM w_logger_series")
+        assert series == (True, [(1,)])
+
+    def test_same_basename_files_keep_distinct_obsid_assignments(self, tmp_path):
+        for obsid in ("rb1", "rb2"):
+            db_utils.sql_alter_db(f"INSERT INTO obs_points (obsid) VALUES ('{obsid}')")
+        first_dir = tmp_path / "first"
+        second_dir = tmp_path / "second"
+        first_dir.mkdir()
+        second_dir.mkdir()
+        first_file = first_dir / "logger.csv"
+        second_file = second_dir / "logger.csv"
+        first_file.write_text(
+            "Location=rb1\nDate/time,Water head[cm]\n2025/01/01 00:00:00,1\n",
+            encoding="utf-8",
+        )
+        second_file.write_text(
+            "Location=rb2\nDate/time,Water head[cm]\n2025/01/02 00:00:00,2\n",
+            encoding="utf-8",
+        )
+
+        with (
+            mock.patch(
+                "midvatten.tools.import_logger.midvatten_utils.select_files",
+                return_value=[str(first_file), str(second_file)],
+            ),
+            mock.patch("midvatten.tools.utils.dialog_utils.Askuser"),
+            mock.patch("qgis.utils.iface", autospec=True),
+        ):
+            ms = MagicMock()
+            ms.settingsdict = OrderedDict()
+            importer = LoggerImport(self.iface, ms)
+            importer.load_gui()
+            importer.confirm_names.checked = False
+            importer.import_all_data.checked = True
+            importer.select_files()
+            importer.start_import(
+                importer.files,
+                importer.skip_rows.checked,
+                importer.confirm_names.checked,
+                importer.import_all_data.checked,
+            )
+
+        rows = db_utils.sql_load_fr_db(
+            "SELECT obsid, date_time, head_cm FROM w_levels_logger ORDER BY obsid"
+        )
+        assert rows == (
+            True,
+            [
+                ("rb1", "2025-01-01 00:00:00", 1.0),
+                ("rb2", "2025-01-02 00:00:00", 2.0),
+            ],
+        )
+
 
 @pytest.mark.spatialite
 class TestLoggerImportLeveloggerSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv):
@@ -905,10 +1242,8 @@ class TestDiverOfficeParserOldFormat:
         )
         charset = "cp1252"
         with file_utils.tempinput("\n".join(f), charset) as path:
-            file_data = DiverOfficeParser.parse(path, charset)
-        # parse() cannot detect correct delimiter; returns a tuple (no crash)
-        assert isinstance(file_data, tuple)
-        assert len(file_data) == 5
+            with pytest.raises(DiverOfficeParseError, match="delimited fields"):
+                DiverOfficeParser.parse(path, charset)
 
     def test_parse_old_different_separators(self):
         """parse() handles semicolon data with comma header: detects ';' from data rows."""
@@ -3480,7 +3815,7 @@ class TestDiverOfficeBaroParser:
         "[Channel 2]\n"
         "  Identification          =TEMPERATURE\n"
         "[data]\n"
-        "626\n"
+        "2\n"
         "2023/10/05 13:00:00.0      978.667       9.470\n"
         "2023/10/05 14:00:00.0      978.667      12.110\n"
     )
@@ -3509,6 +3844,13 @@ class TestDiverOfficeBaroParser:
         assert filedata[1][0] == "2023-10-05 13:00:00"
         assert float(filedata[1][1]) == pytest.approx(978.667, rel=1e-3)
         assert float(filedata[1][2]) == pytest.approx(9.470, rel=1e-3)
+
+    def test_parse_baro_mon_preserves_wider_pressure_after_inference_window(self):
+        content = build_mon(1001, baro=True)
+        with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
+            file_data, *_ = DiverOfficeBaroParser.parse(path, "utf-8")
+
+        assert file_data[-1][1] == "100.308"
 
     def test_parse_csv_extracts_pressure_and_temperature(self):
         with file_utils.tempinput(self.CSV_CONTENT, "utf-8", suffix=".csv") as f:

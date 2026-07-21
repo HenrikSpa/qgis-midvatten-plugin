@@ -179,6 +179,16 @@ Each validated file becomes one database import job. Jobs run sequentially so
 the current progress dialog and cooperative cancellation model remain intact.
 Rows within a file continue to use the generic bulk importer.
 
+Latest-date filtering is completed for every successfully parsed file before
+the first database job starts. When **Import all data** is unchecked, every
+file in the selected batch is filtered against one immutable snapshot of the
+database's per-obsid latest dates. The importer must not recalculate that
+snapshot between per-file jobs: an early job containing only a late segment
+must not cause an overlapping, fuller file later in the batch to lose the
+missing interval. When **Import all data** is checked, no latest-date cutoff is
+applied; exact timestamp duplicates are still excluded by the generic bulk
+importer.
+
 For water-level imports using the new logger-series schema, creation of the
 `w_logger_series` row, assignment of its `series_id`, and bulk insertion of that
 file's `w_levels_logger` rows occur on the same worker-owned connection and in
@@ -281,6 +291,9 @@ Worker and integration tests cover:
   import and the malformed file appears in failures;
 - one database job failing while another commits;
 - rollback removes both rows and logger-series metadata for the failed file;
+- two overlapping files for one obsid, where a late-segment file is scheduled
+  before a full-period file, produce no gap with either **Import all data**
+  setting;
 - successful regular and Baro files still use bulk insertion;
 - cancellation rolls back the active file and prevents later jobs;
 - completion summaries enumerate imported, skipped, and failed files.
@@ -299,6 +312,8 @@ PostgreSQL test backend is available.
   guarantees.
 - A bad file produces no rows or series metadata from that file.
 - Other valid selected files still import after a parse or database failure.
+- Per-file transaction ordering cannot create gaps between overlapping files
+  selected in the same batch.
 - The grouped summary makes every failed or skipped file visible.
 - The 100,000-row primary-path benchmark is no slower than the recorded current
   median on the same machine.

@@ -1119,6 +1119,7 @@ class CalibrloggerSpatialiteMixin(CalibrloggerMixin):
         assert hasattr(editor, "button_add_offset")
         assert hasattr(editor, "best_fit_search_radius")
         assert not hasattr(editor, "button_auto_calculate")
+        assert hasattr(editor, "line_2")
         assert not hasattr(editor, "line_3")
         assert editor.label_15.text() == "Auto-fit search radius"
 

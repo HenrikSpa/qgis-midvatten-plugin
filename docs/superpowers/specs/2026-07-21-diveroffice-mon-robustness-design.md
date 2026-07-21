@@ -54,14 +54,15 @@ The existing high-level routing remains:
 
 1. Delimited DiverOffice `.mon` and `.csv` files use deterministic CSV parsing.
 2. Non-delimited `.mon` files first use a deterministic right-edge parser.
-3. If, and only if, the right-edge layout is incomplete without being
-   contradictory, a full-file fixed-width fallback is attempted.
+3. If the endpoint layout does not uniquely match the metadata channel count,
+   a full-file fixed-width fallback is attempted.
 4. Every path feeds the same strict validation stage before date filtering,
    missing-head filtering, timezone conversion, or database work.
 
-The fallback is not allowed after the primary parser detects contradictory
-structure such as an unexpected extra endpoint or extra token. Those cases are
-file errors rather than alternate valid layouts.
+Malformed date/time prefixes are immediate file errors. Endpoint-count
+mismatches and extra measurement tokens are offered to the fallback, which may
+accept them only when its independent field inference passes the complete
+losslessness proof.
 
 ### Raw-line preservation and diagnostics
 
@@ -98,10 +99,10 @@ The endpoint set is compared with `[Channel N]` metadata:
 - no row may introduce an unexpected endpoint;
 - the mapping must be unique before output is produced.
 
-If the observed endpoints cannot establish every required channel but do not
-contradict the metadata, the parser records a structured "incomplete layout"
-result and permits the fallback. It does not guess which metadata channel an
-ambiguous endpoint belongs to.
+If the observed endpoints do not uniquely establish every required channel,
+the parser records a structured "incomplete layout" result and permits the
+fallback. It does not guess which metadata channel an ambiguous endpoint
+belongs to.
 
 ### Full-file fixed-width fallback
 

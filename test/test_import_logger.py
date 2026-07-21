@@ -12,6 +12,7 @@ from qgis.PyQt import QtWidgets
 
 from midvatten.tools.import_logger import (
     DiverOfficeParser,
+    DiverOfficeParseError,
     DiverOfficeBaroParser,
     LeveloggerParser,
     HoboParser,
@@ -26,6 +27,28 @@ from midvatten.tools.utils.date_utils import to_date
 from midvatten.tools.utils.gui_utils import set_combobox
 from midvatten.test import utils_for_tests
 from midvatten.test.mocks_for_tests import MockReturnUsingDictIn
+from scripts.benchmark_diveroffice_mon import build_mon
+
+
+def make_fixed_mon(
+    rows: list[tuple[str | None, ...]], declared_count: int | None = None
+) -> str:
+    channel_names = ["WATER HEAD (WC)", "TEMPERATURE", "CONDUCTIVITY"]
+    header = [
+        "[Logger settings]",
+        "  Location                =rb1",
+        f"  Number of channels      ={len(rows[0])}",
+    ]
+    for channel, name in enumerate(channel_names[: len(rows[0])], 1):
+        header.extend(
+            [f"[Channel {channel}]", f"  Identification          ={name}"]
+        )
+    header.extend(["[Data]", str(declared_count or len(rows))])
+    for values in rows:
+        fields = "".join(f"{value or '':>12}" for value in values)
+        header.append(f"2025/01/01 00:00:00.0{fields}")
+    header.append("END OF DATA FILE OF DATALOGGER FOR WINDOWS")
+    return "\n".join(header) + "\n"
 
 
 @pytest.mark.active
@@ -64,6 +87,82 @@ class TestDiverOfficeParser:
             None,
         ]
         assert [row[1] for row in filtered_filedata[1:]] == ["409.667", "409.433"]
+
+    def test_parse_mon_preserves_wider_head_after_inference_window(self):
+        content = build_mon(1001)
+        with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
+            file_data, *_ = DiverOfficeParser.parse(path, "utf-8")
+
+        assert file_data[-1][1] == "100.308"
+
+    @pytest.mark.parametrize(
+        ("before", "after"),
+        [("9.999", "10.001"), ("99.999", "100.001"), ("999.999", "1000.001")],
+    )
+    def test_parse_mon_preserves_digit_width_crossings(self, before, after):
+        content = make_fixed_mon([(before,)] * 1000 + [(after,)])
+        with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
+            file_data, *_ = DiverOfficeParser.parse(path, "utf-8")
+
+        assert float(file_data[-1][1]) == pytest.approx(float(after))
+
+    def test_parse_mon_preserves_missing_channel_positions(self):
+        content = make_fixed_mon(
+            [("1.0", None, "3.0"), (None, "2.0", "3.0"), ("1.0", "2.0", None)]
+        )
+        with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
+            file_data, *_ = DiverOfficeParser.parse(path, "utf-8")
+
+        assert [row[1:] for row in file_data[1:]] == [
+            ["1.0", None, "3.0"],
+            [None, "2.0", "3.0"],
+            ["1.0", "2.0", None],
+        ]
+
+    @pytest.mark.parametrize("value", ["-100.308", "+1,25", "1.25e3"])
+    def test_parse_mon_accepts_supported_numeric_tokens(self, value):
+        content = make_fixed_mon([(value,)])
+        with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
+            file_data, *_ = DiverOfficeParser.parse(path, "utf-8")
+
+        assert float(file_data[1][1]) == pytest.approx(float(value.replace(",", ".")))
+
+    def test_parse_mon_rejects_invalid_date(self):
+        content = make_fixed_mon([("1.0",)]).replace(
+            "2025/01/01 00:00:00.0", "not-a-date 00:00:00.0"
+        )
+        with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
+            with pytest.raises(DiverOfficeParseError, match="date/time"):
+                DiverOfficeParser.parse(path, "utf-8")
+
+    def test_parse_mon_rejects_invalid_numeric_value(self):
+        content = make_fixed_mon([("invalid",)])
+        with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
+            with pytest.raises(DiverOfficeParseError, match="numeric"):
+                DiverOfficeParser.parse(path, "utf-8")
+
+    def test_parse_mon_rejects_declared_count_mismatch(self):
+        content = make_fixed_mon([("1.0",)], declared_count=2)
+        with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
+            with pytest.raises(DiverOfficeParseError, match="declared 2 data rows"):
+                DiverOfficeParser.parse(path, "utf-8")
+
+    def test_parse_mon_fallback_accepts_lossless_left_aligned_field(self):
+        content = make_fixed_mon([("9.9",), ("100.308",)])
+        content = content.replace(f"{'9.9':>12}", "    9.9     ").replace(
+            f"{'100.308':>12}", "    100.308 "
+        )
+        with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
+            file_data, *_ = DiverOfficeParser.parse(path, "utf-8")
+
+        assert [float(row[1]) for row in file_data[1:]] == [9.9, 100.308]
+
+    def test_parse_mon_fallback_rejects_ambiguous_layout(self):
+        content = make_fixed_mon([("1.0", "2.0"), ("10.0", "20.0")])
+        content = content.replace("         1.0         2.0", "  1.0 2.0              ")
+        with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
+            with pytest.raises(DiverOfficeParseError, match="fallback"):
+                DiverOfficeParser.parse(path, "utf-8")
 
     def test_parse_utf8(self):
         file_content = (
@@ -3480,7 +3579,7 @@ class TestDiverOfficeBaroParser:
         "[Channel 2]\n"
         "  Identification          =TEMPERATURE\n"
         "[data]\n"
-        "626\n"
+        "2\n"
         "2023/10/05 13:00:00.0      978.667       9.470\n"
         "2023/10/05 14:00:00.0      978.667      12.110\n"
     )
@@ -3509,6 +3608,13 @@ class TestDiverOfficeBaroParser:
         assert filedata[1][0] == "2023-10-05 13:00:00"
         assert float(filedata[1][1]) == pytest.approx(978.667, rel=1e-3)
         assert float(filedata[1][2]) == pytest.approx(9.470, rel=1e-3)
+
+    def test_parse_baro_mon_preserves_wider_pressure_after_inference_window(self):
+        content = build_mon(1001, baro=True)
+        with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
+            file_data, *_ = DiverOfficeBaroParser.parse(path, "utf-8")
+
+        assert file_data[-1][1] == "100.308"
 
     def test_parse_csv_extracts_pressure_and_temperature(self):
         with file_utils.tempinput(self.CSV_CONTENT, "utf-8", suffix=".csv") as f:

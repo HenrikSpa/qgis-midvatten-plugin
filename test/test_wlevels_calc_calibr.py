@@ -1115,6 +1115,18 @@ class CalibrloggerSpatialiteMixin(CalibrloggerMixin):
     """Spatialite-specific tests for calibrlogger."""
 
     @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_calibration_ui_has_only_three_level_actions(self, mock_messagebar):
+        editor = LoggerEditor(self.iface, self.midvatten.ms)
+
+        assert hasattr(editor, "button_calculate")
+        assert hasattr(editor, "button_auto_fit")
+        assert hasattr(editor, "button_add_offset")
+        assert hasattr(editor, "best_fit_search_radius")
+        assert not hasattr(editor, "button_auto_calculate")
+        assert not hasattr(editor, "line_3")
+        assert editor.label_15.text() == "Auto-fit search radius"
+
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_calibrlogger_adjust_trend(self, mock_messagebar):
         """Interactive trend: drag start up by 5, end stays (pivot)."""
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")

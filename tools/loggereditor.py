@@ -190,7 +190,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         )
         self.push_button_from_selection.clicked.connect(self._from_date_from_selection)
         self.push_button_to_selection.clicked.connect(self._to_date_from_selection)
-        self.button_auto_calculate.clicked.connect(lambda x: self.logger_pos_best_fit())
         self.button_auto_fit.clicked.connect(lambda x: self.level_masl_best_fit())
         self.push_button_delete_logger.clicked.connect(
             lambda: self.delete_selected_range("w_levels_logger")

@@ -32,7 +32,9 @@ of a measurement is therefore unacceptable.
   validated fallback can prove a lossless channel mapping.
 - Continue parsing and importing other selected files after a per-file parse or
   database failure.
-- Keep the normal import path at least as fast as the current implementation.
+- Keep the normal import path fast enough for interactive use. A modest
+  slowdown is acceptable when required for lossless validation, but a gross or
+  order-of-magnitude regression is not.
 - Report imported and skipped files clearly enough for a user to continue work
   and repair failed files separately.
 
@@ -158,10 +160,11 @@ fallback cost.
 
 Before implementation changes, record the current parser's median runtime over
 five warm runs of a reproducible synthetic 100,000-row, two-channel `.mon`
-file. After implementation, the same benchmark on the same machine must show
-that the primary parser is no slower than that median. The benchmark reports
-times but is not a wall-clock assertion in the normal unit-test suite, avoiding
-flaky CI failures.
+file. Run the same benchmark on the same machine after implementation. A modest
+slowdown is acceptable because lossless parsing has priority; a median above
+twice the baseline requires profiling and optimization before completion. The
+benchmark reports times but is not a wall-clock assertion in the normal
+unit-test suite, avoiding flaky CI failures.
 
 ### Per-file parse isolation
 
@@ -315,6 +318,7 @@ PostgreSQL test backend is available.
 - Per-file transaction ordering cannot create gaps between overlapping files
   selected in the same batch.
 - The grouped summary makes every failed or skipped file visible.
-- The 100,000-row primary-path benchmark is no slower than the recorded current
-  median on the same machine.
+- The 100,000-row primary-path benchmark remains within twice the recorded
+  current median on the same machine; smaller regressions are accepted when
+  they are the cost of the approved integrity checks.
 - Focused and full regression suites pass without schema changes.

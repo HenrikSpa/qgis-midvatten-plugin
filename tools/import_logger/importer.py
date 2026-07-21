@@ -41,6 +41,8 @@ from .parsers import (
     filter_dates_from_filedata,
 )
 from .workers import (
+    LoggerFileFailure,
+    LoggerParseBatchResult,
     LoggerDbImportWorker,
     LoggerParseRequest,
     LoggerParseWorker,
@@ -536,8 +538,10 @@ class LoggerImport(BaseImporter, import_ui_dialog):
 
     def _run_parse_worker(
         self, request: LoggerParseRequest, progress: QtWidgets.QProgressDialog
-    ) -> list:
-        return self._run_worker(LoggerParseWorker(request), progress) or []
+    ) -> LoggerParseBatchResult:
+        return self._run_worker(
+            LoggerParseWorker(request), progress
+        ) or LoggerParseBatchResult([], [])
 
     def _run_db_worker(
         self,
@@ -602,8 +606,16 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         parsed_files = []
 
         try:
-            parsed_results = self._run_parse_worker(parse_request, progress)
-            for parsed in parsed_results:
+            parse_batch = self._run_parse_worker(parse_request, progress)
+            file_failures: list[LoggerFileFailure] = list(parse_batch.failures)
+            for failure in file_failures:
+                message_utils.MessagebarAndLog.warning(
+                    log_msg=QCoreApplication.translate(
+                        "LoggerImport", "%s failed during %s: %s"
+                    )
+                    % (failure.filename, failure.stage, failure.reason)
+                )
+            for parsed in parse_batch.parsed_files:
                 if parsed.timezone_error:
                     msg = QCoreApplication.translate(
                         "LoggerImport",

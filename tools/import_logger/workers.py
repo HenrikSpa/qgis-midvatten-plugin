@@ -14,6 +14,7 @@ from qgis.PyQt.QtCore import QCoreApplication, QObject, pyqtSignal, pyqtSlot
 from midvatten.tools import import_data_to_db
 from midvatten.tools.import_logger.parsers import (
     DiverOfficeBaroParser,
+    DiverOfficeParseError,
     DiverOfficeParser,
     HoboParser,
     LeveloggerParser,
@@ -55,6 +56,19 @@ class ParsedLoggerFile:
 
 
 @dataclass(frozen=True)
+class LoggerFileFailure:
+    filename: str
+    stage: str
+    reason: str
+
+
+@dataclass
+class LoggerParseBatchResult:
+    parsed_files: list[ParsedLoggerFile]
+    failures: list[LoggerFileFailure]
+
+
+@dataclass(frozen=True)
 class LoggerParseRequest:
     files: tuple[str, ...]
     format_name: str
@@ -88,6 +102,7 @@ class LoggerParseWorker(LoggerWorker):
     @pyqtSlot()
     def run(self) -> None:
         parsed_files: list[ParsedLoggerFile] = []
+        failures: list[LoggerFileFailure] = []
         try:
             for file_idx, selected_file in enumerate(self.request.files):
                 self._check_cancelled()
@@ -97,12 +112,22 @@ class LoggerParseWorker(LoggerWorker):
                     )
                     % (file_idx + 1, len(self.request.files))
                 )
-                result = self._parse_file(selected_file)
+                try:
+                    result = self._parse_file(selected_file)
+                except (DiverOfficeParseError, UnicodeDecodeError) as error:
+                    failures.append(
+                        LoggerFileFailure(
+                            filename=os.path.basename(selected_file),
+                            stage="parse",
+                            reason=str(error),
+                        )
+                    )
+                    continue
                 self._check_cancelled()
                 if result is None:
                     continue
                 parsed_files.append(result)
-            self.finished.emit(parsed_files)
+            self.finished.emit(LoggerParseBatchResult(parsed_files, failures))
         except LoggerImportCancelledError:
             self.cancelled.emit()
         except Exception:
@@ -147,7 +172,7 @@ class LoggerParseWorker(LoggerWorker):
                     )
                     % (os.path.basename(selected_file), self.request.format_name)
                 )
-                return None
+                raise
 
         if result in ("cancel", "skip", "ignore"):
             if result == "cancel":

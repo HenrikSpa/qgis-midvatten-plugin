@@ -4,9 +4,48 @@ from unittest import mock
 from qgis.PyQt.QtCore import QEventLoop, QThread, QTimer
 
 from midvatten.tools.import_logger.workers import (
+    ParsedLoggerFile,
     LoggerParseRequest,
     LoggerParseWorker,
 )
+from midvatten.tools.import_logger.parsers import DiverOfficeParseError
+
+
+def test_parse_worker_collects_bad_file_and_continues():
+    request = LoggerParseRequest(
+        files=("bad.mon", "good.mon"),
+        format_name="DiverOffice",
+        skip_rows_without_water_level=False,
+        from_date=None,
+        to_date=None,
+        requested_utc_offset="",
+        hobo_target_timezone="GMT+1",
+    )
+    worker = LoggerParseWorker(request)
+    finished = []
+    errors = []
+    worker.finished.connect(finished.append)
+    worker.error.connect(errors.append)
+    good_file = ParsedLoggerFile(
+        [["date_time", "head_cm"], ["2025-01-01 00:00:00", "1.0"]],
+        "good.mon",
+        "obs1",
+        None,
+    )
+
+    with mock.patch.object(
+        worker,
+        "_parse_file",
+        side_effect=[
+            DiverOfficeParseError("bad.mon", "ambiguous endpoints", 12),
+            good_file,
+        ],
+    ):
+        worker.run()
+
+    assert errors == []
+    assert [item.filename for item in finished[0].parsed_files] == ["good.mon"]
+    assert [item.filename for item in finished[0].failures] == ["bad.mon"]
 
 
 def test_parse_worker_keeps_gui_event_loop_responsive_and_cancels():

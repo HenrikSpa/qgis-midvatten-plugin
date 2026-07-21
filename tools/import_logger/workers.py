@@ -329,9 +329,8 @@ class LoggerDbImportWorker(LoggerWorker):
                     defer_commit=True,
                     progress_callback=self._on_progress,
                     manage_wait_cursor=False,
+                    raise_insert_errors=True,
                 )
-                if importer.last_insert_error is not None:
-                    raise importer.last_insert_error
                 self._check_cancelled()
                 result = LoggerDbImportResult(self.request.filename, True)
                 if series_id is not None:

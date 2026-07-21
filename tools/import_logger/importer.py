@@ -807,10 +807,11 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                     if len(meteo_rows) < 2:
                         summary.no_new_rows.append(source_path)
                         continue
-                    if not exported_rows:
-                        exported_rows = [list(row) for row in meteo_rows]
-                    else:
-                        exported_rows.extend([list(row) for row in meteo_rows[1:]])
+                    if export_csv:
+                        if not exported_rows:
+                            exported_rows = [list(row) for row in meteo_rows]
+                        else:
+                            exported_rows.extend([list(row) for row in meteo_rows[1:]])
 
                     if import_to_db:
                         result = self._run_db_worker(
@@ -901,18 +902,18 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                 _location,
                 serial_number,
             ) in parsed_files_with_obsid:
-                file_data = [list(row) for row in file_data]
-
                 # Old schemas store source directly on each reading.
                 if source_text and has_source_column and not has_series_id:
+                    file_data = [list(row) for row in file_data]
                     file_data[0].append("source")
                     for row in file_data[1:]:
                         row.append(source_text)
 
-                if not exported_data:
-                    exported_data = [list(row) for row in file_data]
-                else:
-                    exported_data.extend([list(row) for row in file_data[1:]])
+                if export_csv:
+                    if not exported_data:
+                        exported_data = [list(row) for row in file_data]
+                    else:
+                        exported_data.extend([list(row) for row in file_data[1:]])
 
                 series = None
                 if has_series_id:

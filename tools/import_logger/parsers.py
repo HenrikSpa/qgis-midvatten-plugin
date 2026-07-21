@@ -698,11 +698,6 @@ class DiverOfficeParser:
             if row.lower().strip().startswith("end of data"):
                 stop_row = true_rownr
                 break
-        if stop_row is not None:
-            skipfooter = len(rows) - stop_row
-        else:
-            skipfooter = 0
-
         is_csv = path.lower().endswith(".csv")
         data_stop = stop_row if stop_row is not None else len(raw_rows)
         source_lines = [
@@ -883,13 +878,6 @@ class DiverOfficeParser:
                 colnames,
                 filename,
             )
-        for col in df.columns:
-            if col == "date_time":
-                continue
-            df[col] = pd.to_numeric(
-                df[col].astype(str).str.replace(",", ".").str.strip(), errors="coerce"
-            )
-
         if not df.empty:
             if begindate is not None:
                 df = df.loc[(df["date_time"] >= begindate), :]

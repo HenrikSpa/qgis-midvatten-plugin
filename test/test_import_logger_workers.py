@@ -203,14 +203,13 @@ def test_database_worker_rolls_back_series_and_rows_together():
     assert "insert failed" in results[0].reason
 
 
-def test_database_worker_detects_generic_importer_swallowed_insert_error():
+def test_database_worker_requests_insert_error_propagation():
     connection = FakeConnection()
-    worker = LoggerDbImportWorker({}, make_db_request("swallowed.mon"))
+    worker = LoggerDbImportWorker({}, make_db_request("propagate.mon"))
     results = []
     worker.finished.connect(results.append)
     fake_importer = mock.Mock()
-    fake_importer.last_insert_error = RuntimeError("SQL insert failed")
-    fake_importer.general_import.return_value = 0
+    fake_importer.general_import.return_value = 1
 
     with (
         mock.patch(
@@ -228,10 +227,10 @@ def test_database_worker_detects_generic_importer_swallowed_insert_error():
     ):
         worker.run()
 
-    assert connection.rollbacks == 1
+    assert connection.commits == 1
     assert len(results) == 1
-    assert not results[0].imported
-    assert "SQL insert failed" in results[0].reason
+    assert results[0].imported
+    assert fake_importer.general_import.call_args.kwargs["raise_insert_errors"] is True
 
 
 def test_database_worker_removes_series_when_all_rows_are_duplicates():

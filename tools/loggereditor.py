@@ -3121,42 +3121,20 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self._legend_picker.connect()
 
     @fn_timer
-    def logger_pos_best_fit(self):
-        self.loggerpos_masl_or_offset_state = 1
-        self.calc_best_fit()
-
-    @fn_timer
     def level_masl_best_fit(self):
-        self.loggerpos_masl_or_offset_state = 0
         self.calc_best_fit()
 
     @fn_timer
     def calc_best_fit(self):
-        """Calculates the self.logger_elevation from self.meas_ts and self.head_ts
-
-        First matches measurements from self.meas_ts to logger values from
-        self.head_ts. This is done by making a mean of all logger values inside
-        self.meas_ts date - search_radius and self.meas_ts date + search_radius.
-        (this could probably be change to get only the closest logger value
-        inside the search_radius instead)
-        (search_radius is gotten from self.get_search_radius())
-
-        Then calculates the mean of all matches and set to self.logger_elevation.
-        """
+        """Fit selected logger level_masl values to manual measurements."""
         obsid = self.load_obsid_and_init()
         common_utils.start_waiting_cursor()
         self.reset_plot_selects_and_calib_help()
         search_radius = self.get_search_radius()
-        if self.loggerpos_masl_or_offset_state == 1:
-            logger_ts = self.head_ts
-            text_field = self.logger_elevation
-            calib_func = self.set_logger_pos
-        else:
-            logger_ts = self.level_masl_ts
-            text_field = self.offset
-            calib_func = self.add_to_level_masl
 
-        coupled_vals = self.match_ts_values(self.meas_ts, logger_ts, search_radius)
+        coupled_vals = self.match_ts_values(
+            self.meas_ts, self.level_masl_ts, search_radius
+        )
         if not coupled_vals:
             message_utils.pop_up_info(
                 QCoreApplication.translate(
@@ -3180,8 +3158,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                     )
                 )
             else:
-                text_field.setText(calculated_diff)
-                calib_func(obsid)
+                self.offset.setText(calculated_diff)
+                self.add_to_level_masl(obsid)
 
         common_utils.stop_waiting_cursor()
 

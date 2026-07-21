@@ -183,7 +183,7 @@ class CalibrloggerMixin:
 
     @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
     @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
-    def test_calibrlogger_calc_best_fit_add_out_of_radius(
+    def test_calibrlogger_level_masl_best_fit_out_of_radius(
         self, mock_messagebar, skip_popup
     ):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
@@ -198,13 +198,12 @@ class CalibrloggerMixin:
 
         calibrlogger.update_plot()
 
-        calibrlogger.loggerpos_masl_or_offset_state = 2
         calibrlogger.from_date_time.setDateTime(
             date_utils.to_date("2000-01-01 00:00:00")
         )
         gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
 
-        calibrlogger.calc_best_fit()
+        calibrlogger.level_masl_best_fit()
 
         test = utils_for_tests.create_test_string(
             db_utils.sql_load_fr_db(
@@ -218,7 +217,7 @@ class CalibrloggerMixin:
 
     @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
     @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
-    def test_calibrlogger_calc_best_fit_add(self, mock_messagebar, skip_popup):
+    def test_calibrlogger_level_masl_best_fit(self, mock_messagebar, skip_popup):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
         db_utils.sql_alter_db(
             "INSERT INTO w_levels (obsid, date_time, level_masl) VALUES ('rb1', '2017-02-01 00:00', 100)"
@@ -232,14 +231,13 @@ class CalibrloggerMixin:
 
         calibrlogger.update_plot()
 
-        calibrlogger.loggerpos_masl_or_offset_state = 2
         calibrlogger.from_date_time.setDateTime(
             date_utils.to_date("2000-01-01 00:00:00")
         )
         gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
         calibrlogger.best_fit_search_radius.setText("2 hours")
 
-        calibrlogger.calc_best_fit()
+        calibrlogger.level_masl_best_fit()
 
         calibrlogger.save_to_db()
         test = utils_for_tests.create_test_string(
@@ -253,7 +251,7 @@ class CalibrloggerMixin:
 
     @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
     @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
-    def test_calibrlogger_calc_best_fit_add_matches_same_from_date(
+    def test_calibrlogger_level_masl_best_fit_matches_same_from_date(
         self, mock_messagebar, skip_popup
     ):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
@@ -269,12 +267,11 @@ class CalibrloggerMixin:
 
         calibrlogger.update_plot()
 
-        calibrlogger.loggerpos_masl_or_offset_state = 2
         calibrlogger.from_date_time.setDateTime(date_utils.to_date("2017-02-01 01:00"))
         gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
         calibrlogger.best_fit_search_radius.setText("2 hours")
 
-        calibrlogger.calc_best_fit()
+        calibrlogger.level_masl_best_fit()
 
         calibrlogger.save_to_db()
         test = utils_for_tests.create_test_string(
@@ -288,7 +285,7 @@ class CalibrloggerMixin:
 
     @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
     @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
-    def test_calibrlogger_calc_best_fit_add_matches_same_to_date(
+    def test_calibrlogger_level_masl_best_fit_matches_same_to_date(
         self, mock_messagebar, skip_popup
     ):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
@@ -304,13 +301,12 @@ class CalibrloggerMixin:
 
         calibrlogger.update_plot()
 
-        calibrlogger.loggerpos_masl_or_offset_state = 2
         calibrlogger.from_date_time.setDateTime(date_utils.to_date("2010-02-01 01:00"))
         calibrlogger.to_date_time.setDateTime(date_utils.to_date("2017-02-01 01:00"))
         gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
         calibrlogger.best_fit_search_radius.setText("2 hours")
 
-        calibrlogger.calc_best_fit()
+        calibrlogger.level_masl_best_fit()
 
         calibrlogger.save_to_db()
         test = utils_for_tests.create_test_string(
@@ -1125,6 +1121,10 @@ class CalibrloggerSpatialiteMixin(CalibrloggerMixin):
         assert not hasattr(editor, "button_auto_calculate")
         assert not hasattr(editor, "line_3")
         assert editor.label_15.text() == "Auto-fit search radius"
+
+    def test_automatic_fit_has_no_logger_elevation_entry_point(self):
+        assert not hasattr(LoggerEditor, "logger_pos_best_fit")
+        assert hasattr(LoggerEditor, "level_masl_best_fit")
 
     @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_calibrlogger_adjust_trend(self, mock_messagebar):

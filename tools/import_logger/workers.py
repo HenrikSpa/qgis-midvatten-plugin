@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 import os
 import threading
 import traceback
@@ -117,21 +118,13 @@ class LoggerParseWorker(LoggerWorker):
                     result = self._parse_file(selected_file)
                 except LoggerImportCancelledError:
                     raise
-                except (DiverOfficeParseError, UnicodeDecodeError) as error:
-                    failures.append(
-                        LoggerFileFailure(
-                            filename=selected_file,
-                            stage="parse",
-                            reason=str(error),
-                        )
-                    )
-                    continue
-                except Exception as error:
-                    if self.request.format_name not in (
-                        "DiverOffice",
-                        "DiverOffice Baro",
-                    ):
-                        raise
+                except (
+                    DiverOfficeParseError,
+                    UnicodeDecodeError,
+                    OSError,
+                    csv.Error,
+                    pd.errors.ParserError,
+                ) as error:
                     failures.append(
                         LoggerFileFailure(
                             filename=selected_file,

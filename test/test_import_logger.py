@@ -28,6 +28,7 @@ from midvatten.tools.utils import db_utils
 from midvatten.tools.utils.date_utils import to_date
 from midvatten.tools.utils.gui_utils import set_combobox
 from midvatten.tools.import_logger.parsers import _SourceLine
+from midvatten.tools.import_logger.parsers import _IncompleteMonLayoutError
 from midvatten.test import utils_for_tests
 from midvatten.test.mocks_for_tests import MockReturnUsingDictIn
 from scripts.benchmark_diveroffice_mon import build_mon
@@ -184,6 +185,18 @@ class TestDiverOfficeParser:
             with pytest.raises(DiverOfficeParseError, match="fallback"):
                 DiverOfficeParser.parse(path, "utf-8")
 
+    def test_mon_primary_requires_all_channel_endpoints_in_one_row(self):
+        prefix = "2025/01/01 00:00:00.0"
+        source_lines = [
+            _SourceLine(1, prefix + "    1    2"),
+            _SourceLine(2, prefix + "    1         3"),
+            _SourceLine(3, prefix + "         2    3"),
+        ]
+        scanned = DiverOfficeParser._scan_mon_rows(source_lines, "ambiguous.mon")
+
+        with pytest.raises(_IncompleteMonLayoutError, match="same row"):
+            DiverOfficeParser._read_mon_by_right_edge(scanned, 4)
+
     def test_mon_fallback_rejects_compressed_blank_slot_comparison(self):
         source_lines = [_SourceLine(1, "2025/01/01 00:00:00.0                2.0")]
         scanned = DiverOfficeParser._scan_mon_rows(source_lines, "ambiguous.mon")
@@ -223,6 +236,23 @@ class TestDiverOfficeParser:
         assert filedata[0] == ["date_time", "head_cm", "temp_degc", "cond_mscm"]
         assert filedata[1][0] == "2016-03-15 10:30:00"
         assert filedata[1][1] == "1.0"
+
+    def test_csv_header_order_is_authoritative_when_metadata_exists(self):
+        content = (
+            "[Logger settings]\n"
+            "  Location                =rb1\n"
+            "  Number of channels      =2\n"
+            "[Channel 1]\n"
+            "  Identification          =WATER HEAD (WC)\n"
+            "[Channel 2]\n"
+            "  Identification          =TEMPERATURE\n"
+            "Date/time;Temperature[°C];Water head[cm]\n"
+            "2025/01/01 00:00:00;10.0;123.4\n"
+        )
+        with file_utils.tempinput(content, "utf-8", suffix=".csv") as path:
+            filedata, *_ = DiverOfficeParser.parse(path, "utf-8")
+
+        assert filedata[1] == ["2025-01-01 00:00:00", "123.4", "10.0", None]
 
     def test_parse_cp1252(self):
         file_content = (

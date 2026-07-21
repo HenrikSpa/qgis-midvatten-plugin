@@ -62,6 +62,30 @@ def test_parse_worker_collects_bad_file_and_continues(parse_error):
     assert [item.filename for item in finished[0].failures] == ["bad.mon"]
 
 
+def test_parse_worker_reports_unexpected_programming_error_as_terminal():
+    request = LoggerParseRequest(
+        files=("bad.mon", "never-reached.mon"),
+        format_name="DiverOffice",
+        skip_rows_without_water_level=False,
+        from_date=None,
+        to_date=None,
+        requested_utc_offset="",
+        hobo_target_timezone="GMT+1",
+    )
+    worker = LoggerParseWorker(request)
+    finished = []
+    errors = []
+    worker.finished.connect(finished.append)
+    worker.error.connect(errors.append)
+
+    with mock.patch.object(worker, "_parse_file", side_effect=KeyError("bug")):
+        worker.run()
+
+    assert finished == []
+    assert len(errors) == 1
+    assert "KeyError" in errors[0]
+
+
 class FakeConnection:
     def __init__(self, imported_row_count=1):
         self.cancelled = threading.Event()

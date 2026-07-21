@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import csv
 import datetime
-import itertools
 import os
 import re
 from dataclasses import dataclass
@@ -325,17 +324,13 @@ class DiverOfficeParser:
                 f"{len(right_edges)} ({right_edges})"
             )
 
-        observed_pairs = {
-            pair
+        required_edges = set(right_edges)
+        if not any(
+            {token.end for token in row.tokens} == required_edges
             for row in scanned_rows
-            for pair in itertools.combinations(
-                sorted({token.end for token in row.tokens}), 2
-            )
-        }
-        required_pairs = set(itertools.combinations(right_edges, 2))
-        if observed_pairs != required_pairs:
+        ):
             raise _IncompleteMonLayoutError(
-                "channel end positions lack pairwise co-occurrence evidence"
+                "channel end positions never occur together in the same row"
             )
 
         channel_by_edge = {edge: index for index, edge in enumerate(right_edges, 1)}
@@ -343,7 +338,12 @@ class DiverOfficeParser:
         for row in scanned_rows:
             record: list[str | None] = [row.date_time] + [None] * channel_count
             for token in row.tokens:
-                record[channel_by_edge[token.end]] = token.text
+                channel = channel_by_edge[token.end]
+                if channel > 1 and token.start < right_edges[channel - 2]:
+                    raise _IncompleteMonLayoutError(
+                        "measurement token crosses a proven channel boundary"
+                    )
+                record[channel] = token.text
             records.append(record)
         return pd.DataFrame(records, columns=range(expected_num_fields))
 
@@ -562,6 +562,14 @@ class DiverOfficeParser:
             if output_cols is not None
             else ["date_time", "head_cm", "temp_degc", "cond_mscm"]
         )
+
+        def mapped_output_name(header: str) -> str | None:
+            normalized = header.lower().replace(" ", "")
+            for keyword, outcol in _col_map.items():
+                if keyword in normalized:
+                    return outcol
+            return None
+
         filedata = []
         filename = os.path.basename(path)
         section = None
@@ -646,6 +654,7 @@ class DiverOfficeParser:
                 if colname:
                     data_headers[int(secno)] = colname
 
+        declared_channels: int | None = None
         declared_channels_raw = metadata.get("logger settings", {}).get(
             "number of channels", ""
         ) or metadata.get("series settings", {}).get("number of channels", "")
@@ -735,26 +744,61 @@ class DiverOfficeParser:
                 ]
                 expected_num_fields = len(header_cols)
 
-                # When no [Channel N] sections were found, derive column names
-                # from the CSV header. Legacy files may put Date/time anywhere.
-                if len(data_headers) == 1:
-                    date_col_idx = next(
-                        (
-                            i
-                            for i, c in enumerate(header_cols)
-                            if c.lower() == "date/time"
-                        ),
-                        0,
+                date_columns = [
+                    index
+                    for index, column in enumerate(header_cols)
+                    if column.lower() == "date/time"
+                ]
+                if len(date_columns) != 1:
+                    raise DiverOfficeParseError(
+                        filename,
+                        "CSV header must contain exactly one Date/time column",
+                        header_row_idx + 1,
+                        raw_rows[header_row_idx],
                     )
-                    data_headers = {date_col_idx: "date_time"}
-                    for colidx, colname in enumerate(header_cols):
-                        if colidx == date_col_idx:
-                            continue
-                        col_nospace = colname.lower().replace(" ", "")
-                        for keyword in _col_map:
-                            if keyword in col_nospace:
-                                data_headers[colidx] = keyword
-                                break
+                if (
+                    declared_channels is not None
+                    and expected_num_fields != declared_channels + 1
+                ):
+                    raise DiverOfficeParseError(
+                        filename,
+                        f"CSV header has {expected_num_fields - 1} channels but file "
+                        f"declares {declared_channels}",
+                        header_row_idx + 1,
+                        raw_rows[header_row_idx],
+                    )
+
+                metadata_outputs = {
+                    mapped
+                    for index, header in data_headers.items()
+                    if index != 0 and (mapped := mapped_output_name(header)) is not None
+                }
+                date_col_idx = date_columns[0]
+                header_data_headers = {date_col_idx: "date_time"}
+                header_outputs: set[str] = set()
+                for colidx, colname in enumerate(header_cols):
+                    if colidx == date_col_idx:
+                        continue
+                    mapped = mapped_output_name(colname)
+                    if mapped is None:
+                        continue
+                    if mapped in header_outputs:
+                        raise DiverOfficeParseError(
+                            filename,
+                            f"CSV header maps more than one column to {mapped}",
+                            header_row_idx + 1,
+                            raw_rows[header_row_idx],
+                        )
+                    header_outputs.add(mapped)
+                    header_data_headers[colidx] = colname
+                if metadata_outputs and metadata_outputs != header_outputs:
+                    raise DiverOfficeParseError(
+                        filename,
+                        "CSV header channels disagree with channel metadata",
+                        header_row_idx + 1,
+                        raw_rows[header_row_idx],
+                    )
+                data_headers = header_data_headers
 
         delimiter = file_utils.get_delimiter_from_file_rows(
             data_rows,
@@ -788,13 +832,11 @@ class DiverOfficeParser:
         for k, v in sorted(data_headers.items()):
             if v == "date_time":
                 continue
-            v_nospace = v.lower().replace(" ", "")
-            for keyword, outcol in _col_map.items():
-                if keyword in v_nospace and outcol not in seen_outcols:
-                    usecols.append(k)
-                    colnames.append(outcol)
-                    seen_outcols.add(outcol)
-                    break
+            outcol = mapped_output_name(v)
+            if outcol is not None and outcol not in seen_outcols:
+                usecols.append(k)
+                colnames.append(outcol)
+                seen_outcols.add(outcol)
 
         if colnames:
             colnames.insert(0, "date_time")

@@ -513,30 +513,30 @@ class TestLoggerEditorSeries(utils_for_tests.MidvattenTestSpatialiteDbSv):
     def test_series_tab_not_shown_for_legacy_schema(self, mock_messagebar):
         """A DB without w_logger_series table should not get the Series tab."""
 
-        def _legacy_tables_columns(table: str = "", dbconnection=None):
+        def _legacy_columns_for_tables(table_names, dbconnection=None):
             """Return column info that simulates a legacy schema without series."""
-            if table == "w_levels_logger":
-                return {
-                    "w_levels_logger": [
-                        "obsid",
-                        "date_time",
-                        "head_cm",
-                        "temp_degc",
-                        "cond_mscm",
-                        "level_masl",
-                        "comment",
-                        "source",
-                    ]
-                }
-            if table == "w_logger_series":
-                return {}
-            # Fall through for any other table — return empty to avoid
-            # calling the real function (which would see the real schema).
-            return {}
+            legacy_columns = {
+                "w_levels_logger": [
+                    "obsid",
+                    "date_time",
+                    "head_cm",
+                    "temp_degc",
+                    "cond_mscm",
+                    "level_masl",
+                    "comment",
+                    "source",
+                ],
+                "w_logger_series": [],
+                "about_db": ["tablename", "columnname", "description"],
+            }
+            return {
+                table_name: legacy_columns.get(table_name, [])
+                for table_name in table_names
+            }
 
         with mock.patch(
-            "midvatten.tools.loggereditor.db_utils.tables_columns",
-            side_effect=_legacy_tables_columns,
+            "midvatten.tools.loggereditor.db_utils.get_columns_for_tables",
+            side_effect=_legacy_columns_for_tables,
         ):
             editor = LoggerEditor(self.iface, self.midvatten.ms)
             editor.show()

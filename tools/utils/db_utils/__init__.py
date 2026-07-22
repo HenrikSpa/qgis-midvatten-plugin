@@ -39,6 +39,7 @@ from midvatten.tools.utils.db_utils.execution import (
 from midvatten.tools.utils.db_utils.schema import (
     db_tables_columns_info,
     get_available_schemas,  # noqa: F401
+    get_columns_for_tables,
     get_foreign_keys,
     get_table_info,
     get_tables,
@@ -92,6 +93,7 @@ from midvatten.tools.utils.db_utils.helpers import (
     get_all_obsids,
     get_latlon_for_all_obsids,
     get_timezone_from_db,
+    get_timezones_from_db,
 )
 
 __all__ = [
@@ -121,6 +123,7 @@ __all__ = [
     "execute_sqlfile_using_func",
     "export_bytea_as_bytes",
     "get_all_obsids",
+    "get_columns_for_tables",
     "get_dbtype",
     "get_foreign_keys",
     "get_geometry_types",
@@ -136,6 +139,7 @@ __all__ = [
     "rowid_string",
     "get_tables",
     "get_timezone_from_db",
+    "get_timezones_from_db",
     "ident",
     "if_connection_ok",
     "in_clause",

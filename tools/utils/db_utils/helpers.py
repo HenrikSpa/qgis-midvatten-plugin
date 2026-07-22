@@ -7,6 +7,7 @@ import os
 import re
 import traceback
 from collections import defaultdict
+from collections.abc import Sequence
 from typing import Any, Optional
 
 try:
@@ -24,6 +25,7 @@ from midvatten.tools.utils.db_utils.execution import (
     use_or_create_connection,
 )
 from midvatten.tools.utils.db_utils.schema import (
+    get_columns_for_tables,
     get_sql_result_as_dict,
     get_table_info,
     tables_columns,
@@ -177,33 +179,61 @@ def get_latlon_for_all_obsids(
         return dict((obsid, lat_lon[0]) for obsid, lat_lon in latlon_dict.items())
 
 
+def _parse_timezone_description(description: Optional[str]) -> Optional[str]:
+    if not description:
+        return None
+    pattern = r"[(]*[\-a-zA-Z0-9 \t]*(gmt|utc)([\+\-]*)([0-9]+)([\:]*[0-9]*)\)[)]*"
+    match = re.search(pattern, description, re.IGNORECASE)
+    if match is not None:
+        return match.group(0).lstrip("(").rstrip(")")
+    match = re.search(r"\([a-zA-Z0-9åäöÅÄÖ+\-/]+\)", description, re.IGNORECASE)
+    if match is not None:
+        return match.group(0).lstrip("(").rstrip(")")
+    return None
+
+
+def get_timezones_from_db(
+    tablenames: Sequence[str],
+    dbconnection: Optional[DbConnectionManager] = None,
+    about_db_columns: Optional[Sequence[str]] = None,
+) -> dict[str, Optional[str]]:
+    """Load date-time timezone descriptions for multiple tables in one query."""
+    names = list(dict.fromkeys(tablenames))
+    timezones = {name: None for name in names}
+    if not names:
+        return timezones
+
+    with use_or_create_connection(dbconnection) as dbconnection:
+        if about_db_columns is None:
+            about_db_columns = get_columns_for_tables(
+                ("about_db",), dbconnection=dbconnection
+            )["about_db"]
+        if "tablename" in about_db_columns:
+            table_column = "tablename"
+            date_column = "columnname"
+        else:
+            table_column = "table"
+            date_column = "column"
+
+        table_clause, table_args = dbconnection.in_clause(names)
+        ph = dbconnection.placeholder()
+        table_ident = dbconnection.ident(table_column)
+        date_ident = dbconnection.ident(date_column)
+        rows = dbconnection.execute_and_fetchall(
+            f"SELECT {table_ident}, description FROM about_db "
+            f"WHERE {table_ident} IN {table_clause} AND {date_ident} = {ph}",
+            (*table_args, "date_time"),
+        )
+        for table_name, description in rows:
+            timezones[table_name] = _parse_timezone_description(description)
+        return timezones
+
+
 def get_timezone_from_db(
     tablename: str,
     dbconnection: Optional[DbConnectionManager] = None,
 ) -> Optional[str]:
-    with use_or_create_connection(dbconnection) as dbconnection:
-        about_db_cols = tables_columns("about_db", dbconnection).get("about_db", [])
-        ph = dbconnection.placeholder()
-        if "tablename" in about_db_cols:
-            res = dbconnection.execute_and_fetchall(
-                f"SELECT description FROM about_db WHERE tablename = {ph} AND columnname = 'date_time' LIMIT 1;",
-                (tablename,),
-            )
-        else:
-            res = dbconnection.execute_and_fetchall(
-                f'SELECT description FROM about_db WHERE "table" = {ph} AND "column" = \'date_time\' LIMIT 1;',
-                (tablename,),
-            )
-        if not res:
-            return None
-        pattern = r"[(]*[\-a-zA-Z0-9 \t]*(gmt|utc)([\+\-]*)([0-9]+)([\:]*[0-9]*)\)[)]*"
-        m = re.search(pattern, res[0][0], re.IGNORECASE)
-        if m is not None:
-            return m.group(0).lstrip("(").rstrip(")")
-        m = re.search(r"\([a-zA-Z0-9åäöÅÄÖ+-/]+\)", res[0][0], re.IGNORECASE)
-        if m is not None:
-            return m.group(0).lstrip("(").rstrip(")")
-        return None
+    return get_timezones_from_db((tablename,), dbconnection=dbconnection)[tablename]
 
 
 def nonplot_tables(
@@ -428,7 +458,7 @@ def calculate_db_table_rows() -> None:
         )
 
     if results:
-        printable_msg = "{0:40}{1:15}".format("Tablename", "Nr of rows\n")
+        printable_msg = "{:40}{:15}".format("Tablename", "Nr of rows\n")
         printable_msg += "\n".join(
             [
                 f"{table_name:40}{_nr_of_rows:15}"

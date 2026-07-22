@@ -263,6 +263,47 @@ def tables_columns(
     )
 
 
+def get_columns_for_tables(
+    table_names: Sequence[str],
+    dbconnection: Optional[DbConnectionManager] = None,
+) -> dict[str, list[str]]:
+    """Return column names for selected tables with minimal metadata queries.
+
+    Unlike :func:`tables_columns`, this helper does not enumerate every table
+    first or load primary-key metadata. Missing tables are represented by an
+    empty list, which is useful for optional-schema feature detection.
+    """
+    names = list(dict.fromkeys(table_names))
+    columns_by_table = {name: [] for name in names}
+    if not names:
+        return columns_by_table
+
+    with use_or_create_connection(dbconnection) as dbconnection:
+        if dbconnection.is_sqlite():
+            for table_name in names:
+                sql = dbconnection.sql_ident(
+                    "PRAGMA table_info({table})", table=table_name
+                )
+                rows = dbconnection.execute_and_fetchall(sql)
+                columns_by_table[table_name] = [row[1] for row in rows]
+            return columns_by_table
+
+        table_clause, table_args = dbconnection.in_clause(names)
+        ph = dbconnection.placeholder()
+        sql = (
+            "SELECT table_name, column_name "
+            "FROM information_schema.columns "
+            f"WHERE table_schema = {ph} AND table_name IN {table_clause} "
+            "ORDER BY table_name, ordinal_position"
+        )
+        rows = dbconnection.execute_and_fetchall(
+            sql, (dbconnection.schema, *table_args)
+        )
+        for table_name, column_name in rows:
+            columns_by_table[table_name].append(column_name)
+        return columns_by_table
+
+
 def get_available_schemas(dbconnection: DbConnectionManager) -> list[str]:
     """Return user-visible schema names for a PostgreSQL connection.
 

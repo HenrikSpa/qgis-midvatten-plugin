@@ -263,28 +263,12 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             self.get_search_radius()
 
             common_utils.start_waiting_cursor()
-            # Populate combobox with obsid from table w_levels_logger
-            self.load_obsid_from_db()
-            common_utils.stop_waiting_cursor()
+            try:
+                self._load_database_startup_state()
+            finally:
+                common_utils.stop_waiting_cursor()
             self._prev_combobox_index = self.combobox_obsid.currentIndex()
             self.combobox_obsid.currentIndexChanged.connect(self._on_obsid_changed)
-
-            self.w_levels_logger_tz = db_utils.get_timezone_from_db("w_levels_logger")
-            self.w_levels_tz = db_utils.get_timezone_from_db("w_levels")
-
-            existing_columns = db_utils.tables_columns(table="w_levels_logger").get(
-                "w_levels_logger", []
-            )
-            has_series_id = "series_id" in existing_columns
-            has_series_table = bool(db_utils.tables_columns(table="w_logger_series"))
-            if has_series_id and has_series_table:
-                self._schema_variant = "series_join"
-            elif "source" in existing_columns:
-                self._schema_variant = "source_col"
-            else:
-                self._schema_variant = "no_source"
-
-            self._existing_columns = existing_columns
 
             _cb_font = QFont("Noto Sans", 8)
 
@@ -374,7 +358,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                         "Source column not available in this database",
                     )
                 )
-            if "created_at" not in existing_columns:
+            if "created_at" not in self._existing_columns:
                 self.separate_created_at_cb.setEnabled(False)
                 self.separate_created_at_cb.setToolTip(
                     QCoreApplication.translate(
@@ -515,59 +499,112 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         uncalibrated_str = " (uncalibrated)"
         return str(self.combobox_obsid.currentText().replace(uncalibrated_str, ""))
 
+    def _load_database_startup_state(self) -> None:
+        """Load all database-derived startup state through one connection."""
+        dbconnection = db_utils.DbConnectionManager()
+        try:
+            columns_by_table = db_utils.get_columns_for_tables(
+                ("w_levels_logger", "w_logger_series", "about_db"),
+                dbconnection=dbconnection,
+            )
+            timezones = db_utils.get_timezones_from_db(
+                ("w_levels_logger", "w_levels"),
+                dbconnection=dbconnection,
+                about_db_columns=columns_by_table["about_db"],
+            )
+            self.load_obsid_from_db(dbconnection=dbconnection)
+        finally:
+            dbconnection.closedb()
+
+        existing_columns = columns_by_table["w_levels_logger"]
+        has_series_id = "series_id" in existing_columns
+        has_series_table = bool(columns_by_table["w_logger_series"])
+        if has_series_id and has_series_table:
+            self._schema_variant = "series_join"
+        elif "source" in existing_columns:
+            self._schema_variant = "source_col"
+        else:
+            self._schema_variant = "no_source"
+
+        self._existing_columns = existing_columns
+        self.w_levels_logger_tz = timezones["w_levels_logger"]
+        self.w_levels_tz = timezones["w_levels"]
+
     @fn_timer
-    def get_all_obsids_in_w_levels_logger(self):
+    def get_obsids_with_calibration_status(
+        self, obsid=None, dbconnection=None
+    ) -> list[tuple[str, bool]]:
+        """Return one sorted (obsid, is_uncalibrated) row per logger."""
+        with use_or_create_connection(dbconnection) as dbconnection:
+            ph = dbconnection.placeholder()
+            where_sql = "" if obsid is None else f" WHERE obsid = {ph}"
+            if dbconnection.is_sqlite():
+                sql = f"""
+                    SELECT obsid,
+                           CASE WHEN level_masl IS NULL AND head_cm IS NOT NULL
+                                THEN 1 ELSE 0 END AS is_uncalibrated
+                    FROM (
+                        SELECT obsid, MAX(date_time), level_masl, head_cm
+                        FROM w_levels_logger
+                        {where_sql}
+                        GROUP BY obsid
+                    ) latest
+                    ORDER BY obsid
+                    """
+            else:
+                sql = f"""
+                    SELECT obsid,
+                           CASE WHEN level_masl IS NULL AND head_cm IS NOT NULL
+                                THEN TRUE ELSE FALSE END AS is_uncalibrated
+                    FROM (
+                        SELECT DISTINCT ON (obsid)
+                               obsid, level_masl, head_cm
+                        FROM w_levels_logger
+                        {where_sql}
+                        ORDER BY obsid, date_time DESC
+                    ) latest
+                    ORDER BY obsid
+                    """
+
+            execute_args = (obsid,) if obsid is not None else None
+            _ok, rows = db_utils.sql_load_fr_db(
+                sql, dbconnection=dbconnection, execute_args=execute_args
+            )
+            return [(row[0], bool(row[1])) for row in rows]
+
+    @fn_timer
+    def get_all_obsids_in_w_levels_logger(self, dbconnection=None):
         return [
-            row[0]
-            for row in db_utils.sql_load_fr_db(
-                """SELECT DISTINCT obsid FROM w_levels_logger ORDER BY obsid"""
-            )[1]
+            row_obsid
+            for row_obsid, _is_uncalibrated in self.get_obsids_with_calibration_status(
+                dbconnection=dbconnection
+            )
         ]
 
     @fn_timer
-    def get_uncalibrated_obsids(self, obsid=None):
-        dbconnection = db_utils.DbConnectionManager()
-        try:
-            ph = dbconnection.placeholder()
-            if dbconnection.is_sqlite():
-                sql = """SELECT obsid FROM (SELECT obsid, MAX(date_time), level_masl, head_cm FROM w_levels_logger {} GROUP BY obsid)
-                         WHERE level_masl IS NULL AND head_cm IS NOT NULL ORDER BY obsid""".format(
-                    "" if obsid is None else f" WHERE obsid = {ph}"
-                )
-            else:
-                sql = """SELECT obsid FROM
-                        (SELECT DISTINCT ON (obsid) obsid, level_masl, head_cm
-                        FROM w_levels_logger
-                        {}
-                        ORDER BY obsid, date_time desc) foo
-                        WHERE level_masl IS NULL AND head_cm IS NOT NULL ORDER BY obsid""".format(
-                    "" if obsid is None else f" WHERE obsid = {ph}"
-                )
-
-            execute_args = (obsid,) if obsid is not None else None
-            res = [
-                row[0]
-                for row in db_utils.sql_load_fr_db(
-                    sql, dbconnection=dbconnection, execute_args=execute_args
-                )[1]
-            ]
-        except Exception:
-            dbconnection.closedb()
-            raise
-        else:
-            dbconnection.closedb()
-        return res
+    def get_uncalibrated_obsids(self, obsid=None, dbconnection=None):
+        return [
+            row_obsid
+            for row_obsid, is_uncalibrated in self.get_obsids_with_calibration_status(
+                obsid=obsid, dbconnection=dbconnection
+            )
+            if is_uncalibrated
+        ]
 
     @fn_timer
-    def load_obsid_from_db(self):
+    def load_obsid_from_db(self, dbconnection=None):
         self.combobox_obsid.clear()
         self.combobox_obsid.setPlaceholderText(
             QCoreApplication.translate("Calibrlogger", "Select an obsid...")
         )
-        self.combobox_obsid.addItems(self.get_all_obsids_in_w_levels_logger())
-        self.update_combobox_with_calibration_info(
-            _obsids_with_uncalibrated_data=self.get_uncalibrated_obsids()
-        )
+        suffix = " (uncalibrated)"
+        labels = [
+            row_obsid + suffix if is_uncalibrated else row_obsid
+            for row_obsid, is_uncalibrated in self.get_obsids_with_calibration_status(
+                dbconnection=dbconnection
+            )
+        ]
+        self.combobox_obsid.addItems(labels)
         # Start clean: no obsid is loaded until the user picks one.
         self.combobox_obsid.setCurrentIndex(-1)
 
@@ -592,10 +629,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
         num_entries = self.combobox_obsid.count()
 
-        if obsid is None and _obsids_with_uncalibrated_data is None:
-            obsids_with_uncalibrated_data = self.get_uncalibrated_obsids()
-        elif _obsids_with_uncalibrated_data is not None:
-            obsids_with_uncalibrated_data = _obsids_with_uncalibrated_data
+        if _obsids_with_uncalibrated_data is None:
+            _obsids_with_uncalibrated_data = self.get_uncalibrated_obsids(obsid)
+        obsids_with_uncalibrated_data = set(_obsids_with_uncalibrated_data)
 
         for idx in range(num_entries):
             current_obsid = self.combobox_obsid.itemText(idx).replace(
@@ -606,10 +642,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 # If obsid was given, only continue loop for that one:
                 if current_obsid != obsid:
                     continue
-                if obsids_with_uncalibrated_data is None:
-                    obsids_with_uncalibrated_data = self.get_uncalibrated_obsids(
-                        current_obsid
-                    )
 
             if current_obsid in obsids_with_uncalibrated_data:
                 new_text = current_obsid + uncalibrated_str

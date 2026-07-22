@@ -21,6 +21,8 @@
 
 import datetime
 import math
+import statistics
+import time
 from types import SimpleNamespace
 from unittest import mock
 
@@ -30,6 +32,25 @@ import pytest
 from midvatten.tools.loggereditor import LoggerEditor
 from midvatten.tools.utils import db_utils, date_utils, gui_utils
 from midvatten.test import utils_for_tests
+
+
+def test_database_startup_closes_connection_after_metadata_failure():
+    editor = LoggerEditor.__new__(LoggerEditor)
+    connection = mock.MagicMock()
+    connection.is_sqlite.return_value = True
+    connection.sql_ident.return_value = "PRAGMA table_info(w_levels_logger)"
+    connection.execute_and_fetchall.side_effect = RuntimeError("metadata failed")
+
+    with (
+        mock.patch(
+            "midvatten.tools.loggereditor.db_utils.DbConnectionManager",
+            return_value=connection,
+        ),
+        pytest.raises(RuntimeError, match="metadata failed"),
+    ):
+        editor._load_database_startup_state()
+
+    connection.closedb.assert_called_once_with()
 
 
 class CalibrloggerMixin:
@@ -117,6 +138,82 @@ class CalibrloggerMixin:
         assert calibrlogger.selected_obsid == ""
         assert calibrlogger.obsid == ""
         assert calibrlogger._buf is None
+
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_obsid_calibration_summary_combines_labels_and_status(
+        self, mock_messagebar
+    ):
+        dbconnection = db_utils.DbConnectionManager()
+        try:
+            ph = dbconnection.placeholder()
+            for obsid in ("calibrated", "uncalibrated", "no_head"):
+                dbconnection.execute_and_commit(
+                    f"INSERT INTO obs_points (obsid) VALUES ({ph})", (obsid,)
+                )
+        finally:
+            dbconnection.closedb()
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger"
+            " (obsid, date_time, head_cm, level_masl) VALUES"
+            " ('calibrated', '2024-01-01 00:00:00', 100, NULL),"
+            " ('calibrated', '2024-01-02 00:00:00', 100, 10),"
+            " ('uncalibrated', '2024-01-01 00:00:00', 100, NULL),"
+            " ('no_head', '2024-01-01 00:00:00', NULL, NULL)"
+        )
+
+        editor = LoggerEditor(self.iface, self.midvatten.ms)
+        summary = editor.get_obsids_with_calibration_status()
+
+        print(f"{mock_messagebar.mock_calls=}")
+        assert summary == [
+            ("calibrated", False),
+            ("no_head", False),
+            ("uncalibrated", True),
+        ]
+        assert editor.get_all_obsids_in_w_levels_logger() == [
+            "calibrated",
+            "no_head",
+            "uncalibrated",
+        ]
+        assert editor.get_uncalibrated_obsids() == ["uncalibrated"]
+        assert editor.get_obsids_with_calibration_status("calibrated") == [
+            ("calibrated", False)
+        ]
+
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_database_startup_roundtrip_contract(self, mock_messagebar):
+        inner_connection = db_utils.DbConnectionManager()
+
+        class RecordingConnection:
+            def __init__(self, connection):
+                self.connection = connection
+                self.queries = 0
+                self.close_calls = 0
+
+            def __getattr__(self, name):
+                return getattr(self.connection, name)
+
+            def execute_and_fetchall(self, sql, args=None):
+                self.queries += 1
+                return self.connection.execute_and_fetchall(sql, args=args)
+
+            def closedb(self):
+                self.close_calls += 1
+                self.connection.closedb()
+
+        recording = RecordingConnection(inner_connection)
+        editor = LoggerEditor(self.iface, self.midvatten.ms)
+        with mock.patch(
+            "midvatten.tools.loggereditor.db_utils.DbConnectionManager",
+            return_value=recording,
+        ) as connection_factory:
+            editor._load_database_startup_state()
+
+        print(f"{mock_messagebar.mock_calls=}")
+        connection_factory.assert_called_once_with()
+        assert recording.close_calls == 1
+        expected_queries = 5 if inner_connection.is_sqlite() else 3
+        assert recording.queries == expected_queries
 
     @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_calibrlogger_set_log_pos(self, mock_messagebar):
@@ -1126,6 +1223,87 @@ class CalibrloggerSpatialiteMixin(CalibrloggerMixin):
     def test_automatic_fit_has_no_logger_elevation_entry_point(self):
         assert not hasattr(LoggerEditor, "logger_pos_best_fit")
         assert hasattr(LoggerEditor, "level_masl_best_fit")
+
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_database_startup_reuses_one_connection_and_measures_latency(
+        self, mock_messagebar
+    ):
+        """Compare the legacy and optimized paths under simulated latency."""
+        original_init = db_utils.DbConnectionManager.__init__
+        original_fetchall = db_utils.DbConnectionManager.execute_and_fetchall
+
+        def legacy_startup(editor):
+            # Exact pre-optimization round-trip shape: two logger queries,
+            # two timezone metadata/query pairs, and two schema probes.
+            editor.get_all_obsids_in_w_levels_logger()
+            editor.get_uncalibrated_obsids()
+            for timezone_table in ("w_levels_logger", "w_levels"):
+                connection = db_utils.DbConnectionManager()
+                try:
+                    db_utils.tables_columns("about_db", connection)
+                    ph = connection.placeholder()
+                    connection.execute_and_fetchall(
+                        "SELECT description FROM about_db "
+                        f"WHERE tablename = {ph} "
+                        "AND columnname = 'date_time' LIMIT 1",
+                        (timezone_table,),
+                    )
+                finally:
+                    connection.closedb()
+            for table_name in ("w_levels_logger", "w_logger_series"):
+                connection = db_utils.DbConnectionManager()
+                try:
+                    db_utils.tables_columns(table_name, connection)
+                finally:
+                    connection.closedb()
+
+        def measure(operation):
+            elapsed_samples = []
+            observed_counts = []
+            for _ in range(5):
+                counts = {"connections": 0, "queries": 0}
+
+                def delayed_init(connection, *args, **kwargs):
+                    counts["connections"] += 1
+                    time.sleep(0.04)
+                    original_init(connection, *args, **kwargs)
+
+                def delayed_fetchall(connection, sql, args=None):
+                    counts["queries"] += 1
+                    time.sleep(0.01)
+                    return original_fetchall(connection, sql, args=args)
+
+                editor = LoggerEditor(self.iface, self.midvatten.ms)
+                started = time.perf_counter()
+                with (
+                    mock.patch.object(
+                        db_utils.DbConnectionManager, "__init__", delayed_init
+                    ),
+                    mock.patch.object(
+                        db_utils.DbConnectionManager,
+                        "execute_and_fetchall",
+                        delayed_fetchall,
+                    ),
+                ):
+                    operation(editor)
+                elapsed_samples.append(time.perf_counter() - started)
+                observed_counts.append(dict(counts))
+            return statistics.median(elapsed_samples), observed_counts
+
+        legacy_elapsed, legacy_counts = measure(legacy_startup)
+        optimized_elapsed, optimized_counts = measure(
+            lambda editor: editor._load_database_startup_state()
+        )
+        speedup = legacy_elapsed / optimized_elapsed
+        print(
+            "logger startup simulated-network medians: "
+            f"legacy={legacy_elapsed:.3f}s, optimized={optimized_elapsed:.3f}s, "
+            f"speedup={speedup:.2f}x"
+        )
+        print(f"{mock_messagebar.mock_calls=}")
+        assert legacy_counts == [{"connections": 6, "queries": 12}] * 5
+        assert optimized_counts == [{"connections": 1, "queries": 5}] * 5
+        assert optimized_elapsed < legacy_elapsed * 0.6
 
     @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_calibrlogger_adjust_trend(self, mock_messagebar):

@@ -90,6 +90,20 @@ class TablesColumnsMixin:
         for tablename in ["geometry_columns", "spatial_ref_sys"]:
             assert tablename not in tables_columns
 
+    def test_get_columns_for_tables_includes_missing_tables(self):
+        dbconnection = db_utils.DbConnectionManager()
+        try:
+            columns = db_utils.get_columns_for_tables(
+                ("w_levels_logger", "w_logger_series", "missing_table"),
+                dbconnection=dbconnection,
+            )
+        finally:
+            dbconnection.closedb()
+
+        assert "obsid" in columns["w_levels_logger"]
+        assert "source" in columns["w_logger_series"]
+        assert columns["missing_table"] == []
+
 
 class GetForeignKeysMixin:
     def test_get_foreign_keys(self):
@@ -160,6 +174,34 @@ class GetTimezoneFromDbMixin:
         )
         tz = db_utils.get_timezone_from_db("w_levels")
         assert tz == "Europe/Stockholm"
+
+    def test_get_timezones_from_db_uses_one_result_for_multiple_tables(self):
+        db_utils.sql_alter_db(
+            """UPDATE about_db SET description = description || ' (UTC+1)'
+            WHERE tablename = 'w_levels_logger' and columnname = 'date_time';"""
+        )
+        db_utils.sql_alter_db(
+            """UPDATE about_db SET description = description || ' (Europe/Stockholm)'
+            WHERE tablename = 'w_levels' and columnname = 'date_time';"""
+        )
+        dbconnection = db_utils.DbConnectionManager()
+        try:
+            about_db_columns = db_utils.get_columns_for_tables(
+                ("about_db",), dbconnection=dbconnection
+            )["about_db"]
+            timezones = db_utils.get_timezones_from_db(
+                ("w_levels_logger", "w_levels", "missing_table"),
+                dbconnection=dbconnection,
+                about_db_columns=about_db_columns,
+            )
+        finally:
+            dbconnection.closedb()
+
+        assert timezones == {
+            "w_levels_logger": "UTC+1",
+            "w_levels": "Europe/Stockholm",
+            "missing_table": None,
+        }
 
 
 class SqlInjectionHardeningMixin:

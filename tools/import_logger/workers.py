@@ -172,7 +172,8 @@ class LoggerDbImportWorker(LoggerWorker):
         self.progress.emit(message)
 
     def _prepare_frame(self, connection) -> tuple[pd.DataFrame, int | None]:
-        frame = self.request.frame.copy(deep=True)
+        # general_import owns the defensive copy at the database boundary.
+        frame = self.request.frame
         series = self.request.series
         if series is None:
             return frame, None

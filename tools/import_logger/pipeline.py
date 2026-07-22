@@ -31,6 +31,8 @@ _BARO_DESTINATION = {
     "baro_cmh2o": ("pressure", "cmH2O"),
     "temp_degc": ("temp", "°C"),
 }
+# Parameters that must exist in zz_meteoparam for barometric imports.
+_BARO_METEO_PARAMS: tuple[tuple[str, str], ...] = (("pressure", "Barometric pressure"),)
 
 
 class LoggerPipelineError(ValueError):
@@ -114,18 +116,21 @@ def reconcile_transformed_timestamp_collisions(
     if len(before.data) != len(after.data):
         raise LoggerPipelineError("timezone reconciliation requires aligned frames")
 
-    before_dates = before.data["date_time"].reset_index(drop=True)
-    data = after.data.reset_index(drop=True).copy()
+    duplicate_mask = after.data["date_time"].duplicated(keep=False)
+    if not duplicate_mask.any():
+        return _copy_with_data(after, after.data)
+
+    before_dates = before.data["date_time"]
+    data = after.data.copy()
     collision_indices: list[list[int]] = []
-    for _, indices in data.groupby("date_time", sort=False).groups.items():
+    duplicated = data.loc[duplicate_mask]
+    for _, indices in duplicated.groupby("date_time", sort=False).groups.items():
         positions = list(indices)
-        if len(positions) < 2:
-            continue
         if before_dates.iloc[positions].nunique(dropna=False) > 1:
             collision_indices.append(positions)
 
     if not collision_indices:
-        return _copy_with_data(after, data)
+        return replace(after, data=data)
 
     discard_indices: list[int] = []
     conflict_count = 0

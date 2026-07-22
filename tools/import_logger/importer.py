@@ -49,8 +49,9 @@ from .models import (
     LoggerSeriesSpec,
     PreparedLoggerFile,
 )
-from .parsers import _BARO_METEO_PARAMS, TzConverter
+from .parsers import TzConverter
 from .pipeline import (
+    _BARO_METEO_PARAMS,
     InvalidLatestDateError,
     parse_latest_dates,
     run_post_resolution_pipeline,

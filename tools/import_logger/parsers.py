@@ -23,6 +23,8 @@ from midvatten.tools.utils import (
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.common_utils import format_timezone_string
 from midvatten.tools.import_logger.models import (
+    CANONICAL_COLUMNS,
+    MEASUREMENT_COLUMNS,
     LoggerDataKind,
     ParsedLoggerFile,
     empty_logger_frame,
@@ -44,13 +46,14 @@ def fix_date(date_time: str, filename: str) -> datetime.datetime:
     """Parse one HOBO timestamp using only documented source formats."""
     value = str(date_time).strip()
     suffix_match = re.fullmatch(r"(.+?)\s+([A-Za-z]{2})", value)
-    if suffix_match and suffix_match.group(2).casefold() in {
+    suffix = suffix_match.group(2).casefold() if suffix_match else None
+    if suffix in {
         "am",
         "pm",
         "fm",
         "em",
     }:
-        meridiem = "AM" if suffix_match.group(2).casefold() in {"am", "fm"} else "PM"
+        meridiem = "AM" if suffix in {"am", "fm"} else "PM"
         try:
             return datetime.datetime.strptime(
                 f"{suffix_match.group(1)} {meridiem}",
@@ -94,10 +97,7 @@ def get_tz_string(date_time_tz: str) -> str | None:
     'GMT-2:00'
     """
     match = re.match(r"Date Time, ([A-Za-z0-9\+\-\:]+)", date_time_tz, re.IGNORECASE)
-    if not match:
-        return None
-    else:
-        return match.group(1)
+    return match.group(1) if match else None
 
 
 def _parse_explicit_datetimes(
@@ -121,16 +121,14 @@ def _parse_explicit_datetimes(
 def _canonical_frame(data: pd.DataFrame) -> pd.DataFrame:
     """Add absent numeric channels once and return the exact parser schema."""
     result = data.copy()
-    for column in ("head_cm", "temp_degc", "cond_mscm", "baro_cmh2o"):
+    for column in MEASUREMENT_COLUMNS:
         if column not in result.columns:
             result[column] = float("nan")
         result[column] = pd.to_numeric(result[column]).astype("float64")
     if "date_time" not in result.columns:
         return empty_logger_frame()
     result["date_time"] = result["date_time"].astype("datetime64[ns]")
-    return result.loc[
-        :, ["date_time", "head_cm", "temp_degc", "cond_mscm", "baro_cmh2o"]
-    ].reset_index(drop=True)
+    return result.loc[:, CANONICAL_COLUMNS].reset_index(drop=True)
 
 
 # ── GUI components ─────────────────────────────────────────────────────────────
@@ -524,11 +522,9 @@ class DiverOfficeParser:
         col_map: dict[str, str],
         kind: LoggerDataKind,
     ) -> ParsedLoggerFile:
-        _col_map = col_map
-
         def mapped_output_name(header: str) -> str | None:
             normalized = header.lower().replace(" ", "")
-            for keyword, outcol in _col_map.items():
+            for keyword, outcol in col_map.items():
                 if keyword in normalized:
                     return outcol
             return None
@@ -813,7 +809,7 @@ class DiverOfficeParser:
         usecols = [pair[0] for pair in sorted_pairs]
         colnames = [pair[1] for pair in sorted_pairs]
 
-        if "head_cm" in _col_map.values() and "head_cm" not in colnames:
+        if "head_cm" in col_map.values() and "head_cm" not in colnames:
             message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
                     "LoggerImport",
@@ -860,10 +856,6 @@ class DiverOfficeBaroParser:
             col_map=_DIVEROFFICE_BARO_COL_MAP,
             kind=LoggerDataKind.BAROMETRIC,
         )
-
-
-# Parameters that must exist in zz_meteoparam for barometric imports.
-_BARO_METEO_PARAMS: tuple[tuple[str, str], ...] = (("pressure", "Barometric pressure"),)
 
 
 def _strict_numeric_series(
@@ -1078,12 +1070,9 @@ class HoboParser:
             if any(len(row) != len(header) for row in source_rows):
                 raise FileError(f"Ragged data row in {filename}")
             source = pd.DataFrame(source_rows, columns=header)
-            try:
-                parsed_dates = source.iloc[:, date_index].map(
-                    lambda value: fix_date(value, filename)
-                )
-            except FileError:
-                raise
+            parsed_dates = source.iloc[:, date_index].map(
+                lambda value: fix_date(value, filename)
+            )
             data = pd.DataFrame(
                 {
                     "date_time": pd.to_datetime(parsed_dates),

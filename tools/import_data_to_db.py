@@ -24,9 +24,10 @@ import re
 import traceback
 from functools import wraps
 from operator import itemgetter
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Optional, TypeAlias
 
 import pandas as pd
+from pandas.api.types import is_datetime64_any_dtype
 import psycopg2
 import psycopg2.extras
 from qgis.PyQt.QtCore import QCoreApplication
@@ -35,6 +36,41 @@ from midvatten.tools.utils import common_utils, db_utils, dialog_utils, message_
 from midvatten.tools.utils.exceptions import UserInterruptError
 from midvatten.tools.utils.db_utils import DbConnectionManager
 from midvatten.tools.utils.date_utils import instant_key
+
+
+ImportData: TypeAlias = list[list[object]] | pd.DataFrame
+
+
+def _as_import_frame(file_data: ImportData) -> pd.DataFrame:
+    """Normalize legacy rows or a typed frame at the one import boundary."""
+    if isinstance(file_data, pd.DataFrame):
+        frame = file_data.copy(deep=True)
+    elif isinstance(file_data, list):
+        if not file_data:
+            return pd.DataFrame()
+        header = file_data[0]
+        if not isinstance(header, (list, tuple)):
+            raise MidvDataImporterError(
+                QCoreApplication.translate(
+                    "midv_data_importer",
+                    "The first import row must contain column names.",
+                )
+            )
+        frame = pd.DataFrame.from_records(file_data[1:], columns=header)
+    else:
+        raise MidvDataImporterError(
+            QCoreApplication.translate(
+                "midv_data_importer",
+                "Import data must be a list of rows or a pandas DataFrame.",
+            )
+        )
+    if not frame.columns.is_unique:
+        raise MidvDataImporterError(
+            QCoreApplication.translate(
+                "midv_data_importer", "Import column names must be unique."
+            )
+        )
+    return frame.reset_index(drop=True)
 
 
 class MidvDataImporter:  # this class is intended to be a multipurpose import class  BUT loggerdata probably needs specific importer or its own subfunction
@@ -51,7 +87,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
     def general_import(
         self,
         dest_table: str,
-        file_data: Any,
+        file_data: ImportData,
         allow_obs_fk_import: bool = False,
         _dbconnection: Optional[DbConnectionManager] = None,
         dump_temptable: bool = False,
@@ -63,7 +99,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         manage_wait_cursor: bool = True,
         raise_insert_errors: bool = False,
     ) -> int:
-        """General method for importing a list of list to a table
+        """General method for importing legacy rows or a pandas DataFrame.
 
             self.temptableName must be the name of the table containing the new data to import.
 
@@ -90,7 +126,8 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
 
         dbconnection: Optional[DbConnectionManager] = None
         try:
-            if file_data is None or not file_data:
+            import_frame = _as_import_frame(file_data)
+            if import_frame.empty:
                 return 0
             message_utils.MessagebarAndLog.info(
                 log_msg=QCoreApplication.translate(
@@ -119,7 +156,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 existing_columns_in_dest_table,
                 existing_columns_in_temptable,
                 primary_keys_for_concat,
-            ) = self._validate_and_connect(dest_table, file_data, _dbconnection)
+            ) = self._validate_and_connect(dest_table, import_frame, _dbconnection)
 
             if "date_time" in primary_keys:
                 if progress_callback:
@@ -133,7 +170,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                     dbconnection, dest_table, primary_keys
                 )
 
-            recsinfile = len(file_data[1:])
+            recsinfile = len(import_frame)
             all_rownumbers = tuple(range(recsinfile))
             remaining_rownumbers = tuple(all_rownumbers)
 
@@ -144,8 +181,8 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                     )
                 )
 
-            in_file_dups, in_file_dup_rownumbers = self.list_to_table(
-                dbconnection, dest_table, file_data, primary_keys_for_concat
+            in_file_dups, in_file_dup_rownumbers = self.dataframe_to_table(
+                dbconnection, dest_table, import_frame, primary_keys_for_concat
             )
 
             sql_remaining = dbconnection.sql_ident(
@@ -153,16 +190,24 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 rowid=self.temptable_rowid_name,
                 t=self.temptable_name,
             )
-            get_remaining_rownumbers = lambda: [
-                x[0] for x in dbconnection.execute_and_fetchall(sql_remaining)
-            ]
-            get_removed_rownumbers = lambda start_numbers, remaining: [
-                x for x in start_numbers if x not in set(remaining)
-            ]
-            get_row_subset = lambda rownumbers: [
-                ", ".join([str(x) for x in file_data[1:][rownr]])
-                for rownr in rownumbers[:10]
-            ]
+
+            def get_remaining_rownumbers() -> list[int]:
+                return [x[0] for x in dbconnection.execute_and_fetchall(sql_remaining)]
+
+            def get_removed_rownumbers(
+                start_numbers: tuple[int, ...] | list[int],
+                remaining: tuple[int, ...] | list[int],
+            ) -> list[int]:
+                remaining_set = set(remaining)
+                return [x for x in start_numbers if x not in remaining_set]
+
+            def get_row_subset(
+                rownumbers: tuple[int, ...] | list[int],
+            ) -> list[str]:
+                return [
+                    ", ".join(str(value) for value in import_frame.iloc[rownr].tolist())
+                    for rownr in rownumbers[:10]
+                ]
 
             if progress_callback:
                 progress_callback(
@@ -303,9 +348,9 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
     def _validate_and_connect(
         self,
         dest_table: str,
-        file_data: Any,
+        import_frame: pd.DataFrame,
         _dbconnection: Optional[DbConnectionManager],
-    ) -> Tuple:
+    ) -> tuple:
         """Set up DB connection, activate foreign keys, introspect schema, validate columns.
 
         Returns (dbconnection, table_info, column_headers_types, primary_keys,
@@ -345,9 +390,9 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         ]
         # Only use the columns that exist in the goal table.
         existing_columns_in_dest_table = [
-            col for col in file_data[0] if col in column_headers_types
+            col for col in import_frame.columns if col in column_headers_types
         ]
-        existing_columns_in_temptable = file_data[0]
+        existing_columns_in_temptable = import_frame.columns.tolist()
         missing_columns = [
             column
             for column in not_null_columns
@@ -382,15 +427,15 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         self,
         dbconnection: DbConnectionManager,
         dest_table: str,
-        primary_keys: List[str],
-        all_rownumbers: Tuple,
-        remaining_rownumbers: Tuple,
+        primary_keys: list[str],
+        all_rownumbers: tuple,
+        remaining_rownumbers: tuple,
         get_remaining_rownumbers: Callable,
         get_removed_rownumbers: Callable,
         get_row_subset: Callable,
-        in_file_dup_rownumbers: List[int],
-        import_messages: List[str],
-    ) -> Tuple:
+        in_file_dup_rownumbers: list[int],
+        import_messages: list[str],
+    ) -> tuple:
         """Delete temp rows whose date_time already exists in the destination table.
 
         Returns (remaining_rownumbers, import_messages, already_in_db_count), where
@@ -457,13 +502,13 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         self,
         dbconnection: DbConnectionManager,
         dest_table: str,
-        existing_columns_in_dest_table: List[str],
-        remaining_rownumbers: Tuple,
+        existing_columns_in_dest_table: list[str],
+        remaining_rownumbers: tuple,
         get_remaining_rownumbers: Callable,
         get_removed_rownumbers: Callable,
         get_row_subset: Callable,
-        import_messages: List[str],
-    ) -> Tuple:
+        import_messages: list[str],
+    ) -> tuple:
         """Apply table-specific pre-import transformations.
 
         Handles stratigraphy validation and w_qual_field unit normalization.
@@ -515,9 +560,9 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
 
     def _ask_user_to_proceed(
         self,
-        remaining_rownumbers: Tuple,
-        all_rownumbers: Tuple,
-        import_messages: List[str],
+        remaining_rownumbers: tuple,
+        all_rownumbers: tuple,
+        import_messages: list[str],
     ) -> None:
         """Confirm only when rows would actually be dropped (real data loss).
 
@@ -565,7 +610,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         self,
         dbconnection: DbConnectionManager,
         dest_table: str,
-        existing_columns_in_temptable: List[str],
+        existing_columns_in_temptable: list[str],
         allow_obs_fk_import: bool,
     ) -> None:
         """Detect and import foreign key rows for the destination table."""
@@ -595,10 +640,10 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         self,
         dbconnection: DbConnectionManager,
         dest_table: str,
-        existing_columns_in_dest_table: List[str],
-        existing_columns_in_temptable: List[str],
-        column_headers_types: Dict[str, str],
-        not_null_columns: List[str],
+        existing_columns_in_dest_table: list[str],
+        existing_columns_in_temptable: list[str],
+        column_headers_types: dict[str, str],
+        not_null_columns: list[str],
         source_srid: Optional[int],
         binary_geometry: bool,
         raise_insert_errors: bool,
@@ -720,23 +765,30 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         self,
         dbconnection: DbConnectionManager,
         destination_table: str,
-        file_data: List[Any],
-        primary_keys_for_concat: List[str],
-    ) -> Tuple[int, List[int]]:
-        """
-        TODO: This method can be extremely slow sometimes.
-        @param dbconnection:
-        @param destination_table:
-        @param file_data:
-        @param primary_keys_for_concat:
-        @return: (number of in-file duplicates skipped, their original row-numbers)
-        """
-        # field_name comes from the imported file's header row (user-supplied),
-        # so it must be safely quoted before being spliced into CREATE TABLE.
-        # quote_ident (not ident) is used so non-ASCII headers (e.g. Swedish
-        # å/ä/ö) are preserved rather than rejected.
+        file_data: ImportData,
+        primary_keys_for_concat: list[str],
+    ) -> tuple[int, list[int]]:
+        """Legacy staging wrapper retained for non-logger callers and tests."""
+        return self.dataframe_to_table(
+            dbconnection,
+            destination_table,
+            _as_import_frame(file_data),
+            primary_keys_for_concat,
+        )
+
+    def dataframe_to_table(
+        self,
+        dbconnection: DbConnectionManager,
+        destination_table: str,
+        import_frame: pd.DataFrame,
+        primary_keys_for_concat: list[str],
+    ) -> tuple[int, list[int]]:
+        """Create and bulk-load the import staging table from a normalized frame."""
+        # Field names originate in imported data and therefore require quoting.
+        # quote_ident preserves valid non-ASCII names while preventing injection.
         fieldnames_types = [
-            f"{db_utils.quote_ident(field_name)} TEXT" for field_name in file_data[0]
+            f"{db_utils.quote_ident(field_name)} TEXT"
+            for field_name in import_frame.columns
         ]
         tname = f"temp_{destination_table}_temp"
         self.temptable_rowid_name = f"{tname}_rowid"
@@ -745,11 +797,11 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             tname, fieldnames_types
         )
 
-        numskipped, in_file_dup_rownumbers = self.list_to_table_using_pandas(
+        numskipped, in_file_dup_rownumbers = self.dataframe_to_table_using_pandas(
             dbconnection,
             self.temptable_name,
             self.temptable_rowid_name,
-            file_data,
+            import_frame,
             primary_keys_for_concat,
         )
 
@@ -770,69 +822,67 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             )
         return numskipped, in_file_dup_rownumbers
 
-    def list_to_table_using_pandas(
+    def dataframe_to_table_using_pandas(
         self,
         dbconnection: DbConnectionManager,
         temptable_name: str,
         temptable_rowidcol: str,
-        file_data: List[Any],
-        primary_keys_for_concat: List[str],
-    ) -> Tuple[int, List[int]]:
+        import_frame: pd.DataFrame,
+        primary_keys_for_concat: list[str],
+    ) -> tuple[int, list[int]]:
+        """Deduplicate and bulk-load a normalized import frame."""
         numskipped = 0
-        in_file_dup_rownumbers: List[int] = []
-        df = pd.DataFrame.from_records(file_data[1:], columns=file_data[0])
-        df[temptable_rowidcol] = df.index
+        in_file_dup_rownumbers: list[int] = []
+        df = import_frame.copy(deep=True).reset_index(drop=True)
+        df[temptable_rowidcol] = range(len(df))
 
         if primary_keys_for_concat:
-            # Dedup key: normalize date_time to its second-instant so '00:00' and
-            # '00:00:00' collapse, but fall back to the RAW text when unparseable so
-            # distinct malformed dates are not merged (they escape the normalized
-            # uniqueness in the DB too). The stored date_time stays raw — we compute
-            # the key on a separate frame and never mutate df's columns.
             key_df = df[list(primary_keys_for_concat)].copy()
             if "date_time" in key_df.columns:
-                key_df["date_time"] = key_df["date_time"].map(
-                    lambda v: instant_key(v) or v
-                )
+                date_values = key_df["date_time"]
+                if is_datetime64_any_dtype(date_values.dtype):
+                    key_df["date_time"] = date_values.dt.floor("s")
+                else:
+                    key_df["date_time"] = date_values.map(
+                        lambda value: instant_key(value) or value
+                    )
             duplicate_mask = key_df.duplicated(keep="first")
-            # Original file row-numbers of the in-file duplicates, so the caller can
-            # report them separately from rows that already exist in the database.
             in_file_dup_rownumbers = df.loc[duplicate_mask, temptable_rowidcol].tolist()
             numskipped = len(in_file_dup_rownumbers)
-            df = df[~duplicate_mask].reset_index(drop=True)
+            df = df.loc[~duplicate_mask].reset_index(drop=True)
 
         for column in df.columns:
-            try:
-                df[column] = df[column].str.strip()
-            except (AttributeError, TypeError):
-                # Not a string column
-                pass
-            pass
+            if is_datetime64_any_dtype(df[column].dtype):
+                df[column] = df[column].dt.strftime("%Y-%m-%d %H:%M:%S")
+                continue
+            if df[column].dtype == object or isinstance(
+                df[column].dtype, pd.StringDtype
+            ):
+                df[column] = df[column].map(
+                    lambda value: value.strip() if isinstance(value, str) else value
+                )
 
-        # Replaces NaN with None and empty strings with None so all insert paths
-        # treat missing values as SQL NULL without needing post-insert UPDATE queries.
-        df = df.astype(object).where(pd.notnull(df), None)
-        df = df.replace("", None)
+        # Database drivers receive Python None for every pandas null. Numeric
+        # values remain numeric; only datetime columns are formatted to text.
+        df = df.astype(object).where(pd.notnull(df), None).replace("", None)
 
         if dbconnection.is_sqlite():
-            sql = f"INSERT INTO {dbconnection.ident(temptable_name)} VALUES ({dbconnection.placeholders(len(df.columns))})"
-
-            dbconnection.cursor.executemany(sql, list(df.itertuples(index=False)))
+            sql = (
+                f"INSERT INTO {dbconnection.ident(temptable_name)} VALUES "
+                f"({dbconnection.placeholders(len(df.columns))})"
+            )
+            dbconnection.cursor.executemany(sql, df.itertuples(index=False, name=None))
         else:
             csv_buffer = io.StringIO()
             df.to_csv(csv_buffer, index=False, header=False, sep=";")
             csv_buffer.seek(0)
             try:
-                # null="" tells COPY to treat empty CSV fields as SQL NULL, consistent
-                # with df.replace("", None) above.
                 dbconnection.cursor.copy_from(
                     csv_buffer, temptable_name, sep=";", null=""
                 )
             except psycopg2.errors.BadCopyFileFormat:
-                # This is probably due to the separator exists in the values.
-                data = list(df.itertuples(index=False))
+                data = list(df.itertuples(index=False, name=None))
                 ph = dbconnection.placeholders(len(df.columns))
-
                 sql = dbconnection.sql_ident(
                     "INSERT INTO {t} VALUES %s",
                     t=temptable_name,
@@ -845,7 +895,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
 
     def delete_existing_date_times_from_temptable(
         self,
-        primary_keys: List[str],
+        primary_keys: list[str],
         dest_table: str,
         dbconnection: DbConnectionManager,
     ) -> int:
@@ -888,7 +938,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         self,
         dbconnection: DbConnectionManager,
         dest_table: str,
-        primary_keys: List[str],
+        primary_keys: list[str],
     ) -> bool:
         """Whether an index can satisfy the normalized duplicate lookup.
 
@@ -932,7 +982,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         self,
         dbconnection: DbConnectionManager,
         dest_table: str,
-        primary_keys: List[str],
+        primary_keys: list[str],
     ) -> bool:
         """Create the lookup index required by normalized duplicate removal.
 
@@ -1046,7 +1096,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         return sql.format(**kwargs)
 
     def check_and_delete_stratigraphy(
-        self, existing_columns: List[str], dbconnection: DbConnectionManager
+        self, existing_columns: list[str], dbconnection: DbConnectionManager
     ) -> None:
         if all(
             [
@@ -1140,8 +1190,8 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         dbconnection: DbConnectionManager,
         dest_table: str,
         temptablename: str,
-        foreign_keys: Dict[str, List[Tuple[str, str]]],
-        existing_columns_in_temptable: List[str],
+        foreign_keys: dict[str, list[tuple[str, str]]],
+        existing_columns_in_temptable: list[str],
     ) -> None:
         # TODO: Empty foreign keys are probably imported now. Must add "case when...NULL" to a couple of sql questions here
 

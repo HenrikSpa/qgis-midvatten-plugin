@@ -24,11 +24,28 @@ from collections import OrderedDict
 
 from unittest import mock
 from unittest.mock import call
+import pandas as pd
 import pytest
+from pandas.testing import assert_frame_equal
 
 from midvatten.test import utils_for_tests
-from midvatten.tools.import_data_to_db import MidvDataImporterError
+from midvatten.tools.import_data_to_db import (
+    MidvDataImporterError,
+    _as_import_frame,
+)
 from midvatten.tools.utils import db_utils, string_utils
+
+
+def test_as_import_frame_copies_dataframe_and_rejects_duplicate_columns():
+    source = pd.DataFrame([[1, 2]], columns=["value", "value"])
+
+    with pytest.raises(MidvDataImporterError, match="unique"):
+        _as_import_frame(source)
+
+
+def test_as_import_frame_rejects_non_list_non_dataframe():
+    with pytest.raises(MidvDataImporterError, match="list of rows"):
+        _as_import_frame((1, 2, 3))
 
 
 class GeneralImportMixin:
@@ -54,6 +71,48 @@ class GeneralImportMixin:
         print(f"{mock_messagebar.mock_calls=}")
         print(test_string)
         assert test_string == reference_string
+
+    @pytest.mark.parametrize("use_dataframe", [False, True])
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
+    def test_general_import_list_dataframe_parity(self, mock_messagebar, use_dataframe):
+        legacy_data = [
+            ["obsid", "date_time", "head_cm", "temp_degc"],
+            ["rb1", "2025-01-01 00:00:00", 1.0, None],
+            ["rb1", "2025-01-01 00:00:00", 2.0, 5.0],
+            ["rb1", "2025-01-01 00:00:01", None, 6.0],
+        ]
+        if use_dataframe:
+            file_data = pd.DataFrame(legacy_data[1:], columns=legacy_data[0])
+            file_data["date_time"] = pd.to_datetime(
+                file_data["date_time"], format="%Y-%m-%d %H:%M:%S"
+            )
+            original = file_data.copy(deep=True)
+        else:
+            file_data = legacy_data
+            original = None
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+
+        imported = self.importinstance.general_import(
+            dest_table="w_levels_logger",
+            file_data=file_data,
+            skip_confirmation=True,
+        )
+
+        print(mock_messagebar.mock_calls)
+        assert imported == 2
+        assert db_utils.sql_load_fr_db(
+            "SELECT date_time, head_cm, temp_degc FROM w_levels_logger "
+            "WHERE obsid='rb1' ORDER BY date_time"
+        ) == (
+            True,
+            [
+                ("2025-01-01 00:00:00", 1.0, None),
+                ("2025-01-01 00:00:01", None, 6.0),
+            ],
+        )
+        if original is not None:
+            assert_frame_equal(file_data, original)
 
     @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())

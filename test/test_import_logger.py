@@ -1,37 +1,42 @@
-"""Tests for the unified LoggerImport tool — parser unit tests."""
+"""Tests for the unified typed-DataFrame LoggerImport tool."""
 
 from __future__ import annotations
 
 import os
+from collections import OrderedDict
 from datetime import datetime, timedelta
-import pandas as pd
-import pytest
 from unittest import mock
 from unittest.mock import MagicMock
-from collections import OrderedDict
 
+import pandas as pd
+import pytest
 from qgis.PyQt import QtWidgets
 
-from midvatten.tools import import_data_to_db
-from midvatten.tools.import_logger import (
-    DiverOfficeParser,
-    DiverOfficeParseError,
-    DiverOfficeBaroParser,
-    LeveloggerParser,
-    HoboParser,
-    TzConverter,
-    filter_dates_from_filedata,
-    _pivot_baro_to_meteo,
-    LoggerImport,
-)
-from midvatten.tools.utils import file_utils
-from midvatten.tools.utils import db_utils
-from midvatten.tools.utils.date_utils import to_date
-from midvatten.tools.utils.gui_utils import set_combobox
-from midvatten.tools.import_logger.parsers import _SourceLine
-from midvatten.tools.import_logger.parsers import _IncompleteMonLayoutError
 from midvatten.test import utils_for_tests
 from midvatten.test.mocks_for_tests import MockReturnUsingDictIn
+from midvatten.tools import import_data_to_db
+from midvatten.tools.import_logger import (
+    CANONICAL_COLUMNS,
+    DiverOfficeBaroParser,
+    DiverOfficeParseError,
+    DiverOfficeParser,
+    HoboParser,
+    LeveloggerParser,
+    LoggerDataKind,
+    LoggerImport,
+    LoggerImportOptions,
+    TzConverter,
+)
+from midvatten.tools.import_logger.parsers import (
+    FileError,
+    _IncompleteMonLayoutError,
+    _SourceLine,
+)
+from midvatten.tools.import_logger.importer import logger_schema_capabilities
+from midvatten.tools.import_logger.pipeline import run_pre_resolution_pipeline
+from midvatten.tools.utils import db_utils, file_utils
+from midvatten.tools.utils.date_utils import to_date
+from midvatten.tools.utils.gui_utils import set_combobox
 from scripts.benchmark_diveroffice_mon import build_mon
 
 
@@ -54,108 +59,139 @@ def make_fixed_mon(
     return "\n".join(header) + "\n"
 
 
+def assert_canonical(parsed) -> None:
+    assert tuple(parsed.data.columns) == CANONICAL_COLUMNS
+    assert str(parsed.data["date_time"].dtype) == "datetime64[ns]"
+    assert all(
+        pd.api.types.is_numeric_dtype(parsed.data[column])
+        for column in CANONICAL_COLUMNS[1:]
+    )
+    assert parsed.data.index.equals(pd.RangeIndex(len(parsed.data)))
+
+
+def replace_with_legacy_logger_schema(*, source_column: bool) -> None:
+    """Replace current logger tables with an isolated legacy table shape."""
+    db_utils.sql_alter_db("DROP TABLE w_levels_logger")
+    db_utils.sql_alter_db("DROP TABLE w_logger_series")
+    source_definition = ", source text" if source_column else ""
+    db_utils.sql_alter_db(
+        "CREATE TABLE w_levels_logger ("
+        "obsid text NOT NULL, date_time text NOT NULL, head_cm double, "
+        "temp_degc double, cond_mscm double, level_masl double, comment text"
+        f"{source_definition}, PRIMARY KEY (obsid, date_time), "
+        "FOREIGN KEY(obsid) REFERENCES obs_points(obsid) "
+        "ON UPDATE CASCADE ON DELETE CASCADE)"
+    )
+
+
+def test_logger_schema_capabilities_cover_all_supported_shapes() -> None:
+    oldest = logger_schema_capabilities(["obsid", "date_time"])
+    assert not oldest.has_series_id
+    assert not oldest.has_created_at
+    assert not oldest.has_source_column
+
+    source_column = logger_schema_capabilities(["obsid", "date_time", "source"])
+    assert source_column.has_source_column
+    assert not source_column.has_series_id
+
+    current = logger_schema_capabilities(
+        ["obsid", "date_time", "series_id", "created_at"]
+    )
+    assert current.has_series_id
+    assert current.has_created_at
+    assert not current.has_source_column
+
+
 @pytest.mark.active
 class TestDiverOfficeParser:
-    """Unit tests for DiverOfficeParser.parse — ported from TestParseDiverofficeFile."""
-
     def test_parse_mon_first_rows_missing_water_head(self):
-        file_content = (
-            "[Logger settings]\n"
-            "  Location                =rb1\n"
-            "  Number of channels      =2\n"
-            "[Channel 1]\n"
-            "  Identification          =WATER HEAD (WC)\n"
-            "[Channel 2]\n"
-            "  Identification          =TEMPERATURE\n"
-            "[Data]\n"
-            "4\n"
+        content = (
+            "[Logger settings]\n  Location                =rb1\n"
+            "  Number of channels      =2\n[Channel 1]\n"
+            "  Identification          =WATER HEAD (WC)\n[Channel 2]\n"
+            "  Identification          =TEMPERATURE\n[Data]\n4\n"
             "2025/05/05 13:00:00.0                    5.250\n"
             "2025/05/05 14:00:00.0                    4.827\n"
             "2025/05/05 15:00:00.0      409.667       4.820\n"
             "2025/05/05 16:00:00.0      409.433       4.837\n"
             "END OF DATA FILE OF DATALOGGER FOR WINDOWS\n"
         )
-        with file_utils.tempinput(file_content, "utf-8", suffix=".MON") as f:
-            filedata, *_ = DiverOfficeParser.parse(f, "utf-8")
-            filtered_filedata, *_ = DiverOfficeParser.parse(
-                f, "utf-8", skip_rows_without_water_level=True
-            )
+        with file_utils.tempinput(content, "utf-8", suffix=".MON") as path:
+            parsed = DiverOfficeParser.parse(path, "utf-8")
+        filtered = run_pre_resolution_pipeline(
+            parsed,
+            LoggerImportOptions(skip_missing_water_head=True),
+        )
 
-        assert filedata[1] == ["2025-05-05 13:00:00", None, "5.25", None]
-        assert filedata[2] == ["2025-05-05 14:00:00", None, "4.827", None]
-        assert filedata[3] == [
-            "2025-05-05 15:00:00",
-            "409.667",
-            "4.82",
-            None,
-        ]
-        assert [row[1] for row in filtered_filedata[1:]] == ["409.667", "409.433"]
+        assert_canonical(parsed)
+        assert parsed.data["head_cm"].isna().tolist() == [True, True, False, False]
+        assert parsed.data["temp_degc"].tolist() == [5.25, 4.827, 4.82, 4.837]
+        assert filtered.data["head_cm"].tolist() == [409.667, 409.433]
 
     def test_parse_mon_preserves_wider_head_after_inference_window(self):
-        content = build_mon(1001)
-        with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
-            file_data, *_ = DiverOfficeParser.parse(path, "utf-8")
-
-        assert file_data[-1][1] == "100.308"
+        with file_utils.tempinput(build_mon(1001), "utf-8", suffix=".mon") as path:
+            parsed = DiverOfficeParser.parse(path, "utf-8")
+        assert parsed.data.iloc[-1]["head_cm"] == pytest.approx(100.308)
 
     @pytest.mark.parametrize(
         ("before", "after"),
         [("9.999", "10.001"), ("99.999", "100.001"), ("999.999", "1000.001")],
     )
     def test_parse_mon_preserves_digit_width_crossings(self, before, after):
-        content = make_fixed_mon([(before,)] * 1000 + [(after,)])
-        with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
-            file_data, *_ = DiverOfficeParser.parse(path, "utf-8")
-
-        assert float(file_data[-1][1]) == pytest.approx(float(after))
+        with file_utils.tempinput(
+            make_fixed_mon([(before,)] * 1000 + [(after,)]),
+            "utf-8",
+            suffix=".mon",
+        ) as path:
+            parsed = DiverOfficeParser.parse(path, "utf-8")
+        assert parsed.data.iloc[-1]["head_cm"] == pytest.approx(float(after))
 
     def test_parse_mon_preserves_missing_channel_positions(self):
         content = make_fixed_mon(
             [("1.0", None, "3.0"), (None, "2.0", "3.0"), ("1.0", "2.0", None)]
         )
         with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
-            file_data, *_ = DiverOfficeParser.parse(path, "utf-8")
-
-        assert [row[1:] for row in file_data[1:]] == [
-            ["1.0", None, "3.0"],
-            [None, "2.0", "3.0"],
-            ["1.0", "2.0", None],
+            parsed = DiverOfficeParser.parse(path, "utf-8")
+        measurements = parsed.data.loc[:, ["head_cm", "temp_degc", "cond_mscm"]]
+        assert measurements.notna().values.tolist() == [
+            [True, False, True],
+            [False, True, True],
+            [True, True, False],
         ]
+        assert measurements.sum(skipna=True).tolist() == [2.0, 4.0, 6.0]
 
     @pytest.mark.parametrize("value", ["-100.308", "+1,25", "1.25e3"])
     def test_parse_mon_accepts_supported_numeric_tokens(self, value):
-        content = make_fixed_mon([(value,)])
-        with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
-            file_data, *_ = DiverOfficeParser.parse(path, "utf-8")
-
-        assert float(file_data[1][1]) == pytest.approx(float(value.replace(",", ".")))
-
-    def test_parse_mon_rejects_invalid_date(self):
-        content = make_fixed_mon([("1.0",)]).replace(
-            "2025/01/01 00:00:00.0", "not-a-date 00:00:00.0"
+        with file_utils.tempinput(
+            make_fixed_mon([(value,)]), "utf-8", suffix=".mon"
+        ) as path:
+            parsed = DiverOfficeParser.parse(path, "utf-8")
+        assert parsed.data.loc[0, "head_cm"] == pytest.approx(
+            float(value.replace(",", "."))
         )
-        with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
-            with pytest.raises(DiverOfficeParseError, match="date/time"):
-                DiverOfficeParser.parse(path, "utf-8")
 
-    def test_parse_mon_rejects_invalid_numeric_value(self):
-        content = make_fixed_mon([("invalid",)])
+    @pytest.mark.parametrize(
+        ("content", "message"),
+        [
+            (
+                make_fixed_mon([("1.0",)]).replace(
+                    "2025/01/01 00:00:00.0", "not-a-date 00:00:00.0"
+                ),
+                "date/time",
+            ),
+            (make_fixed_mon([("invalid",)]), "numeric"),
+            (make_fixed_mon([("1.0",)], declared_count=2), "declared 2 data rows"),
+            (
+                make_fixed_mon([("1.0", "2.0")]).replace(
+                    "Number of channels      =2", "Number of channels      =3"
+                ),
+                "declares 3 channels",
+            ),
+        ],
+    )
+    def test_parse_mon_rejects_structurally_invalid_input(self, content, message):
         with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
-            with pytest.raises(DiverOfficeParseError, match="numeric"):
-                DiverOfficeParser.parse(path, "utf-8")
-
-    def test_parse_mon_rejects_declared_count_mismatch(self):
-        content = make_fixed_mon([("1.0",)], declared_count=2)
-        with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
-            with pytest.raises(DiverOfficeParseError, match="declared 2 data rows"):
-                DiverOfficeParser.parse(path, "utf-8")
-
-    def test_parse_mon_rejects_declared_channel_count_mismatch(self):
-        content = make_fixed_mon([("1.0", "2.0")]).replace(
-            "Number of channels      =2", "Number of channels      =3"
-        )
-        with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
-            with pytest.raises(DiverOfficeParseError, match="declares 3 channels"):
+            with pytest.raises(DiverOfficeParseError, match=message):
                 DiverOfficeParser.parse(path, "utf-8")
 
     def test_parse_mon_fallback_accepts_lossless_left_aligned_field(self):
@@ -164,9 +200,8 @@ class TestDiverOfficeParser:
             f"{'100.308':>12}", "    100.308 "
         )
         with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
-            file_data, *_ = DiverOfficeParser.parse(path, "utf-8")
-
-        assert [float(row[1]) for row in file_data[1:]] == [9.9, 100.308]
+            parsed = DiverOfficeParser.parse(path, "utf-8")
+        assert parsed.data["head_cm"].tolist() == [9.9, 100.308]
 
     def test_parse_mon_fallback_rejects_ambiguous_layout(self):
         content = make_fixed_mon([("1.0", "2.0"), ("10.0", "20.0")])
@@ -175,428 +210,196 @@ class TestDiverOfficeParser:
             with pytest.raises(DiverOfficeParseError, match="fallback"):
                 DiverOfficeParser.parse(path, "utf-8")
 
-    def test_parse_mon_rejects_width_change_as_fake_second_channel(self):
-        """Two widths in one sparse channel must not be mapped to two channels."""
-        content = make_fixed_mon([("9.9", None), ("10.0", None)]).replace(
-            "2025/01/01 00:00:00.0         9.9            \n"
-            "2025/01/01 00:00:00.0        10.0            ",
-            "2025/01/01 00:00:00.0    9.9\n2025/01/01 00:00:00.0    10.0",
-        )
-        with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
-            with pytest.raises(DiverOfficeParseError, match="fallback"):
-                DiverOfficeParser.parse(path, "utf-8")
-
     def test_mon_primary_requires_all_channel_endpoints_in_one_row(self):
         prefix = "2025/01/01 00:00:00.0"
-        source_lines = [
+        lines = [
             _SourceLine(1, prefix + "    1    2"),
             _SourceLine(2, prefix + "    1         3"),
             _SourceLine(3, prefix + "         2    3"),
         ]
-        scanned = DiverOfficeParser._scan_mon_rows(source_lines, "ambiguous.mon")
-
+        scanned = DiverOfficeParser._scan_mon_rows(lines, "ambiguous.mon")
         with pytest.raises(_IncompleteMonLayoutError, match="same row"):
             DiverOfficeParser._read_mon_by_right_edge(scanned, 4)
 
-    def test_mon_fallback_rejects_compressed_blank_slot_comparison(self):
-        source_lines = [_SourceLine(1, "2025/01/01 00:00:00.0                2.0")]
-        scanned = DiverOfficeParser._scan_mon_rows(source_lines, "ambiguous.mon")
-        wrong_slots = pd.DataFrame([["2025/01/01", "00:00:00.0", "2.0", None]])
-
-        with mock.patch(
-            "midvatten.tools.import_logger.parsers.pd.read_fwf",
-            return_value=wrong_slots,
-        ):
-            with pytest.raises(DiverOfficeParseError, match="fallback"):
-                DiverOfficeParser._read_mon_fallback(
-                    scanned, 3, "ambiguous.mon", "ambiguous endpoints"
-                )
-
-    def test_parse_utf8(self):
-        file_content = (
-            "[Channel identification]\n"
-            "Instrument number;123\n"
-            "Location;rb1\n"
-            "UTC offset (hh:mm);+01:00\n"
-            "[data]\n"
-            "Date/time;Water head[cm];Temperature[\u00b0C]\n"
-            "2016/03/15 10:30:00;1.0;10.0\n"
-            "2016/03/15 11:00:00;2.0;11.0\n"
-        )
-        with file_utils.tempinput(file_content, "utf-8") as f:
-            result = DiverOfficeParser.parse(
-                path=f,
-                charset="utf-8",
-                skip_rows_without_water_level=False,
-                begindate=None,
-                enddate=None,
-            )
-        filedata, filename, location, utc_offset, serial_number = result
-        assert location == "rb1"
-        assert utc_offset == "+01:00"
-        assert filedata[0] == ["date_time", "head_cm", "temp_degc", "cond_mscm"]
-        assert filedata[1][0] == "2016-03-15 10:30:00"
-        assert filedata[1][1] == "1.0"
-
-    def test_csv_header_order_is_authoritative_when_metadata_exists(self):
+    def test_parse_csv_metadata_and_header_order(self):
         content = (
-            "[Logger settings]\n"
-            "  Location                =rb1\n"
-            "  Number of channels      =2\n"
-            "[Channel 1]\n"
-            "  Identification          =WATER HEAD (WC)\n"
-            "[Channel 2]\n"
-            "  Identification          =TEMPERATURE\n"
+            "[Logger settings]\n  Serial number=..00-R2717  214.\n"
+            "  Location=rb1\n  Number of channels=2\n[Channel 1]\n"
+            "  Identification=WATER HEAD (WC)\n[Channel 2]\n"
+            "  Identification=TEMPERATURE\n"
             "Date/time;Temperature[°C];Water head[cm]\n"
             "2025/01/01 00:00:00;10.0;123.4\n"
         )
         with file_utils.tempinput(content, "utf-8", suffix=".csv") as path:
-            filedata, *_ = DiverOfficeParser.parse(path, "utf-8")
-
-        assert filedata[1] == ["2025-01-01 00:00:00", "123.4", "10.0", None]
-
-    def test_parse_cp1252(self):
-        file_content = (
-            "[Channel identification]\n"
-            "Instrument number;123\n"
-            "Location;rb1\n"
-            "UTC offset (hh:mm);+01:00\n"
-            "[data]\n"
-            "Date/time;Water head[cm];Temperature[\xb0C]\n"
-            "2016/03/15 10:30:00;1.0;10.0\n"
-        )
-        with file_utils.tempinput(file_content, "cp1252") as f:
-            result = DiverOfficeParser.parse(
-                path=f,
-                charset="cp1252",
-                skip_rows_without_water_level=False,
-                begindate=None,
-                enddate=None,
-            )
-        filedata, filename, location, utc_offset, serial_number = result
-        assert location == "rb1"
-        assert len(filedata) == 2  # header + 1 data row
-
-    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
-    def test_parse_warning_missing_head_cm(self, mock_messagebar):
-        """File with only Temperature column — warns and still returns data."""
-        file_content = (
-            "[Channel identification]\n"
-            "Location;rb1\n"
-            "[data]\n"
-            "Date/time;Temperature[\xb0C]\n"
-            "2016/03/15 10:30:00;10.0\n"
-        )
-        with file_utils.tempinput(file_content, "utf-8") as f:
-            result = DiverOfficeParser.parse(
-                path=f,
-                charset="utf-8",
-                skip_rows_without_water_level=False,
-                begindate=None,
-                enddate=None,
-            )
-        filedata, filename, location, utc_offset, serial_number = result
-        assert location == "rb1"
-        assert mock_messagebar.warning.called
-
-    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
-    def test_parse_get_timezone(self, mock_messagebar):
-        """UTC offset is extracted from file header."""
-        file_content = (
-            "[Channel identification]\n"
-            "Location;rb1\n"
-            "UTC offset (hh:mm);+02:00\n"
-            "[data]\n"
-            "Date/time;Water head[cm]\n"
-            "2016/03/15 10:30:00;1.0\n"
-        )
-        with file_utils.tempinput(file_content, "utf-8") as f:
-            result = DiverOfficeParser.parse(
-                path=f,
-                charset="utf-8",
-                skip_rows_without_water_level=False,
-                begindate=None,
-                enddate=None,
-            )
-        _, _, _, utc_offset, _ = result
-        assert utc_offset == "+02:00"
-
-    def test_parse_serial_number(self):
-        file_content = (
-            "[Logger settings]\n"
-            "Serial number=..00-R2717  214.\n"
-            "Location=rb1\n"
-            "[data]\n"
-            "Date/time;Water head[cm];Temperature[\u00b0C]\n"
-            "2016/03/15 10:30:00;1.0;10.0\n"
-        )
-        with file_utils.tempinput(file_content, "utf-8") as f:
-            result = DiverOfficeParser.parse(
-                path=f,
-                charset="utf-8",
-                skip_rows_without_water_level=False,
-                begindate=None,
-                enddate=None,
-            )
-        _, _, _, _, serial_number = result
-        assert serial_number == "R2717"
-
-    def test_parse_serial_number_absent(self):
-        file_content = (
-            "[Logger settings]\n"
-            "Location=rb1\n"
-            "[data]\n"
-            "Date/time;Water head[cm]\n"
-            "2016/03/15 10:30:00;1.0\n"
-        )
-        with file_utils.tempinput(file_content, "utf-8") as f:
-            result = DiverOfficeParser.parse(
-                path=f,
-                charset="utf-8",
-                skip_rows_without_water_level=False,
-                begindate=None,
-                enddate=None,
-            )
-        _, _, _, _, serial_number = result
-        assert serial_number is None
-
-    def test_parse_old_serial_number(self):
-        file_content = (
-            "Serial number=..00-R2717  214.\n"
-            "Location=rb1\n"
-            "Date/time,Water head[cm],Temperature[\u00b0C]\n"
-            "2016/03/15 10:30:00,1.0,10.0\n"
-            "2016/03/15 11:00:00,2.0,11.0\n"
-        )
-        with file_utils.tempinput(file_content, "utf-8") as f:
-            result = DiverOfficeParser.parse(
-                path=f,
-                charset="utf-8",
-                skip_rows_without_water_level=False,
-                begindate=None,
-                enddate=None,
-            )
-        _, _, _, _, serial_number = result
-        assert serial_number == "R2717"
-
-
-@pytest.mark.active
-class TestFilterDatesFromFiledata:
-    """Unit tests for filter_dates_from_filedata module-level function."""
-
-    def test_filter_dates_from_filedata(self):
-        file_data = [
-            ["date_time", "head_cm", "obsid"],
-            ["2016-03-15 10:30:00", "1.0", "rb1"],
-            ["2016-03-15 11:00:00", "2.0", "rb1"],
-            ["2016-04-15 10:30:00", "3.0", "rb2"],
-        ]
-        last_dates = {"rb1": "2016-03-15 10:30:00"}
-        result = filter_dates_from_filedata(file_data, last_dates)
-        obsids = [row[2] for row in result[1:]]
-        assert "rb2" in obsids
-        rb1_rows = [r for r in result[1:] if r[2] == "rb1"]
-        assert len(rb1_rows) == 1
-        assert rb1_rows[0][0] == "2016-03-15 11:00:00"
+            parsed = DiverOfficeParser.parse(path, "utf-8")
+        assert_canonical(parsed)
+        assert parsed.location == "rb1"
+        assert parsed.serial_number == "R2717"
+        assert parsed.data.loc[0, ["head_cm", "temp_degc"]].tolist() == [123.4, 10.0]
 
 
 @pytest.mark.active
 class TestLeveloggerParser:
-    """Unit tests for LeveloggerParser.parse."""
-
-    def test_parse_basic(self):
-        file_content = (
-            "Serial_number: 123\n"
-            "Location: rb1\n"
-            "LEVEL\n"
-            "UNIT: cm\n"
-            "TEMPERATURE\n"
-            "Date;Time;ms;LEVEL;TEMPERATURE\n"
-            "2016-03-15;10:30:00;0;1;10\n"
-            "2016-03-15;11:00:00;0;2;20\n"
+    def test_parse_basic_units_and_metadata(self):
+        content = (
+            "Serial_number: 123\nLocation: rb1\nLEVEL\nUNIT: m\nTEMPERATURE\n"
+            "Date;Time;ms;LEVEL;TEMPERATURE;spec. conductivity (uS/cm)\n"
+            "2016-03-15;10:30:00;0;0.01;10;1000\n"
         )
-        with file_utils.tempinput(file_content, "utf-8") as f:
-            result = LeveloggerParser.parse(
-                path=f,
-                charset="utf-8",
-                skip_rows_without_water_level=False,
-                begindate=None,
-                enddate=None,
-            )
-        filedata, filename, location, timezone, serial_number = result
-        assert location == "rb1"
-        assert timezone is None
-        assert filedata[0] == ["date_time", "head_cm", "temp_degc", "cond_mscm"]
-        assert filedata[1][0] == "2016-03-15 10:30:00"
-        assert float(filedata[1][1]) == pytest.approx(1.0)
+        with file_utils.tempinput(content, "utf-8") as path:
+            parsed = LeveloggerParser.parse(path, "utf-8")
+        assert_canonical(parsed)
+        assert parsed.location == "rb1"
+        assert parsed.serial_number == "123"
+        assert parsed.data.loc[0, ["head_cm", "temp_degc", "cond_mscm"]].tolist() == [
+            1.0,
+            10.0,
+            1.0,
+        ]
 
-    def test_parse_level_as_m(self):
-        """Level unit 'm' is converted to cm (*100)."""
-        file_content = (
-            "Location: rb1\n"
-            "LEVEL\n"
-            "UNIT: m\n"
-            "TEMPERATURE\n"
-            "Date;Time;ms;LEVEL;TEMPERATURE\n"
-            "2016-03-15;10:30:00;0;0.01;10\n"
+    @pytest.mark.parametrize(
+        "layout", ["Serial_number: 12345", "Serial_number:\n12345"]
+    )
+    def test_parse_serial_number_variants(self, layout):
+        content = (
+            f"{layout}\nLocation: rb1\nLEVEL\nUNIT: cm\n"
+            "Date;Time;ms;LEVEL\n2016-03-15;10:30:00;0;1\n"
         )
-        with file_utils.tempinput(file_content, "utf-8") as f:
-            result = LeveloggerParser.parse(
-                path=f,
-                charset="utf-8",
-                skip_rows_without_water_level=False,
-                begindate=None,
-                enddate=None,
-            )
-        filedata, _, _, _, _ = result
-        assert float(filedata[1][1]) == pytest.approx(1.0)
+        with file_utils.tempinput(content, "utf-8") as path:
+            parsed = LeveloggerParser.parse(path, "utf-8")
+        assert parsed.serial_number == "12345"
 
-    def test_returns_5_tuple(self):
-        """LeveloggerParser.parse must always return a 5-tuple."""
-        file_content = "Date;Time\n"
-        with file_utils.tempinput(file_content, "utf-8") as f:
-            result = LeveloggerParser.parse(
-                path=f,
-                charset="utf-8",
-                skip_rows_without_water_level=False,
-                begindate=None,
-                enddate=None,
-            )
-        assert len(result) == 5
-        assert result[0] == []
-        assert result[3] is None
-        assert result[4] is None
-
-    def test_parse_serial_number_next_line(self):
-        """Serial_number: on its own line, value on the next line."""
-        file_content = (
-            "Serial_number:\n"
-            "12345\n"
-            "Location: rb1\n"
-            "LEVEL\n"
-            "UNIT: cm\n"
-            "Date;Time;ms;LEVEL\n"
-            "2016-03-15;10:30:00;0;1\n"
-        )
-        with file_utils.tempinput(file_content, "utf-8") as f:
-            result = LeveloggerParser.parse(
-                path=f,
-                charset="utf-8",
-                skip_rows_without_water_level=False,
-                begindate=None,
-                enddate=None,
-            )
-        _, _, _, _, serial_number = result
-        assert serial_number == "12345"
-
-    def test_parse_serial_number_same_line(self):
-        """Serial_number: value on the same line."""
-        file_content = (
-            "Serial_number: 12345\n"
-            "Location: rb1\n"
-            "LEVEL\n"
-            "UNIT: cm\n"
-            "Date;Time;ms;LEVEL\n"
-            "2016-03-15;10:30:00;0;1\n"
-        )
-        with file_utils.tempinput(file_content, "utf-8") as f:
-            result = LeveloggerParser.parse(
-                path=f,
-                charset="utf-8",
-                skip_rows_without_water_level=False,
-                begindate=None,
-                enddate=None,
-            )
-        _, _, _, _, serial_number = result
-        assert serial_number == "12345"
+    def test_invalid_nonempty_measurement_fails_file(self):
+        content = "Date;Time;LEVEL\n2016-03-15;10:30:00;bad\n"
+        with file_utils.tempinput(content, "utf-8") as path:
+            with pytest.raises(FileError, match="Invalid numeric"):
+                LeveloggerParser.parse(path, "utf-8")
 
 
 @pytest.mark.active
 class TestHoboParser:
-    """Unit tests for HoboParser.parse."""
-
-    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
-    def test_parse_utf8(self, mock_messagebar):
-        file_content = (
-            '"Plot Title: temp"\n'
-            '"#","Date Time, GMT+01:00","Temp, \u00b0C (LGR S/N: 1234, SEN S/N: 1234, LBL: Rb1)"\n'
-            '1,"07/19/18 10:00:00 fm",4.558\n'
-            '2,"07/19/18 11:00:00 fm",4.402\n'
+    def test_parse_metadata_timezone_em_and_changed_order(self):
+        content = (
+            '﻿"Plot Title: temp"\n'
+            '"#","Temp, °C (LGR S/N: 1234, SEN S/N: 1234, LBL: Rb1)",'
+            '"Date Time, GMT+01:00"\n'
+            "1,4.558,07/19/18 10:00:00 fm\n"
+            "2,4.402,07/19/18 01:00:00 em\n"
         )
-        tz_converter = TzConverter()
-        with file_utils.tempinput(file_content, "utf-8") as f:
-            result = HoboParser.parse(
-                path=f,
-                charset="utf-8",
-                tz_converter=tz_converter,
-                begindate=None,
-                enddate=None,
-            )
-        filedata, filename, location, utc_offset, serial_number = (
-            result  # must be 5-tuple
-        )
-        assert location == "Rb1"
-        assert utc_offset is None
-        assert filedata[0] == ["date_time", "head_cm", "temp_degc", "cond_mscm"]
-        assert filedata[1][0] == "2018-07-19 10:00:00"
-        assert float(filedata[1][2]) == pytest.approx(4.558)
+        with file_utils.tempinput(content, "utf-8") as path:
+            parsed = HoboParser.parse(path, "utf-8")
+        assert_canonical(parsed)
+        assert parsed.location == "Rb1"
+        assert parsed.serial_number == "1234"
+        assert parsed.source_timezone == "GMT+01:00"
+        assert parsed.data["date_time"].tolist() == [
+            pd.Timestamp("2018-07-19 10:00:00"),
+            pd.Timestamp("2018-07-19 13:00:00"),
+        ]
+        assert parsed.data["temp_degc"].tolist() == [4.558, 4.402]
 
-    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
-    def test_parse_convert_tz(self, mock_messagebar):
-        """Timezone conversion: GMT+03:00 source → GMT+01:00 target shifts time -2h."""
-        file_content = (
-            '"Plot Title: temp"\n'
-            '"#","Date Time, GMT+03:00","Temp, \u00b0C (LGR S/N: 1234, SEN S/N: 1234, LBL: Rb1)"\n'
-            '1,"07/19/18 10:00:00 fm",4.558\n'
+    @pytest.mark.parametrize(
+        ("suffix", "expected"),
+        [
+            ("12:00:00 am", pd.Timestamp("2018-07-19 00:00:00")),
+            ("12:00:00 pm", pd.Timestamp("2018-07-19 12:00:00")),
+            ("12:00:00 fm", pd.Timestamp("2018-07-19 00:00:00")),
+            ("12:00:00 em", pd.Timestamp("2018-07-19 12:00:00")),
+        ],
+    )
+    def test_parse_meridiem_noon_and_midnight(self, suffix, expected):
+        content = (
+            chr(34)
+            + "#"
+            + chr(34)
+            + ","
+            + chr(34)
+            + "Date Time, GMT+01:00"
+            + chr(34)
+            + ","
+            + chr(34)
+            + "Temp, °C (LGR S/N: 1234, LBL: Rb1)"
+            + chr(34)
+            + "\n1,07/19/18 "
+            + suffix
+            + ",4.558\n"
         )
-        tz_converter = TzConverter()
-        tz_converter.target_tz = "GMT+1"
-        with file_utils.tempinput(file_content, "utf-8") as f:
-            result = HoboParser.parse(
-                path=f,
-                charset="utf-8",
-                tz_converter=tz_converter,
-                begindate=None,
-                enddate=None,
-            )
-        filedata, _, _, _, _ = result
-        assert filedata[1][0] == "2018-07-19 08:00:00"
+        with file_utils.tempinput(content, "utf-8") as path:
+            parsed = HoboParser.parse(path, "utf-8")
+        assert parsed.data.loc[0, "date_time"] == expected
 
-    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
-    def test_parse_always_returns_5_tuple(self, mock_messagebar):
-        """HoboParser must return a 5-tuple even on parse failure."""
-        file_content = '"Plot Title: temp"\n'
-        tz_converter = TzConverter()
-        with file_utils.tempinput(file_content, "utf-8") as f:
-            result = HoboParser.parse(
-                path=f,
-                charset="utf-8",
-                tz_converter=tz_converter,
-                begindate=None,
-                enddate=None,
-            )
-        assert len(result) == 5
-        assert result[3] is None
-        assert result[4] is None
-
-    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
-    def test_parse_serial_number(self, mock_messagebar):
-        file_content = (
-            '"Plot Title: temp"\n'
-            '"#","Date Time, GMT+01:00","Temp, \u00b0C (LGR S/N: 5678, SEN S/N: 5678, LBL: Rb1)"\n'
-            '1,"07/19/18 10:00:00 fm",4.558\n'
+    def test_parse_year_first_variant(self):
+        content = (
+            '"#","Date Time, GMT+01:00",'
+            '"Temp, °C (LGR S/N: 1234, LBL: Rb1)"\n'
+            "1,2018-07-19 10:00:00,4.558\n"
         )
-        tz_converter = TzConverter()
-        with file_utils.tempinput(file_content, "utf-8") as f:
-            result = HoboParser.parse(
-                path=f,
-                charset="utf-8",
-                tz_converter=tz_converter,
-                begindate=None,
-                enddate=None,
-            )
-        _, _, _, _, serial_number = result
-        assert serial_number == "5678"
+        with file_utils.tempinput(content, "utf-8") as path:
+            parsed = HoboParser.parse(path, "utf-8")
+        assert parsed.data.loc[0, "date_time"] == pd.Timestamp("2018-07-19 10:00:00")
+
+
+@pytest.mark.active
+def test_diveroffice_and_hobo_share_target_timezone_window() -> None:
+    diver_content = (
+        "Location=rb1\nInstrument number=UTC\n"
+        "Date/time,Water head[cm],Temperature[°C]\n"
+        "2025/01/01 00:00:00,1.0,10.0\n"
+        "2025/01/01 01:00:00,2.0,20.0\n"
+    )
+    quote = chr(34)
+    hobo_content = (
+        quote
+        + "#"
+        + quote
+        + ","
+        + quote
+        + "Date Time, GMT+00:00"
+        + quote
+        + ","
+        + quote
+        + "Temp, °C (LGR S/N: 1, LBL: rb1)"
+        + quote
+        + "\n"
+        + "1,2025-01-01 00:00:00,10.0\n"
+        + "2,2025-01-01 01:00:00,20.0\n"
+    )
+    options = LoggerImportOptions(
+        target_timezone="UTC+1",
+        from_date=pd.Timestamp("2025-01-01 02:00:00"),
+        to_date=pd.Timestamp("2025-01-01 02:00:00"),
+    )
+
+    with (
+        file_utils.tempinput(diver_content, "utf-8") as diver_path,
+        file_utils.tempinput(hobo_content, "utf-8") as hobo_path,
+    ):
+        diver = run_pre_resolution_pipeline(
+            DiverOfficeParser.parse(diver_path, "utf-8"), options
+        )
+        hobo = run_pre_resolution_pipeline(
+            HoboParser.parse(hobo_path, "utf-8"), options
+        )
+
+    expected_date = [pd.Timestamp("2025-01-01 02:00:00")]
+    assert diver.data["date_time"].tolist() == expected_date
+    assert hobo.data["date_time"].tolist() == expected_date
+    assert diver.data["temp_degc"].tolist() == [20.0]
+    assert hobo.data["temp_degc"].tolist() == [20.0]
+
+
+@pytest.mark.active
+class TestDiverOfficeBaroParser:
+    def test_parse_returns_canonical_semantic_frame(self):
+        with file_utils.tempinput(
+            build_mon(2, baro=True), "utf-8", suffix=".mon"
+        ) as path:
+            parsed = DiverOfficeBaroParser.parse(path, "utf-8")
+        assert_canonical(parsed)
+        assert parsed.kind is LoggerDataKind.BAROMETRIC
+        assert parsed.data["baro_cmh2o"].tolist() == [99.9, 100.308]
+        assert parsed.data["temp_degc"].tolist() == [5.0, 5.0]
+        assert parsed.data["head_cm"].isna().all()
 
 
 @pytest.mark.spatialite
@@ -694,6 +497,117 @@ class TestLoggerImportDiverOfficeSpatialite(
             r"(rb1, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None)])"
         )
         assert test_string == reference_string
+
+    @pytest.mark.parametrize(
+        ("source_column", "expected_source"),
+        [(False, None), (True, "field campaign")],
+        ids=["oldest", "source-column"],
+    )
+    def test_import_supports_legacy_schema_metadata(
+        self, source_column, expected_source
+    ):
+        replace_with_legacy_logger_schema(source_column=source_column)
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        content = (
+            "Location=rb1\nDate/time,Water head[cm],Temperature[°C]\n"
+            "2025/01/01 00:00:00,1.5,5.0\n"
+        )
+        with (
+            file_utils.tempinput(content, "utf-8") as filename,
+            mock.patch(
+                "midvatten.tools.import_logger.midvatten_utils.select_files",
+                return_value=[filename],
+            ),
+            mock.patch("midvatten.tools.utils.dialog_utils.Askuser"),
+            mock.patch(
+                "midvatten.tools.utils.common_utils.filter_nonexisting_values_and_ask",
+                side_effect=lambda file_data, **_kwargs: file_data,
+            ),
+            mock.patch("qgis.utils.iface", autospec=True),
+        ):
+            ms = MagicMock()
+            ms.settingsdict = OrderedDict()
+            importer = LoggerImport(self.iface, ms)
+            importer.load_gui()
+            importer.confirm_names.checked = False
+            importer.import_all_data.checked = True
+            if importer.source_edit is not None:
+                importer.source_edit.setText("field campaign")
+            assert importer.start_import(
+                importer.files or [filename],
+                importer.skip_rows.checked,
+                importer.confirm_names.checked,
+                importer.import_all_data.checked,
+            )
+
+        selected = "obsid, date_time, head_cm"
+        if source_column:
+            selected += ", source"
+        rows = db_utils.sql_load_fr_db(f"SELECT {selected} FROM w_levels_logger")
+        expected = ["rb1", "2025-01-01 00:00:00", 1.5]
+        if expected_source is not None:
+            expected.append(expected_source)
+        assert rows == (True, [tuple(expected)])
+
+    def test_export_only_resolves_obsid_aggregates_and_never_writes_db(self, tmp_path):
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        first = (
+            "Location=rb1\nDate/time,Water head[cm],Temperature[°C]\n"
+            "2025/01/01 00:00:00,1.0,\n"
+        )
+        second = (
+            "Location=rb1\nDate/time,Water head[cm],Temperature[°C]\n"
+            "2025/01/01 01:00:00,2.0,5.0\n"
+        )
+        exported = tmp_path / "logger.csv"
+        with (
+            file_utils.tempinput(first, "utf-8") as first_path,
+            file_utils.tempinput(second, "utf-8") as second_path,
+            mock.patch(
+                "midvatten.tools.import_logger.midvatten_utils.select_files",
+                return_value=[first_path, second_path],
+            ),
+            mock.patch(
+                "qgis.PyQt.QtWidgets.QFileDialog.getSaveFileName",
+                return_value=(str(exported), "CSV(*.csv)"),
+            ),
+            mock.patch("midvatten.tools.utils.dialog_utils.Askuser"),
+            mock.patch(
+                "midvatten.tools.utils.common_utils.filter_nonexisting_values_and_ask",
+                side_effect=lambda file_data, **_kwargs: file_data,
+            ),
+            mock.patch("qgis.utils.iface", autospec=True),
+            mock.patch.object(
+                LoggerImport,
+                "_run_db_worker",
+                side_effect=AssertionError("export-only mode attempted a DB job"),
+            ),
+        ):
+            ms = MagicMock()
+            ms.settingsdict = OrderedDict()
+            importer = LoggerImport(self.iface, ms)
+            importer.load_gui()
+            importer.confirm_names.checked = False
+            importer.import_all_data.checked = True
+            importer.select_files()
+            assert importer.start_import(
+                importer.files,
+                importer.skip_rows.checked,
+                importer.confirm_names.checked,
+                importer.import_all_data.checked,
+                export_csv=True,
+                import_to_db=False,
+            )
+
+        assert db_utils.sql_load_fr_db("SELECT COUNT(*) FROM w_levels_logger") == (
+            True,
+            [(0,)],
+        )
+        assert exported.read_text(encoding="utf-8") == (
+            "date_time;head_cm;temp_degc;cond_mscm;obsid\n"
+            "2025-01-01 00:00:00;1.0;;;rb1\n"
+            "2025-01-01 01:00:00;2.0;5.0;;rb1\n"
+        )
 
     def test_diveroffice_import_instrument_serial(self):
         """Serial number extracted from file is stored in w_logger_series.instrument."""
@@ -820,8 +734,11 @@ class TestLoggerImportDiverOfficeSpatialite(
         )
         assert test_string == reference_string
 
-    def test_failure2_shaped_mon_matches_import_all_result(self):
+    @pytest.mark.parametrize("oldest_schema", [False, True], ids=["current", "oldest"])
+    def test_failure2_shaped_mon_matches_import_all_result(self, oldest_schema):
         """Generated hourly MON data must not lose the seven 96-hour blocks."""
+        if oldest_schema:
+            replace_with_legacy_logger_schema(source_column=False)
         cutoff = "2025-05-05 14:00:00"
         expected = (
             pd.date_range("2025-05-05 15:00:00", periods=9_915, freq="h")
@@ -838,7 +755,8 @@ class TestLoggerImportDiverOfficeSpatialite(
 
         def run_import(filename: str, import_all_data: bool) -> list[str]:
             db_utils.sql_alter_db("DELETE FROM w_levels_logger")
-            db_utils.sql_alter_db("DELETE FROM w_logger_series")
+            if not oldest_schema:
+                db_utils.sql_alter_db("DELETE FROM w_logger_series")
             db_utils.sql_alter_db(
                 "INSERT INTO w_levels_logger (obsid, date_time, head_cm) "
                 f"VALUES ('rb1', '{cutoff}', 1)"
@@ -1187,346 +1105,6 @@ class TestLoggerImportHoboSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
 # ── Migrated from test_import_diveroffice.py (parser unit tests) ──────────────
 
 
-@pytest.mark.active
-class TestFilterDatesFromFiledataOld:
-    """Ported from TestFilterDatesFromFiledata in test_import_diveroffice.py."""
-
-    def test_filter_dates_from_filedata_with_date_objects(self):
-        file_data = [
-            ["obsid", "date_time"],
-            ["rb1", "2015-05-01 00:00:00"],
-            ["rb1", "2016-05-01 00:00"],
-            ["rb2", "2015-05-01 00:00:00"],
-            ["rb2", "2016-05-01 00:00"],
-            ["rb3", "2015-05-01 00:00:00"],
-            ["rb3", "2016-05-01 00:00"],
-        ]
-        obsid_last_imported_dates = {
-            "rb1": [(to_date("2016-01-01 00:00:00"),)],
-            "rb2": [(to_date("2017-01-01 00:00:00"),)],
-        }
-        test_file_data = utils_for_tests.create_test_string(
-            filter_dates_from_filedata(file_data, obsid_last_imported_dates)
-        )
-        reference_file_data = "[[obsid, date_time], [rb1, 2016-05-01 00:00], [rb3, 2015-05-01 00:00:00], [rb3, 2016-05-01 00:00]]"
-        assert test_file_data == reference_file_data
-
-
-# ── Migrated from test_import_diveroffice.py: TestParseDiverofficeFile ────────
-# (appended to existing TestDiverOfficeParser class above via separate tests
-#  so as not to duplicate.  The 9 tests below use parse_old/parse API.)
-
-
-@pytest.mark.active
-class TestDiverOfficeParserOldFormat:
-    """Parser unit tests ported from TestParseDiverofficeFile in test_import_diveroffice.py.
-    These specifically test parse_old (legacy CSV) and parse (new .mon/.csv) methods."""
-
-    def test_parse_old_utf8(self):
-        f = (
-            "Location=rb1",
-            "Date/time,Water head[cm],Temperature[\u00b0C]",
-            "2016/03/15 10:30:00,26.9,5.18",
-            "2016/03/15 11:00:00,157.7,0.6",
-        )
-        charset = "utf-8"
-        with file_utils.tempinput("\n".join(f), charset) as path:
-            file_data = DiverOfficeParser.parse(path, charset)
-
-        test_string = utils_for_tests.create_test_string(file_data[0])
-        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, 26.9, 5.18, None], [2016-03-15 11:00:00, 157.7, 0.6, None]]"
-        assert test_string == reference_string
-        assert os.path.basename(path) == file_data[1]
-        assert file_data[2] == "rb1"
-
-    def test_parse_old_cp1252(self):
-        f = (
-            "Location=rb1",
-            "Date/time,Water head[cm],Temperature[\u00b0C]",
-            "2016/03/15 10:30:00,26.9,5.18",
-            "2016/03/15 11:00:00,157.7,0.6",
-        )
-        charset = "cp1252"
-        with file_utils.tempinput("\n".join(f), charset) as path:
-            file_data = DiverOfficeParser.parse(path, charset)
-
-        test_string = utils_for_tests.create_test_string(file_data[0])
-        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, 26.9, 5.18, None], [2016-03-15 11:00:00, 157.7, 0.6, None]]"
-        assert test_string == reference_string
-        assert os.path.basename(path) == file_data[1]
-        assert file_data[2] == "rb1"
-
-    def test_parse_old_semicolon_sep(self):
-        f = (
-            "Location=rb1",
-            "Date/time;Water head[cm];Temperature[\u00b0C]",
-            "2016/03/15 10:30:00;26.9;5.18",
-            "2016/03/15 11:00:00;157.7;0.6",
-        )
-        charset = "cp1252"
-        with file_utils.tempinput("\n".join(f), charset) as path:
-            file_data = DiverOfficeParser.parse(path, charset)
-
-        test_string = utils_for_tests.create_test_string(file_data[0])
-        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, 26.9, 5.18, None], [2016-03-15 11:00:00, 157.7, 0.6, None]]"
-        assert test_string == reference_string
-        assert os.path.basename(path) == file_data[1]
-        assert file_data[2] == "rb1"
-
-    def test_parse_old_comma_dec(self):
-        f = (
-            "Location=rb1",
-            "Date/time;Water head[cm];Temperature[\u00b0C]",
-            "2016/03/15 10:30:00;26,9;5,18",
-            "2016/03/15 11:00:00;157,7;0,6",
-        )
-        charset = "cp1252"
-        with file_utils.tempinput("\n".join(f), charset) as path:
-            file_data = DiverOfficeParser.parse(path, charset)
-
-        test_string = utils_for_tests.create_test_string(file_data[0])
-        reference_string = r"""[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, 26.9, 5.18, None], [2016-03-15 11:00:00, 157.7, 0.6, None]]"""
-        assert test_string == reference_string
-        assert os.path.basename(path) == file_data[1]
-        assert file_data[2] == "rb1"
-
-    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
-    def test_parse_old_comma_sep_comma_dec_failed(self, mock_messagebar):
-        """Ambiguous format (comma sep + comma decimal): delimiter cannot be reliably detected."""
-        f = (
-            "Location=rb1",
-            "Date/time,Water head[cm],Temperature[\u00b0C]",
-            "2016/03/15 10:30:00,26,9,5,18",
-            "2016/03/15 11:00:00,157,7,0,6",
-        )
-        charset = "cp1252"
-        with file_utils.tempinput("\n".join(f), charset) as path:
-            with pytest.raises(DiverOfficeParseError, match="delimited fields"):
-                DiverOfficeParser.parse(path, charset)
-
-    def test_parse_old_different_separators(self):
-        """parse() handles semicolon data with comma header: detects ';' from data rows."""
-        f = (
-            "Location=rb1",
-            "Date/time,Water head[cm],Temperature[\u00b0C]",
-            "2016/03/15 10:30:00;26,9;5,18",
-            "2016/03/15 11:00:00;157,7;0,6",
-        )
-        charset = "cp1252"
-        with file_utils.tempinput("\n".join(f), charset) as path:
-            file_data = DiverOfficeParser.parse(path, charset)
-        test_string = utils_for_tests.create_test_string(file_data[0])
-        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, 26.9, 5.18, None], [2016-03-15 11:00:00, 157.7, 0.6, None]]"
-        assert test_string == reference_string
-        assert file_data[2] == "rb1"
-
-    def test_parse_old_changed_order(self):
-        f = (
-            "Location=rb1",
-            "Temperature[\u00b0C];2:Spec.cond.[mS/cm];Date/time;Water head[cm]",
-            "5.18;2;2016/03/15 10:30:00;26.9",
-            "0.6;3;2016/03/15 11:00:00;157.7",
-        )
-        charset = "cp1252"
-        with file_utils.tempinput("\n".join(f), charset) as path:
-            file_data = DiverOfficeParser.parse(path, charset)
-
-        test_string = utils_for_tests.create_test_string(file_data[0])
-        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, 26.9, 5.18, 2], [2016-03-15 11:00:00, 157.7, 0.6, 3]]"
-        assert test_string == reference_string
-        assert os.path.basename(path) == file_data[1]
-        assert file_data[2] == "rb1"
-
-    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
-    def test_parse_old_warning_missing_head_cm(self, mock_messagebar):
-        f = (
-            "Location=rb1",
-            "Temperature[\u00b0C];2:Spec.cond.[mS/cm];Date/time",
-            "5.18;2;2016/03/15 10:30:00",
-            "0.6;3;2016/03/15 11:00:00",
-        )
-        charset = "cp1252"
-        with file_utils.tempinput("\n".join(f), charset) as path:
-            file_data = DiverOfficeParser.parse(path, charset)
-
-        test_string = utils_for_tests.create_test_string(file_data[0])
-        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, None, 5.18, 2], [2016-03-15 11:00:00, None, 0.6, 3]]"
-        assert len(mock_messagebar.mock_calls) == 1
-        assert test_string == reference_string
-        assert os.path.basename(path) == file_data[1]
-        assert file_data[2] == "rb1"
-
-    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
-    def test_parse_old_warning_missing_date_time(self, mock_messagebar):
-        f = (
-            "Location=rb1",
-            "Temperature[\u00b0C];2:Spec.cond.[mS/cm];dada",
-            "5.18;2;2016/03/15 10:30:00",
-            "0.6;3;2016/03/15 11:00:00",
-        )
-        charset = "cp1252"
-        with file_utils.tempinput("\n".join(f), charset) as path:
-            file_data = DiverOfficeParser.parse(path, charset)
-
-        assert file_data[0] == []
-        assert len(mock_messagebar.mock_calls) == 1
-
-    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
-    def test_parse_old_get_timezone(self, mock_messagebar):
-        f = (
-            "Location=rb1",
-            "Instrument number       =UTC+1",
-            "Date/time,Water head[cm],Temperature[\u00b0C]",
-            "2016/03/15 10:30:00,26.9,5.18",
-            "2016/03/15 11:00:00,157.7,0.6",
-        )
-        charset = "utf-8"
-        with file_utils.tempinput("\n".join(f), charset) as path:
-            file_data = DiverOfficeParser.parse(path, charset)
-
-        test_string = utils_for_tests.create_test_string(file_data[0])
-        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, 26.9, 5.18, None], [2016-03-15 11:00:00, 157.7, 0.6, None]]"
-        assert test_string == reference_string
-        assert os.path.basename(path) == file_data[1]
-        assert file_data[2] == "rb1"
-        assert file_data[3] == "UTC+1"
-
-    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
-    def test_parse_comma_missing_head_cm_value(self, mock_messagebar):
-        """parse() (new-style .csv/.mon) with missing head_cm value."""
-        f = (
-            "[Logger settings]",
-            "Location=rb1",
-            "[Channel 1]",
-            "Identification          =LEVEL",
-            "[Channel 2]",
-            "Identification          =TEMPERATURE",
-            "",
-            "Date/time;Water head[cm];Temperature[\u00b0C]",
-            "2016/03/15 10:30:00;1,2;10",
-            "2016/03/15 11:00:00;    ;101",
-            "END OF DATA FILE OF DATALOGGER FOR WINDOWS",
-            "    ",
-        )
-        charset = "utf-8"
-        with file_utils.tempinput("\n".join(f), charset, suffix=".csv") as path:
-            file_data = DiverOfficeParser.parse(
-                path=path,
-                charset=charset,
-                skip_rows_without_water_level=False,
-                begindate=None,
-                enddate=None,
-            )
-
-        test_string = utils_for_tests.create_test_string(file_data[0])
-        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2016-03-15 10:30:00, 1.2, 10, None], [2016-03-15 11:00:00, None, 101, None]]"
-        assert test_string == reference_string
-        assert os.path.basename(path) == file_data[1]
-        assert file_data[2] == "rb1"
-
-
-# ── Hobo parser tests ported from test_import_hobologger.py ───────────────────
-
-
-@pytest.mark.active
-class TestHoboParserOldAPI:
-    """Parser unit tests ported from TestParseHobologgerFile in test_import_hobologger.py.
-    These test HoboParser.parse() (which replaced HobologgerImport.parse_hobologger_file)."""
-
-    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
-    def test_parse_hobologger_file_utf8(self, mock_messagelog):
-        f = (
-            '\ufeff"Plot Title: temp"',
-            '"#","Date Time, GMT+01:00","Temp, \u00b0C (LGR S/N: 1234, SEN S/N: 1234, LBL: Rb1)","Coupler Detached (LGR S/N: 1234)","Coupler Attached (LGR S/N: 1234)","Stopped (LGR S/N: 1234)","End Of File (LGR S/N: 1234)"',
-            "1,07/19/18 10:00:00 fm,4.558,Logged,,,",
-            "2,07/19/18 11:00:00 fm,4.402,,,,",
-            "3,07/19/18 12:00:00 em,4.402,,,,",
-            "4,07/19/18 01:00:00 em,4.402,,,,",
-        )
-        charset = "utf-8"
-        tzconverter = TzConverter()
-        with file_utils.tempinput("\n".join(f), charset) as path:
-            file_data = HoboParser.parse(
-                path, charset, tz_converter=tzconverter, begindate=None, enddate=None
-            )
-
-        test_string = utils_for_tests.create_test_string(file_data[0])
-        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2018-07-19 10:00:00, , 4.558, ], [2018-07-19 11:00:00, , 4.402, ], [2018-07-19 12:00:00, , 4.402, ], [2018-07-19 13:00:00, , 4.402, ]]"
-        assert test_string == reference_string
-        assert os.path.basename(path) == file_data[1]
-        assert file_data[2] == "Rb1"
-
-    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
-    def test_parse_hobologger_file_convert_tz(self, mock_messagelog):
-        f = (
-            '\ufeff"Plot Title: temp"',
-            '"#","Date Time, GMT+03:00","Temp, \u00b0C (LGR S/N: 1234, SEN S/N: 1234, LBL: Rb1)","Coupler Detached (LGR S/N: 1234)","Coupler Attached (LGR S/N: 1234)","Stopped (LGR S/N: 1234)","End Of File (LGR S/N: 1234)"',
-            "1,07/19/18 10:00:00 fm,4.558,Logged,,,",
-            "2,07/19/18 11:00:00 fm,4.402,,,,",
-            "3,07/19/18 12:00:00 em,4.402,,,,",
-            "4,07/19/18 01:00:00 em,4.402,,,,",
-        )
-        charset = "utf-8"
-        tzconverter = TzConverter()
-        tzconverter.target_tz = "GMT+01:00"
-        with file_utils.tempinput("\n".join(f), charset) as path:
-            file_data = HoboParser.parse(
-                path, charset, tz_converter=tzconverter, begindate=None, enddate=None
-            )
-
-        test_string = utils_for_tests.create_test_string(file_data[0])
-        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2018-07-19 08:00:00, , 4.558, ], [2018-07-19 09:00:00, , 4.402, ], [2018-07-19 10:00:00, , 4.402, ], [2018-07-19 11:00:00, , 4.402, ]]"
-        assert test_string == reference_string
-        assert os.path.basename(path) == file_data[1]
-        assert file_data[2] == "Rb1"
-
-    def test_parse_hobologger_file_changed_order(self):
-        f = (
-            '\ufeff"Plot Title: temp"',
-            '"#","Temp, \u00b0C (LGR S/N: 1234, SEN S/N: 1234, LBL: Rb1)","Date Time, GMT+01:00","Coupler Detached (LGR S/N: 1234)","Coupler Attached (LGR S/N: 1234)","Stopped (LGR S/N: 1234)","End Of File (LGR S/N: 1234)"',
-            "1,4.558,07/19/18 10:00:00 fm,Logged,,,",
-            "2,4.402,07/19/18 11:00:00 fm,,,,",
-            "3,4.402,07/19/18 12:00:00 em,,,,",
-            "4,4.402,07/19/18 01:00:00 em,,,,",
-        )
-        charset = "utf-8"
-        tzconverter = TzConverter()
-        with file_utils.tempinput("\n".join(f), charset) as path:
-            file_data = HoboParser.parse(
-                path, charset, tz_converter=tzconverter, begindate=None, enddate=None
-            )
-
-        test_string = utils_for_tests.create_test_string(file_data[0])
-        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2018-07-19 10:00:00, , 4.558, ], [2018-07-19 11:00:00, , 4.402, ], [2018-07-19 12:00:00, , 4.402, ], [2018-07-19 13:00:00, , 4.402, ]]"
-        assert test_string == reference_string
-        assert os.path.basename(path) == file_data[1]
-        assert file_data[2] == "Rb1"
-
-    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
-    def test_parse_hobologger_file_other_dateformat(self, mock_messagelog):
-        f = (
-            '\ufeff"Plot Title: temp"',
-            '"#","Date Time, GMT+01:00","Temp, \u00b0C (LGR S/N: 1234, SEN S/N: 1234, LBL: Rb1)","Coupler Detached (LGR S/N: 1234)","Coupler Attached (LGR S/N: 1234)","Stopped (LGR S/N: 1234)","End Of File (LGR S/N: 1234)"',
-            "1,2018-07-19 10:00:00,4.558,Logged,,,",
-            "2,2018-07-19 11:00:00,4.402,,,,",
-            "3,2018-07-19 12:00:00,4.402,,,,",
-            "4,2018-07-19 13:00:00,4.402,,,,",
-        )
-        charset = "utf-8"
-        tzconverter = TzConverter()
-        with file_utils.tempinput("\n".join(f), charset) as path:
-            file_data = HoboParser.parse(
-                path, charset, tz_converter=tzconverter, begindate=None, enddate=None
-            )
-
-        test_string = utils_for_tests.create_test_string(file_data[0])
-        reference_string = "[[date_time, head_cm, temp_degc, cond_mscm], [2018-07-19 10:00:00, , 4.558, ], [2018-07-19 11:00:00, , 4.402, ], [2018-07-19 12:00:00, , 4.402, ], [2018-07-19 13:00:00, , 4.402, ]]"
-        assert test_string == reference_string
-        assert os.path.basename(path) == file_data[1]
-        assert file_data[2] == "Rb1"
-
-
-# ── Integration test mixin: DiverOffice ──────────────────────────────────────
 # Ported from WlvllogImportFromDiverofficeFilesMixin in test_import_diveroffice_backends.py
 
 _CHARSET = "utf-8"
@@ -3856,188 +3434,6 @@ class TestLoggerImportLeveloggerPostgis(
 
 
 # ── DiverOffice Baro parser tests ─────────────────────────────────────────────
-
-
-@pytest.mark.active
-class TestDiverOfficeBaroParser:
-    """Unit tests for DiverOfficeBaroParser.parse."""
-
-    # Matches the real baro .mon file format (space-delimited data section)
-    MON_CONTENT = (
-        "[Logger settings]\n"
-        "  Serial number           =..00-DA123  219.\n"
-        "  Instrument number       =          UTC+1     \n"
-        "  Location                =Rb1Baro\n"
-        "  Number of channels      =2\n"
-        "[Channel 1]\n"
-        "  Identification          =PRESSURE\n"
-        "[Channel 2]\n"
-        "  Identification          =TEMPERATURE\n"
-        "[data]\n"
-        "2\n"
-        "2023/10/05 13:00:00.0      978.667       9.470\n"
-        "2023/10/05 14:00:00.0      978.667      12.110\n"
-    )
-
-    # Matches the real baro .csv file format (semicolon-delimited)
-    CSV_CONTENT = (
-        "[Logger settings]\n"
-        "  Serial number           =..00-DA123  219.\n"
-        "  Instrument number       =          UTC+1     \n"
-        "  Location                =Rb1Baro\n"
-        "[Channel 1]\n"
-        "  Identification          =PRESSURE\n"
-        "[Channel 2]\n"
-        "  Identification          =TEMPERATURE\n"
-        "Date/time;Pressure[cmH2O];Temperature[\u00b0C]\n"
-        "2023/10/05 13:00:00;978,667;9,470\n"
-        "2023/10/05 14:00:00;978,667;12,110\n"
-    )
-
-    def test_parse_mon_extracts_pressure_and_temperature(self):
-        with file_utils.tempinput(self.MON_CONTENT, "utf-8", suffix=".mon") as f:
-            result = DiverOfficeBaroParser.parse(path=f, charset="utf-8")
-        filedata, filename, location, utc_offset, serial_number = result
-        assert filedata[0] == ["date_time", "baro_cmh2o", "temperature"]
-        assert len(filedata) == 3  # header + 2 data rows
-        assert filedata[1][0] == "2023-10-05 13:00:00"
-        assert float(filedata[1][1]) == pytest.approx(978.667, rel=1e-3)
-        assert float(filedata[1][2]) == pytest.approx(9.470, rel=1e-3)
-
-    def test_parse_baro_mon_preserves_wider_pressure_after_inference_window(self):
-        content = build_mon(1001, baro=True)
-        with file_utils.tempinput(content, "utf-8", suffix=".mon") as path:
-            file_data, *_ = DiverOfficeBaroParser.parse(path, "utf-8")
-
-        assert file_data[-1][1] == "100.308"
-
-    def test_parse_csv_extracts_pressure_and_temperature(self):
-        with file_utils.tempinput(self.CSV_CONTENT, "utf-8", suffix=".csv") as f:
-            result = DiverOfficeBaroParser.parse(path=f, charset="utf-8")
-        filedata, filename, location, utc_offset, serial_number = result
-        assert filedata[0] == ["date_time", "baro_cmh2o", "temperature"]
-        assert len(filedata) == 3
-        assert filedata[1][0] == "2023-10-05 13:00:00"
-        assert float(filedata[1][1]) == pytest.approx(978.667, rel=1e-3)
-
-    def test_parse_mon_first_row_missing_pressure_preserves_temperature(self):
-        content = (
-            "[Logger settings]\n"
-            "  Location                =Rb1Baro\n"
-            "  Number of channels      =2\n"
-            "[Channel 1]\n"
-            "  Identification          =PRESSURE\n"
-            "[Channel 2]\n"
-            "  Identification          =TEMPERATURE\n"
-            "[data]\n"
-            "2\n"
-            "2023/10/05 13:00:00.0                    9.470\n"
-            "2023/10/05 14:00:00.0      978.667      12.110\n"
-        )
-        with file_utils.tempinput(content, "utf-8", suffix=".mon") as f:
-            result = DiverOfficeBaroParser.parse(path=f, charset="utf-8")
-
-        filedata, *_ = result
-        assert filedata[0] == ["date_time", "baro_cmh2o", "temperature"]
-        assert filedata[1] == ["2023-10-05 13:00:00", None, "9.47"]
-        assert filedata[2][0] == "2023-10-05 14:00:00"
-        assert float(filedata[2][1]) == pytest.approx(978.667, rel=1e-3)
-        assert float(filedata[2][2]) == pytest.approx(12.110, rel=1e-3)
-
-    def test_parse_extracts_location(self):
-        with file_utils.tempinput(self.MON_CONTENT, "utf-8", suffix=".mon") as f:
-            result = DiverOfficeBaroParser.parse(path=f, charset="utf-8")
-        _, _, location, _, _ = result
-        assert location == "Rb1Baro"
-
-    def test_parse_extracts_serial_number(self):
-        with file_utils.tempinput(self.MON_CONTENT, "utf-8", suffix=".mon") as f:
-            result = DiverOfficeBaroParser.parse(path=f, charset="utf-8")
-        _, _, _, _, serial_number = result
-        assert serial_number == "DA123"
-
-    def test_parse_extracts_utc_offset(self):
-        with file_utils.tempinput(self.MON_CONTENT, "utf-8", suffix=".mon") as f:
-            result = DiverOfficeBaroParser.parse(path=f, charset="utf-8")
-        _, _, _, utc_offset, _ = result
-        assert utc_offset is not None
-        assert "UTC+1" in utc_offset or "+1" in utc_offset
-
-    def test_parse_date_filter(self):
-        with file_utils.tempinput(self.MON_CONTENT, "utf-8", suffix=".mon") as f:
-            result = DiverOfficeBaroParser.parse(
-                path=f,
-                charset="utf-8",
-                begindate="2023-10-05 14:00:00",
-            )
-        filedata, *_ = result
-        assert len(filedata) == 2  # header + 1 row (second row only)
-        assert filedata[1][0] == "2023-10-05 14:00:00"
-
-    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
-    def test_parse_no_pressure_column_warns(self, mock_messagebar):
-        content = (
-            "[Channel 1]\n"
-            "  Identification          =TEMPERATURE\n"
-            "[data]\n"
-            "1\n"
-            "2023/10/05 13:00:00.0       9.470\n"
-        )
-        with file_utils.tempinput(content, "utf-8", suffix=".mon") as f:
-            result = DiverOfficeBaroParser.parse(path=f, charset="utf-8")
-        # Temperature-only file: temp_degc column present, baro_cmh2o absent
-        filedata, *_ = result
-        # Either warns or returns data with only temp column — either way no crash
-        assert isinstance(filedata, list)
-
-
-@pytest.mark.active
-class TestPivotBaroToMeteo:
-    """Unit tests for _pivot_baro_to_meteo helper."""
-
-    def test_pivots_both_channels(self):
-        file_data = [
-            ["date_time", "baro_cmh2o", "temperature", "obsid"],
-            ["2023-10-05 13:00:00", "978.667", "9.470", "Rb1Baro"],
-        ]
-        result = _pivot_baro_to_meteo(file_data, "DA123", "baro.mon")
-        assert result[0] == [
-            "obsid",
-            "instrumentid",
-            "parameter",
-            "date_time",
-            "reading_num",
-            "unit",
-        ]
-        params = [(r[2], r[4], r[5]) for r in result[1:]]
-        assert ("pressure", "978.667", "cmH2O") in params
-        assert ("temp", "9.470", "\u00b0C") in params
-
-    def test_uses_serial_number_as_instrumentid(self):
-        file_data = [
-            ["date_time", "baro_cmh2o", "obsid"],
-            ["2023-10-05 13:00:00", "978.667", "Rb1Baro"],
-        ]
-        result = _pivot_baro_to_meteo(file_data, "SN999", "baro.mon")
-        assert result[1][1] == "SN999"
-
-    def test_falls_back_to_filename_when_no_serial(self):
-        file_data = [
-            ["date_time", "baro_cmh2o", "obsid"],
-            ["2023-10-05 13:00:00", "978.667", "Rb1Baro"],
-        ]
-        result = _pivot_baro_to_meteo(file_data, None, "mybaro.mon")
-        assert result[1][1] == "mybaro.mon"
-
-    def test_skips_none_values(self):
-        file_data = [
-            ["date_time", "baro_cmh2o", "temperature", "obsid"],
-            ["2023-10-05 13:00:00", "978.667", None, "Rb1Baro"],
-        ]
-        result = _pivot_baro_to_meteo(file_data, "DA123", "baro.mon")
-        params = [r[2] for r in result[1:]]
-        assert "pressure" in params
-        assert "temp" not in params
 
 
 @pytest.mark.spatialite

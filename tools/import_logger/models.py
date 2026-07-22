@@ -85,6 +85,53 @@ class LoggerSchemaCapabilities:
     has_source_column: bool
 
 
+@dataclass(frozen=True)
+class LoggerFileFailure:
+    filename: str
+    stage: str
+    reason: str
+
+
+@dataclass
+class LoggerParseBatchResult:
+    parsed_files: list[ParsedLoggerFile]
+    failures: list[LoggerFileFailure]
+
+
+@dataclass(frozen=True)
+class LoggerParseRequest:
+    files: tuple[str, ...]
+    format_name: str
+    skip_missing_water_head: bool
+    from_date: datetime | pd.Timestamp | None
+    to_date: datetime | pd.Timestamp | None
+    target_timezone: str | None
+
+
+@dataclass(frozen=True)
+class LoggerSeriesSpec:
+    obsid: str
+    source: str | None
+    description: str | None
+    instrument: str | None
+    created_at: str | None
+
+
+@dataclass(frozen=True)
+class LoggerDbImportRequest:
+    filename: str
+    dest_table: str
+    frame: pd.DataFrame
+    series: LoggerSeriesSpec | None = None
+
+
+@dataclass(frozen=True)
+class LoggerDbImportResult:
+    filename: str
+    imported: bool
+    reason: str | None = None
+
+
 def empty_logger_frame() -> pd.DataFrame:
     """Return an empty frame with the canonical logger schema and dtypes."""
     return pd.DataFrame(

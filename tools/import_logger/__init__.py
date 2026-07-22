@@ -21,8 +21,6 @@ from .parsers import (
     LeveloggerParser,
     HoboParser,
     TzConverter,
-    filter_dates_from_filedata,
-    _pivot_baro_to_meteo,
 )
 
 __all__ = [

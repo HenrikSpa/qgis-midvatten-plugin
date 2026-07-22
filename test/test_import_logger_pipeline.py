@@ -34,6 +34,7 @@ from midvatten.tools.import_logger.pipeline import (
     run_post_resolution_pipeline,
     run_pre_resolution_pipeline,
     validate_logger_frame,
+    write_logger_csv,
 )
 
 
@@ -454,3 +455,52 @@ def test_post_pipeline_uses_kind_policy_without_mutating_parser_frame() -> None:
     assert tuple(result.data.columns) == METEO_COLUMNS
     assert result.data["parameter"].tolist() == ["pressure", "temp"]
     assert_frame_equal(data, original)
+
+
+def test_water_csv_export_combines_files_and_renders_nulls_blank(tmp_path) -> None:
+    first = run_post_resolution_pipeline(
+        parsed_file(logger_frame(["2025-01-01 00:00:00"], head=[1.0], temp=[None])),
+        "rb1",
+        {},
+        LoggerImportOptions(import_all_data=True),
+    )
+    second = run_post_resolution_pipeline(
+        parsed_file(logger_frame(["2025-01-01 01:00:00"], head=[2.0], temp=[5.0])),
+        "rb1",
+        {},
+        LoggerImportOptions(import_all_data=True),
+    )
+    path = tmp_path / "water.csv"
+
+    write_logger_csv(str(path), [first, second])
+
+    assert path.read_text(encoding="utf-8") == (
+        "date_time;head_cm;temp_degc;cond_mscm;obsid\n"
+        "2025-01-01 00:00:00;1.0;;;rb1\n"
+        "2025-01-01 01:00:00;2.0;5.0;;rb1\n"
+    )
+
+
+def test_baro_csv_export_uses_destination_columns_and_order(tmp_path) -> None:
+    prepared = run_post_resolution_pipeline(
+        parsed_file(
+            logger_frame(
+                ["2025-01-01 00:00:00"],
+                temp=[5.0],
+                baro=[100.0],
+            ),
+            kind=LoggerDataKind.BAROMETRIC,
+        ),
+        "baro1",
+        {},
+        LoggerImportOptions(),
+    )
+    path = tmp_path / "baro.csv"
+
+    write_logger_csv(str(path), [prepared])
+
+    assert path.read_text(encoding="utf-8") == (
+        "obsid;instrumentid;parameter;date_time;reading_num;unit\n"
+        "baro1;SN1;pressure;2025-01-01 00:00:00;100.0;cmH2O\n"
+        "baro1;SN1;temp;2025-01-01 00:00:00;5.0;°C\n"
+    )

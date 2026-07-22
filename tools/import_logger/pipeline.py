@@ -37,6 +37,10 @@ class LoggerPipelineError(ValueError):
     """A shared logger transformation could not be completed safely."""
 
 
+class TimezoneConversionError(LoggerPipelineError):
+    """A requested source-to-target timezone conversion was invalid."""
+
+
 class InvalidLatestDateError(LoggerPipelineError):
     """A non-null database latest-date value was structurally invalid."""
 
@@ -163,10 +167,12 @@ def normalize_timezone(
     validate_logger_frame(parsed.data)
     result = _copy_with_data(parsed, parsed.data)
     source = parsed.source_timezone
-    if not source or not target or _timezones_equivalent(source, target):
+    if not source or not target:
         return result
 
     try:
+        if _timezones_equivalent(source, target):
+            return result
         source_spec = _timezone_spec(source)
         target_spec = _timezone_spec(target)
         try:
@@ -183,7 +189,7 @@ def normalize_timezone(
             )
         converted = localized.dt.tz_convert(target_spec).dt.tz_localize(None)
     except Exception as error:
-        raise LoggerPipelineError(
+        raise TimezoneConversionError(
             f"timezone conversion from {source!r} to {target!r} failed: {error}"
         ) from error
 
@@ -295,7 +301,7 @@ def filter_after_latest_date(
     latest_dates: Mapping[str, pd.Timestamp | None],
 ) -> pd.DataFrame:
     """Keep typed file rows strictly newer than the observation cutoff."""
-    validate_logger_frame(data)
+    validate_logger_frame(data.loc[:, CANONICAL_COLUMNS])
     cutoff = latest_dates.get(obsid)
     if cutoff is None:
         return data.reset_index(drop=True).copy()
@@ -310,7 +316,7 @@ def baro_to_meteo(
     instrumentid: str,
 ) -> pd.DataFrame:
     """Reshape canonical Baro measurements into deterministic meteo rows."""
-    validate_logger_frame(data)
+    validate_logger_frame(data.loc[:, CANONICAL_COLUMNS])
     wide = data.assign(_source_ordinal=range(len(data)), obsid=obsid)
     long = wide.melt(
         id_vars=["_source_ordinal", "obsid", "date_time"],
@@ -334,10 +340,10 @@ def baro_to_meteo(
 
 def _water_destination(
     data: pd.DataFrame,
-    obsid: str,
+    _obsid: str,
     _instrumentid: str,
 ) -> pd.DataFrame:
-    return data.assign(obsid=obsid).loc[:, WATER_LEVEL_COLUMNS].copy()
+    return data.loc[:, WATER_LEVEL_COLUMNS].copy()
 
 
 def _barometric_destination(
@@ -392,8 +398,8 @@ def run_post_resolution_pipeline(
 ) -> PreparedLoggerFile:
     """Run the common post-obsid pipeline and prepare destination-shaped data."""
     validate_logger_frame(parsed.data)
-    data = parsed.data.reset_index(drop=True).copy()
-    if not options.import_all_data:
+    data = assign_obsid(parsed.data, obsid)
+    if not options.import_all_data and parsed.kind is LoggerDataKind.WATER_LEVEL:
         data = filter_after_latest_date(data, obsid, latest_dates)
     instrumentid = parsed.serial_number or parsed.filename
     destination = _DESTINATION_PREPARERS[parsed.kind](data, obsid, instrumentid)
@@ -406,4 +412,33 @@ def run_post_resolution_pipeline(
         serial_number=parsed.serial_number,
         obsid=obsid,
         notices=parsed.notices,
+    )
+
+
+def concatenate_prepared_frames(
+    prepared_files: list[PreparedLoggerFile],
+) -> pd.DataFrame:
+    """Combine destination-shaped files once for CSV export."""
+    if not prepared_files:
+        return pd.DataFrame()
+    columns = tuple(prepared_files[0].data.columns)
+    if any(tuple(item.data.columns) != columns for item in prepared_files[1:]):
+        raise LoggerPipelineError("export frames must share one destination schema")
+    return pd.concat(
+        [item.data for item in prepared_files],
+        ignore_index=True,
+        copy=False,
+    )
+
+
+def write_logger_csv(path: str, prepared_files: list[PreparedLoggerFile]) -> None:
+    """Write logger destination data at the sole CSV text boundary."""
+    data = concatenate_prepared_frames(prepared_files)
+    data.to_csv(
+        path,
+        sep=";",
+        encoding="utf-8",
+        index=False,
+        date_format="%Y-%m-%d %H:%M:%S",
+        na_rep="",
     )

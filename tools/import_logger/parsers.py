@@ -17,15 +17,16 @@ from qgis.PyQt.QtCore import QCoreApplication
 import pandas as pd  # pandas is a mandatory dependency of this plugin
 
 from midvatten.tools.utils import (
-    common_utils,
-    date_utils,
-    dialog_utils,
     file_utils,
     message_utils,
 )
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.common_utils import format_timezone_string
-from midvatten.tools.utils.date_utils import to_date
+from midvatten.tools.import_logger.models import (
+    LoggerDataKind,
+    ParsedLoggerFile,
+    empty_logger_frame,
+)
 from midvatten.tools.utils.gui_utils import (
     RowEntry,
     set_combobox,
@@ -39,31 +40,45 @@ class FileError(Exception):
     pass
 
 
-def fix_date(
-    date_time: str, filename: str, tz_converter: TzConverter | None = None
-) -> datetime.datetime:
-    """Convert a HOBO date string to a datetime, optionally converting timezone."""
-    try:
-        dt = datetime.datetime.strptime(date_time[:-2].rstrip(), "%m/%d/%y %I:%M:%S")
-    except ValueError:
-        dt = date_utils.to_date(date_time)
-        if dt is None:
+def fix_date(date_time: str, filename: str) -> datetime.datetime:
+    """Parse one HOBO timestamp using only documented source formats."""
+    value = str(date_time).strip()
+    suffix_match = re.fullmatch(r"(.+?)\s+([A-Za-z]{2})", value)
+    if suffix_match and suffix_match.group(2).casefold() in {
+        "am",
+        "pm",
+        "fm",
+        "em",
+    }:
+        meridiem = "AM" if suffix_match.group(2).casefold() in {"am", "fm"} else "PM"
+        try:
+            return datetime.datetime.strptime(
+                f"{suffix_match.group(1)} {meridiem}",
+                "%m/%d/%y %I:%M:%S %p",
+            )
+        except ValueError as error:
             raise FileError(
                 QCoreApplication.translate(
-                    "LoggerImport",
-                    """Dateformat in file %s could not be parsed.""",
+                    "LoggerImport", "Dateformat in file %s could not be parsed."
                 )
                 % filename
-            )
-    else:
-        dt_end = date_time[-2:]
-        if dt_end.lower() in ("em", "pm"):
-            dt = date_utils.dateshift(dt, 12, "hours")
+            ) from error
 
-    if tz_converter is not None:
-        dt = tz_converter.convert_datetime(dt)
-
-    return dt
+    for date_format in (
+        "%Y-%m-%d %H:%M:%S",
+        "%Y/%m/%d %H:%M:%S",
+        "%m/%d/%y %H:%M:%S",
+    ):
+        try:
+            return datetime.datetime.strptime(value, date_format)
+        except ValueError:
+            continue
+    raise FileError(
+        QCoreApplication.translate(
+            "LoggerImport", "Dateformat in file %s could not be parsed."
+        )
+        % filename
+    )
 
 
 def get_tz_string(date_time_tz: str) -> str | None:
@@ -85,72 +100,37 @@ def get_tz_string(date_time_tz: str) -> str | None:
         return match.group(1)
 
 
-def _get_last_date_str(last_dates_value: object) -> str | None:
-    """Normalise the different shapes that ``obsid_last_imported_dates`` values
-    can take:
-    - ``[('2016-09-28',)]``  — from ``db_utils.get_last_logger_dates()``
-    - ``'2016-09-28'``       — plain string (used in tests)
-    """
-    if last_dates_value is None:
-        return None
-    if isinstance(last_dates_value, str):
-        return last_dates_value
-    # Assume list-of-tuple: [(date_str,), ...]
-    try:
-        return last_dates_value[0][0]
-    except (IndexError, TypeError):
-        return str(last_dates_value)
-
-
-def filter_dates_from_filedata(
-    file_data: list[list[str]],
-    obsid_last_imported_dates: dict[str, object],
-    obsid_header_name: str = "obsid",
-    date_time_header_name: str = "date_time",
-) -> list[list[str]]:
-    """Return only rows with dates strictly after the last imported date for
-    each obsid.
-
-    Accepts two value formats for *obsid_last_imported_dates*:
-
-    * ``{'obs1': [('2016-09-28',)]}`` — produced by
-      ``db_utils.get_last_logger_dates()``
-    * ``{'obs1': '2016-09-28'}`` — plain string (used in tests)
-
-    >>> filter_dates_from_filedata([['obsid', 'date_time'], ['obs1', '2016-09-28'], ['obs1', '2016-09-29']], {'obs1': [('2016-09-28', )]})
-    [['obsid', 'date_time'], ['obs1', '2016-09-29']]
-    """
-    if len(file_data) == 1:
-        return file_data
-
-    obsid_idx = file_data[0].index(obsid_header_name)
-    date_time_idx = file_data[0].index(date_time_header_name)
-
-    last_dates_parsed: dict[str, object] = {}
-    for obsid, val in obsid_last_imported_dates.items():
-        last_date_str = _get_last_date_str(val)
-        last_dates_parsed[obsid] = (
-            to_date(last_date_str) if last_date_str is not None else None
+def _parse_explicit_datetimes(
+    values: pd.Series,
+    formats: tuple[str, ...],
+) -> pd.Series:
+    """Parse known source formats and expose every structurally invalid value."""
+    parsed = pd.Series(pd.NaT, index=values.index, dtype="datetime64[ns]")
+    remaining = parsed.isna()
+    for date_format in formats:
+        candidates = pd.to_datetime(
+            values.loc[remaining], format=date_format, errors="coerce"
         )
+        parsed.loc[remaining] = candidates
+        remaining = parsed.isna()
+        if not remaining.any():
+            break
+    return parsed
 
-    data_rows = file_data[1:]
-    row_dates = date_utils.to_dates([row[date_time_idx] for row in data_rows])
 
-    filtered_file_data = []
-    for row, row_date in zip(data_rows, row_dates):
-        obsid = row[obsid_idx]
-        if obsid not in obsid_last_imported_dates:
-            filtered_file_data.append(row)
-            continue
-        last_date = last_dates_parsed.get(obsid)
-        if last_date is None:
-            filtered_file_data.append(row)
-            continue
-        if row_date is not None and row_date > last_date:
-            filtered_file_data.append(row)
-
-    filtered_file_data.insert(0, file_data[0])
-    return filtered_file_data
+def _canonical_frame(data: pd.DataFrame) -> pd.DataFrame:
+    """Add absent numeric channels once and return the exact parser schema."""
+    result = data.copy()
+    for column in ("head_cm", "temp_degc", "cond_mscm", "baro_cmh2o"):
+        if column not in result.columns:
+            result[column] = float("nan")
+        result[column] = pd.to_numeric(result[column]).astype("float64")
+    if "date_time" not in result.columns:
+        return empty_logger_frame()
+    result["date_time"] = result["date_time"].astype("datetime64[ns]")
+    return result.loc[
+        :, ["date_time", "head_cm", "temp_degc", "cond_mscm", "baro_cmh2o"]
+    ].reset_index(drop=True)
 
 
 # ── GUI components ─────────────────────────────────────────────────────────────
@@ -161,7 +141,6 @@ class TzConverter(RowEntry):
 
     def __init__(self):
         super().__init__()
-        self.source_tz = None
         self.label = QtWidgets.QLabel(
             QCoreApplication.translate("TzSelector", "Select target timezone: ")
         )
@@ -176,21 +155,6 @@ class TzConverter(RowEntry):
         self.target_tz = "GMT+1"
 
         self.layout().addStretch()
-
-    def convert_datetime(self, date_time: datetime.datetime) -> datetime.datetime:
-        if self.source_tz is None:
-            return date_time
-
-        source_td = date_utils.parse_timezone_to_timedelta(self.source_tz)
-        target_td = date_utils.parse_timezone_to_timedelta(self.target_tz)
-
-        diff = target_td - source_td
-
-        if diff == 0:
-            return date_time
-        else:
-            new_date = date_utils.to_date(date_time) + diff
-            return new_date
 
     @property
     def target_tz(self):
@@ -213,7 +177,7 @@ _DIVEROFFICE_DEFAULT_COL_MAP: dict[str, str] = {
 _DIVEROFFICE_BARO_COL_MAP: dict[str, str] = {
     "pressure": "baro_cmh2o",
     "baro": "baro_cmh2o",
-    "temp": "temperature",
+    "temp": "temp_degc",
 }
 
 
@@ -429,8 +393,14 @@ class DiverOfficeParser:
     ) -> pd.DataFrame:
         """Convert dates and numbers while rejecting every non-empty bad value."""
         converted_frame = frame.copy()
-        parsed_dates = pd.to_datetime(
-            converted_frame.iloc[:, date_col_idx], errors="coerce"
+        parsed_dates = _parse_explicit_datetimes(
+            converted_frame.iloc[:, date_col_idx].astype("string").str.strip(),
+            (
+                "%Y/%m/%d %H:%M:%S.%f",
+                "%Y/%m/%d %H:%M:%S",
+                "%Y-%m-%d %H:%M:%S.%f",
+                "%Y-%m-%d %H:%M:%S",
+            ),
         )
         invalid_dates = parsed_dates.isna()
         if invalid_dates.any():
@@ -538,30 +508,23 @@ class DiverOfficeParser:
         return df
 
     @staticmethod
-    def parse(
+    def parse(path: str, charset: str) -> ParsedLoggerFile:
+        return DiverOfficeParser._parse(
+            path,
+            charset,
+            col_map=_DIVEROFFICE_DEFAULT_COL_MAP,
+            kind=LoggerDataKind.WATER_LEVEL,
+        )
+
+    @staticmethod
+    def _parse(
         path: str,
         charset: str,
-        col_map: dict[str, str] | None = None,
-        output_cols: list[str] | None = None,
-        skip_rows_without_water_level: bool = False,
-        begindate: str | None = None,
-        enddate: str | None = None,
-        interactive: bool = True,
-    ) -> tuple[list, str, str, str | None, str | None]:
-        """Parse a Diver-Office .mon or .csv file.
-
-        Returns ``(filedata, filename, location, utc_offset, serial_number)``.
-
-        ``col_map`` maps space-stripped lowercase keywords to output column names.
-        ``output_cols`` fixes the column order in the returned filedata (None-filled
-        when absent); defaults to water-level columns when not supplied.
-        """
-        _col_map = col_map if col_map is not None else _DIVEROFFICE_DEFAULT_COL_MAP
-        _output_cols = (
-            output_cols
-            if output_cols is not None
-            else ["date_time", "head_cm", "temp_degc", "cond_mscm"]
-        )
+        *,
+        col_map: dict[str, str],
+        kind: LoggerDataKind,
+    ) -> ParsedLoggerFile:
+        _col_map = col_map
 
         def mapped_output_name(header: str) -> str | None:
             normalized = header.lower().replace(" ", "")
@@ -570,7 +533,6 @@ class DiverOfficeParser:
                     return outcol
             return None
 
-        filedata = []
         filename = os.path.basename(path)
         section = None
         data_start_row = None
@@ -645,6 +607,17 @@ class DiverOfficeParser:
         if not location:
             location = metadata.get("flat", {}).get("location", "")
 
+        def make_result(data: pd.DataFrame) -> ParsedLoggerFile:
+            return ParsedLoggerFile(
+                data=_canonical_frame(data),
+                filename=filename,
+                source_path=path,
+                kind=kind,
+                location=location or None,
+                serial_number=serial_number,
+                source_timezone=utc_offset or None,
+            )
+
         data_headers = {0: "date_time"}
         for section, data in metadata.items():
             m = re.search("channel ([0-9]+)", section)
@@ -688,7 +661,7 @@ class DiverOfficeParser:
                 )
                 % ru(path),
             )
-            return filedata, filename, location, utc_offset or None, serial_number
+            raise DiverOfficeParseError(filename, "Date/time header not found")
 
         stop_row = None
         for inv_rownr, row in enumerate(rows[::-1]):
@@ -833,13 +806,12 @@ class DiverOfficeParser:
                 colnames.append(outcol)
                 seen_outcols.add(outcol)
 
-        if colnames:
-            colnames.insert(0, "date_time")
-            usecols.insert(0, date_col_idx)
-            # pandas requires usecols sorted ascending
-            sorted_pairs = sorted(zip(usecols, colnames))
-            usecols = [p[0] for p in sorted_pairs]
-            colnames = [p[1] for p in sorted_pairs]
+        colnames.insert(0, "date_time")
+        usecols.insert(0, date_col_idx)
+        # pandas requires usecols sorted ascending
+        sorted_pairs = sorted(zip(usecols, colnames))
+        usecols = [pair[0] for pair in sorted_pairs]
+        colnames = [pair[1] for pair in sorted_pairs]
 
         if "head_cm" in _col_map.values() and "head_cm" not in colnames:
             message_utils.MessagebarAndLog.warning(
@@ -854,12 +826,6 @@ class DiverOfficeParser:
                 )
                 % path,
             )
-            if skip_rows_without_water_level:
-                return "skip"
-
-        if not colnames:
-            return filedata, filename, location, utc_offset or None, serial_number
-
         if delimiter is not None:
             df = DiverOfficeParser._read_delimited_data(
                 source_lines,
@@ -878,114 +844,48 @@ class DiverOfficeParser:
                 colnames,
                 filename,
             )
-        if not df.empty:
-            if begindate is not None:
-                df = df.loc[(df["date_time"] >= begindate), :]
-            if enddate is not None:
-                df = df.loc[df["date_time"] <= enddate, :]
-
-            if df.empty:
-                return filedata, filename, location, utc_offset or None, serial_number
-
-        if skip_rows_without_water_level and "head_cm" in df.columns:
-            df = df.dropna(subset=["head_cm"])
-            if df.empty:
-                return filedata, filename, location, utc_offset or None, serial_number
-
-        df["date_time"] = df["date_time"].dt.strftime("%Y-%m-%d %H:%M:%S")
-        df = df.astype(object).where(pd.notnull(df), None)
-
-        filedata = [_output_cols]
-        for c in _output_cols:
-            if c not in df.columns:
-                df[c] = None
-        for col in _output_cols[1:]:
-            if col in df.columns:
-                df[col] = df[col].apply(lambda v: str(v) if v is not None else None)
-        filedata.extend(df.loc[:, _output_cols].values.tolist())
-        if len(filedata) < 2:
-            if not interactive:
-                return filedata, filename, location, utc_offset or None, serial_number
-            return dialog_utils.ask_user_about_stopping(
-                QCoreApplication.translate(
-                    "LoggerImport",
-                    "Failure, parsing failed for file %s\nNo valid data "
-                    "found!\nDo you want to stop the import? "
-                    "(else it will continue with the next file)",
-                )
-                % path
-            )
-
-        return filedata, filename, location, utc_offset or None, serial_number
+        if len(colnames) == 1:
+            return make_result(empty_logger_frame())
+        return make_result(df)
 
 
 class DiverOfficeBaroParser:
-    """Parser for Diver-Office barometric logger files (TD-Diver baro).
-
-    Same file format as DiverOfficeParser; maps Pressure[cmH2O] →
-    ``baro_cmh2o`` and Temperature → ``temperature`` for import into ``meteo``.
-    """
+    """Parser for DiverOffice barometric logger files."""
 
     @staticmethod
-    def parse(
-        path: str,
-        charset: str,
-        begindate: str | None = None,
-        enddate: str | None = None,
-        interactive: bool = True,
-    ) -> tuple[list, str, str, str | None, str | None]:
-        """Parse a DiverOffice baro file (.mon or .csv).
-
-        Returns ``(filedata, filename, location, utc_offset, serial_number)``
-        where filedata has header ``['date_time', 'baro_cmh2o', 'temperature']``.
-        """
-        return DiverOfficeParser.parse(
+    def parse(path: str, charset: str) -> ParsedLoggerFile:
+        return DiverOfficeParser._parse(
             path,
             charset,
             col_map=_DIVEROFFICE_BARO_COL_MAP,
-            output_cols=["date_time", "baro_cmh2o", "temperature"],
-            begindate=begindate,
-            enddate=enddate,
-            interactive=interactive,
+            kind=LoggerDataKind.BAROMETRIC,
         )
 
 
-# Column → (meteo parameter, unit) mapping for baro imports
-_BARO_COL_TO_METEO: dict[str, tuple[str, str]] = {
-    "baro_cmh2o": ("pressure", "cmH2O"),
-    "temperature": ("temp", "\u00b0C"),
-}
-
-# Parameters that must exist in zz_meteoparam for baro imports
-# ("temp" is always seeded by insert_datadomain.sql — only "pressure" needs checking)
-_BARO_METEO_PARAMS: list[tuple[str, str]] = [
-    ("pressure", "Barometric pressure"),
-]
+# Parameters that must exist in zz_meteoparam for barometric imports.
+_BARO_METEO_PARAMS: tuple[tuple[str, str], ...] = (("pressure", "Barometric pressure"),)
 
 
-def _pivot_baro_to_meteo(
-    file_data: list[list],
-    serial_number: str | None,
+def _strict_numeric_series(
+    values: pd.Series,
+    *,
     filename: str,
-) -> list[list]:
-    """Convert wide baro filedata (date_time, baro_cmh2o, temperature, obsid)
-    to meteo long format (obsid, instrumentid, parameter, date_time,
-    reading_num, unit).
-    """
-    instrumentid = serial_number or filename
-    header = file_data[0]
-    meteo_rows: list[list] = [
-        ["obsid", "instrumentid", "parameter", "date_time", "reading_num", "unit"]
-    ]
-    for row in file_data[1:]:
-        row_dict = dict(zip(header, row))
-        obsid = row_dict.get("obsid", "")
-        date_time = row_dict.get("date_time", "")
-        for col, (param, unit) in _BARO_COL_TO_METEO.items():
-            val = row_dict.get(col)
-            if val is not None:
-                meteo_rows.append([obsid, instrumentid, param, date_time, val, unit])
-    return meteo_rows
+    column: str,
+) -> pd.Series:
+    normalized = values.astype("string").str.strip().replace("", pd.NA)
+    normalized = normalized.str.replace(",", ".", regex=False)
+    converted = pd.to_numeric(normalized, errors="coerce")
+    invalid = normalized.notna() & converted.isna()
+    if invalid.any():
+        row_index = int(invalid.to_numpy().nonzero()[0][0])
+        raise FileError(
+            QCoreApplication.translate(
+                "LoggerImport",
+                "Invalid numeric value %s in column %s of file %s (data row %s).",
+            )
+            % (values.iloc[row_index], column, filename, row_index + 1)
+        )
+    return converted.astype("float64")
 
 
 class LeveloggerParser:
@@ -994,352 +894,214 @@ class LeveloggerParser:
     @staticmethod
     def _col1_value(col1: list[str], key: str) -> str | None:
         try:
-            idx = col1.index(key)
-            return col1[idx + 1].strip() or None
+            index = col1.index(key)
         except ValueError:
             pass
+        else:
+            if index + 1 < len(col1):
+                return col1[index + 1].strip() or None
         for cell in col1:
             if cell.startswith(key):
                 return cell[len(key) :].strip() or None
         return None
 
     @staticmethod
-    def parse(
-        path: str,
-        charset: str,
-        skip_rows_without_water_level: bool = False,
-        begindate: str | None = None,
-        enddate: str | None = None,
-    ) -> tuple[list, str, str | None, None, str | None]:
-        """Parse a Levelogger CSV file.
-
-        Returns ``(filedata, filename, location, timezone, serial_number)`` where
-        timezone is always ``None``.
-
-        Also handles ``Location: value`` on a single line (the legacy format used
-        only the two-line ``Location:\\nvalue`` layout).
-        """
-        filedata = []
-        location = None
-        timezone = None
-        serial_number = None
-        level_unit_factor_to_cm = 100
-        spec_cond_factor_to_mscm = 0.001
+    def parse(path: str, charset: str) -> ParsedLoggerFile:
         filename = os.path.basename(path)
-        if begindate is not None:
-            begindate = date_utils.to_date(begindate)
-        if enddate is not None:
-            enddate = date_utils.to_date(enddate)
-
-        with open(path, encoding=str(charset)) as f:
-            rows_unsplit = [row.lstrip().rstrip("\n").rstrip("\r") for row in f]
+        with open(path, encoding=str(charset)) as handle:
+            rows_unsplit = [row.strip("\r\n").lstrip() for row in handle]
 
         try:
-            data_header_idx = [
-                rownr
-                for rownr, row in enumerate(rows_unsplit)
+            header_index = next(
+                index
+                for index, row in enumerate(rows_unsplit)
                 if row.startswith("Date")
-            ][0]
-        except IndexError:
-            message_utils.MessagebarAndLog.warning(
-                bar_msg=QCoreApplication.translate(
-                    "LoggerImport", """File %s could not be parsed."""
+            )
+        except StopIteration as error:
+            raise FileError(
+                QCoreApplication.translate(
+                    "LoggerImport", "File %s could not be parsed."
                 )
                 % filename
-            )
-            return [], filename, location, timezone, serial_number
+            ) from error
 
         delimiter = file_utils.get_delimiter_from_file_rows(
-            rows_unsplit[data_header_idx:],
+            rows_unsplit[header_index:],
             filename=filename,
             delimiters=[";", ","],
             num_fields=None,
         )
-
         if delimiter is None:
-            return [], filename, location, timezone, serial_number
-
+            raise FileError(f"Could not determine delimiter in {filename}")
         rows = [next(csv.reader([row], delimiter=delimiter)) for row in rows_unsplit]
-
-        col1 = [row[0] for row in rows]
-
+        col1 = [row[0] if row else "" for row in rows]
         location = LeveloggerParser._col1_value(col1, "Location:")
         serial_number = LeveloggerParser._col1_value(col1, "Serial_number:")
 
+        level_factor = 100.0
         try:
-            level_unit_idx = col1.index("LEVEL")
-        except ValueError:
-            pass
-        else:
-            try:
-                level_unit = col1[level_unit_idx + 1].split(":")[1].lstrip()
-            except IndexError:
-                pass
-            else:
-                if level_unit == "cm":
-                    level_unit_factor_to_cm = 1
-                elif level_unit == "m":
-                    level_unit_factor_to_cm = 100
-                else:
-                    level_unit_factor_to_cm = 100
-                    message_utils.MessagebarAndLog.warning(
-                        bar_msg=QCoreApplication.translate(
-                            "LoggerImport",
-                            """The unit for level wasn't m or cm, a factor of %s was used. Check the imported data.""",
-                        )
-                        % str(level_unit_factor_to_cm)
-                    )
-
-        file_header = rows[data_header_idx]
-
-        new_header = ["date_time", "head_cm", "temp_degc", "cond_mscm"]
-        filedata.append(new_header)
-
-        date_colnr = file_header.index("Date")
-        time_colnr = file_header.index("Time")
-        try:
-            level_colnr = file_header.index("LEVEL")
-        except ValueError:
-            level_colnr = None
-        try:
-            temp_colnr = file_header.index("TEMPERATURE")
-        except ValueError:
-            temp_colnr = None
-        try:
-            spec_cond_colnr = file_header.index("spec. conductivity (uS/cm)")
-        except ValueError:
-            try:
-                spec_cond_colnr = file_header.index("spec. conductivity (mS/cm)")
-            except ValueError:
-                spec_cond_colnr = None
-            else:
-                spec_cond_factor_to_mscm = 1
-        else:
-            spec_cond_factor_to_mscm = 0.001
-
-        try:
-            first_data_row = rows[data_header_idx + 1]
-        except IndexError:
+            level_unit_index = col1.index("LEVEL")
+            level_unit = col1[level_unit_index + 1].split(":", 1)[1].strip()
+        except (ValueError, IndexError):
+            level_unit = None
+        if level_unit == "cm":
+            level_factor = 1.0
+        elif level_unit not in (None, "m"):
             message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
-                    "LoggerImport", """No data in file %s."""
+                    "LoggerImport",
+                    "The unit for level wasn't m or cm, a factor of %s was used. "
+                    "Check the imported data.",
                 )
-                % filename
+                % str(level_factor)
             )
-            return [], filename, location, timezone, serial_number
+
+        header = rows[header_index]
+        if "Date" not in header or "Time" not in header:
+            raise FileError(f"Date and Time columns not found in {filename}")
+        source_rows = rows[header_index + 1 :]
+        if not source_rows:
+            data = empty_logger_frame()
         else:
-            date_str = " ".join(
-                [first_data_row[date_colnr], first_data_row[time_colnr]]
+            if any(len(row) != len(header) for row in source_rows):
+                raise FileError(f"Ragged data row in {filename}")
+            source = pd.DataFrame(source_rows, columns=header)
+            combined_dates = (
+                source["Date"].astype("string").str.strip()
+                + " "
+                + source["Time"].astype("string").str.strip()
             )
-            if date_utils.to_date(date_str) is None:
-                message_utils.MessagebarAndLog.warning(
-                    bar_msg=QCoreApplication.translate(
-                        "LoggerImport",
-                        """Dateformat in file %s could not be parsed.""",
+            parsed_dates = _parse_explicit_datetimes(
+                combined_dates,
+                (
+                    "%Y-%m-%d %H:%M:%S",
+                    "%Y/%m/%d %H:%M:%S",
+                    "%d/%m/%Y %H:%M:%S",
+                ),
+            )
+            if parsed_dates.isna().any():
+                row_index = int(parsed_dates.isna().to_numpy().nonzero()[0][0])
+                raise FileError(
+                    f"Invalid date/time in {filename} data row {row_index + 1}"
+                )
+
+            data = pd.DataFrame({"date_time": parsed_dates})
+            column_specs = {
+                "head_cm": ("LEVEL", level_factor),
+                "temp_degc": ("TEMPERATURE", 1.0),
+            }
+            conductivity_column = next(
+                (
+                    column
+                    for column in (
+                        "spec. conductivity (uS/cm)",
+                        "spec. conductivity (mS/cm)",
                     )
-                    % filename
-                )
-                return [], filename, location, timezone, serial_number
-
-        candidate_rows = []
-        date_strings = []
-        for row in rows[data_header_idx + 1 :]:
-            if (
-                skip_rows_without_water_level
-                and level_colnr is not None
-                and not isinstance(
-                    common_utils.to_float_or_none(row[level_colnr]), float
-                )
-            ):
-                continue
-            date_strings.append(" ".join([row[date_colnr], row[time_colnr]]))
-            candidate_rows.append(row)
-
-        parsed_dates = date_utils.to_dates(date_strings)
-
-        for row, row_date in zip(candidate_rows, parsed_dates):
-            if row_date is None:
-                continue
-            if begindate is not None and row_date < begindate:
-                continue
-            if enddate is not None and row_date > enddate:
-                continue
-            filedata.append(
-                [
-                    row_date.strftime("%Y-%m-%d %H:%M:%S"),
-                    (
-                        str(
-                            float(row[level_colnr].replace(",", "."))
-                            * level_unit_factor_to_cm
-                        )
-                        if (
-                            common_utils.to_float_or_none(row[level_colnr]) is not None
-                            if level_colnr is not None
-                            else None
-                        )
-                        else None
-                    ),
-                    (
-                        str(float(row[temp_colnr].replace(",", ".")))
-                        if (
-                            common_utils.to_float_or_none(row[temp_colnr])
-                            if temp_colnr is not None
-                            else None
-                        )
-                        else None
-                    ),
-                    (
-                        str(
-                            float(row[spec_cond_colnr].replace(",", "."))
-                            * spec_cond_factor_to_mscm
-                        )
-                        if (
-                            common_utils.to_float_or_none(row[spec_cond_colnr])
-                            if spec_cond_colnr is not None
-                            else None
-                        )
-                        else None
-                    ),
-                ]
+                    if column in source.columns
+                ),
+                None,
             )
+            if conductivity_column is not None:
+                factor = 0.001 if "uS/cm" in conductivity_column else 1.0
+                column_specs["cond_mscm"] = (conductivity_column, factor)
+            for target, (source_column, factor) in column_specs.items():
+                if source_column in source.columns:
+                    data[target] = _strict_numeric_series(
+                        source[source_column],
+                        filename=filename,
+                        column=source_column,
+                    ) * float(factor)
+            data = _canonical_frame(data)
 
-        filedata = [row for row in filedata if any(row[1:])]
-
-        return filedata, filename, location, timezone, serial_number
+        return ParsedLoggerFile(
+            data=data,
+            filename=filename,
+            source_path=path,
+            kind=LoggerDataKind.WATER_LEVEL,
+            location=location,
+            serial_number=serial_number,
+        )
 
 
 class HoboParser:
-    """Parser for HOBO temperature logger CSV files."""
+    """Parser for quoted HOBO temperature logger CSV files."""
 
     @staticmethod
-    def parse(
-        path: str,
-        charset: str,
-        tz_converter: TzConverter | None = None,
-        begindate: str | None = None,
-        enddate: str | None = None,
-    ) -> tuple[list, str, str | None, None, str | None]:
-        """Parse a HOBO temperature logger CSV file.
-
-        Returns ``(filedata, filename, location, None, serial_number)`` — always a 5-tuple.
-        ``tz_converter``, if provided, is used to adjust timestamps to the target timezone.
-        """
-        filedata = []
-        location = None
-        serial_number = None
+    def parse(path: str, charset: str) -> ParsedLoggerFile:
         filename = os.path.basename(path)
-        if begindate is not None:
-            begindate = date_utils.to_date(begindate)
-        if enddate is not None:
-            enddate = date_utils.to_date(enddate)
-
-        with open(path, encoding=str(charset)) as f:
-            rows_unsplit = [row.lstrip().rstrip("\n").rstrip("\r") for row in f]
-            csvreader = csv.reader(rows_unsplit, delimiter=",", quotechar='"')
-
-        rows = [ru(row, keep_containers=True) for row in csvreader]
+        with open(path, encoding=str(charset)) as handle:
+            rows = [
+                ru(row, keep_containers=True)
+                for row in csv.reader(handle, delimiter=",", quotechar='"')
+            ]
 
         try:
-            data_header_idx = [
-                rownr for rownr, row in enumerate(rows) if "Date Time" in "_".join(row)
-            ][0]
-        except IndexError:
+            header_index = next(
+                index for index, row in enumerate(rows) if "Date Time" in "_".join(row)
+            )
+        except StopIteration as error:
+            raise FileError(
+                QCoreApplication.translate(
+                    "LoggerImport", "File %s could not be parsed."
+                )
+                % filename
+            ) from error
+        header = rows[header_index]
+        date_columns = [
+            index for index, column in enumerate(header) if "Date Time" in column
+        ]
+        temperature_columns = [
+            index for index, column in enumerate(header) if "Temp, °C" in column
+        ]
+        if len(date_columns) != 1 or len(temperature_columns) != 1:
+            raise FileError(f"Required HOBO columns not found uniquely in {filename}")
+        date_index = date_columns[0]
+        temperature_index = temperature_columns[0]
+        source_timezone = get_tz_string(header[date_index])
+        if source_timezone is None:
             message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(
-                    "LoggerImport", """File %s could not be parsed."""
+                    "LoggerImport", "Timezone not found in %s"
                 )
                 % filename
             )
-            return [], filename, location, None, serial_number
-        date_colnr = [idx for idx, col in enumerate(rows[1]) if "Date Time" in col]
-        if not date_colnr:
-            raise Exception(
-                QCoreApplication.translate(
-                    "LoggerImport", "Date Time column not found!"
-                )
-            )
+
+        location_match = re.search(r"LBL: ([A-Za-z0-9_\-]+)", header[temperature_index])
+        location = location_match.group(1) if location_match else filename
+        serial_match = re.search(r"LGR S/N:\s*(\w+)", header[temperature_index])
+        serial_number = serial_match.group(1) if serial_match else None
+
+        source_rows = rows[header_index + 1 :]
+        if not source_rows:
+            data = empty_logger_frame()
         else:
-            date_colnr = date_colnr[0]
-
-        if tz_converter:
-            tz_string = get_tz_string(rows[1][date_colnr])
-            if tz_string is None:
-                message_utils.MessagebarAndLog.warning(
-                    bar_msg=QCoreApplication.translate(
-                        "LoggerImport", "Timezone not found in %s"
-                    )
-                    % filename
+            if any(len(row) != len(header) for row in source_rows):
+                raise FileError(f"Ragged data row in {filename}")
+            source = pd.DataFrame(source_rows, columns=header)
+            try:
+                parsed_dates = source.iloc[:, date_index].map(
+                    lambda value: fix_date(value, filename)
                 )
-            tz_converter.source_tz = tz_string
-
-        temp_colnr = [idx for idx, col in enumerate(rows[1]) if "Temp, °C" in col]
-        if not temp_colnr:
-            raise Exception(
-                QCoreApplication.translate(
-                    "LoggerImport", "Temperature column not found!"
-                )
-            )
-        else:
-            temp_colnr = temp_colnr[0]
-
-        match = re.search(r"LBL: ([A-Za-z0-9_\-]+)", rows[1][temp_colnr])
-        if not match:
-            location = filename
-        else:
-            location = match.group(1)
-
-        sn_match = re.search(r"LGR S/N:\s*(\w+)", rows[data_header_idx][temp_colnr])
-        serial_number = sn_match.group(1) if sn_match else None
-
-        new_header = ["date_time", "head_cm", "temp_degc", "cond_mscm"]
-        filedata.append(new_header)
-
-        try:
-            first_data_row = rows[data_header_idx + 1]
-        except IndexError:
-            message_utils.MessagebarAndLog.warning(
-                bar_msg=QCoreApplication.translate(
-                    "LoggerImport", """No data in file %s."""
-                )
-                % filename
-            )
-            return [], filename, location, None, serial_number
-        else:
-            dt = first_data_row[date_colnr]
-            if date_utils.to_date(dt) is None:
-                dt = first_data_row[date_colnr][:-2].rstrip()
-                if date_utils.to_date(dt) is None:
-                    message_utils.MessagebarAndLog.warning(
-                        bar_msg=QCoreApplication.translate(
-                            "LoggerImport",
-                            """Dateformat in file %s could not be parsed.""",
-                        )
-                        % filename
-                    )
-                    return [], filename, location, None, serial_number
-        for row in rows[data_header_idx + 1 :]:
-            dt = fix_date(row[date_colnr], filename, tz_converter)
-            if begindate is not None and dt < begindate:
-                continue
-            if enddate is not None and dt > enddate:
-                continue
-            filedata.append(
-                [
-                    date_utils.to_YmdHMS(dt),
-                    "",
-                    (
-                        str(float(row[temp_colnr].replace(",", ".")))
-                        if (
-                            common_utils.to_float_or_none(row[temp_colnr])
-                            if temp_colnr is not None
-                            else None
-                        )
-                        else ""
+            except FileError:
+                raise
+            data = pd.DataFrame(
+                {
+                    "date_time": pd.to_datetime(parsed_dates),
+                    "temp_degc": _strict_numeric_series(
+                        source.iloc[:, temperature_index],
+                        filename=filename,
+                        column=header[temperature_index],
                     ),
-                    "",
-                ]
+                }
             )
+            data = _canonical_frame(data)
 
-        filedata = [row for row in filedata if any(row[1:])]
-
-        return filedata, filename, location, None, serial_number
+        return ParsedLoggerFile(
+            data=data,
+            filename=filename,
+            source_path=path,
+            kind=LoggerDataKind.WATER_LEVEL,
+            location=location,
+            serial_number=serial_number,
+            source_timezone=source_timezone,
+        )

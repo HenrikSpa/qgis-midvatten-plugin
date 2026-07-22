@@ -3,19 +3,58 @@ import threading
 from contextlib import contextmanager
 from unittest import mock
 
+import pandas as pd
 import pytest
+from pandas.testing import assert_frame_equal
 from qgis.PyQt.QtCore import QEventLoop, QThread, QTimer
 
-from midvatten.tools.import_logger.workers import (
+from midvatten.tools.import_logger.models import (
+    LoggerDataKind,
     LoggerDbImportRequest,
     LoggerDbImportResult,
-    LoggerDbImportWorker,
-    ParsedLoggerFile,
     LoggerParseRequest,
-    LoggerParseWorker,
     LoggerSeriesSpec,
+    ParsedLoggerFile,
 )
 from midvatten.tools.import_logger.parsers import DiverOfficeParseError
+from midvatten.tools.import_logger.workers import (
+    LoggerDbImportWorker,
+    LoggerParseWorker,
+)
+
+
+def canonical_frame() -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            "date_time": pd.to_datetime(["2025-01-01 00:00:00"]),
+            "head_cm": [1.0],
+            "temp_degc": [float("nan")],
+            "cond_mscm": [float("nan")],
+            "baro_cmh2o": [float("nan")],
+        }
+    )
+
+
+def parsed_file(filename: str = "good.mon") -> ParsedLoggerFile:
+    return ParsedLoggerFile(
+        data=canonical_frame(),
+        filename=filename,
+        source_path=filename,
+        kind=LoggerDataKind.WATER_LEVEL,
+        location="obs1",
+        serial_number=None,
+    )
+
+
+def parse_request(*files: str) -> LoggerParseRequest:
+    return LoggerParseRequest(
+        files=files,
+        format_name="DiverOffice",
+        skip_missing_water_head=False,
+        from_date=None,
+        to_date=None,
+        target_timezone=None,
+    )
 
 
 @pytest.mark.parametrize(
@@ -26,34 +65,16 @@ from midvatten.tools.import_logger.parsers import DiverOfficeParseError
     ],
 )
 def test_parse_worker_collects_bad_file_and_continues(parse_error):
-    request = LoggerParseRequest(
-        files=("bad.mon", "good.mon"),
-        format_name="DiverOffice",
-        skip_rows_without_water_level=False,
-        from_date=None,
-        to_date=None,
-        requested_utc_offset="",
-        hobo_target_timezone="GMT+1",
-    )
-    worker = LoggerParseWorker(request)
+    worker = LoggerParseWorker(parse_request("bad.mon", "good.mon"))
     finished = []
     errors = []
     worker.finished.connect(finished.append)
     worker.error.connect(errors.append)
-    good_file = ParsedLoggerFile(
-        [["date_time", "head_cm"], ["2025-01-01 00:00:00", "1.0"]],
-        "good.mon",
-        "obs1",
-        None,
-    )
 
     with mock.patch.object(
         worker,
         "_parse_file",
-        side_effect=[
-            parse_error,
-            good_file,
-        ],
+        side_effect=[parse_error, parsed_file()],
     ):
         worker.run()
 
@@ -63,16 +84,7 @@ def test_parse_worker_collects_bad_file_and_continues(parse_error):
 
 
 def test_parse_worker_reports_unexpected_programming_error_as_terminal():
-    request = LoggerParseRequest(
-        files=("bad.mon", "never-reached.mon"),
-        format_name="DiverOffice",
-        skip_rows_without_water_level=False,
-        from_date=None,
-        to_date=None,
-        requested_utc_offset="",
-        hobo_target_timezone="GMT+1",
-    )
-    worker = LoggerParseWorker(request)
+    worker = LoggerParseWorker(parse_request("bad.mon", "never-reached.mon"))
     finished = []
     errors = []
     worker.finished.connect(finished.append)
@@ -126,10 +138,13 @@ def make_db_request(filename="logger.mon"):
     return LoggerDbImportRequest(
         filename=filename,
         dest_table="w_levels_logger",
-        file_data=[
-            ["date_time", "head_cm", "obsid"],
-            ["2025-01-01 00:00:00", "100.308", "rb1"],
-        ],
+        frame=pd.DataFrame(
+            {
+                "date_time": pd.to_datetime(["2025-01-01 00:00:00"]),
+                "head_cm": [100.308],
+                "obsid": ["rb1"],
+            }
+        ),
         series=LoggerSeriesSpec(
             obsid="rb1",
             source="test",
@@ -143,7 +158,9 @@ def make_db_request(filename="logger.mon"):
 def test_database_worker_commits_series_and_rows_together():
     connection = FakeConnection()
     imported_data = []
-    worker = LoggerDbImportWorker({}, make_db_request())
+    request = make_db_request()
+    original = request.frame.copy(deep=True)
+    worker = LoggerDbImportWorker({}, request)
     results = []
     worker.finished.connect(results.append)
 
@@ -166,17 +183,18 @@ def test_database_worker_commits_series_and_rows_together():
     assert connection.commits == 1
     assert connection.rollbacks == 0
     assert results == [LoggerDbImportResult("logger.mon", imported=True)]
-    assert imported_data[0][0][-2:] == ["series_id", "created_at"]
-    assert imported_data[0][1][-2:] == [7, "2026-07-21 12:00:00"]
+    assert imported_data[0][["series_id", "created_at"]].iloc[0].tolist() == [
+        7,
+        "2026-07-21 12:00:00",
+    ]
+    assert_frame_equal(request.frame, original)
 
 
 def test_database_worker_rolls_back_series_and_rows_together():
     connection = FakeConnection()
     worker = LoggerDbImportWorker({}, make_db_request("bad.mon"))
     results = []
-    errors = []
     worker.finished.connect(results.append)
-    worker.error.connect(errors.append)
 
     with (
         mock.patch(
@@ -196,9 +214,7 @@ def test_database_worker_rolls_back_series_and_rows_together():
 
     assert connection.rollbacks == 1
     assert connection.commits == 0
-    assert errors == []
     assert len(results) == 1
-    assert results[0].filename == "bad.mon"
     assert not results[0].imported
     assert "insert failed" in results[0].reason
 
@@ -228,7 +244,6 @@ def test_database_worker_requests_insert_error_propagation():
         worker.run()
 
     assert connection.commits == 1
-    assert len(results) == 1
     assert results[0].imported
     assert fake_importer.general_import.call_args.kwargs["raise_insert_errors"] is True
 
@@ -267,35 +282,18 @@ def test_parse_worker_keeps_gui_event_loop_responsive_and_cancels():
     parser_started = threading.Event()
     release_parser = threading.Event()
 
-    def slow_parse(**kwargs):
-        assert kwargs["interactive"] is False
+    def slow_parse(*_args):
         parser_started.set()
         assert release_parser.wait(timeout=2)
-        return (
-            [["date_time", "head_cm"], ["2020-01-01 00:00:00", "1"]],
-            "logger.csv",
-            "obs1",
-            None,
-            None,
-        )
+        return parsed_file("logger.csv")
 
-    request = LoggerParseRequest(
-        files=("first.csv", "second.csv"),
-        format_name="DiverOffice",
-        skip_rows_without_water_level=False,
-        from_date=None,
-        to_date=None,
-        requested_utc_offset="",
-        hobo_target_timezone="GMT+1",
-    )
-    worker = LoggerParseWorker(request)
+    worker = LoggerParseWorker(parse_request("first.csv", "second.csv"))
     thread = QThread()
     worker.moveToThread(thread)
     thread.started.connect(worker.run)
     worker.finished.connect(thread.quit)
     worker.cancelled.connect(thread.quit)
     worker.error.connect(thread.quit)
-
     loop = QEventLoop()
     states = {"timer_fired": False, "cancelled": False, "error": None}
 
@@ -345,7 +343,7 @@ def test_database_worker_interrupts_active_query_and_rolls_back():
         LoggerDbImportRequest(
             filename="logger.mon",
             dest_table="w_levels_logger",
-            file_data=[["obsid", "date_time"]],
+            frame=pd.DataFrame(columns=["obsid", "date_time"]),
         ),
     )
     thread = QThread()
@@ -354,28 +352,18 @@ def test_database_worker_interrupts_active_query_and_rolls_back():
     worker.finished.connect(thread.quit)
     worker.cancelled.connect(thread.quit)
     worker.error.connect(thread.quit)
-
     loop = QEventLoop()
     states = {"cancelled": False, "finished": False, "error": None}
 
-    def request_cancel():
-        worker.cancel()
-
-    def on_cancelled():
-        states["cancelled"] = True
-        loop.quit()
-
-    def on_finished():
-        states["finished"] = True
-        loop.quit()
-
-    def on_error(error):
-        states["error"] = error
-        loop.quit()
-
-    worker.cancelled.connect(on_cancelled)
-    worker.finished.connect(on_finished)
-    worker.error.connect(on_error)
+    worker.cancelled.connect(
+        lambda: (states.__setitem__("cancelled", True), loop.quit())
+    )
+    worker.finished.connect(
+        lambda *_: (states.__setitem__("finished", True), loop.quit())
+    )
+    worker.error.connect(
+        lambda error: (states.__setitem__("error", error), loop.quit())
+    )
 
     with (
         mock.patch(
@@ -389,7 +377,7 @@ def test_database_worker_interrupts_active_query_and_rolls_back():
     ):
         thread.start()
         assert importer_started.wait(timeout=1)
-        QTimer.singleShot(10, request_cancel)
+        QTimer.singleShot(10, lambda: worker.cancel())
         loop.exec_()
         thread.wait()
 

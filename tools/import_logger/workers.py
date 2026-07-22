@@ -6,21 +6,34 @@ import csv
 import os
 import threading
 import traceback
-from dataclasses import dataclass
-from datetime import timedelta
+from dataclasses import replace
 
 import pandas as pd
 from qgis.PyQt.QtCore import QCoreApplication, QObject, pyqtSignal, pyqtSlot
 
 from midvatten.tools import import_data_to_db
+from midvatten.tools.import_logger.models import (
+    LoggerDbImportRequest,
+    LoggerDbImportResult,
+    LoggerFileFailure,
+    LoggerImportOptions,
+    LoggerParseBatchResult,
+    LoggerParseRequest,
+    ParsedLoggerFile,
+)
 from midvatten.tools.import_logger.parsers import (
     DiverOfficeBaroParser,
     DiverOfficeParseError,
     DiverOfficeParser,
+    FileError,
     HoboParser,
     LeveloggerParser,
 )
-from midvatten.tools.utils import date_utils, db_utils, message_utils
+from midvatten.tools.import_logger.pipeline import (
+    TimezoneConversionError,
+    run_pre_resolution_pipeline,
+)
+from midvatten.tools.utils import db_utils, message_utils
 
 
 class LoggerImportCancelledError(Exception):
@@ -47,53 +60,12 @@ class LoggerWorker(QObject):
             raise LoggerImportCancelledError()
 
 
-@dataclass
-class ParsedLoggerFile:
-    file_data: list
-    filename: str
-    location: str | None
-    serial_number: str | None
-    timezone_error: str | None = None
-    source_path: str | None = None
-
-
-@dataclass(frozen=True)
-class LoggerFileFailure:
-    filename: str
-    stage: str
-    reason: str
-
-
-@dataclass
-class LoggerParseBatchResult:
-    parsed_files: list[ParsedLoggerFile]
-    failures: list[LoggerFileFailure]
-
-
-@dataclass(frozen=True)
-class LoggerParseRequest:
-    files: tuple[str, ...]
-    format_name: str
-    skip_rows_without_water_level: bool
-    from_date: str | None
-    to_date: str | None
-    requested_utc_offset: str
-    hobo_target_timezone: str
-
-
-class _WorkerTzConverter:
-    """Widget-free timezone converter for HOBO parsing."""
-
-    def __init__(self, target_tz: str):
-        self.source_tz: str | None = None
-        self.target_tz = target_tz
-
-    def convert_datetime(self, value):
-        if self.source_tz is None:
-            return value
-        source = date_utils.parse_timezone_to_timedelta(self.source_tz)
-        target = date_utils.parse_timezone_to_timedelta(self.target_tz)
-        return value + (target - source)
+_PARSERS = {
+    "DiverOffice": DiverOfficeParser,
+    "DiverOffice Baro": DiverOfficeBaroParser,
+    "Levelogger": LeveloggerParser,
+    "Hobo": HoboParser,
+}
 
 
 class LoggerParseWorker(LoggerWorker):
@@ -106,13 +78,13 @@ class LoggerParseWorker(LoggerWorker):
         parsed_files: list[ParsedLoggerFile] = []
         failures: list[LoggerFileFailure] = []
         try:
-            for file_idx, selected_file in enumerate(self.request.files):
+            for file_index, selected_file in enumerate(self.request.files):
                 self._check_cancelled()
                 self.progress.emit(
                     QCoreApplication.translate(
                         "LoggerImport", "Parsing file %s of %s..."
                     )
-                    % (file_idx + 1, len(self.request.files))
+                    % (file_index + 1, len(self.request.files))
                 )
                 try:
                     result = self._parse_file(selected_file)
@@ -120,6 +92,7 @@ class LoggerParseWorker(LoggerWorker):
                     raise
                 except (
                     DiverOfficeParseError,
+                    FileError,
                     UnicodeDecodeError,
                     OSError,
                     csv.Error,
@@ -134,8 +107,6 @@ class LoggerParseWorker(LoggerWorker):
                     )
                     continue
                 self._check_cancelled()
-                if result is None:
-                    continue
                 parsed_files.append(result)
             self.finished.emit(LoggerParseBatchResult(parsed_files, failures))
         except LoggerImportCancelledError:
@@ -143,37 +114,13 @@ class LoggerParseWorker(LoggerWorker):
         except Exception:
             self.error.emit(traceback.format_exc())
 
-    def _parse_file(self, selected_file: str) -> ParsedLoggerFile | None:
-        parse_kwargs = {
-            "path": selected_file,
-            "begindate": self.request.from_date,
-            "enddate": self.request.to_date,
-        }
-        if self.request.format_name == "DiverOffice":
-            parse_func = DiverOfficeParser.parse
-            parse_kwargs["skip_rows_without_water_level"] = (
-                self.request.skip_rows_without_water_level
-            )
-            parse_kwargs["interactive"] = False
-        elif self.request.format_name == "DiverOffice Baro":
-            parse_func = DiverOfficeBaroParser.parse
-            parse_kwargs["interactive"] = False
-        elif self.request.format_name == "Levelogger":
-            parse_func = LeveloggerParser.parse
-            parse_kwargs["skip_rows_without_water_level"] = (
-                self.request.skip_rows_without_water_level
-            )
-        else:
-            parse_func = HoboParser.parse
-            parse_kwargs["tz_converter"] = _WorkerTzConverter(
-                self.request.hobo_target_timezone
-            )
-
+    def _parse_file(self, selected_file: str) -> ParsedLoggerFile:
+        parser = _PARSERS[self.request.format_name]
         try:
-            result = parse_func(charset="utf-8", **parse_kwargs)
+            parsed = parser.parse(selected_file, "utf-8")
         except UnicodeDecodeError:
             try:
-                result = parse_func(charset="cp1252", **parse_kwargs)
+                parsed = parser.parse(selected_file, "cp1252")
             except UnicodeDecodeError:
                 message_utils.MessagebarAndLog.warning(
                     bar_msg=QCoreApplication.translate(
@@ -184,85 +131,24 @@ class LoggerParseWorker(LoggerWorker):
                 )
                 raise
 
-        if result in ("cancel", "skip", "ignore"):
-            if result == "cancel":
-                raise LoggerImportCancelledError()
-            return None
-
-        file_data, filename, location, file_utc_offset, serial_number = result
-        timezone_error = None
-        if (
-            self.request.format_name in ("DiverOffice", "DiverOffice Baro")
-            and self.request.requested_utc_offset
-        ):
-            if not file_utc_offset:
-                message_utils.MessagebarAndLog.warning(
-                    log_msg=QCoreApplication.translate(
-                        "LoggerImport", "UTC-offset not found in file %s"
-                    )
-                    % filename
-                )
-            else:
-                requested = date_utils.parse_timezone_to_timedelta(
-                    self.request.requested_utc_offset
-                )
-                try:
-                    source = date_utils.parse_timezone_to_timedelta(file_utc_offset)
-                except ValueError as exc:
-                    timezone_error = str(exc)
-                else:
-                    if requested != source and len(file_data) > 1:
-                        file_data = self._shift_file_data(file_data, source - requested)
-
-        return ParsedLoggerFile(
-            file_data=file_data,
-            filename=filename,
-            location=location,
-            serial_number=serial_number,
-            timezone_error=timezone_error,
-            source_path=selected_file,
+        options = LoggerImportOptions(
+            target_timezone=self.request.target_timezone,
+            from_date=self.request.from_date,
+            to_date=self.request.to_date,
+            skip_missing_water_head=self.request.skip_missing_water_head,
         )
-
-    @staticmethod
-    def _shift_file_data(file_data: list, offset: timedelta) -> list:
-        frame = pd.DataFrame.from_records(
-            file_data[1:],
-            index="date_time",
-            columns=file_data[0],
-        )
-        frame.index = pd.to_datetime(frame.index) - offset
-        frame.index = frame.index.strftime("%Y-%m-%d %H:%M:%S")
-        shifted = [["date_time", *frame.columns.tolist()]]
-        shifted.extend([list(row) for row in frame.itertuples()])
-        return shifted
-
-
-@dataclass(frozen=True)
-class LoggerSeriesSpec:
-    obsid: str
-    source: str | None
-    description: str | None
-    instrument: str | None
-    created_at: str | None
-
-
-@dataclass(frozen=True)
-class LoggerDbImportRequest:
-    filename: str
-    dest_table: str
-    file_data: list
-    series: LoggerSeriesSpec | None = None
-
-
-@dataclass(frozen=True)
-class LoggerDbImportResult:
-    filename: str
-    imported: bool
-    reason: str | None = None
+        try:
+            return run_pre_resolution_pipeline(parsed, options)
+        except TimezoneConversionError as error:
+            unshifted = run_pre_resolution_pipeline(
+                parsed,
+                replace(options, target_timezone=None),
+            )
+            return replace(unshifted, timezone_error=str(error))
 
 
 class LoggerDbImportWorker(LoggerWorker):
-    """Import one file atomically on a worker-owned connection."""
+    """Import one prepared file atomically on a worker-owned connection."""
 
     def __init__(self, db_settings, request: LoggerDbImportRequest):
         super().__init__()
@@ -285,11 +171,11 @@ class LoggerDbImportWorker(LoggerWorker):
         self._check_cancelled()
         self.progress.emit(message)
 
-    def _prepare_file_data(self, connection) -> tuple[list[list], int | None]:
-        file_data = [list(row) for row in self.request.file_data]
+    def _prepare_frame(self, connection) -> tuple[pd.DataFrame, int | None]:
+        frame = self.request.frame.copy(deep=True)
         series = self.request.series
         if series is None:
-            return file_data, None
+            return frame, None
 
         placeholder = connection.placeholder()
         connection.execute(
@@ -299,14 +185,10 @@ class LoggerDbImportWorker(LoggerWorker):
             (series.obsid, series.source, series.description, series.instrument),
         )
         series_id = db_utils.get_last_insert_id(connection)
-        file_data[0].append("series_id")
+        assignments = {"series_id": series_id}
         if series.created_at is not None:
-            file_data[0].append("created_at")
-        for row in file_data[1:]:
-            row.append(series_id)
-            if series.created_at is not None:
-                row.append(series.created_at)
-        return file_data, series_id
+            assignments["created_at"] = series.created_at
+        return frame.assign(**assignments), series_id
 
     @pyqtSlot()
     def run(self) -> None:
@@ -317,13 +199,12 @@ class LoggerDbImportWorker(LoggerWorker):
                 self._connection = connection
 
             self._check_cancelled()
-
             with connection.transaction():
-                file_data, series_id = self._prepare_file_data(connection)
+                frame, series_id = self._prepare_frame(connection)
                 importer = import_data_to_db.MidvDataImporter()
                 inserted_count = importer.general_import(
                     self.request.dest_table,
-                    file_data,
+                    frame,
                     _dbconnection=connection,
                     skip_confirmation=True,
                     defer_commit=True,

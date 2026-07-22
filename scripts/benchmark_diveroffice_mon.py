@@ -61,11 +61,11 @@ def median_runtime(row_count: int, repeats: int) -> float:
         handle.write(content)
         path = Path(handle.name)
     try:
-        DiverOfficeParser.parse(str(path), "utf-8", interactive=False)
+        DiverOfficeParser.parse(str(path), "utf-8")
         timings = []
         for _ in range(repeats):
             started = time.perf_counter()
-            DiverOfficeParser.parse(str(path), "utf-8", interactive=False)
+            DiverOfficeParser.parse(str(path), "utf-8")
             timings.append(time.perf_counter() - started)
         return statistics.median(timings)
     finally:

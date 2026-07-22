@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from datetime import datetime, timedelta
 import pandas as pd
 import pytest
 from unittest import mock
@@ -818,6 +819,64 @@ class TestLoggerImportDiverOfficeSpatialite(
             r"(rb1, 2016-03-15 11:00:00, 11.0)])"
         )
         assert test_string == reference_string
+
+    def test_failure2_shaped_mon_matches_import_all_result(self):
+        """Generated hourly MON data must not lose the seven 96-hour blocks."""
+        cutoff = "2025-05-05 14:00:00"
+        expected = (
+            pd.date_range("2025-05-05 15:00:00", periods=9_915, freq="h")
+            .strftime("%Y-%m-%d %H:%M:%S")
+            .tolist()
+        )
+        content = build_mon(
+            len(expected),
+            start=datetime(2025, 5, 5, 15),
+            step=timedelta(hours=1),
+            location="rb1",
+        )
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+
+        def run_import(filename: str, import_all_data: bool) -> list[str]:
+            db_utils.sql_alter_db("DELETE FROM w_levels_logger")
+            db_utils.sql_alter_db("DELETE FROM w_logger_series")
+            db_utils.sql_alter_db(
+                "INSERT INTO w_levels_logger (obsid, date_time, head_cm) "
+                f"VALUES ('rb1', '{cutoff}', 1)"
+            )
+            with (
+                mock.patch(
+                    "midvatten.tools.import_logger.midvatten_utils.select_files",
+                    return_value=[filename],
+                ),
+                mock.patch("midvatten.tools.utils.dialog_utils.Askuser"),
+                mock.patch("qgis.utils.iface", autospec=True),
+            ):
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = LoggerImport(self.iface, ms)
+                importer.load_gui()
+                importer.confirm_names.checked = False
+                importer.import_all_data.checked = import_all_data
+                importer.select_files()
+                importer.start_import(
+                    importer.files,
+                    importer.skip_rows.checked,
+                    importer.confirm_names.checked,
+                    importer.import_all_data.checked,
+                )
+            result = db_utils.sql_load_fr_db(
+                "SELECT date_time FROM w_levels_logger "
+                f"WHERE obsid = 'rb1' AND date_time > '{cutoff}' ORDER BY date_time"
+            )
+            assert result[0]
+            return [row[0] for row in result[1]]
+
+        with file_utils.tempinput(content, "utf-8", suffix=".MON") as filename:
+            cutoff_result = run_import(filename, import_all_data=False)
+            import_all_result = run_import(filename, import_all_data=True)
+
+        assert len(cutoff_result) == 9_915
+        assert cutoff_result == import_all_result == expected
 
     @pytest.mark.parametrize("import_all_data", [False, True])
     def test_overlapping_files_use_one_pre_import_date_snapshot(self, import_all_data):

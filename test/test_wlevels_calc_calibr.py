@@ -43,7 +43,7 @@ def test_database_startup_closes_connection_after_metadata_failure():
 
     with (
         mock.patch(
-            "midvatten.tools.loggereditor.db_utils.DbConnectionManager",
+            "midvatten.tools.utils.db_utils.execution.DbConnectionManager",
             return_value=connection,
         ),
         pytest.raises(RuntimeError, match="metadata failed"),
@@ -204,7 +204,7 @@ class CalibrloggerMixin:
         recording = RecordingConnection(inner_connection)
         editor = LoggerEditor(self.iface, self.midvatten.ms)
         with mock.patch(
-            "midvatten.tools.loggereditor.db_utils.DbConnectionManager",
+            "midvatten.tools.utils.db_utils.execution.DbConnectionManager",
             return_value=recording,
         ) as connection_factory:
             editor._load_database_startup_state()

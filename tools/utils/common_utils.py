@@ -95,6 +95,8 @@ from numpy import ndarray
 log = logging.getLogger(__name__)
 
 LEGEND_NCOL_KEY = "ncols"
+_GENERAL_EXCEPTION_HANDLER = "_midvatten_general_exception_handler"
+_MANAGES_WAITING_CURSOR = "_midvatten_manages_waiting_cursor"
 
 
 def write_qgs_log_to_file(message: str, tag: str, level: Qgis.MessageLevel):
@@ -423,10 +425,15 @@ def waiting_cursor(func: Callable) -> Callable:
     @wraps(func)
     def func_wrapper(*args, **kwargs):
         start_waiting_cursor()
-        result = func(*args, **kwargs)
-        stop_waiting_cursor()
-        return result
+        try:
+            return func(*args, **kwargs)
+        finally:
+            stop_waiting_cursor()
 
+    setattr(func_wrapper, _MANAGES_WAITING_CURSOR, True)
+    if getattr(func, _GENERAL_EXCEPTION_HANDLER, False):
+        # The outer cursor wrapper owns restoration for the inner handler.
+        setattr(func, _MANAGES_WAITING_CURSOR, True)
     return func_wrapper
 
 
@@ -519,8 +526,10 @@ def general_exception_handler(func: Callable) -> Callable:
         else:
             return result
         finally:
-            stop_waiting_cursor()
+            if not getattr(new_func, _MANAGES_WAITING_CURSOR, False):
+                stop_waiting_cursor()
 
+    setattr(new_func, _GENERAL_EXCEPTION_HANDLER, True)
     return new_func
 
 

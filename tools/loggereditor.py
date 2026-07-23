@@ -1153,6 +1153,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         return head_level_masl_list, series_buf, has_created_at, has_comment
 
     @fn_timer
+    @common_utils.waiting_cursor
     def load_obsid_and_init(self):
         """Checks the current obsid and reloads all ts.
         :return: obsid
@@ -1161,11 +1162,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         data was changed in the background in for example spatialite gui. Now all time series are reloaded always.
         It's rather fast anyway.
         """
-        common_utils.start_waiting_cursor()
         obsid = self.selected_obsid
         if not obsid:
             log.debug("error obsid " + str(obsid))
-            common_utils.stop_waiting_cursor()
             return None
 
         if obsid == self._buf_obsid and self._buf is not None:
@@ -1182,7 +1181,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 # cannot see; mutators must go through _history_push).
                 self.obsid = obsid
                 self.setlastcalibration(obsid)
-                common_utils.stop_waiting_cursor()
                 return obsid
             buf = self._buf
         else:
@@ -1266,7 +1264,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         )
 
         self.setlastcalibration(obsid)
-        common_utils.stop_waiting_cursor()
         return obsid
 
     def _invalidate_ts_cache(self) -> None:
@@ -2426,6 +2423,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         return table2
 
     @fn_timer
+    @common_utils.waiting_cursor
     def update_plot(self):
         """Plots self.level_masl_ts, self.meas_ts and maybe self.head_ts"""
         self.reset_plot_selects_and_calib_help()
@@ -2434,7 +2432,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         )
         last_used_obsid = self.obsid
         obsid = self.load_obsid_and_init()
-        common_utils.start_waiting_cursor()
         if obsid is None:
             self.statusbar.clearMessage()
             return
@@ -2456,8 +2453,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             # Clear choices
             self.reset_settings()
             self.mpltoolbar.update()
-
-        common_utils.stop_waiting_cursor()
 
         self.period_selector.set_active(False)
         if self.move_nodes_button.button().isChecked():

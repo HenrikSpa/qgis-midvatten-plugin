@@ -791,3 +791,42 @@ class TestDecoratorMetadata:
 
         assert my_cursor_func.__name__ == "my_cursor_func"
         assert my_cursor_func.__doc__ == "Cursor docstring."
+
+    def test_waiting_cursor_restores_after_exception(self):
+        @common_utils.waiting_cursor
+        def failing_operation():
+            raise RuntimeError("operation failed")
+
+        with (
+            mock.patch.object(common_utils, "start_waiting_cursor") as start_cursor,
+            mock.patch.object(common_utils, "stop_waiting_cursor") as stop_cursor,
+            pytest.raises(RuntimeError, match="operation failed"),
+        ):
+            failing_operation()
+
+        start_cursor.assert_called_once_with()
+        stop_cursor.assert_called_once_with()
+
+    @pytest.mark.parametrize("cursor_outermost", [False, True])
+    def test_cursor_and_exception_handlers_restore_once(self, cursor_outermost):
+        def failing_operation():
+            raise RuntimeError("operation failed")
+
+        if cursor_outermost:
+            decorated = common_utils.waiting_cursor(
+                common_utils.general_exception_handler(failing_operation)
+            )
+        else:
+            decorated = common_utils.general_exception_handler(
+                common_utils.waiting_cursor(failing_operation)
+            )
+
+        with (
+            mock.patch.object(common_utils, "start_waiting_cursor") as start_cursor,
+            mock.patch.object(common_utils, "stop_waiting_cursor") as stop_cursor,
+            pytest.raises(RuntimeError, match="operation failed"),
+        ):
+            decorated()
+
+        start_cursor.assert_called_once_with()
+        stop_cursor.assert_called_once_with()

@@ -98,12 +98,41 @@ def test_plot_load_closes_connection_after_series_query_failure():
             "midvatten.tools.utils.db_utils.execution.DbConnectionManager",
             return_value=connection,
         ),
-        mock.patch("midvatten.tools.loggereditor.common_utils.start_waiting_cursor"),
+        mock.patch(
+            "midvatten.tools.loggereditor.common_utils.start_waiting_cursor"
+        ) as start_cursor,
+        mock.patch(
+            "midvatten.tools.loggereditor.common_utils.stop_waiting_cursor"
+        ) as stop_cursor,
         pytest.raises(RuntimeError, match="series query failed"),
     ):
         editor.load_obsid_and_init()
 
     connection.closedb.assert_called_once_with()
+    start_cursor.assert_called_once_with()
+    stop_cursor.assert_called_once_with()
+
+
+def test_update_plot_restores_cursor_when_no_obsid_is_selected():
+    editor = LoggerEditor.__new__(LoggerEditor)
+    editor.reset_plot_selects_and_calib_help = mock.MagicMock()
+    editor.statusbar = mock.MagicMock()
+    editor.obsid = ""
+    editor.load_obsid_and_init = mock.MagicMock(return_value=None)
+
+    with (
+        mock.patch(
+            "midvatten.tools.loggereditor.common_utils.start_waiting_cursor"
+        ) as start_cursor,
+        mock.patch(
+            "midvatten.tools.loggereditor.common_utils.stop_waiting_cursor"
+        ) as stop_cursor,
+    ):
+        assert editor.update_plot() is None
+
+    start_cursor.assert_called_once_with()
+    stop_cursor.assert_called_once_with()
+    editor.statusbar.clearMessage.assert_called_once_with()
 
 
 def test_last_calibration_closes_owned_connection_after_failure():

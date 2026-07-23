@@ -53,6 +53,77 @@ def test_database_startup_closes_connection_after_metadata_failure():
     connection.closedb.assert_called_once_with()
 
 
+def test_measurement_load_closes_owned_connection_after_failure():
+    editor = LoggerEditor.__new__(LoggerEditor)
+    editor._meas_obsid = None
+    editor._meas_ts = None
+    connection = mock.MagicMock()
+    connection.placeholder.side_effect = RuntimeError("measurement metadata failed")
+
+    with (
+        mock.patch(
+            "midvatten.tools.utils.db_utils.execution.DbConnectionManager",
+            return_value=connection,
+        ),
+        pytest.raises(RuntimeError, match="measurement metadata failed"),
+    ):
+        editor._ensure_meas_ts("obs-1")
+
+    connection.closedb.assert_called_once_with()
+
+
+def test_plot_load_closes_connection_after_series_query_failure():
+    editor = LoggerEditor.__new__(LoggerEditor)
+    editor._buf_obsid = None
+    editor._buf = None
+    editor._schema_variant = "series_join"
+    editor._existing_columns = []
+    editor._meas_obsid = "obs-1"
+    editor._meas_ts = mock.MagicMock()
+    connection = mock.MagicMock()
+    connection.placeholder.return_value = "?"
+    connection.execute_and_fetchall.side_effect = [
+        [],
+        RuntimeError("series query failed"),
+    ]
+
+    with (
+        mock.patch.object(
+            LoggerEditor,
+            "selected_obsid",
+            new_callable=mock.PropertyMock,
+            return_value="obs-1",
+        ),
+        mock.patch(
+            "midvatten.tools.utils.db_utils.execution.DbConnectionManager",
+            return_value=connection,
+        ),
+        mock.patch("midvatten.tools.loggereditor.common_utils.start_waiting_cursor"),
+        pytest.raises(RuntimeError, match="series query failed"),
+    ):
+        editor.load_obsid_and_init()
+
+    connection.closedb.assert_called_once_with()
+
+
+def test_last_calibration_closes_owned_connection_after_failure():
+    editor = LoggerEditor.__new__(LoggerEditor)
+    editor._buf = None
+    connection = mock.MagicMock()
+    connection.placeholder.side_effect = RuntimeError("calibration metadata failed")
+
+    with (
+        mock.patch(
+            "midvatten.tools.utils.db_utils.execution.DbConnectionManager",
+            return_value=connection,
+        ),
+        pytest.raises(RuntimeError, match="calibration metadata failed"),
+    ):
+        editor.getlastcalibration("obs-1")
+
+    connection.closedb.assert_called_once_with()
+
+
 class CalibrloggerMixin:
     """Test to make sure wlvllogg_import goes all the way to the end without errors"""
 

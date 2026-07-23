@@ -1075,16 +1075,12 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         if self._meas_obsid == obsid and self._meas_ts is not None:
             self.meas_ts = self._meas_ts
             return
-        own_conn = dbconnection is None
-        if own_conn:
-            dbconnection = db_utils.DbConnectionManager()
-        ph = dbconnection.placeholder()
-        meas_sql = f"SELECT date_time, level_masl FROM w_levels WHERE obsid = {ph} ORDER BY date_time"
-        _ok, meas_list = db_utils.sql_load_fr_db(
-            meas_sql, dbconnection=dbconnection, execute_args=(obsid,)
-        )
-        if own_conn:
-            dbconnection.closedb()
+        with use_or_create_connection(dbconnection) as dbconnection:
+            ph = dbconnection.placeholder()
+            meas_sql = f"SELECT date_time, level_masl FROM w_levels WHERE obsid = {ph} ORDER BY date_time"
+            _ok, meas_list = db_utils.sql_load_fr_db(
+                meas_sql, dbconnection=dbconnection, execute_args=(obsid,)
+            )
         self.meas_ts = self.list_of_list_to_recarray(meas_list)
         if self.w_levels_logger_tz and self.w_levels_tz:
             self.meas_ts.date_time = [
@@ -1093,6 +1089,68 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             ]
         self._meas_ts = self.meas_ts
         self._meas_obsid = obsid
+
+    def _load_plot_rows_from_db(self, obsid, dbconnection):
+        """Load one plot's database rows using the caller-owned connection."""
+        ph = dbconnection.placeholder()
+        self._ensure_meas_ts(obsid, dbconnection)
+
+        schema_variant = self._schema_variant
+        existing_columns = getattr(self, "_existing_columns", [])
+        has_created_at = "created_at" in existing_columns
+        has_comment = "comment" in existing_columns
+        if schema_variant == "series_join":
+            extra_cols = self._build_optional_extra_cols(
+                has_created_at, has_comment, prefix="l."
+            )
+            head_level_masl_sql = (
+                f"SELECT l.date_time, l.head_cm / 100, l.level_masl,"
+                f" TRIM(COALESCE(s.source, '')), l.series_id{extra_cols}"
+                f" FROM w_levels_logger l"
+                f" LEFT JOIN w_logger_series s ON s.id = l.series_id"
+                f" WHERE l.obsid = {ph} ORDER BY l.date_time"
+            )
+        elif schema_variant == "source_col":
+            extra_cols = self._build_optional_extra_cols(has_created_at, has_comment)
+            head_level_masl_sql = (
+                f"SELECT date_time, head_cm / 100, level_masl,"
+                f" TRIM(COALESCE(source, '')), NULL AS series_id{extra_cols}"
+                f" FROM w_levels_logger WHERE obsid = {ph}"
+                f" ORDER BY date_time"
+            )
+        else:
+            extra_cols = self._build_optional_extra_cols(has_created_at, has_comment)
+            head_level_masl_sql = (
+                f"SELECT date_time, head_cm / 100, level_masl,"
+                f" '' as source, NULL AS series_id{extra_cols}"
+                f" FROM w_levels_logger WHERE obsid = {ph}"
+                f" ORDER BY date_time"
+            )
+
+        _ok, head_level_masl_list = db_utils.sql_load_fr_db(
+            head_level_masl_sql, dbconnection=dbconnection, execute_args=(obsid,)
+        )
+
+        if schema_variant == "series_join":
+            series_rows = dbconnection.execute_and_fetchall(
+                f"SELECT id, obsid, source, instrument, description, comment"
+                f" FROM w_logger_series WHERE obsid = {ph}",
+                (obsid,),
+            )
+            series_buf = {
+                row[0]: {
+                    "obsid": row[1],
+                    "source": row[2],
+                    "instrument": row[3],
+                    "description": row[4],
+                    "comment": row[5],
+                }
+                for row in series_rows
+            }
+        else:
+            series_buf = {}
+
+        return head_level_masl_list, series_buf, has_created_at, has_comment
 
     @fn_timer
     def load_obsid_and_init(self):
@@ -1133,71 +1191,13 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                     "load_obsid_and_init called before show() — schema variant not yet detected"
                 )
 
-            dbconnection = db_utils.DbConnectionManager()
-            ph = dbconnection.placeholder()
-
-            self._ensure_meas_ts(obsid, dbconnection)
-
-            schema_variant = self._schema_variant
-            existing_columns = getattr(self, "_existing_columns", [])
-            has_created_at = "created_at" in existing_columns
-            has_comment = "comment" in existing_columns
-            if schema_variant == "series_join":
-                extra_cols = self._build_optional_extra_cols(
-                    has_created_at, has_comment, prefix="l."
-                )
-                head_level_masl_sql = (
-                    f"SELECT l.date_time, l.head_cm / 100, l.level_masl,"
-                    f" TRIM(COALESCE(s.source, '')), l.series_id{extra_cols}"
-                    f" FROM w_levels_logger l"
-                    f" LEFT JOIN w_logger_series s ON s.id = l.series_id"
-                    f" WHERE l.obsid = {ph} ORDER BY l.date_time"
-                )
-            elif schema_variant == "source_col":
-                extra_cols = self._build_optional_extra_cols(
-                    has_created_at, has_comment
-                )
-                head_level_masl_sql = (
-                    f"SELECT date_time, head_cm / 100, level_masl,"
-                    f" TRIM(COALESCE(source, '')), NULL AS series_id{extra_cols}"
-                    f" FROM w_levels_logger WHERE obsid = {ph}"
-                    f" ORDER BY date_time"
-                )
-            else:
-                extra_cols = self._build_optional_extra_cols(
-                    has_created_at, has_comment
-                )
-                head_level_masl_sql = (
-                    f"SELECT date_time, head_cm / 100, level_masl,"
-                    f" '' as source, NULL AS series_id{extra_cols}"
-                    f" FROM w_levels_logger WHERE obsid = {ph}"
-                    f" ORDER BY date_time"
-                )
-
-            _ok, head_level_masl_list = db_utils.sql_load_fr_db(
-                head_level_masl_sql, dbconnection=dbconnection, execute_args=(obsid,)
-            )
-
-            if schema_variant == "series_join":
-                series_rows = dbconnection.execute_and_fetchall(
-                    f"SELECT id, obsid, source, instrument, description, comment"
-                    f" FROM w_logger_series WHERE obsid = {ph}",
-                    (obsid,),
-                )
-                self._series_buf = {
-                    row[0]: {
-                        "obsid": row[1],
-                        "source": row[2],
-                        "instrument": row[3],
-                        "description": row[4],
-                        "comment": row[5],
-                    }
-                    for row in series_rows
-                }
-            else:
-                self._series_buf = {}
-
-            dbconnection.closedb()
+            with use_or_create_connection(None) as dbconnection:
+                (
+                    head_level_masl_list,
+                    self._series_buf,
+                    has_created_at,
+                    has_comment,
+                ) = self._load_plot_rows_from_db(obsid, dbconnection)
 
             if head_level_masl_list:
                 cols_data: dict = {
@@ -1333,13 +1333,12 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 return [(dt_str, loggerpos)]
             return []
 
-        dbconnection = db_utils.DbConnectionManager()
-        ph = dbconnection.placeholder()
-        sql = f"SELECT date_time, (level_masl - (head_cm/100)) AS loggerpos FROM w_levels_logger WHERE date_time = (SELECT max(date_time) AS date_time FROM w_levels_logger WHERE obsid = {ph} AND (CASE WHEN level_masl IS NULL THEN -1000 ELSE level_masl END) > -990 AND level_masl IS NOT NULL AND head_cm IS NOT NULL) AND obsid = {ph}"
-        _ok, lastcalibr = db_utils.sql_load_fr_db(
-            sql, dbconnection=dbconnection, execute_args=(obsid, obsid)
-        )
-        dbconnection.closedb()
+        with use_or_create_connection(None) as dbconnection:
+            ph = dbconnection.placeholder()
+            sql = f"SELECT date_time, (level_masl - (head_cm/100)) AS loggerpos FROM w_levels_logger WHERE date_time = (SELECT max(date_time) AS date_time FROM w_levels_logger WHERE obsid = {ph} AND (CASE WHEN level_masl IS NULL THEN -1000 ELSE level_masl END) > -990 AND level_masl IS NOT NULL AND head_cm IS NOT NULL) AND obsid = {ph}"
+            _ok, lastcalibr = db_utils.sql_load_fr_db(
+                sql, dbconnection=dbconnection, execute_args=(obsid, obsid)
+            )
         return lastcalibr
 
     def _on_save_clicked(self) -> None:

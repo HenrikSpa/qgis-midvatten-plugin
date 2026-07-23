@@ -1078,9 +1078,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         with use_or_create_connection(dbconnection) as dbconnection:
             ph = dbconnection.placeholder()
             meas_sql = f"SELECT date_time, level_masl FROM w_levels WHERE obsid = {ph} ORDER BY date_time"
-            _ok, meas_list = db_utils.sql_load_fr_db(
+            meas_list = db_utils.sql_load_fr_db(
                 meas_sql, dbconnection=dbconnection, execute_args=(obsid,)
-            )
+            )[1]
         self.meas_ts = self.list_of_list_to_recarray(meas_list)
         if self.w_levels_logger_tz and self.w_levels_tz:
             self.meas_ts.date_time = [
@@ -1127,9 +1127,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 f" ORDER BY date_time"
             )
 
-        _ok, head_level_masl_list = db_utils.sql_load_fr_db(
+        head_level_masl_list = db_utils.sql_load_fr_db(
             head_level_masl_sql, dbconnection=dbconnection, execute_args=(obsid,)
-        )
+        )[1]
 
         if schema_variant == "series_join":
             series_rows = dbconnection.execute_and_fetchall(
@@ -1336,9 +1336,9 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         with use_or_create_connection(None) as dbconnection:
             ph = dbconnection.placeholder()
             sql = f"SELECT date_time, (level_masl - (head_cm/100)) AS loggerpos FROM w_levels_logger WHERE date_time = (SELECT max(date_time) AS date_time FROM w_levels_logger WHERE obsid = {ph} AND (CASE WHEN level_masl IS NULL THEN -1000 ELSE level_masl END) > -990 AND level_masl IS NOT NULL AND head_cm IS NOT NULL) AND obsid = {ph}"
-            _ok, lastcalibr = db_utils.sql_load_fr_db(
+            lastcalibr = db_utils.sql_load_fr_db(
                 sql, dbconnection=dbconnection, execute_args=(obsid, obsid)
-            )
+            )[1]
         return lastcalibr
 
     def _on_save_clicked(self) -> None:

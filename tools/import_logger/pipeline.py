@@ -30,8 +30,6 @@ _BARO_DESTINATION = {
     "baro_cmh2o": ("pressure", "cmH2O"),
     "temp_degc": ("temp", "°C"),
 }
-# Parameters that must exist in zz_meteoparam for barometric imports.
-_BARO_METEO_PARAMS: tuple[tuple[str, str], ...] = (("pressure", "Barometric pressure"),)
 
 
 class LoggerPipelineError(ValueError):

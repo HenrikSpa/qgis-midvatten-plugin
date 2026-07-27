@@ -38,6 +38,7 @@ from midvatten.tools.utils.gui_utils import (
 from midvatten.tools.utils.string_utils import returnunicode as ru
 
 from .models import (
+    BARO_METEO_PARAMS,
     NO_NEW_ROWS_REASON,
     LoggerDataKind,
     LoggerDbImportRequest,
@@ -52,7 +53,6 @@ from .models import (
 )
 from .parsers import TzConverter
 from .pipeline import (
-    _BARO_METEO_PARAMS,
     InvalidLatestDateError,
     parse_latest_dates,
     run_post_resolution_pipeline,
@@ -624,6 +624,27 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         )
         reporter(bar_msg=bar_message, log_msg="\n".join(detail_lines))
 
+    def _ensure_baro_meteo_parameters(self) -> None:
+        """Insert any zz_meteoparam rows a barometric import depends on."""
+        connection = db_utils.DbConnectionManager()
+        try:
+            placeholder = connection.placeholder()
+            with connection.transaction():
+                for parameter, explanation in BARO_METEO_PARAMS:
+                    existing = connection.execute_and_fetchall(
+                        "SELECT parameter FROM zz_meteoparam "
+                        f"WHERE parameter = {placeholder}",
+                        (parameter,),
+                    )
+                    if not existing:
+                        connection.execute(
+                            "INSERT INTO zz_meteoparam(parameter, explanation) "
+                            f"VALUES ({placeholder}, {placeholder})",
+                            (parameter, explanation),
+                        )
+        finally:
+            connection.closedb()
+
     @common_utils.general_exception_handler
     @import_data_to_db.import_exception_handler
     def start_import(
@@ -819,25 +840,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                 prepared.kind is LoggerDataKind.BAROMETRIC
                 for prepared in prepared_files
             ):
-                connection = db_utils.DbConnectionManager()
-                try:
-                    placeholder = connection.placeholder()
-                    with connection.transaction():
-                        for parameter, explanation in _BARO_METEO_PARAMS:
-                            existing = connection.execute_and_fetchall(
-                                "SELECT parameter FROM zz_meteoparam "
-                                f"WHERE parameter = {placeholder}",
-                                (parameter,),
-                            )
-                            if not existing:
-                                connection.execute(
-                                    "INSERT INTO zz_meteoparam"
-                                    "(parameter, explanation) "
-                                    f"VALUES ({placeholder}, {placeholder})",
-                                    (parameter, explanation),
-                                )
-                finally:
-                    connection.closedb()
+                self._ensure_baro_meteo_parameters()
 
             for prepared in prepared_files:
                 series = None

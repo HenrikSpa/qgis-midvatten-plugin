@@ -35,6 +35,7 @@ from midvatten.tools.import_logger.parsers import (
     _SourceLine,
 )
 from midvatten.tools.import_logger.importer import logger_schema_capabilities
+from midvatten.tools.import_logger.models import BARO_METEO_PARAMS
 from midvatten.tools.import_logger.pipeline import run_pre_resolution_pipeline
 from midvatten.tools.utils import db_utils, file_utils
 from midvatten.tools.utils.date_utils import to_date
@@ -3563,6 +3564,26 @@ class TestLoggerImportBaroSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
         assert len(rows) == 2, f"Expected 2 pressure rows in meteo, got: {rows}"
         assert rows[0][2] == "2023-10-05 13:00:00"
         assert rows[0][4] == "cmH2O"
+
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_ensure_baro_meteo_parameters_seeds_missing_rows(self, mock_messagebar):
+        """The extracted seeding inserts missing rows and is idempotent."""
+        db_utils.sql_alter_db("DELETE FROM zz_meteoparam WHERE parameter='pressure'")
+
+        ms = MagicMock()
+        ms.settingsdict = OrderedDict()
+        importer = LoggerImport(self.iface, ms)
+        importer._ensure_baro_meteo_parameters()
+        importer._ensure_baro_meteo_parameters()
+
+        print(mock_messagebar.mock_calls)
+
+        result = db_utils.sql_load_fr_db(
+            "SELECT parameter, explanation FROM zz_meteoparam"
+            " WHERE parameter='pressure'"
+        )
+        assert result[0] is True
+        assert result[1] == [BARO_METEO_PARAMS[0]]
 
     @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_baro_import_does_not_write_to_wlevels_logger(self, mock_messagebar):

@@ -36,6 +36,9 @@ METEO_COLUMNS = (
 # Shared so the dialog can classify the outcome without matching on prose.
 NO_NEW_ROWS_REASON = "no non-duplicate rows"
 
+# Parameters that must exist in zz_meteoparam before a barometric import.
+BARO_METEO_PARAMS: tuple[tuple[str, str], ...] = (("pressure", "Barometric pressure"),)
+
 
 class LoggerDataKind(Enum):
     WATER_LEVEL = "water_level"

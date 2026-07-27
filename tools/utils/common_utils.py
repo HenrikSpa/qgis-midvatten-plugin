@@ -435,7 +435,13 @@ _cursor_depth = 0
 
 
 def start_waiting_cursor() -> None:
-    """Push one wait-cursor level owned by this process."""
+    """Push one wait-cursor level owned by this process.
+
+    GUI thread only. ``_cursor_depth`` is a plain module global with a
+    non-atomic increment, and Qt's setOverrideCursor is itself GUI-thread
+    only — background workers must route messages to the main thread rather
+    than touching the cursor.
+    """
     global _cursor_depth
     qgis.PyQt.QtWidgets.QApplication.setOverrideCursor(qgis.PyQt.QtCore.Qt.WaitCursor)
     _cursor_depth += 1

@@ -391,8 +391,13 @@ def run_post_resolution_pipeline(
     instrumentid = parsed.serial_number or parsed.filename
     if parsed.kind is LoggerDataKind.BAROMETRIC:
         destination = baro_to_meteo(data, obsid, instrumentid)
-    else:
+    elif parsed.kind is LoggerDataKind.WATER_LEVEL:
         destination = data.loc[:, WATER_LEVEL_COLUMNS].copy()
+    else:
+        # The registry this replaced raised KeyError on an unknown kind. Keep
+        # failing loudly: silently shaping a new kind as water level would
+        # write it to the wrong destination table.
+        raise LoggerPipelineError(f"unsupported logger kind {parsed.kind!r}")
     return PreparedLoggerFile(
         data=destination,
         filename=parsed.filename,

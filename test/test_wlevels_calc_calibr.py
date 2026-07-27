@@ -274,11 +274,6 @@ class CalibrloggerMixin:
             ("no_head", False),
             ("uncalibrated", True),
         ]
-        assert [row_obsid for row_obsid, _flag in summary] == [
-            "calibrated",
-            "no_head",
-            "uncalibrated",
-        ]
         assert editor.get_uncalibrated_obsids() == ["uncalibrated"]
         assert editor.get_obsids_with_calibration_status("calibrated") == [
             ("calibrated", False)

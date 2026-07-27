@@ -8,7 +8,7 @@ import pytest
 from pandas.testing import assert_frame_equal
 from qgis.PyQt.QtCore import QEventLoop, QThread, QTimer
 
-from midvatten.tools.import_logger import importer, models, workers
+from midvatten.tools.import_logger import models, workers
 from midvatten.tools.import_logger.models import (
     LoggerDataKind,
     LoggerDbImportRequest,
@@ -390,6 +390,9 @@ def test_database_worker_interrupts_active_query_and_rolls_back():
 
 
 def test_no_new_rows_reason_is_shared_between_worker_and_dialog():
+    # Pinning the text is the part that matters: the dialog classifies a
+    # skipped file by comparing against it. Asserting `workers.X is models.X`
+    # would only restate Python's import aliasing, and importing the dialog
+    # here to do so drags loadUiType() into this pure worker/threading module.
     assert models.NO_NEW_ROWS_REASON == "no non-duplicate rows"
-    assert workers.NO_NEW_ROWS_REASON is models.NO_NEW_ROWS_REASON
-    assert importer.NO_NEW_ROWS_REASON is models.NO_NEW_ROWS_REASON
+    assert workers.NO_NEW_ROWS_REASON == models.NO_NEW_ROWS_REASON

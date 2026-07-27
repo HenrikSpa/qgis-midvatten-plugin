@@ -240,6 +240,16 @@ class _ScannedMonRow:
     tokens: tuple[_MonToken, ...]
 
 
+@dataclass(frozen=True)
+class _ParsedMonMetadata:
+    """Everything the DiverOffice header pass produces, before column mapping."""
+
+    sections: dict[str, dict[str, str]]
+    raw_rows: list[str]
+    rows: list[str]
+    data_start_row: int | None
+
+
 class _IncompleteMonLayoutError(Exception):
     """The right edges do not uniquely describe every declared channel."""
 
@@ -541,34 +551,11 @@ class DiverOfficeParser:
         return df
 
     @staticmethod
-    def parse(path: str, charset: str) -> ParsedLoggerFile:
-        return DiverOfficeParser._parse(
-            path,
-            charset,
-            col_map=_DIVEROFFICE_DEFAULT_COL_MAP,
-            kind=LoggerDataKind.WATER_LEVEL,
-        )
-
-    @staticmethod
-    def _parse(
-        path: str,
-        charset: str,
-        *,
-        col_map: dict[str, str],
-        kind: LoggerDataKind,
-    ) -> ParsedLoggerFile:
-        def mapped_output_name(header: str) -> str | None:
-            normalized = header.lower().replace(" ", "")
-            for keyword, outcol in col_map.items():
-                if keyword in normalized:
-                    return outcol
-            return None
-
-        filename = os.path.basename(path)
+    def _read_metadata(path: str, charset: str) -> _ParsedMonMetadata:
+        """Read the file and parse its header sections into key/value maps."""
         section = None
         data_start_row = None
-        metadata = {}
-        # Parse metadata
+        metadata: dict[str, dict[str, str]] = {}
         with open(path, encoding=str(charset)) as f:
             raw_rows = [ru(rawrow).rstrip("\n").rstrip("\r") for rawrow in f]
         rows = [rawrow.strip() for rawrow in raw_rows]
@@ -607,6 +594,44 @@ class DiverOfficeParser:
                 key = kv[0].lower()
                 if key in ("location", "instrument number", "serial number"):
                     metadata.setdefault("flat", {})[key] = kv[1] if len(kv) > 1 else ""
+
+        return _ParsedMonMetadata(
+            sections=metadata,
+            raw_rows=raw_rows,
+            rows=rows,
+            data_start_row=data_start_row,
+        )
+
+    @staticmethod
+    def parse(path: str, charset: str) -> ParsedLoggerFile:
+        return DiverOfficeParser._parse(
+            path,
+            charset,
+            col_map=_DIVEROFFICE_DEFAULT_COL_MAP,
+            kind=LoggerDataKind.WATER_LEVEL,
+        )
+
+    @staticmethod
+    def _parse(
+        path: str,
+        charset: str,
+        *,
+        col_map: dict[str, str],
+        kind: LoggerDataKind,
+    ) -> ParsedLoggerFile:
+        def mapped_output_name(header: str) -> str | None:
+            normalized = header.lower().replace(" ", "")
+            for keyword, outcol in col_map.items():
+                if keyword in normalized:
+                    return outcol
+            return None
+
+        filename = os.path.basename(path)
+        parsed_metadata = DiverOfficeParser._read_metadata(path, charset)
+        metadata = parsed_metadata.sections
+        raw_rows = parsed_metadata.raw_rows
+        rows = parsed_metadata.rows
+        data_start_row = parsed_metadata.data_start_row
 
         # Each field moved between sections across DiverOffice generations, so
         # every known location is tried in priority order. For the UTC offset the

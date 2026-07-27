@@ -460,8 +460,15 @@ def waiting_cursor_depth() -> int:
 
 
 def unwind_waiting_cursor(depth: int) -> None:
-    """Pop wait-cursor levels until *depth* is restored."""
-    while _cursor_depth > depth:
+    """Pop wait-cursor levels until *depth* is restored.
+
+    Bounded rather than a ``while _cursor_depth > depth`` loop: the count is
+    read once, so a test that patches ``stop_waiting_cursor`` without also
+    patching ``start_waiting_cursor`` gets a no-op instead of an unkillable
+    spin with no traceback. Against the real function the two forms are
+    identical, since each call decrements exactly one level.
+    """
+    for _ in range(_cursor_depth - depth):
         stop_waiting_cursor()
 
 

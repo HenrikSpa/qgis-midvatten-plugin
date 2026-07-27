@@ -832,9 +832,13 @@ class TestDecoratorMetadata:
         start_cursor.assert_called_once_with()
         stop_cursor.assert_called_once_with()
 
-    @pytest.fixture
+    @pytest.fixture(autouse=True)
     def zero_cursor_depth(self):
-        """Keep the process-global cursor depth from leaking between tests."""
+        """Keep the process-global cursor depth from leaking between tests.
+
+        autouse so a later depth-touching test in this class cannot forget it;
+        a leaked non-zero depth would silently poison every test after it.
+        """
         common_utils._cursor_depth = 0
         try:
             yield

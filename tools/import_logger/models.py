@@ -137,9 +137,6 @@ def empty_logger_frame() -> pd.DataFrame:
     return pd.DataFrame(
         {
             "date_time": pd.Series(dtype="datetime64[ns]"),
-            "head_cm": pd.Series(dtype="float64"),
-            "temp_degc": pd.Series(dtype="float64"),
-            "cond_mscm": pd.Series(dtype="float64"),
-            "baro_cmh2o": pd.Series(dtype="float64"),
+            **{column: pd.Series(dtype="float64") for column in MEASUREMENT_COLUMNS},
         }
     )

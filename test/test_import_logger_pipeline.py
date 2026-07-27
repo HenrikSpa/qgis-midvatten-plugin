@@ -15,6 +15,7 @@ from pandas.testing import assert_frame_equal
 
 from midvatten.tools.import_logger.models import (
     CANONICAL_COLUMNS,
+    MEASUREMENT_COLUMNS,
     METEO_COLUMNS,
     LoggerDataKind,
     LoggerImportOptions,
@@ -198,7 +199,8 @@ def test_empty_logger_frame_has_exact_schema_and_dtypes() -> None:
     validate_logger_frame(data)
     assert tuple(data.columns) == CANONICAL_COLUMNS
     assert str(data["date_time"].dtype) == "datetime64[ns]"
-    assert all(str(data[column].dtype) == "float64" for column in CANONICAL_COLUMNS[1:])
+    assert all(str(data[column].dtype) == "float64" for column in MEASUREMENT_COLUMNS)
+    assert len(data) == 0
 
 
 @pytest.mark.parametrize(

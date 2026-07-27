@@ -3629,3 +3629,11 @@ def test_coerce_numeric_column_reports_the_first_invalid_position():
         pd.Series(["1.0", "", "oops", "2.0"])
     )
     assert invalid_position == 2
+
+    # Non-default index: the contract is the *positional* offset, because both
+    # call sites use it positionally (source_lines[...] and values.iloc[...]).
+    # With a default RangeIndex a label-based lookup would pass by coincidence.
+    _converted, invalid_position = _coerce_numeric_column(
+        pd.Series(["1.0", "", "oops", "2.0"], index=[10, 11, 12, 13])
+    )
+    assert invalid_position == 2

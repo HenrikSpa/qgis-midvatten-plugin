@@ -64,6 +64,29 @@ def make_fixed_mon(
     return "\n".join(header) + "\n"
 
 
+def make_diveroffice_csv(
+    channels: list[str],
+    header_columns: list[str],
+    declared_count: str | None = None,
+) -> str:
+    """Build a minimal DiverOffice .csv with a metadata block and one data row.
+
+    The header row is always line ``3 + 2 * len(channels) + 1``.
+    """
+    lines = [
+        "[Logger settings]",
+        "  Location=rb1",
+        f"  Number of channels={declared_count or len(channels)}",
+    ]
+    for channel, name in enumerate(channels, 1):
+        lines.extend([f"[Channel {channel}]", f"  Identification={name}"])
+    lines.append(";".join(header_columns))
+    lines.append(
+        ";".join(["2025/01/01 00:00:00"] + ["1.0"] * (len(header_columns) - 1))
+    )
+    return "\n".join(lines) + "\n"
+
+
 def assert_canonical(parsed) -> None:
     assert tuple(parsed.data.columns) == CANONICAL_COLUMNS
     assert str(parsed.data["date_time"].dtype) == "datetime64[ns]"
@@ -241,6 +264,69 @@ class TestDiverOfficeParser:
         assert parsed.location == "rb1"
         assert parsed.serial_number == "R2717"
         assert parsed.data.loc[0, ["head_cm", "temp_degc"]].tolist() == [123.4, 10.0]
+
+    @pytest.mark.parametrize(
+        ("content", "message", "expected_line"),
+        [
+            pytest.param(
+                make_diveroffice_csv(
+                    ["WATER HEAD (WC)", "TEMPERATURE"],
+                    ["Date/time", "Date/time", "Water head[cm]"],
+                ),
+                "CSV header must contain exactly one Date/time column",
+                8,
+                id="two_date_time_columns",
+            ),
+            pytest.param(
+                make_diveroffice_csv(
+                    ["WATER HEAD (WC)", "TEMPERATURE"],
+                    ["Date/time", "Water head[cm]"],
+                ),
+                "CSV header has 1 channels but file declares 2",
+                8,
+                id="header_channel_count_mismatch",
+            ),
+            pytest.param(
+                make_diveroffice_csv(
+                    ["WATER HEAD (WC)", "TEMPERATURE", "LEVEL"],
+                    ["Date/time", "Water head[cm]", "Temperature[C]", "Level[cm]"],
+                ),
+                "CSV header maps more than one column to head_cm",
+                10,
+                id="two_columns_map_to_head_cm",
+            ),
+            pytest.param(
+                make_diveroffice_csv(
+                    ["WATER HEAD (WC)", "TEMPERATURE"],
+                    ["Date/time", "Temperature[C]", "Conductivity[mS/cm]"],
+                ),
+                "CSV header channels disagree with channel metadata",
+                8,
+                id="header_disagrees_with_channel_metadata",
+            ),
+        ],
+    )
+    def test_parse_csv_rejects_inconsistent_header(
+        self, content, message, expected_line
+    ):
+        with file_utils.tempinput(content, "utf-8", suffix=".csv") as path:
+            with pytest.raises(DiverOfficeParseError, match=message) as excinfo:
+                DiverOfficeParser.parse(path, "utf-8")
+        assert excinfo.value.line_number == expected_line
+        assert excinfo.value.raw_text == content.splitlines()[expected_line - 1]
+
+    def test_parse_csv_rejects_non_numeric_declared_channel_count(self):
+        content = make_diveroffice_csv(
+            ["WATER HEAD (WC)", "TEMPERATURE"],
+            ["Date/time", "Water head[cm]", "Temperature[C]"],
+            declared_count="two",
+        )
+        with file_utils.tempinput(content, "utf-8", suffix=".csv") as path:
+            with pytest.raises(
+                DiverOfficeParseError, match="invalid declared channel count"
+            ) as excinfo:
+                DiverOfficeParser.parse(path, "utf-8")
+        assert excinfo.value.line_number is None
 
 
 @pytest.mark.active

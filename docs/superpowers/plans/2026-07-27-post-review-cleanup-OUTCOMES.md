@@ -241,3 +241,57 @@ python3 -m pytest test/ -m postgis: 289 passed, 1 skipped, 0 failed (13m33s), ru
 uncontended database after the other agent stopped. Combined with the 975 non-postgis
 passes, every test in the suite has now run green against this branch.
 ALL GATES GREEN. Branch ready for the merge decision.
+
+=== /simplify PASS (post-merge, 4 parallel reviewers over origin/ai_test..HEAD) ===
+Strong convergence: the wait-cursor mechanism was flagged independently by 3 of the
+4 angles, _ensure_baro_meteo_parameters by 3.
+
+APPLIED (6) -- full suite unchanged at 975 passed / 0 failed:
+ - pipeline.py _copy_with_data: dropped reset_index(drop=True). Provable no-op
+   (validate_logger_frame requires a zero-based RangeIndex and all 3 callers validate
+   first) that cost a SECOND full deep copy: ~35ms + 20MB per call on a 500k-row file,
+   paid even when no timezone conversion happens.
+ - importer.py start_import: now @common_utils.waiting_cursor instead of one manual
+   push hand-paired with four pops. Verified depth returns to 0 on normal return,
+   early return, modal pause/resume and exception (5 push / 5 pop).
+ - importer.py _ensure_baro_meteo_parameters: uses db_utils.add_insert_or_ignore_to_sql
+   + use_or_create_connection instead of two hand-rolled schemes. Drops a SELECT
+   round trip per parameter.
+ - workers.py: skip the COUNT(*) when inserted_count == 0 -- it cannot change the
+   outcome (the series is deleted either way). ~1s on a 50-file PostGIS import @20ms RTT.
+ - parsers.py _delimiter_is_at_timestamp_boundary: compile the regex once (was 3.2x
+   slower, ~0.5s per 500k-row .mon) and early-return instead of sentinel+break.
+ - parsers.py _slice_data_rows: walk backwards by index; rows[::-1] copied every line
+   pointer in the file to examine one or two entries.
+
+SKIPPED -- MEASURED PERF OPPORTUNITY, deliberately not taken:
+ - Six trailing .copy() calls on already-materialised frames (pipeline.py:395 written
+   by this work, plus :261,:267,:273,:327,:330,:358). Measured ~120ms and ~100MB per
+   500k-row water-level file. Safe under pandas 2.3.3 with CoW off (each preceding op
+   deep-copies) AND under CoW, but the argument rests on frame shape/dtypes. Kept the
+   defensive copy as cheap insurance. Revisit deliberately, with a benchmark.
+
+SKIPPED -- BEHAVIOUR CHANGE, not cleanup:
+ - _report_parse_failures double-logs: every parse failure is emitted twice per run,
+   in two different wordings (_report_import_summary already reports the same list).
+   Pre-existing; the extraction only gave it a name. Folding it in changes log verbosity.
+
+SKIPPED -- COHERENT FOLLOW-UP DESIGN PASS (out of scope for a cleanup, worth doing):
+ - Make start/stop_waiting_cursor no-op off the GUI thread (the check MessagebarAndLog
+   already does), then delete the manage_wait_cursor flag threaded through
+   import_data_to_db as a public param + attribute + 3 guards. Two sibling GUI-touching
+   utilities currently sit at opposite altitudes.
+ - Ship waiting_cursor_scope() and suspended_waiting_cursor() on top of the depth
+   counter. 13 sites hand-roll stop->modal->start (9 in create_db.py), and that idiom
+   is WRONG under nesting: at depth 2 the single stop leaves the cursor up during the
+   modal -- the mechanism-level cause of the known QFileDialog cursor bug.
+ - import_data_to_db.py:1296 import_exception_handler still uses a bare single pop
+   instead of the new unwind_waiting_cursor(entry_depth). Two restoration policies.
+ - _DESTINATION_TABLES (kind->table) lives in the GUI dialog while kind->frame-shape
+   lives in pipeline.py. A meteo-shaped frame written to w_levels_logger is a
+   data-corruption class of failure, and the two maps are edited in different layers.
+   One kind spec in models.py would also give BARO_METEO_PARAMS a correct home.
+ - LoggerDbImportResult.reason carries both a status code and a traceback; classify on
+   an ImportOutcome enum instead so the GUI owns the wording.
+ - importer.py has six parallel per-format tables/branches; a _format_sections registry
+   would make adding a format one registration instead of six edits.

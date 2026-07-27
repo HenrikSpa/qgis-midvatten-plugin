@@ -686,16 +686,17 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         )
         common_utils.start_waiting_cursor()
         paths_obsid = {row[0]: row[2] for row in resolved_metadata[1:]}
-        summary.skipped.extend(
-            parsed.source_path
-            for parsed in parsed_files
-            if parsed.source_path not in paths_obsid
-        )
-        return [
-            (parsed, paths_obsid[parsed.source_path])
-            for parsed in parsed_files
-            if parsed.source_path in paths_obsid
-        ]
+        # One pass: the two predicates were exact complements, so a change to
+        # the resolution rule had to be made identically in both places or
+        # files would be dropped from the summary or counted twice.
+        resolved_files = []
+        for parsed in parsed_files:
+            obsid = paths_obsid.get(parsed.source_path)
+            if obsid is None:
+                summary.skipped.append(parsed.source_path)
+            else:
+                resolved_files.append((parsed, obsid))
+        return resolved_files
 
     def _import_one_prepared_file(
         self,
@@ -728,26 +729,25 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             )
 
     def _ensure_baro_meteo_parameters(self) -> None:
-        """Insert any zz_meteoparam rows a barometric import depends on."""
-        connection = db_utils.DbConnectionManager()
-        try:
+        """Insert any zz_meteoparam rows a barometric import depends on.
+
+        zz_meteoparam is keyed on `parameter`, so the backend's own
+        insert-or-ignore expresses "seed what is missing" in one statement per
+        row — no read-then-write, and no second idempotency scheme to keep
+        working across both backends.
+        """
+        with db_utils.use_or_create_connection(None) as connection:
             placeholder = connection.placeholder()
+            sql = db_utils.add_insert_or_ignore_to_sql(
+                "INSERT INTO zz_meteoparam(parameter, explanation) "
+                f"VALUES ({placeholder}, {placeholder})",
+                connection,
+            )
             with connection.transaction():
                 for parameter, explanation in BARO_METEO_PARAMS:
-                    existing = connection.execute_and_fetchall(
-                        "SELECT parameter FROM zz_meteoparam "
-                        f"WHERE parameter = {placeholder}",
-                        (parameter,),
-                    )
-                    if not existing:
-                        connection.execute(
-                            "INSERT INTO zz_meteoparam(parameter, explanation) "
-                            f"VALUES ({placeholder}, {placeholder})",
-                            (parameter, explanation),
-                        )
-        finally:
-            connection.closedb()
+                    connection.execute(sql, (parameter, explanation))
 
+    @common_utils.waiting_cursor
     @common_utils.general_exception_handler
     @import_data_to_db.import_exception_handler
     def start_import(
@@ -761,7 +761,6 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         export_csv=False,
         import_to_db=True,
     ):
-        common_utils.start_waiting_cursor()
         progress = QtWidgets.QProgressDialog(
             QCoreApplication.translate("LoggerImport", "Importing logger data..."),
             QCoreApplication.translate("LoggerImport", "Cancel"),
@@ -803,7 +802,6 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                         "LoggerImport", "Import Failure: No files imported"
                     )
                 )
-                common_utils.stop_waiting_cursor()
                 return
 
             resolved_files = self._resolve_obsids(parsed_files, confirm_names, summary)
@@ -815,7 +813,6 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                         "Warning. All files were skipped, nothing imported!",
                     )
                 )
-                common_utils.stop_waiting_cursor()
                 return False
 
             logger_columns = db_utils.tables_columns(table="w_levels_logger").get(
@@ -869,7 +866,6 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                     )
                 )
                 self.status = True
-                common_utils.stop_waiting_cursor()
                 return True
 
             if import_to_db and any(
@@ -912,7 +908,6 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                     )
 
             self._report_import_summary(summary)
-            common_utils.stop_waiting_cursor()
             if self.close_after_import.isChecked():
                 self.close()
             return True

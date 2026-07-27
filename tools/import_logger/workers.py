@@ -218,12 +218,18 @@ class LoggerDbImportWorker(LoggerWorker):
                 has_new_rows = inserted_count != 0
                 if series_id is not None:
                     placeholder = connection.placeholder()
-                    count = connection.execute_and_fetchall(
-                        "SELECT COUNT(*) FROM w_levels_logger "
-                        f"WHERE series_id = {placeholder}",
-                        (series_id,),
-                    )[0][0]
-                    has_new_rows = has_new_rows and count != 0
+                    # Only worth asking when rows were actually inserted: with
+                    # inserted_count == 0 the series is dropped either way, so
+                    # the COUNT is a round trip that cannot change the outcome.
+                    if has_new_rows:
+                        has_new_rows = (
+                            connection.execute_and_fetchall(
+                                "SELECT COUNT(*) FROM w_levels_logger "
+                                f"WHERE series_id = {placeholder}",
+                                (series_id,),
+                            )[0][0]
+                            != 0
+                        )
                     if not has_new_rows:
                         connection.execute(
                             f"DELETE FROM w_logger_series WHERE id = {placeholder}",

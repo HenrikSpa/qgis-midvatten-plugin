@@ -769,12 +769,12 @@ class DiverOfficeParser:
         filename: str,
     ) -> tuple[list[_SourceLine], list[str], str]:
         """Return the data block as (source_lines, data_rows, count_row)."""
+        # Walk backwards by index rather than over rows[::-1]: the marker is on
+        # the last line or not at all, so the loop breaks almost immediately,
+        # while the reversed slice copies the whole file's line list first.
         stop_row = None
-        for inv_rownr, row in enumerate(rows[::-1]):
-            true_rownr = len(rows) - inv_rownr - 1
-            if true_rownr == data_start_row:
-                break
-            if row.lower().strip().startswith("end of data"):
+        for true_rownr in range(len(rows) - 1, data_start_row, -1):
+            if rows[true_rownr].lower().strip().startswith("end of data"):
                 stop_row = true_rownr
                 break
         data_stop = stop_row if stop_row is not None else len(raw_rows)
@@ -827,17 +827,16 @@ class DiverOfficeParser:
         delimiter: str,
     ) -> bool:
         """Return whether every data row places the delimiter after the date/time."""
-        delimiter_at_boundary = True
+        # Compiled once: the pattern is loop-invariant, and rebuilding it per row
+        # costs an re.escape, an f-string and a regex-cache lookup per data row.
+        pattern = re.compile(rf"^\s*\S+\s+[^\s{re.escape(delimiter)}]+")
         for source in source_lines:
-            timestamp = re.match(
-                rf"^\s*\S+\s+[^\s{re.escape(delimiter)}]+", source.text
-            )
+            timestamp = pattern.match(source.text)
             if timestamp is None or not source.text[timestamp.end() :].startswith(
                 delimiter
             ):
-                delimiter_at_boundary = False
-                break
-        return delimiter_at_boundary
+                return False
+        return True
 
     @staticmethod
     def parse(path: str, charset: str) -> ParsedLoggerFile:

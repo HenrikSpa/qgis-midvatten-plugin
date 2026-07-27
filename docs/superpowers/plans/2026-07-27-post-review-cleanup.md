@@ -2033,7 +2033,7 @@ for node in ast.walk(tree):
 PY
 ```
 
-Expected: under 150 lines (it started at ~330). If it is still over 200, an extraction was not wired up — re-check Steps 3.
+Expected: ~217 lines from these three extractions (329 - 112). The plan originally claimed "under 150"; that was a miscalculation. 150 IS reachable, but needs four further extractions (identity resolution, data-row slicing, column selection, delimiter boundary predicate) — done as Task 15b, which brought it to 147.
 
 - [ ] **Step 6: Format and commit**
 
@@ -2310,7 +2310,7 @@ for node in ast.walk(tree):
 PY
 ```
 
-Expected: under 130 lines (it started at ~275).
+Expected: ~167 lines. The plan originally claimed "under 130" from a ~275-line base; both numbers were wrong — the base was 255 (Phase 1 had already removed the meteo block), and these five extractions remove 88. Reaching 130 would need further extractions (parse-request builder, series-spec construction, preparation loop); deliberately NOT done, because the goal is a readable sequence of named stages, which 167 achieves, not a line count I invented.
 
 - [ ] **Step 11: Format and commit**
 

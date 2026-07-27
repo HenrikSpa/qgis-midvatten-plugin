@@ -647,6 +647,40 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             parsed_files.append(parsed)
         return parsed_files
 
+    def _resolve_obsids(
+        self,
+        parsed_files: list[ParsedLoggerFile],
+        confirm_names: bool,
+        summary: LoggerImportSummary,
+    ) -> list[tuple[ParsedLoggerFile, str]]:
+        """Match each file to an obsid, asking the user where needed."""
+        filename_location_obsid = [["filename", "location", "obsid"]]
+        filename_location_obsid.extend(
+            [parsed.source_path, parsed.location, parsed.location]
+            for parsed in parsed_files
+        )
+        existing_obsids = db_utils.get_all_obsids()
+        common_utils.stop_waiting_cursor()
+        resolved_metadata = common_utils.filter_nonexisting_values_and_ask(
+            file_data=filename_location_obsid,
+            header_value="obsid",
+            existing_values=existing_obsids,
+            try_capitalize=not confirm_names,
+            always_ask_user=confirm_names,
+        )
+        common_utils.start_waiting_cursor()
+        paths_obsid = {row[0]: row[2] for row in resolved_metadata[1:]}
+        summary.skipped.extend(
+            parsed.source_path
+            for parsed in parsed_files
+            if parsed.source_path not in paths_obsid
+        )
+        return [
+            (parsed, paths_obsid[parsed.source_path])
+            for parsed in parsed_files
+            if parsed.source_path in paths_obsid
+        ]
+
     def _ensure_baro_meteo_parameters(self) -> None:
         """Insert any zz_meteoparam rows a barometric import depends on."""
         connection = db_utils.DbConnectionManager()
@@ -736,32 +770,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                 common_utils.stop_waiting_cursor()
                 return
 
-            filename_location_obsid = [["filename", "location", "obsid"]]
-            filename_location_obsid.extend(
-                [parsed.source_path, parsed.location, parsed.location]
-                for parsed in parsed_files
-            )
-            existing_obsids = db_utils.get_all_obsids()
-            common_utils.stop_waiting_cursor()
-            resolved_metadata = common_utils.filter_nonexisting_values_and_ask(
-                file_data=filename_location_obsid,
-                header_value="obsid",
-                existing_values=existing_obsids,
-                try_capitalize=not confirm_names,
-                always_ask_user=confirm_names,
-            )
-            common_utils.start_waiting_cursor()
-            paths_obsid = {row[0]: row[2] for row in resolved_metadata[1:]}
-            resolved_files = [
-                (parsed, paths_obsid[parsed.source_path])
-                for parsed in parsed_files
-                if parsed.source_path in paths_obsid
-            ]
-            summary.skipped.extend(
-                parsed.source_path
-                for parsed in parsed_files
-                if parsed.source_path not in paths_obsid
-            )
+            resolved_files = self._resolve_obsids(parsed_files, confirm_names, summary)
             if not resolved_files:
                 self._report_import_summary(summary)
                 message_utils.MessagebarAndLog.warning(

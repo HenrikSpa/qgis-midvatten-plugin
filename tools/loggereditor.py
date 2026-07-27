@@ -1088,16 +1088,16 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self._meas_ts = self.meas_ts
         self._meas_obsid = obsid
 
-    def _load_plot_rows_from_db(self, obsid, dbconnection):
+    def _load_plot_rows_from_db(self, obsid, dbconnection) -> tuple[list, dict]:
         """Load one plot's database rows using the caller-owned connection."""
         ph = dbconnection.placeholder()
         self._ensure_meas_ts(obsid, dbconnection)
 
-        schema_variant = self._schema_variant
-        existing_columns = getattr(self, "_existing_columns", [])
-        has_created_at = "created_at" in existing_columns
-        has_comment = "comment" in existing_columns
-        if schema_variant == "series_join":
+        has_created_at = "created_at" in self._existing_columns
+        has_comment = "comment" in self._existing_columns
+        series_join = self._schema_variant == "series_join"
+
+        if series_join:
             extra_cols = self._build_optional_extra_cols(
                 has_created_at, has_comment, prefix="l."
             )
@@ -1108,19 +1108,18 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 f" LEFT JOIN w_logger_series s ON s.id = l.series_id"
                 f" WHERE l.obsid = {ph} ORDER BY l.date_time"
             )
-        elif schema_variant == "source_col":
-            extra_cols = self._build_optional_extra_cols(has_created_at, has_comment)
-            head_level_masl_sql = (
-                f"SELECT date_time, head_cm / 100, level_masl,"
-                f" TRIM(COALESCE(source, '')), NULL AS series_id{extra_cols}"
-                f" FROM w_levels_logger WHERE obsid = {ph}"
-                f" ORDER BY date_time"
-            )
         else:
+            # Both non-join variants read the same table; only the source
+            # expression differs, so they share one query.
+            source_expr = (
+                "TRIM(COALESCE(source, ''))"
+                if self._schema_variant == "source_col"
+                else "'' as source"
+            )
             extra_cols = self._build_optional_extra_cols(has_created_at, has_comment)
             head_level_masl_sql = (
                 f"SELECT date_time, head_cm / 100, level_masl,"
-                f" '' as source, NULL AS series_id{extra_cols}"
+                f" {source_expr}, NULL AS series_id{extra_cols}"
                 f" FROM w_levels_logger WHERE obsid = {ph}"
                 f" ORDER BY date_time"
             )
@@ -1129,7 +1128,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             head_level_masl_sql, dbconnection=dbconnection, execute_args=(obsid,)
         )[1]
 
-        if schema_variant == "series_join":
+        series_buf: dict = {}
+        if series_join:
             series_rows = dbconnection.execute_and_fetchall(
                 f"SELECT id, obsid, source, instrument, description, comment"
                 f" FROM w_logger_series WHERE obsid = {ph}",
@@ -1145,10 +1145,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 }
                 for row in series_rows
             }
-        else:
-            series_buf = {}
 
-        return head_level_masl_list, series_buf, has_created_at, has_comment
+        return head_level_masl_list, series_buf
 
     @fn_timer
     @common_utils.waiting_cursor
@@ -1188,12 +1186,11 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 )
 
             with use_or_create_connection(None) as dbconnection:
-                (
-                    head_level_masl_list,
-                    self._series_buf,
-                    has_created_at,
-                    has_comment,
-                ) = self._load_plot_rows_from_db(obsid, dbconnection)
+                head_level_masl_list, self._series_buf = self._load_plot_rows_from_db(
+                    obsid, dbconnection
+                )
+            has_created_at = "created_at" in self._existing_columns
+            has_comment = "comment" in self._existing_columns
 
             if head_level_masl_list:
                 cols_data: dict = {
@@ -1342,16 +1339,14 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
     def _refresh_after_save(self) -> None:
         """Refresh only UI state whose database-backed data may have changed."""
+        # _series_tab only exists for the series_join schema, so its hasattr
+        # guard is load-bearing (same pattern as node_selected uses).
         if (
             hasattr(self, "_series_tab")
-            and hasattr(self, "tab_widget")
             and self.tab_widget.currentWidget() is self._series_tab
         ):
             self._update_series_tab()
-        if any(
-            series.get("table") == "w_levels_logger"
-            for series in getattr(self, "_ref_series", [])
-        ):
+        if any(series.get("table") == "w_levels_logger" for series in self._ref_series):
             self._ref_subplot_dirty = True
             self._draw_reference_subplot()
 

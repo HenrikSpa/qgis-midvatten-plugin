@@ -49,6 +49,7 @@ from .models import (
     LoggerParseRequest,
     LoggerSchemaCapabilities,
     LoggerSeriesSpec,
+    ParsedLoggerFile,
     PreparedLoggerFile,
 )
 from .parsers import TzConverter
@@ -611,6 +612,41 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                 % (failure.filename, failure.stage, failure.reason)
             )
 
+    def _accept_parsed_files(
+        self,
+        parse_batch: LoggerParseBatchResult,
+        summary: LoggerImportSummary,
+    ) -> list[ParsedLoggerFile]:
+        """Surface notices, resolve timezone errors, and drop unusable files."""
+        parsed_files = []
+        for parsed in parse_batch.parsed_files:
+            for notice in parsed.notices:
+                message_utils.MessagebarAndLog.info(log_msg=notice.message)
+            if parsed.timezone_error:
+                msg = QCoreApplication.translate(
+                    "LoggerImport",
+                    "Reading timezone in file %s failed,\n"
+                    " no conversion done:\n%s\n\nSkip file?",
+                ) % (ru(parsed.filename), parsed.timezone_error)
+                common_utils.stop_waiting_cursor()
+                question = dialog_utils.Askuser(
+                    question="YesNo",
+                    msg=msg,
+                    dialogtitle=QCoreApplication.translate(
+                        "askuser", "File timezone error!"
+                    ),
+                    include_cancel_button=True,
+                )
+                common_utils.start_waiting_cursor()
+                if question.result:
+                    summary.skipped.append(parsed.source_path)
+                    continue
+            if parsed.data.empty:
+                summary.skipped.append(parsed.source_path)
+                continue
+            parsed_files.append(parsed)
+        return parsed_files
+
     def _ensure_baro_meteo_parameters(self) -> None:
         """Insert any zz_meteoparam rows a barometric import depends on."""
         connection = db_utils.DbConnectionManager()
@@ -688,33 +724,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             summary = LoggerImportSummary(parse_failures=list(parse_batch.failures))
             self._report_parse_failures(summary)
 
-            parsed_files = []
-            for parsed in parse_batch.parsed_files:
-                for notice in parsed.notices:
-                    message_utils.MessagebarAndLog.info(log_msg=notice.message)
-                if parsed.timezone_error:
-                    msg = QCoreApplication.translate(
-                        "LoggerImport",
-                        "Reading timezone in file %s failed,\n"
-                        " no conversion done:\n%s\n\nSkip file?",
-                    ) % (ru(parsed.filename), parsed.timezone_error)
-                    common_utils.stop_waiting_cursor()
-                    question = dialog_utils.Askuser(
-                        question="YesNo",
-                        msg=msg,
-                        dialogtitle=QCoreApplication.translate(
-                            "askuser", "File timezone error!"
-                        ),
-                        include_cancel_button=True,
-                    )
-                    common_utils.start_waiting_cursor()
-                    if question.result:
-                        summary.skipped.append(parsed.source_path)
-                        continue
-                if parsed.data.empty:
-                    summary.skipped.append(parsed.source_path)
-                    continue
-                parsed_files.append(parsed)
+            parsed_files = self._accept_parsed_files(parse_batch, summary)
 
             if not parsed_files:
                 self._report_import_summary(summary)

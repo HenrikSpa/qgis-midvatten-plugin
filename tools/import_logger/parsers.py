@@ -762,6 +762,39 @@ class DiverOfficeParser:
         return utc_offset, serial_number, location
 
     @staticmethod
+    def _slice_data_rows(
+        rows: list[str],
+        raw_rows: list[str],
+        data_start_row: int,
+        filename: str,
+    ) -> tuple[list[_SourceLine], list[str], str]:
+        """Return the data block as (source_lines, data_rows, count_row)."""
+        stop_row = None
+        for inv_rownr, row in enumerate(rows[::-1]):
+            true_rownr = len(rows) - inv_rownr - 1
+            if true_rownr == data_start_row:
+                break
+            if row.lower().strip().startswith("end of data"):
+                stop_row = true_rownr
+                break
+        data_stop = stop_row if stop_row is not None else len(raw_rows)
+        source_lines = [
+            _SourceLine(number=index + 1, text=raw_rows[index])
+            for index in range(data_start_row, data_stop)
+        ]
+        data_rows = [source.text.strip() for source in source_lines]
+
+        count_row = rows[data_start_row - 1] if data_start_row > 0 else ""
+        if count_row.isdigit() and int(count_row) != len(source_lines):
+            raise DiverOfficeParseError(
+                filename,
+                f"declared {int(count_row)} data rows but found {len(source_lines)}",
+                data_start_row,
+                raw_rows[data_start_row - 1],
+            )
+        return source_lines, data_rows, count_row
+
+    @staticmethod
     def parse(path: str, charset: str) -> ParsedLoggerFile:
         return DiverOfficeParser._parse(
             path,
@@ -833,30 +866,10 @@ class DiverOfficeParser:
             )
             raise DiverOfficeParseError(filename, "Date/time header not found")
 
-        stop_row = None
-        for inv_rownr, row in enumerate(rows[::-1]):
-            true_rownr = len(rows) - inv_rownr - 1
-            if true_rownr == data_start_row:
-                break
-            if row.lower().strip().startswith("end of data"):
-                stop_row = true_rownr
-                break
         is_csv = path.lower().endswith(".csv")
-        data_stop = stop_row if stop_row is not None else len(raw_rows)
-        source_lines = [
-            _SourceLine(number=index + 1, text=raw_rows[index])
-            for index in range(data_start_row, data_stop)
-        ]
-        data_rows = [source.text.strip() for source in source_lines]
-
-        count_row = rows[data_start_row - 1] if data_start_row > 0 else ""
-        if count_row.isdigit() and int(count_row) != len(source_lines):
-            raise DiverOfficeParseError(
-                filename,
-                f"declared {int(count_row)} data rows but found {len(source_lines)}",
-                data_start_row,
-                raw_rows[data_start_row - 1],
-            )
+        source_lines, data_rows, count_row = DiverOfficeParser._slice_data_rows(
+            rows, raw_rows, data_start_row, filename
+        )
         date_col_idx = 0  # .mon files: date/time is always at column index 0
         delimiter = None
         header_delimiter = None

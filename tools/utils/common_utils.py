@@ -95,8 +95,6 @@ from numpy import ndarray
 log = logging.getLogger(__name__)
 
 LEGEND_NCOL_KEY = "ncols"
-_GENERAL_EXCEPTION_HANDLER = "_midvatten_general_exception_handler"
-_MANAGES_WAITING_CURSOR = "_midvatten_manages_waiting_cursor"
 
 
 def write_qgs_log_to_file(message: str, tag: str, level: Qgis.MessageLevel):
@@ -430,19 +428,41 @@ def waiting_cursor(func: Callable) -> Callable:
         finally:
             stop_waiting_cursor()
 
-    setattr(func_wrapper, _MANAGES_WAITING_CURSOR, True)
-    if getattr(func, _GENERAL_EXCEPTION_HANDLER, False):
-        # The outer cursor wrapper owns restoration for the inner handler.
-        setattr(func, _MANAGES_WAITING_CURSOR, True)
     return func_wrapper
 
 
-def start_waiting_cursor():
+_cursor_depth = 0
+
+
+def start_waiting_cursor() -> None:
+    """Push one wait-cursor level owned by this process."""
+    global _cursor_depth
     qgis.PyQt.QtWidgets.QApplication.setOverrideCursor(qgis.PyQt.QtCore.Qt.WaitCursor)
+    _cursor_depth += 1
 
 
-def stop_waiting_cursor():
+def stop_waiting_cursor() -> None:
+    """Pop one wait-cursor level.
+
+    Popping below zero is a no-op: an unbalanced call must never restore a
+    cursor that some other caller is still relying on.
+    """
+    global _cursor_depth
+    if _cursor_depth <= 0:
+        return
     qgis.PyQt.QtWidgets.QApplication.restoreOverrideCursor()
+    _cursor_depth -= 1
+
+
+def waiting_cursor_depth() -> int:
+    """Return how many wait-cursor levels this process currently holds."""
+    return _cursor_depth
+
+
+def unwind_waiting_cursor(depth: int) -> None:
+    """Pop wait-cursor levels until *depth* is restored."""
+    while _cursor_depth > depth:
+        stop_waiting_cursor()
 
 
 class Cancel:
@@ -506,6 +526,7 @@ def general_exception_handler(func: Callable) -> Callable:
 
     @wraps(func)
     def new_func(*args, **kwargs):
+        entry_depth = waiting_cursor_depth()
         try:
             result = func(*args, **kwargs)
         except UserInterruptError:
@@ -526,10 +547,9 @@ def general_exception_handler(func: Callable) -> Callable:
         else:
             return result
         finally:
-            if not getattr(new_func, _MANAGES_WAITING_CURSOR, False):
-                stop_waiting_cursor()
+            # Restore whatever levels the wrapped call pushed and did not pop.
+            unwind_waiting_cursor(entry_depth)
 
-    setattr(new_func, _GENERAL_EXCEPTION_HANDLER, True)
     return new_func
 
 

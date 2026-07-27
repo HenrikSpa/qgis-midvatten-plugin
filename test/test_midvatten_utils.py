@@ -832,6 +832,41 @@ class TestDecoratorMetadata:
         start_cursor.assert_called_once_with()
         stop_cursor.assert_called_once_with()
 
+    @pytest.fixture
+    def zero_cursor_depth(self):
+        """Keep the process-global cursor depth from leaking between tests."""
+        common_utils._cursor_depth = 0
+        try:
+            yield
+        finally:
+            common_utils._cursor_depth = 0
+
+    def test_cursor_depth_unwinds_exactly_once_per_push(self, zero_cursor_depth):
+        with mock.patch("qgis.PyQt.QtWidgets.QApplication") as app:
+            assert common_utils.waiting_cursor_depth() == 0
+            common_utils.start_waiting_cursor()
+            common_utils.start_waiting_cursor()
+            assert common_utils.waiting_cursor_depth() == 2
+
+            common_utils.stop_waiting_cursor()
+            common_utils.stop_waiting_cursor()
+            assert common_utils.waiting_cursor_depth() == 0
+
+            # An extra pop must not steal a cursor pushed by someone else.
+            common_utils.stop_waiting_cursor()
+            assert common_utils.waiting_cursor_depth() == 0
+            assert app.restoreOverrideCursor.call_count == 2
+
+    def test_exception_handler_unwinds_a_leaked_cursor(self, zero_cursor_depth):
+        @common_utils.general_exception_handler
+        def leaks_a_cursor():
+            common_utils.start_waiting_cursor()
+
+        with mock.patch("qgis.PyQt.QtWidgets.QApplication") as app:
+            leaks_a_cursor()
+            assert common_utils.waiting_cursor_depth() == 0
+            assert app.restoreOverrideCursor.call_count == 1
+
 
 @pytest.mark.active
 class TestMessageDispatcher:

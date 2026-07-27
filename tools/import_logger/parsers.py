@@ -137,6 +137,23 @@ def _canonical_frame(data: pd.DataFrame) -> pd.DataFrame:
     return result.loc[:, CANONICAL_COLUMNS].reset_index(drop=True)
 
 
+def _first_metadata_value(
+    metadata: dict[str, dict[str, str]],
+    lookups: tuple[tuple[str, str], ...],
+) -> str:
+    """Return the first non-empty value for the ordered (section, key) pairs.
+
+    DiverOffice moved the same field between sections across file-format
+    generations, so every metadata field is resolved by trying each known
+    location in priority order.
+    """
+    for section_name, key in lookups:
+        value = metadata.get(section_name, {}).get(key, "")
+        if value:
+            return value
+    return ""
+
+
 # ── GUI components ─────────────────────────────────────────────────────────────
 
 
@@ -579,35 +596,37 @@ class DiverOfficeParser:
                 if key in ("location", "instrument number", "serial number"):
                     metadata.setdefault("flat", {})[key] = kv[1] if len(kv) > 1 else ""
 
-        # Resolve UTC offset: classic format stores it as 'instrument number',
-        # newer format uses 'utc offset (hh:mm)' in 'channel identification'.
-        utc_offset = metadata.get("logger settings", {}).get("instrument number", "")
-        if not utc_offset:
-            utc_offset = metadata.get("series settings", {}).get(
-                "instrument number", ""
-            )
-        if not utc_offset:
-            utc_offset = metadata.get("channel identification", {}).get(
-                "utc offset (hh:mm)", ""
-            )
-        if not utc_offset:
-            utc_offset = metadata.get("flat", {}).get("instrument number", "")
-
-        serial_raw = metadata.get("logger settings", {}).get("serial number", "")
-        if not serial_raw:
-            serial_raw = metadata.get("series settings", {}).get("serial number", "")
-        if not serial_raw:
-            serial_raw = metadata.get("flat", {}).get("serial number", "")
+        # Each field moved between sections across DiverOffice generations, so
+        # every known location is tried in priority order. For the UTC offset the
+        # classic format stores it as 'instrument number', while the newer format
+        # uses 'utc offset (hh:mm)' in 'channel identification'.
+        utc_offset = _first_metadata_value(
+            metadata,
+            (
+                ("logger settings", "instrument number"),
+                ("series settings", "instrument number"),
+                ("channel identification", "utc offset (hh:mm)"),
+                ("flat", "instrument number"),
+            ),
+        )
+        serial_raw = _first_metadata_value(
+            metadata,
+            (
+                ("logger settings", "serial number"),
+                ("series settings", "serial number"),
+                ("flat", "serial number"),
+            ),
+        )
         serial_number = DiverOfficeParser._extract_diver_serial(serial_raw)
-
-        # Resolve location
-        location = metadata.get("logger settings", {}).get("location", "")
-        if not location:
-            location = metadata.get("series settings", {}).get("location", "")
-        if not location:
-            location = metadata.get("channel identification", {}).get("location", "")
-        if not location:
-            location = metadata.get("flat", {}).get("location", "")
+        location = _first_metadata_value(
+            metadata,
+            (
+                ("logger settings", "location"),
+                ("series settings", "location"),
+                ("channel identification", "location"),
+                ("flat", "location"),
+            ),
+        )
 
         def make_result(data: pd.DataFrame) -> ParsedLoggerFile:
             return ParsedLoggerFile(
@@ -621,11 +640,11 @@ class DiverOfficeParser:
             )
 
         data_headers = {0: "date_time"}
-        for section, data in metadata.items():
-            m = re.search("channel ([0-9]+)", section)
+        for section_name, section_values in metadata.items():
+            m = re.search("channel ([0-9]+)", section_name)
             if m is not None:
                 secno = m.groups()[0]
-                colname = data.get("identification", "")
+                colname = section_values.get("identification", "")
                 if colname:
                     data_headers[int(secno)] = colname
 

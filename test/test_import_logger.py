@@ -31,6 +31,7 @@ from midvatten.tools.import_logger import (
 from midvatten.tools.import_logger.parsers import (
     FileError,
     fix_date,
+    _first_metadata_value,
     _IncompleteMonLayoutError,
     _SourceLine,
 )
@@ -3597,3 +3598,19 @@ class TestLoggerImportBaroSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
         assert wlevels_result[1][0][0] == 0, (
             "Baro import must not write to w_levels_logger"
         )
+
+
+def test_first_metadata_value_returns_the_first_non_empty_match():
+    metadata = {
+        "logger settings": {"location": ""},
+        "series settings": {"location": "Second"},
+        "flat": {"location": "Fourth"},
+    }
+    lookups = (
+        ("logger settings", "location"),
+        ("series settings", "location"),
+        ("channel identification", "location"),
+        ("flat", "location"),
+    )
+    assert _first_metadata_value(metadata, lookups) == "Second"
+    assert _first_metadata_value({}, lookups) == ""

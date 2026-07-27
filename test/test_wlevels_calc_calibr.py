@@ -29,7 +29,11 @@ from unittest import mock
 import numpy as np
 import pytest
 
-from midvatten.tools.loggereditor import LoggerEditor
+from midvatten.tools.loggereditor import (
+    LoggerEditor,
+    _obsid_from_label,
+    _obsid_label,
+)
 from midvatten.tools.utils import db_utils, date_utils, gui_utils
 from midvatten.test import utils_for_tests
 
@@ -270,7 +274,7 @@ class CalibrloggerMixin:
             ("no_head", False),
             ("uncalibrated", True),
         ]
-        assert editor.get_all_obsids_in_w_levels_logger() == [
+        assert [row_obsid for row_obsid, _flag in summary] == [
             "calibrated",
             "no_head",
             "uncalibrated",
@@ -1335,7 +1339,8 @@ class CalibrloggerSpatialiteMixin(CalibrloggerMixin):
         def legacy_startup(editor):
             # Exact pre-optimization round-trip shape: two logger queries,
             # two timezone metadata/query pairs, and two schema probes.
-            editor.get_all_obsids_in_w_levels_logger()
+            # Two separate logger round-trips, as the pre-optimization path made.
+            editor.get_obsids_with_calibration_status()
             editor.get_uncalibrated_obsids()
             for timezone_table in ("w_levels_logger", "w_levels"):
                 connection = db_utils.DbConnectionManager()
@@ -1748,3 +1753,10 @@ class TestCalibrloggerSpatialite(
     CalibrloggerSpatialiteMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass
+
+
+def test_obsid_label_round_trips():
+    assert _obsid_label("rb1", False) == "rb1"
+    assert _obsid_label("rb1", True) == "rb1 (uncalibrated)"
+    assert _obsid_from_label("rb1") == "rb1"
+    assert _obsid_from_label("rb1 (uncalibrated)") == "rb1"

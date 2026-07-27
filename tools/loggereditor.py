@@ -71,6 +71,16 @@ _LEFT_PANEL_BUTTON_MIN_HEIGHT = 30
 _UNCALIBRATED_SUFFIX = " (uncalibrated)"
 
 
+def _obsid_label(obsid: str, is_uncalibrated: bool) -> str:
+    """Return the obsid combobox label for one calibration state."""
+    return obsid + _UNCALIBRATED_SUFFIX if is_uncalibrated else obsid
+
+
+def _obsid_from_label(label: str) -> str:
+    """Return the bare obsid behind a combobox label."""
+    return str(label).replace(_UNCALIBRATED_SUFFIX, "")
+
+
 def _line_key_order(key: tuple):
     """Sort key for line keys: blank-source keys first, then lexically, so
     color assignment stays stable across redraws."""
@@ -497,7 +507,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
     @property
     def selected_obsid(self):
-        return str(self.combobox_obsid.currentText().replace(_UNCALIBRATED_SUFFIX, ""))
+        return _obsid_from_label(self.combobox_obsid.currentText())
 
     def _load_database_startup_state(self) -> None:
         """Load all database-derived startup state through one connection."""
@@ -570,15 +580,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             return [(row[0], bool(row[1])) for row in rows]
 
     @fn_timer
-    def get_all_obsids_in_w_levels_logger(self, dbconnection=None):
-        return [
-            row[0]
-            for row in self.get_obsids_with_calibration_status(
-                dbconnection=dbconnection
-            )
-        ]
-
-    @fn_timer
     def get_uncalibrated_obsids(self, obsid=None, dbconnection=None):
         return [
             row_obsid
@@ -595,7 +596,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             QCoreApplication.translate("Calibrlogger", "Select an obsid...")
         )
         labels = [
-            row_obsid + _UNCALIBRATED_SUFFIX if is_uncalibrated else row_obsid
+            _obsid_label(row_obsid, is_uncalibrated)
             for row_obsid, is_uncalibrated in self.get_obsids_with_calibration_status(
                 dbconnection=dbconnection
             )
@@ -628,21 +629,18 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         obsids_with_uncalibrated_data = set(_obsids_with_uncalibrated_data)
 
         for idx in range(num_entries):
-            current_obsid = self.combobox_obsid.itemText(idx).replace(
-                _UNCALIBRATED_SUFFIX, ""
-            )
+            current_obsid = _obsid_from_label(self.combobox_obsid.itemText(idx))
 
-            if obsid is not None:
+            if obsid is not None and current_obsid != obsid:
                 # If obsid was given, only continue loop for that one:
-                if current_obsid != obsid:
-                    continue
+                continue
 
-            if current_obsid in obsids_with_uncalibrated_data:
-                new_text = current_obsid + _UNCALIBRATED_SUFFIX
-            else:
-                new_text = current_obsid
-
-            self.combobox_obsid.setItemText(idx, new_text)
+            self.combobox_obsid.setItemText(
+                idx,
+                _obsid_label(
+                    current_obsid, current_obsid in obsids_with_uncalibrated_data
+                ),
+            )
 
     @staticmethod
     def _line_key_codes(line_keys: np.ndarray) -> tuple[np.ndarray, dict]:

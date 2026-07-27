@@ -22,6 +22,7 @@
 - Never build SQL with string concatenation of untrusted values — use `ident()` and DB-API parameter binding.
 - Never change database schemas.
 - Do not repoint `~/.local/share/QGIS/QGIS3/profiles/default/python/plugins/midvatten`.
+- **Never use bare `git stash` / `git stash pop`.** The stash stack is shared with the main checkout and every other worktree, and other sessions may push or pop concurrently — a bare `pop` can restore someone else's work into this tree. To check whether something is pre-existing, use `git show HEAD:<path>`, `git diff`, or a scratch copy instead. If a stash is genuinely unavoidable, use `git stash push -u -m "<unique-tag>"`, capture the SHA from `git stash list --format='%H %gs'`, restore with `git stash apply <sha>`, and drop that entry by re-finding it via its tag.
 - Commit after every task. Conventional-commit prefixes: `refactor:`, `perf:`, `fix:`, `test:`.
 
 ## Prerequisites

@@ -83,6 +83,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         self.temptable_name = None
         self.csvlayer = None
         self.confirmation_handled = None
+        self._manage_wait_cursor = True
 
     def general_import(
         self,
@@ -744,7 +745,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
     ) -> None:
         """Commit or roll back and release resources after import succeeds or fails."""
         if dbconnection is None:
-            if getattr(self, "_manage_wait_cursor", True):
+            if self._manage_wait_cursor:
                 common_utils.stop_waiting_cursor()
             return
         if commit:
@@ -758,7 +759,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         else:
             if self.temptable_name is not None:
                 dbconnection.drop_temporary_table(self.temptable_name)
-        if getattr(self, "_manage_wait_cursor", True):
+        if self._manage_wait_cursor:
             common_utils.stop_waiting_cursor()
 
     def list_to_table(

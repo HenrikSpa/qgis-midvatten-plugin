@@ -30,6 +30,7 @@ from pandas.testing import assert_frame_equal
 
 from midvatten.test import utils_for_tests
 from midvatten.tools.import_data_to_db import (
+    MidvDataImporter,
     MidvDataImporterError,
     _as_import_frame,
 )
@@ -46,6 +47,11 @@ def test_as_import_frame_copies_dataframe_and_rejects_duplicate_columns():
 def test_as_import_frame_rejects_non_list_non_dataframe():
     with pytest.raises(MidvDataImporterError, match="list of rows"):
         _as_import_frame((1, 2, 3))
+
+
+def test_importer_manages_the_wait_cursor_by_default():
+    importer = MidvDataImporter()
+    assert importer._manage_wait_cursor is True
 
 
 class GeneralImportMixin:

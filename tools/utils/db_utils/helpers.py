@@ -224,7 +224,13 @@ def get_timezones_from_db(
             f"WHERE {table_ident} IN {table_clause} AND {date_ident} = {ph}",
             (*table_args, "date_time"),
         )
+        # about_db may hold several date_time rows for one table; the previous
+        # per-table query took the first with LIMIT 1, so keep that rule.
+        resolved: set[str] = set()
         for table_name, description in rows:
+            if table_name in resolved:
+                continue
+            resolved.add(table_name)
             timezones[table_name] = _parse_timezone_description(description)
         return timezones
 

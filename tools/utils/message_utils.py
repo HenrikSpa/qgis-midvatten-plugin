@@ -33,8 +33,8 @@ class _MessageDispatcher(QObject):
         self.requested.connect(self._deliver)
 
     @pyqtSlot(object)
-    def _deliver(self, payload) -> None:
-        MessagebarAndLog._log_on_main_thread(*payload)
+    def _deliver(self, payload: dict) -> None:
+        MessagebarAndLog._log_on_main_thread(**payload)
 
 
 _message_dispatcher = _MessageDispatcher()
@@ -85,14 +85,14 @@ class MessagebarAndLog:
         app = QCoreApplication.instance()
         if app is not None and QThread.currentThread() is not app.thread():
             _message_dispatcher.requested.emit(
-                (
-                    bar_msg,
-                    log_msg,
-                    duration,
-                    messagebar_level,
-                    log_level,
-                    button,
-                )
+                {
+                    "bar_msg": bar_msg,
+                    "log_msg": log_msg,
+                    "duration": duration,
+                    "messagebar_level": messagebar_level,
+                    "log_level": log_level,
+                    "button": button,
+                }
             )
             return None
         return MessagebarAndLog._log_on_main_thread(

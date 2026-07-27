@@ -32,6 +32,7 @@ from midvatten.tools import import_data_to_db
 from midvatten.tools.utils import (
     common_utils,
     db_utils,
+    message_utils,
     midvatten_utils,
     file_utils,
     exceptions,
@@ -830,3 +831,37 @@ class TestDecoratorMetadata:
 
         start_cursor.assert_called_once_with()
         stop_cursor.assert_called_once_with()
+
+
+@pytest.mark.active
+class TestMessageDispatcher:
+    def test_queued_log_payload_is_delivered_by_keyword(self):
+        delivered = {}
+
+        def fake_deliver(**kwargs):
+            delivered.update(kwargs)
+
+        with mock.patch.object(
+            message_utils.MessagebarAndLog,
+            "_log_on_main_thread",
+            side_effect=fake_deliver,
+        ):
+            message_utils._message_dispatcher._deliver(
+                {
+                    "bar_msg": "bar",
+                    "log_msg": "log",
+                    "duration": 5,
+                    "messagebar_level": 1,
+                    "log_level": 2,
+                    "button": False,
+                }
+            )
+
+        assert delivered == {
+            "bar_msg": "bar",
+            "log_msg": "log",
+            "duration": 5,
+            "messagebar_level": 1,
+            "log_level": 2,
+            "button": False,
+        }

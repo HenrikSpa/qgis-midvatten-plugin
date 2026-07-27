@@ -460,3 +460,32 @@ class TestBackendPredicatesSpatialite(utils_for_tests.MidvattenTestSpatialiteDbS
             assert conn.is_postgresql() is False
         finally:
             conn.closedb()
+
+
+@pytest.mark.active
+class TestGetTimezonesFromDbRowSelection:
+    def test_get_timezones_from_db_keeps_the_first_matching_row(self):
+        """about_db may hold several date_time rows per table; the first wins."""
+
+        class FakeConnection:
+            def placeholder(self) -> str:
+                return "?"
+
+            def ident(self, name: str) -> str:
+                return f'"{name}"'
+
+            def in_clause(self, values) -> tuple:
+                return "(?)", tuple(values)
+
+            def execute_and_fetchall(self, sql: str, args=None) -> list:
+                return [
+                    ("w_levels_logger", "Local time (GMT+1)"),
+                    ("w_levels_logger", "Local time (GMT+9)"),
+                ]
+
+        result = db_utils.get_timezones_from_db(
+            ("w_levels_logger",),
+            dbconnection=FakeConnection(),
+            about_db_columns=["tablename", "columnname", "description"],
+        )
+        assert result == {"w_levels_logger": "GMT+1"}

@@ -86,6 +86,22 @@ def logger_schema_capabilities(columns: list[str]) -> LoggerSchemaCapabilities:
     )
 
 
+def _parse_gui_date_bound(value, name: str) -> pd.Timestamp | None:
+    """Parse one date-filter widget value into a Timestamp.
+
+    This is the GUI's parse boundary. ``pipeline._typed_bound`` is the
+    downstream *assertion* boundary and deliberately rejects text.
+    """
+    if value in (None, ""):
+        return None
+    if isinstance(value, (pd.Timestamp, _datetime)):
+        return pd.Timestamp(value)
+    parsed = date_utils.to_date(value)
+    if parsed is None:
+        raise ValueError(f"Invalid {name}: {value!r}")
+    return pd.Timestamp(parsed)
+
+
 _DESTINATION_TABLES = {
     LoggerDataKind.WATER_LEVEL: "w_levels_logger",
     LoggerDataKind.BAROMETRIC: "meteo",
@@ -727,16 +743,6 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         progress.setMinimumDuration(0)
         progress.show()
 
-        def typed_bound(value, name: str) -> pd.Timestamp | None:
-            if value in (None, ""):
-                return None
-            if isinstance(value, (pd.Timestamp, _datetime)):
-                return pd.Timestamp(value)
-            parsed = date_utils.to_date(value)
-            if parsed is None:
-                raise ValueError(f"Invalid {name}: {value!r}")
-            return pd.Timestamp(parsed)
-
         format_name = self.format_combo.currentText()
         target_timezone = {
             self.FORMAT_DIVEROFFICE: self.utc_offset.currentText() or None,
@@ -748,8 +754,8 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             files=tuple(files),
             format_name=format_name,
             skip_missing_water_head=skip_rows_without_water_level,
-            from_date=typed_bound(from_date, "from_date"),
-            to_date=typed_bound(to_date, "to_date"),
+            from_date=_parse_gui_date_bound(from_date, "from_date"),
+            to_date=_parse_gui_date_bound(to_date, "to_date"),
             target_timezone=target_timezone,
         )
 

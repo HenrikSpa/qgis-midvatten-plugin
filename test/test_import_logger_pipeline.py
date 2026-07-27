@@ -443,6 +443,31 @@ def test_pre_pipeline_applies_target_window_then_kind_missing_policy(
     assert_frame_equal(data, original)
 
 
+@pytest.mark.parametrize(
+    "kind",
+    [LoggerDataKind.WATER_LEVEL, LoggerDataKind.BAROMETRIC],
+)
+def test_pre_pipeline_result_never_aliases_the_caller_frame(
+    kind: LoggerDataKind,
+) -> None:
+    data = logger_frame(
+        ["2025-01-01 00:00:00", "2025-01-01 01:00:00"],
+        head=[None, 2.0],
+        temp=[4.0, 5.0],
+        baro=[100.0, 101.0],
+    )
+    original = data.copy(deep=True)
+
+    result = run_pre_resolution_pipeline(
+        parsed_file(data, kind=kind),
+        LoggerImportOptions(skip_missing_water_head=True),
+    )
+
+    assert result.data is not data
+    result.data.loc[0, "temp_degc"] = 999.0
+    assert_frame_equal(data, original)
+
+
 def test_post_pipeline_uses_kind_policy_without_mutating_parser_frame() -> None:
     data = logger_frame(["2025-01-01 00:00:00"], temp=[5.0], baro=[100.0])
     original = data.copy(deep=True)

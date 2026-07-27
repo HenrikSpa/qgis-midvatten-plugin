@@ -47,14 +47,27 @@ class InvalidLatestDateError(LoggerPipelineError):
     """A non-null database latest-date value was structurally invalid."""
 
 
-def validate_logger_frame(data: pd.DataFrame) -> None:
-    """Raise when *data* does not satisfy the canonical parser-frame contract."""
+def validate_logger_frame(
+    data: pd.DataFrame, *, allow_extra_columns: bool = False
+) -> None:
+    """Raise when *data* does not satisfy the canonical parser-frame contract.
+
+    With ``allow_extra_columns`` the frame may carry additional trailing
+    columns (e.g. ``obsid``) as long as it *starts* with the canonical ones.
+    This lets post-resolution callers validate in place instead of slicing a
+    full copy of the frame just to check it.
+    """
     if not isinstance(data, pd.DataFrame):
         raise LoggerPipelineError("logger data must be a pandas DataFrame")
-    if tuple(data.columns) != CANONICAL_COLUMNS:
+    columns = tuple(data.columns)
+    if allow_extra_columns:
+        if columns[: len(CANONICAL_COLUMNS)] != CANONICAL_COLUMNS:
+            raise LoggerPipelineError(
+                f"logger columns must start with {CANONICAL_COLUMNS!r}, got {columns!r}"
+            )
+    elif columns != CANONICAL_COLUMNS:
         raise LoggerPipelineError(
-            f"logger columns must be exactly {CANONICAL_COLUMNS!r}, got "
-            f"{tuple(data.columns)!r}"
+            f"logger columns must be exactly {CANONICAL_COLUMNS!r}, got {columns!r}"
         )
     if not data.columns.is_unique:
         raise LoggerPipelineError("logger columns must be unique")
@@ -79,6 +92,11 @@ def validate_logger_frame(data: pd.DataFrame) -> None:
 
 def _copy_with_data(parsed: ParsedLoggerFile, data: pd.DataFrame) -> ParsedLoggerFile:
     return replace(parsed, data=data.reset_index(drop=True).copy())
+
+
+def _with_data(parsed: ParsedLoggerFile, data: pd.DataFrame) -> ParsedLoggerFile:
+    """Attach a frame the callee just built. No defensive copy is needed."""
+    return replace(parsed, data=data)
 
 
 def _fixed_offset(value: str) -> datetime.timedelta | None:
@@ -306,7 +324,7 @@ def filter_after_latest_date(
     latest_dates: Mapping[str, pd.Timestamp | None],
 ) -> pd.DataFrame:
     """Keep typed file rows strictly newer than the observation cutoff."""
-    validate_logger_frame(data.loc[:, CANONICAL_COLUMNS])
+    validate_logger_frame(data, allow_extra_columns=True)
     cutoff = latest_dates.get(obsid)
     if cutoff is None:
         return data.reset_index(drop=True).copy()
@@ -321,7 +339,7 @@ def baro_to_meteo(
     instrumentid: str,
 ) -> pd.DataFrame:
     """Reshape canonical Baro measurements into deterministic meteo rows."""
-    validate_logger_frame(data.loc[:, CANONICAL_COLUMNS])
+    validate_logger_frame(data, allow_extra_columns=True)
     wide = data.assign(_source_ordinal=range(len(data)), obsid=obsid)
     long = wide.melt(
         id_vars=["_source_ordinal", "obsid", "date_time"],
@@ -366,13 +384,6 @@ _DESTINATION_PREPARERS: Mapping[
     LoggerDataKind.WATER_LEVEL: _water_destination,
     LoggerDataKind.BAROMETRIC: _barometric_destination,
 }
-_MISSING_HEAD_POLICIES: Mapping[
-    LoggerDataKind,
-    Callable[[pd.DataFrame], pd.DataFrame],
-] = {
-    LoggerDataKind.WATER_LEVEL: drop_missing_water_head,
-    LoggerDataKind.BAROMETRIC: lambda data: data.reset_index(drop=True).copy(),
-}
 
 
 def run_pre_resolution_pipeline(
@@ -382,15 +393,14 @@ def run_pre_resolution_pipeline(
     """Run every shared transform that precedes interactive obsid resolution."""
     validate_logger_frame(parsed.data)
     result = normalize_timezone(parsed, options.target_timezone)
-    result = _copy_with_data(
+    # filter_date_window and drop_missing_water_head each return a fresh,
+    # range-indexed copy, so _with_data must not copy a second time.
+    result = _with_data(
         result,
         filter_date_window(result.data, options.from_date, options.to_date),
     )
-    if options.skip_missing_water_head:
-        result = _copy_with_data(
-            result,
-            _MISSING_HEAD_POLICIES[result.kind](result.data),
-        )
+    if options.skip_missing_water_head and result.kind is LoggerDataKind.WATER_LEVEL:
+        result = _with_data(result, drop_missing_water_head(result.data))
     validate_logger_frame(result.data)
     return result
 

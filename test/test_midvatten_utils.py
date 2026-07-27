@@ -865,3 +865,41 @@ class TestMessageDispatcher:
             "log_level": 2,
             "button": False,
         }
+
+    def test_background_thread_payload_round_trips_through_deliver(self):
+        """The emit site's keys must be exactly what _deliver can unpack.
+
+        The test above pins _deliver in isolation, so a renamed key at the
+        emit site would still pass there and only fail at runtime, inside a
+        background thread. This drives the real emit and feeds the captured
+        payload back through the real _deliver to close that loop.
+        """
+        dispatcher = mock.MagicMock()
+        delivered = {}
+
+        with (
+            mock.patch.object(message_utils, "_message_dispatcher", dispatcher),
+            mock.patch.object(
+                message_utils.QThread, "currentThread", return_value=object()
+            ),
+        ):
+            assert (
+                message_utils.MessagebarAndLog.log(
+                    bar_msg="bar", log_msg="log", duration=5, button=False
+                )
+                is None
+            )
+
+        payload = dispatcher.requested.emit.call_args[0][0]
+
+        with mock.patch.object(
+            message_utils.MessagebarAndLog,
+            "_log_on_main_thread",
+            side_effect=lambda **kwargs: delivered.update(kwargs),
+        ):
+            message_utils._message_dispatcher._deliver(payload)
+
+        assert delivered["bar_msg"] == "bar"
+        assert delivered["log_msg"] == "log"
+        assert delivered["duration"] == 5
+        assert delivered["button"] is False

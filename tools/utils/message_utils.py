@@ -33,7 +33,7 @@ class _MessageDispatcher(QObject):
         self.requested.connect(self._deliver)
 
     @pyqtSlot(object)
-    def _deliver(self, payload: dict) -> None:
+    def _deliver(self, payload: dict[str, object]) -> None:
         MessagebarAndLog._log_on_main_thread(**payload)
 
 
@@ -82,27 +82,21 @@ class MessagebarAndLog:
         log_level: Qgis.MessageLevel = Qgis.Info,
         button: bool = True,
     ):
+        # One payload for both paths, passed by keyword, so a renamed or
+        # reordered parameter fails loudly instead of mis-assigning arguments.
+        payload: dict[str, object] = {
+            "bar_msg": bar_msg,
+            "log_msg": log_msg,
+            "duration": duration,
+            "messagebar_level": messagebar_level,
+            "log_level": log_level,
+            "button": button,
+        }
         app = QCoreApplication.instance()
         if app is not None and QThread.currentThread() is not app.thread():
-            _message_dispatcher.requested.emit(
-                {
-                    "bar_msg": bar_msg,
-                    "log_msg": log_msg,
-                    "duration": duration,
-                    "messagebar_level": messagebar_level,
-                    "log_level": log_level,
-                    "button": button,
-                }
-            )
+            _message_dispatcher.requested.emit(payload)
             return None
-        return MessagebarAndLog._log_on_main_thread(
-            bar_msg,
-            log_msg,
-            duration,
-            messagebar_level,
-            log_level,
-            button,
-        )
+        return MessagebarAndLog._log_on_main_thread(**payload)
 
     @staticmethod
     def _log_on_main_thread(

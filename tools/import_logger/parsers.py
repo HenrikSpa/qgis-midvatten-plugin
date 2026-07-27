@@ -8,6 +8,7 @@ import csv
 import datetime
 import os
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from io import StringIO
 
@@ -638,6 +639,91 @@ class DiverOfficeParser:
         return declared_channels
 
     @staticmethod
+    def _resolve_csv_header(
+        rows: list[str],
+        raw_rows: list[str],
+        header_row_idx: int,
+        data_headers: dict[int, str],
+        declared_channels: int | None,
+        mapped_output_name: Callable[[str], str | None],
+        filename: str,
+    ) -> tuple[dict[int, str], int, int, str]:
+        """Reconcile the authoritative CSV header against channel metadata.
+
+        A data row may legitimately omit a measurement, so the header — not the
+        widest data row — decides the field count and column identities.
+        """
+        header_row = rows[header_row_idx]
+        hdr_delim = file_utils.get_delimiter_from_file_rows(
+            [header_row],
+            delimiters=["\t", ";", ","],
+            filename=filename,
+        )
+        if hdr_delim is None:
+            hdr_delim = ","
+        header_cols = [
+            c.strip() for c in next(csv.reader([header_row], delimiter=hdr_delim))
+        ]
+        expected_num_fields = len(header_cols)
+
+        date_columns = [
+            index
+            for index, column in enumerate(header_cols)
+            if column.lower() == "date/time"
+        ]
+        if len(date_columns) != 1:
+            raise DiverOfficeParseError(
+                filename,
+                "CSV header must contain exactly one Date/time column",
+                header_row_idx + 1,
+                raw_rows[header_row_idx],
+            )
+        if (
+            declared_channels is not None
+            and expected_num_fields != declared_channels + 1
+        ):
+            raise DiverOfficeParseError(
+                filename,
+                f"CSV header has {expected_num_fields - 1} channels but file "
+                f"declares {declared_channels}",
+                header_row_idx + 1,
+                raw_rows[header_row_idx],
+            )
+
+        metadata_outputs = {
+            mapped
+            for index, header in data_headers.items()
+            if index != 0 and (mapped := mapped_output_name(header)) is not None
+        }
+        date_col_idx = date_columns[0]
+        header_data_headers = {date_col_idx: "date_time"}
+        header_outputs: set[str] = set()
+        for colidx, colname in enumerate(header_cols):
+            if colidx == date_col_idx:
+                continue
+            mapped = mapped_output_name(colname)
+            if mapped is None:
+                continue
+            if mapped in header_outputs:
+                raise DiverOfficeParseError(
+                    filename,
+                    f"CSV header maps more than one column to {mapped}",
+                    header_row_idx + 1,
+                    raw_rows[header_row_idx],
+                )
+            header_outputs.add(mapped)
+            header_data_headers[colidx] = colname
+        if metadata_outputs and metadata_outputs != header_outputs:
+            raise DiverOfficeParseError(
+                filename,
+                "CSV header channels disagree with channel metadata",
+                header_row_idx + 1,
+                raw_rows[header_row_idx],
+            )
+
+        return header_data_headers, expected_num_fields, date_col_idx, hdr_delim
+
+    @staticmethod
     def parse(path: str, charset: str) -> ParsedLoggerFile:
         return DiverOfficeParser._parse(
             path,
@@ -769,80 +855,22 @@ class DiverOfficeParser:
         expected_num_fields = max(data_headers) + 1
 
         if is_csv:
-            # The CSV header is authoritative. A data row may legitimately have
-            # a missing measurement and must not influence header detection.
             header_row_idx = data_start_row - 1
             if header_row_idx >= 0:
-                header_row = rows[header_row_idx]
-                hdr_delim = file_utils.get_delimiter_from_file_rows(
-                    [header_row],
-                    delimiters=["\t", ";", ","],
-                    filename=filename,
+                (
+                    data_headers,
+                    expected_num_fields,
+                    date_col_idx,
+                    header_delimiter,
+                ) = DiverOfficeParser._resolve_csv_header(
+                    rows,
+                    raw_rows,
+                    header_row_idx,
+                    data_headers,
+                    declared_channels,
+                    mapped_output_name,
+                    filename,
                 )
-                if hdr_delim is None:
-                    hdr_delim = ","
-                header_delimiter = hdr_delim
-                header_cols = [
-                    c.strip()
-                    for c in next(csv.reader([header_row], delimiter=hdr_delim))
-                ]
-                expected_num_fields = len(header_cols)
-
-                date_columns = [
-                    index
-                    for index, column in enumerate(header_cols)
-                    if column.lower() == "date/time"
-                ]
-                if len(date_columns) != 1:
-                    raise DiverOfficeParseError(
-                        filename,
-                        "CSV header must contain exactly one Date/time column",
-                        header_row_idx + 1,
-                        raw_rows[header_row_idx],
-                    )
-                if (
-                    declared_channels is not None
-                    and expected_num_fields != declared_channels + 1
-                ):
-                    raise DiverOfficeParseError(
-                        filename,
-                        f"CSV header has {expected_num_fields - 1} channels but file "
-                        f"declares {declared_channels}",
-                        header_row_idx + 1,
-                        raw_rows[header_row_idx],
-                    )
-
-                metadata_outputs = {
-                    mapped
-                    for index, header in data_headers.items()
-                    if index != 0 and (mapped := mapped_output_name(header)) is not None
-                }
-                date_col_idx = date_columns[0]
-                header_data_headers = {date_col_idx: "date_time"}
-                header_outputs: set[str] = set()
-                for colidx, colname in enumerate(header_cols):
-                    if colidx == date_col_idx:
-                        continue
-                    mapped = mapped_output_name(colname)
-                    if mapped is None:
-                        continue
-                    if mapped in header_outputs:
-                        raise DiverOfficeParseError(
-                            filename,
-                            f"CSV header maps more than one column to {mapped}",
-                            header_row_idx + 1,
-                            raw_rows[header_row_idx],
-                        )
-                    header_outputs.add(mapped)
-                    header_data_headers[colidx] = colname
-                if metadata_outputs and metadata_outputs != header_outputs:
-                    raise DiverOfficeParseError(
-                        filename,
-                        "CSV header channels disagree with channel metadata",
-                        header_row_idx + 1,
-                        raw_rows[header_row_idx],
-                    )
-                data_headers = header_data_headers
 
         delimiter = file_utils.get_delimiter_from_file_rows(
             data_rows,

@@ -1339,7 +1339,6 @@ class CalibrloggerSpatialiteMixin(CalibrloggerMixin):
         def legacy_startup(editor):
             # Exact pre-optimization round-trip shape: two logger queries,
             # two timezone metadata/query pairs, and two schema probes.
-            # Two separate logger round-trips, as the pre-optimization path made.
             editor.get_obsids_with_calibration_status()
             editor.get_uncalibrated_obsids()
             for timezone_table in ("w_levels_logger", "w_levels"):

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import locale
 import os
 from collections import OrderedDict
 from datetime import datetime, timedelta
@@ -29,6 +30,7 @@ from midvatten.tools.import_logger import (
 )
 from midvatten.tools.import_logger.parsers import (
     FileError,
+    fix_date,
     _IncompleteMonLayoutError,
     _SourceLine,
 )
@@ -327,6 +329,39 @@ class TestHoboParser:
         with file_utils.tempinput(content, "utf-8") as path:
             parsed = HoboParser.parse(path, "utf-8")
         assert parsed.data.loc[0, "date_time"] == expected
+
+    @pytest.mark.parametrize(
+        ("lc_time", "meridiem", "expected_hour"),
+        [
+            ("C", "am", 0),
+            ("C", "pm", 12),
+            ("sv_SE.UTF-8", "am", 0),
+            ("sv_SE.UTF-8", "pm", 12),
+            ("sv_SE.UTF-8", "fm", 0),
+            ("sv_SE.UTF-8", "em", 12),
+        ],
+    )
+    def test_fix_date_meridiem_is_locale_independent(
+        self, lc_time, meridiem, expected_hour
+    ):
+        """HOBO meridiems must parse under any LC_TIME.
+
+        strptime's %p is locale-dependent and sv_SE defines no AM/PM strings,
+        so a %p-based implementation rejects every meridiem token there.
+        QgsApplication.initQgis() sets LC_TIME from the user's locale, so this
+        reaches real imports — not just tests.
+        """
+        previous = locale.setlocale(locale.LC_TIME)
+        try:
+            try:
+                locale.setlocale(locale.LC_TIME, lc_time)
+            except locale.Error:
+                pytest.skip(f"locale {lc_time} not available on this system")
+            parsed = fix_date(f"07/19/18 12:00:00 {meridiem}", "hobo.csv")
+        finally:
+            locale.setlocale(locale.LC_TIME, previous)
+
+        assert parsed == datetime(2018, 7, 19, expected_hour, 0, 0)
 
     def test_parse_year_first_variant(self):
         content = (

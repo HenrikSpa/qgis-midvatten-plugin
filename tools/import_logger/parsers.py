@@ -53,12 +53,18 @@ def fix_date(date_time: str, filename: str) -> datetime.datetime:
         "fm",
         "em",
     }:
-        meridiem = "AM" if suffix in {"am", "fm"} else "PM"
         try:
-            return datetime.datetime.strptime(
-                f"{suffix_match.group(1)} {meridiem}",
-                "%m/%d/%y %I:%M:%S %p",
+            # strptime's %p is locale-dependent, and several locales (sv_SE
+            # among them) define no AM/PM strings at all — there %p matches
+            # only the empty string and rejects every meridiem token. QGIS
+            # sets LC_TIME from the user's locale, so parse the 12-hour time
+            # with the locale-independent %I and apply the shift ourselves.
+            base = datetime.datetime.strptime(
+                suffix_match.group(1),
+                "%m/%d/%y %I:%M:%S",
             )
+            is_pm = suffix in {"pm", "em"}
+            return base.replace(hour=base.hour % 12 + (12 if is_pm else 0))
         except ValueError as error:
             raise FileError(
                 QCoreApplication.translate(

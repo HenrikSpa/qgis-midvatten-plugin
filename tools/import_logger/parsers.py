@@ -795,6 +795,33 @@ class DiverOfficeParser:
         return source_lines, data_rows, count_row
 
     @staticmethod
+    def _build_column_selection(
+        data_headers: dict[int, str],
+        date_col_idx: int,
+        mapped_output_name: Callable[[str], str | None],
+    ) -> tuple[list[int], list[str]]:
+        """Return the (usecols, colnames) pair pandas reads the data with."""
+        usecols = []
+        colnames = []
+        seen_outcols: set[str] = set()
+        for k, v in sorted(data_headers.items()):
+            if v == "date_time":
+                continue
+            outcol = mapped_output_name(v)
+            if outcol is not None and outcol not in seen_outcols:
+                usecols.append(k)
+                colnames.append(outcol)
+                seen_outcols.add(outcol)
+
+        colnames.insert(0, "date_time")
+        usecols.insert(0, date_col_idx)
+        # pandas requires usecols sorted ascending
+        sorted_pairs = sorted(zip(usecols, colnames))
+        usecols = [pair[0] for pair in sorted_pairs]
+        colnames = [pair[1] for pair in sorted_pairs]
+        return usecols, colnames
+
+    @staticmethod
     def parse(path: str, charset: str) -> ParsedLoggerFile:
         return DiverOfficeParser._parse(
             path,
@@ -919,24 +946,9 @@ class DiverOfficeParser:
         if delimiter is None and is_csv:
             delimiter = header_delimiter
 
-        usecols = []
-        colnames = []
-        seen_outcols: set[str] = set()
-        for k, v in sorted(data_headers.items()):
-            if v == "date_time":
-                continue
-            outcol = mapped_output_name(v)
-            if outcol is not None and outcol not in seen_outcols:
-                usecols.append(k)
-                colnames.append(outcol)
-                seen_outcols.add(outcol)
-
-        colnames.insert(0, "date_time")
-        usecols.insert(0, date_col_idx)
-        # pandas requires usecols sorted ascending
-        sorted_pairs = sorted(zip(usecols, colnames))
-        usecols = [pair[0] for pair in sorted_pairs]
-        colnames = [pair[1] for pair in sorted_pairs]
+        usecols, colnames = DiverOfficeParser._build_column_selection(
+            data_headers, date_col_idx, mapped_output_name
+        )
 
         if "head_cm" in col_map.values() and "head_cm" not in colnames:
             message_utils.MessagebarAndLog.warning(

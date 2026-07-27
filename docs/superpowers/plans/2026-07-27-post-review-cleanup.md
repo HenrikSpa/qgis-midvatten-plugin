@@ -16,6 +16,7 @@
 - **Prefer extending existing test coverage over appending a near-duplicate test.** Where a task's brief specifies a new test and an equivalent one already exists, fold the brief's distinguishing assertions into the existing test instead — subject to the rule above. This plan exists to remove duplication; its own tests should not add any.
 - **Some new tests are characterization tests and are expected to pass on first run** (Task 1 Step 2, Task 2 Step 2). That is correct for a refactor: they pin existing behaviour *before* it is restructured. Red-then-green applies only where a task adds genuinely new behaviour.
 - Run `ruff check --fix .` and `ruff format .` after every task's code edit, before committing.
+- **`ruff check` will NOT find unused imports in this repo.** The config selects only `E,W,N,UP`, so `F401` is off. Any task that deletes code and may orphan an import must verify explicitly with `ruff check --select F401 <files>`. Do not reason about which imports went dead — measure it. (Repo-wide `ruff check` also reports ~297 pre-existing findings plus an `N999` caused by the worktree directory name; only files a task touches need to be clean.)
 - Add type hints to all new function/method arguments.
 - User-facing strings must use `QCoreApplication.translate("context", "text")`. Reuse the existing context string when moving a string.
 - Never build SQL with string concatenation of untrusted values — use `ident()` and DB-API parameter binding.

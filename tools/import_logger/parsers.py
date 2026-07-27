@@ -822,6 +822,24 @@ class DiverOfficeParser:
         return usecols, colnames
 
     @staticmethod
+    def _delimiter_is_at_timestamp_boundary(
+        source_lines: list[_SourceLine],
+        delimiter: str,
+    ) -> bool:
+        """Return whether every data row places the delimiter after the date/time."""
+        delimiter_at_boundary = True
+        for source in source_lines:
+            timestamp = re.match(
+                rf"^\s*\S+\s+[^\s{re.escape(delimiter)}]+", source.text
+            )
+            if timestamp is None or not source.text[timestamp.end() :].startswith(
+                delimiter
+            ):
+                delimiter_at_boundary = False
+                break
+        return delimiter_at_boundary
+
+    @staticmethod
     def parse(path: str, charset: str) -> ParsedLoggerFile:
         return DiverOfficeParser._parse(
             path,
@@ -931,16 +949,11 @@ class DiverOfficeParser:
             # Counted MON data can itself be delimited. Distinguish that from
             # fixed-width values containing decimal commas at the unambiguous
             # timestamp boundary.
-            delimiter_at_boundary = True
-            for source in source_lines:
-                timestamp = re.match(
-                    rf"^\s*\S+\s+[^\s{re.escape(delimiter)}]+", source.text
+            delimiter_at_boundary = (
+                DiverOfficeParser._delimiter_is_at_timestamp_boundary(
+                    source_lines, delimiter
                 )
-                if timestamp is None or not source.text[timestamp.end() :].startswith(
-                    delimiter
-                ):
-                    delimiter_at_boundary = False
-                    break
+            )
             if not delimiter_at_boundary:
                 delimiter = None
         if delimiter is None and is_csv:

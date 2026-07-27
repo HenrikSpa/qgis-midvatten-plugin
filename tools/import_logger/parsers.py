@@ -603,6 +603,41 @@ class DiverOfficeParser:
         )
 
     @staticmethod
+    def _resolve_declared_channels(
+        metadata: dict[str, dict[str, str]],
+        data_headers: dict[int, str],
+        filename: str,
+    ) -> int | None:
+        """Return the declared channel count, proving it matches the headers."""
+        declared_channels_raw = _first_metadata_value(
+            metadata,
+            (
+                ("logger settings", "number of channels"),
+                ("series settings", "number of channels"),
+            ),
+        )
+        if not declared_channels_raw:
+            return None
+
+        try:
+            declared_channels = int(declared_channels_raw.strip())
+        except ValueError as error:
+            raise DiverOfficeParseError(
+                filename,
+                f"invalid declared channel count {declared_channels_raw!r}",
+            ) from error
+
+        identified_channels = set(data_headers) - {0}
+        expected_channels = set(range(1, declared_channels + 1))
+        if identified_channels != expected_channels:
+            raise DiverOfficeParseError(
+                filename,
+                f"file declares {declared_channels} channels but identifies "
+                f"channels {sorted(identified_channels)}",
+            )
+        return declared_channels
+
+    @staticmethod
     def parse(path: str, charset: str) -> ParsedLoggerFile:
         return DiverOfficeParser._parse(
             path,
@@ -685,26 +720,9 @@ class DiverOfficeParser:
                 if colname:
                     data_headers[int(secno)] = colname
 
-        declared_channels: int | None = None
-        declared_channels_raw = metadata.get("logger settings", {}).get(
-            "number of channels", ""
-        ) or metadata.get("series settings", {}).get("number of channels", "")
-        if declared_channels_raw:
-            try:
-                declared_channels = int(declared_channels_raw.strip())
-            except ValueError as error:
-                raise DiverOfficeParseError(
-                    filename,
-                    f"invalid declared channel count {declared_channels_raw!r}",
-                ) from error
-            identified_channels = set(data_headers) - {0}
-            expected_channels = set(range(1, declared_channels + 1))
-            if identified_channels != expected_channels:
-                raise DiverOfficeParseError(
-                    filename,
-                    f"file declares {declared_channels} channels but identifies "
-                    f"channels {sorted(identified_channels)}",
-                )
+        declared_channels = DiverOfficeParser._resolve_declared_channels(
+            metadata, data_headers, filename
+        )
 
         if data_start_row is None:
             message_utils.MessagebarAndLog.critical(

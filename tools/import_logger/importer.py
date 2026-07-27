@@ -697,6 +697,36 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             if parsed.source_path in paths_obsid
         ]
 
+    def _import_one_prepared_file(
+        self,
+        prepared: PreparedLoggerFile,
+        series: LoggerSeriesSpec | None,
+        progress: QtWidgets.QProgressDialog,
+        summary: LoggerImportSummary,
+    ) -> None:
+        """Run one file's database import and record its outcome."""
+        result = self._run_db_worker(
+            LoggerDbImportRequest(
+                filename=prepared.source_path,
+                dest_table=_DESTINATION_TABLES[prepared.kind],
+                frame=prepared.data,
+                series=series,
+            ),
+            progress,
+        )
+        if result.imported:
+            summary.imported.append(prepared.source_path)
+        elif result.reason == NO_NEW_ROWS_REASON:
+            summary.no_new_rows.append(prepared.source_path)
+        else:
+            summary.database_failures.append(
+                LoggerFileFailure(
+                    prepared.source_path,
+                    "database",
+                    result.reason or "import failed",
+                )
+            )
+
     def _ensure_baro_meteo_parameters(self) -> None:
         """Insert any zz_meteoparam rows a barometric import depends on."""
         connection = db_utils.DbConnectionManager()
@@ -864,28 +894,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                         ),
                     )
                 if import_to_db:
-                    destination = _DESTINATION_TABLES[prepared.kind]
-                    result = self._run_db_worker(
-                        LoggerDbImportRequest(
-                            filename=prepared.source_path,
-                            dest_table=destination,
-                            frame=prepared.data,
-                            series=series,
-                        ),
-                        progress,
-                    )
-                    if result.imported:
-                        summary.imported.append(prepared.source_path)
-                    elif result.reason == NO_NEW_ROWS_REASON:
-                        summary.no_new_rows.append(prepared.source_path)
-                    else:
-                        summary.database_failures.append(
-                            LoggerFileFailure(
-                                prepared.source_path,
-                                "database",
-                                result.reason or "import failed",
-                            )
-                        )
+                    self._import_one_prepared_file(prepared, series, progress, summary)
                 elif export_csv:
                     summary.imported.append(prepared.source_path)
 

@@ -154,6 +154,24 @@ def _first_metadata_value(
     return ""
 
 
+def _coerce_numeric_column(values: pd.Series) -> tuple[pd.Series, int | None]:
+    """Coerce measurement text to numbers, reporting the first bad value.
+
+    Blank and whitespace-only values become NA — a logger row may legitimately
+    omit a channel. Decimal commas are accepted. The second element is the
+    positional index of the first non-blank value that is not a number, or
+    ``None`` when every value converted.
+    """
+    normalized = values.astype("string").str.strip()
+    normalized = normalized.mask(normalized == "")
+    normalized = normalized.str.replace(",", ".", regex=False)
+    converted = pd.to_numeric(normalized, errors="coerce")
+    invalid = normalized.notna() & converted.isna()
+    if invalid.any():
+        return converted, int(invalid.to_numpy().nonzero()[0][0])
+    return converted, None
+
+
 # ── GUI components ─────────────────────────────────────────────────────────────
 
 
@@ -440,22 +458,16 @@ class DiverOfficeParser:
             if col_idx == date_col_idx:
                 continue
             raw = converted_frame.iloc[:, col_idx]
-            normalized = raw.astype("string").str.strip()
-            normalized = normalized.mask(normalized == "")
-            normalized = normalized.str.replace(",", ".", regex=False)
-            converted = pd.to_numeric(normalized, errors="coerce")
-            invalid = normalized.notna() & converted.isna()
-            if invalid.any():
-                row_index = int(invalid.to_numpy().nonzero()[0][0])
-                source = source_lines[row_index]
+            converted, invalid_position = _coerce_numeric_column(raw)
+            if invalid_position is not None:
+                source = source_lines[invalid_position]
                 raise DiverOfficeParseError(
                     filename,
-                    f"invalid numeric value {raw.iloc[row_index]!r}",
+                    f"invalid numeric value {raw.iloc[invalid_position]!r}",
                     source.number,
                     source.text,
                 )
-            column = converted_frame.columns[col_idx]
-            converted_frame[column] = converted
+            converted_frame[converted_frame.columns[col_idx]] = converted
         return converted_frame
 
     @staticmethod
@@ -889,18 +901,14 @@ def _strict_numeric_series(
     filename: str,
     column: str,
 ) -> pd.Series:
-    normalized = values.astype("string").str.strip().replace("", pd.NA)
-    normalized = normalized.str.replace(",", ".", regex=False)
-    converted = pd.to_numeric(normalized, errors="coerce")
-    invalid = normalized.notna() & converted.isna()
-    if invalid.any():
-        row_index = int(invalid.to_numpy().nonzero()[0][0])
+    converted, invalid_position = _coerce_numeric_column(values)
+    if invalid_position is not None:
         raise FileError(
             QCoreApplication.translate(
                 "LoggerImport",
                 "Invalid numeric value %s in column %s of file %s (data row %s).",
             )
-            % (values.iloc[row_index], column, filename, row_index + 1)
+            % (values.iloc[invalid_position], column, filename, invalid_position + 1)
         )
     return converted.astype("float64")
 

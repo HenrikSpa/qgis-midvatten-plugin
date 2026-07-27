@@ -31,6 +31,7 @@ from midvatten.tools.import_logger import (
 from midvatten.tools.import_logger.parsers import (
     FileError,
     fix_date,
+    _coerce_numeric_column,
     _first_metadata_value,
     _IncompleteMonLayoutError,
     _SourceLine,
@@ -3614,3 +3615,17 @@ def test_first_metadata_value_returns_the_first_non_empty_match():
     )
     assert _first_metadata_value(metadata, lookups) == "Second"
     assert _first_metadata_value({}, lookups) == ""
+
+
+def test_coerce_numeric_column_reports_the_first_invalid_position():
+    converted, invalid_position = _coerce_numeric_column(
+        pd.Series(["1,5", " 2.5 ", "", "  ", "3"])
+    )
+    assert invalid_position is None
+    assert converted.tolist()[:2] == [1.5, 2.5]
+    assert pd.isna(converted.iloc[2]) and pd.isna(converted.iloc[3])
+
+    _converted, invalid_position = _coerce_numeric_column(
+        pd.Series(["1.0", "", "oops", "2.0"])
+    )
+    assert invalid_position == 2

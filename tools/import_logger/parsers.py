@@ -724,36 +724,10 @@ class DiverOfficeParser:
         return header_data_headers, expected_num_fields, date_col_idx, hdr_delim
 
     @staticmethod
-    def parse(path: str, charset: str) -> ParsedLoggerFile:
-        return DiverOfficeParser._parse(
-            path,
-            charset,
-            col_map=_DIVEROFFICE_DEFAULT_COL_MAP,
-            kind=LoggerDataKind.WATER_LEVEL,
-        )
-
-    @staticmethod
-    def _parse(
-        path: str,
-        charset: str,
-        *,
-        col_map: dict[str, str],
-        kind: LoggerDataKind,
-    ) -> ParsedLoggerFile:
-        def mapped_output_name(header: str) -> str | None:
-            normalized = header.lower().replace(" ", "")
-            for keyword, outcol in col_map.items():
-                if keyword in normalized:
-                    return outcol
-            return None
-
-        filename = os.path.basename(path)
-        parsed_metadata = DiverOfficeParser._read_metadata(path, charset)
-        metadata = parsed_metadata.sections
-        raw_rows = parsed_metadata.raw_rows
-        rows = parsed_metadata.rows
-        data_start_row = parsed_metadata.data_start_row
-
+    def _read_identity(
+        metadata: dict[str, dict[str, str]],
+    ) -> tuple[str, str | None, str]:
+        """Return the (utc_offset, serial_number, location) identity fields."""
         # Each field moved between sections across DiverOffice generations, so
         # every known location is tried in priority order. For the UTC offset the
         # classic format stores it as 'instrument number', while the newer format
@@ -785,6 +759,40 @@ class DiverOfficeParser:
                 ("flat", "location"),
             ),
         )
+        return utc_offset, serial_number, location
+
+    @staticmethod
+    def parse(path: str, charset: str) -> ParsedLoggerFile:
+        return DiverOfficeParser._parse(
+            path,
+            charset,
+            col_map=_DIVEROFFICE_DEFAULT_COL_MAP,
+            kind=LoggerDataKind.WATER_LEVEL,
+        )
+
+    @staticmethod
+    def _parse(
+        path: str,
+        charset: str,
+        *,
+        col_map: dict[str, str],
+        kind: LoggerDataKind,
+    ) -> ParsedLoggerFile:
+        def mapped_output_name(header: str) -> str | None:
+            normalized = header.lower().replace(" ", "")
+            for keyword, outcol in col_map.items():
+                if keyword in normalized:
+                    return outcol
+            return None
+
+        filename = os.path.basename(path)
+        parsed_metadata = DiverOfficeParser._read_metadata(path, charset)
+        metadata = parsed_metadata.sections
+        raw_rows = parsed_metadata.raw_rows
+        rows = parsed_metadata.rows
+        data_start_row = parsed_metadata.data_start_row
+
+        utc_offset, serial_number, location = DiverOfficeParser._read_identity(metadata)
 
         def make_result(data: pd.DataFrame) -> ParsedLoggerFile:
             return ParsedLoggerFile(

@@ -184,8 +184,19 @@ class LoggerImport(BaseImporter, import_ui_dialog):
 
         # Format-specific sections (each builds a container widget shown/hidden by _on_format_changed)
         _db_tz = db_utils.get_timezone_from_db("w_levels_logger")
-        self._build_diveroffice_section(_db_tz)
-        self._build_diveroffice_baro_section(_db_tz)
+        # Section build order determines layout order — DiverOffice first.
+        (
+            self._diveroffice_section,
+            self.utc_offset,
+            self.utcoffset_label,
+            self.utcoffset_row,
+        ) = self._build_utc_offset_section(_db_tz)
+        (
+            self._diveroffice_baro_section,
+            self.baro_utc_offset,
+            _baro_label,
+            _baro_row,
+        ) = self._build_utc_offset_section(_db_tz)
         self._build_levelogger_section()
         self._build_hobo_section()
 
@@ -287,16 +298,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         )
         self.grid_layout_buttons.addWidget(self.start_import_button, 6, 0)
         self.start_import_button.clicked.connect(
-            lambda: self.start_import(
-                files=self.files,
-                skip_rows_without_water_level=self.skip_rows.checked,
-                confirm_names=self.confirm_names.checked,
-                import_all_data=self.import_all_data.checked,
-                from_date=self.date_time_filter.from_date,
-                to_date=self.date_time_filter.to_date,
-                export_csv=False,
-                import_to_db=True,
-            )
+            lambda: self._start_import_from_gui(export_csv=False, import_to_db=True)
         )
         self.start_import_button.setEnabled(False)
 
@@ -305,16 +307,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         )
         self.grid_layout_buttons.addWidget(self.export_csv_button, 7, 0)
         self.export_csv_button.clicked.connect(
-            lambda: self.start_import(
-                files=self.files,
-                skip_rows_without_water_level=self.skip_rows.checked,
-                confirm_names=self.confirm_names.checked,
-                import_all_data=self.import_all_data.checked,
-                from_date=self.date_time_filter.from_date,
-                to_date=self.date_time_filter.to_date,
-                export_csv=True,
-                import_to_db=False,
-            )
+            lambda: self._start_import_from_gui(export_csv=True, import_to_db=False)
         )
         self.export_csv_button.setEnabled(False)
 
@@ -373,71 +366,42 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         self.format_combo.currentTextChanged.connect(self._on_format_changed)
         self._on_format_changed(self.format_combo.currentText())
 
-    def _build_diveroffice_section(self, database_timezone: str | None = None) -> None:
-        """Build DiverOffice-specific section (UTC offset control). Hidden for other formats."""
-        self._diveroffice_section = QtWidgets.QWidget()
-        _vl = QtWidgets.QVBoxLayout(self._diveroffice_section)
-        _vl.setContentsMargins(0, 0, 0, 0)
-
-        self.utcoffset_label = QtWidgets.QLabel(
-            QCoreApplication.translate(
-                "LoggerImport", "Identify and change UTC offset:"
-            )
-        )
-        self.utc_offset = QtWidgets.QComboBox()
-        self.utc_offset.setToolTip(
-            QCoreApplication.translate(
-                "LoggerImport",
-                "Identifies UTC-offset in file and changes to the selected one.",
-            )
-        )
-        self.utc_offset.addItem("")
-        self.utc_offset.addItems(
-            [format_timezone_string(hour) for hour in range(-12, 15)]
-        )
-        if database_timezone is not None:
-            set_combobox(self.utc_offset, database_timezone, add_if_not_exists=False)
-        self.utcoffset_row = RowEntry()
-        self.utcoffset_row.layout().addWidget(self.utcoffset_label)
-        self.utcoffset_row.layout().addWidget(self.utc_offset)
-        _vl.addWidget(self.utcoffset_row)
-
-        self.add_row(self._diveroffice_section)
-
-    def _build_diveroffice_baro_section(
+    def _build_utc_offset_section(
         self, database_timezone: str | None = None
-    ) -> None:
-        """Build DiverOffice Baro section (UTC offset control). Imports to meteo table."""
-        self._diveroffice_baro_section = QtWidgets.QWidget()
-        _vl = QtWidgets.QVBoxLayout(self._diveroffice_baro_section)
-        _vl.setContentsMargins(0, 0, 0, 0)
+    ) -> tuple[QtWidgets.QWidget, QtWidgets.QComboBox, QtWidgets.QLabel, RowEntry]:
+        """Build one format section holding a UTC-offset combobox.
 
-        baro_utcoffset_label = QtWidgets.QLabel(
+        DiverOffice and DiverOffice Baro need the identical control; they only
+        differ in which section is visible for the selected format.
+        """
+        section = QtWidgets.QWidget()
+        section_layout = QtWidgets.QVBoxLayout(section)
+        section_layout.setContentsMargins(0, 0, 0, 0)
+
+        label = QtWidgets.QLabel(
             QCoreApplication.translate(
                 "LoggerImport", "Identify and change UTC offset:"
             )
         )
-        self.baro_utc_offset = QtWidgets.QComboBox()
-        self.baro_utc_offset.setToolTip(
+        combobox = QtWidgets.QComboBox()
+        combobox.setToolTip(
             QCoreApplication.translate(
                 "LoggerImport",
                 "Identifies UTC-offset in file and changes to the selected one.",
             )
         )
-        self.baro_utc_offset.addItem("")
-        self.baro_utc_offset.addItems(
-            [format_timezone_string(hour) for hour in range(-12, 15)]
-        )
+        combobox.addItem("")
+        combobox.addItems([format_timezone_string(hour) for hour in range(-12, 15)])
         if database_timezone is not None:
-            set_combobox(
-                self.baro_utc_offset, database_timezone, add_if_not_exists=False
-            )
-        baro_utcoffset_row = RowEntry()
-        baro_utcoffset_row.layout().addWidget(baro_utcoffset_label)
-        baro_utcoffset_row.layout().addWidget(self.baro_utc_offset)
-        _vl.addWidget(baro_utcoffset_row)
+            set_combobox(combobox, database_timezone, add_if_not_exists=False)
 
-        self.add_row(self._diveroffice_baro_section)
+        row = RowEntry()
+        row.layout().addWidget(label)
+        row.layout().addWidget(combobox)
+        section_layout.addWidget(row)
+
+        self.add_row(section)
+        return section, combobox, label, row
 
     def _build_levelogger_section(self) -> None:
         """Build Levelogger-specific section (no extra controls needed)."""
@@ -515,6 +479,19 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         )
         self.start_import_button.setEnabled(True)
         self.export_csv_button.setEnabled(True)
+
+    def _start_import_from_gui(self, *, export_csv: bool, import_to_db: bool):
+        """Read the current widget state and run one import or CSV export."""
+        return self.start_import(
+            files=self.files,
+            skip_rows_without_water_level=self.skip_rows.checked,
+            confirm_names=self.confirm_names.checked,
+            import_all_data=self.import_all_data.checked,
+            from_date=self.date_time_filter.from_date,
+            to_date=self.date_time_filter.to_date,
+            export_csv=export_csv,
+            import_to_db=import_to_db,
+        )
 
     # ── Import logic ─────────────────────────────────────────────────────────
 

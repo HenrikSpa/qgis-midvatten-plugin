@@ -32,6 +32,10 @@ METEO_COLUMNS = (
     "unit",
 )
 
+# Reason recorded when every row in a file was already present in the database.
+# Shared so the dialog can classify the outcome without matching on prose.
+NO_NEW_ROWS_REASON = "no non-duplicate rows"
+
 
 class LoggerDataKind(Enum):
     WATER_LEVEL = "water_level"

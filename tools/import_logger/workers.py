@@ -13,6 +13,7 @@ from qgis.PyQt.QtCore import QCoreApplication, QObject, pyqtSignal, pyqtSlot
 
 from midvatten.tools import import_data_to_db
 from midvatten.tools.import_logger.models import (
+    NO_NEW_ROWS_REASON,
     LoggerDbImportRequest,
     LoggerDbImportResult,
     LoggerFileFailure,
@@ -214,7 +215,7 @@ class LoggerDbImportWorker(LoggerWorker):
                     raise_insert_errors=True,
                 )
                 self._check_cancelled()
-                result = LoggerDbImportResult(self.request.filename, True)
+                has_new_rows = inserted_count != 0
                 if series_id is not None:
                     placeholder = connection.placeholder()
                     count = connection.execute_and_fetchall(
@@ -222,21 +223,17 @@ class LoggerDbImportWorker(LoggerWorker):
                         f"WHERE series_id = {placeholder}",
                         (series_id,),
                     )[0][0]
-                    if inserted_count == 0 or count == 0:
+                    has_new_rows = has_new_rows and count != 0
+                    if not has_new_rows:
                         connection.execute(
                             f"DELETE FROM w_logger_series WHERE id = {placeholder}",
                             (series_id,),
                         )
-                        result = LoggerDbImportResult(
-                            self.request.filename,
-                            False,
-                            "no non-duplicate rows",
-                        )
-                elif inserted_count == 0:
+                if has_new_rows:
+                    result = LoggerDbImportResult(self.request.filename, True)
+                else:
                     result = LoggerDbImportResult(
-                        self.request.filename,
-                        False,
-                        "no non-duplicate rows",
+                        self.request.filename, False, NO_NEW_ROWS_REASON
                     )
             self.finished.emit(result)
         except Exception:

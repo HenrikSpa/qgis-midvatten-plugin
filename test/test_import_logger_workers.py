@@ -8,6 +8,7 @@ import pytest
 from pandas.testing import assert_frame_equal
 from qgis.PyQt.QtCore import QEventLoop, QThread, QTimer
 
+from midvatten.tools.import_logger import importer, models, workers
 from midvatten.tools.import_logger.models import (
     LoggerDataKind,
     LoggerDbImportRequest,
@@ -386,3 +387,9 @@ def test_database_worker_interrupts_active_query_and_rolls_back():
     assert connection.rollbacks == 1
     assert connection.commits == 0
     assert connection.closed
+
+
+def test_no_new_rows_reason_is_shared_between_worker_and_dialog():
+    assert models.NO_NEW_ROWS_REASON == "no non-duplicate rows"
+    assert workers.NO_NEW_ROWS_REASON is models.NO_NEW_ROWS_REASON
+    assert importer.NO_NEW_ROWS_REASON is models.NO_NEW_ROWS_REASON

@@ -38,6 +38,7 @@ from midvatten.tools.utils.gui_utils import (
 from midvatten.tools.utils.string_utils import returnunicode as ru
 
 from .models import (
+    NO_NEW_ROWS_REASON,
     LoggerDataKind,
     LoggerDbImportRequest,
     LoggerDbImportResult,
@@ -866,7 +867,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                     )
                     if result.imported:
                         summary.imported.append(prepared.source_path)
-                    elif result.reason == "no non-duplicate rows":
+                    elif result.reason == NO_NEW_ROWS_REASON:
                         summary.no_new_rows.append(prepared.source_path)
                     else:
                         summary.database_failures.append(

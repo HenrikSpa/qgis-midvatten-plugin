@@ -601,6 +601,16 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         )
         reporter(bar_msg=bar_message, log_msg="\n".join(detail_lines))
 
+    def _report_parse_failures(self, summary: LoggerImportSummary) -> None:
+        """Log one warning per file that failed before obsid resolution."""
+        for failure in summary.parse_failures:
+            message_utils.MessagebarAndLog.warning(
+                log_msg=QCoreApplication.translate(
+                    "LoggerImport", "%s failed during %s: %s"
+                )
+                % (failure.filename, failure.stage, failure.reason)
+            )
+
     def _ensure_baro_meteo_parameters(self) -> None:
         """Insert any zz_meteoparam rows a barometric import depends on."""
         connection = db_utils.DbConnectionManager()
@@ -676,13 +686,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         try:
             parse_batch = self._run_parse_worker(parse_request, progress)
             summary = LoggerImportSummary(parse_failures=list(parse_batch.failures))
-            for failure in summary.parse_failures:
-                message_utils.MessagebarAndLog.warning(
-                    log_msg=QCoreApplication.translate(
-                        "LoggerImport", "%s failed during %s: %s"
-                    )
-                    % (failure.filename, failure.stage, failure.reason)
-                )
+            self._report_parse_failures(summary)
 
             parsed_files = []
             for parsed in parse_batch.parsed_files:

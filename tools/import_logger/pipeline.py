@@ -5,7 +5,6 @@ from __future__ import annotations
 import datetime
 import re
 from dataclasses import replace
-from typing import Callable
 from collections.abc import Mapping
 
 import pandas as pd
@@ -361,31 +360,6 @@ def baro_to_meteo(
     return long.loc[:, METEO_COLUMNS].reset_index(drop=True).copy()
 
 
-def _water_destination(
-    data: pd.DataFrame,
-    _obsid: str,
-    _instrumentid: str,
-) -> pd.DataFrame:
-    return data.loc[:, WATER_LEVEL_COLUMNS].copy()
-
-
-def _barometric_destination(
-    data: pd.DataFrame,
-    obsid: str,
-    instrumentid: str,
-) -> pd.DataFrame:
-    return baro_to_meteo(data, obsid, instrumentid)
-
-
-_DESTINATION_PREPARERS: Mapping[
-    LoggerDataKind,
-    Callable[[pd.DataFrame, str, str], pd.DataFrame],
-] = {
-    LoggerDataKind.WATER_LEVEL: _water_destination,
-    LoggerDataKind.BAROMETRIC: _barometric_destination,
-}
-
-
 def run_pre_resolution_pipeline(
     parsed: ParsedLoggerFile,
     options: LoggerImportOptions,
@@ -417,7 +391,10 @@ def run_post_resolution_pipeline(
     if not options.import_all_data and parsed.kind is LoggerDataKind.WATER_LEVEL:
         data = filter_after_latest_date(data, obsid, latest_dates)
     instrumentid = parsed.serial_number or parsed.filename
-    destination = _DESTINATION_PREPARERS[parsed.kind](data, obsid, instrumentid)
+    if parsed.kind is LoggerDataKind.BAROMETRIC:
+        destination = baro_to_meteo(data, obsid, instrumentid)
+    else:
+        destination = data.loc[:, WATER_LEVEL_COLUMNS].copy()
     return PreparedLoggerFile(
         data=destination,
         filename=parsed.filename,

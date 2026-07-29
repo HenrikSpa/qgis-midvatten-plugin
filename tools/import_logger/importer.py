@@ -102,12 +102,6 @@ def _parse_gui_date_bound(value, name: str) -> pd.Timestamp | None:
     return pd.Timestamp(parsed)
 
 
-_DESTINATION_TABLES = {
-    LoggerDataKind.WATER_LEVEL: "w_levels_logger",
-    LoggerDataKind.BAROMETRIC: "meteo",
-}
-
-
 class CheckboxAndExplanation(VRowEntry):
     """A checkbox widget with an optional explanatory label below it."""
 
@@ -707,7 +701,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         result = self._run_db_worker(
             LoggerDbImportRequest(
                 filename=prepared.source_path,
-                dest_table=_DESTINATION_TABLES[prepared.kind],
+                dest_table=prepared.dest_table,
                 frame=prepared.data,
                 series=series,
             ),

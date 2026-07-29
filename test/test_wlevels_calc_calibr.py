@@ -932,6 +932,43 @@ class CalibrloggerMixin:
         assert rows[0][0] == expected_level
 
     @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_undo_to_saved_position_clears_dirty(self, mock_messagebar):
+        """After save, undoing back to the saved position must clear _dirty."""
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, head_cm, level_masl) "
+            "VALUES ('rb1', '2017-02-01 00:00', 100, NULL)"
+        )
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
+        gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
+        calibrlogger.update_plot()
+
+        # Make an edit and save — saved position is now 1
+        calibrlogger.from_date_time.setDateTime(
+            date_utils.to_date("2000-01-01 00:00:00")
+        )
+        calibrlogger.logger_elevation.setText("5")
+        gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
+        calibrlogger.set_logger_pos()
+        assert calibrlogger._dirty
+        assert calibrlogger._history_pos == 1
+        saved_pos = calibrlogger._history_pos
+
+        calibrlogger.save_to_db()
+        assert not calibrlogger._dirty
+        assert calibrlogger._last_saved_history_pos == saved_pos
+
+        # Make another edit — dirty again
+        calibrlogger.set_logger_pos()
+        assert calibrlogger._dirty
+
+        # Undo back to the saved position — should clear dirty
+        calibrlogger.undo()
+        assert calibrlogger._history_pos == saved_pos
+        assert not calibrlogger._dirty
+
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_close_event_dirty_cancel(self, mock_messagebar):
         """closeEvent with dirty buffer and 'cancel' response ignores the event."""
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")

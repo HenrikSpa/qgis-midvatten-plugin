@@ -1924,7 +1924,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         if hasattr(self, "_series_last_shown_id"):
             self._series_last_shown_id = None
         self._buf_version += 1
-        self._dirty = pos != 0
+        self._dirty = pos != self._last_saved_history_pos
         self._refresh_window_title()
         self._refresh_history_widget()
         self.update_plot()

@@ -478,6 +478,28 @@ def unwind_waiting_cursor(depth: int) -> None:
         stop_waiting_cursor()
 
 
+@contextmanager
+def suspended_waiting_cursor():
+    """Drop the wait cursor for a modal prompt, then restore it.
+
+    A bare ``stop_waiting_cursor()`` pops one level, so a caller nested inside
+    another wait-cursor scope still shows the wait cursor while the modal is on
+    screen — the exact thing the caller was trying to avoid. And if the prompt
+    raises or the caller returns early, the matching ``start_waiting_cursor()``
+    never runs and the outer scope silently loses its cursor.
+
+    This unwinds every level on entry and restores the entry depth in a
+    ``finally``, so both hold regardless of nesting or control flow.
+    """
+    depth = waiting_cursor_depth()
+    unwind_waiting_cursor(0)
+    try:
+        yield
+    finally:
+        for _ in range(depth):
+            start_waiting_cursor()
+
+
 class Cancel:
     """Object for transmitting cancel messages instead of using string 'cancel'.
     use isinstance(variable, Cancel) to check for it.

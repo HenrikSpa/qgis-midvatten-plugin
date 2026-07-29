@@ -871,6 +871,39 @@ class TestDecoratorMetadata:
             assert common_utils.waiting_cursor_depth() == 0
             assert app.restoreOverrideCursor.call_count == 1
 
+    def test_suspended_cursor_drops_every_level_not_just_one(self):
+        """A bare stop() pops one level; at depth 2 the wait cursor stayed up."""
+        with mock.patch("qgis.PyQt.QtWidgets.QApplication") as app:
+            common_utils.start_waiting_cursor()
+            common_utils.start_waiting_cursor()
+            assert common_utils.waiting_cursor_depth() == 2
+
+            with common_utils.suspended_waiting_cursor():
+                # Qt must hold no override cursor while the modal is up.
+                assert common_utils.waiting_cursor_depth() == 0
+                assert app.restoreOverrideCursor.call_count == 2
+
+            assert common_utils.waiting_cursor_depth() == 2
+
+    def test_suspended_cursor_restores_depth_after_exception(self):
+        """The old idiom skipped its start() when the modal raised."""
+        with mock.patch("qgis.PyQt.QtWidgets.QApplication"):
+            common_utils.start_waiting_cursor()
+
+            with pytest.raises(RuntimeError, match="modal blew up"):
+                with common_utils.suspended_waiting_cursor():
+                    raise RuntimeError("modal blew up")
+
+            assert common_utils.waiting_cursor_depth() == 1
+
+    def test_suspended_cursor_is_a_noop_at_depth_zero(self):
+        with mock.patch("qgis.PyQt.QtWidgets.QApplication") as app:
+            with common_utils.suspended_waiting_cursor():
+                assert common_utils.waiting_cursor_depth() == 0
+            assert common_utils.waiting_cursor_depth() == 0
+            assert app.setOverrideCursor.call_count == 0
+            assert app.restoreOverrideCursor.call_count == 0
+
 
 @pytest.mark.active
 class TestMessageDispatcher:

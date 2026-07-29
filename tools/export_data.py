@@ -182,10 +182,8 @@ class ExportData:
 
         with common_utils.suspended_waiting_cursor():
             dlg = ExportCsvDialog(None)
-            accepted = dlg.exec() == QDialog.DialogCode.Accepted
-
-        if not accepted:
-            return
+            if dlg.exec() != QDialog.DialogCode.Accepted:
+                return
 
         self.ID_obs_points = obsid_p
         self.ID_obs_lines = obsid_l

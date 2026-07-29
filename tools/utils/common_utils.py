@@ -500,6 +500,16 @@ def suspended_waiting_cursor():
             start_waiting_cursor()
 
 
+@contextmanager
+def waiting_cursor_scope():
+    """Show a wait cursor for the duration of the with-block."""
+    start_waiting_cursor()
+    try:
+        yield
+    finally:
+        stop_waiting_cursor()
+
+
 class Cancel:
     """Object for transmitting cancel messages instead of using string 'cancel'.
     use isinstance(variable, Cancel) to check for it.

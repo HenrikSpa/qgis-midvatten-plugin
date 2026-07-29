@@ -130,7 +130,6 @@ class MessagebarAndLog:
                     QgsApplication.messageLog().logMessage(
                         traceback.format_exc(), "Midvatten", level=Qgis.Info
                     )
-        if bar_msg is not None:
             QgsApplication.messageLog().logMessage(
                 returnunicode(bar_msg), "Midvatten", level=log_level
             )

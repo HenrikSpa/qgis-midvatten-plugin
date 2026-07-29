@@ -3141,8 +3141,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     def calc_best_fit(self):
         """Fit selected logger level_masl values to manual measurements."""
         obsid = self.load_obsid_and_init()
-        common_utils.start_waiting_cursor()
-        try:
+        with common_utils.waiting_cursor_scope():
             self.reset_plot_selects_and_calib_help()
             search_radius = self.get_search_radius()
 
@@ -3174,8 +3173,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 else:
                     self.offset.setText(str(calculated_diff))
                     self.add_to_level_masl(obsid)
-        finally:
-            common_utils.stop_waiting_cursor()
 
     @fn_timer
     def match_ts_values(self, meas_ts, logger_ts, search_radius_tuple):
@@ -3360,8 +3357,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
         really_delete = dialog_utils.Askuser("YesNo", msg).result
         if really_delete:
-            common_utils.start_waiting_cursor()
-            try:
+            with common_utils.waiting_cursor_scope():
                 mask = self._build_edit_mask(fr_d_t, to_d_t)
                 if set_to_null_instead:
                     self._buf.loc[mask, "level_masl"] = np.nan
@@ -3369,8 +3365,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 else:
                     self._buf = self._buf.drop(index=self._buf.index[mask])
                     self._history_push("Delete data")
-            finally:
-                common_utils.stop_waiting_cursor()
             self.update_plot()
 
     @fn_timer
@@ -3673,8 +3667,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         if len(selected) < 2:
             return
 
-        common_utils.start_waiting_cursor()
-        try:
+        with common_utils.waiting_cursor_scope():
             sub = self._buf.loc[mask].copy()
             applied = apply_trend_correction(
                 sub, original_start_y, original_end_y, new_start_y, new_end_y
@@ -3699,8 +3692,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                     )
                 )
                 self._history_push("Adjust trend")
-        finally:
-            common_utils.stop_waiting_cursor()
         self.update_plot()
 
     def _remove_trend_overlay(self):

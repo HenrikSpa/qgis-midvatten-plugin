@@ -175,21 +175,21 @@ class ExportData:
         self.ID_obs_points: tuple = ()
         self.ID_obs_lines: tuple = ()
 
+    @common_utils.waiting_cursor
     def show(self) -> None:
-        common_utils.start_waiting_cursor()
         obsid_p = layer_utils.get_selected_features_as_tuple("obs_points")
         obsid_l = layer_utils.get_selected_features_as_tuple("obs_lines")
-        common_utils.stop_waiting_cursor()
 
-        dlg = ExportCsvDialog(None)
-        if dlg.exec() != QDialog.DialogCode.Accepted:
+        with common_utils.suspended_waiting_cursor():
+            dlg = ExportCsvDialog(None)
+            accepted = dlg.exec() == QDialog.DialogCode.Accepted
+
+        if not accepted:
             return
 
-        common_utils.start_waiting_cursor()
         self.ID_obs_points = obsid_p
         self.ID_obs_lines = obsid_l
         self.export_2_csv(dlg.export_folder, dlg.strip_html)
-        common_utils.stop_waiting_cursor()
 
     def export_2_csv(self, exportfolder: str, strip_html: bool = True) -> None:
         self.source_dbconnection = db_utils.DbConnectionManager()

@@ -85,17 +85,15 @@ class NewDb:
         """Open a new DataBase (create an empty one if file doesn't exists) and set as default DB"""
 
         if locale is None:
-            common_utils.stop_waiting_cursor()
-            set_locale = self.ask_for_locale()
-            common_utils.start_waiting_cursor()
+            with common_utils.suspended_waiting_cursor():
+                set_locale = self.ask_for_locale()
         else:
             set_locale = locale
         # print("Got locale " + str(set_locale))
 
         if user_select_crs == "y":
-            common_utils.stop_waiting_cursor()
-            epsg_id = str(self.ask_for_CRS(set_locale))
-            common_utils.start_waiting_cursor()
+            with common_utils.suspended_waiting_cursor():
+                epsg_id = str(self.ask_for_CRS(set_locale))
         else:
             epsg_id = epsg_code
 
@@ -106,32 +104,29 @@ class NewDb:
         # path and name of new db
 
         if w_levels_logger_timezone is None:
-            common_utils.stop_waiting_cursor()
-            default_ts = "UTC+1" if set_locale.lower() == "sv_se" else ""
-            w_levels_logger_timezone = self.ask_for_timezone(
-                "w_levels_logger", default_ts
-            )
-            # print("Got timezone:" + str(w_levels_logger_timezone))
-            common_utils.start_waiting_cursor()
+            with common_utils.suspended_waiting_cursor():
+                default_ts = "UTC+1" if set_locale.lower() == "sv_se" else ""
+                w_levels_logger_timezone = self.ask_for_timezone(
+                    "w_levels_logger", default_ts
+                )
+                # print("Got timezone:" + str(w_levels_logger_timezone))
 
         if w_levels_timezone is None:
-            common_utils.stop_waiting_cursor()
-            default_ts = "Europe/Stockholm" if set_locale.lower() == "sv_se" else ""
-            w_levels_timezone = self.ask_for_timezone("w_levels", default_ts)
-            # print("Got timezone:" + str(w_levels_timezone))
-            common_utils.start_waiting_cursor()
+            with common_utils.suspended_waiting_cursor():
+                default_ts = "Europe/Stockholm" if set_locale.lower() == "sv_se" else ""
+                w_levels_timezone = self.ask_for_timezone("w_levels", default_ts)
+                # print("Got timezone:" + str(w_levels_timezone))
 
         if dbpath is None:
-            common_utils.stop_waiting_cursor()
-            dbpath = ru(
-                common_utils.get_save_file_name_no_extension(
-                    parent=None,
-                    caption="New DB",
-                    directory="midv_obsdb.sqlite",
-                    filter="Spatialite (*.sqlite)",
+            with common_utils.suspended_waiting_cursor():
+                dbpath = ru(
+                    common_utils.get_save_file_name_no_extension(
+                        parent=None,
+                        caption="New DB",
+                        directory="midv_obsdb.sqlite",
+                        filter="Spatialite (*.sqlite)",
+                    )
                 )
-            )
-            common_utils.start_waiting_cursor()
 
         if not dbpath:
             return
@@ -308,16 +303,14 @@ class NewDb:
             versionstext = "PostGIS (version unknown)"
 
         if locale is None:
-            common_utils.stop_waiting_cursor()
-            supplied_locale = self.ask_for_locale()
-            common_utils.start_waiting_cursor()
+            with common_utils.suspended_waiting_cursor():
+                supplied_locale = self.ask_for_locale()
         else:
             supplied_locale = locale
 
         if user_select_crs == "y":
-            common_utils.stop_waiting_cursor()
-            epsg_id = str(self.ask_for_CRS(supplied_locale))
-            common_utils.start_waiting_cursor()
+            with common_utils.suspended_waiting_cursor():
+                epsg_id = str(self.ask_for_CRS(supplied_locale))
         else:
             epsg_id = epsg_code
 
@@ -325,22 +318,20 @@ class NewDb:
             raise exceptions.UserInterruptError()
 
         if w_levels_logger_timezone is None:
-            common_utils.stop_waiting_cursor()
-            default_ts = "UTC+1" if supplied_locale.lower() == "sv_se" else ""
-            w_levels_logger_timezone = self.ask_for_timezone(
-                "w_levels_logger", default_ts
-            )
-            # print("Got timezone:" + str(w_levels_logger_timezone))
-            common_utils.start_waiting_cursor()
+            with common_utils.suspended_waiting_cursor():
+                default_ts = "UTC+1" if supplied_locale.lower() == "sv_se" else ""
+                w_levels_logger_timezone = self.ask_for_timezone(
+                    "w_levels_logger", default_ts
+                )
+                # print("Got timezone:" + str(w_levels_logger_timezone))
 
         if w_levels_timezone is None:
-            common_utils.stop_waiting_cursor()
-            default_ts = (
-                "Europe/Stockholm" if supplied_locale.lower() == "sv_se" else ""
-            )
-            w_levels_timezone = self.ask_for_timezone("w_levels", default_ts)
-            # print("Got timezone:" + str(w_levels_timezone))
-            common_utils.start_waiting_cursor()
+            with common_utils.suspended_waiting_cursor():
+                default_ts = (
+                    "Europe/Stockholm" if supplied_locale.lower() == "sv_se" else ""
+                )
+                w_levels_timezone = self.ask_for_timezone("w_levels", default_ts)
+                # print("Got timezone:" + str(w_levels_timezone))
 
         sql_file = definitions_path("create_db.sql")
         # We want to store info about which qgis-version that created the db

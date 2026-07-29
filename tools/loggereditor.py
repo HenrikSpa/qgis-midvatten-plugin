@@ -3142,39 +3142,40 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         """Fit selected logger level_masl values to manual measurements."""
         obsid = self.load_obsid_and_init()
         common_utils.start_waiting_cursor()
-        self.reset_plot_selects_and_calib_help()
-        search_radius = self.get_search_radius()
+        try:
+            self.reset_plot_selects_and_calib_help()
+            search_radius = self.get_search_radius()
 
-        coupled_vals = self.match_ts_values(
-            self.meas_ts, self.level_masl_ts, search_radius
-        )
-        if not coupled_vals:
-            message_utils.pop_up_info(
-                QCoreApplication.translate(
-                    "Calibrlogger",
-                    "There was no match found between measurements and logger values inside the chosen period.\n Try to increase the search radius or adjust the period!",
-                )
+            coupled_vals = self.match_ts_values(
+                self.meas_ts, self.level_masl_ts, search_radius
             )
-        else:
-            calculated_diff = common_utils.calc_mean_diff(coupled_vals)
-            if math.isnan(calculated_diff):
+            if not coupled_vals:
                 message_utils.pop_up_info(
                     QCoreApplication.translate(
                         "Calibrlogger",
-                        "There was no matched measurements or logger values inside the chosen period.\n Try to increase the search radius!",
-                    )
-                )
-                message_utils.MessagebarAndLog.info(
-                    log_msg=QCoreApplication.translate(
-                        "Calibrlogger",
-                        "Calculated water level from logger: midvatten_utils.calc_mean_diff(coupled_vals) didn't return a useable value.",
+                        "There was no match found between measurements and logger values inside the chosen period.\n Try to increase the search radius or adjust the period!",
                     )
                 )
             else:
-                self.offset.setText(str(calculated_diff))
-                self.add_to_level_masl(obsid)
-
-        common_utils.stop_waiting_cursor()
+                calculated_diff = common_utils.calc_mean_diff(coupled_vals)
+                if math.isnan(calculated_diff):
+                    message_utils.pop_up_info(
+                        QCoreApplication.translate(
+                            "Calibrlogger",
+                            "There was no matched measurements or logger values inside the chosen period.\n Try to increase the search radius!",
+                        )
+                    )
+                    message_utils.MessagebarAndLog.info(
+                        log_msg=QCoreApplication.translate(
+                            "Calibrlogger",
+                            "Calculated water level from logger: midvatten_utils.calc_mean_diff(coupled_vals) didn't return a useable value.",
+                        )
+                    )
+                else:
+                    self.offset.setText(str(calculated_diff))
+                    self.add_to_level_masl(obsid)
+        finally:
+            common_utils.stop_waiting_cursor()
 
     @fn_timer
     def match_ts_values(self, meas_ts, logger_ts, search_radius_tuple):
@@ -3360,14 +3361,16 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         really_delete = dialog_utils.Askuser("YesNo", msg).result
         if really_delete:
             common_utils.start_waiting_cursor()
-            mask = self._build_edit_mask(fr_d_t, to_d_t)
-            if set_to_null_instead:
-                self._buf.loc[mask, "level_masl"] = np.nan
-                self._history_push("Set to null")
-            else:
-                self._buf = self._buf.drop(index=self._buf.index[mask])
-                self._history_push("Delete data")
-            common_utils.stop_waiting_cursor()
+            try:
+                mask = self._build_edit_mask(fr_d_t, to_d_t)
+                if set_to_null_instead:
+                    self._buf.loc[mask, "level_masl"] = np.nan
+                    self._history_push("Set to null")
+                else:
+                    self._buf = self._buf.drop(index=self._buf.index[mask])
+                    self._history_push("Delete data")
+            finally:
+                common_utils.stop_waiting_cursor()
             self.update_plot()
 
     @fn_timer
@@ -3671,32 +3674,33 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             return
 
         common_utils.start_waiting_cursor()
-        sub = self._buf.loc[mask].copy()
-        applied = apply_trend_correction(
-            sub, original_start_y, original_end_y, new_start_y, new_end_y
-        )
-        if applied:
-            self._buf.loc[mask, "level_masl"] = sub["level_masl"]
-
-            obsid = self._buf_obsid or ""
-            delta_start = new_start_y - original_start_y
-            delta_end = new_end_y - original_end_y
-            message_utils.MessagebarAndLog.info(
-                log_msg=QCoreApplication.translate(
-                    "Calibrlogger",
-                    "Trend adjusted for %s (%s to %s): Δ_start=%.4f, Δ_end=%.4f",
-                )
-                % (
-                    obsid,
-                    fr_d_t.strftime(_DT_FMT),
-                    to_d_t.strftime(_DT_FMT),
-                    delta_start,
-                    delta_end,
-                )
+        try:
+            sub = self._buf.loc[mask].copy()
+            applied = apply_trend_correction(
+                sub, original_start_y, original_end_y, new_start_y, new_end_y
             )
-            self._history_push("Adjust trend")
+            if applied:
+                self._buf.loc[mask, "level_masl"] = sub["level_masl"]
 
-        common_utils.stop_waiting_cursor()
+                obsid = self._buf_obsid or ""
+                delta_start = new_start_y - original_start_y
+                delta_end = new_end_y - original_end_y
+                message_utils.MessagebarAndLog.info(
+                    log_msg=QCoreApplication.translate(
+                        "Calibrlogger",
+                        "Trend adjusted for %s (%s to %s): Δ_start=%.4f, Δ_end=%.4f",
+                    )
+                    % (
+                        obsid,
+                        fr_d_t.strftime(_DT_FMT),
+                        to_d_t.strftime(_DT_FMT),
+                        delta_start,
+                        delta_end,
+                    )
+                )
+                self._history_push("Adjust trend")
+        finally:
+            common_utils.stop_waiting_cursor()
         self.update_plot()
 
     def _remove_trend_overlay(self):

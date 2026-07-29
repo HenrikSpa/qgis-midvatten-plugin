@@ -1754,3 +1754,25 @@ def test_obsid_label_round_trips():
     assert _obsid_label("rb1", True) == "rb1 (uncalibrated)"
     assert _obsid_from_label("rb1") == "rb1"
     assert _obsid_from_label("rb1 (uncalibrated)") == "rb1"
+
+
+def test_calc_best_fit_restores_cursor_on_exception():
+    """calc_best_fit must pop the cursor even when the body raises."""
+    editor = LoggerEditor.__new__(LoggerEditor)
+    editor.load_obsid_and_init = mock.MagicMock(return_value="rb1")
+    editor.reset_plot_selects_and_calib_help = mock.MagicMock()
+    editor.get_search_radius = mock.MagicMock(side_effect=RuntimeError("boom"))
+
+    with (
+        mock.patch(
+            "midvatten.tools.loggereditor.common_utils.start_waiting_cursor"
+        ) as start_cursor,
+        mock.patch(
+            "midvatten.tools.loggereditor.common_utils.stop_waiting_cursor"
+        ) as stop_cursor,
+        pytest.raises(RuntimeError, match="boom"),
+    ):
+        editor.calc_best_fit()
+
+    start_cursor.assert_called_once()
+    stop_cursor.assert_called_once()

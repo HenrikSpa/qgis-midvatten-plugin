@@ -975,3 +975,19 @@ class TestMessageDispatcher:
         assert delivered["log_msg"] == "log"
         assert delivered["duration"] == 5
         assert delivered["button"] is False
+
+    def test_log_msg_only_does_not_produce_empty_bar_entry(self):
+        """When only log_msg is supplied, the bar_msg log entry must be skipped."""
+        with mock.patch("qgis.utils.iface", autospec=True):
+            mock_log = mock.MagicMock()
+            with mock.patch(
+                "midvatten.tools.utils.message_utils.QgsApplication"
+            ) as mock_app:
+                mock_app.messageLog.return_value = mock_log
+                message_utils.MessagebarAndLog._log_on_main_thread(
+                    log_msg="detail only"
+                )
+
+        logged_messages = [call.args[0] for call in mock_log.logMessage.call_args_list]
+        assert "" not in logged_messages
+        assert "detail only" in logged_messages

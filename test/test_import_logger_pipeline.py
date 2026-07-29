@@ -17,6 +17,7 @@ from midvatten.tools.import_logger.models import (
     CANONICAL_COLUMNS,
     MEASUREMENT_COLUMNS,
     METEO_COLUMNS,
+    WATER_LEVEL_COLUMNS,
     LoggerDataKind,
     LoggerImportOptions,
     ParsedLoggerFile,
@@ -531,3 +532,30 @@ def test_baro_csv_export_uses_destination_columns_and_order(tmp_path) -> None:
         "baro1;SN1;pressure;2025-01-01 00:00:00;100.0;cmH2O\n"
         "baro1;SN1;temp;2025-01-01 00:00:00;5.0;°C\n"
     )
+
+
+@pytest.mark.parametrize(
+    ("kind", "expected_columns", "expected_table"),
+    [
+        (LoggerDataKind.WATER_LEVEL, WATER_LEVEL_COLUMNS, "w_levels_logger"),
+        (LoggerDataKind.BAROMETRIC, METEO_COLUMNS, "meteo"),
+    ],
+)
+def test_prepared_file_table_always_matches_its_shape(
+    kind, expected_columns, expected_table
+) -> None:
+    """The destination table and the frame shape are chosen together.
+
+    They used to be decided in different modules; a meteo-shaped frame routed
+    to w_levels_logger is a data-corruption failure, so pin them as one fact.
+    """
+    parsed = parsed_file(
+        logger_frame(["2025-01-01 00:00:00"], head=[1.0], baro=[2.0]), kind=kind
+    )
+
+    prepared = run_post_resolution_pipeline(
+        parsed, "rb1", {}, LoggerImportOptions(import_all_data=True)
+    )
+
+    assert tuple(prepared.data.columns) == expected_columns
+    assert prepared.dest_table == expected_table

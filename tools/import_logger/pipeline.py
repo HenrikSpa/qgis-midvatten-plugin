@@ -17,7 +17,9 @@ from .models import (
     CANONICAL_COLUMNS,
     MEASUREMENT_COLUMNS,
     METEO_COLUMNS,
+    METEO_TABLE,
     WATER_LEVEL_COLUMNS,
+    WATER_LEVEL_TABLE,
     LoggerDataKind,
     LoggerImportOptions,
     LoggerPipelineNotice,
@@ -398,8 +400,10 @@ def run_post_resolution_pipeline(
     instrumentid = parsed.serial_number or parsed.filename
     if parsed.kind is LoggerDataKind.BAROMETRIC:
         destination = baro_to_meteo(data, obsid, instrumentid)
+        dest_table = METEO_TABLE
     elif parsed.kind is LoggerDataKind.WATER_LEVEL:
         destination = data.loc[:, WATER_LEVEL_COLUMNS].copy()
+        dest_table = WATER_LEVEL_TABLE
     else:
         # The registry this replaced raised KeyError on an unknown kind. Keep
         # failing loudly: silently shaping a new kind as water level would
@@ -413,6 +417,7 @@ def run_post_resolution_pipeline(
         location=parsed.location,
         serial_number=parsed.serial_number,
         obsid=obsid,
+        dest_table=dest_table,
         notices=parsed.notices,
     )
 

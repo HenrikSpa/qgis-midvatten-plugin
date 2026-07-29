@@ -23,6 +23,8 @@ WATER_LEVEL_COLUMNS = (
     "cond_mscm",
     "obsid",
 )
+WATER_LEVEL_TABLE = "w_levels_logger"
+
 METEO_COLUMNS = (
     "obsid",
     "instrumentid",
@@ -31,6 +33,7 @@ METEO_COLUMNS = (
     "reading_num",
     "unit",
 )
+METEO_TABLE = "meteo"
 
 # Reason recorded when every row in a file was already present in the database.
 # Shared so the dialog can classify the outcome without matching on prose.
@@ -73,6 +76,7 @@ class PreparedLoggerFile:
     location: str | None
     serial_number: str | None
     obsid: str
+    dest_table: str
     notices: tuple[LoggerPipelineNotice, ...] = field(default_factory=tuple)
 
 

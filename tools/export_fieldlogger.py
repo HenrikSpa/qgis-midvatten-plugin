@@ -911,16 +911,15 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
 
     @staticmethod
     def write_to_file(out_string, filter="csv (*.csv)"):
-        stop_waiting_cursor()
-        filename = common_utils.get_save_file_name_no_extension(
-            parent=None,
-            caption=QCoreApplication.translate(
-                "ExportToFieldLogger", "Choose a file name"
-            ),
-            directory="",
-            filter=filter,
-        )
-        start_waiting_cursor()
+        with common_utils.suspended_waiting_cursor():
+            filename = common_utils.get_save_file_name_no_extension(
+                parent=None,
+                caption=QCoreApplication.translate(
+                    "ExportToFieldLogger", "Choose a file name"
+                ),
+                directory="",
+                filter=filter,
+            )
         if os.path.splitext(filename)[1] != f".{filter.split()[0]}":
             filename += f".{filter.split()[0]}"
         try:

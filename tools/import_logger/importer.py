@@ -644,16 +644,15 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                     "Reading timezone in file %s failed,\n"
                     " no conversion done:\n%s\n\nSkip file?",
                 ) % (ru(parsed.filename), parsed.timezone_error)
-                common_utils.stop_waiting_cursor()
-                question = dialog_utils.Askuser(
-                    question="YesNo",
-                    msg=msg,
-                    dialogtitle=QCoreApplication.translate(
-                        "askuser", "File timezone error!"
-                    ),
-                    include_cancel_button=True,
-                )
-                common_utils.start_waiting_cursor()
+                with common_utils.suspended_waiting_cursor():
+                    question = dialog_utils.Askuser(
+                        question="YesNo",
+                        msg=msg,
+                        dialogtitle=QCoreApplication.translate(
+                            "askuser", "File timezone error!"
+                        ),
+                        include_cancel_button=True,
+                    )
                 if question.result:
                     summary.skipped.append(parsed.source_path)
                     continue
@@ -676,15 +675,14 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             for parsed in parsed_files
         )
         existing_obsids = db_utils.get_all_obsids()
-        common_utils.stop_waiting_cursor()
-        resolved_metadata = common_utils.filter_nonexisting_values_and_ask(
-            file_data=filename_location_obsid,
-            header_value="obsid",
-            existing_values=existing_obsids,
-            try_capitalize=not confirm_names,
-            always_ask_user=confirm_names,
-        )
-        common_utils.start_waiting_cursor()
+        with common_utils.suspended_waiting_cursor():
+            resolved_metadata = common_utils.filter_nonexisting_values_and_ask(
+                file_data=filename_location_obsid,
+                header_value="obsid",
+                existing_values=existing_obsids,
+                try_capitalize=not confirm_names,
+                always_ask_user=confirm_names,
+            )
         paths_obsid = {row[0]: row[2] for row in resolved_metadata[1:]}
         # One pass: the two predicates were exact complements, so a change to
         # the resolution rule had to be made identically in both places or

@@ -37,49 +37,6 @@ ruff format .
 
 **Test run order** (when diagnosing failures): run `test_create_*_db.py` first (DB creation), then `test_db_utils*.py` / `test_midvatten_utils*.py`, then specific tests, then the full suite.
 
-## Architecture
-
-### Plugin Entry Point
-
-`__init__.py` defines `classFactory(iface)` which returns `midvatten_plugin.Midvatten(iface)`. The `Midvatten` class builds all plugin actions via `initGui()`, which calls `_make_actions()` to produce a list of `ActionSpec` entries. Each action is dispatched through a single `_dispatch(spec)` method that handles precondition checking, persistent-window reuse, and tool invocation.
-
-### Database Abstraction Layer (`tools/utils/db_utils/`)
-
-Strategy pattern with abstract base + concrete backends:
-
-- **`backends/base.py`** — `Backend` ABC: common interface (`execute`, `execute_and_fetchall`, `commit`, `closedb`)
-- **`backends/sqlite.py`** — `SQLiteBackend` (SpatiaLite, `?` placeholders)
-- **`backends/postgresql.py`** — `PostgreSQLBackend` (PostGIS, `%s` placeholders, `psycopg2.sql.Composable` support)
-- **`connection.py`** — `DbConnectionManager` facade and `create_backend()` factory
-- **`dialect.py`** — `ident()` for safe SQL identifier quoting, `sql_literal()` for values
-- **`helpers.py`** — Domain helpers (`cast_null`, `backup_db`, etc.)
-- **`schema.py`** — Schema introspection (`get_tables`, `get_table_info`)
-
-### Tool Modules (`tools/`)
-
-Each feature is a standalone module. Major categories:
-
-- **Import**: `import_fieldlogger.py`, `import_general_csv_gui.py`, `import_interlab4.py`, `import_logger/importer.py` (unified DiverOffice/Levelogger/HOBO) — the importer dialogs all inherit `BaseImporter` (`base_importer.py`) and drive the data-layer helper `MidvDataImporter` in `import_data_to_db.py`
-- **Visualization**: `customplot.py` (time series), `sectionplot.py` (geological sections), `loggereditor.py` (logger editor), `piper.py` (piper diagrams), `stratigraphy.py`
-- **Export/Reports**: `export_data.py`, `export_fieldlogger.py`, `drillreport.py`, `wqualreport.py`
-- **DB management**: `create_db.py`, `loadlayers.py`
-
-### Shared Utilities (`tools/utils/`)
-
-- **`message_utils.py`** — `MessagebarAndLog` (user messaging), `pop_up_info`
-- **`common_utils.py`** — Misc shared helpers; re-exports for midv_addons backward compatibility
-- **`midvatten_utils.py`** — Domain-specific utilities; re-exports functions from `db_utils/helpers.py` for backward compatibility
-- **`gui_utils.py`** — PyQt widget helpers
-- **`plot_templates.py`** — `PlotTemplates` (section plot template chooser), `MatplotlibStyles` (custom plot style chooser)
-- **`date_utils.py`** — Date parsing and timezone handling
-
-### Definitions (`definitions/`)
-
-- **`midvatten_defs.py`** — Global constants (table names, columns, defaults)
-- **`db_defs.py`** — Database version constants
-- **`create_db.sql`** / `insert_datadomain.sql` — Schema and lookup data
-- **`*.qml`** — QGIS layer styling files
-
 ## Workflow Requirements
 
 - Before starting any implementation task, always invoke the `superpowers:using-git-worktrees` skill to set up an isolated worktree.

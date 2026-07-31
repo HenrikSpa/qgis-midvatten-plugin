@@ -19,3 +19,4 @@ the linked archived doc where one exists.
 - [ ] Re-ground the motivation for an integer primary key on `obs_points`/`obs_lines` (tool compat / FID semantics, not the already-fixed 100-row bug) before deciding whether to migrate (details: docs/archive/2026-04-18-integer-pk-schema-migration-design-spec.md)
 - [ ] Decompose `LoggerEditor` (3,857 lines, 138 methods, one class) into a thin Qt coordinator over unit-testable collaborators, one slice at a time (details: docs/archive/2026-06-15-loggereditor-refactor-HANDOVER-spec.md)
 - [ ] Add cursor-leak regression tests for `delete_selected_range` and `_trend_release` — only `calc_best_fit` got one (details: docs/archive/2026-07-29-review-bug-fixes-progress.md)
+- [ ] Strat symbology: deepest-stratum shadow paints rows the geology layer skips (TODO at `tools/strat_symbology.py:99`) — see `docs/superpowers/plans/2026-02-25-strat-symbology-shadow-else-bug.md`.

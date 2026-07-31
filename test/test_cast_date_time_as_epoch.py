@@ -4,9 +4,9 @@ These lock down today's UTC interpretation of the naive date string
 `2024-06-15 12:00:00`. Both backends interpret it as UTC, so the epoch
 value is 1718452800.
 
-Written before the F1 refactor (see docs/superpowers/specs/
-2026-04-19-stabilisation-followups.md). The tests must keep passing
-after the refactor — that's the whole point.
+Written before the F1 refactor (see
+docs/archive/2026-04-19-stabilisation-followups-spec.md). The tests must
+keep passing after the refactor — that's the whole point.
 """
 
 from unittest import mock

@@ -7,9 +7,11 @@ This document covers two things that come up when moving to the new
 2. How to use the new schema from direct SQL (spatialite_gui, psql, or
    any other SQL client) without going through the Midvatten plugin.
 
-For the design rationale behind the new schema, see
-`docs/superpowers/plans/` and
-`/home/hsai1/dev/midv20/midv20/docs/schema-analysis-midv1-vs-midv20.md`.
+For the design rationale behind the new schema, see the archived planning
+docs under `docs/archive/` — notably
+`docs/archive/2026-04-17-instrument-serial-import-design-spec.md` and
+`docs/archive/2026-06-01-general-csv-logger-series-metadata-design-spec.md` —
+and `/home/hsai1/dev/midv20/midv20/docs/schema-analysis-midv1-vs-midv20.md`.
 
 ## What changed in the schema
 

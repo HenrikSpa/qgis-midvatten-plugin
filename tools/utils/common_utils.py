@@ -42,8 +42,9 @@ from qgis.PyQt import QtWidgets  # noqa: F401
 # The re-exports below are PUBLIC API for external consumers (midv_addons
 # imports these names via common_utils). Do not remove or rename them even
 # when no in-repo caller remains. In-repo code should import from the source
-# modules instead. See docs/superpowers/plans/
-# 2026-06-10-maintainability-refactor-review.md (midv_addons contract).
+# modules instead. See
+# docs/archive/2026-06-10-maintainability-refactor-review-plan.md
+# (midv_addons contract).
 from midvatten.tools.utils.dialog_utils import (
     Askuser,  # noqa: F401
     HtmlDialog,  # noqa: F401

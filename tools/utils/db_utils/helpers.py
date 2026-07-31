@@ -70,7 +70,7 @@ def cast_date_time_as_epoch(
     When ``date_time`` is provided the fragment uses a backend placeholder
     and ``args`` carries the value — callers must parameter-bind the
     returned args alongside any surrounding SQL. See F1 in
-    docs/superpowers/specs/2026-04-19-stabilisation-followups.md.
+    docs/archive/2026-04-19-stabilisation-followups-spec.md.
     """
     with use_or_create_connection(dbconnection) as dbconnection:
         return dbconnection.cast_date_time_as_epoch(date_time)

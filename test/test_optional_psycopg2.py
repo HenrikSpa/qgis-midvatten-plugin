@@ -3,6 +3,11 @@ import subprocess
 import sys
 import textwrap
 
+import pytest
+
+import midvatten.tools.utils.db_utils.connection as conn
+from midvatten.tools.utils.exceptions import UsageError
+
 
 def test_core_modules_import_without_psycopg2():
     """The plugin must load SpatiaLite-only when psycopg2 is unavailable."""
@@ -25,7 +30,9 @@ def test_core_modules_import_without_psycopg2():
     # PYTHONPATH so the subprocess resolves "midvatten" to *this* worktree's
     # code, not the shared QGIS plugins symlink (which points at a different
     # checkout entirely — see conftest.py for why _pkgroot exists).
-    pkgroot = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, "_pkgroot"))
+    pkgroot = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), os.pardir, "_pkgroot")
+    )
     env = dict(os.environ)
     env["PYTHONPATH"] = os.pathsep.join(filter(None, [pkgroot, env.get("PYTHONPATH")]))
     result = subprocess.run(
@@ -36,3 +43,11 @@ def test_core_modules_import_without_psycopg2():
         env=env,
     )
     assert "OK" in result.stdout, result.stderr
+
+
+def test_create_backend_postgis_without_psycopg2_raises_usage_error(monkeypatch):
+    """Attempting a PostGIS connection without psycopg2 must raise a
+    translated, actionable UsageError - not an ImportError/traceback."""
+    monkeypatch.setattr(conn, "PostgreSQLBackend", None)
+    with pytest.raises(UsageError, match="psycopg2"):
+        conn.create_backend({"postgis": {}})

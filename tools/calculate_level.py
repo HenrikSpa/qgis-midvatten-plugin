@@ -23,10 +23,6 @@
 import traceback
 from typing import List
 
-import matplotlib as mpl
-
-mpl.use("Qt5Agg")
-
 import qgis.PyQt
 
 from qgis.PyQt import uic

@@ -25,6 +25,7 @@ from qgis.PyQt.QtCore import QCoreApplication
 
 # midvatten modules
 from midvatten.tools.utils import common_utils, db_utils, message_utils
+from midvatten.tools.utils.html_utils import esc
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.wqualreport_core import (
     report_path,
@@ -312,11 +313,11 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
             try:
                 if counter < self.nr_header_rows:
                     rpt = "  <tr><th>"
-                    rpt += '    </th><th width ="75">'.join([ru(x) for x in sublist])
+                    rpt += '    </th><th width ="75">'.join([esc(x) for x in sublist])
                     rpt += "  </th></tr>\n"
                 else:
                     rpt = "  <tr><td>"
-                    rpt += '    </td><td align="right">'.join([ru(x) for x in sublist])
+                    rpt += '    </td><td align="right">'.join([esc(x) for x in sublist])
                     rpt += "  </td></tr>\n"
             except Exception:
                 log.warning("here was an error: %s", sublist)

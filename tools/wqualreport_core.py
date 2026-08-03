@@ -10,7 +10,7 @@ from qgis.PyQt.QtCore import QDir
 from qgis.PyQt.QtCore import QUrl
 from qgis.PyQt.QtGui import QDesktopServices
 
-from midvatten.tools.utils.string_utils import returnunicode as ru
+from midvatten.tools.utils.html_utils import esc
 
 
 REPORT_FILENAME = "w_qual_report.html"
@@ -44,7 +44,7 @@ def write_html_preamble(
     """Write HTML head, meta and open body tag to the report file."""
     if title is None:
         title = default_report_title()
-    rpt = f"<head><title>{ru(title)}</title></head>"
+    rpt = f"<head><title>{esc(title)}</title></head>"
     rpt += r""" <meta http-equiv="content-type" content="text/html; charset=utf-8" />"""
     rpt += "<html><body>"
     f.write(rpt)

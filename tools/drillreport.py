@@ -30,6 +30,7 @@ from midvatten.tools.calculate_statistics import get_statistics_for_single_obsid
 from midvatten.tools.drillreport_models import ObsPointsRow, StratigraphyRow
 from midvatten.tools.utils import db_utils, layer_utils, message_utils, midvatten_utils
 from midvatten.tools.utils.file_utils import templates_path
+from midvatten.tools.utils.html_utils import esc
 from midvatten.tools.utils.string_utils import returnunicode as ru
 
 _EMPTY_VALS = ("", "NULL")
@@ -97,7 +98,7 @@ class Drillreport:  # general observation point info for the selected object
             r"""<meta http-equiv="content-type" content="text/html; charset=utf-8" />"""
         )
         rpt += r"""<head><title>%s %s</title></head>""" % (
-            header,
+            esc(header),
             QCoreApplication.translate(
                 "Drillreport", "General report from Midvatten plugin for QGIS"
             ),
@@ -218,7 +219,7 @@ class Drillreport:  # general observation point info for the selected object
 
     @staticmethod
     def _row(label: str, value: str, width: int = 50) -> str:
-        return f"<TR VALIGN=TOP><TD WIDTH=33%>{label}</TD><TD WIDTH={width}%>{value}</TD></TR>"
+        return f"<TR VALIGN=TOP><TD WIDTH=33%>{esc(label)}</TD><TD WIDTH={width}%>{esc(value)}</TD></TR>"
 
     def write_obsid(
         self,
@@ -230,7 +231,7 @@ class Drillreport:  # general observation point info for the selected object
     ) -> None:
         spec = self._locale_spec()
         rpt += r"""<html><TABLE WIDTH=100% BORDER=0 CELLPADDING=1 CELLSPACING=1><TR VALIGN=TOP><TD WIDTH=15%><h3 style="font-family:'arial';font-size:18pt; font-weight:600">"""
-        rpt += obsid
+        rpt += esc(obsid)
         rpt += f'</h3><img src="{os.path.join(imgpath, spec["img"])}" /><br><img src=\''
         rpt += logopath
         rpt += """' /></TD><TD WIDTH=85%><TABLE WIDTH=100% BORDER=1 CELLPADDING=4 CELLSPACING=3><TR VALIGN=TOP><TD WIDTH=50%><P><U><B>"""
@@ -350,7 +351,7 @@ class Drillreport:  # general observation point info for the selected object
             rpt += "</TR>"
         for row in strat_data:
             cells = [
-                "" if ru(value) == "NULL" else ru(value)
+                "" if ru(value) == "NULL" else esc(value)
                 for value in (
                     row.depthtop,
                     row.depthbot,
@@ -376,8 +377,11 @@ class Drillreport:  # general observation point info for the selected object
         r = general_data[0]
         rpt = r"""<p style="font-family:'arial'; font-size:10pt; font-weight:400; font-style:normal;">"""
         if ru(r.com_onerow) not in _EMPTY_VALS:
-            rpt += ru(r.com_onerow)
+            rpt += esc(r.com_onerow)
         if ru(r.com_html) not in _EMPTY_VALS:
+            # com_html is schema-documented as "Multiline formatted comment in
+            # html format" (definitions/create_db.sql) — a rich-text editor
+            # field whose content is intentionally raw HTML, not a leaf value.
             rpt += ru(r.com_html)
         rpt += r"""</p>"""
         return rpt
@@ -391,13 +395,13 @@ class Drillreport:  # general observation point info for the selected object
         unit = spec["unit_meas"] if meas_or_level_masl == "meas" else spec["unit_masl"]
         rpt = r"""<p style="font-family:'arial'; font-size:10pt; font-weight:400; font-style:normal;">"""
         if ru(statistics[2]) != "" and ru(statistics[2]) != "0":
-            rpt += spec["stat_count"] + ru(statistics[2]) + "<br>"
+            rpt += spec["stat_count"] + esc(statistics[2]) + "<br>"
             if ru(statistics[0]) != "":
-                rpt += spec["stat_max"] + ru(statistics[0]) + unit
+                rpt += spec["stat_max"] + esc(statistics[0]) + unit
             if ru(statistics[1]) != "":
-                rpt += spec["stat_median"] + ru(statistics[1]) + unit
+                rpt += spec["stat_median"] + esc(statistics[1]) + unit
             if ru(statistics[3]) != "":
-                rpt += spec["stat_min"] + ru(statistics[3]) + unit
+                rpt += spec["stat_min"] + esc(statistics[3]) + unit
         rpt += r"""</p>"""
         return rpt
 

@@ -40,6 +40,7 @@ from midvatten.tools.utils import (
 )
 from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
+from midvatten.tools.utils.html_utils import esc
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.common_utils import general_exception_handler
 from midvatten.tools.wqualreport_core import (
@@ -681,7 +682,7 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
         f.write(rpt)
 
         for counter, row in enumerate(report_data):
-            row = ru(row, keep_containers=True)
+            row = [esc(x) for x in row]
             try:
                 if counter < nr_header_rows:
                     rpt = "<tr>"

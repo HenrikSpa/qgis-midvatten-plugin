@@ -60,6 +60,18 @@ log = logging.getLogger(__name__)
 strat_symbology_dialog = uic.loadUiType(ui_path("strat_symbology_dialog.ui"))[0]
 
 
+def _report_symbology_error(symbology_name: str, exc: Exception) -> None:
+    message_utils.MessagebarAndLog.warning(
+        bar_msg=QCoreApplication.translate(
+            "StratSymbology",
+            "Could not apply symbology '%s', see log message panel.",
+        )
+        % symbology_name,
+        log_msg=traceback.format_exc(),
+        duration=4,
+    )
+
+
 class StratSymbology(qgis.PyQt.QtWidgets.QDialog, strat_symbology_dialog):
     def __init__(self, iface, ms):
         super().__init__(iface.mainWindow())
@@ -216,10 +228,8 @@ def strat_symbology(
                 add_generic_symbology(
                     group, layers[symbology], symbology_stylename[symbology]
                 )
-            except StyleNotFoundError as e:
-                message_utils.MessagebarAndLog.info(bar_msg=str(e))
-            except Exception:
-                message_utils.MessagebarAndLog.info(bar_msg=traceback.format_exc())
+            except Exception as e:
+                _report_symbology_error(symbology, e)
 
         symbology = "Layer texts"
         if symbology in symbology_stylename:
@@ -230,10 +240,8 @@ def strat_symbology(
                     symbology_stylename[symbology],
                     checked=False,
                 )
-            except StyleNotFoundError as e:
-                message_utils.MessagebarAndLog.info(bar_msg=str(e))
-            except Exception:
-                message_utils.MessagebarAndLog.info(bar_msg=traceback.format_exc())
+            except Exception as e:
+                _report_symbology_error(symbology, e)
 
         symbology = "W levels"
         if symbology in symbology_stylename:
@@ -249,20 +257,14 @@ def strat_symbology(
                             symbology_stylename[wlvl_label],
                             checked=False,
                         )
-                    except StyleNotFoundError as e:
-                        message_utils.MessagebarAndLog.info(bar_msg=str(e))
-                    except Exception:
-                        message_utils.MessagebarAndLog.info(
-                            bar_msg=traceback.format_exc()
-                        )
+                    except Exception as e:
+                        _report_symbology_error(wlvl_label, e)
                 try:
                     add_wlvls_symbology(
                         wlvls_group, wlvls_layer, symbology_stylename[symbology]
                     )
-                except StyleNotFoundError as e:
-                    message_utils.MessagebarAndLog.info(bar_msg=str(e))
-                except Exception:
-                    message_utils.MessagebarAndLog.info(bar_msg=traceback.format_exc())
+                except Exception as e:
+                    _report_symbology_error(symbology, e)
 
         symbology = "Bedrock"
         if symbology in symbology_stylename:
@@ -276,10 +278,8 @@ def strat_symbology(
                         symbology_stylename["Bedrock label"],
                         checked=False,
                     )
-                except StyleNotFoundError as e:
-                    message_utils.MessagebarAndLog.info(bar_msg=str(e))
-                except Exception:
-                    message_utils.MessagebarAndLog.info(bar_msg=traceback.format_exc())
+                except Exception as e:
+                    _report_symbology_error("Bedrock label", e)
                 else:
                     _bedrock_label = """LOWER("drillstop") LIKE '%{}%' """
                     for child in (
@@ -299,10 +299,8 @@ def strat_symbology(
                 )
             except RuleDiscrepancyError:
                 del layers[symbology]
-            except StyleNotFoundError as e:
-                message_utils.MessagebarAndLog.info(bar_msg=str(e))
-            except Exception:
-                message_utils.MessagebarAndLog.info(bar_msg=traceback.format_exc())
+            except Exception as e:
+                _report_symbology_error(symbology, e)
 
         symbology = "Frame"
         if symbology in symbology_stylename:
@@ -310,10 +308,8 @@ def strat_symbology(
                 add_generic_symbology(
                     group, layers[symbology], symbology_stylename[symbology]
                 )
-            except StyleNotFoundError as e:
-                message_utils.MessagebarAndLog.info(bar_msg=str(e))
-            except Exception:
-                message_utils.MessagebarAndLog.info(bar_msg=traceback.format_exc())
+            except Exception as e:
+                _report_symbology_error(symbology, e)
 
         layers_group = add_group(group, "Layers", checked=True)
         try:
@@ -326,10 +322,8 @@ def strat_symbology(
                 layers["Hydro"],
                 symbology_stylename["Geology"],
             )
-        except StyleNotFoundError as e:
-            message_utils.MessagebarAndLog.info(bar_msg=str(e))
-        except Exception:
-            message_utils.MessagebarAndLog.info(bar_msg=traceback.format_exc())
+        except Exception as e:
+            _report_symbology_error("Layers", e)
 
         symbology = "Shadow"
         if symbology in symbology_stylename:
@@ -337,10 +331,8 @@ def strat_symbology(
                 add_generic_symbology(
                     group, layers[symbology], symbology_stylename[symbology]
                 )
-            except StyleNotFoundError as e:
-                message_utils.MessagebarAndLog.info(bar_msg=str(e))
-            except Exception:
-                message_utils.MessagebarAndLog.info(bar_msg=traceback.format_exc())
+            except Exception as e:
+                _report_symbology_error(symbology, e)
 
         if any([spec.get("xfactor"), spec.get("yfactor"), spec.get("use_map_scale")]):
             for layer in layers.values():

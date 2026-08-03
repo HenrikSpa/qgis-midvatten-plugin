@@ -2347,7 +2347,7 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
             filenames = [f1, f2, f3, f4, f5]
 
             @mock.patch(
-                "midvatten.tools.import_logger.QtWidgets.QMessageBox.information"
+                "midvatten.tools.import_logger.QtWidgets.QMessageBox.question"
             )
             @mock.patch("midvatten.tools.utils.common_utils.NotFoundQuestion")
             @mock.patch("qgis.utils.iface", autospec=True)

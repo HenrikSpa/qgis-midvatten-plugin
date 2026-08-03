@@ -39,6 +39,7 @@ from qgis.PyQt.QtCore import QCoreApplication
 from midvatten.tools.utils import common_utils, db_utils, dialog_utils, message_utils
 from midvatten.tools.utils.exceptions import UserInterruptError
 from midvatten.tools.utils.db_utils import DbConnectionManager
+from midvatten.tools.utils.db_utils.dialect import safe_type
 from midvatten.tools.utils.date_utils import instant_key
 
 
@@ -679,7 +680,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 )
             else:
                 sourcecols.append(
-                    f"""(CASE WHEN {colname} IS NOT NULL\n    THEN CAST({colname} AS {column_headers_types[colname]}) ELSE {null_replacement} END)"""
+                    f"""(CASE WHEN {dbconnection.ident(colname)} IS NOT NULL\n    THEN CAST({dbconnection.ident(colname)} AS {safe_type(column_headers_types[colname])}) ELSE {null_replacement} END)"""
                 )
 
         if dbconnection.is_postgresql():
@@ -692,8 +693,10 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         sql = """INSERT INTO {dest_table} ({dest_columns})\nSELECT {source_columns}\nFROM {source_table}\n"""
         kwargs = {
             "dest_table": dest_table_with_schema,
-            "dest_columns": ", ".join(sorted(existing_columns_in_dest_table)),
-            "source_table": self.temptable_name,
+            "dest_columns": ", ".join(
+                dbconnection.ident(c) for c in sorted(existing_columns_in_dest_table)
+            ),
+            "source_table": dbconnection.ident(self.temptable_name),
             "source_columns": ",\n    ".join(sourcecols),
         }
         if not_null_columns:
@@ -1060,7 +1063,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         )
 
         sql = """(CASE WHEN ({colname} !='' AND {colname} !=' ' AND {colname} IS NOT NULL)\n    THEN {to_geometry} ELSE {null} END)"""
-        kwargs = {"colname": geom_col, "null": null_replacement}
+        kwargs = {"colname": dbconnection.ident(geom_col), "null": null_replacement}
 
         if source_srid is None:
             # Assume it's the same as the destination.
@@ -1093,10 +1096,11 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 % str(dest_srid)
             ) from e
 
+        geom_col_ident = dbconnection.ident(geom_col)
         if int(_source_srid) == int(dest_srid):
-            to_geometry = f"""{convert_func}({geom_col}, {dest_srid})"""
+            to_geometry = f"""{convert_func}({geom_col_ident}, {dest_srid})"""
         else:
-            to_geometry = f"""ST_Transform({convert_func}({geom_col}, {_source_srid}), {dest_srid})"""
+            to_geometry = f"""ST_Transform({convert_func}({geom_col_ident}, {_source_srid}), {dest_srid})"""
         kwargs["to_geometry"] = to_geometry
         return sql.format(**kwargs)
 
@@ -1257,7 +1261,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 for x in to_list
             )
             cast_exprs = ", ".join(
-                f'CAST("b".{dbconnection.ident(k)} AS {column_headers_types[to_list[idx]]})'
+                f'CAST("b".{dbconnection.ident(k)} AS {safe_type(column_headers_types[to_list[idx]])})'
                 for idx, k in enumerate(from_list)
             )
             and_parts = " AND ".join(

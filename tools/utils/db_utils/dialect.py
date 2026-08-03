@@ -20,6 +20,22 @@ class UnsafeIdentifierError(ValueError):
     pass
 
 
+# A SQL column type is an identifier word, optionally repeated (e.g.
+# "DOUBLE PRECISION", "TIMESTAMP WITH TIME ZONE"), optionally with a
+# parenthesised size/precision (e.g. "VARCHAR(50)", "DECIMAL(10, 2)").
+_TYPE_RE = re.compile(r"^[A-Za-z][A-Za-z ]*(\(\s*\d+\s*(,\s*\d+\s*)?\))?$")
+
+
+def safe_type(data_type: str) -> str:
+    """Validate a declared column type before interpolating it into
+    ``CAST(expr AS <type>)``. SQLite lets a .sqlite file declare a column
+    with an arbitrary type string, so this is an untrusted-input guard.
+    Returns the type unchanged when safe; raises UnsafeIdentifierError."""
+    if not isinstance(data_type, str) or not _TYPE_RE.match(data_type.strip()):
+        raise UnsafeIdentifierError(f"Unsafe column type: {data_type!r}")
+    return data_type.strip()
+
+
 def _split_qualified_identifier(name: str) -> list[str]:
     if not isinstance(name, str) or not name.strip():
         raise UnsafeIdentifierError(

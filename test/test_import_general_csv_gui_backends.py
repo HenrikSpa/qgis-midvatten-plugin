@@ -126,6 +126,98 @@ class GeneralCsvGuiMixin:
             print(str(test_string))
             assert test_string == reference_string
 
+    def test_import_w_levels_via_start_import_button_click(self):
+        """Regression test for the former "dummy parameter" mystery.
+
+        Qt's QAbstractButton.clicked signal passes a positional ``checked``
+        bool to whatever slot it is connected to. start_import_button is
+        wired as ``clicked.connect(lambda x: self.start_import())``, so that
+        bool is swallowed by the lambda and never reaches start_import().
+        This test drives the import through a real button click (instead of
+        calling start_import() directly, as the other tests here do) to
+        prove that no phantom argument, column or value leaks into the
+        imported rows.
+        """
+        file = ["obsid,date_time,meas", "rb1,2016-03-15 10:30:00,5.0"]
+
+        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('rb1')""")
+
+        with file_utils.tempinput("\n".join(file), "utf-8") as filename:
+            utils_askuser_answer_no_obj = MockUsingReturnValue(None)
+            utils_askuser_answer_no_obj.result = 0
+            utils_askuser_answer_no = MockUsingReturnValue(utils_askuser_answer_no_obj)
+
+            @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
+            @mock.patch("qgis.utils.iface", autospec=True)
+            @mock.patch(
+                "midvatten.tools.utils.message_utils.pop_up_info",
+                autospec=True,
+            )
+            @mock.patch("midvatten.tools.import_general_csv_gui.CsvFileLoadDialog")
+            def _test(
+                self,
+                filename,
+                mock_dialog,
+                mock_skippopup,
+                mock_iface,
+                mock_askuser,
+            ):
+                instance = mock_dialog.return_value
+                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.filename = filename
+                instance.charset = "utf-8"
+                instance.has_header = True
+
+                def side_effect(*args, **kwargs):
+                    mock_result = mock.MagicMock()
+                    if len(args) > 1:
+                        if args[1].startswith("Do you want to confirm"):
+                            mock_result.result = 0
+                            return mock_result
+                        elif args[1].startswith("Do you want to import all"):
+                            mock_result.result = 0
+                            return mock_result
+                        elif "(see log for more info about removed rows)" in args[
+                            1
+                        ] or args[1].startswith("Please note!\nThere are"):
+                            mock_result.result = 1
+                            return mock_result
+                        elif args[1].startswith("It is a strong recommendation"):
+                            mock_result.result = 0
+                            return mock_result
+
+                mock_askuser.side_effect = side_effect
+
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = GeneralCsvImportGui(self.iface, ms)
+                importer.load_gui()
+
+                importer.load_files()
+                importer.table_chooser.import_method = "w_levels"
+
+                for column in importer.table_chooser.columns:
+                    names = {"obsid": "obsid", "date_time": "date_time", "meas": "meas"}
+                    if column.db_column in names:
+                        column.file_column_name = names[column.db_column]
+
+                # Click the real button instead of calling start_import()
+                # directly, so the clicked(bool) signal's argument actually
+                # goes through the lambda wiring under test.
+                importer.start_import_button.click()
+
+            _test(self, filename)
+            test_string = utils_for_tests.create_test_string(
+                db_utils.sql_load_fr_db(
+                    """SELECT obsid, date_time, meas, h_toc, level_masl, comment FROM w_levels"""
+                )
+            )
+            reference_string = (
+                r"""(True, [(rb1, 2016-03-15 10:30:00, 5.0, None, None, None)])"""
+            )
+            print(str(test_string))
+            assert test_string == reference_string
+
     def test_import_obs_points(self):
         file = ["obsid,testcol", "rb1,test"]
 

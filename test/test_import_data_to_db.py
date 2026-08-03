@@ -1263,6 +1263,70 @@ class WflowImportMixin:
         reference_string = r"""(True, [(Accvol, Accumulated volume), (Momflow, Momentary flow rate), (Aveflow, Average flow since last reading), (Momflow2, None)])"""
         assert test_string == reference_string
 
+    @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_wflow_empty_flowtype_creates_no_bogus_fk_row(self, mock_messagebar):
+        """Regression test for the "empty foreign keys are probably imported"
+        TODO. flowtype is a required column of w_flow (part of its primary
+        key) with a foreign key into zz_flowtype(type); a blank CSV value for
+        it is a plausible user mistake and must not create a phantom
+        zz_flowtype row, nor a w_flow row silently referencing one.
+
+        import_foreign_keys' ``and_parts`` filter already excludes NULL/''
+        values when auto-populating fk_table rows (see
+        tools/import_data_to_db.py::import_foreign_keys), so no zz_flowtype
+        row for '' gets created; the FK constraint (activated for the whole
+        import in _validate_and_connect) then rejects the w_flow row itself,
+        and only the row with the valid flowtype is imported.
+        """
+        db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('obsid1')""")
+        f = [
+            [
+                "obsid",
+                "instrumentid",
+                "flowtype",
+                "date_time",
+                "reading",
+                "unit",
+                "comment",
+            ],
+            [
+                "obsid1",
+                "testid",
+                "Momflow",
+                "2011-10-19 12:30:00",
+                "2",
+                "l/s",
+                "testcomment",
+            ],
+            [
+                "obsid1",
+                "testid",
+                "",
+                "2011-10-19 13:00:00",
+                "3",
+                "l/s",
+                "testcomment2",
+            ],
+        ]
+
+        self.importinstance.general_import(dest_table="w_flow", file_data=f)
+
+        print(f"{mock_messagebar.mock_calls=}")
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db("""select * from w_flow""")
+        )
+        reference_string = r"""(True, [(obsid1, testid, Momflow, 2011-10-19 12:30:00, 2.0, l/s, testcomment)])"""
+        assert test_string == reference_string
+
+        # No phantom '' (or NULL) flowtype ever lands in the fk table.
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db("""select * from zz_flowtype""")
+        )
+        reference_string = r"""(True, [(Accvol, Accumulated volume), (Momflow, Momentary flow rate), (Aveflow, Average flow since last reading)])"""
+        assert test_string == reference_string
+
 
 class WqualfieldImportMixin:
     @mock.patch("midvatten.tools.utils.dialog_utils.Askuser", mock.MagicMock())

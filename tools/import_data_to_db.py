@@ -1220,12 +1220,6 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         foreign_keys: dict[str, list[tuple[str, str]]],
         existing_columns_in_temptable: list[str],
     ) -> None:
-        # TODO: Empty foreign keys are probably imported now. Must add "case when...NULL" to a couple of sql questions here
-
-        # What I want to do:
-        # import all foreign keys from temptable that doesn't already exist in foreign key table
-        # insert into fk_table (to1, to2) select distinct from1(cast as), from2(cast as) from temptable where concatted_from_and_case_when_null not in concatted_to_and_case_when_null
-
         for fk_table, from_to_fields in foreign_keys.items():
             from_list = [x[0] for x in from_to_fields]
             to_list = [x[1] for x in from_to_fields]

@@ -30,7 +30,14 @@ def safe_type(data_type: str) -> str:
     """Validate a declared column type before interpolating it into
     ``CAST(expr AS <type>)``. SQLite lets a .sqlite file declare a column
     with an arbitrary type string, so this is an untrusted-input guard.
-    Returns the type unchanged when safe; raises UnsafeIdentifierError."""
+    Returns the type unchanged when safe; raises UnsafeIdentifierError.
+
+    Deliberately rejects ``-``, so PostgreSQL's ``USER-DEFINED`` pseudo-type
+    is not accepted here; PostgreSQL type strings are expected to already be
+    gated by the allow-list in ``cast_null`` (backends/postgresql.py) before
+    reaching this validator. Empty/falsy types (SQLite affinity-NONE
+    columns) are not "safe" here either — callers must check for that case
+    themselves and skip the CAST entirely rather than pass "" through."""
     if not isinstance(data_type, str) or not _TYPE_RE.match(data_type.strip()):
         raise UnsafeIdentifierError(f"Unsafe column type: {data_type!r}")
     return data_type.strip()

@@ -33,8 +33,10 @@ from midvatten.tools.import_data_to_db import (
     MidvDataImporter,
     MidvDataImporterError,
     _as_import_frame,
+    _cast_or_passthrough,
 )
 from midvatten.tools.utils import db_utils, string_utils
+from midvatten.tools.utils.db_utils.dialect import UnsafeIdentifierError
 
 
 def test_as_import_frame_copies_dataframe_and_rejects_duplicate_columns():
@@ -52,6 +54,25 @@ def test_as_import_frame_rejects_non_list_non_dataframe():
 def test_importer_manages_the_wait_cursor_by_default():
     importer = MidvDataImporter()
     assert importer._manage_wait_cursor is True
+
+
+def test_cast_or_passthrough_casts_when_type_declared():
+    assert _cast_or_passthrough('"head_cm"', "REAL") == 'CAST("head_cm" AS REAL)'
+
+
+@pytest.mark.parametrize("empty_type", ["", None])
+def test_cast_or_passthrough_skips_cast_for_typeless_column(empty_type):
+    # SQLite affinity-NONE columns report their type as "" via
+    # PRAGMA table_info; CAST(x AS ) is invalid SQL and previously silently
+    # corrupted such columns. The fix is to pass the value through unchanged.
+    result = _cast_or_passthrough('"name"', empty_type)
+    assert result == '"name"'
+    assert "CAST" not in result
+
+
+def test_cast_or_passthrough_still_rejects_unsafe_type():
+    with pytest.raises(UnsafeIdentifierError):
+        _cast_or_passthrough('"col"', "TEXT) OR (SELECT 1) --")
 
 
 class GeneralImportMixin:

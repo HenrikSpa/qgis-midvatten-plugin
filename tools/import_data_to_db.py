@@ -46,6 +46,23 @@ from midvatten.tools.utils.date_utils import instant_key
 ImportData: TypeAlias = list[list[object]] | pd.DataFrame
 
 
+def _cast_or_passthrough(value_ident: str, declared_type: str) -> str:
+    """Return ``CAST(value_ident AS declared_type)``, or ``value_ident``
+    unchanged when ``declared_type`` is falsy.
+
+    SQLite allows a column to have no declared type at all (affinity NONE);
+    ``PRAGMA table_info`` then reports its type as ``""``. ``CAST(x AS )`` is
+    invalid SQL, and silently corrupts such columns rather than failing, so a
+    falsy ``declared_type`` skips the CAST and passes the value through as-is
+    — this matches SQLite's own no-declared-type semantics. A truthy type is
+    validated via :func:`safe_type` before interpolation, since it may come
+    from an untrusted ``.sqlite`` file.
+    """
+    if not declared_type:
+        return value_ident
+    return f"CAST({value_ident} AS {safe_type(declared_type)})"
+
+
 def _as_import_frame(file_data: ImportData) -> pd.DataFrame:
     """Normalize legacy rows or a typed frame at the one import boundary."""
     if isinstance(file_data, pd.DataFrame):
@@ -679,8 +696,9 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                     )
                 )
             else:
+                colname_ident = dbconnection.ident(colname)
                 sourcecols.append(
-                    f"""(CASE WHEN {dbconnection.ident(colname)} IS NOT NULL\n    THEN CAST({dbconnection.ident(colname)} AS {safe_type(column_headers_types[colname])}) ELSE {null_replacement} END)"""
+                    f"""(CASE WHEN {colname_ident} IS NOT NULL\n    THEN {_cast_or_passthrough(colname_ident, column_headers_types[colname])} ELSE {null_replacement} END)"""
                 )
 
         if dbconnection.is_postgresql():
@@ -1261,7 +1279,10 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 for x in to_list
             )
             cast_exprs = ", ".join(
-                f'CAST("b".{dbconnection.ident(k)} AS {safe_type(column_headers_types[to_list[idx]])})'
+                _cast_or_passthrough(
+                    f'"b".{dbconnection.ident(k)}',
+                    column_headers_types[to_list[idx]],
+                )
                 for idx, k in enumerate(from_list)
             )
             and_parts = " AND ".join(

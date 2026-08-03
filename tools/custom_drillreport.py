@@ -41,6 +41,7 @@ from midvatten.tools.utils import (
 )
 from midvatten.tools.utils.file_utils import templates_path, ui_path
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
+from midvatten.tools.utils.html_utils import esc
 from midvatten.tools.utils.string_utils import returnunicode as ru
 
 _EMPTY_VALS = ("", "NULL")
@@ -518,7 +519,7 @@ class Drillreport:  # general observation point info for the selected object
 
             if include_comments:
                 comment_data = [
-                    obs_points_data[obs_points_cols.index(header) - 1]
+                    (header, obs_points_data[obs_points_cols.index(header) - 1])
                     for header in ("com_onerow", "com_html")
                     if all(
                         [
@@ -579,7 +580,7 @@ class Drillreport:  # general observation point info for the selected object
             r"""<meta http-equiv="content-type" content="text/html; charset=utf-8" />"""
         )
         rpt += r"""<head><title>%s %s</title></head>""" % (
-            header,
+            esc(header),
             QCoreApplication.translate(
                 "Drillreport", "General report from Midvatten plugin for QGIS"
             ),
@@ -597,7 +598,7 @@ class Drillreport:  # general observation point info for the selected object
     def obsid_header(self, obsid):
         return (
             r"""<h3 style="font-family:'Ubuntu';font-size:12pt; font-weight:600"><font size=4>%s</font></h3>"""
-            % ru(obsid)
+            % esc(obsid)
         )
 
     def write_obsid(
@@ -783,7 +784,7 @@ class Drillreport:  # general observation point info for the selected object
                 value = value.replace(".", decimal_separator)
 
             try:
-                rpt += rf"""<TR VALIGN=TOP><TD WIDTH=33%><P><font size=1>{header}</font></P></TD><TD WIDTH=50%><P><font size=1>{value}</font></P></TD></TR>"""
+                rpt += rf"""<TR VALIGN=TOP><TD WIDTH=33%><P><font size=1>{esc(header)}</font></P></TD><TD WIDTH=50%><P><font size=1>{esc(value)}</font></P></TD></TR>"""
             except UnicodeEncodeError:
                 message_utils.MessagebarAndLog.critical(
                     bar_msg=QCoreApplication.translate(
@@ -904,14 +905,14 @@ class Drillreport:  # general observation point info for the selected object
                                 else row[depthbot_idx].replace(".", decimal_separator)
                             )
                             rpt += r"""<TD><P><font size=1>{}</font></P></TD>""".format(
-                                " - ".join([depthtop, depthbot])
+                                esc(" - ".join([depthtop, depthbot]))
                             )
                     else:
                         value_idx = strat_sql_columns_list.index(col)
                         value = "" if row[value_idx] == "NULL" else row[value_idx]
                         if col in ("depthtop", "depthbot") and decimal_separator != ".":
                             value = value.replace(".", decimal_separator)
-                        rpt += rf"""<TD><P><font size=1>{value}</font></P></TD>"""
+                        rpt += rf"""<TD><P><font size=1>{esc(value)}</font></P></TD>"""
 
                 rpt += r"""</TR>"""
         rpt += r"""</p>"""
@@ -927,7 +928,17 @@ class Drillreport:  # general observation point info for the selected object
                 rpt = r""
 
             rpt += r"""<p style="font-family:'Ubuntu'; font-size:8pt; font-weight:400; font-style:normal;"><font size=1>"""
-            rpt += r". ".join([ru(x) for x in comment_data if ru(x) not in _EMPTY_VALS])
+            # com_html is schema-documented as "Multiline formatted comment in
+            # html format" (definitions/create_db.sql) — a rich-text editor
+            # field whose content is intentionally raw HTML, not a leaf value.
+            # com_onerow is plain free text and must be escaped.
+            rpt += r". ".join(
+                [
+                    ru(value) if col == "com_html" else esc(value)
+                    for col, value in comment_data
+                    if ru(value) not in _EMPTY_VALS
+                ]
+            )
             rpt += r"""</font></p>"""
         else:
             rpt = ""

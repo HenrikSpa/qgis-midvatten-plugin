@@ -2,49 +2,28 @@
 Shared logic for water quality reports (wqualreport.py and wqualreport_compact.py).
 """
 
-import atexit
 import os
-import shutil
-import tempfile
 from typing import Optional, TextIO
 
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtCore import QUrl
 from qgis.PyQt.QtGui import QDesktopServices
 
+from midvatten.tools.utils.file_utils import session_tempdir
 from midvatten.tools.utils.html_utils import esc
 
 
 REPORT_FILENAME = "w_qual_report.html"
 
-# Every report_folder() call creates a brand-new mkdtemp() dir (kept alive
-# for the session so the report stays viewable in the browser). Track them
-# here and sweep on process exit so a long QGIS session doesn't accumulate
-# one orphaned dir per report view.
-_created_tmp_dirs: list[str] = []
-
-
-def _cleanup_report_dirs() -> None:
-    """Remove every report temp dir created this session. Registered with
-    atexit; also callable directly (e.g. from tests)."""
-    for d in _created_tmp_dirs:
-        shutil.rmtree(d, ignore_errors=True)
-
-
-atexit.register(_cleanup_report_dirs)
-
 
 def report_folder() -> str:
     """Create and return a fresh, private temp directory for a report.
 
-    Each call returns a brand-new directory (tempfile.mkdtemp, mode 0700),
-    rather than a shared fixed path, to avoid symlink/pre-creation attacks
-    on multi-user hosts (bandit B108). The directory is swept at process
-    exit via `_cleanup_report_dirs` so these don't accumulate unbounded.
+    A brand-new mkdtemp() dir per call (kept for the session so the report
+    stays viewable in the browser, then swept at exit) — see
+    `file_utils.session_tempdir` for the rationale.
     """
-    reportfolder = tempfile.mkdtemp(prefix="midvatten_report_")
-    _created_tmp_dirs.append(reportfolder)
-    return reportfolder
+    return session_tempdir(prefix="midvatten_report_")
 
 
 def report_path() -> str:

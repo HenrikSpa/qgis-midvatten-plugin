@@ -60,15 +60,16 @@ log = logging.getLogger(__name__)
 strat_symbology_dialog = uic.loadUiType(ui_path("strat_symbology_dialog.ui"))[0]
 
 
-def _report_symbology_error(symbology_name: str, exc: Exception) -> None:
-    message_utils.MessagebarAndLog.warning(
+def _report_symbology_error(symbology_name: str) -> None:
+    """Report a failed symbology application. Call from inside an `except`
+    block — the traceback is read from the active exception."""
+    message_utils.report_exception(
         bar_msg=QCoreApplication.translate(
             "strat_symbology",
             "Could not apply symbology '%s', see log message panel.",
         )
         % symbology_name,
-        log_msg=traceback.format_exc(),
-        duration=4,
+        level="warning",
     )
 
 
@@ -228,8 +229,8 @@ def strat_symbology(
                 add_generic_symbology(
                     group, layers[symbology], symbology_stylename[symbology]
                 )
-            except Exception as e:
-                _report_symbology_error(symbology, e)
+            except Exception:
+                _report_symbology_error(symbology)
 
         symbology = "Layer texts"
         if symbology in symbology_stylename:
@@ -240,8 +241,8 @@ def strat_symbology(
                     symbology_stylename[symbology],
                     checked=False,
                 )
-            except Exception as e:
-                _report_symbology_error(symbology, e)
+            except Exception:
+                _report_symbology_error(symbology)
 
         symbology = "W levels"
         if symbology in symbology_stylename:
@@ -257,14 +258,14 @@ def strat_symbology(
                             symbology_stylename[wlvl_label],
                             checked=False,
                         )
-                    except Exception as e:
-                        _report_symbology_error(wlvl_label, e)
+                    except Exception:
+                        _report_symbology_error(wlvl_label)
                 try:
                     add_wlvls_symbology(
                         wlvls_group, wlvls_layer, symbology_stylename[symbology]
                     )
-                except Exception as e:
-                    _report_symbology_error(symbology, e)
+                except Exception:
+                    _report_symbology_error(symbology)
 
         symbology = "Bedrock"
         if symbology in symbology_stylename:
@@ -278,8 +279,8 @@ def strat_symbology(
                         symbology_stylename["Bedrock label"],
                         checked=False,
                     )
-                except Exception as e:
-                    _report_symbology_error("Bedrock label", e)
+                except Exception:
+                    _report_symbology_error("Bedrock label")
                 else:
                     _bedrock_label = """LOWER("drillstop") LIKE '%{}%' """
                     for child in (
@@ -299,8 +300,8 @@ def strat_symbology(
                 )
             except RuleDiscrepancyError:
                 del layers[symbology]
-            except Exception as e:
-                _report_symbology_error(symbology, e)
+            except Exception:
+                _report_symbology_error(symbology)
 
         symbology = "Frame"
         if symbology in symbology_stylename:
@@ -308,8 +309,8 @@ def strat_symbology(
                 add_generic_symbology(
                     group, layers[symbology], symbology_stylename[symbology]
                 )
-            except Exception as e:
-                _report_symbology_error(symbology, e)
+            except Exception:
+                _report_symbology_error(symbology)
 
         layers_group = add_group(group, "Layers", checked=True)
         try:
@@ -322,8 +323,8 @@ def strat_symbology(
                 layers["Hydro"],
                 symbology_stylename["Geology"],
             )
-        except Exception as e:
-            _report_symbology_error("Layers", e)
+        except Exception:
+            _report_symbology_error("Layers")
 
         symbology = "Shadow"
         if symbology in symbology_stylename:
@@ -331,8 +332,8 @@ def strat_symbology(
                 add_generic_symbology(
                     group, layers[symbology], symbology_stylename[symbology]
                 )
-            except Exception as e:
-                _report_symbology_error(symbology, e)
+            except Exception:
+                _report_symbology_error(symbology)
 
         if any([spec.get("xfactor"), spec.get("yfactor"), spec.get("use_map_scale")]):
             for layer in layers.values():

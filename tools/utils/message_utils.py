@@ -170,6 +170,18 @@ class MessagebarAndLog:
         )
 
 
+def report_exception(bar_msg: str, level: str = "warning", duration: int = 4) -> None:
+    """Surface a caught exception the polished way: a short, human-readable
+    `bar_msg` on the message bar, the full traceback in the log panel only.
+
+    Call from inside an `except` block — the traceback is read from the
+    active exception via ``traceback.format_exc()``. ``level`` selects the
+    MessagebarAndLog method ("info" | "warning" | "critical").
+    """
+    reporter = getattr(MessagebarAndLog, level)
+    reporter(bar_msg=bar_msg, log_msg=traceback.format_exc(), duration=duration)
+
+
 def pop_up_info(msg="", title=tr("pop_up_info", "Information"), parent=None):
     """Display an info message via Qt box"""
     QtWidgets.QMessageBox.information(parent, title, "%s" % (msg))

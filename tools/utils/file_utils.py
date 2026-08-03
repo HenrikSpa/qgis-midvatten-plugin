@@ -2,8 +2,10 @@
 File I/O utilities for the Midvatten plugin.
 """
 
+import atexit
 import csv
 import os
+import shutil
 import tempfile
 from contextlib import contextmanager
 from typing import Any, List, Optional, Type
@@ -14,6 +16,38 @@ import qgis.PyQt
 from midvatten.tools.utils.exceptions import UserInterruptError
 from midvatten.tools.utils import message_utils
 from midvatten.tools.utils.string_utils import returnunicode, tr
+
+
+# Session-scoped temp dirs created via session_tempdir(); swept on process
+# exit so a long QGIS session doesn't accumulate one orphaned dir per call.
+_session_tmp_dirs: list[str] = []
+_sweep_registered = False
+
+
+def _cleanup_session_tempdirs() -> None:
+    """Remove every dir created via session_tempdir() this session. Registered
+    with atexit on first use; also callable directly (e.g. from tests)."""
+    for d in _session_tmp_dirs:
+        shutil.rmtree(d, ignore_errors=True)
+
+
+def session_tempdir(prefix: str) -> str:
+    """Create and return a fresh, private (mode 0700) temp directory, tracked
+    for removal at process exit.
+
+    Use this instead of a fixed shared path (e.g. for report HTML or CSV
+    dumps): each call returns a brand-new mkdtemp() dir, avoiding the
+    symlink/pre-creation attacks a predictable path invites on multi-user
+    hosts (bandit B108), while the per-session sweep keeps them from
+    accumulating unbounded.
+    """
+    global _sweep_registered
+    d = tempfile.mkdtemp(prefix=prefix)
+    _session_tmp_dirs.append(d)
+    if not _sweep_registered:
+        atexit.register(_cleanup_session_tempdirs)
+        _sweep_registered = True
+    return d
 
 
 @contextmanager

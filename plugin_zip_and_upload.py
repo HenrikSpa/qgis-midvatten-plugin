@@ -24,14 +24,44 @@ PORT = "80"
 ENDPOINT = "/plugins/RPC2/"
 VERBOSE = False
 
-IGNORE_FOLDERS = [".git", "arkiv", "arkiv_o_dok", "__pycache__", "tests", ".idea"]
+IGNORE_FOLDERS = [
+    ".git",
+    "arkiv",
+    "arkiv_o_dok",
+    "__pycache__",
+    "tests",
+    "test",
+    ".idea",
+    ".venv",
+    ".worktrees",
+    ".logger-import-worktree",
+    ".claude",
+    ".cursor",
+    ".superpowers",
+    ".pytest_cache",
+    ".ruff_cache",
+    "docs",
+    "scripts",
+    "_pkgroot",
+]
 IGNORE_FILES = [
     ".gitignore",
     "plugin_zip_and_upload.py",
     "compile_and_prepare_for_upload_notes.txt",
     ":",
+    "conftest.py",
+    "pytest.ini",
+    "pyproject.toml",
+    ".coveragerc",
+    "CLAUDE.md",
+    ".claudeignore",
+    ".cursorignore",
+    "midvatten.pro",
+    "CHANGELOG_HISTORY",
+    ".swo",
+    ".swp",
 ]
-IGNORE_FILESUFFIX = (".pyc", ".zip")
+IGNORE_FILESUFFIX = (".pyc", ".zip", ".swp", ".swo", ".orig", ".rej")
 
 
 def main(parameters, arguments):

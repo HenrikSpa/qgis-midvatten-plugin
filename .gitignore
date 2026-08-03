@@ -11,11 +11,12 @@ qgis-auth.db
 ./test/:
 .venv
 .swp
+.swo
 .pytest_cache
 __pycache__
 monkeytype.sqlite3
 .worktrees/
-.claude/worktrees/
+.claude/
 .superpowers/
 symbology-style.db
 

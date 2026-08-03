@@ -308,13 +308,6 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         self.obs_from_row.layout().addWidget(self.obs_from_obs_points)
         self.obs_from_row.layout().addWidget(self.obs_from_vlayer)
 
-        self.parameter_groups = self.create_parameter_groups_using_stored_settings(
-            common_utils.get_stored_settings(self.ms, self.stored_settingskey),
-            self.obslayer,
-        )
-        if self.parameter_groups is None or not self.parameter_groups:
-            self.parameter_groups = [ParameterGroup(self.obslayer)]
-
         self.main_vertical_layout.addWidget(
             QtWidgets.QLabel(
                 QCoreApplication.translate(
@@ -323,14 +316,7 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
             )
         )
         self.main_vertical_layout.addWidget(get_line())
-        self.splitter = SplitterWithHandel(qgis.PyQt.QtCore.Qt.Vertical)
-        self.main_vertical_layout.addWidget(self.splitter)
-
-        self.widgets_layouts = self.init_splitters_layouts(self.splitter)
-
-        if self.parameter_groups:
-            for export_object in self.parameter_groups:
-                self.add_parameter_group_to_gui(self.widgets_layouts, export_object)
+        self.splitter = None
 
         # Buttons
 
@@ -348,13 +334,6 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         )
         self.parameter_browser_button.clicked.connect(
             lambda: self.parameter_browser.show()
-        )
-
-        self.update_parameter_browser_using_stored_settings(
-            common_utils.get_stored_settings(
-                self.ms, self.stored_settingskey_parameterbrowser
-            ),
-            self.parameter_browser,
         )
 
         self.add_parameter_group = QtWidgets.QPushButton(
@@ -496,9 +475,42 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
 
         self.grid_layout_buttons.setRowStretch(self.grid_layout_buttons.rowCount(), 1)
 
+        self._rebuild_input_fields_from_settings()
+
     def show(self) -> None:
         super().show()
         self.activateWindow()
+
+    def _rebuild_input_fields_from_settings(self) -> None:
+        """(Re)build the parameter browser and group widgets from stored settings.
+        Called from __init__ and after any settings change so the open dialog
+        always reflects current settings."""
+        if self.splitter is not None:
+            self.main_vertical_layout.removeWidget(self.splitter)
+            self.splitter.setParent(None)
+            self.splitter.deleteLater()
+
+        self.parameter_groups = self.create_parameter_groups_using_stored_settings(
+            common_utils.get_stored_settings(self.ms, self.stored_settingskey),
+            self.obslayer,
+        )
+        if not self.parameter_groups:
+            self.parameter_groups = [ParameterGroup(self.obslayer)]
+
+        self.splitter = SplitterWithHandel(qgis.PyQt.QtCore.Qt.Vertical)
+        self.main_vertical_layout.addWidget(self.splitter)
+        self.widgets_layouts = self.init_splitters_layouts(self.splitter)
+
+        for export_object in self.parameter_groups:
+            self.add_parameter_group_to_gui(self.widgets_layouts, export_object)
+
+        if getattr(self, "parameter_browser", None) is not None:
+            self.update_parameter_browser_using_stored_settings(
+                common_utils.get_stored_settings(
+                    self.ms, self.stored_settingskey_parameterbrowser
+                ),
+                self.parameter_browser,
+            )
 
     @staticmethod
     def init_splitters_layouts(splitter):
@@ -653,18 +665,19 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
             skip_ast=True,
         )
 
-        message_utils.pop_up_info(
-            QCoreApplication.translate(
-                "ExportToFieldLogger",
-                'Input fields and "Create Input Fields" updated to default.\nRestart Export to Fieldlogger dialog to complete,\nor press "Save settings" to save current input fields settings again.',
-            )
+        self._rebuild_input_fields_from_settings()
+        message_utils.MessagebarAndLog.info(
+            bar_msg=QCoreApplication.translate(
+                "ExportToFieldLogger", "Settings updated."
+            ),
+            duration=3,
         )
 
     def settings_strings_dialogs(self):
 
         msg = QCoreApplication.translate(
             "ExportToFieldLogger",
-            "Edit the settings string for input fields browser and restart export fieldlogger dialog\nto load the change.",
+            "Edit the settings string for input fields browser.",
         )
 
         browser_updated = self.ask_and_update_settings(
@@ -672,18 +685,19 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         )
         msg = QCoreApplication.translate(
             "ExportToFieldLogger",
-            "Edit the settings string for input fields groups and restart export fieldlogger dialog\nto load the change.",
+            "Edit the settings string for input fields groups.",
         )
 
         groups_updated = self.ask_and_update_settings(
             self.parameter_groups, self.stored_settingskey, msg
         )
         if browser_updated or groups_updated:
-            message_utils.pop_up_info(
-                QCoreApplication.translate(
-                    "ExportToFieldLogger",
-                    'Settings updated. Restart Export to Fieldlogger dialog\nor press "Save settings" to undo.',
-                )
+            self._rebuild_input_fields_from_settings()
+            message_utils.MessagebarAndLog.info(
+                bar_msg=QCoreApplication.translate(
+                    "ExportToFieldLogger", "Settings updated."
+                ),
+                duration=3,
             )
 
     def ask_and_update_settings(self, objects_with_get_settings, settingskey, msg=""):
@@ -704,7 +718,7 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
 
         new_string_text = ru(new_string[0])
 
-        self.update_settings(new_string_text, settingskey)
+        return self.update_settings(new_string_text, settingskey)
 
     def update_settings(self, new_string_text, settingskey):
         try:
@@ -1002,15 +1016,16 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         )
 
     def clear_settings(self):
-        (common_utils.save_stored_settings(self.ms, [], self.stored_settingskey),)
+        common_utils.save_stored_settings(self.ms, [], self.stored_settingskey)
         common_utils.save_stored_settings(
             self.ms, "FieldLogger", self.stored_settingskey_format, skip_ast=True
         )
-        message_utils.pop_up_info(
-            QCoreApplication.translate(
-                "ExportToFieldLogger",
-                'Settings cleared. Restart Export to Fieldlogger dialog to complete,\nor press "Save settings" to save current input fields settings again.',
-            )
+        self._rebuild_input_fields_from_settings()
+        message_utils.MessagebarAndLog.info(
+            bar_msg=QCoreApplication.translate(
+                "ExportToFieldLogger", "Settings cleared."
+            ),
+            duration=3,
         )
 
     def _add_parameter_group(self):

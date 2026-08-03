@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, call
 import pytest
 
 from midvatten.test import utils_for_tests
+from midvatten.test.mocks_for_tests import DummyInterface
 from midvatten.test.utils_for_tests import create_test_string
 from midvatten.tools import import_fieldlogger
 from midvatten.tools.import_fieldlogger import (
@@ -985,6 +986,51 @@ class TestFieldLoggerImporterNoDb:
                 )
             )
             assert test_string == reference
+
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_clear_settings_rebuilds_widgets_and_confirms(
+        self, mock_messagebar, mock_popup
+    ):
+        mock_ms = MagicMock()
+        mock_ms.settingsdict = {}
+        iface = DummyInterface()
+
+        dlg = FieldloggerImport(iface, mock_ms)
+        # Minimal state clear_settings()/update_input_fields_from_button()
+        # need, without going through the DB-backed
+        # parse_observations_and_populate_gui() flow (see
+        # test_import_fieldlogger_backends.py for the full-dialog version).
+        dlg.observations = [
+            {
+                "sublocation": "a.1",
+                "parametername": "par1",
+                "value": "1",
+                "date_time": to_date("2016-01-01"),
+            }
+        ]
+        dlg.settings = []
+        dlg.stored_settingskey = "fieldlogger_import_parameter_settings"
+        dlg.stored_settings = []
+        dlg.input_fields = InputFields()
+        dlg.input_fields.update_parameter_imports_queue(
+            dlg.observations, dlg.stored_settings
+        )
+
+        # Choose an import method for par1 so clearing has something to undo.
+        dlg.input_fields.parameter_imports["par1"].import_method = "comments"
+        assert dlg.input_fields.parameter_imports["par1"].import_method == "comments"
+
+        dlg.clear_settings()
+
+        print(f"{mock_messagebar.mock_calls=}")
+        assert not mock_popup.called
+        mock_messagebar.info.assert_any_call(bar_msg="Settings cleared.", duration=3)
+
+        # The already-open dialog's widgets are rebuilt in place: the
+        # chosen import method is reset, without needing a restart.
+        assert dlg.input_fields.parameter_imports["par1"].import_method == ""
+        assert dlg.stored_settings == []
 
 
 @pytest.mark.active

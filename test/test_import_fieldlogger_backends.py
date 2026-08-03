@@ -102,6 +102,68 @@ class FieldLoggerImporterDbMixin:
                     bar_msg="Import error, staff not given"
                 )
 
+    def test_clear_settings_rebuilds_widgets_and_confirms(self):
+        """ "Clear settings" applies immediately: the already-open dialog's
+        input field widgets are rebuilt in place and a brief message bar
+        confirms it, with no "restart the dialog" popup."""
+        f = [
+            "LOCATION;DATE;TIME;VALUE;TYPE\n",
+            "Rb1202.sample;30-03-2016;15:31:30;hej2;s.comment\n",
+        ]
+
+        with file_utils.tempinput("".join(f)) as filename:
+
+            @mock.patch(
+                "midvatten.tools.import_fieldlogger.midvatten_utils.QtWidgets.QFileDialog.getOpenFileNames"
+            )
+            @mock.patch(
+                "midvatten.tools.import_fieldlogger.midvatten_utils.QtWidgets.QInputDialog.getText"
+            )
+            @mock.patch("midvatten.tools.utils.message_utils.pop_up_info")
+            @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+            def _test_clear_settings(
+                self,
+                filename,
+                mock_messagebar,
+                mock_popup,
+                mock_charset,
+                mock_savefilename,
+            ):
+                mock_charset.return_value = ("utf-8", True)
+                mock_savefilename.return_value = [[filename]]
+
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = FieldloggerImport(self.iface, ms)
+                importer.parse_observations_and_populate_gui()
+
+                # Choose an import method so clearing has something to undo.
+                importer.input_fields.parameter_imports[
+                    "s.comment"
+                ].import_method = "comments"
+                assert (
+                    importer.input_fields.parameter_imports["s.comment"].import_method
+                    == "comments"
+                )
+
+                importer.clear_settings()
+
+                print(f"{mock_messagebar.mock_calls=}")
+                assert not mock_popup.called
+                mock_messagebar.info.assert_any_call(
+                    bar_msg="Settings cleared.", duration=3
+                )
+
+                # The already-open dialog's widgets are rebuilt in place:
+                # the chosen import method is reset, no restart needed.
+                assert (
+                    importer.input_fields.parameter_imports["s.comment"].import_method
+                    == ""
+                )
+                assert importer.stored_settings == []
+
+            _test_clear_settings(self, filename)
+
     def test_full_integration_test_to_db(self):
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('Rb1202')""")
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('Rb1608')""")

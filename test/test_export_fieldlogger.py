@@ -749,6 +749,92 @@ class TestExportFieldloggerNoDb(MidvattenTestBase):
             == '[[0, [["input_field_group_list", ["DO.mg/l;numberDecimal|numberSigned; ", "comment;text;Obsid related comment"]], ["location_suffix", "2766"], ["sublocation_suffix", "level"]]], [1, [["input_field_group_list", ["comment;text;Obsid related comment"]], ["location_suffix", "1234"], ["sublocation_suffix", "comment"]]]]'
         )
 
+        # No "restart the dialog" popup: the dialog rebuilds its own
+        # widgets in place and confirms via the message bar instead.
+        print(f"{mock_settingsbarandlog.mock_calls=}")
+        assert not mock_popup.called
+        mock_settingsbarandlog.info.assert_any_call(
+            bar_msg="Settings updated.", duration=3
+        )
+        # The already-open dialog's parameter groups reflect the edited
+        # settings string without needing a restart.
+        assert exportfieldlogger.parameter_groups[0].input_field_group_list == [
+            "DO.mg/l;numberDecimal|numberSigned; ",
+            "comment;text;Obsid related comment",
+        ]
+        assert exportfieldlogger.parameter_groups[0].location_suffix == "2766"
+        assert exportfieldlogger.parameter_groups[1].location_suffix == "1234"
+
+    @mock.patch("midvatten.definitions.midvatten_defs.getcurrentlocale")
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.export_fieldlogger.db_utils.tables_columns")
+    @mock.patch("qgis.utils.iface", autospec=True)
+    def test_restore_default_settings_rebuilds_widgets_and_confirms(
+        self,
+        mock_iface,
+        mock_tables_columns,
+        mock_messagebar,
+        mock_popup,
+        mock_getcurrentlocale,
+    ):
+        mock_tables_columns.return_value = {}
+        mock_getcurrentlocale.return_value = ["en_US", "UTF-8"]
+        mock_ms = MagicMock()
+        mock_ms.settingsdict = {}
+
+        mock_iface = QWidget()
+        mock_iface.legendInterface = mock.Mock()
+        mock_iface.legendInterface.return_value.layers.return_value = []
+        exportfieldlogger = ExportToFieldLogger(mock_iface, mock_ms)
+
+        exportfieldlogger.restore_default_settings()
+
+        print(f"{mock_messagebar.mock_calls=}")
+        assert not mock_popup.called
+        mock_messagebar.info.assert_any_call(bar_msg="Settings updated.", duration=3)
+
+        # The already-open dialog's widgets are rebuilt from the new
+        # (default) settings, without the user needing to restart it.
+        default_fields = exportfieldlogger.parameter_groups[0].input_field_group_list
+        assert "meas.m;numberDecimal|numberSigned;depth to water" in default_fields
+
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.export_fieldlogger.db_utils.tables_columns")
+    @mock.patch("qgis.utils.iface", autospec=True)
+    def test_clear_settings_rebuilds_widgets_and_confirms(
+        self, mock_iface, mock_tables_columns, mock_messagebar, mock_popup
+    ):
+        mock_tables_columns.return_value = {}
+        mock_ms = MagicMock()
+        mock_ms.settingsdict = {
+            "fieldlogger_export_pgroups": (
+                '[[0, [["input_field_group_list", ["par1;type1;hint1"]], '
+                '["location_suffix", "proj"]]]]'
+            ),
+        }
+
+        mock_iface = QWidget()
+        mock_iface.legendInterface = mock.Mock()
+        mock_iface.legendInterface.return_value.layers.return_value = []
+        exportfieldlogger = ExportToFieldLogger(mock_iface, mock_ms)
+
+        assert exportfieldlogger.parameter_groups[0].input_field_group_list == [
+            "par1;type1;hint1"
+        ]
+
+        exportfieldlogger.clear_settings()
+
+        print(f"{mock_messagebar.mock_calls=}")
+        assert not mock_popup.called
+        mock_messagebar.info.assert_any_call(bar_msg="Settings cleared.", duration=3)
+
+        # The already-open dialog's widgets are rebuilt to reflect the now
+        # empty settings, without the user needing to restart it.
+        assert len(exportfieldlogger.parameter_groups) == 1
+        assert exportfieldlogger.parameter_groups[0].input_field_group_list == []
+
     @staticmethod
     @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_create_export_printlist_correct_order(mock_messagebar):

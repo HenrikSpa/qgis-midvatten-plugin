@@ -157,26 +157,11 @@ class FieldloggerImport(BaseImporter, import_fieldlogger_ui_dialog):
         self.clear_settings_button.setToolTip(
             QCoreApplication.translate(
                 "FieldloggerImport",
-                'Clear all parameter settings\nReopen Fieldlogger import gui to have it reset,\nor press "Save settings" to undo.',
+                'Clear all parameter settings,\nor press "Save settings" to undo.',
             )
         )
         self.grid_layout_buttons.addWidget(self.clear_settings_button, 1, 0)
-        self.clear_settings_button.clicked.connect(
-            lambda: [
-                x()
-                for x in [
-                    lambda: common_utils.save_stored_settings(
-                        self.ms, [], self.stored_settingskey
-                    ),
-                    lambda: message_utils.pop_up_info(
-                        QCoreApplication.translate(
-                            "FieldloggerImport",
-                            "Settings cleared. Restart import Fieldlogger dialog",
-                        )
-                    ),
-                ]
-            ]
-        )
+        self.clear_settings_button.clicked.connect(self.clear_settings)
 
         self.close_after_import = QtWidgets.QCheckBox(
             QCoreApplication.translate("FieldloggerImport", "Close dialog after import")
@@ -341,6 +326,29 @@ class FieldloggerImport(BaseImporter, import_fieldlogger_ui_dialog):
             self.filter_by_settings_using_shared_loop(self.observations, self.settings),
             self.stored_settings,
             staff=self.get_staff(),
+        )
+
+    def _rebuild_from_settings(self):
+        """Rebuild the input field widgets from the current in-memory
+        settings so the already-open dialog reflects the change
+        immediately. Unlike update_input_fields_from_button(), this does
+        not re-run the date/sublocation/staff filters, so it works even
+        when those questions have not been answered yet."""
+        self.input_fields.update_parameter_imports_queue(
+            self.observations, self.stored_settings, staff=self.get_staff()
+        )
+
+    def clear_settings(self):
+        self.stored_settings = []
+        common_utils.save_stored_settings(
+            self.ms, self.stored_settings, self.stored_settingskey
+        )
+        self._rebuild_from_settings()
+        message_utils.MessagebarAndLog.info(
+            bar_msg=QCoreApplication.translate(
+                "FieldloggerImport", "Settings cleared."
+            ),
+            duration=3,
         )
 
     @staticmethod

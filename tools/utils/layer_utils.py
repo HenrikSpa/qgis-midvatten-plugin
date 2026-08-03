@@ -102,15 +102,36 @@ def selection_check(
                 bar_msg=returnunicode(
                     tr(
                         "selection_check",
-                        '"""Error, select exactly %s object in the qgis layer!',
+                        "Error, select exactly %s object in the qgis layer!",
                     )
                 )
                 % str(selectedfeatures)
             )
     else:
-        message_utils.pop_up_info(
-            tr("selection_check", "Select a qgis layer that has a field obsid!")
+        warn_no_layer("obsid")
+
+
+def warn_no_selection() -> None:
+    """Canonical 'nothing selected' outcome (message bar, not a popup)."""
+    message_utils.MessagebarAndLog.warning(
+        bar_msg=tr(
+            "selection_check",
+            "Select at least one object in the layer first.",
+        ),
+        duration=4,
+    )
+
+
+def warn_no_layer(field: str = "obsid") -> None:
+    """Canonical 'no suitable layer' outcome (message bar, not a popup)."""
+    message_utils.MessagebarAndLog.warning(
+        bar_msg=tr(
+            "selection_check",
+            "Select a layer that has a '%s' field first.",
         )
+        % field,
+        duration=4,
+    )
 
 
 def strat_selection_check(layer=""):

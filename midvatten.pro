@@ -72,6 +72,7 @@ SOURCES = \
 ././tools/utils/exceptions.py \
 ././tools/utils/file_utils.py \
 ././tools/utils/gui_utils.py \
+././tools/utils/html_utils.py \
 ././tools/utils/layer_build.py \
 ././tools/utils/layer_specs.py \
 ././tools/utils/layer_utils.py \
@@ -81,6 +82,7 @@ SOURCES = \
 ././tools/utils/midvatten_utils.py \
 ././tools/utils/mpl_compat.py \
 ././tools/utils/sampledem.py \
+././tools/utils/stored_settings.py \
 ././tools/utils/string_utils.py \
 ././tools/utils/util_translate.py \
 ././tools/w_flow_calc_aveflow.py \

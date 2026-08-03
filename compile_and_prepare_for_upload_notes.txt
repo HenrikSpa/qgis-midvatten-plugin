@@ -38,6 +38,20 @@ pylupdate5 -verbose midvatten.pro
 # Translate strings using QtLinguist.
 lrelease i18n/midvatten_*.ts
 
+NOTE (2026-08-03, pre-release-hardening): after adding new user-facing
+translate() strings, `pylupdate5`/`pylupdate6` MUST be run against
+midvatten.pro to regenerate the .ts files before `lrelease` is run -
+lrelease only recompiles .qm from whatever is already in the .ts, it does
+not scan .py source for new strings. The pre-release-hardening session
+added several new translate() calls (including in the new
+tools/utils/html_utils.py and tools/utils/stored_settings.py, now listed
+in midvatten.pro SOURCES) that are NOT YET present in any i18n/*.ts file,
+because pylupdate5/pylupdate6 was not available in that environment.
+Before public release, run on a machine with pylupdate installed:
+    pylupdate5 -verbose midvatten.pro   # or the Qt6 equivalent
+    lrelease i18n/*.ts
+to capture these strings and recompile the .qm files.
+
 # ----------- Tests -------------
 cd path/to/midvatten/plugin/
 nosetests -vv --with-doctest --nocapture

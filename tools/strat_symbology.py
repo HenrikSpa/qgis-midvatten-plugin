@@ -63,7 +63,7 @@ strat_symbology_dialog = uic.loadUiType(ui_path("strat_symbology_dialog.ui"))[0]
 def _report_symbology_error(symbology_name: str, exc: Exception) -> None:
     message_utils.MessagebarAndLog.warning(
         bar_msg=QCoreApplication.translate(
-            "StratSymbology",
+            "strat_symbology",
             "Could not apply symbology '%s', see log message panel.",
         )
         % symbology_name,

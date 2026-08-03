@@ -40,6 +40,10 @@ from midvatten.tools.utils.string_utils import returnunicode as ru, lstrip
 
 log = logging.getLogger(__name__)
 
+_DUPLICATE_TABLE_ERRORS: tuple[type[Exception], ...] = ()
+if psycopg2 is not None:
+    _DUPLICATE_TABLE_ERRORS = (psycopg2.errors.DuplicateTable,)
+
 
 class PrepareForQgis2Threejs:
     def __init__(self, iface, ms):
@@ -190,7 +194,7 @@ class PrepareForQgis2Threejs:
                     AND COALESCE(h_toc, h_gs, 0) > 0;
                     """
                 )
-            except psycopg2.errors.DuplicateTable:
+            except _DUPLICATE_TABLE_ERRORS:
                 message_utils.MessagebarAndLog.info(
                     log_msg=QCoreApplication.translate(
                         "PrepareForQgis2Threejs",
@@ -238,7 +242,7 @@ class PrepareForQgis2Threejs:
 
                     try:
                         self.dbconnection.execute(sqliteline)
-                    except psycopg2.errors.DuplicateTable:
+                    except _DUPLICATE_TABLE_ERRORS:
                         message_utils.MessagebarAndLog.info(
                             log_msg=QCoreApplication.translate(
                                 "PrepareForQgis2Threejs",

@@ -76,12 +76,11 @@ class CalculateLevel(
                         obsid for obsid in obsids if obsid in obsid_with_h_toc_null
                     ]
                     if any_nulls:
-                        message_utils.pop_up_info(
-                            QCoreApplication.translate(
+                        message_utils.MessagebarAndLog.critical(
+                            bar_msg=QCoreApplication.translate(
                                 "Calclvl",
                                 "Adjustment aborted! There seems to be NULL values in your table obs_points, column h_toc.",
                             ),
-                            QCoreApplication.translate("Calclvl", "Error"),
                         )
                         return None
 
@@ -91,11 +90,10 @@ class CalculateLevel(
                     ]
 
                 if not obsids:
-                    message_utils.pop_up_info(
-                        QCoreApplication.translate(
+                    message_utils.MessagebarAndLog.critical(
+                        bar_msg=QCoreApplication.translate(
                             "Calclvl", "Adjustment aborted! All h_tocs were NULL."
                         ),
-                        QCoreApplication.translate("Calclvl", "Error"),
                     )
                     return None
 
@@ -145,11 +143,10 @@ class CalculateLevel(
             obsids = [x[0] for x in obsids]
             self.calc(obsids)
         else:
-            message_utils.pop_up_info(
-                QCoreApplication.translate(
+            message_utils.MessagebarAndLog.critical(
+                bar_msg=QCoreApplication.translate(
                     "Calclvl", "Adjustment aborted! No obsids in w_levels."
                 ),
-                QCoreApplication.translate("Calclvl", "Error"),
             )
 
     @fn_timer
@@ -158,11 +155,10 @@ class CalculateLevel(
             layer_utils.get_selected_object_names(self.layer), keep_containers=True
         )
         if not obsids:
-            message_utils.pop_up_info(
-                QCoreApplication.translate(
+            message_utils.MessagebarAndLog.critical(
+                bar_msg=QCoreApplication.translate(
                     "Calclvl", "Adjustment aborted! No obsids selected."
                 ),
-                QCoreApplication.translate("Calclvl", "Error"),
             )
         else:
             self.calc(obsids)

@@ -63,11 +63,7 @@ class Drillreport:  # general observation point info for the selected object
         imgpath = templates_path()
 
         if len(obsids) == 0:
-            message_utils.pop_up_info(
-                QCoreApplication.translate(
-                    "Drillreport", "Must select one or more obsids!"
-                )
-            )
+            layer_utils.warn_no_selection()
             return None
         elif len(obsids) == 1:
             merged_question = False

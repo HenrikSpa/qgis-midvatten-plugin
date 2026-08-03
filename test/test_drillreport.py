@@ -110,6 +110,18 @@ class DrillreportMixin:
 </p></body></html>"""
         assert report == ref
 
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
+    def test_no_obsids_uses_bar_not_popup(self, mock_popup, mock_messagebar):
+        """'Must select one or more obsids!' now goes through
+        layer_utils.warn_no_selection(), never a modal popup."""
+        dlg = Drillreport(self.iface, self.midvatten.ms)
+        result = dlg._run_report([], self.midvatten.ms.settingsdict)
+        print(f"{mock_messagebar.mock_calls=}")
+        assert result is None
+        assert not mock_popup.called
+        assert mock_messagebar.warning.called
+
 
 @pytest.mark.postgis
 class TestDrillreportPostgis(

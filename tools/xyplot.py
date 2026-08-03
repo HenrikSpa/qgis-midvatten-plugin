@@ -218,15 +218,17 @@ class XYPlot:
                 fig.show()  # causes conflict with plugins "statist" and "chartmaker"
                 dbconnection.closedb()
             else:
-                message_utils.pop_up_info(
-                    QCoreApplication.translate(
+                message_utils.MessagebarAndLog.warning(
+                    bar_msg=QCoreApplication.translate(
                         "XYPlot", "Please select at least one point with xy data"
-                    )
+                    ),
+                    duration=4,
                 )
         else:
-            message_utils.pop_up_info(
-                QCoreApplication.translate(
+            message_utils.MessagebarAndLog.warning(
+                bar_msg=QCoreApplication.translate(
                     "XYPlot",
                     "Please select a layer containing observations with xy data",
-                )
+                ),
+                duration=4,
             )

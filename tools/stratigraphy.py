@@ -81,9 +81,11 @@ class Stratigraphy:
         lyr = self.layer
         ids = lyr.selectedFeatureIds()
         if len(ids) == 0:
-            message_utils.pop_up_info(
-                QCoreApplication.translate(" Stratigraphy", "No selection"),
-                QCoreApplication.translate(" Stratigraphy", "No features are selected"),
+            message_utils.MessagebarAndLog.warning(
+                bar_msg=QCoreApplication.translate(
+                    " Stratigraphy", "No selection: No features are selected"
+                ),
+                duration=4,
             )
             return
         # initiate the datastore if not yet done
@@ -94,11 +96,12 @@ class Stratigraphy:
         except DataSanityError as e:  # if an object 'e' belonging to DataSanityError is created, then do following
             log.warning("DataSanityError %s" % str(e))
             common_utils.stop_waiting_cursor()
-            message_utils.pop_up_info(
-                QCoreApplication.translate(
+            message_utils.MessagebarAndLog.warning(
+                bar_msg=QCoreApplication.translate(
                     " Stratigraphy", "Data sanity problem, obsid: %s\n%s"
                 )
-                % (e.sond_id, e.message)
+                % (e.sond_id, e.message),
+                duration=4,
             )
             return
         except Exception as e:  # if an object 'e' belonging to DataSanityError is created, then do following

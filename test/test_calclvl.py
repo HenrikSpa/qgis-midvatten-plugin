@@ -242,6 +242,76 @@ class CalclvlMixin:
         print(f"{mock_messagebar.mock_calls=}")
         assert test_string == reference_string
 
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
+    def test_calc_selected_no_obsids_uses_bar_not_popup(
+        self, mock_selected_obsids, mock_messagebar, mock_popup
+    ):
+        """'Adjustment aborted! No obsids selected.' must go to the message
+        bar (critical), never a modal popup."""
+        mock_selected_obsids.return_value = []
+        self.calclvl.calcselected()
+        print(f"{mock_messagebar.mock_calls=}")
+        assert not mock_popup.called
+        assert mock_messagebar.critical.called
+
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_calcall_no_obsids_in_w_levels_uses_bar_not_popup(
+        self, mock_messagebar, mock_popup
+    ):
+        """'Adjustment aborted! No obsids in w_levels.' must go to the
+        message bar (critical), never a modal popup."""
+        self.calclvl.calcall()
+        print(f"{mock_messagebar.mock_calls=}")
+        assert not mock_popup.called
+        assert mock_messagebar.critical.called
+
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
+    def test_calc_selected_stop_if_null_uses_bar_not_popup(
+        self, mock_selected_obsids, mock_messagebar, mock_popup
+    ):
+        """'Adjustment aborted! There seems to be NULL values...' must go
+        to the message bar (critical), never a modal popup."""
+        mock_selected_obsids.return_value = ["rb1"]
+        db_utils.sql_alter_db(
+            """INSERT INTO obs_points (obsid, h_toc) VALUES ('rb1', NULL)"""
+        )
+        self.calclvl.from_date_time = QtWidgets.QDateTimeEdit()
+        self.calclvl.from_date_time.setDateTime(to_date("2000-01-01 00:00:00"))
+        self.calclvl.to_date_time = QtWidgets.QDateTimeEdit()
+        self.calclvl.to_date_time.setDateTime(to_date("2010-01-01 00:00:00"))
+        self.calclvl.stop_if_null.setChecked(True)
+        self.calclvl.calcselected()
+        print(f"{mock_messagebar.mock_calls=}")
+        assert not mock_popup.called
+        assert mock_messagebar.critical.called
+
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
+    def test_calc_selected_all_h_toc_null_uses_bar_not_popup(
+        self, mock_selected_obsids, mock_messagebar, mock_popup
+    ):
+        """'Adjustment aborted! All h_tocs were NULL.' must go to the
+        message bar (critical), never a modal popup."""
+        mock_selected_obsids.return_value = ["rb1"]
+        db_utils.sql_alter_db(
+            """INSERT INTO obs_points (obsid, h_toc) VALUES ('rb1', NULL)"""
+        )
+        self.calclvl.from_date_time = QtWidgets.QDateTimeEdit()
+        self.calclvl.from_date_time.setDateTime(to_date("2000-01-01 00:00:00"))
+        self.calclvl.to_date_time = QtWidgets.QDateTimeEdit()
+        self.calclvl.to_date_time.setDateTime(to_date("2010-01-01 00:00:00"))
+        self.calclvl.stop_if_null.setChecked(False)
+        self.calclvl.calcselected()
+        print(f"{mock_messagebar.mock_calls=}")
+        assert not mock_popup.called
+        assert mock_messagebar.critical.called
+
     def teardown_method(self):
         if hasattr(self.calclvl, "updated_h_tocs") and hasattr(
             self.calclvl, "updated_level_masl"

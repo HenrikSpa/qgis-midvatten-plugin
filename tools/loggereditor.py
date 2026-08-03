@@ -3149,20 +3149,22 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 self.meas_ts, self.level_masl_ts, search_radius
             )
             if not coupled_vals:
-                message_utils.pop_up_info(
-                    QCoreApplication.translate(
+                message_utils.MessagebarAndLog.warning(
+                    bar_msg=QCoreApplication.translate(
                         "Calibrlogger",
                         "There was no match found between measurements and logger values inside the chosen period.\n Try to increase the search radius or adjust the period!",
-                    )
+                    ),
+                    duration=4,
                 )
             else:
                 calculated_diff = common_utils.calc_mean_diff(coupled_vals)
                 if math.isnan(calculated_diff):
-                    message_utils.pop_up_info(
-                        QCoreApplication.translate(
+                    message_utils.MessagebarAndLog.warning(
+                        bar_msg=QCoreApplication.translate(
                             "Calibrlogger",
                             "There was no matched measurements or logger values inside the chosen period.\n Try to increase the search radius!",
-                        )
+                        ),
+                        duration=4,
                     )
                     message_utils.MessagebarAndLog.info(
                         log_msg=QCoreApplication.translate(
@@ -3266,11 +3268,12 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
         search_radius_splitted = ru(search_radius).split()
         if len(search_radius_splitted) != 2:
-            message_utils.pop_up_info(
-                QCoreApplication.translate(
+            message_utils.MessagebarAndLog.warning(
+                bar_msg=QCoreApplication.translate(
                     "Calibrlogger", "Must write time resolution also, ex. %s"
                 )
-                % "60 minutes"
+                % "60 minutes",
+                duration=4,
             )
         return tuple(search_radius_splitted)
 
@@ -3299,20 +3302,22 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         current_loaded_obsid = self.obsid
         selected_obsid = self.selected_obsid
         if current_loaded_obsid != selected_obsid:
-            message_utils.pop_up_info(
-                QCoreApplication.translate(
+            message_utils.MessagebarAndLog.warning(
+                bar_msg=QCoreApplication.translate(
                     "Calibrlogger",
                     "Error!\n The obsid selection has been changed but the plot has not been updated. No deletion done.\nUpdating plot.",
-                )
+                ),
+                duration=4,
             )
             self.update_plot()
             return
         elif selected_obsid is None:
-            message_utils.pop_up_info(
-                QCoreApplication.translate(
+            message_utils.MessagebarAndLog.warning(
+                bar_msg=QCoreApplication.translate(
                     "Calibrlogger",
                     "Error!\n No obsid was selected. No deletion done.\nUpdating plot.",
-                )
+                ),
+                duration=4,
             )
             self.update_plot()
             return

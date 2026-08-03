@@ -175,16 +175,18 @@ class TimeSeriesPlot:
                 # plt.draw()
                 dbconnection.closedb()
             else:
-                message_utils.pop_up_info(
-                    QCoreApplication.translate(
+                message_utils.MessagebarAndLog.warning(
+                    bar_msg=QCoreApplication.translate(
                         "TimeSeriesPlot",
                         "Please select at least one point with time series data",
-                    )
+                    ),
+                    duration=4,
                 )
         else:
-            message_utils.pop_up_info(
-                QCoreApplication.translate(
+            message_utils.MessagebarAndLog.warning(
+                bar_msg=QCoreApplication.translate(
                     "TimeSeriesPlot",
                     "Please select a layer with time series observation points",
-                )
+                ),
+                duration=4,
             )

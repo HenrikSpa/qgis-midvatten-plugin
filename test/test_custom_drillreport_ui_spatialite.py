@@ -10,7 +10,7 @@ import pytest
 
 from midvatten.test import utils_for_tests
 from midvatten.tools import wqualreport_core
-from midvatten.tools.custom_drillreport import DrillreportUi
+from midvatten.tools.custom_drillreport import Drillreport, DrillreportUi
 from midvatten.tools.utils import db_utils
 
 
@@ -107,6 +107,37 @@ class TestDrillreportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
         mock_messagebar.critical.assert_called_once()
         call_args = mock_messagebar.critical.call_args
         assert "obsid" in str(call_args).lower() or "select" in str(call_args).lower()
+
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
+    def test_report_class_no_obsids_uses_bar_not_popup(
+        self, mock_popup, mock_messagebar
+    ):
+        """The Drillreport helper class's own 'Must select one or more
+        obsids!' guard (custom_drillreport.py) must use the shared
+        layer_utils.warn_no_selection() bar helper, never a modal popup."""
+        Drillreport(
+            [],
+            self.midvatten.ms.settingsdict,
+            [],
+            [],
+            [],
+            False,
+            False,
+            False,
+            "",
+            "",
+            "",
+            "",
+            False,
+            "50;50",
+            "50;50",
+            "50;50",
+            ".",
+        )
+        print(f"{mock_messagebar.mock_calls=}")
+        assert not mock_popup.called
+        assert mock_messagebar.warning.called
 
     @mock.patch(
         "midvatten.tools.custom_drillreport.common_utils.get_stored_settings",

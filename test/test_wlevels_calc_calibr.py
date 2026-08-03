@@ -410,6 +410,10 @@ class CalibrloggerMixin:
         print(f"{mock_messagebar.mock_calls=}")
         print(test)
         assert test == ref
+        # No match is found inside the chosen period/radius: the outcome
+        # must reach the message bar (warning), never a modal popup.
+        assert not skip_popup.called
+        assert mock_messagebar.warning.called
 
     @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
     @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
@@ -1813,3 +1817,87 @@ def test_calc_best_fit_restores_cursor_on_exception():
 
     start_cursor.assert_called_once()
     stop_cursor.assert_called_once()
+
+
+def test_calc_best_fit_nan_diff_uses_bar_not_popup():
+    """When calc_mean_diff can't produce a useable value (NaN), the
+    outcome must reach the message bar (warning), never a modal popup."""
+    editor = LoggerEditor.__new__(LoggerEditor)
+    editor.load_obsid_and_init = mock.MagicMock(return_value="rb1")
+    editor.reset_plot_selects_and_calib_help = mock.MagicMock()
+    editor.get_search_radius = mock.MagicMock(return_value=("60", "minutes"))
+    editor.match_ts_values = mock.MagicMock(return_value=[(1, 2)])
+    editor.meas_ts = None
+    editor.level_masl_ts = None
+
+    with (
+        mock.patch("midvatten.tools.loggereditor.common_utils.start_waiting_cursor"),
+        mock.patch("midvatten.tools.loggereditor.common_utils.stop_waiting_cursor"),
+        mock.patch(
+            "midvatten.tools.loggereditor.common_utils.calc_mean_diff",
+            return_value=float("nan"),
+        ),
+        mock.patch(
+            "midvatten.tools.utils.message_utils.pop_up_info", autospec=True
+        ) as mock_popup,
+        mock.patch(
+            "midvatten.tools.utils.message_utils.MessagebarAndLog"
+        ) as mock_messagebar,
+    ):
+        editor.calc_best_fit()
+
+    print(f"{mock_messagebar.mock_calls=}")
+    assert not mock_popup.called
+    assert mock_messagebar.warning.called
+
+
+def test_get_search_radius_bad_format_uses_bar_not_popup():
+    """'Must write time resolution also' must reach the message bar
+    (warning), never a modal popup."""
+    editor = LoggerEditor.__new__(LoggerEditor)
+    editor.best_fit_search_radius = mock.MagicMock()
+    editor.best_fit_search_radius.text.return_value = "garbage"
+
+    with (
+        mock.patch(
+            "midvatten.tools.utils.message_utils.pop_up_info", autospec=True
+        ) as mock_popup,
+        mock.patch(
+            "midvatten.tools.utils.message_utils.MessagebarAndLog"
+        ) as mock_messagebar,
+    ):
+        editor.get_search_radius()
+
+    print(f"{mock_messagebar.mock_calls=}")
+    assert not mock_popup.called
+    assert mock_messagebar.warning.called
+
+
+def test_delete_selected_range_obsid_changed_uses_bar_not_popup():
+    """'The obsid selection has been changed but the plot has not been
+    updated' must reach the message bar (warning), never a modal popup."""
+    editor = LoggerEditor.__new__(LoggerEditor)
+    editor._buf = object()
+    editor.obsid = "rb1"
+    editor.update_plot = mock.MagicMock()
+
+    with (
+        mock.patch.object(
+            LoggerEditor,
+            "selected_obsid",
+            new_callable=mock.PropertyMock,
+            return_value="rb2",
+        ),
+        mock.patch(
+            "midvatten.tools.utils.message_utils.pop_up_info", autospec=True
+        ) as mock_popup,
+        mock.patch(
+            "midvatten.tools.utils.message_utils.MessagebarAndLog"
+        ) as mock_messagebar,
+    ):
+        editor.delete_selected_range("w_levels_logger")
+
+    print(f"{mock_messagebar.mock_calls=}")
+    assert not mock_popup.called
+    assert mock_messagebar.warning.called
+    editor.update_plot.assert_called_once()

@@ -24,7 +24,7 @@ import pytest
 from qgis.core import QgsProject, QgsVectorLayer
 
 from midvatten.test import utils_for_tests
-from midvatten.tools.stratigraphy import Stratigraphy
+from midvatten.tools.stratigraphy import DataSanityError, Stratigraphy
 from midvatten.tools.utils import string_utils
 from midvatten.tools.utils import db_utils
 
@@ -379,6 +379,48 @@ class StratigraphyMixin:
             test_strata
             == """["strata(1, '3', 'sand', 'sand', 0.000000-1.000000)", "strata(2, '3', 'morän', 'moran', 1.000000-4.500000)"]"""
         )
+
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
+    def test_no_selection_uses_bar_not_popup(self, mock_popup, mock_messagebar):
+        """'No selection / No features are selected' must go to the
+        message bar (warning), never a modal popup."""
+        self.create_and_select_vlayer()
+        self.vlayer.removeSelection()
+
+        dlg = Stratigraphy(self.iface, self.midvatten.ms)
+        dlg.layer = self.vlayer
+        dlg.show_survey()
+        print(f"{mock_messagebar.mock_calls=}")
+        assert not mock_popup.called
+        assert mock_messagebar.warning.called
+
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
+    def test_data_sanity_error_uses_bar_not_popup(self, mock_popup, mock_messagebar):
+        """'Data sanity problem, obsid: %s' must go to the message bar
+        (warning), with the obsid present in the bar message, never a
+        modal popup."""
+        db_utils.sql_alter_db(
+            """INSERT INTO obs_points (obsid, h_gs, geometry) VALUES ('1', 5, ST_GeomFromText('POINT(633466 711659)', 3006))"""
+        )
+        self.create_and_select_vlayer()
+        dlg = Stratigraphy(self.iface, self.midvatten.ms)
+        dlg.layer = self.vlayer
+
+        fake_store = mock.Mock()
+        fake_store.get_data.side_effect = DataSanityError("obs-42", "bad data")
+
+        def _fake_init_store():
+            dlg.store = fake_store
+
+        with mock.patch.object(dlg, "init_store", side_effect=_fake_init_store):
+            dlg.show_survey()
+        print(f"{mock_messagebar.mock_calls=}")
+        assert not mock_popup.called
+        assert mock_messagebar.warning.called
+        warning_calls = str(mock_messagebar.warning.mock_calls)
+        assert "obs-42" in warning_calls
 
 
 @pytest.mark.postgis

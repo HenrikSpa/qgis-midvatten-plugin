@@ -81,3 +81,12 @@ git merge ai_test
 - Add type hints to function/method arguments
 - Run `ruff check --fix .` and `ruff format .` after Python code modifications
 - User-facing strings must use `QCoreApplication.translate("context", "text")`
+
+### Imports
+
+- Import from the specific source module, not the aggregators: use
+  `string_utils`, `message_utils`, `layer_utils`, `dialog_utils`, `exceptions`
+  directly — not `common_utils.X` / `midvatten_utils.X` re-exports.
+- The `common_utils` / `midvatten_utils` re-export blocks and the `db_utils.X`
+  names exist ONLY as the midv_addons public API. Do not add new in-repo call
+  sites through them; do not remove them either.

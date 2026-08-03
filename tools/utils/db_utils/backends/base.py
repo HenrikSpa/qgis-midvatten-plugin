@@ -1,7 +1,6 @@
 """
-Abstract base for database backends. All dialect-specific logic lives in
-SQLiteBackend and PostgreSQLBackend; callers use is_sqlite()/is_postgresql()
-or the common interface only.
+Backend base class. Most dialect-specific SQL lives in SQLiteBackend/
+PostgreSQLBackend; a few introspection forks remain in schema.py.
 """
 
 import atexit
@@ -12,8 +11,12 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable, Sequence
 from typing import Any, Optional, Union
 
+from midvatten.tools.utils.db_utils.dialect import ident as _ident
+from midvatten.tools.utils.db_utils.dialect import in_clause as _in_clause
+from midvatten.tools.utils.db_utils.dialect import sql_ident as _sql_ident
 from midvatten.tools.utils.file_utils import write_printlist_to_file
 from midvatten.tools.utils import message_utils
+from midvatten.tools.utils.string_utils import returnunicode as ru
 
 # Each dump_table_2_csv() call creates a fresh, private mkdtemp() dir for its
 # CSV file. Track them here and sweep on process exit so a long QGIS session
@@ -162,20 +165,14 @@ class Backend(ABC):
 
     def ident(self, name: str, *, allowed: Optional[Iterable[str]] = None) -> str:
         """Safely quote an identifier."""
-        from midvatten.tools.utils.db_utils.dialect import ident as _ident
-
         return _ident(name, allowed=allowed)
 
     def sql_ident(self, template: str, /, **identifiers: str) -> str:
         """Format template with identifier substitutions only."""
-        from midvatten.tools.utils.db_utils.dialect import sql_ident as _sql_ident
-
         return _sql_ident(template, **identifiers)
 
     def in_clause(self, values: Sequence[Any]) -> tuple[str, list[Any]]:
         """Return (sql_fragment, args) for IN (...)."""
-        from midvatten.tools.utils.db_utils.dialect import in_clause as _in_clause
-
         return _in_clause(self, values)
 
     # --- Schema / metadata ---
@@ -334,7 +331,6 @@ class Backend(ABC):
     @staticmethod
     def log_execute_error(sql: Union[str, Composable], args: Any, e: Exception) -> None:
         """Log a DB execute error via message_utils.MessagebarAndLog."""
-        from midvatten.tools.utils.string_utils import returnunicode as ru
         from qgis.PyQt.QtCore import QCoreApplication
 
         sql_text = sql if isinstance(sql, str) else str(sql)

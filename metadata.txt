@@ -11,7 +11,7 @@ license=GPLv2
 qgisMaximumVersion=4.99
 
 #optional metadata entries
-experimental=False
+experimental=True
 deprecated=False
 tags=hydrogeology,groundwater,time series,stratigraphy,piper diagram,borehole
 homepage=https://github.com/henrikspa/qgis-midvatten-plugin/wiki
@@ -173,4 +173,4 @@ changelog=
         - Customplot: Adjustments for matplotlib 3.8.4.
 
 
-        For changes until ver 1.8.0, see separate document changelog_history
+        For changes until ver 1.8.0, see separate document CHANGELOG_HISTORY

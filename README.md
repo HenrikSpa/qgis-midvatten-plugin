@@ -2,6 +2,18 @@ A toolset for managing and working with hydrogeological observational data. Dist
 
 NOTE: This is as of 2025-05-16 the official and maintained repository for the Midvatten plugin (forked from https://github.com/jkall/qgis-midvatten-plugin).
 
+## Installation & dependencies
+
+**QGIS version:** Requires QGIS ≥ 3.40.
+
+**Python packages:** This plugin requires numpy, pandas, and matplotlib. These packages are installed automatically by the `qpip` plugin dependency (present on most QGIS installations). When you first install Midvatten, a `qpip` dialog will appear asking to install these packages — click "Install" to proceed. This is a one-time step.
+
+**PostGIS support:** If you plan to connect to PostgreSQL/PostGIS databases, you will also need the `psycopg2` package. This is optional and only required for PostGIS; SQLite/SpatiaLite databases do not need it.
+
+**For changelog and detailed release notes,** see the `metadata.txt` file in this repository, specifically the `changelog=` section.
+
+## Features
+
 The following features are included:
 
   * Database generator
@@ -27,7 +39,9 @@ change in DB version 1.10.0) and direct-SQL patterns for working with
 the new schema, see
 [`docs/LOGGER_SERIES_MIGRATION.md`](docs/LOGGER_SERIES_MIGRATION.md).
 
-## Coding style
+## Development
+
+### Coding style
 
 This project follows PEP 8 naming conventions:
 

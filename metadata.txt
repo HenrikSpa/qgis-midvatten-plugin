@@ -3,7 +3,7 @@ name=Midvatten
 qgisMinimumVersion=3.40
 description=A toolset that makes QGIS an interface for editing/viewing hydrogeological observational data (drillings, water levels, seismic data etc) stored in a SQLite or PostgreSQL database.
 about=The plugin is a toolset that makes QGIS an interface for editing/viewing hydrogeological observational data (drillings, water levels, seismic data etc) stored in a SQLite or PostgreSQL database. NOTE: This plugin requires the Python packages numpy, pandas and matplotlib. These are installed automatically by the qpip helper plugin. When you first install Midvatten, qpip will show a dialog asking to install these packages — click "Install" to proceed. This is a one-time step.
-version=1.9.0b30
+version=1.9.0b31
 author=Henrik Spångmyr, Josef Källgården
 email=midvattenplugin@midvatten.se
 repository=https://github.com/henrikspa/qgis-midvatten-plugin.git
@@ -23,6 +23,17 @@ hasProcessingProvider=no
 supportsQt6=True
 
 changelog=
+        Version 1.9.0b31:
+          - Security: Imported data and shared databases are handled more safely. CSV import validates declared column types before using them, and all generated reports (drill reports, custom drill reports, water quality reports) escape text values, so a malformed or malicious database can no longer inject code when a report is opened in the browser.
+          - Security: Generated reports and exported CSV files are written to private per-run temporary folders instead of a fixed shared path.
+          - Reliability: The plugin now loads and runs with SpatiaLite databases even when the PostgreSQL driver (psycopg2) is not installed; attempting a PostgreSQL connection then shows a clear message instead of the whole plugin failing to load.
+          - UX: Many status and "nothing selected" messages that used to open a dialog now appear in the QGIS message bar, so they no longer interrupt your work; errors show a short message with the full details in the log panel.
+          - UX: Export to FieldLogger/FieldForm settings changes now update the open dialog in place instead of asking you to restart it.
+          - UX: Lab data (interlab4) import collects parsing problems into a single summary instead of showing one dialog per bad row.
+          - Reports: Drill reports, custom drill reports and Piper plots now show a progress dialog with a working Cancel button; the FieldLogger export preview is a resizable, scrollable window.
+          - Qt6: Removed a Qt5-only matplotlib backend setting so plots work under Qt6 builds of QGIS.
+          - Packaging: Fixed the plugin build script so the published archive no longer includes development files.
+          - Internal: Extracted shared helpers (stored settings, temporary directories, error reporting) and documented module import rules. Note: newly added user-facing strings still need a translation update (pylupdate) before public release.
         Version 1.9.0b30:
           - LoggerEditor: Faster saves on series-heavy and PostgreSQL datasets through indexed raw-row updates, set-based orphan cleanup, true batched writes, duplicate-aware range updates, and a lightweight post-save refresh.
           - Logger import: Parsing and database writes now run without blocking QGIS, Cancel interrupts active database work, and legacy databases automatically receive a non-unique normalized timestamp lookup index before duplicate checking.

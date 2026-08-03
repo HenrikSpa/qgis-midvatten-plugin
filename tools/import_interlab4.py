@@ -466,12 +466,13 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
             skip_reports = []
 
         all_lab_results = {}
+        parse_errors: list[str] = []
 
         for filename in filenames:
             file_settings = self.parse_filesettings(filename)
             file_error, version, encoding, decimalsign, quotechar = file_settings
             if file_error:
-                message_utils.pop_up_info(
+                parse_errors.append(
                     QCoreApplication.translate(
                         "Interlab4Import",
                         "Warning: The file information %s could not be read. Skipping file",
@@ -567,22 +568,22 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
                                 )
 
                             if "parameter" not in data:
-                                message_utils.pop_up_info(
+                                parse_errors.append(
                                     QCoreApplication.translate(
                                         "Interlab4Import",
-                                        "WARNING: Parsing error. The parameter is missing on row %s",
+                                        "%s: parameter column missing, row skipped.",
                                     )
-                                    % str(cols)
+                                    % filename
                                 )
                                 continue
 
                             if data["lablittera"] not in lab_results:
-                                message_utils.pop_up_info(
+                                parse_errors.append(
                                     QCoreApplication.translate(
                                         "Interlab4Import",
-                                        "WARNING: Parsing error. Data for %s read before it's metadata.",
+                                        "%s: data appeared before its metadata; file aborted.",
                                     )
-                                    % data["lablittera"]
+                                    % filename
                                 )
                                 file_error = True
                                 break
@@ -630,6 +631,18 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
 
                 if not file_error:
                     all_lab_results.update(lab_results)
+
+        if parse_errors:
+            message_utils.MessagebarAndLog.warning(
+                bar_msg=QCoreApplication.translate(
+                    "Interlab4Import",
+                    "%s parsing problem(s) while reading lab files, see log message panel.",
+                )
+                % len(parse_errors),
+                log_msg="\n".join(parse_errors),
+                duration=5,
+            )
+
         return all_lab_results
 
     def parse_filesettings(self, filename):

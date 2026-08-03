@@ -290,6 +290,41 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
 
         assert result_string == reference_string
 
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_parse_collects_row_errors_instead_of_popup(
+        self, mock_messagebar, mock_popup
+    ):
+        # Same valid #Provadm/#Provdat structure as test_parse_interlab4_utf16,
+        # but the "Parameter" cell is blanked on 3 data rows so they fail the
+        # "parameter" in data check inside parse(). Previously each one popped
+        # a modal; now they should be collected into a single warning.
+        interlab4_lines = (
+            "#Interlab",
+            "#Version=4.0",
+            "#Tecken=UTF-8",
+            "#Textavgränsare=Nej",
+            "#Decimaltecken=,",
+            "#Provadm",
+            "Lablittera;Namn;Adress;Postnr;Ort;Kommunkod;Projekt;Laboratorium;Provtyp;Provtagare;Registertyp;ProvplatsID;Provplatsnamn;Specifik provplats;Provtagningsorsak;Provtyp;Provtypspecifikation;Bedömning;Kemisk bedömning;Mikrobiologisk bedömning;Kommentar;År;Provtagningsdatum;Provtagningstid;Inlämningsdatum;Inlämningstid;",
+            "DM-990908-2773;MFR;PG Vejdes väg 15;351 96;Växjö;0780;Demoproj;Demo-Laboratoriet;NSG;DV;;Demo1 vattenverk;;Föreskriven regelbunden undersökning enligt SLVFS 2001:30;Dricksvatten enligt SLVFS 2001:30;Utgående;Nej;Tjänligt;;;;2010;2010-09-07;10:15;2010-09-07;14:15;",
+            "#Provdat",
+            "Lablittera;Metodbeteckning;Parameter;Mätvärdetext;Mätvärdetal;Mätvärdetalanm;Enhet;Rapporteringsgräns;Detektionsgräns;Mätosäkerhet;Mätvärdespår;Parameterbedömning;Kommentar;",
+            "DM-990908-2773;SS-EN ISO 7887-1/4;;;5;;mg/l Pt;;;;;;;",
+            "DM-990908-2773;ISO 17294-2;;;0,06;;mg/l;;;;;;;",
+            "DM-990908-2773;Saknas;;;14,5;;grader C;;;;;;;",
+            "#Slut",
+        )
+
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
+            self.importinstance.parse([testfile])
+
+        print(f"{mock_messagebar.mock_calls=}")
+        assert not mock_popup.called
+        assert mock_messagebar.warning.call_count == 1
+        warn_msgs = " ".join(str(c) for c in mock_messagebar.warning.mock_calls)
+        assert "3" in warn_msgs
+
     def test_interlab4_to_table(self):
         interlab4_lines = (
             "#Interlab",

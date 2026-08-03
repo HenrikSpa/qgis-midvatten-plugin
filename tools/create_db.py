@@ -177,11 +177,13 @@ class NewDb:
         if (
             not int(versionstext[0][0]) > 3
         ):  # which file to use depends on spatialite version installed
-            message_utils.pop_up_info(
-                QCoreApplication.translate(
+            message_utils.MessagebarAndLog.critical(
+                bar_msg=QCoreApplication.translate(
                     "NewDb",
-                    "Midvatten plugin needs spatialite4.\nDatabase can not be created",
-                )
+                    "This database needs SpatiaLite 4 or newer, which is not "
+                    "available in your QGIS install. Update QGIS or install a "
+                    "newer SpatiaLite to create the database.",
+                ),
             )
             common_utils.stop_waiting_cursor()
             return ""

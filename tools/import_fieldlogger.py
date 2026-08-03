@@ -572,16 +572,12 @@ class FieldloggerImport(BaseImporter, import_fieldlogger_ui_dialog):
             if import_method_chooser.import_method
         ]
         if not chosen_methods:
-            message_utils.pop_up_info(
-                QCoreApplication.translate(
+            message_utils.MessagebarAndLog.warning(
+                bar_msg=QCoreApplication.translate(
                     "FieldloggerImport",
                     "Must choose at least one parameter import method",
-                )
-            )
-            message_utils.MessagebarAndLog.critical(
-                bar_msg=QCoreApplication.translate(
-                    "FieldloggerImport", "No parameter import method chosen"
-                )
+                ),
+                duration=4,
             )
             return None
 

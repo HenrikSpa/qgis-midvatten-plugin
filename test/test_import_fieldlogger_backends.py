@@ -32,6 +32,31 @@ class FieldLoggerImporterDbMixin:
     )
     skip_popup = MockUsingReturnValue("")
 
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_start_import_no_chosen_methods_uses_bar_not_popup(
+        self, mock_messagebar, mock_popup
+    ):
+        """'Must choose at least one parameter import method' must reach
+        the message bar (warning), never a modal popup, and it must not
+        be duplicated with a second (critical) bar call."""
+        ms = MagicMock()
+        ms.settingsdict = OrderedDict()
+        importer = FieldloggerImport(self.iface, ms)
+        # Bypass the file-parsing GUI flow; only input_fields/stored_settings
+        # are needed to reach the chosen_methods guard in start_import().
+        importer.stored_settings = {}
+        importer.stored_settingskey = "fieldlogger_import_parameter_settings"
+        importer.input_fields = import_fieldlogger.InputFields()
+
+        result = importer.start_import([])
+
+        print(f"{mock_messagebar.mock_calls=}")
+        assert result is None
+        assert not mock_popup.called
+        assert mock_messagebar.warning.called
+        assert not mock_messagebar.critical.called
+
     def test_staff_not_given(self):
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('Rb1')""")
 

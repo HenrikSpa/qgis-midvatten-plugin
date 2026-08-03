@@ -819,6 +819,31 @@ class TestExportFieldloggerNoDb(MidvattenTestBase):
         print(f"{mock_messagebar.mock_calls=}")
         assert tuple(lines) == tuple(result_lines)
 
+    @staticmethod
+    @mock.patch(
+        "midvatten.tools.export_fieldlogger.common_utils.get_save_file_name_no_extension"
+    )
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_write_to_file_oserror_uses_bar_not_popup(
+        mock_messagebar, mock_popup, mock_get_save_file_name_no_extension
+    ):
+        """'Writing of file failed!: %s' must reach the message bar
+        (critical) with the exception text as log_msg, never a modal
+        popup."""
+        # A path inside a nonexistent directory makes open() raise OSError.
+        mock_get_save_file_name_no_extension.return_value = (
+            "/nonexistent-dir/does-not-exist/out.csv"
+        )
+
+        export_fieldlogger.ExportToFieldLogger.write_to_file("a;b;c")
+
+        print(f"{mock_messagebar.mock_calls=}")
+        assert not mock_popup.called
+        assert mock_messagebar.critical.called
+        (_, _, kwargs) = mock_messagebar.critical.mock_calls[0]
+        assert kwargs.get("log_msg")
+
     @mock.patch("midvatten.tools.export_fieldlogger.db_utils.tables_columns")
     @mock.patch("midvatten.tools.export_fieldlogger.ExportToFieldLogger.write_to_file")
     @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")

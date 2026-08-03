@@ -105,6 +105,39 @@ class TestCreateDb(utils_for_tests.MidvattenTestSpatialiteNotCreated):
         print(str(current_locale))
         assert current_locale == "en_US"
 
+    @mock.patch(
+        "midvatten.tools.utils.db_utils.DbConnectionManager.execute_and_fetchall",
+        return_value=[("3.0.1",)],
+    )
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    @mock.patch("qgis.utils.iface")
+    @mock.patch("midvatten.midvatten_plugin.NewSpatialiteDbDialog")
+    def test_old_spatialite_version_uses_bar_not_popup(
+        self,
+        mock_dialog_cls,
+        mock_iface,
+        mock_messagebar,
+        mock_popup,
+        mock_execute_and_fetchall,
+    ):
+        """'Midvatten plugin needs spatialite4...' must reach the message
+        bar (critical), never a modal popup."""
+        mock_dlg = mock.MagicMock()
+        mock_dialog_cls.return_value = mock_dlg
+        mock_dlg.exec.return_value = 1  # QDialog.Accepted
+        mock_dlg.locale = "sv_SE"
+        mock_dlg.epsg_code = 3006
+        mock_dlg.w_levels_logger_timezone = ""
+        mock_dlg.w_levels_timezone = ""
+        mock_dlg.dbpath = self.TEMP_DBPATH
+
+        self.midvatten.new_db()
+
+        print(f"{mock_messagebar.mock_calls=}")
+        assert not mock_popup.called
+        assert mock_messagebar.critical.called
+
     @mock.patch("qgis.utils.iface")
     @mock.patch("midvatten.midvatten_plugin.NewSpatialiteDbDialog")
     def test_create_db_setup_string(

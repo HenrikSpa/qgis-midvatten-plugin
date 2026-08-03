@@ -914,13 +914,13 @@ class ImportTableChooser(VRowEntry):
         else:
             if layer is not None:
                 if layer.isEditable():
-                    message_utils.pop_up_info(
-                        QCoreApplication.translate(
+                    message_utils.MessagebarAndLog.warning(
+                        bar_msg=QCoreApplication.translate(
                             "ImportTableChooser",
                             "Layer %s is currently in editing mode.\nPlease exit this mode before proceeding with this operation.",
                         )
                         % str(layer.name()),
-                        QCoreApplication.translate("GeneralCsvImportGui", "Error"),
+                        duration=4,
                     )
                     self.import_method = ""
                     import_method_name = None

@@ -926,16 +926,20 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
             with open(filename, "w", encoding="utf8") as f:
                 f.write(out_string)
         except OSError as e:
-            message_utils.pop_up_info(
-                QCoreApplication.translate(
+            message_utils.MessagebarAndLog.critical(
+                bar_msg=QCoreApplication.translate(
                     "ExportToFieldLogger", "Writing of file failed!: %s "
                 )
-                % str(e)
+                % str(e),
+                log_msg=str(e),
             )
         except UnicodeDecodeError as e:
-            message_utils.pop_up_info(
-                QCoreApplication.translate("ExportToFieldLogger", "Error writing %s")
-                % str(out_string)
+            message_utils.MessagebarAndLog.critical(
+                bar_msg=QCoreApplication.translate(
+                    "ExportToFieldLogger", "Error writing %s"
+                )
+                % str(out_string),
+                log_msg=str(e),
             )
 
     @staticmethod

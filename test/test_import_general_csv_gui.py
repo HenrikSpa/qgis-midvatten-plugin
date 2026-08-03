@@ -231,6 +231,32 @@ class TestGeneralCsvImportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
         gui.table_chooser.import_method = "obs_points"
         assert gui.table_chooser.series_columns == []
 
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.import_general_csv_gui.layer_utils.find_layer")
+    def test_choose_method_editing_layer_uses_bar_not_popup(
+        self, mock_find_layer, mock_messagebar, mock_popup
+    ):
+        """'Layer %s is currently in editing mode' must reach the message
+        bar (warning), never a modal popup."""
+        fake_layer = mock.Mock()
+        fake_layer.isEditable.return_value = True
+        fake_layer.name.return_value = "obs_points"
+        mock_find_layer.return_value = fake_layer
+
+        ms = MagicMock()
+        ms.settingsdict = OrderedDict()
+        gui = GeneralCsvImportGui(self.iface, ms)
+        gui.load_gui()
+
+        gui.table_chooser.import_method = "obs_points"
+
+        print(f"{mock_messagebar.mock_calls=}")
+        assert not mock_popup.called
+        assert mock_messagebar.warning.called
+        # The guard also resets the chooser away from the editing layer.
+        assert gui.table_chooser.import_method == ""
+
     def test_old_schema_source_is_plain_column_no_series_block(self):
         """Without w_logger_series / series_id, source is a normal column and
         no series block is built."""

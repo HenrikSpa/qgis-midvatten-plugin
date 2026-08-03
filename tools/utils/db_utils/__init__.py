@@ -16,7 +16,8 @@ from midvatten.tools.utils.db_utils.backends.sqlite import (
     SQLiteBackend,
     sqlite_internal_tables,
 )
-from midvatten.tools.utils.db_utils.backends.postgresql import (
+
+from midvatten.tools.utils.db_utils.backends import (
     PostgreSQLBackend,
     postgis_internal_tables,
 )

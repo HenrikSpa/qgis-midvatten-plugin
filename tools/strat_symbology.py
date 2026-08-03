@@ -23,7 +23,12 @@ import os
 import traceback
 
 import qgis.utils
-from psycopg2.sql import SQL, Identifier
+
+try:
+    from psycopg2.sql import SQL, Identifier
+except ImportError:  # optional — only needed for PostGIS
+    SQL = None
+    Identifier = None
 from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtGui import QColor

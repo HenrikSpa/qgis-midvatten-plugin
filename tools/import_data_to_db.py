@@ -28,8 +28,12 @@ from typing import Any, Callable, Optional, TypeAlias
 
 import pandas as pd
 from pandas.api.types import is_datetime64_any_dtype
-import psycopg2
-import psycopg2.extras
+
+try:
+    import psycopg2
+    import psycopg2.extras
+except ImportError:  # optional — only needed for PostGIS
+    psycopg2 = None
 from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools.utils import common_utils, db_utils, dialog_utils, message_utils

@@ -23,7 +23,11 @@ import logging
 import os
 
 import matplotlib as mpl
-import psycopg2.errors
+
+try:
+    import psycopg2.errors
+except ImportError:  # optional — only needed for PostGIS
+    psycopg2 = None
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtGui import QColor
 from qgis.core import QgsProject

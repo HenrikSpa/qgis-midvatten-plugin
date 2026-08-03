@@ -13,7 +13,12 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
-from psycopg2.sql import SQL, Identifier
+
+try:
+    from psycopg2.sql import SQL, Identifier
+except ImportError:  # optional — only needed for PostGIS
+    SQL = None
+    Identifier = None
 from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools.utils import common_utils, db_utils, message_utils, string_utils

@@ -12,8 +12,7 @@ from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.exceptions import UsageError
-from midvatten.tools.utils.db_utils.backends.base import Backend
-from midvatten.tools.utils.db_utils.backends.postgresql import PostgreSQLBackend
+from midvatten.tools.utils.db_utils.backends import Backend, PostgreSQLBackend
 from midvatten.tools.utils.db_utils.backends.sqlite import SQLiteBackend
 
 
@@ -63,6 +62,14 @@ def create_backend(db_settings: Optional[str] = None) -> Backend:
     if dbtype == "spatialite":
         return SQLiteBackend(dbpath=connection_settings["dbpath"])
     if dbtype == "postgis":
+        if PostgreSQLBackend is None:
+            raise UsageError(
+                QCoreApplication.translate(
+                    "DbConnectionManager",
+                    "PostgreSQL support requires the python package psycopg2. "
+                    "Install it (for example: pip install psycopg2) and restart QGIS.",
+                )
+            )
         schema = connection_settings.get("schema", "public")
         return PostgreSQLBackend(
             connection_name=connection_settings["connection"].split("/")[0],

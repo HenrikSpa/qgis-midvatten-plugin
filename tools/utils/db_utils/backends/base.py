@@ -4,7 +4,9 @@ SQLiteBackend and PostgreSQLBackend; callers use is_sqlite()/is_postgresql()
 or the common interface only.
 """
 
+import atexit
 import os
+import shutil
 import tempfile
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Sequence
@@ -12,6 +14,21 @@ from typing import Any, Optional, Union
 
 from midvatten.tools.utils.file_utils import write_printlist_to_file
 from midvatten.tools.utils import message_utils
+
+# Each dump_table_2_csv() call creates a fresh, private mkdtemp() dir for its
+# CSV file. Track them here and sweep on process exit so a long QGIS session
+# doesn't accumulate one orphaned dir per CSV dump.
+_created_tmp_dirs: list[str] = []
+
+
+def _cleanup_csv_dirs() -> None:
+    """Remove every CSV-dump temp dir created this session. Registered
+    with atexit; also callable directly (e.g. from tests)."""
+    for d in _created_tmp_dirs:
+        shutil.rmtree(d, ignore_errors=True)
+
+
+atexit.register(_cleanup_csv_dirs)
 
 # Optional to avoid hard dependency on psycopg2 at import
 try:
@@ -350,9 +367,9 @@ class Backend(ABC):
         header = [col[0] for col in self.cursor.description]
         rows = self.cursor.fetchall()
         if rows:
-            filename = os.path.join(
-                tempfile.mkdtemp(prefix="midvatten_csv_"), f"{table_name}.csv"
-            )
+            csv_dir = tempfile.mkdtemp(prefix="midvatten_csv_")
+            _created_tmp_dirs.append(csv_dir)
+            filename = os.path.join(csv_dir, f"{table_name}.csv")
             printlist = [header]
             printlist.extend(rows)
             write_printlist_to_file(filename, printlist)

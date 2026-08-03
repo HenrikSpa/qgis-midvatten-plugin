@@ -29,7 +29,7 @@ from qgis.PyQt.QtGui import QDesktopServices
 from midvatten.tools import wqualreport_core
 from midvatten.tools.calculate_statistics import get_statistics_for_single_obsid
 from midvatten.tools.drillreport_models import ObsPointsRow, StratigraphyRow
-from midvatten.tools.utils import db_utils, layer_utils, message_utils, midvatten_utils
+from midvatten.tools.utils import db_utils, layer_utils, midvatten_utils
 from midvatten.tools.utils.file_utils import templates_path
 from midvatten.tools.utils.html_utils import esc
 from midvatten.tools.utils.string_utils import returnunicode as ru
@@ -235,7 +235,7 @@ class Drillreport:  # general observation point info for the selected object
         f.write(rpt)
 
         # GENERAL DATA UPPER LEFT QUADRANT
-        connection_ok, general_data = self.get_data(obsid, "obs_points", "n")
+        connection_ok, general_data = self.get_data(obsid, "obs_points")
         if connection_ok:
             result2 = db_utils.sql_load_fr_db(
                 r"""SELECT srid FROM geometry_columns where f_table_name = 'obs_points'"""
@@ -251,7 +251,7 @@ class Drillreport:  # general observation point info for the selected object
             f.write(rpt)
 
             # STRATIGRAPHY DATA UPPER RIGHT QUADRANT
-            strat_data = self.get_data(obsid, "stratigraphy", "n")[1]
+            strat_data = self.get_data(obsid, "stratigraphy")[1]
             f.write(self.rpt_upper_right(strat_data, spec))
 
             rpt = r"""</TABLE></TD></TR><TR VALIGN=TOP><TD WIDTH=50%><P><U><B>"""
@@ -404,7 +404,6 @@ class Drillreport:  # general observation point info for the selected object
         self,
         obsid: str = "",
         tablename: str = "",
-        debug: str = "n",
     ) -> Tuple[
         bool,
         Union[List[ObsPointsRow], List[StratigraphyRow], List[Any]],
@@ -416,8 +415,6 @@ class Drillreport:  # general observation point info for the selected object
         sql = f"SELECT * FROM {table_ident} WHERE obsid = {obsid_literal}"
         if tablename == "stratigraphy":
             sql += " ORDER BY stratid"
-        if debug == "y":
-            message_utils.pop_up_info(sql)
         connection_ok, raw_rows = db_utils.sql_load_fr_db(sql, dbconnection)
         if not connection_ok or not raw_rows:
             return connection_ok, []

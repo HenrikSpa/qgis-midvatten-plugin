@@ -794,7 +794,20 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
             output = "\n".join(
                 self.create_export_printlist(self.parameter_groups, self.get_latlons())
             )
-        QtWidgets.QMessageBox.information(None, "Preview", output)
+        dialog = QtWidgets.QDialog(self)
+        dialog.setWindowTitle(
+            QCoreApplication.translate("ExportToFieldLogger", "Preview")
+        )
+        dialog.resize(700, 500)
+        layout = QtWidgets.QVBoxLayout(dialog)
+        text_edit = QtWidgets.QPlainTextEdit(dialog)
+        text_edit.setReadOnly(True)
+        text_edit.setPlainText(output)
+        layout.addWidget(text_edit)
+        button_box = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Close)
+        button_box.rejected.connect(dialog.reject)
+        layout.addWidget(button_box)
+        dialog.exec()
 
     @staticmethod
     def organize_for_export(

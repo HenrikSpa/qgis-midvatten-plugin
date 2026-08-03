@@ -37,7 +37,7 @@ class Askuser(QtWidgets.QDialog):
                 )
             else:
                 buttons = QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No
-            reply = QtWidgets.QMessageBox.information(
+            reply = QtWidgets.QMessageBox.question(
                 parent, dialogtitle, msg, buttons, QtWidgets.QMessageBox.Yes
             )
             if reply == QtWidgets.QMessageBox.Cancel:
@@ -116,13 +116,15 @@ class NotFoundQuestion(QtWidgets.QDialog, not_found_dialog):
 
     def __init__(
         self,
-        dialogtitle="Warning",
+        dialogtitle=tr("NotFoundQuestion", "Warning"),
         msg="",
         existing_list=None,
         default_value="",
         parent=None,
         button_names=None,
-        combobox_label="Similar values found in db (choose or edit):",
+        combobox_label=tr(
+            "NotFoundQuestion", "Similar values found in db (choose or edit):"
+        ),
         reuse_header_list=None,
         reuse_column="",
         ignore_checkbox=False,
@@ -157,8 +159,18 @@ class NotFoundQuestion(QtWidgets.QDialog, not_found_dialog):
                 )
             )
             self.ignore_layout.addWidget(self.ignore_checkbox)
+        # objectName stays the stable English key (button_clicked/set_answer_and_value
+        # compare on it); only the visible label is translated, and only for the
+        # known default names -- caller-supplied button_names are shown as-is.
+        button_display_names = {
+            "Ignore": tr("NotFoundQuestion", "Ignore"),
+            "Cancel": tr("NotFoundQuestion", "Cancel"),
+            "Ok": tr("NotFoundQuestion", "Ok"),
+        }
         for idx, button_name in enumerate(button_names):
-            button = QtWidgets.QPushButton(button_name)
+            button = QtWidgets.QPushButton(
+                button_display_names.get(button_name, button_name)
+            )
             button.setObjectName(button_name.lower())
             self.button_box.addButton(button, QtWidgets.QDialogButtonBox.ActionRole)
             button.clicked.connect(lambda x: self.button_clicked())

@@ -57,3 +57,36 @@ class TestNotFoundQuestion:
         )
         print(f"{mock_messagebar.mock_calls=}")
         assert d.combo_box.currentText() == "my_default"
+
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.dialog_utils.QtWidgets.QWidget.show")
+    @mock.patch(
+        "midvatten.tools.utils.dialog_utils.QtWidgets.QDialog.exec", return_value=0
+    )
+    @mock.patch("midvatten.tools.utils.dialog_utils.tr")
+    def test_default_button_objectnames_stay_english_under_translation(
+        self, mock_tr, mock_exec, mock_show, mock_messagebar
+    ):
+        """button_clicked/set_answer_and_value compare on objectName, so the
+        default Ignore/Cancel/Ok buttons must keep the stable English
+        objectName no matter what a translation returns for the label."""
+        mock_tr.side_effect = lambda context, msg: f"TRANSLATED-{msg}"
+        print(f"{mock_messagebar.mock_calls=}")
+        d = dialog_utils.NotFoundQuestion(
+            dialogtitle="Test",
+            msg="Message",
+            default_value="default",
+            parent=None,
+            # button_names left as None -> exercises the translated defaults.
+        )
+        buttons = d.button_box.buttons()
+        by_object_name = {b.objectName(): b for b in buttons}
+        assert set(by_object_name) == {"ignore", "cancel", "ok"}
+        # Display text is translated (proves translation actually ran)...
+        assert by_object_name["ignore"].text() == "TRANSLATED-Ignore"
+        assert by_object_name["cancel"].text() == "TRANSLATED-Cancel"
+        assert by_object_name["ok"].text() == "TRANSLATED-Ok"
+        # ...but objectName -- the key button_clicked/set_answer_and_value
+        # actually compare on -- stays the untranslated English key.
+        d.set_answer_and_value(by_object_name["ok"].objectName())
+        assert d.answer == "ok"

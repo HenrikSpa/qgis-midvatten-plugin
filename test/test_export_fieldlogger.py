@@ -26,6 +26,7 @@ from unittest import mock
 
 from unittest.mock import MagicMock
 import pytest
+from qgis.PyQt import QtWidgets
 from qgis.PyQt.QtWidgets import QWidget
 from qgis.PyQt.QtCore import QMetaType
 from qgis.core import QgsField, QgsGeometry
@@ -1231,4 +1232,50 @@ class TestExportFieldloggerNoDb(MidvattenTestBase):
         print(f"Test")
         print(test)
         assert test == ref
+
+    @mock.patch("midvatten.tools.export_fieldlogger.db_utils.tables_columns")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_preview_is_scrollable_readonly_dialog_not_messagebox(
+        self, mock_messagebar, mock_tables_columns
+    ):
+        """Preview must be a resizable, scrollable read-only QDialog holding
+        a QPlainTextEdit, never an unscrollable/unparented QMessageBox."""
+        mock_tables_columns.return_value = {}
+        mock_ms = MagicMock()
+        mock_ms.settingsdict = {}
+
+        exportfieldlogger = ExportToFieldLogger(None, mock_ms)
+        exportfieldlogger.create_export_printlist = mock.Mock(
+            return_value=["line one", "line two"]
+        )
+        exportfieldlogger.get_latlons = mock.Mock(return_value={})
+
+        captured = {}
+
+        def fake_exec(dialog_self):
+            captured["dialog"] = dialog_self
+            return 0
+
+        with mock.patch(
+            "midvatten.tools.export_fieldlogger.QtWidgets.QDialog.exec",
+            new=fake_exec,
+        ):
+            exportfieldlogger.preview()
+
+        print(f"{mock_messagebar.mock_calls=}")
+        dialog = captured.get("dialog")
+        assert dialog is not None
+        assert isinstance(dialog, QtWidgets.QDialog)
+        assert not isinstance(dialog, QtWidgets.QMessageBox)
+        assert dialog.parent() is exportfieldlogger
+        assert dialog.windowTitle() == "Preview"
+
+        text_edits = dialog.findChildren(QtWidgets.QPlainTextEdit)
+        assert len(text_edits) == 1
+        assert text_edits[0].isReadOnly()
+        assert text_edits[0].toPlainText() == "line one\nline two"
+
+        button_boxes = dialog.findChildren(QtWidgets.QDialogButtonBox)
+        assert len(button_boxes) == 1
+        assert button_boxes[0].standardButtons() == QtWidgets.QDialogButtonBox.Close
         # assert False

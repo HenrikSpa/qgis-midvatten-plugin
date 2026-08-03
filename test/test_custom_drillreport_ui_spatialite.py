@@ -275,7 +275,7 @@ class TestDrillreportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
         ui1.general_metadata_header.setText("SavedHeader")
         ui1.header_in_table.setChecked(False)
         ui1.skip_empty.setChecked(True)
-        ui1.save_stored_settings()
+        ui1.save_stored_settings(ui1.save_attrnames)
         stored = dict(ui1.stored_settings)
         ui2 = DrillreportUi(self.iface, self.midvatten.ms)
         ui2.update_from_stored_settings(stored)

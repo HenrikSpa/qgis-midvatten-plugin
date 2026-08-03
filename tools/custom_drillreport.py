@@ -18,9 +18,7 @@
  ***************************************************************************/
 """
 
-import ast
 import codecs
-import json
 import os
 
 from collections import OrderedDict
@@ -38,11 +36,11 @@ from midvatten.tools.utils import (
     exceptions,
     layer_utils,
     message_utils,
-    string_utils,
 )
 from midvatten.tools.utils.file_utils import templates_path, ui_path
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
 from midvatten.tools.utils.html_utils import esc
+from midvatten.tools.utils.stored_settings import StoredSettingsMixin
 from midvatten.tools.utils.string_utils import returnunicode as ru
 
 _EMPTY_VALS = ("", "NULL")
@@ -52,7 +50,28 @@ custom_drillreport_dialog = qgis.PyQt.uic.loadUiType(ui_path("custom_drillreport
 ]
 
 
-class DrillreportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
+class DrillreportUi(
+    qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog, StoredSettingsMixin
+):
+    #: Widget attribute names persisted by StoredSettingsMixin.save_stored_settings().
+    save_attrnames = [
+        "general_metadata",
+        "geo_metadata",
+        "strat_columns",
+        "header_in_table",
+        "skip_empty",
+        "include_comments",
+        "general_metadata_header",
+        "geo_metadata_header",
+        "strat_columns_header",
+        "comment_header",
+        "empty_row_between_obsids",
+        "topleft_topright_colwidths",
+        "general_colwidth",
+        "geo_colwidth",
+        "decimal_separator",
+    ]
+
     def __init__(self, iface, ms):
         self.iface = iface
 
@@ -109,7 +128,7 @@ class DrillreportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
                 )
             )
             raise exceptions.UsageError()
-        self.save_stored_settings()
+        self.save_stored_settings(self.save_attrnames)
         drillrep = Drillreport(
             obsids,
             self.ms,
@@ -130,28 +149,21 @@ class DrillreportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
             decimal_separator,
         )
 
-    @common_utils.general_exception_handler
-    def ask_and_update_stored_settings(self):
-        self.stored_settings = self.ask_for_stored_settings(self.stored_settings)
-        self.update_from_stored_settings(self.stored_settings)
-        self.save_stored_settings()
+    def _apply_checkbox_or_radio_value(self, widget, val):
+        """Override of StoredSettingsMixin's default: this dialog's
+        checkboxes have no side effects wired to their `clicked` signal, so
+        (unlike wqualreport_compact) restoring settings must set the exact
+        boolean, including False -- setChecked(), not a truthy-only click()."""
+        widget.setChecked(val)
 
     def update_from_stored_settings(self, stored_settings):
+        """Extends StoredSettingsMixin.update_from_stored_settings(): when
+        there is nothing stored yet (first run, or the user cleared the
+        settings string via ask_and_update_stored_settings()), fall back to
+        this report's hardcoded defaults instead of leaving the widgets
+        untouched."""
         if isinstance(stored_settings, dict) and stored_settings:
-            for attr, val in stored_settings.items():
-                try:
-                    selfattr = getattr(self, attr)
-                except AttributeError:
-                    pass
-                else:
-                    if isinstance(selfattr, qgis.PyQt.QtWidgets.QPlainTextEdit):
-                        if isinstance(val, (list, tuple)):
-                            val = "\n".join(val)
-                        selfattr.setPlainText(val)
-                    elif isinstance(selfattr, qgis.PyQt.QtWidgets.QCheckBox):
-                        selfattr.setChecked(val)
-                    elif isinstance(selfattr, qgis.PyQt.QtWidgets.QLineEdit):
-                        selfattr.setText(val)
+            super().update_from_stored_settings(stored_settings)
         else:
             # Settings:
             # --------------
@@ -219,105 +231,6 @@ class DrillreportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
             # skip_empty = False
             # include_comments = True
             ###############
-
-    def save_stored_settings(self):
-        stored_settings = {}
-        for attrname in [
-            "general_metadata",
-            "geo_metadata",
-            "strat_columns",
-            "header_in_table",
-            "skip_empty",
-            "include_comments",
-            "general_metadata_header",
-            "geo_metadata_header",
-            "strat_columns_header",
-            "comment_header",
-            "empty_row_between_obsids",
-            "topleft_topright_colwidths",
-            "general_colwidth",
-            "geo_colwidth",
-            "decimal_separator",
-        ]:
-            try:
-                attr = getattr(self, attrname)
-            except Exception:
-                message_utils.MessagebarAndLog.info(
-                    log_msg=QCoreApplication.translate(
-                        "DrillreportUi",
-                        "Programming error. Attribute name %s didn't exist in self.",
-                    )
-                    % attrname
-                )
-            else:
-                if isinstance(attr, qgis.PyQt.QtWidgets.QPlainTextEdit):
-                    val = [x for x in attr.toPlainText().split("\n") if x]
-                elif isinstance(attr, qgis.PyQt.QtWidgets.QCheckBox):
-                    val = attr.isChecked()
-                elif isinstance(attr, qgis.PyQt.QtWidgets.QLineEdit):
-                    val = attr.text()
-                else:
-                    message_utils.MessagebarAndLog.info(
-                        log_msg=QCoreApplication.translate(
-                            "DrillreportUi",
-                            "Programming error. The Qt-type %s is unhandled.",
-                        )
-                        % str(type(attr))
-                    )
-                    continue
-                stored_settings[attrname] = val
-
-        self.stored_settings = stored_settings
-
-        common_utils.save_stored_settings(
-            self.ms, self.stored_settings, self.stored_settings_key
-        )
-
-    def ask_for_stored_settings(self, stored_settings):
-        old_string = string_utils.anything_to_string_representation(
-            stored_settings,
-            itemjoiner=",\n",
-            pad="    ",
-            dictformatter="{\n%s}",
-            listformatter="[\n%s]",
-            tupleformatter="(\n%s, )",
-        )
-
-        msg = QCoreApplication.translate(
-            "DrillreportUi",
-            "Replace the settings string with a new settings string.",
-        )
-
-        new_string = qgis.PyQt.QtWidgets.QInputDialog.getText(
-            None,
-            QCoreApplication.translate("DrillreportUi", "Edit settings string"),
-            msg,
-            qgis.PyQt.QtWidgets.QLineEdit.Normal,
-            old_string,
-        )
-        if not new_string[1]:
-            raise exceptions.UserInterruptError()
-
-        new_string_text = ru(new_string[0])
-        if not new_string_text:
-            return {}
-
-        try:
-            try:
-                as_dict = json.loads(new_string_text)
-            except (json.JSONDecodeError, ValueError):
-                as_dict = ast.literal_eval(new_string_text)
-        except Exception as e:
-            message_utils.MessagebarAndLog.warning(
-                bar_msg=QCoreApplication.translate(
-                    "DrillreportUi",
-                    "Translating string to dict failed, see log message panel",
-                ),
-                log_msg=str(e),
-            )
-            raise exceptions.UsageError()
-        else:
-            return as_dict
 
 
 class Drillreport:  # general observation point info for the selected object

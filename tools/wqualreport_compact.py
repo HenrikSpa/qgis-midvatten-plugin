@@ -17,9 +17,7 @@
  ***************************************************************************/
 """
 
-import ast
 import codecs
-import json
 import logging
 import traceback
 
@@ -36,11 +34,11 @@ from midvatten.tools.utils import (
     exceptions,
     layer_utils,
     message_utils,
-    string_utils,
 )
 from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
 from midvatten.tools.utils.html_utils import esc
+from midvatten.tools.utils.stored_settings import StoredSettingsMixin
 from midvatten.tools.utils.string_utils import returnunicode as ru
 from midvatten.tools.utils.common_utils import general_exception_handler
 from midvatten.tools.wqualreport_core import (
@@ -57,7 +55,9 @@ custom_drillreport_dialog = qgis.PyQt.uic.loadUiType(
 )[0]
 
 
-class CompactWqualReportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog):
+class CompactWqualReportUi(
+    qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_dialog, StoredSettingsMixin
+):
     def __init__(self, iface, ms):
         self.iface = iface
 
@@ -248,126 +248,6 @@ class CompactWqualReportUi(qgis.PyQt.QtWidgets.QMainWindow, custom_drillreport_d
             data_column,
         )
         common_utils.stop_waiting_cursor()
-
-    def update_from_stored_settings(self, stored_settings):
-        if isinstance(stored_settings, dict) and stored_settings:
-            for attr, val in stored_settings.items():
-                try:
-                    selfattr = getattr(self, attr)
-                except AttributeError:
-                    pass
-                else:
-                    if isinstance(selfattr, qgis.PyQt.QtWidgets.QPlainTextEdit):
-                        if isinstance(val, (list, tuple)):
-                            val = "\n".join(val)
-                        selfattr.setPlainText(val)
-                    elif isinstance(
-                        selfattr,
-                        (
-                            qgis.PyQt.QtWidgets.QCheckBox,
-                            qgis.PyQt.QtWidgets.QRadioButton,
-                        ),
-                    ):
-                        if bool(val):
-                            selfattr.click()
-                    elif isinstance(selfattr, qgis.PyQt.QtWidgets.QLineEdit):
-                        selfattr.setText(val)
-                    elif isinstance(selfattr, qgis.PyQt.QtWidgets.QComboBox):
-                        gui_utils.set_combobox(selfattr, val, add_if_not_exists=False)
-
-    @common_utils.general_exception_handler
-    def ask_and_update_stored_settings(self):
-        self.stored_settings = self.ask_for_stored_settings(self.stored_settings)
-        self.update_from_stored_settings(self.stored_settings)
-        self.save_stored_settings(self.save_attrnames)
-
-    def save_stored_settings(self, save_attrnames):
-        stored_settings = {}
-        for attrname in save_attrnames:
-            try:
-                attr = getattr(self, attrname)
-            except Exception:
-                message_utils.MessagebarAndLog.info(
-                    log_msg=QCoreApplication.translate(
-                        "DrillreportUi",
-                        "Programming error. Attribute name %s didn't exist in self.",
-                    )
-                    % attrname
-                )
-            else:
-                if isinstance(attr, qgis.PyQt.QtWidgets.QPlainTextEdit):
-                    val = [x for x in attr.toPlainText().split("\n") if x]
-                elif isinstance(
-                    attr,
-                    (qgis.PyQt.QtWidgets.QCheckBox, qgis.PyQt.QtWidgets.QRadioButton),
-                ):
-                    val = attr.isChecked()
-                elif isinstance(attr, qgis.PyQt.QtWidgets.QLineEdit):
-                    val = attr.text()
-                elif isinstance(attr, qgis.PyQt.QtWidgets.QComboBox):
-                    val = attr.currentText()
-                else:
-                    message_utils.MessagebarAndLog.info(
-                        log_msg=QCoreApplication.translate(
-                            "DrillreportUi",
-                            "Programming error. The Qt-type %s is unhandled.",
-                        )
-                        % str(type(attr))
-                    )
-                    continue
-                stored_settings[attrname] = val
-
-        self.stored_settings = stored_settings
-
-        common_utils.save_stored_settings(
-            self.ms, self.stored_settings, self.stored_settings_key
-        )
-
-    def ask_for_stored_settings(self, stored_settings):
-        old_string = string_utils.anything_to_string_representation(
-            stored_settings,
-            itemjoiner=",\n",
-            pad="    ",
-            dictformatter="{\n%s}",
-            listformatter="[\n%s]",
-            tupleformatter="(\n%s, )",
-        )
-
-        msg = QCoreApplication.translate(
-            "CompactWqualReportUi",
-            "Replace the settings string with a new settings string.",
-        )
-
-        new_string = qgis.PyQt.QtWidgets.QInputDialog.getText(
-            None,
-            QCoreApplication.translate("DrillreportUi", "Edit settings string"),
-            msg,
-            qgis.PyQt.QtWidgets.QLineEdit.Normal,
-            old_string,
-        )
-        if not new_string[1]:
-            raise exceptions.UserInterruptError()
-
-        new_string_text = ru(new_string[0])
-        if not new_string_text:
-            return {}
-
-        try:
-            try:
-                as_dict = json.loads(new_string_text)
-            except (json.JSONDecodeError, ValueError):
-                as_dict = ast.literal_eval(new_string_text)
-        except Exception as e:
-            message_utils.MessagebarAndLog.warning(
-                bar_msg=QCoreApplication.translate(
-                    "CompactWqualReportUi",
-                    "Translating string to dict failed, see log message panel",
-                ),
-                log_msg=str(e),
-            )
-            raise exceptions.UsageError()
-        else:
-            return as_dict
 
 
 class Wqualreport:  # extracts water quality data for selected objects, selected db and given table, results shown in html report

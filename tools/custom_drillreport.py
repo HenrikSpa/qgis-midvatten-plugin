@@ -28,9 +28,10 @@ from collections import OrderedDict
 import qgis
 import qgis.PyQt
 from qgis.PyQt.QtCore import QCoreApplication
-from qgis.PyQt.QtCore import QUrl, QDir
+from qgis.PyQt.QtCore import QUrl
 from qgis.PyQt.QtGui import QDesktopServices
 
+from midvatten.tools import wqualreport_core
 from midvatten.tools.utils import (
     common_utils,
     db_utils,
@@ -341,9 +342,7 @@ class Drillreport:  # general observation point info for the selected object
         decimal_separator,
     ):
 
-        reportfolder = os.path.join(QDir.tempPath(), "midvatten_reports")
-        if not os.path.exists(reportfolder):
-            os.makedirs(reportfolder)
+        reportfolder = wqualreport_core.report_folder()
         reportpath = os.path.join(reportfolder, "drill_report.html")
         logopath = templates_path("midvatten_logga.png")
         imgpath = templates_path()

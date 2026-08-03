@@ -8,6 +8,7 @@ import pytest
 from qgis.core import QgsProject, QgsVectorLayer
 
 from midvatten.test import utils_for_tests
+from midvatten.tools import wqualreport_core
 from midvatten.tools.utils import db_utils
 from midvatten.tools.wqualreport import Wqualreport
 from midvatten.tools.wqualreport_core import report_path
@@ -16,6 +17,15 @@ from midvatten.tools.wqualreport_core import report_path
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def _pin_report_folder(tmp_path, monkeypatch):
+    """report_folder() (Task 8 hardening) now returns a fresh mkdtemp() dir
+    on every call. Pin it to a single tmp_path per test so the report
+    written by the production code under test and the path this test reads
+    back afterwards agree on the same directory."""
+    monkeypatch.setattr(wqualreport_core, "report_folder", lambda: str(tmp_path))
 
 
 def _insert_wqual_data(obsid: str = "OBS1") -> None:

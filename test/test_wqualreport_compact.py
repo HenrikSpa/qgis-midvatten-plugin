@@ -7,9 +7,9 @@ from unittest import mock
 
 import pytest
 from qgis.core import QgsProject, QgsVectorLayer
-from qgis.PyQt import QtCore
 
 from midvatten.test import utils_for_tests
+from midvatten.tools import wqualreport_core
 from midvatten.tools.utils import db_utils
 from midvatten.tools.utils import gui_utils
 from midvatten.tools.wqualreport_compact import CompactWqualReportUi
@@ -42,9 +42,16 @@ def _insert_wqual_test_data(obsid: str = "WQ1") -> None:
 
 
 def _report_path() -> str:
-    return os.path.join(
-        QtCore.QDir.tempPath(), "midvatten_reports", "w_qual_report.html"
-    )
+    return os.path.join(wqualreport_core.report_folder(), "w_qual_report.html")
+
+
+@pytest.fixture(autouse=True)
+def _pin_report_folder(tmp_path, monkeypatch):
+    """report_folder() (Task 8 hardening) now returns a fresh mkdtemp() dir
+    on every call. Pin it to a single tmp_path per test so the report
+    written by the production code under test and _report_path() above
+    agree on the same directory."""
+    monkeypatch.setattr(wqualreport_core, "report_folder", lambda: str(tmp_path))
 
 
 def _create_wqual_lab_layer():

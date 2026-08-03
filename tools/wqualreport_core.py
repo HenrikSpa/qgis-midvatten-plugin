@@ -3,10 +3,10 @@ Shared logic for water quality reports (wqualreport.py and wqualreport_compact.p
 """
 
 import os
+import tempfile
 from typing import Optional, TextIO
 
 from qgis.PyQt.QtCore import QCoreApplication
-from qgis.PyQt.QtCore import QDir
 from qgis.PyQt.QtCore import QUrl
 from qgis.PyQt.QtGui import QDesktopServices
 
@@ -17,11 +17,13 @@ REPORT_FILENAME = "w_qual_report.html"
 
 
 def report_folder() -> str:
-    """Ensure midvatten_reports folder exists in temp and return its path."""
-    reportfolder = os.path.join(QDir.tempPath(), "midvatten_reports")
-    if not os.path.exists(reportfolder):
-        os.makedirs(reportfolder)
-    return reportfolder
+    """Create and return a fresh, private temp directory for a report.
+
+    Each call returns a brand-new directory (tempfile.mkdtemp, mode 0700),
+    rather than a shared fixed path, to avoid symlink/pre-creation attacks
+    on multi-user hosts (bandit B108).
+    """
+    return tempfile.mkdtemp(prefix="midvatten_report_")
 
 
 def report_path() -> str:

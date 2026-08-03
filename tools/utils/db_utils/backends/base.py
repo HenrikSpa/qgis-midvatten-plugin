@@ -350,7 +350,9 @@ class Backend(ABC):
         header = [col[0] for col in self.cursor.description]
         rows = self.cursor.fetchall()
         if rows:
-            filename = os.path.join(tempfile.gettempdir(), f"{table_name}.csv")
+            filename = os.path.join(
+                tempfile.mkdtemp(prefix="midvatten_csv_"), f"{table_name}.csv"
+            )
             printlist = [header]
             printlist.extend(rows)
             write_printlist_to_file(filename, printlist)

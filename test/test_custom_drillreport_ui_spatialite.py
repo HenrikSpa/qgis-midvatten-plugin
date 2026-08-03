@@ -7,9 +7,9 @@ import re
 from unittest import mock
 
 import pytest
-from qgis.PyQt import QtCore
 
 from midvatten.test import utils_for_tests
+from midvatten.tools import wqualreport_core
 from midvatten.tools.custom_drillreport import DrillreportUi
 from midvatten.tools.utils import db_utils
 
@@ -34,9 +34,16 @@ def _insert_drillreport_test_data(obsids=None):
 
 
 def _report_path():
-    return os.path.join(
-        QtCore.QDir.tempPath(), "midvatten_reports", "drill_report.html"
-    )
+    return os.path.join(wqualreport_core.report_folder(), "drill_report.html")
+
+
+@pytest.fixture(autouse=True)
+def _pin_report_folder(tmp_path, monkeypatch):
+    """report_folder() (Task 8 hardening) now returns a fresh mkdtemp() dir
+    on every call. Pin it to a single tmp_path per test so the report
+    written by the production code under test and _report_path() above
+    agree on the same directory."""
+    monkeypatch.setattr(wqualreport_core, "report_folder", lambda: str(tmp_path))
 
 
 def _normalize_report_html(html):

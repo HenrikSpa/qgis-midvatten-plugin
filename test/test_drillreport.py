@@ -26,8 +26,18 @@ import pytest
 from qgis.PyQt import QtCore
 
 from midvatten.test import utils_for_tests
+from midvatten.tools import wqualreport_core
 from midvatten.tools.drillreport import Drillreport
 from midvatten.tools.utils import db_utils
+
+
+@pytest.fixture(autouse=True)
+def _pin_report_folder(tmp_path, monkeypatch):
+    """report_folder() (Task 8 hardening) now returns a fresh mkdtemp() dir
+    on every call. Pin it to a single tmp_path per test so the report
+    written by _run_report() and the path this test reads back agree on
+    the same directory."""
+    monkeypatch.setattr(wqualreport_core, "report_folder", lambda: str(tmp_path))
 
 
 def _normalize_template_paths(report: str) -> str:
@@ -49,7 +59,7 @@ class DrillreportMixin:
     @mock.patch("midvatten.tools.drillreport.QDesktopServices.openUrl")
     @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
-    def test_drillreport(self, mock_skippopup, mock_messagebar, openurl):
+    def test_drillreport(self, mock_skippopup, mock_messagebar, openurl, tmp_path):
         """
         :param mock_skippopup:
         :param mock_messagebar:
@@ -86,12 +96,10 @@ class DrillreportMixin:
 
         print(f"{mock_messagebar.mock_calls=}")
 
-        assert (
-            mock.call(QtCore.QUrl("file:///tmp/midvatten_reports/drill_report.html"))
-            in openurl.mock_calls
-        )
+        reportpath = str(tmp_path / "drill_report.html")
+        assert mock.call(QtCore.QUrl.fromLocalFile(reportpath)) in openurl.mock_calls
 
-        with open("/tmp/midvatten_reports/drill_report.html") as f:
+        with open(reportpath) as f:
             report = "".join(f.readlines())
         print(str(report))
 
@@ -131,7 +139,13 @@ class DrillreportEnglishMixin:
     @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
     def test_drillreport_english(
-        self, mock_skippopup, mock_messagebar, openurl, mock_swedish, mock_translate
+        self,
+        mock_skippopup,
+        mock_messagebar,
+        openurl,
+        mock_swedish,
+        mock_translate,
+        tmp_path,
     ):
         """The translate patch returns source text so the reference does not
         depend on which translator the host machine happens to load."""
@@ -150,7 +164,7 @@ class DrillreportEnglishMixin:
         dlg._run_report(("1",), self.midvatten.ms.settingsdict)
 
         print(f"{mock_messagebar.mock_calls=}")
-        with open("/tmp/midvatten_reports/drill_report.html") as f:
+        with open(tmp_path / "drill_report.html") as f:
             report = "".join(f.readlines())
         report = _normalize_template_paths(report)
         ref = """<meta http-equiv="content-type" content="text/html; charset=utf-8" /><head><title>1 General report from Midvatten plugin for QGIS</title></head><html><TABLE WIDTH=100% BORDER=0 CELLPADDING=1 CELLSPACING=1><TR VALIGN=TOP><TD WIDTH=15%><h3 style="font-family:'arial';font-size:18pt; font-weight:600">1</h3><img src="midvatten/tools/../templates/for_general_report.png" /><br><img src='midvatten/tools/../templates/midvatten_logga.png' /></TD><TD WIDTH=85%><TABLE WIDTH=100% BORDER=1 CELLPADDING=4 CELLSPACING=3><TR VALIGN=TOP><TD WIDTH=50%><P><U><B>General information</B></U></P><TABLE style="font-family:'arial'; font-size:10pt; font-weight:400; font-style:normal;" WIDTH=100% BORDER=0 CELLPADDING=0 CELLSPACING=1><COL WIDTH=43*><COL WIDTH=43*><p style="font-family:'arial'; font-size:8pt; font-weight:400; font-style:normal;"><TR VALIGN=TOP><TD WIDTH=33%>ground surface level, gs (masl)</TD><TD WIDTH=50%>5.0</TD></TR><TR VALIGN=TOP><TD WIDTH=33%>eastern coordinate</TD><TD WIDTH=50%>633466.0 (SWEREF99 TM, EPSG:3006)</TD></TR><TR VALIGN=TOP><TD WIDTH=33%>northern coordinate</TD><TD WIDTH=50%>711659.0 (SWEREF99 TM, EPSG:3006)</TD></TR></p></TABLE></TD><TD WIDTH=50%><P><U><B>Stratigraphy</B></U></P><TABLE style="font-family:'arial'; font-size:10pt; font-weight:400; font-style:normal;" WIDTH=100% BORDER=0 CELLPADDING=0 CELLSPACING=1><COL WIDTH=43*><COL WIDTH=43*><COL WIDTH=43*><COL WIDTH=43*><COL WIDTH=43*><COL WIDTH=43*><p style="font-family:'arial'; font-size:10pt; font-weight:400; font-style:normal;"><TR VALIGN=TOP><TD WIDTH=15%><P><u>level (m b gs)</P></u></TD><TD WIDTH=27%><P><u>geology, full text</P></u></TD><TD WIDTH=17%><P><u>geology, short</P></u></TD><TD WIDTH=9%><P><u>capacity</P></u></TD><TD WIDTH=13%><P><u>development</P></u></TD><TD WIDTH=21%><P><u>comment</P></u></TD></TR><TR VALIGN=TOP><TD WIDTH=15%><P>0.0 - 1.0</P></TD><TD WIDTH=27%><P>sand</P></TD><TD WIDTH=17%><P>sand</P></TD><TD WIDTH=9%><P>3</P></TD><TD WIDTH=13%><P>j</P></TD><TD WIDTH=21%><P></P></TD></TR></p></TABLE></TD></TR><TR VALIGN=TOP><TD WIDTH=50%><P><U><B>Comments</B></U></P><p style="font-family:'arial'; font-size:10pt; font-weight:400; font-style:normal;"></p></TD><TD WIDTH=50%><P><U><B>Water levels</B></U></P><p style="font-family:'arial'; font-size:10pt; font-weight:400; font-style:normal;">Number of water level measurements: 1<br>Highest measured water level: 123.0 m above sea level<br>Median water level: 123.0 m above sea level<br>Lowest measured water level: 123.0 m above sea level<br></p></TD></TR></TABLE></TD></TR></TABLE>

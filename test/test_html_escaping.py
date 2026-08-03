@@ -3,6 +3,7 @@ from unittest import mock
 import pytest
 
 from midvatten.test import utils_for_tests
+from midvatten.tools import wqualreport_core
 from midvatten.tools.custom_drillreport import Drillreport as CustomDrillreport
 from midvatten.tools.drillreport import Drillreport
 from midvatten.tools.utils import db_utils
@@ -39,8 +40,13 @@ class TestReportsNeutralizeScriptPayload(utils_for_tests.MidvattenTestSpatialite
     @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
     def test_drillreport_escapes_script_payload(
-        self, mock_skippopup, mock_messagebar, mock_openurl
+        self, mock_skippopup, mock_messagebar, mock_openurl, tmp_path, monkeypatch
     ):
+        # report_folder() now returns a fresh mkdtemp() dir per call (Task 8
+        # hardening); pin it to a known pytest tmp_path so the test can find
+        # the written report.
+        monkeypatch.setattr(wqualreport_core, "report_folder", lambda: str(tmp_path))
+
         db_utils.sql_alter_db(
             f"""INSERT INTO obs_points (obsid, material, geometry) VALUES
             ('{_SCRIPT_PAYLOAD}', '{_SCRIPT_PAYLOAD}',
@@ -55,7 +61,7 @@ class TestReportsNeutralizeScriptPayload(utils_for_tests.MidvattenTestSpatialite
         dlg = Drillreport(self.iface, self.midvatten.ms)
         dlg._run_report((_SCRIPT_PAYLOAD,), self.midvatten.ms.settingsdict)
 
-        with open("/tmp/midvatten_reports/drill_report.html") as f:
+        with open(tmp_path / "drill_report.html") as f:
             report = f.read()
 
         print(f"{mock_messagebar.mock_calls=}")
@@ -66,8 +72,13 @@ class TestReportsNeutralizeScriptPayload(utils_for_tests.MidvattenTestSpatialite
     @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch("midvatten.tools.utils.message_utils.pop_up_info", autospec=True)
     def test_custom_drillreport_escapes_script_payload(
-        self, mock_skippopup, mock_messagebar, mock_openurl
+        self, mock_skippopup, mock_messagebar, mock_openurl, tmp_path, monkeypatch
     ):
+        # report_folder() now returns a fresh mkdtemp() dir per call (Task 8
+        # hardening); pin it to a known pytest tmp_path so the test can find
+        # the written report.
+        monkeypatch.setattr(wqualreport_core, "report_folder", lambda: str(tmp_path))
+
         db_utils.sql_alter_db(
             f"""INSERT INTO obs_points (obsid, material, com_onerow, geometry) VALUES
             ('{_SCRIPT_PAYLOAD}', '{_SCRIPT_PAYLOAD}', '{_SCRIPT_PAYLOAD}',
@@ -99,7 +110,7 @@ class TestReportsNeutralizeScriptPayload(utils_for_tests.MidvattenTestSpatialite
             ".",
         )
 
-        with open("/tmp/midvatten_reports/drill_report.html") as f:
+        with open(tmp_path / "drill_report.html") as f:
             report = f.read()
 
         print(f"{mock_messagebar.mock_calls=}")

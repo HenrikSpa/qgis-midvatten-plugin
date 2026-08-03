@@ -23,8 +23,10 @@ import os
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from qgis.PyQt.QtCore import QCoreApplication
+from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtCore import QUrl
 from qgis.PyQt.QtGui import QDesktopServices
+from qgis.PyQt.QtWidgets import QProgressDialog
 
 from midvatten.tools import wqualreport_core
 from midvatten.tools.calculate_statistics import get_statistics_for_single_obsid
@@ -72,16 +74,32 @@ class Drillreport:  # general observation point info for the selected object
             merged_question = True
 
         obsids = sorted(set(obsids))
+        progress = QProgressDialog(
+            QCoreApplication.translate("Drillreport", "Generating report…"),
+            QCoreApplication.translate("Drillreport", "Cancel"),
+            0,
+            len(obsids),
+        )
+        progress.setWindowModality(Qt.WindowModal)
+        progress.setMinimumDuration(0)
         if merged_question:
             f, rpt = self.open_file(", ".join(obsids), reportpath)
-            for obsid in obsids:
+            for i, obsid in enumerate(obsids):
+                if progress.wasCanceled():
+                    break
+                progress.setValue(i)
                 self.write_obsid(obsid, rpt, imgpath, logopath, f)
+            progress.setValue(len(obsids))
             self.close_file(f, reportpath)
         else:
-            for obsid in obsids:
+            for i, obsid in enumerate(obsids):
+                if progress.wasCanceled():
+                    break
+                progress.setValue(i)
                 f, rpt = self.open_file(obsid, reportpath)
                 self.write_obsid(obsid, rpt, imgpath, logopath, f)
                 url_status = self.close_file(f, reportpath)
+            progress.setValue(len(obsids))
 
     def open_file(
         self, header: str, reportpath: str

@@ -465,7 +465,18 @@ class Drillreport:  # general observation point info for the selected object
 
         f, rpt = self.open_file(", ".join(obsids), reportpath)
         rpt += r"""<html>"""
-        for obsid in obsids:
+        progress = qgis.PyQt.QtWidgets.QProgressDialog(
+            QCoreApplication.translate("Drillreport2", "Generating report…"),
+            QCoreApplication.translate("Drillreport2", "Cancel"),
+            0,
+            len(obsids),
+        )
+        progress.setWindowModality(qgis.PyQt.QtCore.Qt.WindowModal)
+        progress.setMinimumDuration(0)
+        for i, obsid in enumerate(obsids):
+            if progress.wasCanceled():
+                break
+            progress.setValue(i)
             obs_points_data = all_obs_points_data[obsid][0]
             general_data_no_rounding = [x.split(";")[0] for x in general_metadata]
             general_rounding = [
@@ -563,6 +574,7 @@ class Drillreport:  # general observation point info for the selected object
             if empty_row_between_obsids:
                 rpt += r"""<p>empty_row_between_obsids</p>"""
 
+        progress.setValue(len(obsids))
         rpt += r"""</html>"""
         f.write(rpt)
         self.close_file(f, reportpath)

@@ -51,7 +51,8 @@ class PiperPlot:
 
     def show(self) -> None:
         self.activelayer = self._iface.activeLayer()
-        self.get_data_and_make_plot()
+        with common_utils.waiting_cursor_scope():
+            self.get_data_and_make_plot()
 
     def get_data_and_make_plot(self):
 

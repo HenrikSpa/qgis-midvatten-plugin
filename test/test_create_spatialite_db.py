@@ -731,13 +731,17 @@ class TestNewSpatialiteDbDialog(utils_for_tests.MidvattenTestSpatialiteNotCreate
         missing_parent = tmp_path / "missing" / "new.sqlite"
         dialog._path_edit.setText(str(missing_parent))
         assert not ok_button.isEnabled()
-        assert dialog._path_error_label.text() == "The destination folder does not exist."
+        assert (
+            dialog._path_error_label.text() == "The destination folder does not exist."
+        )
 
         existing = tmp_path / "existing.sqlite"
         existing.write_text("keep me", encoding="utf-8")
         dialog._path_edit.setText(str(existing))
         assert not ok_button.isEnabled()
-        assert dialog._path_error_label.text() == "A file with this name already exists."
+        assert (
+            dialog._path_error_label.text() == "A file with this name already exists."
+        )
 
         destination = tmp_path / "new.sqlite"
         dialog._path_edit.setText(str(destination))

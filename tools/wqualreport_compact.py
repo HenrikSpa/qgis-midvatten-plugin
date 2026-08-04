@@ -219,7 +219,10 @@ class CompactWqualReportUi(
             self.num_data_cols,
             1,
             999999,
-            "Number of data columns must be an integer from %s to %s.",
+            QCoreApplication.translate(
+                "CompactWqualReportUi",
+                "Number of data columns must be an integer from %s to %s.",
+            ),
         )
         if num_data_cols is None:
             return
@@ -227,7 +230,10 @@ class CompactWqualReportUi(
             self.rowheader_colwidth_percent,
             0,
             100,
-            "Row-header width must be an integer from %s to %s.",
+            QCoreApplication.translate(
+                "CompactWqualReportUi",
+                "Row-header width must be an integer from %s to %s.",
+            ),
         )
         if rowheader_colwidth_percent is None:
             return
@@ -307,8 +313,7 @@ class CompactWqualReportUi(
 
         if value is None or not minimum <= value <= maximum:
             message_utils.MessagebarAndLog.warning(
-                bar_msg=QCoreApplication.translate("CompactWqualReportUi", message)
-                % (minimum, maximum),
+                bar_msg=message % (minimum, maximum),
                 duration=4,
             )
             field.setFocus()

@@ -92,6 +92,58 @@ class TestHtmlToPlaintext:
         assert html_to_plaintext("<p>Text</p><script>alert('x')</script>") == "Text"
 
 
+@pytest.mark.parametrize(
+    ("dbpath", "expected_error"),
+    [
+        ("", "Choose a database file."),
+        ("relative.sqlite", "Use an absolute path."),
+    ],
+)
+def test_spatialite_export_rejects_invalid_destination(dbpath, expected_error):
+    """A defensive validation failure must stop export before creating a DB."""
+    iface = mock.MagicMock()
+    dialog = mock.MagicMock()
+    dialog.exec.return_value = 1
+    dialog.dbpath = dbpath
+
+    with (
+        mock.patch(
+            "midvatten.tools.export_spatialite.layer_utils.get_selected_features_as_tuple",
+            return_value=(),
+        ),
+        mock.patch(
+            "midvatten.tools.export_spatialite.db_utils.sql_load_fr_db",
+            return_value=(True, [(3006,)]),
+        ),
+        mock.patch(
+            "midvatten.tools.export_spatialite.db_utils.get_timezone_from_db",
+            return_value=None,
+        ),
+        mock.patch(
+            "midvatten.tools.export_spatialite.common_utils.start_waiting_cursor"
+        ),
+        mock.patch(
+            "midvatten.tools.export_spatialite.common_utils.stop_waiting_cursor"
+        ),
+        mock.patch(
+            "midvatten.tools.export_spatialite.NewSpatialiteDbDialog",
+            return_value=dialog,
+        ),
+        mock.patch(
+            "midvatten.tools.export_spatialite._find_datetime_duplicates"
+        ) as find_duplicates,
+        mock.patch("midvatten.tools.export_spatialite.NewDb") as new_db,
+        mock.patch(
+            "midvatten.tools.export_spatialite.message_utils.MessagebarAndLog"
+        ) as messagebar,
+    ):
+        ExportSpatialite(iface, mock.MagicMock()).show()
+
+    messagebar.critical.assert_called_once_with(bar_msg=expected_error)
+    find_duplicates.assert_not_called()
+    new_db.assert_not_called()
+
+
 class TestExportCsvOverwriteConfirmation:
     planned_tables = [("first", None), ("second", None)]
 

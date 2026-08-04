@@ -1,4 +1,5 @@
 import pytest
+from unittest import mock
 
 from midvatten.tools.utils import file_utils
 
@@ -57,3 +58,46 @@ class TestGetDelimiterRows:
             allow_ragged_rows=True,
         )
         assert delimiter == ";"
+
+
+@pytest.mark.active
+class TestWritePrintlistToFile:
+    def test_notifies_by_default(self, tmp_path):
+        path = tmp_path / "default.csv"
+        with mock.patch(
+            "midvatten.tools.utils.file_utils.message_utils.MessagebarAndLog"
+        ) as messagebar:
+            file_utils.write_printlist_to_file(str(path), [["a", "b"]])
+
+        messagebar.info.assert_called_once()
+        assert "default.csv" in messagebar.info.call_args.kwargs["bar_msg"]
+
+    def test_notification_can_be_suppressed(self, tmp_path):
+        path = tmp_path / "silent.csv"
+        with mock.patch(
+            "midvatten.tools.utils.file_utils.message_utils.MessagebarAndLog"
+        ) as messagebar:
+            file_utils.write_printlist_to_file(str(path), [["a", "b"]], notify=False)
+
+        messagebar.info.assert_not_called()
+
+    def test_non_authorized_write_cannot_replace_existing_file(self, tmp_path):
+        path = tmp_path / "protected.csv"
+        path.write_text("original", encoding="utf-8")
+
+        with pytest.raises(FileExistsError):
+            file_utils.write_printlist_to_file(
+                str(path), [["replacement"]], notify=False, overwrite=False
+            )
+
+        assert path.read_text(encoding="utf-8") == "original"
+
+    def test_authorized_write_replaces_existing_file(self, tmp_path):
+        path = tmp_path / "replace.csv"
+        path.write_text("original", encoding="utf-8")
+
+        file_utils.write_printlist_to_file(
+            str(path), [["replacement"]], notify=False, overwrite=True
+        )
+
+        assert path.read_text(encoding="utf-8") == "replacement\n"

@@ -33,6 +33,7 @@ from qgis.PyQt.QtWidgets import (
     QFormLayout,
     QHBoxLayout,
     QLineEdit,
+    QMessageBox,
     QPushButton,
     QVBoxLayout,
 )
@@ -193,44 +194,84 @@ class ExportData:
 
     def export_2_csv(self, exportfolder: str, strip_html: bool = True) -> None:
         self.source_dbconnection = db_utils.DbConnectionManager()
-        self.source_dbconnection.connect2db()
-        db_utils.export_bytea_as_bytes(self.source_dbconnection)
+        try:
+            self.source_dbconnection.connect2db()
+            db_utils.export_bytea_as_bytes(self.source_dbconnection)
 
-        self.exportfolder = exportfolder
-        self._strip_html = strip_html
-        self.write_data(
-            self.to_csv, None, defs.get_subset_of_tables_fr_db(category="data_domains")
-        )
-        self.write_data(
-            self.to_csv,
-            self.ID_obs_points,
-            defs.get_subset_of_tables_fr_db(category="obs_points"),
-        )
-        self.write_data(
-            self.to_csv,
-            self.ID_obs_lines,
-            defs.get_subset_of_tables_fr_db(category="obs_lines"),
-        )
-        self.write_data(
-            self.to_csv,
-            self.ID_obs_points,
-            defs.get_subset_of_tables_fr_db(category="extra_data_tables"),
-        )
-        self.write_data(
-            self.to_csv,
-            self.ID_obs_points,
-            defs.get_subset_of_tables_fr_db(category="interlab4_import_table"),
-        )
+            self._strip_html = strip_html
+            planned_tables = self._planned_tables()
+            selected_folder = exportfolder
+            replace = False
 
-        self.source_dbconnection.closedb()
+            while True:
+                planned_exports = [
+                    (
+                        tname,
+                        obsids,
+                        os.path.join(selected_folder, tname + ".csv"),
+                    )
+                    for tname, obsids in planned_tables
+                ]
+                conflicts = [
+                    filename
+                    for _, _, filename in planned_exports
+                    if os.path.exists(filename)
+                ]
+                if not conflicts:
+                    break
 
-    def write_data(
-        self,
-        to_writer: Callable,
-        obsids: Optional[Union[tuple[str], tuple[()]]],
-        ptabs: list[str],
-        replace: bool = False,
-    ) -> None:
+                action = self._ask_csv_collision_action(conflicts)
+                if action == "replace":
+                    replace = True
+                    break
+                if action == "choose":
+                    selected_folder = self._choose_another_folder(selected_folder)
+                    if not selected_folder:
+                        return
+                    continue
+                return
+
+            self.exportfolder = selected_folder
+            for tname, obsids, filename in planned_exports:
+                QApplication.processEvents()
+                self.to_csv(tname, obsids, replace, filename)
+
+            message_utils.MessagebarAndLog.info(
+                bar_msg=QCoreApplication.translate(
+                    "ExportData", "Exported %s CSV files to %s"
+                )
+                % (len(planned_exports), selected_folder)
+            )
+        finally:
+            if self.source_dbconnection is not None:
+                self.source_dbconnection.closedb()
+
+    def _table_groups(self):
+        return [
+            (
+                None,
+                defs.get_subset_of_tables_fr_db(category="data_domains"),
+            ),
+            (
+                self.ID_obs_points,
+                defs.get_subset_of_tables_fr_db(category="obs_points"),
+            ),
+            (
+                self.ID_obs_lines,
+                defs.get_subset_of_tables_fr_db(category="obs_lines"),
+            ),
+            (
+                self.ID_obs_points,
+                defs.get_subset_of_tables_fr_db(category="extra_data_tables"),
+            ),
+            (
+                self.ID_obs_points,
+                defs.get_subset_of_tables_fr_db(category="interlab4_import_table"),
+            ),
+        ]
+
+    def _tables_to_export(self, obsids, ptabs):
+        tables = []
         for tname in ptabs:
             QApplication.processEvents()
             if not db_utils.verify_table_exists(
@@ -245,24 +286,91 @@ class ExportData:
                 continue
 
             if not obsids:
-                to_writer(tname, obsids, replace)
-            else:
-                sql = self.source_dbconnection.sql_ident(
-                    "SELECT count({c}) FROM {t}", c="obsid", t=tname
-                )
-                clause, args = self.source_dbconnection.in_clause(obsids)
-                sql += f" WHERE {self.source_dbconnection.ident('obsid')} IN {clause}"
-                nr_of_rows = self.source_dbconnection.execute_and_fetchall(sql, args)[
-                    0
-                ][0]
-                if nr_of_rows > 0:
-                    to_writer(tname, obsids, replace)
+                tables.append((tname, obsids))
+                continue
+
+            sql = self.source_dbconnection.sql_ident(
+                "SELECT count({c}) FROM {t}", c="obsid", t=tname
+            )
+            clause, args = self.source_dbconnection.in_clause(obsids)
+            sql += f" WHERE {self.source_dbconnection.ident('obsid')} IN {clause}"
+            nr_of_rows = self.source_dbconnection.execute_and_fetchall(sql, args)[0][0]
+            if nr_of_rows > 0:
+                tables.append((tname, obsids))
+        return tables
+
+    def _planned_tables(self):
+        planned_tables = []
+        for obsids, ptabs in self._table_groups():
+            planned_tables.extend(self._tables_to_export(obsids, ptabs))
+        return planned_tables
+
+    def _dialog_parent(self):
+        if self._iface is None:
+            return None
+        return self._iface.mainWindow()
+
+    def _ask_csv_collision_action(self, conflicts: list[str]) -> str:
+        box = QMessageBox(self._dialog_parent())
+        box.setIcon(QMessageBox.Warning)
+        box.setWindowTitle(
+            QCoreApplication.translate("ExportData", "CSV files already exist")
+        )
+        conflict_list = "\n".join(os.path.basename(path) for path in conflicts)
+        box.setText(
+            QCoreApplication.translate(
+                "ExportData",
+                "The following CSV files already exist:\n%s\n\nHow would you like to continue?",
+            )
+            % conflict_list
+        )
+        replace_button = box.addButton(
+            QCoreApplication.translate("ExportData", "Replace existing files"),
+            QMessageBox.AcceptRole,
+        )
+        choose_button = box.addButton(
+            QCoreApplication.translate("ExportData", "Choose another folder"),
+            QMessageBox.ActionRole,
+        )
+        cancel_button = box.addButton(
+            QCoreApplication.translate("ExportData", "Cancel"),
+            QMessageBox.RejectRole,
+        )
+        box.setDefaultButton(cancel_button)
+        box.setEscapeButton(cancel_button)
+        box.exec()
+
+        clicked = box.clickedButton()
+        if clicked is replace_button:
+            return "replace"
+        if clicked is choose_button:
+            return "choose"
+        return "cancel"
+
+    def _choose_another_folder(self, current_folder: str) -> str:
+        return QFileDialog.getExistingDirectory(
+            self._dialog_parent(),
+            QCoreApplication.translate("ExportData", "Select export folder"),
+            current_folder,
+            QFileDialog.Option.ShowDirsOnly,
+        )
+
+    def write_data(
+        self,
+        to_writer: Callable,
+        obsids: Optional[Union[tuple[str], tuple[()]]],
+        ptabs: list[str],
+        replace: bool = False,
+    ) -> None:
+        for tname, table_obsids in self._tables_to_export(obsids, ptabs):
+            to_writer(tname, table_obsids, replace)
 
     def to_csv(
         self,
         tname: str,
         obsids: Optional[Union[tuple[str], tuple[()]]] = None,
         replace: bool = False,
+        filename: Optional[str] = None,
     ) -> None:
         geom_cols = set(
             db_utils.get_geometry_types(
@@ -305,5 +413,11 @@ class ExportData:
                 ]
 
         printlist = [headers, *data]
-        filename = os.path.join(self.exportfolder, tname + ".csv")
-        file_utils.write_printlist_to_file(filename, printlist)
+        if filename is None:
+            filename = os.path.join(self.exportfolder, tname + ".csv")
+        file_utils.write_printlist_to_file(
+            filename,
+            printlist,
+            notify=False,
+            overwrite=replace,
+        )

@@ -26,9 +26,9 @@ from unittest import mock
 
 import pytest
 
-from midvatten.tools.export_data import html_to_plaintext
+from midvatten.tools.export_data import ExportData, html_to_plaintext
 from midvatten.tools.export_spatialite import ExportSpatialite
-from midvatten.tools.utils import db_utils
+from midvatten.tools.utils import db_utils, file_utils
 from midvatten.test import utils_for_tests
 from midvatten.test.mocks_for_tests import MockUsingReturnValue, MockReturnUsingDictIn
 from midvatten.definitions import db_defs
@@ -43,9 +43,6 @@ def _unique_export_path(test_self):
         tempfile.gettempdir(),
         f"tmp_midvatten_export_{os.getpid()}_{id(test_self)}.sqlite",
     )
-
-
-TEMP_DIR = "/tmp/"
 
 
 class TestHtmlToPlaintext:
@@ -95,6 +92,154 @@ class TestHtmlToPlaintext:
         assert html_to_plaintext("<p>Text</p><script>alert('x')</script>") == "Text"
 
 
+class TestExportCsvOverwriteConfirmation:
+    planned_tables = [("first", None), ("second", None)]
+
+    def _run_export(self, folder, action=None, another_folder=""):
+        exporter = ExportData(None, None)
+        connection = mock.MagicMock()
+
+        def write_table(tname, obsids, replace, filename):
+            file_utils.write_printlist_to_file(
+                filename,
+                [[tname, "new"]],
+                notify=False,
+                overwrite=replace,
+            )
+
+        with mock.patch(
+            "midvatten.tools.export_data.db_utils.DbConnectionManager",
+            return_value=connection,
+        ):
+            with mock.patch(
+                "midvatten.tools.export_data.db_utils.export_bytea_as_bytes"
+            ):
+                with mock.patch.object(
+                    exporter, "_planned_tables", return_value=self.planned_tables
+                ):
+                    with mock.patch.object(
+                        exporter, "to_csv", side_effect=write_table
+                    ) as to_csv:
+                        with mock.patch.object(
+                            exporter,
+                            "_ask_csv_collision_action",
+                            return_value=action,
+                        ) as ask_collision:
+                            with mock.patch(
+                                "midvatten.tools.export_data.QFileDialog.getExistingDirectory",
+                                return_value=another_folder,
+                            ) as choose_folder:
+                                with mock.patch(
+                                    "midvatten.tools.export_data.message_utils.MessagebarAndLog"
+                                ) as messagebar:
+                                    exporter.export_2_csv(str(folder))
+
+        return to_csv, ask_collision, choose_folder, messagebar, connection
+
+    def test_cancel_leaves_all_colliding_files_untouched(self, tmp_path):
+        original = {}
+        for tname, _ in self.planned_tables:
+            path = tmp_path / f"{tname}.csv"
+            path.write_text(f"original-{tname}", encoding="utf-8")
+            original[path] = path.read_text(encoding="utf-8")
+
+        to_csv, ask_collision, _, _, connection = self._run_export(
+            tmp_path, action="cancel"
+        )
+
+        assert to_csv.call_count == 0
+        assert ask_collision.call_count == 1
+        assert len(ask_collision.call_args.args[0]) == 2
+        assert {path.read_text(encoding="utf-8") for path in original} == set(
+            original.values()
+        )
+        connection.closedb.assert_called_once_with()
+
+    def test_replace_overwrites_expected_files(self, tmp_path):
+        for tname, _ in self.planned_tables:
+            (tmp_path / f"{tname}.csv").write_text("old", encoding="utf-8")
+
+        to_csv, ask_collision, _, messagebar, _ = self._run_export(
+            tmp_path, action="replace"
+        )
+
+        assert ask_collision.call_count == 1
+        assert all(call.args[2] is True for call in to_csv.call_args_list)
+        assert all(
+            (tmp_path / f"{tname}.csv").read_text(encoding="utf-8") == f"{tname};new\n"
+            for tname, _ in self.planned_tables
+        )
+        assert messagebar.info.call_count == 1
+        assert "Exported 2 CSV files" in messagebar.info.call_args.kwargs["bar_msg"]
+
+    def test_choose_another_folder_rechecks_collisions_without_writing(self, tmp_path):
+        alternate = tmp_path / "alternate"
+        alternate.mkdir()
+        first = tmp_path / "first.csv"
+        second = alternate / "second.csv"
+        first.write_text("original-first", encoding="utf-8")
+        second.write_text("original-second", encoding="utf-8")
+
+        exporter = ExportData(None, None)
+        connection = mock.MagicMock()
+        with mock.patch(
+            "midvatten.tools.export_data.db_utils.DbConnectionManager",
+            return_value=connection,
+        ):
+            with mock.patch(
+                "midvatten.tools.export_data.db_utils.export_bytea_as_bytes"
+            ):
+                with mock.patch.object(
+                    exporter, "_planned_tables", return_value=self.planned_tables
+                ):
+                    with mock.patch.object(exporter, "to_csv") as to_csv:
+                        with mock.patch.object(
+                            exporter,
+                            "_ask_csv_collision_action",
+                            side_effect=["choose", "cancel"],
+                        ) as ask_collision:
+                            with mock.patch(
+                                "midvatten.tools.export_data.QFileDialog.getExistingDirectory",
+                                return_value=str(alternate),
+                            ) as choose_folder:
+                                exporter.export_2_csv(str(tmp_path))
+
+        assert to_csv.call_count == 0
+        assert ask_collision.call_count == 2
+        assert choose_folder.call_count == 1
+        assert first.read_text(encoding="utf-8") == "original-first"
+        assert second.read_text(encoding="utf-8") == "original-second"
+        connection.closedb.assert_called_once_with()
+
+    def test_empty_folder_requires_no_decision_and_emits_one_completion(self, tmp_path):
+        _, ask_collision, _, messagebar, _ = self._run_export(tmp_path)
+
+        assert ask_collision.call_count == 0
+        assert messagebar.info.call_count == 1
+        assert "Exported 2 CSV files" in messagebar.info.call_args.kwargs["bar_msg"]
+
+    def test_connection_is_closed_when_a_write_fails(self, tmp_path):
+        exporter = ExportData(None, None)
+        connection = mock.MagicMock()
+        with mock.patch(
+            "midvatten.tools.export_data.db_utils.DbConnectionManager",
+            return_value=connection,
+        ):
+            with mock.patch(
+                "midvatten.tools.export_data.db_utils.export_bytea_as_bytes"
+            ):
+                with mock.patch.object(
+                    exporter, "_planned_tables", return_value=self.planned_tables
+                ):
+                    with mock.patch.object(
+                        exporter, "to_csv", side_effect=OSError("write failed")
+                    ):
+                        with pytest.raises(OSError, match="write failed"):
+                            exporter.export_2_csv(str(tmp_path))
+
+        connection.closedb.assert_called_once_with()
+
+
 class ExportMixin:
     answer_yes_obj = MockUsingReturnValue()
     answer_yes_obj.result = 1
@@ -113,7 +258,7 @@ class ExportMixin:
         {"obs_points": tuple(), "obs_lines": tuple()}, 0
     )
     exported_csv_files = [
-        os.path.join(TEMP_DIR, filename)
+        filename
         for filename in [
             "obs_points.csv",
             "comments.csv",
@@ -134,7 +279,7 @@ class ExportMixin:
         ]
     ]
     exported_csv_files_no_zz = [
-        os.path.join(TEMP_DIR, filename)
+        filename
         for filename in [
             "obs_points.csv",
             "comments.csv",
@@ -156,11 +301,12 @@ class ExportMixin:
     )
     @mock.patch("midvatten.tools.export_data.ExportCsvDialog")
     @mock.patch("qgis.utils.iface", autospec=True)
-    def test_export_csv(self, mock_iface, mock_dialog_cls):
+    def test_export_csv(self, mock_iface, mock_dialog_cls, tmp_path):
         mock_dlg = mock.MagicMock()
         mock_dialog_cls.return_value = mock_dlg
         mock_dlg.exec.return_value = 1
-        mock_dlg.export_folder = TEMP_DIR
+        mock_dlg.export_folder = str(tmp_path)
+        self.export_folder = str(tmp_path)
         mock_dlg.strip_html = False
         db_utils.sql_alter_db(
             """INSERT INTO obs_points (obsid, geometry) VALUES ('P1', ST_GeomFromText('POINT(633466 711659)', 3006))"""
@@ -197,8 +343,8 @@ class ExportMixin:
 
         self.midvatten.export_csv()
         file_contents = []
-        for filename in ExportMixin.exported_csv_files_no_zz:
-            with open(filename, encoding="utf-8") as f:
+        for filename in self.exported_csv_files_no_zz:
+            with open(os.path.join(str(tmp_path), filename), encoding="utf-8") as f:
                 file_contents.append(os.path.basename(filename) + "\n")
                 if os.path.basename(filename) == "obs_points.csv":
                     file_contents.append(
@@ -262,11 +408,12 @@ class ExportMixin:
     )
     @mock.patch("midvatten.tools.export_data.ExportCsvDialog")
     @mock.patch("qgis.utils.iface", autospec=True)
-    def test_export_csv_no_selection(self, mock_iface, mock_dialog_cls):
+    def test_export_csv_no_selection(self, mock_iface, mock_dialog_cls, tmp_path):
         mock_dlg = mock.MagicMock()
         mock_dialog_cls.return_value = mock_dlg
         mock_dlg.exec.return_value = 1
-        mock_dlg.export_folder = TEMP_DIR
+        mock_dlg.export_folder = str(tmp_path)
+        self.export_folder = str(tmp_path)
         mock_dlg.strip_html = False
         db_utils.sql_alter_db(
             """INSERT INTO obs_points (obsid, geometry) VALUES ('P1', ST_GeomFromText('POINT(633466 711659)', 3006))"""
@@ -303,8 +450,8 @@ class ExportMixin:
 
         self.midvatten.export_csv()
         file_contents = []
-        for filename in ExportMixin.exported_csv_files_no_zz:
-            with open(filename, encoding="utf-8") as f:
+        for filename in self.exported_csv_files_no_zz:
+            with open(os.path.join(str(tmp_path), filename), encoding="utf-8") as f:
                 file_contents.append(os.path.basename(filename) + "\n")
                 if os.path.basename(filename) == "obs_points.csv":
                     file_contents.append(
@@ -368,11 +515,12 @@ class ExportMixin:
     )
     @mock.patch("midvatten.tools.export_data.ExportCsvDialog")
     @mock.patch("qgis.utils.iface", autospec=True)
-    def test_export_csv_com_html_stripped(self, mock_iface, mock_dialog_cls):
+    def test_export_csv_com_html_stripped(self, mock_iface, mock_dialog_cls, tmp_path):
         mock_dlg = mock.MagicMock()
         mock_dialog_cls.return_value = mock_dlg
         mock_dlg.exec.return_value = 1
-        mock_dlg.export_folder = TEMP_DIR
+        mock_dlg.export_folder = str(tmp_path)
+        self.export_folder = str(tmp_path)
         mock_dlg.strip_html = True
 
         db_utils.sql_alter_db(
@@ -381,7 +529,7 @@ class ExportMixin:
 
         self.midvatten.export_csv()
 
-        with open(os.path.join(TEMP_DIR, "obs_points.csv"), encoding="utf-8") as f:
+        with open(os.path.join(str(tmp_path), "obs_points.csv"), encoding="utf-8") as f:
             rows = list(csv.reader(f, delimiter=";"))
 
         headers = rows[0]
@@ -399,11 +547,12 @@ class ExportMixin:
     )
     @mock.patch("midvatten.tools.export_data.ExportCsvDialog")
     @mock.patch("qgis.utils.iface", autospec=True)
-    def test_export_csv_geometry_as_wkt(self, mock_iface, mock_dialog_cls):
+    def test_export_csv_geometry_as_wkt(self, mock_iface, mock_dialog_cls, tmp_path):
         mock_dlg = mock.MagicMock()
         mock_dialog_cls.return_value = mock_dlg
         mock_dlg.exec.return_value = 1
-        mock_dlg.export_folder = TEMP_DIR
+        mock_dlg.export_folder = str(tmp_path)
+        self.export_folder = str(tmp_path)
         mock_dlg.strip_html = False
 
         db_utils.sql_alter_db(
@@ -412,7 +561,7 @@ class ExportMixin:
 
         self.midvatten.export_csv()
 
-        with open(os.path.join(TEMP_DIR, "obs_points.csv"), encoding="utf-8") as f:
+        with open(os.path.join(str(tmp_path), "obs_points.csv"), encoding="utf-8") as f:
             rows = list(csv.reader(f, delimiter=";"))
 
         headers = rows[0]
@@ -1224,11 +1373,13 @@ class ExportMixin:
         except OSError:
             pass
 
-        for filename in ExportMixin.exported_csv_files:
-            try:
-                os.remove(filename)
-            except OSError:
-                pass
+        export_folder = getattr(self, "export_folder", None)
+        if export_folder:
+            for filename in self.exported_csv_files:
+                try:
+                    os.remove(os.path.join(export_folder, filename))
+                except OSError:
+                    pass
 
         super().teardown_method()
 

@@ -8,7 +8,7 @@ import os
 import shutil
 import tempfile
 from contextlib import contextmanager
-from typing import Any, List, Optional, Type
+from typing import Any, Optional
 from collections.abc import Iterator
 
 import qgis.PyQt
@@ -88,10 +88,10 @@ def readlines_with_detected_charset(filename: str, encodings: list[str]) -> tupl
 def get_delimiter(
     filename: Optional[str] = None,
     charset: str = "utf-8",
-    delimiters: Optional[List[str]] = None,
+    delimiters: Optional[list[str]] = None,
     num_fields: Optional[int] = None,
     skip_empty_rows: bool = True,
-    rows: Optional[List[str]] = None,
+    rows: Optional[list[str]] = None,
     allow_ragged_rows: bool = False,
 ) -> Optional[str]:
     """Detect the delimiter, asking the user if detection fails.
@@ -135,9 +135,9 @@ def _count_columns(row: str, delimiter: str) -> int:
 
 
 def get_delimiter_from_file_rows(
-    rows: List[str],
+    rows: list[str],
     filename: Optional[str] = None,
-    delimiters: Optional[List[str]] = None,
+    delimiters: Optional[list[str]] = None,
     num_fields: Optional[int] = None,
     allow_ragged_rows: bool = False,
 ) -> Optional[str]:
@@ -237,20 +237,33 @@ def ask_for_delimiter(
 
 def write_printlist_to_file(
     filename: str,
-    printlist: List[Any],
-    dialect: Type[csv.excel] = csv.excel,
+    printlist: list[Any],
+    dialect: type[csv.excel] = csv.excel,
     delimiter: str = ";",
     encoding: str = "utf-8",
+    notify: bool = True,
+    overwrite: Optional[bool] = None,
     **kwds,
 ):
-    with open(filename, "w", newline="", encoding=encoding) as csvfile:
+    if overwrite is False and os.path.exists(filename):
+        raise FileExistsError(filename)
+
+    # ``overwrite=None`` preserves the historical behavior for callers that
+    # do not participate in a batch-level overwrite decision.  The CSV
+    # exporter passes False or True explicitly, with exclusive creation for
+    # the former so a file appearing after preflight cannot be replaced.
+    open_mode = "x" if overwrite is False else "w"
+    with open(filename, open_mode, newline="", encoding=encoding) as csvfile:
         csvwriter = csv.writer(csvfile, delimiter=delimiter, dialect=dialect, **kwds)
         # csvwriter.writerows([[bytes(returnunicode(col), encoding) for col in row] for row in printlist])
         csvwriter.writerows(returnunicode(printlist, keep_containers=True))
-    message_utils.MessagebarAndLog.info(
-        bar_msg=returnunicode(tr("write_printlist_to_file", "Data written to file %s."))
-        % filename
-    )
+    if notify:
+        message_utils.MessagebarAndLog.info(
+            bar_msg=returnunicode(
+                tr("write_printlist_to_file", "Data written to file %s.")
+            )
+            % filename
+        )
 
 
 _PLUGIN_ROOT = os.path.dirname(

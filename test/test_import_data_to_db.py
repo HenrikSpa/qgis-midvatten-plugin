@@ -34,6 +34,7 @@ from midvatten.tools.import_data_to_db import (
     MidvDataImporterError,
     _as_import_frame,
     _cast_or_passthrough,
+    import_exception_handler,
 )
 from midvatten.tools.utils import db_utils, string_utils
 from midvatten.tools.utils.db_utils.dialect import UnsafeIdentifierError
@@ -73,6 +74,27 @@ def test_cast_or_passthrough_skips_cast_for_typeless_column(empty_type):
 def test_cast_or_passthrough_still_rejects_unsafe_type():
     with pytest.raises(UnsafeIdentifierError):
         _cast_or_passthrough('"col"', "TEXT) OR (SELECT 1) --")
+
+
+@mock.patch("midvatten.tools.utils.common_utils.stop_waiting_cursor")
+@mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+def test_import_exception_handler_catches_unsafe_identifier_error(
+    mock_messagebar, mock_stop_cursor
+):
+    # A digit-bearing or hostile declared type raises UnsafeIdentifierError
+    # deep inside the INSERT...SELECT build. That must surface as a clean
+    # message-bar error (like MidvDataImporterError), never an unhandled
+    # traceback with a stuck wait cursor.
+    @import_exception_handler
+    def boom():
+        raise UnsafeIdentifierError("Unsafe column type: 'FLOAT8'")
+
+    assert boom() is None
+    print(mock_messagebar.mock_calls)
+    assert mock_messagebar.critical.called
+    (_, kwargs) = mock_messagebar.critical.call_args
+    assert "FLOAT8" in kwargs["log_msg"]
+    assert mock_stop_cursor.called
 
 
 class GeneralImportMixin:

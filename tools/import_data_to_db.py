@@ -40,7 +40,7 @@ from midvatten.tools.utils import common_utils, db_utils, dialog_utils, message_
 from midvatten.tools.utils import parameter_cleaning
 from midvatten.tools.utils.exceptions import UserInterruptError
 from midvatten.tools.utils.db_utils import DbConnectionManager
-from midvatten.tools.utils.db_utils.dialect import safe_type
+from midvatten.tools.utils.db_utils.dialect import UnsafeIdentifierError, safe_type
 from midvatten.tools.utils.date_utils import instant_key
 
 
@@ -1394,7 +1394,7 @@ def import_exception_handler(func: Callable) -> Callable:
     def new_func(*args, **kwargs):
         try:
             result = func(*args, **kwargs)
-        except MidvDataImporterError as e:
+        except (MidvDataImporterError, UnsafeIdentifierError) as e:
             common_utils.stop_waiting_cursor()
             message_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(

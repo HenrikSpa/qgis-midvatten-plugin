@@ -696,30 +696,31 @@ class Midvatten:
         parent.addMenu(menu)
         return menu
 
+    @staticmethod
+    def _delete_later(obj) -> None:
+        try:
+            obj.deleteLater()
+        except RuntimeError:
+            pass
+
+    @classmethod
+    def _close_and_delete_later(cls, obj) -> None:
+        try:
+            obj.close()
+        except RuntimeError:
+            pass
+        cls._delete_later(obj)
+
     def unload(self):
         self._disconnect_signals()
 
         settings_dialog = getattr(self, "midvsettingsdialog", None)
         if settings_dialog is not None:
-            try:
-                settings_dialog.close()
-            except RuntimeError:
-                pass
-            try:
-                settings_dialog.deleteLater()
-            except RuntimeError:
-                pass
+            self._close_and_delete_later(settings_dialog)
             self.midvsettingsdialog = None
 
         for tool in tuple(self._open_tools.values()):
-            try:
-                tool.close()
-            except RuntimeError:
-                pass
-            try:
-                tool.deleteLater()
-            except RuntimeError:
-                pass
+            self._close_and_delete_later(tool)
         self._open_tools.clear()
 
         menu = self.menu
@@ -751,10 +752,7 @@ class Midvatten:
                 self.iface.removeToolBarIcon(action)
             except RuntimeError:
                 pass
-            try:
-                action.deleteLater()
-            except RuntimeError:
-                pass
+            self._delete_later(action)
 
         settings_action = getattr(self, "action_midvatten_settings", None)
         if settings_action is not None:
@@ -769,32 +767,22 @@ class Midvatten:
                     menu.removeAction(submenu.menuAction())
                 except RuntimeError:
                     pass
-            try:
-                submenu.deleteLater()
-            except RuntimeError:
-                pass
+            self._delete_later(submenu)
 
         if menu is not None and self.owns_midv_menu:
             try:
                 menu.parentWidget().removeAction(menu.menuAction())
             except RuntimeError:
                 pass
-            try:
-                menu.deleteLater()
-            except RuntimeError:
-                pass
+            self._delete_later(menu)
 
         if toolbar is not None:
-            try:
-                toolbar.deleteLater()
-            except RuntimeError:
-                pass
+            self._delete_later(toolbar)
 
         self.actions.clear()
         self._actions_manifest.clear()
         self._qactions.clear()
         self._submenus.clear()
-        self._open_tools.clear()
         self.menu = None
         self.owns_midv_menu = False
         self.tool_bar = None

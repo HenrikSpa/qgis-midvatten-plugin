@@ -44,6 +44,15 @@ from midvatten.tools.utils.db_utils.db_settings_serde import db_settings_to_stri
 log = logging.getLogger(__name__)
 
 
+def _normalize_spatialite_path(dbpath) -> str:
+    if dbpath is None:
+        return ""
+    path = os.fspath(dbpath)
+    if isinstance(path, bytes):
+        path = os.fsdecode(path)
+    return path.strip()
+
+
 def spatialite_destination_error(
     dbpath: str,
     *,
@@ -52,13 +61,7 @@ def spatialite_destination_error(
 ) -> Optional[str]:
     """Return a translated validation error for a new SpatiaLite destination."""
 
-    if dbpath is None:
-        path = ""
-    else:
-        path = os.fspath(dbpath)
-        if isinstance(path, bytes):
-            path = os.fsdecode(path)
-        path = path.strip()
+    path = _normalize_spatialite_path(dbpath)
 
     if allow_memory and path == ":memory:":
         return None
@@ -118,11 +121,7 @@ class NewDb:
     ):  # CreateNewDB(self, verno):
         """Open a new DataBase (create an empty one if file doesn't exists) and set as default DB"""
 
-        if dbpath is not None:
-            dbpath = os.fspath(dbpath)
-            if isinstance(dbpath, bytes):
-                dbpath = os.fsdecode(dbpath)
-            dbpath = dbpath.strip()
+        dbpath = _normalize_spatialite_path(dbpath)
         destination_error = spatialite_destination_error(
             dbpath, allow_memory=True, check_existing=False
         )

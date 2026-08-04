@@ -151,7 +151,8 @@ class TestExportCsvOverwriteConfirmation:
         exporter = ExportData(None, None)
         connection = mock.MagicMock()
 
-        def write_table(tname, obsids, replace, filename):
+        def write_table(tname, obsids, replace):
+            filename = os.path.join(folder, tname + ".csv")
             file_utils.write_printlist_to_file(
                 filename,
                 [[tname, "new"]],

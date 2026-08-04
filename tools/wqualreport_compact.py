@@ -500,15 +500,9 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
 
         col_list = ", ".join(dbconnection.ident(c, allowed=fieldnames) for c in columns)
         table_ident = dbconnection.ident(table)
-        if obsids:
-            placeholders = dbconnection.placeholders(len(obsids))
-            sql = (
-                f"SELECT {col_list} FROM {table_ident} WHERE obsid IN ({placeholders})"
-            )
-            params = tuple(obsids)
-        else:
-            sql = f"SELECT {col_list} FROM {table_ident}"
-            params = None
+        placeholders = dbconnection.placeholders(len(obsids))
+        sql = f"SELECT {col_list} FROM {table_ident} WHERE obsid IN ({placeholders})"
+        params = tuple(obsids)
 
         df = pd.read_sql(
             con=dbconnection.conn,

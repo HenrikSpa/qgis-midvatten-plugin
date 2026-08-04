@@ -232,9 +232,9 @@ class ExportData:
                 return
 
             self.exportfolder = selected_folder
-            for tname, obsids, filename in planned_exports:
+            for tname, obsids, _filename in planned_exports:
                 QApplication.processEvents()
-                self.to_csv(tname, obsids, replace, filename)
+                self.to_csv(tname, obsids, replace)
 
             message_utils.MessagebarAndLog.info(
                 bar_msg=QCoreApplication.translate(
@@ -370,7 +370,6 @@ class ExportData:
         tname: str,
         obsids: Optional[Union[tuple[str], tuple[()]]] = None,
         replace: bool = False,
-        filename: Optional[str] = None,
     ) -> None:
         geom_cols = set(
             db_utils.get_geometry_types(
@@ -413,8 +412,7 @@ class ExportData:
                 ]
 
         printlist = [headers, *data]
-        if filename is None:
-            filename = os.path.join(self.exportfolder, tname + ".csv")
+        filename = os.path.join(self.exportfolder, tname + ".csv")
         file_utils.write_printlist_to_file(
             filename,
             printlist,

@@ -26,8 +26,10 @@ from collections import OrderedDict
 import qgis
 import qgis.PyQt
 from qgis.PyQt.QtCore import QCoreApplication
+from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtCore import QUrl
 from qgis.PyQt.QtGui import QDesktopServices
+from qgis.PyQt.QtWidgets import QProgressDialog
 
 from midvatten.tools import wqualreport_core
 from midvatten.tools.utils import (
@@ -378,7 +380,7 @@ class Drillreport:  # general observation point info for the selected object
 
         f, rpt = self.open_file(", ".join(obsids), reportpath)
         rpt += r"""<html>"""
-        progress = qgis.PyQt.QtWidgets.QProgressDialog(
+        progress = QProgressDialog(
             QCoreApplication.translate("Drillreport2", "Generating report…"),
             QCoreApplication.translate("Drillreport2", "Cancel"),
             0,
@@ -386,8 +388,10 @@ class Drillreport:  # general observation point info for the selected object
         )
         progress.setWindowModality(qgis.PyQt.QtCore.Qt.WindowModality.WindowModal)
         progress.setMinimumDuration(0)
+        canceled = False
         for i, obsid in enumerate(obsids):
             if progress.wasCanceled():
+                canceled = True
                 break
             progress.setValue(i)
             obs_points_data = all_obs_points_data[obsid][0]
@@ -488,6 +492,12 @@ class Drillreport:  # general observation point info for the selected object
                 rpt += r"""<p>empty_row_between_obsids</p>"""
 
         progress.setValue(len(obsids))
+        if canceled:
+            # Cancel means no report at all: drop the (still empty) file,
+            # open nothing, say nothing.
+            f.close()
+            os.remove(reportpath)
+            return
         rpt += r"""</html>"""
         f.write(rpt)
         self.close_file(f, reportpath)

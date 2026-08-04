@@ -139,6 +139,38 @@ class TestDrillreportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert not mock_popup.called
         assert mock_messagebar.warning.called
 
+    @mock.patch("midvatten.tools.custom_drillreport.QProgressDialog")
+    @mock.patch("midvatten.tools.custom_drillreport.QDesktopServices.openUrl")
+    @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    @mock.patch("qgis.utils.iface", autospec=True)
+    def test_cancel_produces_no_report_and_no_message(
+        self, mock_iface, mock_messagebar, mock_getselected, mock_openurl, mock_progress
+    ):
+        """User cancels during generation: nothing opens, no file remains,
+        and no cancellation message is shown (silent by design)."""
+        mock_progress.return_value.wasCanceled.return_value = True
+        _insert_drillreport_test_data(["OP1", "OP2"])
+        mock_getselected.return_value = ["OP1", "OP2"]
+        with mock.patch(
+            "midvatten.tools.custom_drillreport.common_utils.get_stored_settings",
+            return_value={},
+        ):
+            ui = DrillreportUi(self.iface, self.midvatten.ms)
+        ui.drillreport()
+
+        print(f"{mock_messagebar.mock_calls=}")
+        assert not mock_openurl.called
+        assert not os.path.exists(_report_path())
+        assert not mock_messagebar.warning.called
+        # Note: DrillreportUi.drillreport() unconditionally logs a
+        # log_msg-only (not messagebar-visible) "settings stored" info call
+        # via save_stored_settings() *before* Drillreport() is constructed
+        # -- identical on the success path (see test_ok_button_generates_html,
+        # which triggers the same call, unasserted). It is unrelated to
+        # cancellation, so it is intentionally not asserted here.
+        assert not mock_messagebar.critical.called
+
     @mock.patch(
         "midvatten.tools.custom_drillreport.common_utils.get_stored_settings",
         return_value={},

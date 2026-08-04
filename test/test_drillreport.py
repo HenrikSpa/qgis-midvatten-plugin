@@ -19,6 +19,7 @@
  ***************************************************************************/
 """
 
+import os
 import re
 
 from unittest import mock
@@ -121,6 +122,32 @@ class DrillreportMixin:
         assert result is None
         assert not mock_popup.called
         assert mock_messagebar.warning.called
+
+    @mock.patch("midvatten.tools.drillreport.QProgressDialog")
+    @mock.patch("midvatten.tools.drillreport.QDesktopServices.openUrl")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_cancel_produces_no_report_and_no_message(
+        self, mock_messagebar, openurl, mock_progress, tmp_path
+    ):
+        """User cancels during generation: nothing opens, no file remains,
+        and no cancellation message is shown (silent by design)."""
+        mock_progress.return_value.wasCanceled.return_value = True
+        db_utils.sql_alter_db(
+            """INSERT INTO obs_points (obsid, h_gs, geometry) VALUES ('1', 5, ST_GeomFromText('POINT(633466 711659)', 3006))"""
+        )
+        db_utils.sql_alter_db(
+            """INSERT INTO obs_points (obsid, h_gs, geometry) VALUES ('2', 10, ST_GeomFromText('POINT(633566 711759)', 3006))"""
+        )
+
+        dlg = Drillreport(self.iface, self.midvatten.ms)
+        dlg._run_report(("1", "2"), self.midvatten.ms.settingsdict)
+
+        print(f"{mock_messagebar.mock_calls=}")
+        assert not openurl.called
+        assert not os.path.exists(str(tmp_path / "drill_report.html"))
+        assert not mock_messagebar.warning.called
+        assert not mock_messagebar.info.called
+        assert not mock_messagebar.critical.called
 
 
 @pytest.mark.postgis

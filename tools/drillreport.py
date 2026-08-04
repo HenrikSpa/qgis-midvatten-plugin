@@ -84,12 +84,20 @@ class Drillreport:  # general observation point info for the selected object
         progress.setMinimumDuration(0)
         if merged_question:
             f, rpt = self.open_file(", ".join(obsids), reportpath)
+            canceled = False
             for i, obsid in enumerate(obsids):
                 if progress.wasCanceled():
+                    canceled = True
                     break
                 progress.setValue(i)
                 self.write_obsid(obsid, rpt, imgpath, logopath, f)
             progress.setValue(len(obsids))
+            if canceled:
+                # Cancel means no report at all: drop the partial file,
+                # open nothing, say nothing.
+                f.close()
+                os.remove(reportpath)
+                return None
             self.close_file(f, reportpath)
         else:
             for i, obsid in enumerate(obsids):

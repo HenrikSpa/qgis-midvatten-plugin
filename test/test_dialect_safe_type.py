@@ -34,7 +34,15 @@ def test_safe_type_allows_real_types(good):
 
 @pytest.mark.parametrize(
     "evil",
-    ["TEXT) OR (SELECT 1) --", "INT; DROP TABLE x", 'a"b', "a'b", "int)--", "", "8FLOAT"],
+    [
+        "TEXT) OR (SELECT 1) --",
+        "INT; DROP TABLE x",
+        'a"b',
+        "a'b",
+        "int)--",
+        "",
+        "8FLOAT",
+    ],
 )
 def test_safe_type_rejects_injection(evil):
     with pytest.raises(UnsafeIdentifierError):

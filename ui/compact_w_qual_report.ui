@@ -195,6 +195,9 @@
          <property name="inputMethodHints">
           <set>Qt::ImhDigitsOnly</set>
          </property>
+         <property name="maxLength">
+          <number>7</number>
+         </property>
          <property name="text">
           <string>10</string>
          </property>
@@ -211,6 +214,9 @@
         <widget class="QLineEdit" name="rowheader_colwidth_percent">
          <property name="inputMethodHints">
           <set>Qt::ImhDigitsOnly</set>
+         </property>
+         <property name="maxLength">
+          <number>4</number>
          </property>
          <property name="text">
           <string>15</string>

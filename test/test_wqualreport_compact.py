@@ -109,7 +109,14 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
     ):
         _insert_wqual_test_data("WQ1")
         vlayer = _create_wqual_lab_layer()
-        mock_iface.activeLayer.return_value = vlayer
+        selected_ids = [
+            feature.id()
+            for feature in vlayer.getFeatures()
+            if feature["parameter"] == "Iron"
+        ]
+        vlayer.selectByIds(selected_ids)
+        selected_ids_before_report = list(vlayer.selectedFeatureIds())
+        self.iface.activeLayer.return_value = vlayer
         with mock.patch(
             "midvatten.tools.wqualreport_compact.common_utils.get_stored_settings",
             return_value={},
@@ -128,6 +135,7 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert "WQ1" in report
         assert "Iron" in report
         assert "mg/l" in report
+        assert list(vlayer.selectedFeatureIds()) == selected_ids_before_report
 
     @mock.patch("midvatten.tools.wqualreport_compact.open_report_in_browser")
     @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
@@ -317,16 +325,196 @@ class TestCompactWqualReportUi(utils_for_tests.MidvattenTestSpatialiteDbSv):
     def test_from_active_layer_no_layer_shows_error(
         self, mock_iface, mock_messagebar, mock_openurl
     ):
-        mock_iface.activeLayer.return_value = None
+        self.iface.activeLayer.return_value = None
         with mock.patch(
             "midvatten.tools.wqualreport_compact.common_utils.get_stored_settings",
             return_value={},
         ):
             ui = CompactWqualReportUi(self.iface, self.midvatten.ms)
-        ui.from_active_layer.blockSignals(True)
+        data_column_items = [
+            ui.data_column.itemText(i) for i in range(ui.data_column.count())
+        ]
+        ui.from_active_layer.click()
+        assert ui.from_sql_table.isChecked()
+        assert [
+            ui.data_column.itemText(i) for i in range(ui.data_column.count())
+        ] == data_column_items
+        mock_messagebar.warning.assert_called_once()
+        assert not mock_openurl.called
+
+    @mock.patch("midvatten.tools.wqualreport_compact.open_report_in_browser")
+    @mock.patch("midvatten.tools.wqualreport_compact.Wqualreport")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_empty_active_selection_warns_without_report(
+        self, mock_messagebar, mock_wqualreport, mock_openurl
+    ):
+        _insert_wqual_test_data("WQ1")
+        vlayer = _create_wqual_lab_layer()
+        vlayer.removeSelection()
+        self.iface.activeLayer.return_value = vlayer
+        with mock.patch(
+            "midvatten.tools.wqualreport_compact.common_utils.get_stored_settings",
+            return_value={},
+        ):
+            ui = CompactWqualReportUi(self.iface, self.midvatten.ms)
         ui.from_active_layer.setChecked(True)
-        ui.from_active_layer.blockSignals(False)
-        gui_utils.set_combobox(ui.data_column, "reading_txt", add_if_not_exists=False)
+
         ui.wqualreport()
-        print(f"{mock_messagebar.mock_calls=}")
-        mock_messagebar.critical.assert_called()
+
+        mock_messagebar.warning.assert_called_once()
+        mock_wqualreport.assert_not_called()
+        mock_openurl.assert_not_called()
+
+    @mock.patch("midvatten.tools.wqualreport_compact.open_report_in_browser")
+    @mock.patch("midvatten.tools.wqualreport_compact.Wqualreport")
+    @mock.patch("midvatten.tools.utils.layer_utils.get_selected_object_names")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_empty_sql_selection_warns_without_unfiltered_query(
+        self,
+        mock_messagebar,
+        mock_getselected,
+        mock_wqualreport,
+        mock_openurl,
+    ):
+        mock_getselected.return_value = []
+        with mock.patch(
+            "midvatten.tools.wqualreport_compact.common_utils.get_stored_settings",
+            return_value={},
+        ):
+            ui = CompactWqualReportUi(self.iface, self.midvatten.ms)
+        ui.from_sql_table.setChecked(True)
+
+        with mock.patch(
+            "midvatten.tools.wqualreport_compact.db_utils.DbConnectionManager"
+        ) as mock_connection:
+            ui.wqualreport()
+
+        mock_messagebar.warning.assert_called_once()
+        mock_wqualreport.assert_not_called()
+        mock_openurl.assert_not_called()
+        mock_connection.assert_not_called()
+
+    @mock.patch(
+        "midvatten.tools.wqualreport_compact.common_utils.get_stored_settings",
+        return_value={},
+    )
+    def test_integer_validators_have_supported_ranges(self, mock_get_stored):
+        ui = CompactWqualReportUi(self.iface, self.midvatten.ms)
+
+        assert ui.num_data_cols.validator().bottom() == 1
+        assert ui.num_data_cols.validator().top() == 999999
+        assert ui.rowheader_colwidth_percent.validator().bottom() == 0
+        assert ui.rowheader_colwidth_percent.validator().top() == 100
+
+    @pytest.mark.parametrize(
+        ("field_name", "value"),
+        [
+            ("num_data_cols", ""),
+            ("num_data_cols", "not a number"),
+            ("num_data_cols", "0"),
+            ("num_data_cols", "-1"),
+            ("num_data_cols", "1000000"),
+            ("rowheader_colwidth_percent", ""),
+            ("rowheader_colwidth_percent", "not a number"),
+            ("rowheader_colwidth_percent", "-1"),
+            ("rowheader_colwidth_percent", "101"),
+        ],
+    )
+    def test_invalid_integer_setting_stops_without_saving_or_reporting(
+        self, field_name, value
+    ):
+        with (
+            mock.patch(
+                "midvatten.tools.wqualreport_compact.common_utils.get_stored_settings",
+                return_value={},
+            ),
+            mock.patch(
+                "midvatten.tools.wqualreport_compact.layer_utils.get_selected_object_names",
+                return_value=["WQ1"],
+            ),
+            mock.patch(
+                "midvatten.tools.wqualreport_compact.Wqualreport"
+            ) as mock_report,
+            mock.patch(
+                "midvatten.tools.wqualreport_compact.common_utils.save_stored_settings"
+            ) as mock_save,
+            mock.patch(
+                "midvatten.tools.utils.message_utils.MessagebarAndLog"
+            ) as mock_messagebar,
+        ):
+            ui = CompactWqualReportUi(self.iface, self.midvatten.ms)
+            ui.from_sql_table.setChecked(True)
+            field = getattr(ui, field_name)
+            field.setText(value)
+            with (
+                mock.patch.object(field, "setFocus") as mock_focus,
+                mock.patch.object(field, "selectAll") as mock_select_all,
+            ):
+                ui.wqualreport()
+
+        mock_messagebar.warning.assert_called_once()
+        mock_focus.assert_called_once_with()
+        mock_select_all.assert_called_once_with()
+        mock_save.assert_not_called()
+        mock_report.assert_not_called()
+
+    def test_invalid_stored_integer_setting_stops_cleanly(self):
+        with (
+            mock.patch(
+                "midvatten.tools.wqualreport_compact.common_utils.get_stored_settings",
+                return_value={
+                    "num_data_cols": "not a number",
+                    "rowheader_colwidth_percent": "15",
+                    "from_sql_table": True,
+                },
+            ),
+            mock.patch(
+                "midvatten.tools.wqualreport_compact.layer_utils.get_selected_object_names",
+                return_value=["WQ1"],
+            ),
+            mock.patch(
+                "midvatten.tools.wqualreport_compact.Wqualreport"
+            ) as mock_report,
+            mock.patch(
+                "midvatten.tools.wqualreport_compact.common_utils.save_stored_settings"
+            ) as mock_save,
+            mock.patch(
+                "midvatten.tools.utils.message_utils.MessagebarAndLog"
+            ) as mock_messagebar,
+        ):
+            ui = CompactWqualReportUi(self.iface, self.midvatten.ms)
+            ui.wqualreport()
+
+        mock_messagebar.warning.assert_called_once()
+        mock_save.assert_not_called()
+        mock_report.assert_not_called()
+
+    @mock.patch("midvatten.tools.wqualreport_compact.open_report_in_browser")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    @mock.patch(
+        "midvatten.tools.wqualreport_compact.layer_utils.get_selected_object_names",
+        return_value=["WQ1"],
+    )
+    def test_valid_integer_boundaries_generate_reports(
+        self, mock_getselected, mock_messagebar, mock_openurl
+    ):
+        _insert_wqual_test_data("WQ1")
+        with mock.patch(
+            "midvatten.tools.wqualreport_compact.common_utils.get_stored_settings",
+            return_value={},
+        ):
+            ui = CompactWqualReportUi(self.iface, self.midvatten.ms)
+        ui.from_sql_table.setChecked(True)
+        gui_utils.set_combobox(ui.sql_table, "w_qual_lab", add_if_not_exists=False)
+        gui_utils.set_combobox(ui.data_column, "reading_txt", add_if_not_exists=False)
+
+        for num_data_cols, rowheader_colwidth_percent in (
+            ("1", "0"),
+            ("999999", "100"),
+        ):
+            ui.num_data_cols.setText(num_data_cols)
+            ui.rowheader_colwidth_percent.setText(rowheader_colwidth_percent)
+            ui.wqualreport()
+
+        assert mock_openurl.call_count == 2
+        assert not mock_messagebar.warning.called

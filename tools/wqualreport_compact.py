@@ -26,6 +26,7 @@ import pandas as pd
 import qgis
 import qgis.PyQt
 from qgis.PyQt.QtCore import QCoreApplication
+from qgis.PyQt.QtGui import QIntValidator
 
 from midvatten.tools.utils import (
     common_utils,
@@ -110,6 +111,13 @@ class CompactWqualReportUi(
         self.date_time_format.addItems(self.date_time_formats.keys())
         self.method.addItems(self.methods.keys())
 
+        # Keep these as line edits for stored-settings compatibility while
+        # constraining interactive input to the supported integer ranges.
+        self.num_data_cols.setValidator(QIntValidator(1, 999999, self.num_data_cols))
+        self.rowheader_colwidth_percent.setValidator(
+            QIntValidator(0, 100, self.rowheader_colwidth_percent)
+        )
+
         self.sort1.addItems(["", "obsid", "date_time", "report"])
         self.sort2.addItems(["", "obsid", "date_time", "report"])
         self.sort3.addItems(["", "obsid", "date_time", "report"])
@@ -192,7 +200,13 @@ class CompactWqualReportUi(
         self.set_columns(fields)
 
     def set_columns_from_activelayer(self):
-        fields = [field.name() for field in qgis.utils.iface.activeLayer().fields()]
+        layer = self.iface.activeLayer()
+        if layer is None:
+            layer_utils.warn_no_layer("obsid")
+            self.from_sql_table.setChecked(True)
+            return
+
+        fields = [field.name() for field in layer.fields()]
         self.set_columns(fields)
 
     def set_columns(self, fields):
@@ -201,13 +215,45 @@ class CompactWqualReportUi(
 
     @common_utils.general_exception_handler
     def wqualreport(self):
+        num_data_cols = self._validated_integer_setting(
+            self.num_data_cols,
+            1,
+            999999,
+            "Number of data columns must be an integer from %s to %s.",
+        )
+        if num_data_cols is None:
+            return
+        rowheader_colwidth_percent = self._validated_integer_setting(
+            self.rowheader_colwidth_percent,
+            0,
+            100,
+            "Row-header width must be an integer from %s to %s.",
+        )
+        if rowheader_colwidth_percent is None:
+            return
+
+        if self.from_active_layer.isChecked():
+            active_layer = self.iface.activeLayer()
+            if active_layer is None:
+                layer_utils.warn_no_layer("obsid")
+                return
+            selected_feature_ids = list(active_layer.selectedFeatureIds())
+            if not selected_feature_ids:
+                layer_utils.warn_no_selection()
+                return
+            selected_obsids = None
+        else:
+            active_layer = None
+            selected_feature_ids = None
+            selected_obsids = list(layer_utils.get_selected_object_names())
+            if not selected_obsids:
+                layer_utils.warn_no_selection()
+                return
+
         common_utils.start_waiting_cursor()
-        num_data_cols = int(self.num_data_cols.text())
-        rowheader_colwidth_percent = int(self.rowheader_colwidth_percent.text())
         empty_row_between_tables = self.empty_row_between_tables.isChecked()
         page_break_between_tables = self.page_break_between_tables.isChecked()
         from_active_layer = self.from_active_layer.isChecked()
-        from_sql_table = self.from_sql_table.isChecked()
         sql_table = self.sql_table.currentText()
         sort_alphabetically = self.sort_alphabetically.isChecked()
         sort_order = []
@@ -246,8 +292,29 @@ class CompactWqualReportUi(
             date_time_format,
             method,
             data_column,
+            active_layer=active_layer,
+            selected_feature_ids=selected_feature_ids,
+            selected_obsids=selected_obsids,
         )
         common_utils.stop_waiting_cursor()
+
+    def _validated_integer_setting(self, field, minimum, maximum, message):
+        text = field.text().strip()
+        try:
+            value = int(text)
+        except (TypeError, ValueError):
+            value = None
+
+        if value is None or not minimum <= value <= maximum:
+            message_utils.MessagebarAndLog.warning(
+                bar_msg=QCoreApplication.translate("CompactWqualReportUi", message)
+                % (minimum, maximum),
+                duration=4,
+            )
+            field.setFocus()
+            field.selectAll()
+            return None
+        return value
 
 
 class Wqualreport:  # extracts water quality data for selected objects, selected db and given table, results shown in html report
@@ -268,8 +335,31 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
         method,
         data_column,
         include_depth_in_obsid=True,
+        active_layer=None,
+        selected_feature_ids=None,
+        selected_obsids=None,
     ):
         # show the user this may take a long time...
+
+        if from_active_layer:
+            if active_layer is None:
+                layer_utils.warn_no_layer("obsid")
+                return
+            if selected_feature_ids is None:
+                selected_feature_ids = list(active_layer.selectedFeatureIds())
+            else:
+                selected_feature_ids = list(selected_feature_ids)
+            if not selected_feature_ids:
+                layer_utils.warn_no_selection()
+                return
+        else:
+            if selected_obsids is None:
+                selected_obsids = list(layer_utils.get_selected_object_names())
+            else:
+                selected_obsids = list(selected_obsids)
+            if not selected_obsids:
+                layer_utils.warn_no_selection()
+                return
 
         reportpath = report_path()
         f = codecs.open(reportpath, "wb", "utf-8")
@@ -291,20 +381,11 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
             data_columns.insert(1, "depth")
 
         if from_active_layer:
-            w_qual_lab_layer = qgis.utils.iface.activeLayer()
-            if w_qual_lab_layer is None:
-                raise exceptions.UsageError(
-                    QCoreApplication.translate(
-                        "CompactWqualReport", "Must select a layer!"
-                    )
-                )
-            if not w_qual_lab_layer.selectedFeatureCount():
-                w_qual_lab_layer.selectAll()
-            df = self.get_data_from_qgislayer(w_qual_lab_layer, data_columns)
-        else:
-            df = self.get_data_from_sql(
-                sql_table, layer_utils.get_selected_object_names(), data_columns
+            df = self.get_data_from_qgislayer(
+                active_layer, data_columns, selected_feature_ids
             )
+        else:
+            df = self.get_data_from_sql(sql_table, selected_obsids, data_columns)
 
         if "depth" in df.columns:
             try:
@@ -396,6 +477,10 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
         :param dbconnection:
         :return:
         """
+        if not obsids:
+            layer_utils.warn_no_selection()
+            return pd.DataFrame(columns=columns)
+
         dbconnection = db_utils.DbConnectionManager()
         fieldnames = db_utils.tables_columns(table, dbconnection)[table]
         missing = [column not in fieldnames for column in columns if column != "report"]
@@ -430,8 +515,13 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
 
         return df
 
-    def get_data_from_qgislayer(self, w_qual_lab_layer, columns):
+    def get_data_from_qgislayer(
+        self, w_qual_lab_layer, columns, selected_feature_ids=None
+    ):
         """ """
+        if selected_feature_ids is None:
+            selected_feature_ids = list(w_qual_lab_layer.selectedFeatureIds())
+        selected_feature_ids = set(selected_feature_ids)
         fields = w_qual_lab_layer.fields()
         fieldnames = [field.name() for field in fields]
         missing = [column not in fieldnames for column in columns if column != "report"]
@@ -451,7 +541,7 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
         features = [
             f
             for f in w_qual_lab_layer.getFeatures("True")
-            if f.id() in w_qual_lab_layer.selectedFeatureIds()
+            if f.id() in selected_feature_ids
         ]
         file_data = [columns]
         file_data.extend(
@@ -478,7 +568,7 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
                 "Layer processed with %s selected features, %s read features and %s invalid features.",
             )
             % (
-                str(w_qual_lab_layer.selectedFeatureCount()),
+                str(len(selected_feature_ids)),
                 str(num_features),
                 str(invalid_features),
             )
@@ -595,7 +685,7 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
                     )
                     rpt += "</tr>\n"
             except Exception:
-                log.debug("here was an error: %s" % row)
+                log.debug(f"here was an error: {row}")
             f.write(rpt)
 
         f.write("\n</table><p></p><p></p>")

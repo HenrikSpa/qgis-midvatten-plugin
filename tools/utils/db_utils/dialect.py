@@ -20,10 +20,11 @@ class UnsafeIdentifierError(ValueError):
     pass
 
 
-# A SQL column type is an identifier word, optionally repeated (e.g.
+# A SQL column type is a word starting with a letter, optionally containing
+# digits (e.g. "FLOAT8", "INT2"), optionally repeated (e.g.
 # "DOUBLE PRECISION", "TIMESTAMP WITH TIME ZONE"), optionally with a
 # parenthesised size/precision (e.g. "VARCHAR(50)", "DECIMAL(10, 2)").
-_TYPE_RE = re.compile(r"^[A-Za-z][A-Za-z ]*(\(\s*\d+\s*(,\s*\d+\s*)?\))?$")
+_TYPE_RE = re.compile(r"^[A-Za-z][A-Za-z0-9 ]*(\(\s*\d+\s*(,\s*\d+\s*)?\))?$")
 
 
 def safe_type(data_type: str) -> str:

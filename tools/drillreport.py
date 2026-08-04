@@ -93,10 +93,7 @@ class Drillreport:  # general observation point info for the selected object
                 self.write_obsid(obsid, rpt, imgpath, logopath, f)
             progress.setValue(len(obsids))
             if canceled:
-                # Cancel means no report at all: drop the partial file,
-                # open nothing, say nothing.
-                f.close()
-                os.remove(reportpath)
+                wqualreport_core.discard_partial_report(f, reportpath)
                 return None
             self.close_file(f, reportpath)
         else:

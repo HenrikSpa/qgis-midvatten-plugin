@@ -60,3 +60,11 @@ def write_html_close(f: TextIO) -> None:
 def open_report_in_browser(path: str) -> None:
     """Open the report file in the default browser."""
     QDesktopServices.openUrl(QUrl.fromLocalFile(path))
+
+
+def discard_partial_report(f: TextIO, reportpath: str) -> None:
+    """Drop a partially generated report on cancel: close the handle and
+    delete the file. The user cancelled, so nothing opens and nothing is
+    reported."""
+    f.close()
+    os.remove(reportpath)

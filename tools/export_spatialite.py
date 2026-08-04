@@ -6,7 +6,7 @@ import qgis.core
 from qgis.PyQt.QtCore import QCoreApplication, QEventLoop, Qt, QThread
 from qgis.PyQt.QtWidgets import QApplication, QDialog, QMessageBox, QProgressDialog
 
-from midvatten.tools.create_db import NewDb
+from midvatten.tools.create_db import NewDb, spatialite_destination_error
 from midvatten.tools.create_db_dialogs import NewSpatialiteDbDialog
 from midvatten.tools.export_worker import ExportWorker
 from midvatten.tools.utils import common_utils, db_utils, layer_utils, message_utils
@@ -125,12 +125,9 @@ class ExportSpatialite:
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return
 
-        if not dialog.dbpath:
-            message_utils.MessagebarAndLog.critical(
-                bar_msg=QCoreApplication.translate(
-                    "export_spatialite", "No destination path specified."
-                )
-            )
+        destination_error = spatialite_destination_error(dialog.dbpath)
+        if destination_error:
+            message_utils.MessagebarAndLog.critical(bar_msg=destination_error)
             return
 
         source_db_settings = qgis.core.QgsProject.instance().readEntry(

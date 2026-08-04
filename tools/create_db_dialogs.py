@@ -4,8 +4,9 @@ Replaces the sequential dialog pattern with unified single dialogs.
 """
 
 import locale as locale_module
+import os
 
-from qgis.PyQt.QtCore import QCoreApplication, QLocale
+from qgis.PyQt.QtCore import QCoreApplication, QLocale, QStandardPaths
 from qgis.PyQt.QtWidgets import (
     QComboBox,
     QDialog,
@@ -13,6 +14,7 @@ from qgis.PyQt.QtWidgets import (
     QFileDialog,
     QFormLayout,
     QHBoxLayout,
+    QLabel,
     QLineEdit,
     QPushButton,
     QSpinBox,
@@ -20,6 +22,7 @@ from qgis.PyQt.QtWidgets import (
     QWidget,
 )
 
+from midvatten.tools.create_db import spatialite_destination_error
 from midvatten.tools.utils.common_utils import format_timezone_string
 from midvatten.tools.utils.date_utils import get_pytz_timezones
 
@@ -149,7 +152,10 @@ class NewSpatialiteDbDialog(_BaseNewDbDialog):
         self._build_common_form(form)
 
         path_row = QHBoxLayout()
-        self._path_edit = QLineEdit(self._DEFAULT_PATH)
+        self._path_edit = QLineEdit()
+        self._path_edit.setPlaceholderText(
+            QCoreApplication.translate("NewDb", "Choose a database file\u2026")
+        )
         self._browse_btn = QPushButton(
             QCoreApplication.translate("NewDb", "Browse\u2026")
         )
@@ -158,24 +164,49 @@ class NewSpatialiteDbDialog(_BaseNewDbDialog):
         path_widget = QWidget()
         path_widget.setLayout(path_row)
         form.addRow(QCoreApplication.translate("NewDb", "Database path:"), path_widget)
+        self._path_error_label = QLabel()
+        self._path_error_label.setWordWrap(True)
+        self._path_error_label.setStyleSheet("color: #b00020;")
+        form.addRow(self._path_error_label)
 
         layout.addLayout(form)
-        buttons = QDialogButtonBox(
+        self._buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         )
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+        self._buttons.accepted.connect(self.accept)
+        self._buttons.rejected.connect(self.reject)
+        self._ok_button = self._buttons.button(QDialogButtonBox.StandardButton.Ok)
+        layout.addWidget(self._buttons)
 
     def _connect_signals(self) -> None:
         super()._connect_signals()
         self._browse_btn.clicked.connect(self._browse_path)
+        self._path_edit.textChanged.connect(self._validate_destination)
+        self._validate_destination()
+
+    def _validate_destination(self, _path: str = None):
+        error = spatialite_destination_error(self.dbpath)
+        self._path_error_label.setText(error or "")
+        self._path_error_label.setVisible(bool(error))
+        self._ok_button.setEnabled(error is None)
+        return error
+
+    def accept(self) -> None:
+        error = self._validate_destination()
+        if error:
+            self._path_edit.setFocus()
+            return
+        super().accept()
 
     def _browse_path(self) -> None:
+        documents_location = QStandardPaths.writableLocation(
+            QStandardPaths.DocumentsLocation
+        )
+        suggested_path = os.path.join(documents_location, self._DEFAULT_PATH)
         path, _ = QFileDialog.getSaveFileName(
             self,
             QCoreApplication.translate("NewDb", "New DB"),
-            self._path_edit.text() or self._DEFAULT_PATH,
+            suggested_path,
             "Spatialite (*.sqlite)",
         )
         if path:
@@ -183,7 +214,7 @@ class NewSpatialiteDbDialog(_BaseNewDbDialog):
 
     @property
     def dbpath(self) -> str:
-        return self._path_edit.text()
+        return self._path_edit.text().strip()
 
 
 class NewPostgisDbDialog(_BaseNewDbDialog):

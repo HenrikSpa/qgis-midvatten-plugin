@@ -43,6 +43,40 @@ from midvatten.tools.utils.db_utils.db_settings_serde import db_settings_to_stri
 
 log = logging.getLogger(__name__)
 
+
+def spatialite_destination_error(
+    dbpath: str,
+    *,
+    allow_memory: bool = False,
+    check_existing: bool = True,
+) -> Optional[str]:
+    """Return a translated validation error for a new SpatiaLite destination."""
+
+    if dbpath is None:
+        path = ""
+    else:
+        path = os.fspath(dbpath)
+        if isinstance(path, bytes):
+            path = os.fsdecode(path)
+        path = path.strip()
+
+    if allow_memory and path == ":memory:":
+        return None
+    if not path:
+        return QCoreApplication.translate("NewDb", "Choose a database file.")
+    if not os.path.isabs(path):
+        return QCoreApplication.translate("NewDb", "Use an absolute path.")
+    if not os.path.isdir(os.path.dirname(path)):
+        return QCoreApplication.translate(
+            "NewDb", "The destination folder does not exist."
+        )
+    if check_existing and os.path.lexists(path):
+        return QCoreApplication.translate(
+            "NewDb", "A file with this name already exists."
+        )
+    return None
+
+
 # DDL for the helper function used in PostgreSQL expression indexes on date_time columns.
 # Must be executed inline (not via create_db.sql) because create_db.sql is processed by
 # splitting on every ";" — which would truncate a plpgsql function body at its first
@@ -84,6 +118,17 @@ class NewDb:
     ):  # CreateNewDB(self, verno):
         """Open a new DataBase (create an empty one if file doesn't exists) and set as default DB"""
 
+        if dbpath is not None:
+            dbpath = os.fspath(dbpath)
+            if isinstance(dbpath, bytes):
+                dbpath = os.fsdecode(dbpath)
+            dbpath = dbpath.strip()
+        destination_error = spatialite_destination_error(
+            dbpath, allow_memory=True, check_existing=False
+        )
+        if destination_error:
+            raise exceptions.UsageError(destination_error)
+
         if locale is None:
             with common_utils.suspended_waiting_cursor():
                 set_locale = self.ask_for_locale()
@@ -117,21 +162,7 @@ class NewDb:
                 w_levels_timezone = self.ask_for_timezone("w_levels", default_ts)
                 # print("Got timezone:" + str(w_levels_timezone))
 
-        if dbpath is None:
-            with common_utils.suspended_waiting_cursor():
-                dbpath = ru(
-                    common_utils.get_save_file_name_no_extension(
-                        parent=None,
-                        caption="New DB",
-                        directory="midv_obsdb.sqlite",
-                        filter="Spatialite (*.sqlite)",
-                    )
-                )
-
-        if not dbpath:
-            return
-
-        if os.path.exists(dbpath):
+        if os.path.lexists(dbpath):
             message_utils.MessagebarAndLog.critical(
                 bar_msg=QCoreApplication.translate(
                     "NewDb",

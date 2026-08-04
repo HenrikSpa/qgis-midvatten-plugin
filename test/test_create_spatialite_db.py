@@ -24,8 +24,12 @@ import pytest
 
 from midvatten.definitions import midvatten_defs as defs
 from midvatten.test import utils_for_tests
+from midvatten.tools.create_db import NewDb
 from midvatten.tools.create_db_dialogs import NewSpatialiteDbDialog
-from midvatten.tools.utils import midvatten_utils, string_utils
+from midvatten.tools.utils import exceptions, midvatten_utils, string_utils
+from qgis.PyQt.QtCore import QStandardPaths
+from qgis.PyQt.QtWidgets import QDialogButtonBox
+
 from midvatten.tools.utils import db_utils
 
 
@@ -707,6 +711,99 @@ class TestNewSpatialiteDbDialog(utils_for_tests.MidvattenTestSpatialiteNotCreate
         assert dialog.epsg_code == 4326
         assert dialog.w_levels_logger_timezone == ""
         assert dialog.w_levels_timezone == ""
+
+    def test_destination_validation_and_defensive_accept(self, tmp_path):
+        dialog = NewSpatialiteDbDialog()
+        ok_button = dialog._buttons.button(QDialogButtonBox.Ok)
+
+        assert dialog.dbpath == ""
+        assert dialog._path_edit.placeholderText() == "Choose a database file…"
+        assert not ok_button.isEnabled()
+        assert dialog._path_error_label.text() == "Choose a database file."
+
+        dialog.accept()
+        assert dialog.result() != 1
+
+        dialog._path_edit.setText("relative.sqlite")
+        assert not ok_button.isEnabled()
+        assert dialog._path_error_label.text() == "Use an absolute path."
+
+        missing_parent = tmp_path / "missing" / "new.sqlite"
+        dialog._path_edit.setText(str(missing_parent))
+        assert not ok_button.isEnabled()
+        assert dialog._path_error_label.text() == "The destination folder does not exist."
+
+        existing = tmp_path / "existing.sqlite"
+        existing.write_text("keep me", encoding="utf-8")
+        dialog._path_edit.setText(str(existing))
+        assert not ok_button.isEnabled()
+        assert dialog._path_error_label.text() == "A file with this name already exists."
+
+        destination = tmp_path / "new.sqlite"
+        dialog._path_edit.setText(str(destination))
+        assert ok_button.isEnabled()
+        dialog.accept()
+        assert dialog.result() == 1
+
+    @mock.patch("midvatten.tools.create_db_dialogs.QFileDialog.getSaveFileName")
+    @mock.patch("midvatten.tools.create_db_dialogs.QStandardPaths.writableLocation")
+    def test_browse_starts_in_documents_and_suggests_default(
+        self, mock_documents, mock_get_save_file_name, tmp_path
+    ):
+        documents = tmp_path / "Documents"
+        mock_documents.return_value = str(documents)
+        mock_get_save_file_name.return_value = ("", "")
+        dialog = NewSpatialiteDbDialog()
+
+        dialog._browse_path()
+
+        mock_documents.assert_called_once_with(QStandardPaths.DocumentsLocation)
+        assert mock_get_save_file_name.call_args.args[2] == str(
+            documents / "midv_obsdb.sqlite"
+        )
+        assert dialog.dbpath == ""
+
+
+@pytest.mark.spatialite
+class TestSpatialiteDestinationBackend:
+    @pytest.mark.parametrize(
+        ("dbpath", "expected"),
+        [
+            (None, "Choose a database file."),
+            ("", "Choose a database file."),
+            ("relative.sqlite", "Use an absolute path."),
+        ],
+    )
+    def test_backend_rejects_blank_and_relative_paths(self, dbpath, expected):
+        with pytest.raises(exceptions.UsageError, match=expected):
+            NewDb().create_new_spatialite_db(
+                "test",
+                user_select_crs="n",
+                epsg_code="4326",
+                w_levels_logger_timezone="",
+                w_levels_timezone="",
+                locale="en_US",
+                dbpath=dbpath,
+            )
+
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_backend_does_not_overwrite_existing_file(self, mock_messagebar, tmp_path):
+        destination = tmp_path / "existing.sqlite"
+        destination.write_text("keep me", encoding="utf-8")
+
+        result = NewDb().create_new_spatialite_db(
+            "test",
+            user_select_crs="n",
+            epsg_code="4326",
+            w_levels_logger_timezone="",
+            w_levels_timezone="",
+            locale="en_US",
+            dbpath=str(destination),
+        )
+
+        assert result == ""
+        assert destination.read_text(encoding="utf-8") == "keep me"
+        mock_messagebar.critical.assert_called_once()
 
 
 @pytest.mark.spatialite

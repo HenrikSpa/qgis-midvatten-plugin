@@ -464,6 +464,13 @@ class Midvatten:
         self.translator = get_translate("midvatten")
         self.actions = []
         self._open_tools: dict = {}
+        self._signals_connected = False
+        self._actions_manifest: list[ActionSpec] = []
+        self._qactions: dict[str, QAction] = {}
+        self._submenus: dict[str, QMenu] = {}
+        self.tool_bar = None
+        self.menu = None
+        self.owns_midv_menu = False
 
         # Check if plugin was started the first time in current QGIS session
         # Must be set in initGui() to survive plugin reloads
@@ -648,6 +655,9 @@ class Midvatten:
 
     def _connect_signals(self) -> None:
         """Connect QGIS iface signals to plugin slots."""
+        if self._signals_connected:
+            return
+
         # QGIS iface connections
         self.iface.projectRead.connect(self.project_opened)
         self.iface.newProjectCreated.connect(self.project_created)
@@ -658,6 +668,28 @@ class Midvatten:
         QgsApplication.messageLog().messageReceived.connect(
             common_utils.write_qgs_log_to_file
         )
+        self._signals_connected = True
+
+    def _disconnect_signals(self) -> None:
+        """Disconnect the QGIS signals owned by this plugin."""
+        if not self._signals_connected:
+            return
+
+        try:
+            self.iface.projectRead.disconnect(self.project_opened)
+        except (TypeError, RuntimeError):
+            pass
+        try:
+            self.iface.newProjectCreated.disconnect(self.project_created)
+        except (TypeError, RuntimeError):
+            pass
+        try:
+            QgsApplication.messageLog().messageReceived.disconnect(
+                common_utils.write_qgs_log_to_file
+            )
+        except (TypeError, RuntimeError):
+            pass
+        self._signals_connected = False
 
     def add_menu(self, name: str, parent: QMenu) -> QMenu:
         menu = QMenu(name)
@@ -665,32 +697,110 @@ class Midvatten:
         return menu
 
     def unload(self):
-        try:
-            self.menu.removeAction(self.action_load_layers)
-            self.menu.removeAction(self.action_midvatten_settings)
-            self.menu.removeAction(self.action_about)
-        except Exception:
-            pass
+        self._disconnect_signals()
 
-        for submenu in getattr(self, "_submenus", {}).values():
+        settings_dialog = getattr(self, "midvsettingsdialog", None)
+        if settings_dialog is not None:
             try:
-                self.menu.removeAction(submenu.menuAction())
-                submenu.deleteLater()
-            except Exception:
+                settings_dialog.close()
+            except RuntimeError:
+                pass
+            try:
+                settings_dialog.deleteLater()
+            except RuntimeError:
+                pass
+            self.midvsettingsdialog = None
+
+        for tool in tuple(self._open_tools.values()):
+            try:
+                tool.close()
+            except RuntimeError:
+                pass
+            try:
+                tool.deleteLater()
+            except RuntimeError:
+                pass
+        self._open_tools.clear()
+
+        menu = self.menu
+        submenus = tuple(self._submenus.values())
+        toolbar = self.tool_bar
+
+        for action in tuple(self.actions):
+            try:
+                action.triggered.disconnect()
+            except (TypeError, RuntimeError):
                 pass
 
-        if self.owns_midv_menu:
-            self.menu.parentWidget().removeAction(self.menu.menuAction())
-            self.menu.deleteLater()
-
-        for action in self.actions:
+            if menu is not None:
+                try:
+                    menu.removeAction(action)
+                except RuntimeError:
+                    pass
+            for submenu in submenus:
+                try:
+                    submenu.removeAction(action)
+                except RuntimeError:
+                    pass
+            if toolbar is not None:
+                try:
+                    toolbar.removeAction(action)
+                except RuntimeError:
+                    pass
             try:
                 self.iface.removeToolBarIcon(action)
-            except Exception:
+            except RuntimeError:
+                pass
+            try:
+                action.deleteLater()
+            except RuntimeError:
                 pass
 
-        del self.tool_bar
-        self.iface.unregisterMainWindowAction(self.action_midvatten_settings)
+        settings_action = getattr(self, "action_midvatten_settings", None)
+        if settings_action is not None:
+            try:
+                self.iface.unregisterMainWindowAction(settings_action)
+            except RuntimeError:
+                pass
+
+        for submenu in submenus:
+            if menu is not None:
+                try:
+                    menu.removeAction(submenu.menuAction())
+                except RuntimeError:
+                    pass
+            try:
+                submenu.deleteLater()
+            except RuntimeError:
+                pass
+
+        if menu is not None and self.owns_midv_menu:
+            try:
+                menu.parentWidget().removeAction(menu.menuAction())
+            except RuntimeError:
+                pass
+            try:
+                menu.deleteLater()
+            except RuntimeError:
+                pass
+
+        if toolbar is not None:
+            try:
+                toolbar.deleteLater()
+            except RuntimeError:
+                pass
+
+        self.actions.clear()
+        self._actions_manifest.clear()
+        self._qactions.clear()
+        self._submenus.clear()
+        self._open_tools.clear()
+        self.menu = None
+        self.owns_midv_menu = False
+        self.tool_bar = None
+        self.action_midvatten_settings = None
+        self.action_load_layers = None
+        self.action_about = None
 
     def about(self):
         filename = self.plugin_dir / "metadata.txt"

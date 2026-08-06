@@ -57,6 +57,67 @@ class FieldLoggerImporterDbMixin:
         assert mock_messagebar.warning.called
         assert not mock_messagebar.critical.called
 
+    @mock.patch(
+        "midvatten.tools.import_fieldlogger.midvatten_utils.QtWidgets.QFileDialog.getOpenFileNames"
+    )
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_show_does_not_present_window_when_file_dialog_cancelled(
+        self, mock_messagebar, mock_getopenfilenames
+    ):
+        """Pressing Cancel in the file-selection dialog must abort the whole
+        import dialog, not leave an empty FieldLogger import window on
+        screen."""
+        # QFileDialog.getOpenFileNames returns (files, selected_filter);
+        # an empty file list is what Cancel produces.
+        mock_getopenfilenames.return_value = ([], "")
+
+        ms = MagicMock()
+        ms.settingsdict = OrderedDict()
+        importer = FieldloggerImport(self.iface, ms)
+        # activateWindow() is the last presentation step in show(); it must
+        # not run when parsing was aborted.
+        importer.activateWindow = MagicMock()
+
+        importer.show()
+
+        print(f"{mock_messagebar.mock_calls=}")
+        assert importer.observations is None
+        importer.activateWindow.assert_not_called()
+
+    def test_show_presents_window_when_file_selected(self):
+        """A successful parse must still present the populated import window
+        (guards the cancel fix from over-gating the normal flow)."""
+        f = [
+            "LOCATION;DATE;TIME;VALUE;TYPE\n",
+            "Rb1202.sample;30-03-2016;15:31:30;hej2;s.comment\n",
+        ]
+
+        with file_utils.tempinput("".join(f)) as filename:
+
+            @mock.patch(
+                "midvatten.tools.import_fieldlogger.midvatten_utils.QtWidgets.QFileDialog.getOpenFileNames"
+            )
+            @mock.patch(
+                "midvatten.tools.import_fieldlogger.midvatten_utils.QtWidgets.QInputDialog.getText"
+            )
+            @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+            def _test(self, filename, mock_messagebar, mock_charset, mock_savefilename):
+                mock_charset.return_value = ("utf-8", True)
+                mock_savefilename.return_value = [[filename]]
+
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = FieldloggerImport(self.iface, ms)
+                importer.activateWindow = MagicMock()
+
+                importer.show()
+
+                print(f"{mock_messagebar.mock_calls=}")
+                assert importer.observations is not None
+                importer.activateWindow.assert_called_once()
+
+            _test(self, filename)
+
     def test_staff_not_given(self):
         db_utils.sql_alter_db("""INSERT INTO obs_points (obsid) VALUES ('Rb1')""")
 

@@ -67,7 +67,15 @@ class FieldloggerImport(BaseImporter, import_fieldlogger_ui_dialog):
         self.main_vertical_layout.setContentsMargins(0, 0, 0, 0)
 
     def show(self) -> None:
-        self.parse_observations_and_populate_gui()
+        if not self.parse_observations_and_populate_gui():
+            # File selection was cancelled or parsing was aborted (the
+            # UserInterruptError raised by a cancelled file dialog is turned
+            # into a falsy return by general_exception_handler). Don't leave
+            # an empty, half-built window on screen; close it so the
+            # WA_DeleteOnClose window is disposed instead of lingering as a
+            # hidden child of the main window.
+            self.close()
+            return
         super().show()
         self.activateWindow()
 
@@ -81,7 +89,7 @@ class FieldloggerImport(BaseImporter, import_fieldlogger_ui_dialog):
 
         self.observations = self.select_file_and_parse_rows(self.parse_rows)
         if self.observations is None:
-            return None
+            return False
 
         # Filters and general settings
         settings_widget = QtWidgets.QWidget()
@@ -189,6 +197,8 @@ class FieldloggerImport(BaseImporter, import_fieldlogger_ui_dialog):
         self.grid_layout_buttons.setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
 
         self.setGeometry(500, 150, 1100, 700)
+
+        return True
 
     @staticmethod
     @common_utils.general_exception_handler

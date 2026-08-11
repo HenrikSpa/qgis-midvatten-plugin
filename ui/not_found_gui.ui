@@ -22,9 +22,6 @@
   <property name="windowTitle">
    <string>Failure</string>
   </property>
-  <property name="modal">
-   <bool>true</bool>
-  </property>
   <layout class="QVBoxLayout" name="vertical_layout_2">
    <property name="leftMargin">
     <number>3</number>

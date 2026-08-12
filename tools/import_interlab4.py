@@ -33,6 +33,7 @@ from midvatten.tools.obsid_assignment_dialog import (
     ObsidAssignmentDialog,
     apply_session_draft,
     ask_obsid_rows_as_dicts,
+    collect_drafted_obsids,
     fan_out_filled_rows,
     group_editor_rows,
     merge_session_draft,
@@ -318,11 +319,12 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
                 shown_lablitteras = {
                     lab for row in dialog.editor_rows for lab in row.lablitteras
                 }
+                touched_filled = collect_drafted_obsids(dialog.editor_rows)
                 merge_session_draft(
                     self._obsid_session_draft,
                     self._obsid_session_skipped,
                     shown_lablitteras,
-                    filled,
+                    touched_filled,
                     skipped,
                 )
                 self.status = True

@@ -1013,6 +1013,7 @@ class TestInterlab4ImportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv)
             if calls["n"] == 1:
                 for row in editor_rows:
                     row.obsid = "Rb17"
+                    row.drafted = True
                 fake.outcome = DialogOutcome.SAVE_DRAFT
             else:
                 captured["rows"] = list(editor_rows)

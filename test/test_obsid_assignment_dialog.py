@@ -2,10 +2,13 @@
 
 import gc
 
+from qgis.PyQt.QtCore import Qt
+
 from midvatten.tools.obsid_assignment_dialog import (
     EditorRow,
     ObsidAssignmentDialog,
     apply_session_draft,
+    collect_drafted_obsids,
     group_editor_rows,
     merge_session_draft,
 )
@@ -136,6 +139,30 @@ class TestMergeSessionDraft:
         assert skipped_set == set()
 
 
+class TestCollectDraftedObsids:
+    def test_includes_user_touched_rows(self):
+        rows = group_editor_rows([_row("L1", "Br1", "Brunn 1")])
+        rows[0].obsid = "Br1"
+        rows[0].drafted = True
+        assert collect_drafted_obsids(rows) == {"L1": "Br1"}
+
+    def test_excludes_untouched_cached_rows(self):
+        # Auto-matched from the durable cache: has obsid, but drafted stays False.
+        rows = group_editor_rows(
+            [_row("L1", "Br1", "Brunn 1")],
+            cache_matches={("Br1", "Brunn 1"): "Br1"},
+        )
+        assert rows[0].cached is True and rows[0].drafted is False
+        assert collect_drafted_obsids(rows) == {}
+
+    def test_excludes_skipped_rows(self):
+        rows = group_editor_rows([_row("L1", "Br1", "Brunn 1")])
+        rows[0].obsid = "Br1"
+        rows[0].drafted = True
+        rows[0].skipped = True
+        assert collect_drafted_obsids(rows) == {}
+
+
 class TestObsidAssignmentDialogShell:
     def teardown_method(self):
         gc.collect()
@@ -213,6 +240,35 @@ class TestObsidAssignmentDialogShell:
             assert dialog.table.isRowHidden(0) is False
             # Row 1 is only auto-matched from the durable table -> stays hidden.
             assert dialog.table.isRowHidden(1) is True
+        finally:
+            dialog.deleteLater()
+
+    def test_restored_skipped_row_is_rendered_noneditable(self):
+        rows = [EditorRow("Br1", "Brunn 1", "", ["L1"], skipped=True)]
+        dialog = ObsidAssignmentDialog(rows, existing_obsids=["Br1"])
+        try:
+            from midvatten.tools.obsid_assignment_dialog import _COL_OBSID
+
+            item = dialog.table.item(0, _COL_OBSID)
+            assert item.text() == "[skipped]"
+            assert not (item.flags() & Qt.ItemIsEditable)
+        finally:
+            dialog.deleteLater()
+
+    def test_fill_selection_marks_row_drafted(self):
+        from qgis.PyQt.QtCore import QItemSelectionModel
+
+        rows = [EditorRow("Br1", "Brunn 1", "", ["L1"])]
+        dialog = ObsidAssignmentDialog(rows, existing_obsids=["Br1"])
+        try:
+            sel = dialog.table.selectionModel()
+            sel.select(
+                dialog.table.model().index(0, 0),
+                QItemSelectionModel.Select | QItemSelectionModel.Rows,
+            )
+            dialog.fill_combo.setEditText("Br1")
+            dialog.fill_selection_button.click()
+            assert dialog.editor_rows[0].drafted is True
         finally:
             dialog.deleteLater()
 

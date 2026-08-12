@@ -204,6 +204,21 @@ def merge_session_draft(
             skipped_set.discard(lab)
 
 
+def collect_drafted_obsids(editor_rows: list[EditorRow]) -> dict[str, str]:
+    """Map lablittera -> obsid for rows the user filled/edited this session.
+
+    Only `drafted` (user-touched), non-skipped rows with a non-empty obsid are
+    included, so auto-matched cached rows the user never touched do not leak
+    into the session draft.
+    """
+    result: dict[str, str] = {}
+    for row in editor_rows:
+        if row.drafted and row.obsid and not row.skipped:
+            for lab in row.lablitteras:
+                result[lab] = row.obsid
+    return result
+
+
 def _tr(text: str) -> str:
     return QCoreApplication.translate("Interlab4ObsidDialog", text)
 
@@ -361,6 +376,8 @@ class ObsidAssignmentDialog(QDialog):
                         item = self.table.item(row_idx, col)
                         if item is not None:
                             item.setForeground(QBrush(QColor(120, 120, 120)))
+                if row.skipped:
+                    self._apply_skip_style(row_idx, True, row.obsid)
         finally:
             self.table.blockSignals(False)
         self.table.setSortingEnabled(True)
@@ -380,7 +397,9 @@ class ObsidAssignmentDialog(QDialog):
             item = QTableWidgetItem()
             self.table.setItem(visual_row, _COL_OBSID, item)
         item.setText(obsid)
-        self.editor_rows[self._editor_index_at(visual_row)].obsid = obsid
+        row = self.editor_rows[self._editor_index_at(visual_row)]
+        row.obsid = obsid
+        row.drafted = True
         self._paint_obsid_cell(visual_row)
 
     def row_has_invalid_obsid(self, visual_row: int) -> bool:
@@ -428,33 +447,42 @@ class ObsidAssignmentDialog(QDialog):
         for row_idx in self._selected_row_indices():
             self.set_obsid_value(row_idx, obsid)
 
+    def _apply_skip_style(self, visual_row: int, skipped: bool, obsid: str) -> None:
+        """Apply/clear the skipped visual (strikethrough + '[skipped]' text +
+        non-editable obsid cell) for one visual row. `obsid` is the value to
+        restore into the cell when un-skipping."""
+        item = self.table.item(visual_row, _COL_OBSID)
+        if item is None:
+            item = QTableWidgetItem()
+            self.table.setItem(visual_row, _COL_OBSID, item)
+        if skipped:
+            item.setText("[skipped]")
+            item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+        else:
+            item.setText(obsid)
+            item.setFlags(item.flags() | Qt.ItemIsEditable)
+        for col in range(self.table.columnCount()):
+            cell = self.table.item(visual_row, col)
+            if cell is not None:
+                font = cell.font()
+                font.setStrikeOut(skipped)
+                cell.setFont(font)
+        self._paint_obsid_cell(visual_row)
+
     def _set_skipped_for_selection(self, skipped: bool):
         for visual_row in self._selected_row_indices():
             editor_row = self.editor_rows[self._editor_index_at(visual_row)]
             editor_row.skipped = skipped
-            item = self.table.item(visual_row, _COL_OBSID)
-            if item is None:
-                item = QTableWidgetItem()
-                self.table.setItem(visual_row, _COL_OBSID, item)
-            if skipped:
-                item.setText("[skipped]")
-                item.setFlags(item.flags() & ~Qt.ItemIsEditable)
-            else:
-                item.setText(editor_row.obsid)
-                item.setFlags(item.flags() | Qt.ItemIsEditable)
-            for col in range(self.table.columnCount()):
-                cell = self.table.item(visual_row, col)
-                if cell is not None:
-                    font = cell.font()
-                    font.setStrikeOut(skipped)
-                    cell.setFont(font)
-            self._paint_obsid_cell(visual_row)
+            self._apply_skip_style(visual_row, skipped, editor_row.obsid)
 
     def _on_item_changed(self, item):
         if item.column() != _COL_OBSID:
             return
         visual_row = item.row()
-        self.editor_rows[self._editor_index_at(visual_row)].obsid = item.text()
+        row = self.editor_rows[self._editor_index_at(visual_row)]
+        row.obsid = item.text()
+        if not row.skipped:
+            row.drafted = True
         self._paint_obsid_cell(visual_row)
 
     def _reload_obsids(self):

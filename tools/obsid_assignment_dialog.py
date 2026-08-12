@@ -53,6 +53,7 @@ class EditorRow:
     cached: bool = False
     is_override: bool = False
     skipped: bool = False
+    drafted: bool = False
 
 
 def _has_override(row: dict) -> bool:
@@ -306,7 +307,7 @@ class ObsidAssignmentDialog(QDialog):
                     row_idx, _COL_NLAB, QTableWidgetItem(str(len(row.lablitteras)))
                 )
                 self.table.setItem(row_idx, _COL_OBSID, QTableWidgetItem(row.obsid))
-                if row.cached:
+                if row.cached and not row.drafted:
                     for col in range(self.table.columnCount()):
                         item = self.table.item(row_idx, col)
                         if item is not None:
@@ -353,7 +354,7 @@ class ObsidAssignmentDialog(QDialog):
         visible = 0
         for visual_row in range(self.table.rowCount()):
             row = self.editor_rows[self._editor_index_at(visual_row)]
-            if not show_matched and row.cached:
+            if not show_matched and row.cached and not row.drafted:
                 self.table.setRowHidden(visual_row, True)
                 continue
             if needle:

@@ -145,6 +145,22 @@ class TestObsidAssignmentDialogShell:
         finally:
             dialog.deleteLater()
 
+    def test_drafted_row_visible_even_when_cached(self):
+        rows = [
+            EditorRow(
+                "Br1", "Brunn 1", "", ["L1"], obsid="Br1", cached=True, drafted=True
+            ),
+            EditorRow("Br2", "Brunn 2", "", ["L2"], obsid="Br2", cached=True),
+        ]
+        dialog = ObsidAssignmentDialog(rows, existing_obsids=["Br1", "Br2"])
+        try:
+            # Row 0 was typed this session -> visible despite being cached.
+            assert dialog.table.isRowHidden(0) is False
+            # Row 1 is only auto-matched from the durable table -> stays hidden.
+            assert dialog.table.isRowHidden(1) is True
+        finally:
+            dialog.deleteLater()
+
     def test_fill_selection_writes_obsid_to_selected_rows(self):
         from qgis.PyQt.QtCore import QItemSelectionModel
 

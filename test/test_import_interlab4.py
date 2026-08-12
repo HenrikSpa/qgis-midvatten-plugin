@@ -973,3 +973,87 @@ class TestInterlab4ImportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv)
         assert rows[0][1] == "DM-1"
         assert rows[0][2] == "Kalium"
         assert rows[0][4] == "mg/l"
+
+    _OVERRIDE_LINES = (
+        "#Interlab",
+        "#Version=4.0",
+        "#Tecken=UTF-8",
+        "#Textavgränsare=Nej",
+        "#Decimaltecken=,",
+        "#Provadm",
+        "Lablittera;Namn;Adress;Postnr;Ort;Kommunkod;Projekt;Laboratorium;"
+        "Provtyp;Provtagare;Registertyp;ProvplatsID;Provplatsnamn;"
+        "Specifik provplats;Provtagningsorsak;Provtyp;Provtypspecifikation;"
+        "Bedömning;Kemisk bedömning;Mikrobiologisk bedömning;Kommentar;År;"
+        "Provtagningsdatum;Provtagningstid;Inlämningsdatum;Inlämningstid;",
+        "DM-1;MFR;;;;;Demoproj;Demo-Lab;NSG;DV;;;VattA;SpA;Kontroll;"
+        "Dricksvatten;Utgående;Nej;Tjänligt;;;2010;2010-09-07;10:15;"
+        "2010-09-07;14:15;",
+        "#Provdat",
+        "Lablittera;Metodbeteckning;Parameter;Mätvärdetext;Mätvärdetal;"
+        "Mätvärdetalanm;Enhet;Rapporteringsgräns;Detektionsgräns;"
+        "Mätosäkerhet;Mätvärdespår;Parameterbedömning;Kommentar;",
+        "DM-1;Metod-1;Kalium;;5;;mg/l;;;;;;;",
+        "#Slut",
+    )
+
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_save_draft_restores_override_rows_next_cycle(self, mock_messagebar):
+        # An override row (non-empty Provtagningsorsak) is never written to the
+        # durable table; the in-memory session draft must bring it back.
+        captured = {}
+        calls = {"n": 0}
+
+        def fake_dialog(
+            editor_rows, existing_obsids, reload_callback=None, parent=None
+        ):
+            fake = mock.MagicMock()
+            fake.editor_rows = editor_rows
+            calls["n"] += 1
+            if calls["n"] == 1:
+                for row in editor_rows:
+                    row.obsid = "Rb17"
+                fake.outcome = DialogOutcome.SAVE_DRAFT
+            else:
+                captured["rows"] = list(editor_rows)
+                fake.outcome = DialogOutcome.CANCEL
+            fake.exec_ = lambda: None
+            return fake
+
+        with file_utils.tempinput(
+            "\n".join(self._OVERRIDE_LINES), "utf-8", suffix=".lab"
+        ) as filename:
+
+            @mock.patch(
+                "midvatten.tools.import_interlab4.ObsidAssignmentDialog",
+                side_effect=fake_dialog,
+            )
+            @mock.patch("midvatten.tools.utils.common_utils.NotFoundQuestion")
+            @mock.patch(
+                "midvatten.tools.utils.dialog_utils.Askuser",
+                mocks_for_tests.mock_askuser.get_v,
+            )
+            @mock.patch("midvatten.tools.utils.midvatten_utils.select_files")
+            def _run(self, fname, mock_select_files, mock_notfound, mock_dialog):
+                mock_select_files.return_value = [fname]
+                importer = Interlab4Import(self.iface, self.midvatten.ms)
+                importer.init_gui()
+                # Keep the durable table out of it; prove the session draft alone
+                # restores the override row.
+                importer.use_obsid_assignment_table.setChecked(False)
+                importer.load_files()
+                labs = importer.metadata_filter.get_selected_lablitteras()
+                ignore = importer.ignore_provtagningsorsak.isChecked()
+                # Cycle 1: fill + Save draft (returns Cancel, imports nothing).
+                importer.start_import(importer.all_lab_results, labs, ignore)
+                # Cycle 2: reopen -> the draft should pre-fill the override row.
+                importer.start_import(importer.all_lab_results, labs, ignore)
+
+            _run(self, filename)
+
+        print(f"{mock_messagebar.mock_calls=}")
+        restored = captured["rows"]
+        override = [r for r in restored if r.is_override]
+        assert override, f"expected an override row, got {restored}"
+        assert all(r.obsid == "Rb17" for r in override)
+        assert all(r.drafted for r in override)

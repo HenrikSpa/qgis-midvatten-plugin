@@ -31,9 +31,11 @@ from midvatten.tools.base_importer import BaseImporter
 from midvatten.tools.obsid_assignment_dialog import (
     DialogOutcome,
     ObsidAssignmentDialog,
+    apply_session_draft,
     ask_obsid_rows_as_dicts,
     fan_out_filled_rows,
     group_editor_rows,
+    merge_session_draft,
 )
 from midvatten.tools.utils import (
     common_utils,
@@ -69,6 +71,8 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
         self.setWindowTitle(
             QCoreApplication.translate("Interlab4Import", "Import interlab4 data")
         )
+        self._obsid_session_draft: dict[str, str] = {}
+        self._obsid_session_skipped: set[str] = set()
 
     def show(self) -> None:
         if not hasattr(self, "_gui_initialized"):
@@ -291,6 +295,11 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
                 for rd in row_dicts:
                     rd["provtagningsorsak"] = ""
             editor_rows = group_editor_rows(row_dicts, cache_matches=cache_pair_map)
+            apply_session_draft(
+                editor_rows,
+                self._obsid_session_draft,
+                self._obsid_session_skipped,
+            )
             dialog = ObsidAssignmentDialog(
                 editor_rows,
                 existing_obsids=existing_obsids,
@@ -306,6 +315,16 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
             self._insert_cache_rows(connection_columns, cache_rows)
 
             if dialog.outcome == DialogOutcome.SAVE_DRAFT:
+                shown_lablitteras = {
+                    lab for row in dialog.editor_rows for lab in row.lablitteras
+                }
+                merge_session_draft(
+                    self._obsid_session_draft,
+                    self._obsid_session_skipped,
+                    shown_lablitteras,
+                    filled,
+                    skipped,
+                )
                 self.status = True
                 return Cancel()
 

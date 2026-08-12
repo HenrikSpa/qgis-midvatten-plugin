@@ -155,6 +155,29 @@ def fan_out_filled_rows(editor_rows: list[EditorRow]):
     return filled, skipped, cache_rows
 
 
+def apply_session_draft(
+    editor_rows: list[EditorRow],
+    draft: dict[str, str],
+    skipped: set[str],
+) -> None:
+    """Overlay a per-lablittera session draft onto freshly grouped rows.
+
+    Restores exactly what the user typed this session. For each row: if any of
+    its lablitteras was skipped, mark it skipped; else if any was filled, set the
+    obsid to the first matching draft value and flag it `drafted` (so it renders
+    as a normal visible row even when it is also in the durable cache).
+    """
+    for row in editor_rows:
+        if any(lab in skipped for lab in row.lablitteras):
+            row.skipped = True
+            continue
+        for lab in row.lablitteras:
+            if lab in draft:
+                row.obsid = draft[lab]
+                row.drafted = True
+                break
+
+
 def _tr(text: str) -> str:
     return QCoreApplication.translate("Interlab4ObsidDialog", text)
 

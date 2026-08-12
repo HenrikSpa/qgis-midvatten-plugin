@@ -5,6 +5,7 @@ import gc
 from midvatten.tools.obsid_assignment_dialog import (
     EditorRow,
     ObsidAssignmentDialog,
+    apply_session_draft,
     group_editor_rows,
 )
 
@@ -79,6 +80,34 @@ class TestGroupEditorRows:
         assert len(editor_rows) == 1
         assert editor_rows[0].is_override is False
         assert editor_rows[0].lablitteras == ["L1", "L2"]
+
+
+class TestApplySessionDraft:
+    def test_fills_override_row(self):
+        rows = group_editor_rows([_row("L9", "Sp", "Namn", orsak="annan")])
+        apply_session_draft(rows, {"L9": "Rb17"}, set())
+        assert rows[0].obsid == "Rb17"
+        assert rows[0].drafted is True
+
+    def test_marks_skipped(self):
+        rows = group_editor_rows([_row("L9", "Sp", "Namn", orsak="annan")])
+        apply_session_draft(rows, {}, {"L9"})
+        assert rows[0].skipped is True
+
+    def test_leaves_undrafted_row_untouched(self):
+        rows = group_editor_rows([_row("L1", "Br1", "Brunn 1")])
+        apply_session_draft(rows, {"OTHER": "X"}, set())
+        assert rows[0].obsid == ""
+        assert rows[0].drafted is False
+
+    def test_first_match_wins_for_clean_group(self):
+        rows = group_editor_rows(
+            [_row("L1", "Br1", "Brunn 1"), _row("L2", "Br1", "Brunn 1")]
+        )
+        apply_session_draft(rows, {"L1": "Br1", "L2": "Br1"}, set())
+        assert len(rows) == 1
+        assert rows[0].obsid == "Br1"
+        assert rows[0].drafted is True
 
 
 class TestObsidAssignmentDialogShell:

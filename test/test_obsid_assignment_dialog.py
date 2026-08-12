@@ -7,6 +7,7 @@ from midvatten.tools.obsid_assignment_dialog import (
     ObsidAssignmentDialog,
     apply_session_draft,
     group_editor_rows,
+    merge_session_draft,
 )
 
 
@@ -108,6 +109,31 @@ class TestApplySessionDraft:
         assert len(rows) == 1
         assert rows[0].obsid == "Br1"
         assert rows[0].drafted is True
+
+
+class TestMergeSessionDraft:
+    def test_records_fills_and_skips(self):
+        draft, skipped_set = {}, set()
+        merge_session_draft(draft, skipped_set, {"L1", "L2"}, {"L1": "Br1"}, {"L2"})
+        assert draft == {"L1": "Br1"}
+        assert skipped_set == {"L2"}
+
+    def test_drops_cleared_shown_lablittera(self):
+        draft, skipped_set = {"L1": "Br1"}, set()
+        # L1 is shown again but now empty (user cleared it) -> forget it.
+        merge_session_draft(draft, skipped_set, {"L1"}, {}, set())
+        assert draft == {}
+
+    def test_leaves_unshown_lablitteras_untouched(self):
+        draft, skipped_set = {"L9": "Old"}, set()
+        merge_session_draft(draft, skipped_set, {"L1"}, {"L1": "Br1"}, set())
+        assert draft == {"L9": "Old", "L1": "Br1"}
+
+    def test_fill_overrides_previous_skip(self):
+        draft, skipped_set = {}, {"L1"}
+        merge_session_draft(draft, skipped_set, {"L1"}, {"L1": "Br1"}, set())
+        assert draft == {"L1": "Br1"}
+        assert skipped_set == set()
 
 
 class TestObsidAssignmentDialogShell:

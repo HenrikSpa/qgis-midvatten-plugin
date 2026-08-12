@@ -178,6 +178,32 @@ def apply_session_draft(
                 break
 
 
+def merge_session_draft(
+    draft: dict[str, str],
+    skipped_set: set[str],
+    shown_lablitteras: set[str],
+    filled: dict[str, str],
+    skipped: set[str],
+) -> None:
+    """Mirror the dialog's current state into the session draft.
+
+    Only the lablitteras shown this round are reconciled, so a value the user
+    cleared before saving is forgotten rather than resurrected, while
+    lablitteras filtered out this round (e.g. already-imported reports) keep
+    their earlier draft state.
+    """
+    for lab in shown_lablitteras:
+        if lab in filled:
+            draft[lab] = filled[lab]
+            skipped_set.discard(lab)
+        elif lab in skipped:
+            skipped_set.add(lab)
+            draft.pop(lab, None)
+        else:
+            draft.pop(lab, None)
+            skipped_set.discard(lab)
+
+
 def _tr(text: str) -> str:
     return QCoreApplication.translate("Interlab4ObsidDialog", text)
 

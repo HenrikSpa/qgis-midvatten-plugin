@@ -250,7 +250,7 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
         if self.skip_imported_reports.isChecked():
             skip_reports = get_imported_reports(self.dest_table)
         else:
-            skip_reports = []
+            skip_reports = set()
 
         self.all_lab_results = self.parse(filenames, skip_reports)
         self.specific_meta_filter.update_combobox(self.all_lab_results)
@@ -280,7 +280,7 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
         remaining_lablitteras_obsids: dict[str, str] = {}
 
         if ask_obsid_table and len(ask_obsid_table) > 1:
-            cache_pair_map = self._load_obsid_assignment_cache(connection_columns)
+            cache_pair_map = self._load_obsid_assignment_cache()
             row_dicts = ask_obsid_rows_as_dicts(ask_obsid_table)
             if ignore_provtagningsorsak:
                 for rd in row_dicts:
@@ -303,7 +303,7 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
                 return Cancel()
 
             filled, skipped, cache_rows = fan_out_filled_rows(dialog.editor_rows)
-            self._insert_cache_rows(connection_columns, cache_rows)
+            self._insert_cache_rows(cache_rows)
 
             if dialog.outcome == DialogOutcome.SAVE_DRAFT:
                 shown_lablitteras = {
@@ -354,10 +354,9 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
                     dict([(x[0], x[-1]) for x in answer[1:]])
                 )
                 self._insert_cache_rows(
-                    connection_columns,
                     self._cache_rows_from_notfound_answer(
                         answer, connection_columns, ignore_provtagningsorsak
-                    ),
+                    )
                 )
 
         # Filter the remaining lablitteras and add an obsid field
@@ -383,9 +382,7 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
 
         common_utils.stop_waiting_cursor()
 
-    def _load_obsid_assignment_cache(
-        self, connection_columns
-    ) -> dict[tuple[str, str], str]:
+    def _load_obsid_assignment_cache(self) -> dict[tuple[str, str], str]:
         """Return {(spec, namn): obsid} from zz_interlab4_obsid_assignment.
 
         Empty when the "use assignment table" checkbox is off or the table is
@@ -393,23 +390,16 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
         """
         if not self.use_obsid_assignment_table.isChecked():
             return {}
-        return load_obsid_assignment_cache(
-            table=self.obsid_assignment_table,
-            connection_columns=connection_columns,
-        )
+        return load_obsid_assignment_cache()
 
-    def _insert_cache_rows(self, connection_columns, cache_rows):
+    def _insert_cache_rows(self, cache_rows):
         """Insert (spec, namn, obsid) triples into the assignment cache in a
         single transaction. No-op when the cache is disabled or the list is
         empty.
         """
         if not cache_rows or not self.use_obsid_assignment_table.isChecked():
             return
-        insert_obsid_assignment_rows(
-            cache_rows,
-            table=self.obsid_assignment_table,
-            connection_columns=connection_columns,
-        )
+        insert_obsid_assignment_rows(cache_rows)
         message_utils.MessagebarAndLog.info(
             bar_msg=QCoreApplication.translate(
                 "Interlab4Import",
@@ -1445,7 +1435,10 @@ def get_metadata_headers(all_lab_results):
 
 
 OBSID_ASSIGNMENT_TABLE = "zz_interlab4_obsid_assignment"
+# Metadata-header names (as parsed from interlab4 files) ...
 OBSID_CONNECTION_COLUMNS = ("specifik provplats", "provplatsnamn")
+# ... and the corresponding column names fixed by create_db.sql.
+OBSID_ASSIGNMENT_DB_COLUMNS = ("specifik_provplats", "provplatsnamn")
 
 
 def build_ask_obsid_table(all_lab_results) -> list[list]:
@@ -1469,18 +1462,14 @@ def get_imported_reports(dest_table: str, dbconnection=None) -> set[str]:
     return {str(row[0]) for row in rows}
 
 
-def load_obsid_assignment_cache(
-    dbconnection=None,
-    table: str = OBSID_ASSIGNMENT_TABLE,
-    connection_columns: tuple[str, str] = OBSID_CONNECTION_COLUMNS,
-) -> dict[tuple[str, str], str]:
+def load_obsid_assignment_cache(dbconnection=None) -> dict[tuple[str, str], str]:
     """{(specifik provplats, provplatsnamn): obsid} from the assignment cache."""
     with db_utils.use_or_create_connection(dbconnection) as dbconnection:
         sql = dbconnection.sql_ident(
             'SELECT {c1}, {c2}, "obsid" FROM {t}',
-            t=table,
-            c1=connection_columns[0].replace(" ", "_"),
-            c2=connection_columns[1],
+            t=OBSID_ASSIGNMENT_TABLE,
+            c1=OBSID_ASSIGNMENT_DB_COLUMNS[0],
+            c2=OBSID_ASSIGNMENT_DB_COLUMNS[1],
         )
         return {
             (spec, namn): obsid
@@ -1488,29 +1477,19 @@ def load_obsid_assignment_cache(
         }
 
 
-def insert_obsid_assignment_rows(
-    cache_rows,
-    dbconnection=None,
-    table: str = OBSID_ASSIGNMENT_TABLE,
-    connection_columns: tuple[str, str] = OBSID_CONNECTION_COLUMNS,
-) -> None:
-    """Insert (spec, namn, obsid) triples; an already-answered pair is kept.
-
-    ON CONFLICT DO NOTHING is safe on both backends: the composite primary
-    key is in the shared create_db.sql DDL, and supported SQLite (>= 3.24)
-    implements the clause.
-    """
+def insert_obsid_assignment_rows(cache_rows, dbconnection=None) -> None:
+    """Insert (spec, namn, obsid) triples; an already-answered pair is kept
+    (insert-or-ignore, so a re-answered pair never raises)."""
     if not cache_rows:
         return
     with db_utils.use_or_create_connection(dbconnection) as dbconnection:
         sql = dbconnection.sql_ident(
             "INSERT INTO {t} ({c1}, {c2}, obsid) "
-            "VALUES (" + dbconnection.placeholders(3) + ") "
-            "ON CONFLICT ({c1}, {c2}) DO NOTHING",
-            t=table,
-            c1=connection_columns[0].replace(" ", "_"),
-            c2=connection_columns[1],
+            "VALUES (" + dbconnection.placeholders(3) + ")",
+            t=OBSID_ASSIGNMENT_TABLE,
+            c1=OBSID_ASSIGNMENT_DB_COLUMNS[0],
+            c2=OBSID_ASSIGNMENT_DB_COLUMNS[1],
         )
+        sql = dbconnection.add_insert_or_ignore_to_sql(sql)
         with dbconnection.transaction():
-            for cache_row in cache_rows:
-                dbconnection.execute(sql, args=cache_row)
+            dbconnection.executemany(sql, [tuple(row) for row in cache_rows])

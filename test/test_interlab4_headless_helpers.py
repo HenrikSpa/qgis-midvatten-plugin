@@ -20,14 +20,15 @@ def test_build_ask_obsid_table_header_and_sorted_rows():
     assert [row[lab_idx] for row in table[1:]] == ["L1", "L2"]
 
 
-def test_module_constants():
-    assert import_interlab4.OBSID_ASSIGNMENT_TABLE == "zz_interlab4_obsid_assignment"
-    assert import_interlab4.OBSID_CONNECTION_COLUMNS == (
-        "specifik provplats", "provplatsnamn")
-
-
 @pytest.mark.spatialite
 class TestDbHelpers(utils_for_tests.MidvattenTestSpatialiteDbSv):
+
+    def test_assignment_constants_match_ddl(self):
+        # The constants must name a real table/columns in a fresh database.
+        columns = db_utils.tables_columns(
+            table=import_interlab4.OBSID_ASSIGNMENT_TABLE)
+        assert set(columns[import_interlab4.OBSID_ASSIGNMENT_TABLE]) == (
+            set(import_interlab4.OBSID_ASSIGNMENT_DB_COLUMNS) | {"obsid"})
 
     def test_get_imported_reports(self):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('o1')")

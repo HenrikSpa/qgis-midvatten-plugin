@@ -974,27 +974,11 @@ class TestInterlab4ImportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv)
         assert rows[0][2] == "Kalium"
         assert rows[0][4] == "mg/l"
 
-    _OVERRIDE_LINES = (
-        "#Interlab",
-        "#Version=4.0",
-        "#Tecken=UTF-8",
-        "#Textavgränsare=Nej",
-        "#Decimaltecken=,",
-        "#Provadm",
-        "Lablittera;Namn;Adress;Postnr;Ort;Kommunkod;Projekt;Laboratorium;"
-        "Provtyp;Provtagare;Registertyp;ProvplatsID;Provplatsnamn;"
-        "Specifik provplats;Provtagningsorsak;Provtyp;Provtypspecifikation;"
-        "Bedömning;Kemisk bedömning;Mikrobiologisk bedömning;Kommentar;År;"
-        "Provtagningsdatum;Provtagningstid;Inlämningsdatum;Inlämningstid;",
-        "DM-1;MFR;;;;;Demoproj;Demo-Lab;NSG;DV;;;VattA;SpA;Kontroll;"
-        "Dricksvatten;Utgående;Nej;Tjänligt;;;2010;2010-09-07;10:15;"
-        "2010-09-07;14:15;",
-        "#Provdat",
-        "Lablittera;Metodbeteckning;Parameter;Mätvärdetext;Mätvärdetal;"
-        "Mätvärdetalanm;Enhet;Rapporteringsgräns;Detektionsgräns;"
-        "Mätosäkerhet;Mätvärdespår;Parameterbedömning;Kommentar;",
-        "DM-1;Metod-1;Kalium;;5;;mg/l;;;;;;;",
-        "#Slut",
+    # Same as _INTERLAB4_LINES but with a non-empty Provtagningsorsak
+    # ("Kontroll") on the sample row, which makes it an override row.
+    _OVERRIDE_LINES = tuple(
+        line.replace(";SpA;;Dricksvatten;", ";SpA;Kontroll;Dricksvatten;")
+        for line in _INTERLAB4_LINES
     )
 
     @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")

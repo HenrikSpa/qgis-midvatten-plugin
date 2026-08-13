@@ -55,6 +55,14 @@ class EditorRow:
     skipped: bool = False
     drafted: bool = False
 
+    @property
+    def is_auto_matched(self) -> bool:
+        """True when the obsid came only from the durable cache, not typed this
+        session. Such rows are greyed and hidden by default; a row the user
+        filled or restored (`drafted`) is shown normally even when also cached.
+        """
+        return self.cached and not self.drafted
+
 
 def _has_override(row: dict) -> bool:
     """True when provtagningsorsak contains a hand-written override note.
@@ -371,7 +379,7 @@ class ObsidAssignmentDialog(QDialog):
                     row_idx, _COL_NLAB, QTableWidgetItem(str(len(row.lablitteras)))
                 )
                 self.table.setItem(row_idx, _COL_OBSID, QTableWidgetItem(row.obsid))
-                if row.cached and not row.drafted:
+                if row.is_auto_matched:
                     for col in range(self.table.columnCount()):
                         item = self.table.item(row_idx, col)
                         if item is not None:
@@ -422,7 +430,7 @@ class ObsidAssignmentDialog(QDialog):
         visible = 0
         for visual_row in range(self.table.rowCount()):
             row = self.editor_rows[self._editor_index_at(visual_row)]
-            if not show_matched and row.cached and not row.drafted:
+            if not show_matched and row.is_auto_matched:
                 self.table.setRowHidden(visual_row, True)
                 continue
             if needle:

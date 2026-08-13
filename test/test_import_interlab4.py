@@ -824,24 +824,26 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
         return_value=[],
     )
     @mock.patch(
-        "midvatten.tools.import_interlab4.sql_load_fr_db",
-        return_value=(True, []),
+        "midvatten.tools.import_interlab4.get_imported_reports",
+        return_value=set(),
     )
     @mock.patch(
         "midvatten.tools.import_interlab4.tables_columns",
         return_value={"s_qual_lab": [], "w_qual_lab": []},
     )
     def test_skip_reports_queries_dest_table(
-        self, mock_tables_columns, mock_sql_load, mock_select_files, mock_messagebar
+        self,
+        mock_tables_columns,
+        mock_get_imported_reports,
+        mock_select_files,
+        mock_messagebar,
     ):
         print(mock_messagebar.mock_calls)
         self.importinstance.init_gui()
         self.importinstance.skip_imported_reports.setChecked(True)
         self.importinstance.radio_s_qual_lab.setChecked(True)
         self.importinstance.load_files()
-        call_sql = mock_sql_load.call_args[0][0]
-        assert '"s_qual_lab"' in call_sql
-        assert '"w_qual_lab"' not in call_sql
+        mock_get_imported_reports.assert_called_once_with("s_qual_lab")
 
 
 class TestExtractCreateTable:

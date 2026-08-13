@@ -48,7 +48,7 @@ from midvatten.tools.utils import (
 )
 from midvatten.tools.utils.common_utils import Cancel
 from midvatten.tools.utils.date_utils import to_YmdHMS
-from midvatten.tools.utils.db_utils import sql_load_fr_db, tables_columns
+from midvatten.tools.utils.db_utils import tables_columns
 from midvatten.tools.utils.db_utils.dialect import ident
 from midvatten.tools.utils.file_utils import definitions_path, ui_path
 from midvatten.tools.utils.gui_utils import (
@@ -67,7 +67,7 @@ import_fieldlogger_ui_dialog = qgis.PyQt.uic.loadUiType(ui_path("import_interlab
 
 class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
     def __init__(self, iface, ms):
-        self.obsid_assignment_table = "zz_interlab4_obsid_assignment"
+        self.obsid_assignment_table = OBSID_ASSIGNMENT_TABLE
         super().__init__(iface, ms)
         self.setWindowTitle(
             QCoreApplication.translate("Interlab4Import", "Import interlab4 data")
@@ -248,11 +248,7 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
         )
 
         if self.skip_imported_reports.isChecked():
-            tbl = ident(self.dest_table, allowed=["w_qual_lab", "s_qual_lab"])
-            skip_reports = [
-                str(x[0])
-                for x in sql_load_fr_db(f"SELECT DISTINCT report FROM {tbl};")[1]
-            ]
+            skip_reports = get_imported_reports(self.dest_table)
         else:
             skip_reports = []
 
@@ -277,16 +273,10 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
         )
 
         # Allow the user to connect the metadata rows to obsids.
-        meta_headers = get_metadata_headers(all_lab_results)
-        ask_obsid_table = [meta_headers]
-        for lablittera, v in sorted(all_lab_results.items()):
-            metarow = [
-                v["metadata"].get(meta_header, "") for meta_header in meta_headers
-            ]
-            ask_obsid_table.append(metarow)
+        ask_obsid_table = build_ask_obsid_table(all_lab_results)
         existing_obsids = db_utils.get_all_obsids()
 
-        connection_columns = ("specifik provplats", "provplatsnamn")
+        connection_columns = OBSID_CONNECTION_COLUMNS
         remaining_lablitteras_obsids: dict[str, str] = {}
 
         if ask_obsid_table and len(ask_obsid_table) > 1:
@@ -1471,3 +1461,28 @@ def get_metadata_headers(all_lab_results):
         [head for head in sorted(table_header) if head not in sorted_table_header]
     )
     return sorted_table_header
+
+
+OBSID_ASSIGNMENT_TABLE = "zz_interlab4_obsid_assignment"
+OBSID_CONNECTION_COLUMNS = ("specifik provplats", "provplatsnamn")
+
+
+def build_ask_obsid_table(all_lab_results) -> list[list]:
+    """Header + one metadata row per lablittera, sorted by lablittera."""
+    meta_headers = get_metadata_headers(all_lab_results)
+    table = [meta_headers]
+    for _lablittera, v in sorted(all_lab_results.items()):
+        table.append(
+            [v["metadata"].get(meta_header, "") for meta_header in meta_headers]
+        )
+    return table
+
+
+def get_imported_reports(dest_table: str, dbconnection=None) -> set[str]:
+    """Distinct report ids already imported into dest_table."""
+    tbl = ident(dest_table, allowed=["w_qual_lab", "s_qual_lab"])
+    with db_utils.use_or_create_connection(dbconnection) as dbconnection:
+        rows = dbconnection.execute_and_fetchall(
+            f"SELECT DISTINCT report FROM {tbl}"
+        )
+    return {str(row[0]) for row in rows}

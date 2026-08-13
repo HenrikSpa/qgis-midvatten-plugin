@@ -42,3 +42,22 @@ class TestDbHelpers(utils_for_tests.MidvattenTestSpatialiteDbSv):
     def test_get_imported_reports_rejects_unknown_table(self):
         with pytest.raises(Exception):
             import_interlab4.get_imported_reports("obs_points; DROP TABLE x")
+
+    def test_cache_roundtrip(self):
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('o1')")
+        import_interlab4.insert_obsid_assignment_rows([("SP", "PN", "o1")])
+        assert import_interlab4.load_obsid_assignment_cache() == {
+            ("SP", "PN"): "o1"}
+
+    def test_insert_conflict_keeps_first_answer(self):
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('o1')")
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('o2')")
+        import_interlab4.insert_obsid_assignment_rows([("SP", "PN", "o1")])
+        # Re-answering the same pair must not raise and must keep the first.
+        import_interlab4.insert_obsid_assignment_rows([("SP", "PN", "o2")])
+        assert import_interlab4.load_obsid_assignment_cache() == {
+            ("SP", "PN"): "o1"}
+
+    def test_insert_empty_rows_is_noop(self):
+        import_interlab4.insert_obsid_assignment_rows([])
+        assert import_interlab4.load_obsid_assignment_cache() == {}

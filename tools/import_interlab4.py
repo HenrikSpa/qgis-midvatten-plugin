@@ -391,22 +391,12 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
         Empty when the "use assignment table" checkbox is off or the table is
         empty.
         """
-        cache_pair_map: dict[tuple[str, str], str] = {}
         if not self.use_obsid_assignment_table.isChecked():
-            return cache_pair_map
-        dbconnection = db_utils.DbConnectionManager()
-        try:
-            sql = dbconnection.sql_ident(
-                'SELECT {c1}, {c2}, "obsid" FROM {t}',
-                t=self.obsid_assignment_table,
-                c1=connection_columns[0].replace(" ", "_"),
-                c2=connection_columns[1],
-            )
-            for spec, namn, obsid in dbconnection.execute_and_fetchall(sql):
-                cache_pair_map[(spec, namn)] = obsid
-        finally:
-            dbconnection.closedb()
-        return cache_pair_map
+            return {}
+        return load_obsid_assignment_cache(
+            table=self.obsid_assignment_table,
+            connection_columns=connection_columns,
+        )
 
     def _insert_cache_rows(self, connection_columns, cache_rows):
         """Insert (spec, namn, obsid) triples into the assignment cache in a
@@ -415,20 +405,11 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
         """
         if not cache_rows or not self.use_obsid_assignment_table.isChecked():
             return
-        dbconnection = db_utils.DbConnectionManager()
-        try:
-            ph = dbconnection.placeholder()
-            sql = dbconnection.sql_ident(
-                f"INSERT INTO {{t}} ({{c1}}, {{c2}}, obsid) VALUES ({ph}, {ph}, {ph})",
-                t=self.obsid_assignment_table,
-                c1=connection_columns[0].replace(" ", "_"),
-                c2=connection_columns[1],
-            )
-            with dbconnection.transaction():
-                for cache_row in cache_rows:
-                    dbconnection.execute(sql, args=cache_row)
-        finally:
-            dbconnection.closedb()
+        insert_obsid_assignment_rows(
+            cache_rows,
+            table=self.obsid_assignment_table,
+            connection_columns=connection_columns,
+        )
         message_utils.MessagebarAndLog.info(
             bar_msg=QCoreApplication.translate(
                 "Interlab4Import",
@@ -1486,3 +1467,50 @@ def get_imported_reports(dest_table: str, dbconnection=None) -> set[str]:
             f"SELECT DISTINCT report FROM {tbl}"
         )
     return {str(row[0]) for row in rows}
+
+
+def load_obsid_assignment_cache(
+    dbconnection=None,
+    table: str = OBSID_ASSIGNMENT_TABLE,
+    connection_columns: tuple[str, str] = OBSID_CONNECTION_COLUMNS,
+) -> dict[tuple[str, str], str]:
+    """{(specifik provplats, provplatsnamn): obsid} from the assignment cache."""
+    with db_utils.use_or_create_connection(dbconnection) as dbconnection:
+        sql = dbconnection.sql_ident(
+            'SELECT {c1}, {c2}, "obsid" FROM {t}',
+            t=table,
+            c1=connection_columns[0].replace(" ", "_"),
+            c2=connection_columns[1],
+        )
+        return {
+            (spec, namn): obsid
+            for spec, namn, obsid in dbconnection.execute_and_fetchall(sql)
+        }
+
+
+def insert_obsid_assignment_rows(
+    cache_rows,
+    dbconnection=None,
+    table: str = OBSID_ASSIGNMENT_TABLE,
+    connection_columns: tuple[str, str] = OBSID_CONNECTION_COLUMNS,
+) -> None:
+    """Insert (spec, namn, obsid) triples; an already-answered pair is kept.
+
+    ON CONFLICT DO NOTHING is safe on both backends: the composite primary
+    key is in the shared create_db.sql DDL, and supported SQLite (>= 3.24)
+    implements the clause.
+    """
+    if not cache_rows:
+        return
+    with db_utils.use_or_create_connection(dbconnection) as dbconnection:
+        sql = dbconnection.sql_ident(
+            "INSERT INTO {t} ({c1}, {c2}, obsid) "
+            "VALUES (" + dbconnection.placeholders(3) + ") "
+            "ON CONFLICT ({c1}, {c2}) DO NOTHING",
+            t=table,
+            c1=connection_columns[0].replace(" ", "_"),
+            c2=connection_columns[1],
+        )
+        with dbconnection.transaction():
+            for cache_row in cache_rows:
+                dbconnection.execute(sql, args=cache_row)

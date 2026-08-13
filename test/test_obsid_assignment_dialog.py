@@ -189,6 +189,18 @@ class TestObsidAssignmentDialogShell:
         finally:
             dialog.deleteLater()
 
+    def test_dialog_opens_large_enough_to_read_columns(self):
+        rows = [EditorRow("Br1", "Brunn 1", "", ["L1"])]
+        dialog = ObsidAssignmentDialog(rows, existing_obsids=["Br1"])
+        try:
+            assert dialog.width() >= 900
+            assert dialog.height() >= 500
+            for col in (0, 1):  # specifik provplats, provplatsnamn
+                assert dialog.table.columnWidth(col) >= 220
+            assert dialog.table.horizontalHeader().stretchLastSection()
+        finally:
+            dialog.deleteLater()
+
     def test_invalid_obsid_paints_cell_red(self):
         rows = [EditorRow("Br1", "Brunn 1", "", ["L1"])]
         dialog = ObsidAssignmentDialog(rows, existing_obsids=["Br1", "Br2"])

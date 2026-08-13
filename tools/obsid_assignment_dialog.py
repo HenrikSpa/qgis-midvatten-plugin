@@ -300,7 +300,16 @@ class ObsidAssignmentDialog(QDialog):
         # so the initial display matches insertion order.
         self.table.setSortingEnabled(True)
         self.table.horizontalHeader().setSortIndicator(0, Qt.AscendingOrder)
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
+        header = self.table.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.Interactive)
+        # Readable defaults: wide text columns, obsid absorbs the rest.
+        # Interactive mode keeps every column user-resizable.
+        self.resize(1000, 600)
+        header.resizeSection(_COL_SPEC, 280)
+        header.resizeSection(_COL_NAMN, 280)
+        header.resizeSection(_COL_ORSAK, 200)
+        header.resizeSection(_COL_NLAB, 90)
+        header.setStretchLastSection(True)
         search_row = QHBoxLayout()
         search_row.addWidget(QLabel(_tr("Search:")))
         self.search_input = QLineEdit(self)

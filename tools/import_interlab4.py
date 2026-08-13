@@ -652,6 +652,10 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
             except UnicodeError:
                 continue
 
+        if encoding is None and looks_like_interlab4(filename, "utf-16"):
+            # Lab files regularly omit #Tecken= and are in practice UTF-16;
+            # only ask when UTF-16 demonstrably does not fit the file.
+            encoding = "utf-16"
         if encoding is None:
             encoding = midvatten_utils.ask_for_charset(
                 default_charset="utf-16",
@@ -1450,6 +1454,23 @@ def build_ask_obsid_table(all_lab_results) -> list[list]:
             [v["metadata"].get(meta_header, "") for meta_header in meta_headers]
         )
     return table
+
+
+def looks_like_interlab4(filename: str, encoding: str) -> bool:
+    """True when the file decodes with `encoding` and its first non-empty
+    line starts with '#' (interlab4 files start with '#Interlab').
+
+    A file in another encoding decoded as UTF-16 produces garbage that never
+    starts with '#', so this doubles as a cheap wrong-encoding detector.
+    """
+    try:
+        with open(filename, encoding=encoding) as f:
+            for rawrow in f:
+                if rawrow.strip():
+                    return rawrow.startswith("#")
+    except UnicodeError:
+        return False
+    return False
 
 
 def get_imported_reports(dest_table: str, dbconnection=None) -> set[str]:

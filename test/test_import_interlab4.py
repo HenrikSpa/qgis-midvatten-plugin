@@ -59,6 +59,49 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
         print(reference_string)
         assert result_string == reference_string
 
+    def test_interlab4_parse_filesettings_no_tecken_defaults_to_utf16(self):
+        """A UTF-16 file without #Tecken= must be accepted without asking."""
+        interlab4_lines = (
+            "#Interlab",
+            "#Version=4.0",
+            "#Textavgränsare=Nej",
+            "#Decimaltecken=,",
+            "#Provadm",
+            "Lablittera;Namn;Adress",
+        )
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-16") as testfile:
+            with mock.patch(
+                "midvatten.tools.utils.midvatten_utils.ask_for_charset",
+                side_effect=AssertionError("charset dialog must not appear"),
+            ):
+                file_error, version, encoding, decimalsign, quotechar = (
+                    self.importinstance.parse_filesettings(testfile)
+                )
+        assert encoding == "utf-16"
+        assert version == "4.0"
+        assert file_error is False
+
+    def test_interlab4_parse_filesettings_no_tecken_wrong_encoding_asks(self):
+        """A non-UTF-16 file without #Tecken= still falls back to asking."""
+        interlab4_lines = (
+            "#Interlab",
+            "#Version=4.0",
+            "#Textavgränsare=Nej",
+            "#Decimaltecken=,",
+            "#Provadm",
+            "Lablittera;Namn;Adress",
+        )
+        with file_utils.tempinput(
+            "\n".join(interlab4_lines), "iso-8859-1"
+        ) as testfile:
+            with mock.patch(
+                "midvatten.tools.utils.midvatten_utils.ask_for_charset",
+                return_value="iso-8859-1",
+            ) as ask:
+                result = self.importinstance.parse_filesettings(testfile)
+        ask.assert_called_once()
+        assert result[2] == "iso-8859-1"
+
     def test_interlab4_parse_filesettings_utf8(self):
         interlab4_lines = (
             "#Interlab",

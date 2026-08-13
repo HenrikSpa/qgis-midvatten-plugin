@@ -3,7 +3,7 @@ name=Midvatten
 qgisMinimumVersion=3.40
 description=A toolset that makes QGIS an interface for editing/viewing hydrogeological observational data (drillings, water levels, seismic data etc) stored in a SQLite or PostgreSQL database.
 about=The plugin is a toolset that makes QGIS an interface for editing/viewing hydrogeological observational data (drillings, water levels, seismic data etc) stored in a SQLite or PostgreSQL database. NOTE: This plugin requires the Python packages numpy, pandas and matplotlib. These are installed automatically by the qpip helper plugin. When you first install Midvatten, qpip will show a dialog asking to install these packages — click "Install" to proceed. This is a one-time step.
-version=1.9.0b31
+version=1.9.0b32
 author=Henrik Spångmyr, Josef Källgården
 email=midvattenplugin@midvatten.se
 repository=https://github.com/henrikspa/qgis-midvatten-plugin.git
@@ -23,6 +23,12 @@ hasProcessingProvider=no
 supportsQt6=True
 
 changelog=
+        Version 1.9.0b32:
+          - UX: The interlab4 obsid assignment dialog and the "value not found" question no longer block the QGIS main window (window-modal without a parent). You can inspect the map and attribute tables (e.g. obs_points) while assigning obsids, and the dialog's reload button becomes genuinely useful: create the missing obs_point in QGIS, reload, assign.
+          - UX: The interlab4 obsid assignment dialog now keeps typed obsids and skip marks in an in-session draft. Reopening the import after "Save draft" or a cancelled run restores what you already typed, with restored rows marked visibly; auto-matched rows stay out of the draft.
+          - Reliability: Saving obsid assignments to the connection table now uses insert-or-ignore, so re-answering an already-stored connection keeps the first answer instead of raising an error.
+          - Fix: FieldLogger import no longer opens an empty import window when the file dialog is cancelled.
+          - Internal: The interlab4 importer's ask-obsid table construction, imported-report lookup, and assignment-cache read/write are now headless module-level helpers (usable without the GUI, explicit database connection, batched cache writes); the dialog methods delegate to them.
         Version 1.9.0b31:
           - Security: Imported data and shared databases are handled more safely. CSV import validates declared column types before using them, and all generated reports (drill reports, custom drill reports, water quality reports) escape text values, so a malformed or malicious database can no longer inject code when a report is opened in the browser.
           - Security: Generated reports and exported CSV files are written to private per-run temporary folders instead of a fixed shared path.

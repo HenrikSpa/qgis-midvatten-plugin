@@ -277,6 +277,10 @@ class ObsidAssignmentDialog(QDialog):
     ):
         super().__init__(parent)
         self.setWindowTitle(_tr("Assign obsids"))
+        # Window-modal (not application-modal) so QGIS stays usable while the
+        # dialog is open; callers must pass parent=None or WindowModal blocks
+        # the whole parent window chain up to the QGIS main window.
+        self.setWindowModality(Qt.WindowModal)
         self.editor_rows = list(editor_rows)
         self.existing_obsids = list(existing_obsids)
         self._reload_callback = reload_callback

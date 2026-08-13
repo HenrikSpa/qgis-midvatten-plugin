@@ -259,6 +259,59 @@ class TestInterlab4BulkEditorIntegration(utils_for_tests.MidvattenTestSpatialite
         assert result[1][0][0] == 0, "No rows should be imported after CANCEL"
 
     @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_dialog_constructed_with_no_parent_so_qgis_is_not_blocked(
+        self, mock_messagebar
+    ):
+        """WindowModal blocks the whole parent window chain, so start_import
+        must pass parent=None (mirrors the NotFoundQuestion fix, 185d0c5)."""
+        from midvatten.tools.import_interlab4 import Interlab4Import
+        from midvatten.test import mocks_for_tests
+
+        self._setup_obsids("obsid1", "obsid2")
+        self._setup_cache("SpA", "VattA", "obsid1")
+        self._setup_cache("SpB", "VattB", "obsid2")
+
+        importer = Interlab4Import(self.iface, self.midvatten.ms)
+        seen_parents = []
+
+        def _capturing_dialog(
+            editor_rows, existing_obsids, reload_callback=None, parent=None
+        ):
+            seen_parents.append(parent)
+            return _dialog_that_applies_as_is(
+                editor_rows, existing_obsids, reload_callback, parent
+            )
+
+        with (
+            file_utils.tempinput(
+                "\n".join(self._INTERLAB4_LINES_2ROWS), "utf-8"
+            ) as filename,
+            mock.patch(
+                "midvatten.tools.import_interlab4.ObsidAssignmentDialog",
+                side_effect=_capturing_dialog,
+            ),
+            mock.patch(
+                "midvatten.tools.utils.midvatten_utils.QtWidgets.QFileDialog.getOpenFileNames",
+                return_value=[[filename]],
+            ),
+            mock.patch(
+                "midvatten.tools.utils.dialog_utils.Askuser",
+                mocks_for_tests.mock_askuser.get_v,
+            ),
+            mock.patch("midvatten.tools.utils.common_utils.NotFoundQuestion"),
+            mock.patch(
+                "midvatten.tools.utils.message_utils.pop_up_info",
+                autospec=True,
+            ),
+        ):
+            importer.init_gui()
+            importer.select_files_button.click()
+            importer.use_obsid_assignment_table.setChecked(True)
+            importer.start_import_button.click()
+
+        assert seen_parents == [None]
+
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_new_cache_rows_written_after_apply(self, mock_messagebar):
         """fan_out_filled_rows new (non-cached) rows written by the dialog are
         stored in zz_interlab4_obsid_assignment after APPLY."""

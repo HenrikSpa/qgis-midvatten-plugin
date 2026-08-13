@@ -181,6 +181,14 @@ class TestObsidAssignmentDialogShell:
         finally:
             dialog.deleteLater()
 
+    def test_dialog_is_window_modal_so_qgis_stays_usable(self):
+        rows = [EditorRow("Br1", "Brunn 1", "", ["L1"])]
+        dialog = ObsidAssignmentDialog(rows, existing_obsids=["Br1"])
+        try:
+            assert dialog.windowModality() == Qt.WindowModal
+        finally:
+            dialog.deleteLater()
+
     def test_invalid_obsid_paints_cell_red(self):
         rows = [EditorRow("Br1", "Brunn 1", "", ["L1"])]
         dialog = ObsidAssignmentDialog(rows, existing_obsids=["Br1", "Br2"])

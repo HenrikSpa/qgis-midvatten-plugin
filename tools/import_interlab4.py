@@ -305,7 +305,7 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
                 editor_rows,
                 existing_obsids=existing_obsids,
                 reload_callback=db_utils.get_all_obsids,
-                parent=self,
+                parent=None,
             )
             dialog.exec_()
             if dialog.outcome in (None, DialogOutcome.CANCEL):

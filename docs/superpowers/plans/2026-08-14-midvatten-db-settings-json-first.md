@@ -447,3 +447,23 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 - **Deployment order:** The `midv_addons` interlab4_batch tool already normalizes its dbpath to forward slashes before serializing, so its output is valid JSON and reads correctly under the new core reader — no conflict. Per the standing rule, deploy midvatten (core) first, then re-verify the interlab4_batch monthly workflow on Windows against project 3368.
 - **Manual Windows verification:** After deploy, in QGIS on Windows, set a SpatiaLite db on an `M:\...`/`S:\...` path with a project number containing an octal-triggering digit run (e.g. `3368`), save settings, reopen the project, and confirm the db connects. This exercises the real Qt→settings→reconnect path that unit tests approximate.
 - **Out of scope (candidate follow-up):** the other `anything_to_string_representation`+`ast.literal_eval` round-trips (fieldlogger export, plot_templates, midvatten_defs config) share the same asymmetry but store field names/config rather than paths. If a backslash-bearing value ever reaches them, the same JSON-first treatment applies. Track separately if desired.
+
+---
+
+## REVISION 2026-08-14 — writer-side only (supersedes Task 2)
+
+Testing during execution proved the read-side change is behaviorally inert
+(the production reader `ast.literal_eval` already decodes `json.dumps`
+output correctly) and cannot rescue legacy raw-backslash strings. The
+effective fix is **writer-side JSON**. Revised scope:
+
+- Serde module keeps ONLY `db_settings_to_string` (json.dumps);
+  `db_settings_string_to_dict` is removed (no reader consumer).
+- Readers stay on `ast.literal_eval` (unchanged) — it parses json.dumps output.
+- Core writers (midvsettingsdialog spatialite+postgis, create_db spatialite+postgis)
+  emit via `db_settings_to_string`.
+- The interlab4 **addons** writer (the actually-reported bug) must also emit
+  via `db_settings_to_string` (re-exported through midvatten_imports).
+
+Tasks 2 (read-side) is dropped. Task 3 (writers) and Task 4 (changelog)
+stand, plus a new addons task.

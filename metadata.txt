@@ -31,6 +31,7 @@ changelog=
           - Reliability: Saving obsid assignments to the connection table now uses insert-or-ignore, so re-answering an already-stored connection keeps the first answer instead of raising an error.
           - Fix: FieldLogger import no longer opens an empty import window when the file dialog is cancelled.
           - Internal: The interlab4 importer's ask-obsid table construction, imported-report lookup, and assignment-cache read/write are now headless module-level helpers (usable without the GUI, explicit database connection, batched cache writes); the dialog methods delegate to them.
+          - Fix: SpatiaLite databases on Windows paths (backslashes) failed to open; the database setting is now saved as JSON, so a path segment like "\336" is no longer misread as an octal escape.
         Version 1.9.0b31:
           - Security: Imported data and shared databases are handled more safely. CSV import validates declared column types before using them, and all generated reports (drill reports, custom drill reports, water quality reports) escape text values, so a malformed or malicious database can no longer inject code when a report is opened in the browser.
           - Security: Generated reports and exported CSV files are written to private per-run temporary folders instead of a fixed shared path.

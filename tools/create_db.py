@@ -33,7 +33,6 @@ from midvatten.tools.utils import (
     dialog_utils,
     exceptions,
     message_utils,
-    string_utils,
 )
 from midvatten.tools.utils.string_utils import returnunicode as ru, lstrip
 from midvatten.tools.utils.file_utils import definitions_path

@@ -12,7 +12,6 @@ from midvatten.tools.utils.db_utils.connection import (
 )
 from midvatten.tools.utils.db_utils.settings import get_postgis_connections
 from midvatten.tools.utils.db_utils.db_settings_serde import (
-    db_settings_string_to_dict,
     db_settings_to_string,
 )
 from midvatten.tools.utils.db_utils.backends.base import Backend
@@ -123,7 +122,6 @@ __all__ = [
     "connect_with_spatialite_connect",
     "create_backend",
     "DatabaseLockedError",
-    "db_settings_string_to_dict",
     "db_settings_to_string",
     "db_tables_columns_info",
     "execute_sqlfile",

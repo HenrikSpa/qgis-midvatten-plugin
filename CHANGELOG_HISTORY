@@ -1,5 +1,7 @@
 THIS FILE ONLY FOR HISTORICAL RESONS, IF I NEED TO PICK UP A PARTICULAR VERSION WHERE A SPECIFIC CHANGE WERE IMPLEMENTED
 
+        Version 1.9.0b32:
+        - db_utils: Fixes SpatiaLite databases with Windows paths (backslashes) failing to open. The database setting is now saved as JSON, so a path segment like "\336" is no longer misread as an octal escape.
         Version 1.8.1b11:
         - Sectionplot: Fix to only check geometry of selected layer.
         Version 1.8.1b10:

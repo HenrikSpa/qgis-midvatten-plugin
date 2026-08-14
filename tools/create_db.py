@@ -40,6 +40,7 @@ from midvatten.tools.utils.file_utils import definitions_path
 from midvatten.tools.utils.common_utils import format_timezone_string
 from midvatten.tools.utils.date_utils import get_pytz_timezones
 from midvatten.tools.utils.db_utils import DbConnectionManager, execute_sqlfile
+from midvatten.tools.utils.db_utils.db_settings_serde import db_settings_to_string
 
 log = logging.getLogger(__name__)
 
@@ -146,9 +147,7 @@ class NewDb:
         conn.close()
 
         self.db_settings = ru(
-            string_utils.anything_to_string_representation(
-                {"spatialite": {"dbpath": dbpath}}
-            )
+            db_settings_to_string({"spatialite": {"dbpath": dbpath}})
         )
 
         try:
@@ -275,9 +274,7 @@ class NewDb:
         dbconnection = db_utils.DbConnectionManager()
         db_settings = dbconnection.db_settings
         if not isinstance(db_settings, str):
-            self.db_settings = ru(
-                string_utils.anything_to_string_representation(dbconnection.db_settings)
-            )
+            self.db_settings = ru(db_settings_to_string(dbconnection.db_settings))
         else:
             self.db_settings = ru(db_settings)
         if not dbconnection.is_postgresql():

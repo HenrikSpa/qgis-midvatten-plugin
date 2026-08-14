@@ -34,6 +34,7 @@ from midvatten.tools.utils import (
     message_utils,
     string_utils,
 )
+from midvatten.tools.utils.db_utils.db_settings_serde import db_settings_to_string
 from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
 from midvatten.tools.utils.midvatten_utils import warn_about_old_database
@@ -852,9 +853,7 @@ class SpatialiteSettings(gui_utils.RowEntryGrid):
 
         dbpath = self.dbpath
         self.midvsettingsdialogdock.ms.settingsdict["database"] = (
-            string_utils.anything_to_string_representation(
-                {"spatialite": {"dbpath": dbpath}}
-            )
+            db_settings_to_string({"spatialite": {"dbpath": dbpath}})
         )
         self.midvsettingsdialogdock.ms.save_settings("database")
         try:
@@ -979,7 +978,7 @@ class PostgisSettings(gui_utils.RowEntryGrid):
     def _save_db_settings(self) -> None:
         if self.connection:
             self.midvsettingsdialogdock.ms.settingsdict["database"] = (
-                string_utils.anything_to_string_representation(
+                db_settings_to_string(
                     {"postgis": {"connection": self.connection, "schema": self.schema}}
                 )
             )

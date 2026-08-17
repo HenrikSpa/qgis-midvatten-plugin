@@ -510,19 +510,29 @@ class SurveyWidget(QtWidgets.QFrame):
 
         QtWidgets.QFrame.paintEvent(self, event)
 
-        # check whether there's a survey to show
-        if len(self.sondaggio) == 0:
-            p = QtGui.QPainter(self)
-            p.drawText(
-                self.rect(),
-                QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter,
-                QCoreApplication.translate("SurveyWidget", "No data to display"),
-            )
-            return
-
+        # Use a single painter and always end() it explicitly. Relying on GC to
+        # release the painter can leave it active into the next paintEvent; a
+        # second QPainter on the same device then fails to begin(), which on
+        # Windows crashes with an access violation inside QPainter::drawText
+        # rather than raising a catchable Python exception.
         painter = QtGui.QPainter(self)
-
-        self.draw_surveys(self.rect(), painter)
+        # If begin() failed the painter has no paint engine; drawing on it would
+        # be an access violation on Windows. Skip this frame; a later update()
+        # repaints once the device is ready.
+        if not painter.isActive():
+            return
+        try:
+            # check whether there's a survey to show
+            if len(self.sondaggio) == 0:
+                painter.drawText(
+                    self.rect(),
+                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter,
+                    QCoreApplication.translate("SurveyWidget", "No data to display"),
+                )
+            else:
+                self.draw_surveys(self.rect(), painter)
+        finally:
+            painter.end()
 
     def draw_surveys(self, rect, painter):
         """draw surveys to specified rect with specified painter"""

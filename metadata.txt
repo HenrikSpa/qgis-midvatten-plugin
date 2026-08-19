@@ -33,6 +33,7 @@ changelog=
           - Internal: The interlab4 importer's ask-obsid table construction, imported-report lookup, and assignment-cache read/write are now headless module-level helpers (usable without the GUI, explicit database connection, batched cache writes); the dialog methods delegate to them.
           - Fix: SpatiaLite databases on Windows paths (backslashes) failed to open; the database setting is now saved as JSON, so a path segment like "\336" is no longer misread as an octal escape.
           - Fix: The stratigraphy plot no longer crashes QGIS on Windows; the drawing code now guards against an invalid painter state that could trigger a fatal access violation.
+          - Fix: LoggerEditor "adjust trend" — the trend line and its endpoint markers now disappear immediately when the tool is switched off, instead of lingering until the next redraw (zoom, update, etc.). The line now uses a distinct magenta and the two draggable endpoints are filled diamonds, so they stand out clearly from the regular data markers.
         Version 1.9.0b31:
           - Security: Imported data and shared databases are handled more safely. CSV import validates declared column types before using them, and all generated reports (drill reports, custom drill reports, water quality reports) escape text values, so a malformed or malicious database can no longer inject code when a report is opened in the browser.
           - Security: Generated reports and exported CSV files are written to private per-run temporary folders instead of a fixed shared path.

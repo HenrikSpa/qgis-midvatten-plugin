@@ -3576,34 +3576,35 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             )
             return
 
+        # A vivid magenta, chosen to stand apart from the orange/red logger
+        # series colours (see the default palette in update_plot).
+        trend_color = "#e6007e"
+
         self._trend_line = self.axes.plot(
             [start_dt, end_dt],
             [start_y, end_y],
             linestyle="--",
-            color="#dc5028",
+            color=trend_color,
             linewidth=2,
             zorder=40,
         )[0]
 
+        # Filled diamonds with a white outline so the two draggable endpoints
+        # read clearly against the regular data-node markers.
+        marker_style = dict(
+            linestyle="None",
+            marker="D",
+            markersize=11,
+            markerfacecolor=trend_color,
+            markeredgecolor="white",
+            markeredgewidth=1.5,
+            zorder=41,
+            picker=10,
+        )
         self._trend_start_marker = self.axes.plot(
-            [start_dt],
-            [start_y],
-            marker="o",
-            markersize=12,
-            color="#dc5028",
-            zorder=41,
-            picker=10,
+            [start_dt], [start_y], **marker_style
         )[0]
-
-        self._trend_end_marker = self.axes.plot(
-            [end_dt],
-            [end_y],
-            marker="o",
-            markersize=12,
-            color="#dc5028",
-            zorder=41,
-            picker=10,
-        )[0]
+        self._trend_end_marker = self.axes.plot([end_dt], [end_y], **marker_style)[0]
 
         self.cid.append(self.canvas.mpl_connect("pick_event", self._trend_pick))
         self.cid.append(
@@ -3700,6 +3701,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         self.update_plot()
 
     def _remove_trend_overlay(self):
+        removed_any = False
         for attr in ("_trend_line", "_trend_start_marker", "_trend_end_marker"):
             artist = getattr(self, attr, None)
             if artist is not None:
@@ -3708,7 +3710,13 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 except (ValueError, NotImplementedError):
                     pass
                 setattr(self, attr, None)
+                removed_any = True
         self._trend_dragging = None
+        # Detaching the artists does not repaint the canvas, so without this the
+        # trend line and markers linger on screen until the next redraw (e.g.
+        # when the icon is toggled off or another edit mode takes over).
+        if removed_any:
+            self.canvas.draw_idle()
 
 
 class SelectNodesButton(NavigationButton):

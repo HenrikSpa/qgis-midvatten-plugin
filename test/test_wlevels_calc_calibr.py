@@ -1565,6 +1565,83 @@ class CalibrloggerSpatialiteMixin(CalibrloggerMixin):
         assert calibrlogger._trend_start_marker is not None
 
     @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_calibrlogger_trend_overlay_deactivate_removes_and_redraws(
+        self, mock_messagebar
+    ):
+        """Toggling the trend icon off must detach the overlay AND repaint the
+        canvas, so the line/markers do not linger until the next redraw."""
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('rb1', '2017-02-01 00:00', 100)"
+        )
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('rb1', '2017-02-10 00:00', 200)"
+        )
+
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
+        gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
+        calibrlogger.update_plot()
+        calibrlogger.from_date_time.setDateTime(
+            date_utils.to_date("2000-01-01 00:00:00")
+        )
+        calibrlogger.to_date_time.setDateTime(date_utils.to_date("2099-12-31 23:59:59"))
+
+        calibrlogger.toggle_adjust_trend(True)
+        line = calibrlogger._trend_line
+        start_marker = calibrlogger._trend_start_marker
+        end_marker = calibrlogger._trend_end_marker
+        assert line in calibrlogger.axes.lines
+
+        with mock.patch.object(calibrlogger.canvas, "draw_idle") as mock_draw:
+            calibrlogger.toggle_adjust_trend(False)
+
+        print(f"{mock_messagebar.mock_calls=}")
+        # Overlay detached from the axes and the attributes cleared...
+        assert calibrlogger._trend_line is None
+        assert calibrlogger._trend_start_marker is None
+        assert calibrlogger._trend_end_marker is None
+        assert line not in calibrlogger.axes.lines
+        assert start_marker not in calibrlogger.axes.lines
+        assert end_marker not in calibrlogger.axes.lines
+        # ...and the canvas was repainted so nothing lingers on screen.
+        assert mock_draw.called
+
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_calibrlogger_trend_overlay_styling_is_distinct(self, mock_messagebar):
+        """The trend line uses a distinct magenta and the endpoints are filled
+        diamonds with an outline, so they stand apart from the data markers."""
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('rb1', '2017-02-01 00:00', 100)"
+        )
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, level_masl) VALUES ('rb1', '2017-02-10 00:00', 200)"
+        )
+
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
+        gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
+        calibrlogger.update_plot()
+        calibrlogger.from_date_time.setDateTime(
+            date_utils.to_date("2000-01-01 00:00:00")
+        )
+        calibrlogger.to_date_time.setDateTime(date_utils.to_date("2099-12-31 23:59:59"))
+
+        calibrlogger.toggle_adjust_trend(True)
+
+        print(f"{mock_messagebar.mock_calls=}")
+        assert calibrlogger._trend_line.get_color() == "#e6007e"
+        for marker in (
+            calibrlogger._trend_start_marker,
+            calibrlogger._trend_end_marker,
+        ):
+            assert marker.get_marker() == "D"
+            assert marker.get_markerfacecolor() == "#e6007e"
+            assert marker.get_markeredgecolor() == "white"
+            assert marker.get_markeredgewidth() > 0
+
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_calibrlogger_plot_source_sqlite(self, mock_messagebar):
         db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
         db_utils.sql_alter_db(

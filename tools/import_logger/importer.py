@@ -39,7 +39,9 @@ from midvatten.tools.utils.string_utils import returnunicode as ru
 
 from .models import (
     BARO_METEO_PARAMS,
+    METEO_TABLE,
     NO_NEW_ROWS_REASON,
+    WATER_LEVEL_TABLE,
     LoggerDataKind,
     LoggerDbImportRequest,
     LoggerDbImportResult,
@@ -334,30 +336,46 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                 "DiverOffice format: semicolon or comma separated.\n"
                 "Data header must contain 'Date/time' and at least one of:\n"
                 "Water head[cm], Temperature[°C], Level[cm], Conductivity[mS/cm].\n"
-                "Column names matter; column order does not.",
-            ),
+                "Column names matter; column order does not.\n"
+                "Imports water level logger data into the %s table.",
+            )
+            % WATER_LEVEL_TABLE,
             self.FORMAT_DIVEROFFICE_BARO: QCoreApplication.translate(
                 "LoggerImport",
                 "DiverOffice Baro format: same file format as DiverOffice.\n"
-                "Imports Pressure[cmH2O] and Temperature[°C] into the meteo table.\n"
+                "Imports Pressure[cmH2O] and Temperature[°C] into the\n"
+                "%s table (the only format that does not import into %s).\n"
                 "The instrument serial number is used as instrumentid.\n"
                 "Column names matter; column order does not.",
-            ),
+            )
+            % (METEO_TABLE, WATER_LEVEL_TABLE),
             self.FORMAT_LEVELOGGER: QCoreApplication.translate(
                 "LoggerImport",
                 "Levelogger format: CSV exported from the Levelogger data wizard.\n"
                 "Header must contain 'Date', 'Time', and at least one of:\n"
                 "LEVEL, TEMPERATURE, spec. conductivity.\n"
-                "LEVEL unit (cm or m) is read from the row after 'LEVEL'.",
-            ),
+                "LEVEL unit (cm or m) is read from the row after 'LEVEL'.\n"
+                "Imports water level logger data into the %s table.",
+            )
+            % WATER_LEVEL_TABLE,
             self.FORMAT_HOBO: QCoreApplication.translate(
                 "LoggerImport",
                 "Hobo format: UTF-8 CSV from HOBO logger.\n"
                 'First row: "Plot Title: <name>"\n'
                 'Second row: "#","Date Time, GMT+HH:MM","Temp, °C (...LBL: obsid)"\n'
-                "obsid is read from the LBL tag in the temperature column header.",
-            ),
+                "obsid is read from the LBL tag in the temperature column header.\n"
+                "Imports temperature logger data into the %s table.",
+            )
+            % WATER_LEVEL_TABLE,
         }
+        # The same text doubles as per-item dropdown tooltips, so the user can
+        # compare formats (and their destination tables) before selecting one.
+        for index in range(self.format_combo.count()):
+            self.format_combo.setItemData(
+                index,
+                self._format_descriptions[self.format_combo.itemText(index)],
+                Qt.ToolTipRole,
+            )
         self._format_titles = {
             self.FORMAT_DIVEROFFICE: QCoreApplication.translate(
                 "LoggerImport", "Logger import — DiverOffice"

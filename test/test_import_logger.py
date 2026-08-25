@@ -12,6 +12,7 @@ from unittest.mock import MagicMock
 import pandas as pd
 import pytest
 from qgis.PyQt import QtWidgets
+from qgis.PyQt.QtCore import Qt
 
 from midvatten.test import utils_for_tests
 from midvatten.test.mocks_for_tests import MockReturnUsingDictIn
@@ -37,7 +38,11 @@ from midvatten.tools.import_logger.parsers import (
     _SourceLine,
 )
 from midvatten.tools.import_logger.importer import logger_schema_capabilities
-from midvatten.tools.import_logger.models import BARO_METEO_PARAMS
+from midvatten.tools.import_logger.models import (
+    BARO_METEO_PARAMS,
+    METEO_TABLE,
+    WATER_LEVEL_TABLE,
+)
 from midvatten.tools.import_logger.pipeline import run_pre_resolution_pipeline
 from midvatten.tools.utils import db_utils, file_utils
 from midvatten.tools.utils.date_utils import to_date
@@ -531,6 +536,27 @@ class TestLoggerImportDiverOfficeSpatialite(
     utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     """Integration tests for LoggerImport with DiverOffice format."""
+
+    def test_format_combo_items_have_destination_tooltips(self):
+        """The format dropdown explains where each format's data ends up."""
+        ms = MagicMock()
+        ms.settingsdict = OrderedDict()
+        importer = LoggerImport(self.iface, ms)
+        importer.load_gui()
+
+        expected_destinations = {
+            LoggerImport.FORMAT_DIVEROFFICE: WATER_LEVEL_TABLE,
+            LoggerImport.FORMAT_DIVEROFFICE_BARO: METEO_TABLE,
+            LoggerImport.FORMAT_LEVELOGGER: WATER_LEVEL_TABLE,
+            LoggerImport.FORMAT_HOBO: WATER_LEVEL_TABLE,
+        }
+        combo = importer.format_combo
+        assert combo.count() == len(expected_destinations)
+        for index in range(combo.count()):
+            format_name = combo.itemText(index)
+            tooltip = combo.itemData(index, Qt.ToolTipRole)
+            assert tooltip, f"missing tooltip for {format_name}"
+            assert expected_destinations[format_name] in tooltip
 
     def test_basic_diveroffice_import(self):
         """Three files, three obsids (only rb1 exists) — two are added via NotFoundQuestion."""
@@ -2346,9 +2372,7 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
         ):
             filenames = [f1, f2, f3, f4, f5]
 
-            @mock.patch(
-                "midvatten.tools.import_logger.QtWidgets.QMessageBox.question"
-            )
+            @mock.patch("midvatten.tools.import_logger.QtWidgets.QMessageBox.question")
             @mock.patch("midvatten.tools.utils.common_utils.NotFoundQuestion")
             @mock.patch("qgis.utils.iface", autospec=True)
             @mock.patch(

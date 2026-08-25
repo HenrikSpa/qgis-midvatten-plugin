@@ -24,6 +24,7 @@ supportsQt6=True
 
 changelog=
         Version 1.9.0b32:
+          - UX: The logger import format dropdown shows a tooltip per format describing what data it carries and which table it imports into (w_levels_logger for DiverOffice, Levelogger and Hobo; meteo for DiverOffice Baro), and the on-screen format descriptions now always name the destination table.
           - UX: Interlab4 import no longer asks for the charset when a file lacks the #Tecken= line but reads correctly as UTF-16 (the common case for lab files); the question only appears when UTF-16 does not fit the file.
           - UX: The obsid assignment dialog opens at a readable size with wide text columns (still user-resizable); the obsid column absorbs remaining width.
           - UX: The interlab4 obsid assignment dialog and the "value not found" question no longer block the QGIS main window (window-modal without a parent). You can inspect the map and attribute tables (e.g. obs_points) while assigning obsids, and the dialog's reload button becomes genuinely useful: create the missing obs_point in QGIS, reload, assign.

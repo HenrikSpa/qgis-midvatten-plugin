@@ -293,6 +293,27 @@ class TestGeneralCsvImportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
             "destination table" in mock_messagebar.critical.call_args.kwargs["bar_msg"]
         )
 
+    def test_start_import_button_disabled_until_file_and_table_chosen(self):
+        """Start import stays disabled until both a file is loaded and a
+        destination table is chosen, and disables again when the table
+        selection is cleared (e.g. by the editing-layer reset)."""
+        ms = MagicMock()
+        ms.settingsdict = OrderedDict()
+        gui = GeneralCsvImportGui(self.iface, ms)
+        gui.load_gui()
+        assert not gui.start_import_button.isEnabled()
+
+        gui.file_data = [["obsid"], ["rb1"]]
+        gui.table_chooser.file_header = ["obsid"]
+        gui._on_file_data_loaded()
+        assert not gui.start_import_button.isEnabled()
+
+        gui.table_chooser.import_method = "obs_points"
+        assert gui.start_import_button.isEnabled()
+
+        gui.table_chooser.import_method = ""
+        assert not gui.start_import_button.isEnabled()
+
     @mock.patch("midvatten.tools.import_general_csv_gui.CsvFileLoadDialog")
     def test_load_files_cancel_raises_userinterrupt(self, mock_dialog):
         mock_dialog.return_value.exec.return_value = (

@@ -25,7 +25,7 @@ import csv
 from operator import itemgetter
 
 import qgis.PyQt
-from qgis.PyQt.QtCore import QCoreApplication, QSettings
+from qgis.PyQt.QtCore import QCoreApplication, QSettings, pyqtSignal
 
 import midvatten.definitions.midvatten_defs as defs
 from midvatten.tools import import_data_to_db
@@ -306,6 +306,10 @@ class GeneralCsvImportGui(BaseImporter, import_ui_dialog):
         )
         self.grid_layout_buttons.addWidget(self.start_import_button, 8, 0)
         self.start_import_button.clicked.connect(lambda x: self.start_import())
+        self.table_chooser.import_method_changed.connect(
+            self._update_start_import_enabled
+        )
+        self._update_start_import_enabled()
 
         self.grid_layout_buttons.setRowStretch(9, 1)
         self.setGeometry(100, 100, 1800, 800)
@@ -373,6 +377,12 @@ class GeneralCsvImportGui(BaseImporter, import_ui_dialog):
             ):
                 button.setEnabled(False)
             self.table_chooser.set_chooser_enabled(True)
+        self._update_start_import_enabled()
+
+    def _update_start_import_enabled(self):
+        self.start_import_button.setEnabled(
+            self.file_data is not None and bool(self.table_chooser.import_method)
+        )
 
     @staticmethod
     def file_to_list(filename, charset, delimiter, quotechar='"'):
@@ -817,6 +827,10 @@ class GeneralCsvImportGui(BaseImporter, import_ui_dialog):
 
 
 class ImportTableChooser(VRowEntry):
+    # Emitted whenever the destination-table selection changes; read
+    # ``import_method`` for the current value.
+    import_method_changed = pyqtSignal()
+
     def __init__(
         self,
         tables_columns,
@@ -930,6 +944,10 @@ class ImportTableChooser(VRowEntry):
         self.specific_table_info.setText(
             defs.specific_table_info.get(import_method_name, "")
         )
+        # Emit after the editing-layer reset above so listeners always see the
+        # settled selection, and before the early returns so the no-file case
+        # still notifies.
+        self.import_method_changed.emit()
 
         if file_header is None:
             return None

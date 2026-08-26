@@ -37,6 +37,7 @@ except ImportError:  # optional — only needed for PostGIS
 from qgis.PyQt.QtCore import QCoreApplication
 
 from midvatten.tools.utils import common_utils, db_utils, dialog_utils, message_utils
+from midvatten.tools.utils import parameter_cleaning
 from midvatten.tools.utils.exceptions import UserInterruptError
 from midvatten.tools.utils.db_utils import DbConnectionManager
 from midvatten.tools.utils.db_utils.dialect import safe_type
@@ -93,6 +94,22 @@ def _as_import_frame(file_data: ImportData) -> pd.DataFrame:
             )
         )
     return frame.reset_index(drop=True)
+
+
+def _clean_w_qual_lab_frame(frame: pd.DataFrame) -> pd.DataFrame:
+    """Mechanically clean parameter/unit on their way into w_qual_lab
+    (midv_addons spec 2026-08-26 §6). general_import is the choke point
+    every import path funnels through, so this one hook covers the
+    general CSV import, interlab4, and interlab4_batch alike."""
+    frame = frame.copy()
+    for column, cleaner in (
+            ("parameter", parameter_cleaning.clean_parameter),
+            ("unit", parameter_cleaning.clean_unit)):
+        if column in frame.columns:
+            frame[column] = frame[column].map(
+                lambda value, _clean=cleaner:
+                _clean(value) if isinstance(value, str) else value)
+    return frame
 
 
 class MidvDataImporter:  # this class is intended to be a multipurpose import class  BUT loggerdata probably needs specific importer or its own subfunction
@@ -152,6 +169,8 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             import_frame = _as_import_frame(file_data)
             if import_frame.empty:
                 return 0
+            if dest_table == "w_qual_lab":
+                import_frame = _clean_w_qual_lab_frame(import_frame)
             message_utils.MessagebarAndLog.info(
                 log_msg=QCoreApplication.translate(
                     "midv_data_importer",

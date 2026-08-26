@@ -107,8 +107,8 @@ def _clean_w_qual_lab_frame(frame: pd.DataFrame) -> pd.DataFrame:
             ("unit", parameter_cleaning.clean_unit)):
         if column in frame.columns:
             frame[column] = frame[column].map(
-                lambda value, _clean=cleaner:
-                _clean(value) if isinstance(value, str) else value)
+                lambda value: cleaner(value)
+                if isinstance(value, str) else value)
     return frame
 
 

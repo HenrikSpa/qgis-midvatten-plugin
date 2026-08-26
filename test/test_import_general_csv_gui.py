@@ -314,6 +314,23 @@ class TestGeneralCsvImportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
         gui.table_chooser.import_method = ""
         assert not gui.start_import_button.isEnabled()
 
+    def test_cleaning_info_label_shown_only_for_w_qual_lab(self):
+        """Transparency, not a toggle (midv_addons spec 2026-08-26 §6): the
+        mechanical-cleaning notice must be hidden by default and only
+        appear when w_qual_lab is the chosen destination table."""
+        ms = MagicMock()
+        ms.settingsdict = OrderedDict()
+        gui = GeneralCsvImportGui(self.iface, ms)
+        gui.load_gui()
+        label = gui.table_chooser.cleaning_info_label
+        assert label.isHidden()
+
+        gui.table_chooser.import_method = "w_qual_lab"
+        assert not label.isHidden()
+
+        gui.table_chooser.import_method = "obs_points"
+        assert label.isHidden()
+
     @mock.patch("midvatten.tools.import_general_csv_gui.CsvFileLoadDialog")
     def test_load_files_cancel_raises_userinterrupt(self, mock_dialog):
         mock_dialog.return_value.exec.return_value = (

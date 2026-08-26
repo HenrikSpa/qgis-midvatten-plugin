@@ -869,6 +869,21 @@ class ImportTableChooser(VRowEntry):
         self.specific_info_widget.layout().addWidget(get_line())
         self.specific_table_info = qgis.PyQt.QtWidgets.QLabel()
         self.specific_info_widget.layout().addWidget(self.specific_table_info)
+        # Transparency instead of an opt-out (midv_addons spec 2026-08-26
+        # §6): import-time cleaning of parameter/unit happens unconditionally
+        # for w_qual_lab, so tell the user up front when that's the chosen
+        # destination table. Hidden otherwise/by default.
+        self.cleaning_info_label = qgis.PyQt.QtWidgets.QLabel(
+            QCoreApplication.translate(
+                "ImportTableChooser",
+                "Parameternamn och enheter städas mekaniskt vid import "
+                "(extra mellanslag, radbrytningar och teckenvarianter "
+                "tas bort).",
+            )
+        )
+        self.cleaning_info_label.setWordWrap(True)
+        self.cleaning_info_label.setVisible(False)
+        self.specific_info_widget.layout().addWidget(self.cleaning_info_label)
         self.specific_info_widget.layout().addWidget(get_line())
 
         self.layout().addWidget(self.specific_info_widget)
@@ -944,6 +959,7 @@ class ImportTableChooser(VRowEntry):
         self.specific_table_info.setText(
             defs.specific_table_info.get(import_method_name, "")
         )
+        self.cleaning_info_label.setVisible(import_method_name == "w_qual_lab")
         # Emit after the editing-layer reset above so listeners always see the
         # settled selection, and before the early returns so the no-file case
         # still notifies.

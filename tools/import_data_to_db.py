@@ -112,6 +112,27 @@ def _clean_w_qual_lab_frame(frame: pd.DataFrame) -> pd.DataFrame:
     return frame
 
 
+def _log_cleaned_values(before: pd.DataFrame, after: pd.DataFrame) -> None:
+    """Log-panel report of what the w_qual_lab import cleaning changed —
+    transparency instead of an opt-out (midv_addons spec 2026-08-26 §6).
+    Log only, never the bar: cleaning is expected, not an anomaly."""
+    changes = []
+    for column in ("parameter", "unit"):
+        if column not in before.columns:
+            continue
+        pairs = {(b, a) for b, a in zip(before[column], after[column])
+                 if isinstance(b, str) and b != a}
+        changes.extend((column, b, a) for b, a in sorted(pairs))
+    if not changes:
+        return
+    lines = [f"  {column}: {b!r} -> {a!r}" for column, b, a in changes[:50]]
+    if len(changes) > 50:
+        lines.append(f"  ... och {len(changes) - 50} till")
+    message_utils.MessagebarAndLog.info(log_msg=(
+        f"{len(changes)} parameter/enhets-värden städades mekaniskt vid "
+        "import till w_qual_lab:\n" + "\n".join(lines)))
+
+
 class MidvDataImporter:  # this class is intended to be a multipurpose import class  BUT loggerdata probably needs specific importer or its own subfunction
     def __init__(self) -> None:
         self.columns = 0
@@ -170,7 +191,9 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             if import_frame.empty:
                 return 0
             if dest_table == "w_qual_lab":
-                import_frame = _clean_w_qual_lab_frame(import_frame)
+                cleaned_frame = _clean_w_qual_lab_frame(import_frame)
+                _log_cleaned_values(import_frame, cleaned_frame)
+                import_frame = cleaned_frame
             message_utils.MessagebarAndLog.info(
                 log_msg=QCoreApplication.translate(
                     "midv_data_importer",

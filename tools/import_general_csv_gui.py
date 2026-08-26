@@ -454,9 +454,16 @@ class GeneralCsvImportGui(BaseImporter, import_ui_dialog):
                 )
             )
 
-        translation_dict = self.table_chooser.get_translation_dict()
-
         dest_table = self.table_chooser.import_method
+        if not dest_table:
+            raise exceptions.UsageError(
+                QCoreApplication.translate(
+                    "GeneralCsvImportGui",
+                    "Error, must select a destination table first!",
+                )
+            )
+
+        translation_dict = self.table_chooser.get_translation_dict()
 
         # Series metadata mappings merge into translation_dict under their
         # namespaced __series_<field> carrier targets, so the existing

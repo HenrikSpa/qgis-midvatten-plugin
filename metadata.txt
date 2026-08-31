@@ -3,7 +3,7 @@ name=Midvatten
 qgisMinimumVersion=3.40
 description=A toolset that makes QGIS an interface for editing/viewing hydrogeological observational data (drillings, water levels, seismic data etc) stored in a SQLite or PostgreSQL database.
 about=The plugin is a toolset that makes QGIS an interface for editing/viewing hydrogeological observational data (drillings, water levels, seismic data etc) stored in a SQLite or PostgreSQL database. NOTE: This plugin requires the Python packages numpy, pandas and matplotlib. These are installed automatically by the qpip helper plugin. When you first install Midvatten, qpip will show a dialog asking to install these packages — click "Install" to proceed. This is a one-time step.
-version=1.9.0b32
+version=1.9.0b33
 author=Henrik Spångmyr, Josef Källgården
 email=midvattenplugin@midvatten.se
 repository=https://github.com/henrikspa/qgis-midvatten-plugin.git
@@ -23,6 +23,11 @@ hasProcessingProvider=no
 supportsQt6=True
 
 changelog=
+        Version 1.9.0b33:
+          - UX: General CSV import — the "Start import" button now stays disabled until both a file is loaded and a destination table is chosen, so it can no longer be clicked too early. Clicking it with no destination table selected previously crashed with a traceback; it now shows a clear message in the message bar.
+          - Import: When importing into w_qual_lab through the general CSV import, lab parameter and unit strings are mechanically cleaned; the distinct cleaned values are listed in the log for transparency, and the import dialog shows a notice when w_qual_lab is the selected destination table.
+          - UX: Logger import — the timezone prompt is reworded from "Skip file?" to "Import file anyway?" (Yes = import as-is, No = skip, Cancel = abort), matching the natural intent (the old wording inverted it).
+          - Reliability: Logger import no longer aborts with a raw traceback when the database is locked by another program (a stray -journal/-wal file). In the QGIS GUI you now get a Retry/Cancel dialog, so you can close the other program or clear a stale journal and retry; Cancel aborts cleanly. Headless and background runs still raise a clear locked-database error. The read phase of an import now also holds only one connection to the file at a time.
         Version 1.9.0b32:
           - UX: The logger import format dropdown shows a tooltip per format describing what data it carries and which table it imports into (w_levels_logger for DiverOffice, Levelogger and Hobo; meteo for DiverOffice Baro), and the on-screen format descriptions now always name the destination table.
           - UX: Interlab4 import no longer asks for the charset when a file lacks the #Tecken= line but reads correctly as UTF-16 (the common case for lab files); the question only appears when UTF-16 does not fit the file.

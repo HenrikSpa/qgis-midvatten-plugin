@@ -653,19 +653,21 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             if parsed.timezone_error:
                 msg = QCoreApplication.translate(
                     "LoggerImport",
-                    "Reading timezone in file %s failed,\n"
-                    " no conversion done:\n%s\n\nSkip file?",
+                    "Could not convert the time zone for file %s:\n%s\n\n"
+                    "The file can still be imported, but its timestamps are kept "
+                    "as-is (no UTC-offset conversion).\n\nImport file anyway?",
                 ) % (ru(parsed.filename), parsed.timezone_error)
                 with common_utils.suspended_waiting_cursor():
                     question = dialog_utils.Askuser(
                         question="YesNo",
                         msg=msg,
                         dialogtitle=QCoreApplication.translate(
-                            "askuser", "File timezone error!"
+                            "askuser", "Time zone conversion failed"
                         ),
                         include_cancel_button=True,
                     )
-                if question.result:
+                # Yes = import anyway; No = skip; Cancel raises inside Askuser.
+                if not question.result:
                     summary.skipped.append(parsed.source_path)
                     continue
             if parsed.data.empty:
@@ -679,6 +681,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         parsed_files: list[ParsedLoggerFile],
         confirm_names: bool,
         summary: LoggerImportSummary,
+        dbconnection: db_utils.DbConnectionManager,
     ) -> list[tuple[ParsedLoggerFile, str]]:
         """Match each file to an obsid, asking the user where needed."""
         filename_location_obsid = [["filename", "location", "obsid"]]
@@ -686,7 +689,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             [parsed.source_path, parsed.location, parsed.location]
             for parsed in parsed_files
         )
-        existing_obsids = db_utils.get_all_obsids()
+        existing_obsids = db_utils.get_all_obsids(dbconnection=dbconnection)
         with common_utils.suspended_waiting_cursor():
             resolved_metadata = common_utils.filter_nonexisting_values_and_ask(
                 file_data=filename_location_obsid,
@@ -738,24 +741,28 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                 )
             )
 
-    def _ensure_baro_meteo_parameters(self) -> None:
+    def _ensure_baro_meteo_parameters(
+        self, dbconnection: db_utils.DbConnectionManager
+    ) -> None:
         """Insert any zz_meteoparam rows a barometric import depends on.
 
         zz_meteoparam is keyed on `parameter`, so the backend's own
         insert-or-ignore expresses "seed what is missing" in one statement per
         row — no read-then-write, and no second idempotency scheme to keep
         working across both backends.
+
+        Runs on the shared read/prep connection so the import never holds two
+        connections against the same file at once.
         """
-        with db_utils.use_or_create_connection(None) as connection:
-            placeholder = connection.placeholder()
-            sql = db_utils.add_insert_or_ignore_to_sql(
-                "INSERT INTO zz_meteoparam(parameter, explanation) "
-                f"VALUES ({placeholder}, {placeholder})",
-                connection,
-            )
-            with connection.transaction():
-                for parameter, explanation in BARO_METEO_PARAMS:
-                    connection.execute(sql, (parameter, explanation))
+        placeholder = dbconnection.placeholder()
+        sql = db_utils.add_insert_or_ignore_to_sql(
+            "INSERT INTO zz_meteoparam(parameter, explanation) "
+            f"VALUES ({placeholder}, {placeholder})",
+            dbconnection,
+        )
+        with dbconnection.transaction():
+            for parameter, explanation in BARO_METEO_PARAMS:
+                dbconnection.execute(sql, (parameter, explanation))
 
     @common_utils.waiting_cursor
     @common_utils.general_exception_handler
@@ -814,75 +821,86 @@ class LoggerImport(BaseImporter, import_ui_dialog):
                 )
                 return
 
-            resolved_files = self._resolve_obsids(parsed_files, confirm_names, summary)
-            if not resolved_files:
-                self._report_import_summary(summary)
-                message_utils.MessagebarAndLog.warning(
-                    bar_msg=QCoreApplication.translate(
-                        "LoggerImport",
-                        "Warning. All files were skipped, nothing imported!",
+            # One shared connection for the whole read/prep phase: the lock
+            # guard runs once (offering Retry/Cancel in a live QGIS), and the
+            # import never holds two connections against the same file at once.
+            # It is closed before the writer workers open their own connections.
+            with db_utils.use_or_create_connection(None) as dbconnection:
+                resolved_files = self._resolve_obsids(
+                    parsed_files, confirm_names, summary, dbconnection
+                )
+                if not resolved_files:
+                    self._report_import_summary(summary)
+                    message_utils.MessagebarAndLog.warning(
+                        bar_msg=QCoreApplication.translate(
+                            "LoggerImport",
+                            "Warning. All files were skipped, nothing imported!",
+                        )
                     )
-                )
-                return False
+                    return False
 
-            logger_columns = db_utils.tables_columns(table="w_levels_logger").get(
-                "w_levels_logger", []
-            )
-            capabilities = logger_schema_capabilities(logger_columns)
-            source_text = (
-                self.source_edit.text().strip() if self.source_edit is not None else ""
-            )
-            latest_dates = {}
-            if not import_all_data and any(
-                parsed.kind is LoggerDataKind.WATER_LEVEL
-                for parsed, _obsid in resolved_files
-            ):
-                try:
-                    latest_dates = parse_latest_dates(db_utils.get_last_logger_dates())
-                except InvalidLatestDateError as error:
-                    message_utils.MessagebarAndLog.warning(log_msg=str(error))
-
-            options = LoggerImportOptions(import_all_data=import_all_data)
-            prepared_files: list[PreparedLoggerFile] = []
-            batch_created_at = _datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            for parsed, obsid in resolved_files:
-                prepared = run_post_resolution_pipeline(
-                    parsed,
-                    obsid,
-                    latest_dates,
-                    options,
+                logger_columns = db_utils.tables_columns(
+                    table="w_levels_logger", dbconnection=dbconnection
+                ).get("w_levels_logger", [])
+                capabilities = logger_schema_capabilities(logger_columns)
+                source_text = (
+                    self.source_edit.text().strip()
+                    if self.source_edit is not None
+                    else ""
                 )
-                if prepared.data.empty:
-                    summary.no_new_rows.append(prepared.source_path)
-                    continue
-                if (
-                    prepared.kind is LoggerDataKind.WATER_LEVEL
-                    and source_text
-                    and capabilities.has_source_column
-                    and not capabilities.has_series_id
+                latest_dates = {}
+                if not import_all_data and any(
+                    parsed.kind is LoggerDataKind.WATER_LEVEL
+                    for parsed, _obsid in resolved_files
                 ):
-                    prepared = replace(
-                        prepared,
-                        data=prepared.data.assign(source=source_text),
-                    )
-                prepared_files.append(prepared)
+                    try:
+                        latest_dates = parse_latest_dates(
+                            db_utils.get_last_logger_dates(dbconnection=dbconnection)
+                        )
+                    except InvalidLatestDateError as error:
+                        message_utils.MessagebarAndLog.warning(log_msg=str(error))
 
-            if not prepared_files:
-                self._report_import_summary(summary)
-                message_utils.MessagebarAndLog.info(
-                    bar_msg=QCoreApplication.translate(
-                        "LoggerImport",
-                        "No new data existed in the files. Nothing imported.",
+                options = LoggerImportOptions(import_all_data=import_all_data)
+                prepared_files: list[PreparedLoggerFile] = []
+                batch_created_at = _datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                for parsed, obsid in resolved_files:
+                    prepared = run_post_resolution_pipeline(
+                        parsed,
+                        obsid,
+                        latest_dates,
+                        options,
                     )
-                )
-                self.status = True
-                return True
+                    if prepared.data.empty:
+                        summary.no_new_rows.append(prepared.source_path)
+                        continue
+                    if (
+                        prepared.kind is LoggerDataKind.WATER_LEVEL
+                        and source_text
+                        and capabilities.has_source_column
+                        and not capabilities.has_series_id
+                    ):
+                        prepared = replace(
+                            prepared,
+                            data=prepared.data.assign(source=source_text),
+                        )
+                    prepared_files.append(prepared)
 
-            if import_to_db and any(
-                prepared.kind is LoggerDataKind.BAROMETRIC
-                for prepared in prepared_files
-            ):
-                self._ensure_baro_meteo_parameters()
+                if not prepared_files:
+                    self._report_import_summary(summary)
+                    message_utils.MessagebarAndLog.info(
+                        bar_msg=QCoreApplication.translate(
+                            "LoggerImport",
+                            "No new data existed in the files. Nothing imported.",
+                        )
+                    )
+                    self.status = True
+                    return True
+
+                if import_to_db and any(
+                    prepared.kind is LoggerDataKind.BAROMETRIC
+                    for prepared in prepared_files
+                ):
+                    self._ensure_baro_meteo_parameters(dbconnection)
 
             for prepared in prepared_files:
                 series = None

@@ -196,7 +196,15 @@ class Backend(ABC):
 
     @abstractmethod
     def check_db_is_locked(self) -> None:
-        """Raise DatabaseLockedError if SQLite has -journal/-wal/-shm. No-op for PG."""
+        """Refuse to open a database another writer may hold. No-op for PG.
+
+        SQLite raises DatabaseLockedError when a -journal/-wal file is present.
+        In a live QGIS session (GUI thread) the user is first offered
+        Retry/Cancel: Retry re-checks (they may have closed the other program
+        or removed a stale file), Cancel raises UserInterruptError for a clean
+        abort. Headless runs and background worker threads raise
+        DatabaseLockedError directly.
+        """
         pass
 
     @abstractmethod

@@ -23,6 +23,34 @@ def show_message_log(pop_error=False):
     qgis.utils.iface.openMessageLog()
 
 
+def on_gui_main_thread() -> bool:
+    """True when a live QGIS ``iface`` exists and we are on the GUI thread.
+
+    Modal dialogs and direct widget access are only safe under these
+    conditions; headless runs (tests, scripts) and background worker threads
+    must avoid them.
+    """
+    if qgis.utils.iface is None:
+        return False
+    app = QCoreApplication.instance()
+    return app is not None and QThread.currentThread() == app.thread()
+
+
+def ask_retry_cancel(title: str, msg: str) -> bool:
+    """Show a modal Retry/Cancel dialog. True if the user chose Retry.
+
+    Caller must ensure it is safe to show a modal (see on_gui_main_thread).
+    """
+    reply = QtWidgets.QMessageBox.warning(
+        None,
+        title,
+        msg,
+        QtWidgets.QMessageBox.Retry | QtWidgets.QMessageBox.Cancel,
+        QtWidgets.QMessageBox.Retry,
+    )
+    return reply == QtWidgets.QMessageBox.Retry
+
+
 class _MessageDispatcher(QObject):
     """Marshal message-bar work from background workers to the GUI thread."""
 

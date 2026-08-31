@@ -17,9 +17,42 @@ import sqlite3 as sqlite
 
 from midvatten.tools.utils import message_utils
 from midvatten.tools.utils.string_utils import returnunicode as ru
-from midvatten.tools.utils.exceptions import UsageError
+from midvatten.tools.utils.exceptions import UsageError, UserInterruptError
 from midvatten.tools.utils.db_utils.backends.base import Backend
 from midvatten.tools.utils.db_utils.errors import DatabaseLockedError
+
+
+def _sqlite_lock_message(dbpath: str) -> Optional[str]:
+    """Return a lock message if a -journal/-wal file sits next to *dbpath*, else None.
+
+    Existence of these files means another connection may be mid-write (another
+    user/program on a network share, or a stale file from a crash). It is a
+    heuristic, so we let the user decide what to do (see check_db_is_locked).
+    """
+    for ext in ("journal", "wal"):
+        if os.path.exists(f"{dbpath}-{ext}"):
+            return (
+                QCoreApplication.translate(
+                    "DbConnectionManager",
+                    "Error, The database is already in use (a %s-file was found)",
+                )
+                % ext
+            )
+    return None
+
+
+def _lock_retry_message(lock_msg: str) -> str:
+    """The user-facing Retry/Cancel body explaining what to do about the lock."""
+    return (
+        QCoreApplication.translate(
+            "DbConnectionManager",
+            "%s\n\nAnother program or user may be using the database, or a stale "
+            "journal/WAL file was left behind next to it. Close any program using "
+            "the database and click Retry. If nothing is using it, the leftover "
+            "file next to the database can be removed manually.",
+        )
+        % lock_msg
+    )
 
 
 def sqlite_internal_tables(as_tuple: bool = False) -> str:
@@ -197,16 +230,31 @@ class SQLiteBackend(Backend):
             message_utils.MessagebarAndLog.warning(log_msg=traceback.format_exc())
 
     def check_db_is_locked(self) -> None:
-        for ext in ("journal", "wal"):
-            msg = (
-                QCoreApplication.translate(
-                    "DbConnectionManager",
-                    "Error, The database is already in use (a %s-file was found)",
-                )
-                % ext
-            )
-            if os.path.exists(f"{self._dbpath}-{ext}"):
+        """Refuse to open a database another writer may hold.
+
+        In a live QGIS session (GUI main thread) the user gets a Retry/Cancel
+        dialog and may close the other program — or delete a stale journal —
+        and retry as often as they like. Headless runs and background worker
+        threads get the error raised instead, so nothing blocks on a dialog
+        that cannot be shown.
+        """
+        while True:
+            msg = _sqlite_lock_message(self._dbpath)
+            if msg is None:
+                return
+            if not message_utils.on_gui_main_thread():
+                # Headless run or background worker: can't (safely) show a
+                # dialog, so surface the error for the caller to handle.
                 raise DatabaseLockedError(msg)
+            retry = message_utils.ask_retry_cancel(
+                QCoreApplication.translate("DbConnectionManager", "Database in use"),
+                _lock_retry_message(msg),
+            )
+            if not retry:
+                # The user saw the dialog and chose Cancel: a clean abort, not
+                # an error to surface as a traceback.
+                raise UserInterruptError()
+            # Retry: loop and re-check — the journal may now be gone.
 
     def vacuum(self) -> None:
         # Workaround https://bugs.python.org/issue28518 — VACUUM cannot run

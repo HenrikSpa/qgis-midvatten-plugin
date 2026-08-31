@@ -415,10 +415,13 @@ def get_last_used_flow_instruments() -> tuple:
     )
 
 
-def get_last_logger_dates() -> Any:
+def get_last_logger_dates(
+    dbconnection: Optional[DbConnectionManager] = None,
+) -> Any:
     """Return dict {obsid: last_imported_date} from w_levels_logger."""
     ok_or_not, obsid_last_imported_dates = get_sql_result_as_dict(
-        "select obsid, max(date_time) from w_levels_logger group by obsid"
+        "select obsid, max(date_time) from w_levels_logger group by obsid",
+        dbconnection=dbconnection,
     )
     return ru(obsid_last_imported_dates, True)
 

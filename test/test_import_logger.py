@@ -37,11 +37,16 @@ from midvatten.tools.import_logger.parsers import (
     _IncompleteMonLayoutError,
     _SourceLine,
 )
-from midvatten.tools.import_logger.importer import logger_schema_capabilities
+from midvatten.tools.import_logger.importer import (
+    LoggerImportSummary,
+    logger_schema_capabilities,
+)
 from midvatten.tools.import_logger.models import (
     BARO_METEO_PARAMS,
     METEO_TABLE,
     WATER_LEVEL_TABLE,
+    LoggerParseBatchResult,
+    ParsedLoggerFile,
 )
 from midvatten.tools.import_logger.pipeline import run_pre_resolution_pipeline
 from midvatten.tools.utils import db_utils, file_utils
@@ -133,6 +138,64 @@ def test_logger_schema_capabilities_cover_all_supported_shapes() -> None:
     assert current.has_series_id
     assert current.has_created_at
     assert not current.has_source_column
+
+
+class TestTimezoneErrorPromptImportsAnyway:
+    """The timezone-conversion prompt offers 'import anyway', not 'skip'.
+
+    Users routinely want the data even when the UTC offset can't be read, so
+    the default action must keep the file (Yes = import anyway; No = skip;
+    Cancel = abort the whole import, handled inside Askuser).
+    ``_accept_parsed_files`` touches no ``self`` state, so it is exercised
+    directly on a bare object.
+    """
+
+    @staticmethod
+    def _parsed_with_tz_error() -> ParsedLoggerFile:
+        return ParsedLoggerFile(
+            data=pd.DataFrame(
+                {"date_time": ["2020-01-01 00:00:00"], "head_cm": [1.0]}
+            ),
+            filename="logger.csv",
+            source_path="/tmp/logger.csv",
+            kind=LoggerDataKind.WATER_LEVEL,
+            location="rb1",
+            serial_number=None,
+            timezone_error="could not read UTC offset",
+        )
+
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.import_logger.importer.dialog_utils.Askuser")
+    def test_yes_imports_file_anyway(self, mock_askuser, mock_messagebar):
+        mock_askuser.return_value.result = 1  # Yes = import anyway
+        parsed = self._parsed_with_tz_error()
+        summary = LoggerImportSummary()
+
+        kept = LoggerImport._accept_parsed_files(
+            object(), LoggerParseBatchResult([parsed], []), summary
+        )
+
+        print(mock_messagebar.mock_calls)
+        assert kept == [parsed]
+        assert summary.skipped == []
+        msg = mock_askuser.call_args.kwargs["msg"]
+        assert "anyway" in msg.lower()
+        assert "skip file?" not in msg.lower()
+
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.import_logger.importer.dialog_utils.Askuser")
+    def test_no_skips_file(self, mock_askuser, mock_messagebar):
+        mock_askuser.return_value.result = 0  # No = skip
+        parsed = self._parsed_with_tz_error()
+        summary = LoggerImportSummary()
+
+        kept = LoggerImport._accept_parsed_files(
+            object(), LoggerParseBatchResult([parsed], []), summary
+        )
+
+        print(mock_messagebar.mock_calls)
+        assert kept == []
+        assert summary.skipped == ["/tmp/logger.csv"]
 
 
 @pytest.mark.active
@@ -2190,17 +2253,8 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
                 set_combobox(importer.utc_offset, "UTC+1", add_if_not_exists=False)
                 importer.select_files()
 
-                def side_effect(*args, **kwargs):
-                    mock_result = MagicMock()
-                    if "msg" in kwargs:
-                        if (
-                            "UTC+ABC2 could not be parsed!\n\nSkip file?"
-                            in kwargs["msg"]
-                        ):
-                            mock_result.result = 0
-                            return mock_result
-
-                mock_askuser.side_effect = side_effect
+                # Yes = import the file anyway (keep its timestamps as-is).
+                mock_askuser.return_value.result = 1
                 importer.start_import(
                     importer.files,
                     importer.skip_rows.checked,
@@ -2220,8 +2274,11 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
         assert test_string == reference_string
         assert (
             mock_askuser.mock_calls[0].kwargs.get("dialogtitle", "")
-            == "File timezone error!"
+            == "Time zone conversion failed"
         )
+        tz_msg = mock_askuser.mock_calls[0].kwargs.get("msg", "")
+        assert "UTC+ABC2 could not be parsed!" in tz_msg
+        assert "Import file anyway?" in tz_msg
 
     def test_wlvllogg_import_change_timezone_file_timezone_failed_skip(self):
         files = [
@@ -2301,7 +2358,8 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
 
                 set_combobox(importer.utc_offset, "UTC+1", add_if_not_exists=False)
                 importer.select_files()
-                mock_askuser.return_value.result = 1
+                # No = skip this file (rb2 is left out of the import).
+                mock_askuser.return_value.result = 0
                 importer.start_import(
                     importer.files,
                     importer.skip_rows.checked,
@@ -2319,7 +2377,7 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
         )
         reference_string = r"""(True, [(rb1, 2016-03-15 10:30:00, 1.0, 10.0, None, None, None), (rb1, 2016-03-15 11:00:00, 11.0, 101.0, None, None, None), (rb3, 2016-05-15 10:30:00, 3.0, 30.0, 5.0, None, None), (rb3, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None), (rb4, 2016-05-15 10:30:00, 3.0, 30.0, 5.0, None, None), (rb4, 2016-05-15 11:00:00, 31.0, 301.0, 6.0, None, None), (rb5, 2016-05-15 13:30:00, 3.0, 30.0, 5.0, None, None), (rb5, 2016-05-15 14:00:00, 31.0, 301.0, 6.0, None, None)])"""
         assert test_string == reference_string
-        assert "File timezone error!" in ", ".join(
+        assert "Time zone conversion failed" in ", ".join(
             [str(x) for x in mock_askuser.mock_calls]
         )
 
@@ -2420,7 +2478,7 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
         )
         reference_string = r"""(True, [])"""
         assert test_string == reference_string
-        assert mock_askuser.call_args.args[1] == "File timezone error!"
+        assert mock_askuser.call_args.args[1] == "Time zone conversion failed"
 
     def test_wlvllogg_import_change_timezone_read_from_db(self):
         files = [
@@ -3685,8 +3743,9 @@ class TestLoggerImportBaroSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
         ms = MagicMock()
         ms.settingsdict = OrderedDict()
         importer = LoggerImport(self.iface, ms)
-        importer._ensure_baro_meteo_parameters()
-        importer._ensure_baro_meteo_parameters()
+        with db_utils.use_or_create_connection(None) as dbconnection:
+            importer._ensure_baro_meteo_parameters(dbconnection)
+            importer._ensure_baro_meteo_parameters(dbconnection)
 
         print(mock_messagebar.mock_calls)
 

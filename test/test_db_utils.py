@@ -19,13 +19,17 @@
  ***************************************************************************/
 """
 
+import types
 from unittest import mock
 
 import pytest
+from qgis.PyQt import QtWidgets
 
 from midvatten.test import utils_for_tests
-from midvatten.tools.utils import db_utils
+from midvatten.tools.utils import db_utils, message_utils
+from midvatten.tools.utils.db_utils.backends import sqlite as sqlite_backend
 from midvatten.tools.utils.db_utils.backends.sqlite import SQLiteBackend
+from midvatten.tools.utils.exceptions import UserInterruptError
 
 
 class DbTablesColumnsInfoMixin:
@@ -420,6 +424,98 @@ class TestSqlInjectionHardeningSpatialite(
     SqlInjectionHardeningMixin, utils_for_tests.MidvattenTestSpatialiteDbSv
 ):
     pass
+
+
+class TestSQLiteCheckDbIsLocked:
+    """The -journal/-wal guard: raise when headless, offer Retry/Cancel when live.
+
+    ``check_db_is_locked`` reads only ``self._dbpath``, so a bare namespace
+    stands in for the backend and no real database is opened.
+    """
+
+    @staticmethod
+    def _fake_backend(dbpath) -> types.SimpleNamespace:
+        return types.SimpleNamespace(_dbpath=str(dbpath))
+
+    def test_lock_message_detects_journal_and_wal(self, tmp_path):
+        db = tmp_path / "midv.sqlite"
+        db.write_text("")
+        assert sqlite_backend._sqlite_lock_message(str(db)) is None
+
+        journal = tmp_path / "midv.sqlite-journal"
+        journal.write_text("")
+        assert "journal" in sqlite_backend._sqlite_lock_message(str(db))
+        journal.unlink()
+
+        (tmp_path / "midv.sqlite-wal").write_text("")
+        assert "wal" in sqlite_backend._sqlite_lock_message(str(db))
+
+    def test_headless_raises_without_prompt(self, tmp_path):
+        db = tmp_path / "midv.sqlite"
+        (tmp_path / "midv.sqlite-journal").write_text("")
+        with (
+            mock.patch.object(
+                message_utils, "on_gui_main_thread", return_value=False
+            ),
+            mock.patch.object(message_utils, "ask_retry_cancel") as ask,
+        ):
+            with pytest.raises(db_utils.DatabaseLockedError):
+                SQLiteBackend.check_db_is_locked(self._fake_backend(db))
+        ask.assert_not_called()
+
+    def test_interactive_cancel_raises_user_interrupt(self, tmp_path):
+        db = tmp_path / "midv.sqlite"
+        (tmp_path / "midv.sqlite-journal").write_text("")
+        with (
+            mock.patch.object(
+                message_utils, "on_gui_main_thread", return_value=True
+            ),
+            mock.patch.object(
+                message_utils, "ask_retry_cancel", return_value=False
+            ) as ask,
+        ):
+            # Cancel is a user-initiated abort, not an error to raise as one.
+            with pytest.raises(UserInterruptError):
+                SQLiteBackend.check_db_is_locked(self._fake_backend(db))
+        assert ask.call_count == 1
+
+    def test_interactive_retry_until_cleared_returns(self, tmp_path):
+        db = tmp_path / "midv.sqlite"
+        # Journal present for the first two checks, then cleared by the user.
+        with (
+            mock.patch.object(
+                sqlite_backend,
+                "_sqlite_lock_message",
+                side_effect=["locked", "locked", None],
+            ),
+            mock.patch.object(
+                message_utils, "on_gui_main_thread", return_value=True
+            ),
+            mock.patch.object(
+                message_utils, "ask_retry_cancel", return_value=True
+            ) as ask,
+        ):
+            assert (
+                SQLiteBackend.check_db_is_locked(self._fake_backend(db)) is None
+            )
+        assert ask.call_count == 2
+
+    def test_ask_retry_cancel_maps_buttons(self):
+        with mock.patch(
+            "midvatten.tools.utils.message_utils.QtWidgets.QMessageBox"
+        ) as msgbox:
+            msgbox.Retry = QtWidgets.QMessageBox.Retry
+            msgbox.Cancel = QtWidgets.QMessageBox.Cancel
+            msgbox.warning.return_value = QtWidgets.QMessageBox.Retry
+            assert message_utils.ask_retry_cancel("t", "boom") is True
+            msgbox.warning.return_value = QtWidgets.QMessageBox.Cancel
+            assert message_utils.ask_retry_cancel("t", "boom") is False
+
+    def test_on_gui_main_thread_false_when_headless(self):
+        import qgis.utils
+
+        with mock.patch.object(qgis.utils, "iface", None):
+            assert message_utils.on_gui_main_thread() is False
 
 
 @pytest.mark.spatialite

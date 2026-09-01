@@ -13,55 +13,18 @@ python plugin_zip.py
 
 import getpass
 import os
+import subprocess
 import xmlrpc.client
-import zipfile
 from optparse import OptionParser
 
 # Configuration
+# What is excluded from the zip is declared in .gitattributes (export-ignore);
+# the zip is built with `git archive`, so only committed, tracked files ship.
 PROTOCOL = "http"
 # SERVER = 'plugins.qgis.org'
 PORT = "80"
 ENDPOINT = "/plugins/RPC2/"
 VERBOSE = False
-
-IGNORE_FOLDERS = [
-    ".git",
-    "arkiv",
-    "arkiv_o_dok",
-    "__pycache__",
-    "tests",
-    "test",
-    ".idea",
-    ".venv",
-    ".worktrees",
-    ".logger-import-worktree",
-    ".claude",
-    ".cursor",
-    ".superpowers",
-    ".pytest_cache",
-    ".ruff_cache",
-    "docs",
-    "scripts",
-    "_pkgroot",
-]
-IGNORE_FILES = [
-    ".gitignore",
-    "plugin_zip_and_upload.py",
-    "compile_and_prepare_for_upload_notes.txt",
-    ":",
-    "conftest.py",
-    "pytest.ini",
-    "pyproject.toml",
-    ".coveragerc",
-    "CLAUDE.md",
-    ".claudeignore",
-    ".cursorignore",
-    "midvatten.pro",
-    "CHANGELOG_HISTORY",
-    ".swo",
-    ".swp",
-]
-IGNORE_FILESUFFIX = (".pyc", ".zip", ".swp", ".swo", ".orig", ".rej")
 
 
 def main(parameters, arguments):
@@ -131,35 +94,32 @@ def hide_password(url, start=6):
 
 
 def create_zipfile():
-    file_path = os.path.realpath(__file__)
-    dir_path = os.path.dirname(file_path)
-    current_dir = dir_path.split(os.sep)[-1]
-    zf = zipfile.ZipFile(os.path.join(dir_path, current_dir + ".zip"), mode="w")
-    for root, dirs, files in os.walk(dir_path):
-        dirs[:] = [d for d in dirs if d not in IGNORE_FOLDERS]
-        files[:] = [f for f in files if f not in IGNORE_FILES]  # exclude specific files
-        files[:] = [
-            file for file in files if not file.endswith(IGNORE_FILESUFFIX)
-        ]  # exclude specific file extensions
-        for file in files:
-            print(f"now adding this file {os.path.join(root, file)}")
-            # print('in archive it is saved as ' + os.path.join(current_dir,file))
-            print(
-                "in archive it is saved as {}".format(
-                    os.path.relpath(
-                        os.path.join(root, file), os.path.join(dir_path, "..")
-                    )
-                )
-            )
-            # zf.write(os.path.join(root,file),os.path.join(current_dir,file), compress_type=zipfile.ZIP_DEFLATED)
-            zf.write(
-                os.path.join(root, file),
-                os.path.relpath(os.path.join(root, file), os.path.join(dir_path, "..")),
-                compress_type=zipfile.ZIP_DEFLATED,
-            )
+    """Build midvatten.zip from the committed tree (HEAD) with `git archive`.
 
-    zf.close()
-    return os.path.join(dir_path, current_dir + ".zip")
+    Exclusions live in .gitattributes as export-ignore rules. The archive is
+    always rooted at midvatten/ regardless of the checkout directory name, so
+    it can be built from a git worktree too.
+    """
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    dirty = subprocess.run(
+        ["git", "status", "--porcelain", "--untracked-files=no"],
+        cwd=dir_path,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    if dirty:
+        raise SystemExit(
+            "Commit (or discard) these changes first; the zip is built from HEAD:\n"
+            + dirty
+        )
+    out = os.path.join(dir_path, "midvatten.zip")
+    subprocess.run(
+        ["git", "archive", "--format=zip", "--prefix=midvatten/", "-o", out, "HEAD"],
+        cwd=dir_path,
+        check=True,
+    )
+    return out
 
 
 if __name__ == "__main__":

@@ -1,0 +1,33 @@
+# Development baggage that must not end up in the QGIS plugin zip.
+# The release zip is built with `git archive` (see plugin_zip_and_upload.py),
+# which only exports tracked files and honours these export-ignore rules.
+.claude/ export-ignore
+.cursor/ export-ignore
+.superpowers/ export-ignore
+.worktrees/ export-ignore
+docs/ export-ignore
+scripts/ export-ignore
+test/ export-ignore
+_pkgroot/ export-ignore
+
+.gitattributes export-ignore
+.gitignore export-ignore
+.claudeignore export-ignore
+.cursorignore export-ignore
+.coveragerc export-ignore
+CLAUDE.md export-ignore
+CHANGELOG_HISTORY export-ignore
+compile_and_prepare_for_upload_notes.txt export-ignore
+conftest.py export-ignore
+midvatten.pro export-ignore
+plugin_zip_and_upload.py export-ignore
+pyproject.toml export-ignore
+pytest.ini export-ignore
+
+# Translation sources: only the compiled .qm files are needed at runtime.
+i18n/*.ts export-ignore
+i18n/translations.pro export-ignore
+i18n/default_eng.* export-ignore
+
+# Developer-only generator (its output, ui_types.py, is shipped).
+tools/sectionplot/generate_ui_types.py export-ignore

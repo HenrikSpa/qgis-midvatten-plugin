@@ -1,68 +1,59 @@
-# ----------- file format and encoding -------------
-- windows line endings (CR LF)
-- only utf-8 in all code
-# ----------- icons -------------
-- icons should be 22x22 px
-- set paths to icons in resources.qrc
-- compile resources.qrc (i.e. update resources.py):
-$ cd ~/pythoncode/qgis_plugins/midvatten && pyrcc5 -o resources.py resources.qrc
+# Midvatten release checklist
+#
+# Everything below is automated by scripts/prepare_release.py; the notes explain
+# what each step does and what to check by hand.
 
-# ----------- Qt ui ------------
-- keep all ui forms in a subfolder ui which also contains an empty file __init__.py
-- use direct load of qt ui, _without_ pyuic4 compilation (https://github.com/jkall/qgis-midvatten-plugin/issues/63) which is the case for:
-    - calc_aveflow_dialog
-    - calc_lvl_dialog
-    - calibr_logger_dialog
-    - customplotdialog
-    - secplotdockwidget_ui
-    - midvsettingsdock.ui
-- for ui where direct load is not possible, compile new ui-files (i.e. create corresponding py files):
-$ cd ~/pythoncode/qgis_plugins/midvatten/ui && pyuic4 -xo myui.py myui.ui
+# ----------- 0. Prerequisites -------------
+- Tools: pylupdate5 and pyrcc5 (from `pip install PyQt5` in any venv; point
+  MIDV_QT_TOOLS_BIN at that venv's bin/), lrelease (package qttools5-dev-tools).
+- Code: UTF-8 only. User-facing strings via QCoreApplication.translate("ctx", "text").
+  NOTE: pylupdate5 does not understand the two-argument tr("ctx", "text") wrapper
+  in tools/utils/string_utils.py; strings passed through it are not collected
+  into the .ts files (they still work untranslated). Prefer
+  QCoreApplication.translate in new code.
 
-# ----------- Translations -------------
-cd path/to/midvatten/plugin/
+# ----------- 1. Version and changelog -------------
+- metadata.txt: version=, changelog=, experimental=, supportsQt6=True.
+- pyproject.toml: version must match metadata.txt (the script checks this).
 
-Update pro with pythonfiles:
-find . -iname "*.py" | sort | sed 's:^:./:g' | sed 's:$: \\:g'
-Skip files:
-* */__init__.py,
-* ././tools/tests/*
-* ././tools/utils/util_translate.py
-* ././resources.py
-* ././plugin_zip_and_upload.py
+# ----------- 2. Translations -------------
+    python3 scripts/prepare_release.py
+  which runs, in order:
+  - regenerate SOURCES/FORMS in midvatten.pro from tracked .py/.ui files
+    (skips __init__.py, tests, docs, scripts, util_translate.py, resources.py,
+    plugin_zip_and_upload.py, generate_ui_types.py);
+  - pylupdate5 -verbose midvatten.pro   -> refreshes i18n/midvatten_*.ts
+    (lrelease only recompiles what is already in the .ts, so this step is
+    mandatory after adding translate() strings; obsolete-but-translated
+    entries are kept so Qt Linguist can reuse them);
+  - lrelease i18n/midvatten_*.ts        -> the .qm files QGIS actually loads.
+- Translate new strings with Qt Linguist if wanted, then run lrelease again
+  (python3 scripts/prepare_release.py --skip-pro --skip-ts --skip-resources).
 
-And ui-files:
-find ui -maxdepth 1 -iname "*.ui" | sort | sed 's:^:./:g' | sed 's:$: \\:g'
+# ----------- 3. Icons / resources -------------
+- Toolbar icons are 22x22 px and listed in resources.qrc; the script runs
+    pyrcc5 -o resources.py resources.qrc
+  and rewrites the import to `from qgis.PyQt import QtCore` (works on Qt5+Qt6).
+- Icons loaded by file path (icons/svg/*.svg, crosshair.png, ...) need no qrc entry.
 
-pylupdate5 -verbose midvatten.pro
-# Translate strings using QtLinguist.
-lrelease i18n/midvatten_*.ts
+# ----------- 4. Qt ui ------------
+- All .ui forms live in ui/ and are loaded directly with uic.loadUiType;
+  nothing is compiled with pyuic. tools/sectionplot/ui_types.py is generated
+  from secplotdockwidget.ui by tools/sectionplot/generate_ui_types.py (test
+  test_sectionplot_ui_types.py fails if it is stale).
 
-NOTE (2026-08-03, pre-release-hardening): after adding new user-facing
-translate() strings, `pylupdate5`/`pylupdate6` MUST be run against
-midvatten.pro to regenerate the .ts files before `lrelease` is run -
-lrelease only recompiles .qm from whatever is already in the .ts, it does
-not scan .py source for new strings. The pre-release-hardening session
-added several new translate() calls (including in the new
-tools/utils/html_utils.py and tools/utils/stored_settings.py, now listed
-in midvatten.pro SOURCES) that are NOT YET present in any i18n/*.ts file,
-because pylupdate5/pylupdate6 was not available in that environment.
-Before public release, run on a machine with pylupdate installed:
-    pylupdate5 -verbose midvatten.pro   # or the Qt6 equivalent
-    lrelease i18n/*.ts
-to capture these strings and recompile the .qm files.
+# ----------- 5. Tests -------------
+    python3 -m pytest test/
+  Run the whole suite alone: concurrent runs share the PostgreSQL test database
+  and produce spurious failures in the PostGIS classes.
+  test/test_qt6_compat_static.py guards against Qt6-incompatible patterns.
 
-# ----------- Tests -------------
-cd path/to/midvatten/plugin/
-nosetests -vv --with-doctest --nocapture
-
-# ---------- Metadata -----------
-- Update the file metadata.txt by changing version=Version 1.3.13 to the new number.
-- Add the changelog for the new version number in metadata.txt
-
-# ---------- prepare for upload to qgis plugin repo ---------------
-make a zipped archive of midvatten folder, excluding: 
-- *.pyc
-- gitignore file
-- .git folder
-- html files in subfolder reports
+# ----------- 6. Zip for the QGIS plugin repository -------------
+- Commit everything first. Then
+    python3 scripts/prepare_release.py --only-zip
+  or `python3 plugin_zip_and_upload.py` (no args) builds midvatten.zip with
+  `git archive HEAD`: only tracked files ship, always rooted at midvatten/.
+- What is excluded is declared in .gitattributes (export-ignore): tests, docs,
+  scripts, .claude/.cursor/.superpowers, _pkgroot, dev config files,
+  the .ts sources and midvatten.pro. Add new development-only files there.
+- Check: unzip -l midvatten.zip | less  (expect ~230 files, no test/, docs/).

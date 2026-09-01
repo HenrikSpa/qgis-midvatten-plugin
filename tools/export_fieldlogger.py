@@ -19,6 +19,7 @@
 
 import ast
 import copy
+import datetime
 import json
 import logging
 import os.path
@@ -67,6 +68,32 @@ export_fieldlogger_ui_dialog = qgis.PyQt.uic.loadUiType(
 parameter_browser_dialog = qgis.PyQt.uic.loadUiType(
     ui_path("fieldlogger_parameter_browser.ui")
 )[0]
+
+
+def validate_latlons(latlons: Dict[str, Tuple[Any, Any]]) -> None:
+    """Refuse coordinates FieldLogger/FieldForm cannot place on a map.
+
+    Both apps expect WGS84 degrees. Projected metres (a layer with a wrong or
+    missing CRS) are accepted by the apps but the markers end up nowhere, with
+    no error shown, so fail here instead. Missing coordinates (None) are
+    reported separately by organize_for_export.
+    """
+    bad = [
+        obsid
+        for obsid, (lat, lon) in latlons.items()
+        if lat is not None
+        and lon is not None
+        and not (-90 <= float(lat) <= 90 and -180 <= float(lon) <= 180)
+    ]
+    if bad:
+        raise exceptions.UsageError(
+            QCoreApplication.translate(
+                "ExportToFieldLogger",
+                "Coordinates for %s are not WGS84 latitude/longitude (got e.g. %s). "
+                "Check the CRS of the layer or the obs_points geometry.",
+            )
+            % (", ".join(bad), latlons[bad[0]])
+        )
 
 
 class ParameterGroup:
@@ -265,6 +292,15 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         )
         self.export_as_fieldform = QtWidgets.QRadioButton(
             QCoreApplication.translate("ExportToFieldLogger", "FieldForm")
+        )
+        self.export_as_fieldform.setToolTip(
+            QCoreApplication.translate(
+                "ExportToFieldLogger",
+                "Writes a FieldForm location file (.json).\n"
+                "FieldForm's FTP sync only downloads files named locations*.json "
+                "and imports each file name once, so keep the proposed name pattern "
+                "and use a new name for every export.",
+            )
         )
         self.export_format_row.layout().addWidget(
             QtWidgets.QLabel(
@@ -755,6 +791,7 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         else:
             latlons = self.obslayer.get_latlon_for_features()
         latlons = {str(k): v for k, v in latlons.items()}
+        validate_latlons(latlons)
         return latlons
 
     @common_utils.general_exception_handler
@@ -773,6 +810,7 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
                     indent=4,
                 ),
                 filter="json (*.json)",
+                default_name=self.fieldform_default_filename(),
             )
         else:
             self.write_to_file(
@@ -784,6 +822,7 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
             )
         stop_waiting_cursor()
 
+    @common_utils.general_exception_handler
     def preview(self):
         if self.export_as_fieldform.isChecked():
             output = json.dumps(
@@ -939,14 +978,19 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         return printlist
 
     @staticmethod
-    def write_to_file(out_string, filter="csv (*.csv)"):
+    def fieldform_default_filename() -> str:
+        """FieldForm's FTP sync only downloads files named locations*.json."""
+        return f"locations_{datetime.date.today():%Y-%m-%d}.json"
+
+    @staticmethod
+    def write_to_file(out_string, filter="csv (*.csv)", default_name=""):
         with common_utils.suspended_waiting_cursor():
             filename = common_utils.get_save_file_name_no_extension(
                 parent=None,
                 caption=QCoreApplication.translate(
                     "ExportToFieldLogger", "Choose a file name"
                 ),
-                directory="",
+                directory=default_name,
                 filter=filter,
             )
         if os.path.splitext(filename)[1] != f".{filter.split()[0]}":
@@ -1496,6 +1540,15 @@ class ObsLayer(gui_utils.VRowEntry):
 
     def get_latlon_for_features(self):
         current_layer = self.current_layer()
+        if not current_layer.crs().isValid():
+            raise exceptions.UsageError(
+                QCoreApplication.translate(
+                    "ExportToFieldLogger",
+                    "Layer %s has no valid CRS, so its coordinates cannot be "
+                    "converted to latitude/longitude. Set the layer CRS first.",
+                )
+                % current_layer.name()
+            )
         _from = QgsCoordinateReferenceSystem(current_layer.crs())
         _to = QgsCoordinateReferenceSystem("EPSG:4326")
         coordinatetransform = QgsCoordinateTransform(_from, _to, QgsProject.instance())

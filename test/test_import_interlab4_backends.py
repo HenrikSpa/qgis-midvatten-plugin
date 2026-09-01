@@ -839,7 +839,7 @@ class Interlab4ImporterDBMixin:
     @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch(
         "qgis.PyQt.QtWidgets.QMessageBox.question",
-        return_value=qgis.PyQt.QtWidgets.QMessageBox.Yes,
+        return_value=qgis.PyQt.QtWidgets.QMessageBox.StandardButton.Yes,
     )
     def test_s_qual_lab_created_on_demand(self, mock_question, mock_messagebar):
         print(mock_messagebar.mock_calls)
@@ -854,7 +854,7 @@ class Interlab4ImporterDBMixin:
     @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     @mock.patch(
         "qgis.PyQt.QtWidgets.QMessageBox.question",
-        return_value=qgis.PyQt.QtWidgets.QMessageBox.No,
+        return_value=qgis.PyQt.QtWidgets.QMessageBox.StandardButton.No,
     )
     def test_s_qual_lab_reverts_when_creation_declined(
         self, mock_question, mock_messagebar

@@ -45,10 +45,11 @@ def ask_retry_cancel(title: str, msg: str) -> bool:
         None,
         title,
         msg,
-        QtWidgets.QMessageBox.Retry | QtWidgets.QMessageBox.Cancel,
-        QtWidgets.QMessageBox.Retry,
+        QtWidgets.QMessageBox.StandardButton.Retry
+        | QtWidgets.QMessageBox.StandardButton.Cancel,
+        QtWidgets.QMessageBox.StandardButton.Retry,
     )
-    return reply == QtWidgets.QMessageBox.Retry
+    return reply == QtWidgets.QMessageBox.StandardButton.Retry
 
 
 class _MessageDispatcher(QObject):

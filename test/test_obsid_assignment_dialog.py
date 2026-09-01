@@ -185,7 +185,7 @@ class TestObsidAssignmentDialogShell:
         rows = [EditorRow("Br1", "Brunn 1", "", ["L1"])]
         dialog = ObsidAssignmentDialog(rows, existing_obsids=["Br1"])
         try:
-            assert dialog.windowModality() == Qt.WindowModal
+            assert dialog.windowModality() == Qt.WindowModality.WindowModal
         finally:
             dialog.deleteLater()
 
@@ -271,7 +271,7 @@ class TestObsidAssignmentDialogShell:
 
             item = dialog.table.item(0, _COL_OBSID)
             assert item.text() == "[skipped]"
-            assert not (item.flags() & Qt.ItemIsEditable)
+            assert not (item.flags() & Qt.ItemFlag.ItemIsEditable)
         finally:
             dialog.deleteLater()
 
@@ -284,7 +284,8 @@ class TestObsidAssignmentDialogShell:
             sel = dialog.table.selectionModel()
             sel.select(
                 dialog.table.model().index(0, 0),
-                QItemSelectionModel.Select | QItemSelectionModel.Rows,
+                QItemSelectionModel.SelectionFlag.Select
+                | QItemSelectionModel.SelectionFlag.Rows,
             )
             dialog.fill_combo.setEditText("Br1")
             dialog.fill_selection_button.click()
@@ -306,11 +307,13 @@ class TestObsidAssignmentDialogShell:
             sel_model = dialog.table.selectionModel()
             sel_model.select(
                 dialog.table.model().index(0, 0),
-                QItemSelectionModel.Select | QItemSelectionModel.Rows,
+                QItemSelectionModel.SelectionFlag.Select
+                | QItemSelectionModel.SelectionFlag.Rows,
             )
             sel_model.select(
                 dialog.table.model().index(1, 0),
-                QItemSelectionModel.Select | QItemSelectionModel.Rows,
+                QItemSelectionModel.SelectionFlag.Select
+                | QItemSelectionModel.SelectionFlag.Rows,
             )
             dialog.fill_combo.setEditText("Br1")
             dialog.fill_selection_button.click()
@@ -399,7 +402,7 @@ class TestObsidAssignmentDialogShell:
         dialog = ObsidAssignmentDialog(rows, existing_obsids=["Br1", "Br2", "Br3"])
         try:
             # Sort spec_provplats descending: visual order becomes Br3, Br2, Br1
-            dialog.table.sortByColumn(0, Qt.DescendingOrder)
+            dialog.table.sortByColumn(0, Qt.SortOrder.DescendingOrder)
             # Top visual row is now the EditorRow originally at index 2 (Br3).
             dialog.set_obsid_value(0, "Br3")
             assert dialog.editor_rows[2].obsid == "Br3"

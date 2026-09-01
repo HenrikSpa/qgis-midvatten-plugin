@@ -1308,11 +1308,13 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
         for tabnr in range(tabwidget.count()):
             if tabnr != current_index:
                 tabwidget.widget(tabnr).setSizePolicy(
-                    QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored
+                    QtWidgets.QSizePolicy.Policy.Ignored,
+                    QtWidgets.QSizePolicy.Policy.Ignored,
                 )
         tab = tabwidget.currentWidget()
         tab.setSizePolicy(
-            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred
+            QtWidgets.QSizePolicy.Policy.Preferred,
+            QtWidgets.QSizePolicy.Policy.Preferred,
         )
         tab.adjustSize()
 
@@ -1374,7 +1376,7 @@ class PandasCalculations:
         for lineedit in [self.rule, self.offset, self.how, self.window, self.center]:
             # lineedit.sizeHint()setFixedWidth(122)
             lineedit.sizePolicy().setHorizontalPolicy(
-                qgis.PyQt.QtWidgets.QSizePolicy.Preferred
+                qgis.PyQt.QtWidgets.QSizePolicy.Policy.Preferred
             )
 
         maximumwidth = 0
@@ -1399,11 +1401,13 @@ class PandasCalculations:
             label.setFixedWidth(maximumwidth)
             # label.setMinimumWidth(maximumwidth)
             label.sizePolicy().setHorizontalPolicy(
-                qgis.PyQt.QtWidgets.QSizePolicy.Fixed
+                qgis.PyQt.QtWidgets.QSizePolicy.Policy.Fixed
             )
 
         hline = horizontal_line()
-        hline.sizePolicy().setHorizontalPolicy(qgis.PyQt.QtWidgets.QSizePolicy.Fixed)
+        hline.sizePolicy().setHorizontalPolicy(
+            qgis.PyQt.QtWidgets.QSizePolicy.Policy.Fixed
+        )
         gridlayout.addWidget(hline)
         for col1, col2 in [
             (self.rule_label, self.rule),
@@ -1492,8 +1496,8 @@ class PandasCalculations:
 def horizontal_line():
     line = qgis.PyQt.QtWidgets.QFrame()
     line.setGeometry(qgis.PyQt.QtCore.QRect(320, 150, 118, 3))
-    line.setFrameShape(qgis.PyQt.QtWidgets.QFrame.HLine)
-    line.setFrameShadow(qgis.PyQt.QtWidgets.QFrame.Sunken)
+    line.setFrameShape(qgis.PyQt.QtWidgets.QFrame.Shape.HLine)
+    line.setFrameShadow(qgis.PyQt.QtWidgets.QFrame.Shadow.Sunken)
     return line
 
 

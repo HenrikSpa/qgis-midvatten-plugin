@@ -374,7 +374,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             self.format_combo.setItemData(
                 index,
                 self._format_descriptions[self.format_combo.itemText(index)],
-                Qt.ToolTipRole,
+                Qt.ItemDataRole.ToolTipRole,
             )
         self._format_titles = {
             self.FORMAT_DIVEROFFICE: QCoreApplication.translate(
@@ -561,12 +561,12 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             worker.cancelled,
         ):
             terminal_signal.connect(worker.deleteLater)
-            terminal_signal.connect(thread.quit, Qt.DirectConnection)
+            terminal_signal.connect(thread.quit, Qt.ConnectionType.DirectConnection)
         progress.canceled.connect(cancel_worker)
 
         try:
             thread.start()
-            loop.exec_()
+            loop.exec()
             thread.wait()
             thread.deleteLater()
         finally:
@@ -785,7 +785,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
             0,
             self,
         )
-        progress.setWindowModality(Qt.WindowModal)
+        progress.setWindowModality(Qt.WindowModality.WindowModal)
         progress.setMinimumDuration(0)
         progress.show()
 

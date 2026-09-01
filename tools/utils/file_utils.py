@@ -220,7 +220,7 @@ def ask_for_delimiter(
         None,
         tr("ask_for_delimiter", "Give delimiter"),
         question,
-        qgis.PyQt.QtWidgets.QLineEdit.Normal,
+        qgis.PyQt.QtWidgets.QLineEdit.EchoMode.Normal,
         default,
     )
     if not _delimiter[1]:

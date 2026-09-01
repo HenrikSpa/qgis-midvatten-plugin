@@ -145,9 +145,7 @@ class NewDb:
         conn = db_utils.connect_with_spatialite_connect(dbpath)
         conn.close()
 
-        self.db_settings = ru(
-            db_settings_to_string({"spatialite": {"dbpath": dbpath}})
-        )
+        self.db_settings = ru(db_settings_to_string({"spatialite": {"dbpath": dbpath}}))
 
         try:
             dbconnection = db_utils.DbConnectionManager(self.db_settings)
@@ -446,10 +444,12 @@ class NewDb:
     def ask_for_locale(self) -> str:
         locales = [
             qgis.PyQt.QtCore.QLocale(
-                qgis.PyQt.QtCore.QLocale.Swedish, qgis.PyQt.QtCore.QLocale.Sweden
+                qgis.PyQt.QtCore.QLocale.Language.Swedish,
+                qgis.PyQt.QtCore.QLocale.Country.Sweden,
             ),
             qgis.PyQt.QtCore.QLocale(
-                qgis.PyQt.QtCore.QLocale.English, qgis.PyQt.QtCore.QLocale.UnitedStates
+                qgis.PyQt.QtCore.QLocale.Language.English,
+                qgis.PyQt.QtCore.QLocale.Country.UnitedStates,
             ),
         ]
         locale_names = [localeobj.name() for localeobj in locales]

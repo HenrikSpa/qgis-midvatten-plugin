@@ -153,9 +153,7 @@ class TestTimezoneErrorPromptImportsAnyway:
     @staticmethod
     def _parsed_with_tz_error() -> ParsedLoggerFile:
         return ParsedLoggerFile(
-            data=pd.DataFrame(
-                {"date_time": ["2020-01-01 00:00:00"], "head_cm": [1.0]}
-            ),
+            data=pd.DataFrame({"date_time": ["2020-01-01 00:00:00"], "head_cm": [1.0]}),
             filename="logger.csv",
             source_path="/tmp/logger.csv",
             kind=LoggerDataKind.WATER_LEVEL,
@@ -617,7 +615,7 @@ class TestLoggerImportDiverOfficeSpatialite(
         assert combo.count() == len(expected_destinations)
         for index in range(combo.count()):
             format_name = combo.itemText(index)
-            tooltip = combo.itemData(index, Qt.ToolTipRole)
+            tooltip = combo.itemData(index, Qt.ItemDataRole.ToolTipRole)
             assert tooltip, f"missing tooltip for {format_name}"
             assert expected_destinations[format_name] in tooltip
 
@@ -2460,7 +2458,7 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
                 set_combobox(importer.utc_offset, "UTC+1", add_if_not_exists=False)
                 importer.select_files()
 
-                mock_askuser.return_value = QtWidgets.QMessageBox.Cancel
+                mock_askuser.return_value = QtWidgets.QMessageBox.StandardButton.Cancel
                 importer.start_import(
                     importer.files,
                     importer.skip_rows.checked,

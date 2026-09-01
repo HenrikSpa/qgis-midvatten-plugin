@@ -43,6 +43,8 @@ from midvatten.tools.utils import file_utils
 from midvatten.tools.utils import db_utils
 from midvatten.tools.utils.date_utils import to_date
 
+_ACCEPTED = qgis.PyQt.QtWidgets.QDialog.DialogCode.Accepted
+
 
 class GeneralCsvGuiMixin:
     """Test to make sure wlvllogg_import goes all the way to the end without errors"""
@@ -73,7 +75,7 @@ class GeneralCsvGuiMixin:
                 mock_askuser,
             ):
                 instance = mock_dialog.return_value
-                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.exec.return_value = _ACCEPTED
                 instance.filename = filename
                 instance.charset = "utf-8"
                 instance.has_header = True
@@ -163,7 +165,7 @@ class GeneralCsvGuiMixin:
                 mock_askuser,
             ):
                 instance = mock_dialog.return_value
-                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.exec.return_value = _ACCEPTED
                 instance.filename = filename
                 instance.charset = "utf-8"
                 instance.has_header = True
@@ -244,7 +246,7 @@ class GeneralCsvGuiMixin:
                 mock_askuser,
             ):
                 instance = mock_dialog.return_value
-                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.exec.return_value = _ACCEPTED
                 instance.filename = filename
                 instance.charset = "utf-8"
                 instance.has_header = True
@@ -323,7 +325,7 @@ class GeneralCsvGuiMixin:
                 mock_notfound,
             ):
                 instance = mock_dialog.return_value
-                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.exec.return_value = _ACCEPTED
                 instance.filename = filename
                 instance.charset = "utf-8"
                 instance.has_header = True
@@ -412,7 +414,7 @@ class GeneralCsvGuiMixin:
                 mock_notfound,
             ):
                 instance = mock_dialog.return_value
-                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.exec.return_value = _ACCEPTED
                 instance.filename = filename
                 instance.charset = "utf-8"
                 instance.has_header = True
@@ -499,7 +501,7 @@ class GeneralCsvGuiMixin:
                 mock_askuser,
             ):
                 instance = mock_dialog.return_value
-                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.exec.return_value = _ACCEPTED
                 instance.filename = filename
                 instance.charset = "utf-8"
                 instance.has_header = False
@@ -589,7 +591,7 @@ class GeneralCsvGuiMixin:
                 mock_askuser,
             ):
                 instance = mock_dialog.return_value
-                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.exec.return_value = _ACCEPTED
                 instance.filename = filename
                 instance.charset = "utf-8"
                 instance.has_header = True
@@ -669,7 +671,7 @@ class GeneralCsvGuiMixin:
                 mock_selectedobsids,
             ):
                 instance = mock_dialog.return_value
-                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.exec.return_value = _ACCEPTED
                 instance.filename = filename
                 instance.charset = "utf-8"
                 instance.has_header = True
@@ -755,7 +757,7 @@ class GeneralCsvGuiMixin:
                 mock_selectedobsids,
             ):
                 instance = mock_dialog.return_value
-                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.exec.return_value = _ACCEPTED
                 instance.filename = filename
                 instance.charset = "utf-8"
                 instance.has_header = True
@@ -840,7 +842,7 @@ class GeneralCsvGuiMixin:
                 mock_askuser,
             ):
                 instance = mock_dialog.return_value
-                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.exec.return_value = _ACCEPTED
                 instance.filename = filename
                 instance.charset = "utf-8"
                 instance.has_header = True
@@ -924,7 +926,7 @@ class GeneralCsvGuiMixin:
                 mock_askuser,
             ):
                 instance = mock_dialog.return_value
-                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.exec.return_value = _ACCEPTED
                 instance.filename = filename
                 instance.charset = "utf-8"
                 instance.has_header = True
@@ -1002,7 +1004,7 @@ class GeneralCsvGuiMixin:
                 mock_askuser,
             ):
                 instance = mock_dialog.return_value
-                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.exec.return_value = _ACCEPTED
                 instance.filename = filename
                 instance.charset = "utf-8"
                 instance.has_header = True
@@ -1080,7 +1082,7 @@ class GeneralCsvGuiMixin:
                 mock_askuser,
             ):
                 instance = mock_dialog.return_value
-                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.exec.return_value = _ACCEPTED
                 instance.filename = filename
                 instance.charset = "utf-8"
                 instance.has_header = True
@@ -1165,7 +1167,7 @@ class GeneralCsvGuiMixin:
                 mock_askuser,
             ):
                 instance = mock_dialog.return_value
-                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.exec.return_value = _ACCEPTED
                 instance.filename = filename
                 instance.charset = "utf-8"
                 instance.has_header = True
@@ -1243,7 +1245,7 @@ class GeneralCsvGuiMixin:
                 mock_askuser,
             ):
                 instance = mock_dialog.return_value
-                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.exec.return_value = _ACCEPTED
                 instance.filename = filename
                 instance.charset = "utf-8"
                 instance.has_header = True
@@ -1323,7 +1325,7 @@ class GeneralCsvGuiMixin:
                 mock_messagebar,
             ):
                 instance = mock_dialog.return_value
-                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.exec.return_value = _ACCEPTED
                 instance.filename = filename
                 instance.charset = "utf-8"
                 instance.has_header = True
@@ -1406,7 +1408,7 @@ class GeneralCsvGuiMixin:
                 mock_askuser,
             ):
                 instance = mock_dialog.return_value
-                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.exec.return_value = _ACCEPTED
                 instance.filename = filename
                 instance.charset = "utf-8"
                 instance.has_header = True
@@ -1495,7 +1497,7 @@ class GeneralCsvGuiMixin:
                 mock_askuser,
             ):
                 instance = mock_dialog.return_value
-                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.exec.return_value = _ACCEPTED
                 instance.filename = filename
                 instance.charset = "utf-8"
                 instance.has_header = True
@@ -1600,7 +1602,7 @@ class GeneralCsvGuiMixin:
                 mock_askuser,
             ):
                 instance = mock_dialog.return_value
-                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.exec.return_value = _ACCEPTED
                 instance.filename = filename
                 instance.charset = "utf-8"
                 instance.has_header = True

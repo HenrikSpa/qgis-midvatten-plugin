@@ -33,8 +33,8 @@ _DEFAULT_LOCALE_FALLBACK = _LOCALE_DEFAULTS["en_us"]
 
 def _locale_options() -> list:
     locales = [
-        QLocale(QLocale.Swedish, QLocale.Sweden),
-        QLocale(QLocale.English, QLocale.UnitedStates),
+        QLocale(QLocale.Language.Swedish, QLocale.Country.Sweden),
+        QLocale(QLocale.Language.English, QLocale.Country.UnitedStates),
     ]
     names = [loc.name() for loc in locales]
     sys_locale = locale_module.getlocale()[0]
@@ -95,7 +95,9 @@ class _BaseNewDbDialog(QDialog):
         form = QFormLayout()
         self._build_common_form(form)
         layout.addLayout(form)
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
@@ -158,7 +160,9 @@ class NewSpatialiteDbDialog(_BaseNewDbDialog):
         form.addRow(QCoreApplication.translate("NewDb", "Database path:"), path_widget)
 
         layout.addLayout(form)
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)

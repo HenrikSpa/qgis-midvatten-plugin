@@ -497,7 +497,7 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         if not self.parameter_groups:
             self.parameter_groups = [ParameterGroup(self.obslayer)]
 
-        self.splitter = SplitterWithHandel(qgis.PyQt.QtCore.Qt.Vertical)
+        self.splitter = SplitterWithHandel(qgis.PyQt.QtCore.Qt.Orientation.Vertical)
         self.main_vertical_layout.addWidget(self.splitter)
         self.widgets_layouts = self.init_splitters_layouts(self.splitter)
 
@@ -710,7 +710,7 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
             None,
             QCoreApplication.translate("ExportToFieldLogger", "Edit settings string"),
             msg,
-            QtWidgets.QLineEdit.Normal,
+            QtWidgets.QLineEdit.EchoMode.Normal,
             old_string,
         )
         if not new_string[1]:
@@ -804,7 +804,9 @@ class ExportToFieldLogger(QtWidgets.QMainWindow, export_fieldlogger_ui_dialog):
         text_edit.setReadOnly(True)
         text_edit.setPlainText(output)
         layout.addWidget(text_edit)
-        button_box = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Close)
+        button_box = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.StandardButton.Close
+        )
         button_box.rejected.connect(dialog.reject)
         layout.addWidget(button_box)
         dialog.exec()
@@ -1056,7 +1058,7 @@ class ParameterBrowser(QtWidgets.QDialog, parameter_browser_dialog):
         # Other widgets in the ui-file
         self._input_field_list = ExtendedQPlainTextEdit(keep_sorted=True)
         self._input_field_list.sizePolicy().setHorizontalPolicy(
-            QtWidgets.QSizePolicy.Expanding
+            QtWidgets.QSizePolicy.Policy.Expanding
         )
 
         # ------------------------------------------------------------------------------------
@@ -1147,7 +1149,7 @@ class ParameterBrowser(QtWidgets.QDialog, parameter_browser_dialog):
             )
         )
         self._input_field_list.sizePolicy().setHorizontalPolicy(
-            QtWidgets.QSizePolicy.Expanding
+            QtWidgets.QSizePolicy.Policy.Expanding
         )
         self._input_field_list.setMinimumWidth(200)
         # ------------------------------------------------------------------------------------
@@ -1432,7 +1434,7 @@ class MessageBar(qgis.gui.QgsMessageBar):
         self.raise_()
 
     def eventFilter(self, object, event):
-        if event.type() == qgis.PyQt.QtCore.QEvent.Resize:
+        if event.type() == qgis.PyQt.QtCore.QEvent.Type.Resize:
             self.showEvent(None)
         return super().eventFilter(object, event)
 

@@ -91,9 +91,7 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
             "#Provadm",
             "Lablittera;Namn;Adress",
         )
-        with file_utils.tempinput(
-            "\n".join(interlab4_lines), "iso-8859-1"
-        ) as testfile:
+        with file_utils.tempinput("\n".join(interlab4_lines), "iso-8859-1") as testfile:
             with mock.patch(
                 "midvatten.tools.utils.midvatten_utils.ask_for_charset",
                 return_value="iso-8859-1",

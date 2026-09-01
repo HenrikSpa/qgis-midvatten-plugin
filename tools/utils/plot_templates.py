@@ -163,7 +163,7 @@ class PlotTemplates:
                 QCoreApplication.translate("StoredSettings", "Edit settings")
             ),
             msg,
-            QtWidgets.QLineEdit.Normal,
+            QtWidgets.QLineEdit.EchoMode.Normal,
             old_string,
         )
         if not new_string[1]:
@@ -485,22 +485,24 @@ class _FixStylesDialog(QtWidgets.QDialog):
                     label = QCoreApplication.translate(
                         "_FixStylesDialog", "%s  —  %d unknown key(s): %s"
                     ) % (style_name, len(skipped), ", ".join(skipped))
-                    item.setCheckState(QtCore.Qt.Checked)
+                    item.setCheckState(QtCore.Qt.CheckState.Checked)
                 else:
                     label = (
                         QCoreApplication.translate("_FixStylesDialog", "%s  —  OK")
                         % style_name
                     )
-                    item.setCheckState(QtCore.Qt.Unchecked)
+                    item.setCheckState(QtCore.Qt.CheckState.Unchecked)
                 item.setText(label)
-                item.setData(QtCore.Qt.UserRole, fname)
+                item.setData(QtCore.Qt.ItemDataRole.UserRole, fname)
                 self._list.addItem(item)
 
         self._list.blockSignals(False)
         self._update_fix_btn()
 
     def _set_all(self, checked: bool) -> None:
-        state = QtCore.Qt.Checked if checked else QtCore.Qt.Unchecked
+        state = (
+            QtCore.Qt.CheckState.Checked if checked else QtCore.Qt.CheckState.Unchecked
+        )
         self._list.blockSignals(True)
         for i in range(self._list.count()):
             self._list.item(i).setCheckState(state)
@@ -512,7 +514,7 @@ class _FixStylesDialog(QtWidgets.QDialog):
 
     def _update_fix_btn(self) -> None:
         any_checked = any(
-            self._list.item(i).checkState() == QtCore.Qt.Checked
+            self._list.item(i).checkState() == QtCore.Qt.CheckState.Checked
             for i in range(self._list.count())
         )
         self._fix_btn.setEnabled(any_checked)
@@ -521,9 +523,9 @@ class _FixStylesDialog(QtWidgets.QDialog):
         fixed: list[str] = []
         for i in range(self._list.count()):
             item = self._list.item(i)
-            if item.checkState() != QtCore.Qt.Checked:
+            if item.checkState() != QtCore.Qt.CheckState.Checked:
                 continue
-            fname = item.data(QtCore.Qt.UserRole)
+            fname = item.data(QtCore.Qt.ItemDataRole.UserRole)
             fpath, content, skipped = self._info.get(fname, (None, "", []))
             if not fpath or not skipped:
                 continue
@@ -659,7 +661,7 @@ class MatplotlibStyles:
     def fix_styles(self) -> None:
         """Open a dialog where the user can select which style files to sanitize."""
         dialog = _FixStylesDialog(self.style_folder, self.style_extension)
-        dialog.exec_()
+        dialog.exec()
         if dialog.fixed_any:
             self.update_style_list()
 
@@ -851,7 +853,7 @@ class MatplotlibStyles:
 
     @general_exception_handler
     def open_folder(self) -> None:
-        url = QtCore.QUrl(self.style_folder, QtCore.QUrl.TolerantMode)
+        url = QtCore.QUrl(self.style_folder, QtCore.QUrl.ParsingMode.TolerantMode)
         QDesktopServices.openUrl(url)
 
     def update_settingsdict(self) -> None:

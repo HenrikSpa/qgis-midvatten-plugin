@@ -831,7 +831,7 @@ class Midvatten:
     @common_utils.general_exception_handler
     def new_db(self, *args):
         dialog = NewSpatialiteDbDialog(self.iface.mainWindow())
-        if dialog.exec() != QDialog.Accepted:
+        if dialog.exec() != QDialog.DialogCode.Accepted:
             return
         newdbinstance = NewDb()
         newdbinstance.create_new_spatialite_db(
@@ -856,7 +856,7 @@ class Midvatten:
     @common_utils.general_exception_handler
     def new_postgis_db(self):
         dialog = NewPostgisDbDialog(self.iface.mainWindow())
-        if dialog.exec() != QDialog.Accepted:
+        if dialog.exec() != QDialog.DialogCode.Accepted:
             return
         newdbinstance = NewDb()
         newdbinstance.populate_postgis_db(

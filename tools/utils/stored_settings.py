@@ -173,7 +173,7 @@ class StoredSettingsMixin:
             None,
             QCoreApplication.translate(_TRANSLATE_CONTEXT, "Edit settings string"),
             msg,
-            qgis.PyQt.QtWidgets.QLineEdit.Normal,
+            qgis.PyQt.QtWidgets.QLineEdit.EchoMode.Normal,
             old_string,
         )
         if not new_string[1]:

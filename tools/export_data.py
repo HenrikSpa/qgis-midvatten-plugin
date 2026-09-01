@@ -140,10 +140,12 @@ class ExportCsvDialog(QDialog):
 
         layout.addLayout(form)
 
-        self._buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self._buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
         self._buttons.accepted.connect(self.accept)
         self._buttons.rejected.connect(self.reject)
-        self._buttons.button(QDialogButtonBox.Ok).setEnabled(False)
+        self._buttons.button(QDialogButtonBox.StandardButton.Ok).setEnabled(False)
         layout.addWidget(self._buttons)
 
     def _browse_folder(self) -> None:
@@ -156,7 +158,7 @@ class ExportCsvDialog(QDialog):
         if folder:
             self._folder = folder
             self._folder_edit.setText(folder)
-            self._buttons.button(QDialogButtonBox.Ok).setEnabled(True)
+            self._buttons.button(QDialogButtonBox.StandardButton.Ok).setEnabled(True)
 
     @property
     def export_folder(self) -> str:

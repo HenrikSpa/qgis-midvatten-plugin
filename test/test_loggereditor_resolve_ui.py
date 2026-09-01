@@ -131,7 +131,7 @@ class TestResolveUiSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv):
         # QWidget.show to a no-op, so isVisible() can't be asserted here); verify
         # it was created as a Qt.Tool window parented to the editor instead.
         assert dlg is not None
-        assert (dlg.windowFlags() & Qt.Tool) == Qt.Tool
+        assert (dlg.windowFlags() & Qt.WindowType.Tool) == Qt.WindowType.Tool
         assert dlg.parent() is editor
         # clicking again reuses the same instance
         editor._resolve_dupes_btn.click()

@@ -27,7 +27,7 @@ def _run_worker(worker: ExportWorker) -> None:
     worker.finished.connect(loop.quit)
     worker.error.connect(loop.quit)
     thread.start()
-    loop.exec_()
+    loop.exec()
     thread.wait()
 
 

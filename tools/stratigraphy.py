@@ -428,7 +428,7 @@ class SurveyStore:
 class SurveyWidget(QtWidgets.QFrame):
     def __init__(self, parent=None):
         QtWidgets.QFrame.__init__(self, parent)
-        self.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
         self.setLineWidth(3)
         self.sondaggio = {}
         # In the original ARPAT plugin the following convention was used F = points, T = vertical lines and  C = horizontal lines
@@ -526,7 +526,8 @@ class SurveyWidget(QtWidgets.QFrame):
             if len(self.sondaggio) == 0:
                 painter.drawText(
                     self.rect(),
-                    QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter,
+                    QtCore.Qt.AlignmentFlag.AlignCenter
+                    | QtCore.Qt.AlignmentFlag.AlignVCenter,
                     QCoreApplication.translate("SurveyWidget", "No data to display"),
                 )
             else:
@@ -588,7 +589,7 @@ class SurveyWidget(QtWidgets.QFrame):
         label_rect = QtCore.QRect(
             s_rect.left(), s_rect.top(), s_rect.width(), name_height
         )
-        p.drawText(label_rect, QtCore.Qt.AlignVCenter, sond.obsid)
+        p.drawText(label_rect, QtCore.Qt.AlignmentFlag.AlignVCenter, sond.obsid)
 
         scale = (s_rect.height() - name_height - depth_height * 2) / (
             interval[1] - interval[0]
@@ -602,13 +603,17 @@ class SurveyWidget(QtWidgets.QFrame):
         depth_rect = QtCore.QRect(
             s_rect.left(), int(y_top - depth_height), s_rect.width(), int(depth_height)
         )
-        p.drawText(depth_rect, QtCore.Qt.AlignVCenter, "%.1f m" % depth_top)
+        p.drawText(
+            depth_rect, QtCore.Qt.AlignmentFlag.AlignVCenter, "%.1f m" % depth_top
+        )
 
         # bed depth
         depth_rect = QtCore.QRect(
             s_rect.left(), int(y_bed + 1), s_rect.width(), int(depth_height)
         )
-        p.drawText(depth_rect, QtCore.Qt.AlignVCenter, "%.1f m" % depth_bot)
+        p.drawText(
+            depth_rect, QtCore.Qt.AlignmentFlag.AlignVCenter, "%.1f m" % depth_bot
+        )
 
         d_rect = QtCore.QRect(
             QtCore.QPoint(s_rect.left(), int(y_top)),
@@ -647,7 +652,7 @@ class SurveyWidget(QtWidgets.QFrame):
             p.drawRect(c_rect)
 
             # draw column with specified hatch
-            p.setBrush(QtGui.QBrush(QtCore.Qt.black, b_type))
+            p.setBrush(QtGui.QBrush(QtCore.Qt.GlobalColor.black, b_type))
             p.drawRect(c_rect)
 
             # draw associated text
@@ -655,25 +660,25 @@ class SurveyWidget(QtWidgets.QFrame):
                 if self.geo_or_comment == "geology":
                     p.drawText(
                         t_rect,
-                        QtCore.Qt.AlignVCenter,
+                        QtCore.Qt.AlignmentFlag.AlignVCenter,
                         "" if layer.geology == "NULL" else layer.geology,
                     )  #'Yes' if fruit == 'Apple' else 'No'
                 elif self.geo_or_comment == "comment":
                     p.drawText(
                         t_rect,
-                        QtCore.Qt.AlignVCenter,
+                        QtCore.Qt.AlignmentFlag.AlignVCenter,
                         "" if layer.comment == "NULL" else layer.comment,
                     )
                 elif self.geo_or_comment == "geoshort":
                     p.drawText(
                         t_rect,
-                        QtCore.Qt.AlignVCenter,
+                        QtCore.Qt.AlignmentFlag.AlignVCenter,
                         "" if layer.geo_short == "NULL" else layer.geo_short,
                     )
                 elif self.geo_or_comment == "hydro":
                     p.drawText(
                         t_rect,
-                        QtCore.Qt.AlignVCenter,
+                        QtCore.Qt.AlignmentFlag.AlignVCenter,
                         "" if layer.hydro == "NULL" else layer.hydro,
                     )
                 elif self.geo_or_comment == "hydro explanation":
@@ -681,12 +686,12 @@ class SurveyWidget(QtWidgets.QFrame):
                         hydr = ""
                     else:
                         hydr = self.hydro_colors.get(layer.hydro.strip(), "")[0]
-                    p.drawText(t_rect, QtCore.Qt.AlignVCenter, hydr)
+                    p.drawText(t_rect, QtCore.Qt.AlignmentFlag.AlignVCenter, hydr)
 
                 else:
                     p.drawText(
                         t_rect,
-                        QtCore.Qt.AlignVCenter,
+                        QtCore.Qt.AlignmentFlag.AlignVCenter,
                         "" if layer.development == "NULL" else layer.development,
                     )
 
@@ -701,20 +706,20 @@ class SurveyWidget(QtWidgets.QFrame):
             if id in self.hydro_colors:
                 # return eval("PyQt4.QtCore.Qt" + self.hydro_colors[id][2])    # Less sofisticated method to create a function call from a string (function syntax is in the string)
                 return getattr(
-                    QtCore.Qt, self.hydro_colors[id][1]
+                    QtCore.Qt.GlobalColor, self.hydro_colors[id][1]
                 )  # getattr is to combine a function and a string to a combined function
             else:
-                return QtCore.Qt.white
+                return QtCore.Qt.GlobalColor.white
         elif type == "geo":
             # if id.lower() in self.geo_color_symbols:
             if id in self.geo_color_symbols:
                 try:  # first we assume it is a predefined Qt color, hence use PyQt4.QtCore.Qt
                     # return getattr(PyQt4.QtCore.Qt, self.geo_color_symbols[id.lower()][1])
-                    return getattr(QtCore.Qt, self.geo_color_symbols[id][1])
+                    return getattr(QtCore.Qt.GlobalColor, self.geo_color_symbols[id][1])
                 except AttributeError:  # otherwise it must be a SVG 1.0 color name, then it must be created by QtGui.QColor instead
                     return QtGui.QColor(self.geo_color_symbols[id][1])
             else:
-                return QtCore.Qt.white
+                return QtCore.Qt.GlobalColor.white
 
     def geo_to_symbol(
         self, id=""
@@ -724,18 +729,17 @@ class SurveyWidget(QtWidgets.QFrame):
 
         if id in self.geo_color_symbols:
             # return getattr(PyQt4.QtCore.Qt, self.geo_color_symbols[id.lower()][0])   # Or possibly [0]?
-            return getattr(QtCore.Qt, self.geo_color_symbols[id][0])  # Or possibly [0]?
+            return getattr(
+                QtCore.Qt.BrushStyle, self.geo_color_symbols[id][0]
+            )  # Or possibly [0]?
         else:
-            return QtCore.Qt.NoBrush
+            return QtCore.Qt.BrushStyle.NoBrush
 
     def print_diagram(self):
         """outputs the diagram to the printer (or PDF)"""
-        try:
-            printer = QtPrintSupport.QPrinter(
-                QtPrintSupport.QPrinter.PrinterMode.HighResolution
-            )
-        except AttributeError:
-            printer = QtPrintSupport.QPrinter(QtPrintSupport.QPrinter.HighResolution)
+        printer = QtPrintSupport.QPrinter(
+            QtPrintSupport.QPrinter.PrinterMode.HighResolution
+        )
 
         # set defaults
         try:
@@ -748,7 +752,7 @@ class SurveyWidget(QtWidgets.QFrame):
 
         # show print dialog
         dlg = QtPrintSupport.QPrintDialog(printer, self)
-        if dlg.exec() != QtWidgets.QDialog.Accepted:
+        if dlg.exec() != QtWidgets.QDialog.DialogCode.Accepted:
             return
 
         p = QtGui.QPainter()
@@ -771,10 +775,10 @@ class SurveyDialog(QtWidgets.QDialog):
 
         self.resize(QtCore.QSize(500, 250))
         self.setWindowFlags(
-            QtCore.Qt.Window
-            | QtCore.Qt.WindowMinimizeButtonHint
-            | QtCore.Qt.WindowMaximizeButtonHint
-            | QtCore.Qt.WindowCloseButtonHint
+            QtCore.Qt.WindowType.Window
+            | QtCore.Qt.WindowType.WindowMinimizeButtonHint
+            | QtCore.Qt.WindowType.WindowMaximizeButtonHint
+            | QtCore.Qt.WindowType.WindowCloseButtonHint
         )
 
         self.setWindowTitle(

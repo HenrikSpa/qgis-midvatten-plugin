@@ -25,7 +25,7 @@ class ResolveDuplicatesDialog(QDialog):
     def __init__(self, editor, parent=None):
         super().__init__(parent or editor)
         self._editor = editor
-        self.setWindowFlags(self.windowFlags() | Qt.Tool)
+        self.setWindowFlags(self.windowFlags() | Qt.WindowType.Tool)
         self.setWindowTitle(_tr("Resolve duplicate timestamps"))
         self.resize(640, 480)
         self._outer = QVBoxLayout(self)
@@ -37,7 +37,7 @@ class ResolveDuplicatesDialog(QDialog):
         self._outer.addWidget(whole)
         self._body_holder = QVBoxLayout()
         self._outer.addLayout(self._body_holder)
-        buttons = QDialogButtonBox(QDialogButtonBox.Close)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         buttons.rejected.connect(self.reject)
         self._outer.addWidget(buttons)
         editor.from_date_time.dateTimeChanged.connect(self._on_range_changed)

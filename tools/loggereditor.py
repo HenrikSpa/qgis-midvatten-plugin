@@ -1019,19 +1019,19 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         )
         btn_hour = box.addButton(
             QCoreApplication.translate("Calibrlogger", "Group by hour"),
-            qgis.PyQt.QtWidgets.QMessageBox.ActionRole,
+            qgis.PyQt.QtWidgets.QMessageBox.ButtonRole.ActionRole,
         )
         btn_day = box.addButton(
             QCoreApplication.translate("Calibrlogger", "Group by day"),
-            qgis.PyQt.QtWidgets.QMessageBox.ActionRole,
+            qgis.PyQt.QtWidgets.QMessageBox.ButtonRole.ActionRole,
         )
         btn_continue = box.addButton(
             QCoreApplication.translate("Calibrlogger", "Continue without grouping"),
-            qgis.PyQt.QtWidgets.QMessageBox.ActionRole,
+            qgis.PyQt.QtWidgets.QMessageBox.ButtonRole.ActionRole,
         )
-        box.addButton(qgis.PyQt.QtWidgets.QMessageBox.Cancel)
+        box.addButton(qgis.PyQt.QtWidgets.QMessageBox.StandardButton.Cancel)
 
-        box.exec_()
+        box.exec()
         clicked = box.clickedButton()
 
         if clicked is btn_hour:
@@ -1788,17 +1788,17 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         box.setText(msg)
         save_btn = box.addButton(
             QCoreApplication.translate("LoggerEditor", "Save"),
-            qgis.PyQt.QtWidgets.QMessageBox.AcceptRole,
+            qgis.PyQt.QtWidgets.QMessageBox.ButtonRole.AcceptRole,
         )
         discard_btn = box.addButton(
             QCoreApplication.translate("LoggerEditor", "Discard"),
-            qgis.PyQt.QtWidgets.QMessageBox.DestructiveRole,
+            qgis.PyQt.QtWidgets.QMessageBox.ButtonRole.DestructiveRole,
         )
         box.addButton(
             QCoreApplication.translate("LoggerEditor", "Cancel"),
-            qgis.PyQt.QtWidgets.QMessageBox.RejectRole,
+            qgis.PyQt.QtWidgets.QMessageBox.ButtonRole.RejectRole,
         )
-        box.exec_()
+        box.exec()
         clicked = box.clickedButton()
         if clicked is save_btn:
             return "save"
@@ -2638,7 +2638,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                     len(unique_keys),
                     self,
                 )
-                progress.setWindowModality(Qt.WindowModal)
+                progress.setWindowModality(Qt.WindowModality.WindowModal)
             else:
                 progress = None
             base_vals = self.level_masl_ts.values.astype(float, copy=False)
@@ -2804,8 +2804,8 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         vbox.addWidget(self._ref_list)
 
         options_separator = QFrame()
-        options_separator.setFrameShape(QFrame.HLine)
-        options_separator.setFrameShadow(QFrame.Sunken)
+        options_separator.setFrameShape(QFrame.Shape.HLine)
+        options_separator.setFrameShadow(QFrame.Shadow.Sunken)
         vbox.addWidget(options_separator)
         options_label = QLabel(
             QCoreApplication.translate("Calibrlogger", "Plot options")
@@ -2828,7 +2828,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         vbox.addStretch()
 
         self._ref_dock.setWidget(container)
-        self.addDockWidget(Qt.RightDockWidgetArea, self._ref_dock)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self._ref_dock)
         toggle = self._ref_dock.toggleViewAction()
         icon_path = os.path.join(
             os.path.dirname(__file__), "..", "icons", "svg", "ref_panel.svg"

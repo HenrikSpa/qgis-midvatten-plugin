@@ -35,6 +35,10 @@ from midvatten.tools.import_general_csv_gui import (
 )
 from midvatten.tools.utils import db_utils, exceptions, file_utils, string_utils
 
+_REJECTED = qgis.PyQt.QtWidgets.QDialog.DialogCode.Rejected
+
+_ACCEPTED = qgis.PyQt.QtWidgets.QDialog.DialogCode.Accepted
+
 
 @pytest.mark.active
 class TestCsvEncodingHelpers:
@@ -149,7 +153,7 @@ class TestGeneralCsvImportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
             @mock.patch("midvatten.tools.import_general_csv_gui.CsvFileLoadDialog")
             def _run(self, filename, mock_dialog, mock_popup, mock_iface):
                 instance = mock_dialog.return_value
-                instance.exec.return_value = qgis.PyQt.QtWidgets.QDialog.Accepted
+                instance.exec.return_value = _ACCEPTED
                 instance.filename = filename
                 instance.charset = "utf-8"
                 instance.has_header = True
@@ -333,9 +337,7 @@ class TestGeneralCsvImportSpatialite(utils_for_tests.MidvattenTestSpatialiteDbSv
 
     @mock.patch("midvatten.tools.import_general_csv_gui.CsvFileLoadDialog")
     def test_load_files_cancel_raises_userinterrupt(self, mock_dialog):
-        mock_dialog.return_value.exec.return_value = (
-            qgis.PyQt.QtWidgets.QDialog.Rejected
-        )
+        mock_dialog.return_value.exec.return_value = _REJECTED
         ms = MagicMock()
         ms.settingsdict = OrderedDict()
         importer = GeneralCsvImportGui(self.iface, ms)

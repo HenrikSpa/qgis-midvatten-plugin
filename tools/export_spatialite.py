@@ -73,10 +73,10 @@ def _warn_duplicates(parent, duplicates: dict[str, int]) -> bool:
         parent,
         QCoreApplication.translate("ExportSpatialite", "Duplicate timestamps detected"),
         msg,
-        QMessageBox.Yes | QMessageBox.No,
-        QMessageBox.No,
+        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        QMessageBox.StandardButton.No,
     )
-    return result == QMessageBox.Yes
+    return result == QMessageBox.StandardButton.Yes
 
 
 class ExportSpatialite:
@@ -122,7 +122,7 @@ class ExportSpatialite:
             idx = dialog._levels_tz_combo.findText(w_levels_timezone)
             dialog._levels_tz_combo.setCurrentIndex(max(0, idx))
 
-        if dialog.exec() != QDialog.Accepted:
+        if dialog.exec() != QDialog.DialogCode.Accepted:
             return
 
         if not dialog.dbpath:
@@ -150,7 +150,7 @@ class ExportSpatialite:
             0,
             self._iface.mainWindow(),
         )
-        progress.setWindowModality(Qt.WindowModal)
+        progress.setWindowModality(Qt.WindowModality.WindowModal)
         progress.setMinimumDuration(0)
         progress.setCancelButton(None)
         progress.show()
@@ -226,7 +226,7 @@ class ExportSpatialite:
             0,
             self._iface.mainWindow(),
         )
-        progress.setWindowModality(Qt.WindowModal)
+        progress.setWindowModality(Qt.WindowModality.WindowModal)
         progress.setMinimumDuration(0)
         progress.show()
         QApplication.processEvents()
@@ -262,7 +262,7 @@ class ExportSpatialite:
         progress.canceled.connect(worker.cancel)
 
         thread.start()
-        loop.exec_()
+        loop.exec()
         thread.wait()
         progress.close()
 

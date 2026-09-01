@@ -126,8 +126,8 @@ class CsvFileLoadDialog(qgis.PyQt.QtWidgets.QDialog):
         self._preview.setReadOnly(True)
 
         self._buttons = qgis.PyQt.QtWidgets.QDialogButtonBox(
-            qgis.PyQt.QtWidgets.QDialogButtonBox.Ok
-            | qgis.PyQt.QtWidgets.QDialogButtonBox.Cancel
+            qgis.PyQt.QtWidgets.QDialogButtonBox.StandardButton.Ok
+            | qgis.PyQt.QtWidgets.QDialogButtonBox.StandardButton.Cancel
         )
         self._buttons.accepted.connect(self.accept)
         self._buttons.rejected.connect(self.reject)
@@ -150,7 +150,9 @@ class CsvFileLoadDialog(qgis.PyQt.QtWidgets.QDialog):
         self.resize(700, 400)
 
     def _ok_button(self):
-        return self._buttons.button(qgis.PyQt.QtWidgets.QDialogButtonBox.Ok)
+        return self._buttons.button(
+            qgis.PyQt.QtWidgets.QDialogButtonBox.StandardButton.Ok
+        )
 
     def _browse(self):
         try:
@@ -338,7 +340,7 @@ class GeneralCsvImportGui(BaseImporter, import_ui_dialog):
 
     def load_files(self):
         dlg = CsvFileLoadDialog(self)
-        if dlg.exec() != qgis.PyQt.QtWidgets.QDialog.Accepted:
+        if dlg.exec() != qgis.PyQt.QtWidgets.QDialog.DialogCode.Accepted:
             raise exceptions.UserInterruptError()
 
         filename = dlg.filename

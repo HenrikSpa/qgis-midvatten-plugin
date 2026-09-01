@@ -56,7 +56,9 @@ class _FilterRow(QWidget):
         right_layout.setSpacing(2)
 
         self.values_list = QListWidget()
-        self.values_list.setSelectionMode(QAbstractItemView.MultiSelection)
+        self.values_list.setSelectionMode(
+            QAbstractItemView.SelectionMode.MultiSelection
+        )
         right_layout.addWidget(self.values_list)
 
         self.search_edit = QLineEdit()
@@ -143,7 +145,7 @@ class RefSeriesDialog(QDialog):
         main_layout = QVBoxLayout(self)
 
         top_form = QFormLayout()
-        top_form.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
+        top_form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
 
         self.table_combo = QComboBox()
         self._populate_tables()
@@ -158,7 +160,7 @@ class RefSeriesDialog(QDialog):
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setMinimumHeight(60)
-        scroll.setSizeAdjustPolicy(QScrollArea.AdjustToContents)
+        scroll.setSizeAdjustPolicy(QScrollArea.SizeAdjustPolicy.AdjustToContents)
         self._filters_widget = QWidget()
         self._filters_layout = QVBoxLayout(self._filters_widget)
         self._filters_layout.setSpacing(4)
@@ -225,7 +227,9 @@ class RefSeriesDialog(QDialog):
         bottom_form.addRow(_tr("Label:"), self.label_edit)
         main_layout.addLayout(bottom_form)
 
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         main_layout.addWidget(buttons)

@@ -1277,5 +1277,8 @@ class TestExportFieldloggerNoDb(MidvattenTestBase):
 
         button_boxes = dialog.findChildren(QtWidgets.QDialogButtonBox)
         assert len(button_boxes) == 1
-        assert button_boxes[0].standardButtons() == QtWidgets.QDialogButtonBox.Close
+        assert (
+            button_boxes[0].standardButtons()
+            == QtWidgets.QDialogButtonBox.StandardButton.Close
+        )
         # assert False

@@ -154,7 +154,7 @@ def ask_for_charset(
                 None,
                 QCoreApplication.translate("ask_for_charset", "Set charset encoding"),
                 msg,
-                QtWidgets.QLineEdit.Normal,
+                QtWidgets.QLineEdit.EchoMode.Normal,
                 getcurrentlocale()[1],
             )[0]
         else:
@@ -167,7 +167,7 @@ def ask_for_charset(
                 None,
                 QCoreApplication.translate("ask_for_charset", "Set charset encoding"),
                 msg,
-                QtWidgets.QLineEdit.Normal,
+                QtWidgets.QLineEdit.EchoMode.Normal,
                 default_charset,
             )[0]
     except Exception as e:
@@ -182,7 +182,7 @@ def ask_for_charset(
             None,
             QCoreApplication.translate("ask_for_charset", "Set charset encoding"),
             msg,
-            QtWidgets.QLineEdit.Normal,
+            QtWidgets.QLineEdit.EchoMode.Normal,
             default_charset,
         )[0]
 

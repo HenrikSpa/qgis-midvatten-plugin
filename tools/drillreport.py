@@ -80,7 +80,7 @@ class Drillreport:  # general observation point info for the selected object
             0,
             len(obsids),
         )
-        progress.setWindowModality(Qt.WindowModal)
+        progress.setWindowModality(Qt.WindowModality.WindowModal)
         progress.setMinimumDuration(0)
         if merged_question:
             f, rpt = self.open_file(", ".join(obsids), reportpath)

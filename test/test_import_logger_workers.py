@@ -322,7 +322,7 @@ def test_parse_worker_keeps_gui_event_loop_responsive_and_cancels():
         thread.start()
         assert parser_started.wait(timeout=1)
         QTimer.singleShot(10, request_cancel)
-        loop.exec_()
+        loop.exec()
         thread.wait()
 
     assert states == {"timer_fired": True, "cancelled": True, "error": None}
@@ -379,7 +379,7 @@ def test_database_worker_interrupts_active_query_and_rolls_back():
         thread.start()
         assert importer_started.wait(timeout=1)
         QTimer.singleShot(10, lambda: worker.cancel())
-        loop.exec_()
+        loop.exec()
         thread.wait()
 
     assert states == {"cancelled": True, "finished": False, "error": None}

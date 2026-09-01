@@ -384,7 +384,7 @@ class Drillreport:  # general observation point info for the selected object
             0,
             len(obsids),
         )
-        progress.setWindowModality(qgis.PyQt.QtCore.Qt.WindowModal)
+        progress.setWindowModality(qgis.PyQt.QtCore.Qt.WindowModality.WindowModal)
         progress.setMinimumDuration(0)
         for i, obsid in enumerate(obsids):
             if progress.wasCanceled():

@@ -444,7 +444,9 @@ def start_waiting_cursor() -> None:
     than touching the cursor.
     """
     global _cursor_depth
-    qgis.PyQt.QtWidgets.QApplication.setOverrideCursor(qgis.PyQt.QtCore.Qt.WaitCursor)
+    qgis.PyQt.QtWidgets.QApplication.setOverrideCursor(
+        qgis.PyQt.QtCore.Qt.CursorShape.WaitCursor
+    )
     _cursor_depth += 1
 
 

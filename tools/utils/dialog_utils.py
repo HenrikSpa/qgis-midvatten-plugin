@@ -31,18 +31,25 @@ class Askuser(QtWidgets.QDialog):
         if question == "YesNo":  #  Yes/No dialog
             if include_cancel_button:
                 buttons = (
-                    QtWidgets.QMessageBox.Yes
-                    | QtWidgets.QMessageBox.No
-                    | QtWidgets.QMessageBox.Cancel
+                    QtWidgets.QMessageBox.StandardButton.Yes
+                    | QtWidgets.QMessageBox.StandardButton.No
+                    | QtWidgets.QMessageBox.StandardButton.Cancel
                 )
             else:
-                buttons = QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No
+                buttons = (
+                    QtWidgets.QMessageBox.StandardButton.Yes
+                    | QtWidgets.QMessageBox.StandardButton.No
+                )
             reply = QtWidgets.QMessageBox.question(
-                parent, dialogtitle, msg, buttons, QtWidgets.QMessageBox.Yes
+                parent,
+                dialogtitle,
+                msg,
+                buttons,
+                QtWidgets.QMessageBox.StandardButton.Yes,
             )
-            if reply == QtWidgets.QMessageBox.Cancel:
+            if reply == QtWidgets.QMessageBox.StandardButton.Cancel:
                 raise UserInterruptError()
-            elif reply == QtWidgets.QMessageBox.Yes:
+            elif reply == QtWidgets.QMessageBox.StandardButton.Yes:
                 self.result = 1  # 1 = "yes"
             else:
                 self.result = 0  # 0="no"
@@ -52,9 +59,9 @@ class Askuser(QtWidgets.QDialog):
             msg_box = QtWidgets.QMessageBox(parent)
             msg_box.setText(msg)
             msg_box.setWindowTitle(dialogtitle)
-            msg_box.addButton(btn_all, QtWidgets.QMessageBox.ActionRole)
-            msg_box.addButton(btn_selected, QtWidgets.QMessageBox.ActionRole)
-            msg_box.addButton(QtWidgets.QMessageBox.Cancel)
+            msg_box.addButton(btn_all, QtWidgets.QMessageBox.ButtonRole.ActionRole)
+            msg_box.addButton(btn_selected, QtWidgets.QMessageBox.ButtonRole.ActionRole)
+            msg_box.addButton(QtWidgets.QMessageBox.StandardButton.Cancel)
             reply = msg_box.exec()
             self.result = reply  # ALL=0, SELECTED=1
         elif question == "DateShift":
@@ -79,7 +86,7 @@ class Askuser(QtWidgets.QDialog):
                             )
                         )
                         % ", ".join(supported_units),
-                        qgis.PyQt.QtWidgets.QLineEdit.Normal,
+                        qgis.PyQt.QtWidgets.QLineEdit.EchoMode.Normal,
                         "0 hours",
                     )[0]
                 )
@@ -140,7 +147,9 @@ class NotFoundQuestion(QtWidgets.QDialog, not_found_dialog):
         self.setupUi(self)
         self.setWindowTitle(dialogtitle)
         self.label.setText(msg)
-        self.label.setTextInteractionFlags(qgis.PyQt.QtCore.Qt.TextSelectableByMouse)
+        self.label.setTextInteractionFlags(
+            qgis.PyQt.QtCore.Qt.TextInteractionFlag.TextSelectableByMouse
+        )
         self.combo_box.addItem(default_value)
         self.label_2.setText(combobox_label)
         if existing_list is not None:
@@ -172,7 +181,9 @@ class NotFoundQuestion(QtWidgets.QDialog, not_found_dialog):
                 button_display_names.get(button_name, button_name)
             )
             button.setObjectName(button_name.lower())
-            self.button_box.addButton(button, QtWidgets.QDialogButtonBox.ActionRole)
+            self.button_box.addButton(
+                button, QtWidgets.QDialogButtonBox.ButtonRole.ActionRole
+            )
             button.clicked.connect(lambda x: self.button_clicked())
 
         self.reuse_label = qgis.PyQt.QtWidgets.QLabel(
@@ -286,7 +297,7 @@ def ask_for_export_crs(default_crs: int = "") -> str:
             None,
             tr("ask_for_export_crs", "Set export crs"),
             tr("ask_for_export_crs", "Give the crs for the exported database.\n"),
-            QtWidgets.QLineEdit.Normal,
+            QtWidgets.QLineEdit.EchoMode.Normal,
             str(default_crs),
         )[0]
     )

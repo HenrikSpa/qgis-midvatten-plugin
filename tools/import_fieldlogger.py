@@ -63,7 +63,9 @@ import_fieldlogger_ui_dialog = uic.loadUiType(ui_path("import_fieldlogger.ui"))[
 class FieldloggerImport(BaseImporter, import_fieldlogger_ui_dialog):
     def __init__(self, iface, ms):
         super().__init__(iface, ms)
-        self.main_vertical_layout.setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
+        self.main_vertical_layout.setAlignment(
+            QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignLeft
+        )
         self.main_vertical_layout.setContentsMargins(0, 0, 0, 0)
 
     def show(self) -> None:
@@ -81,10 +83,11 @@ class FieldloggerImport(BaseImporter, import_fieldlogger_ui_dialog):
 
     @common_utils.general_exception_handler
     def parse_observations_and_populate_gui(self):
-        splitter = SplitterWithHandel(QtCore.Qt.Vertical)
+        splitter = SplitterWithHandel(QtCore.Qt.Orientation.Vertical)
         self.add_row(splitter)
         self.main_vertical_layout.setAlignment(
-            splitter, QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop
+            splitter,
+            QtCore.Qt.AlignmentFlag.AlignLeft | QtCore.Qt.AlignmentFlag.AlignTop,
         )
 
         self.observations = self.select_file_and_parse_rows(self.parse_rows)
@@ -194,7 +197,9 @@ class FieldloggerImport(BaseImporter, import_fieldlogger_ui_dialog):
             lambda: self.update_input_fields_from_button()
         )
 
-        self.grid_layout_buttons.setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
+        self.grid_layout_buttons.setAlignment(
+            QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignLeft
+        )
 
         self.setGeometry(500, 150, 1100, 700)
 
@@ -721,7 +726,9 @@ class StaffQuestion(QtWidgets.QWidget):
     def __init__(self, parent: None = None):
         super().__init__(parent)
         self.setLayout(qgis.PyQt.QtWidgets.QHBoxLayout())
-        self.layout().setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
+        self.layout().setAlignment(
+            QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignLeft
+        )
         self.label = QtWidgets.QLabel(
             QCoreApplication.translate("StaffQuestion", "Staff who did the measurement")
         )
@@ -757,7 +764,9 @@ class DateShiftQuestion(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setLayout(qgis.PyQt.QtWidgets.QHBoxLayout())
-        self.layout().setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
+        self.layout().setAlignment(
+            QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignLeft
+        )
         self.label = QtWidgets.QLabel(
             QCoreApplication.translate(
                 "DateShiftQuestion", 'Shift dates, supported format ex. "%s":'
@@ -820,7 +829,9 @@ class SublocationFilter(QtWidgets.QWidget):
         """
         super().__init__(parent)
         self.setLayout(qgis.PyQt.QtWidgets.QVBoxLayout())
-        self.layout().setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
+        self.layout().setAlignment(
+            QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignLeft
+        )
 
         self.layout().addWidget(
             QtWidgets.QLabel(
@@ -831,23 +842,31 @@ class SublocationFilter(QtWidgets.QWidget):
         )
 
         self.table = QtWidgets.QTableWidget()
-        self.table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+        self.table.setSelectionBehavior(
+            QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows
+        )
         self.table.sizePolicy().setVerticalPolicy(
-            QtWidgets.QSizePolicy.MinimumExpanding
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding
         )
         self.table.sizePolicy().setVerticalStretch(2)
         self.table.sizePolicy().setHorizontalPolicy(
-            QtWidgets.QSizePolicy.MinimumExpanding
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding
         )
 
-        self.table.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+        self.table.setSelectionMode(
+            QtWidgets.QAbstractItemView.SelectionMode.ExtendedSelection
+        )
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.setSortingEnabled(True)
 
         self.update_sublocations(sublocations)
         self.layout().addWidget(self.table)
-        self.sizePolicy().setHorizontalPolicy(QtWidgets.QSizePolicy.MinimumExpanding)
-        self.sizePolicy().setVerticalPolicy(QtWidgets.QSizePolicy.MinimumExpanding)
+        self.sizePolicy().setHorizontalPolicy(
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding
+        )
+        self.sizePolicy().setVerticalPolicy(
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding
+        )
 
     def set_selection(self, sublocations, true_or_false):
         """
@@ -1158,7 +1177,9 @@ class ImportMethodChooser(QtWidgets.QWidget):
         self.parameter_import_fields = None
         self.label = QtWidgets.QLabel()
         self.label.setText(self.parameter_name)
-        self.label.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse)
+        self.label.setTextInteractionFlags(
+            QtCore.Qt.TextInteractionFlag.TextSelectableByMouse
+        )
         self.__import_method = QtWidgets.QComboBox()
 
         self.import_method_classes = OrderedDict(
@@ -1181,7 +1202,9 @@ class ImportMethodChooser(QtWidgets.QWidget):
         for widget in [self.label, self.__import_method]:
             self.layout().addWidget(widget)
 
-        self.layout().setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
+        self.layout().setAlignment(
+            QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignLeft
+        )
         self.layout().setContentsMargins(0, 0, 0, 0)
 
     @property
@@ -1241,7 +1264,9 @@ class CommentsImportFields(QtWidgets.QWidget):
         """ """
         super().__init__(parent)
         self.setLayout(qgis.PyQt.QtWidgets.QHBoxLayout())
-        self.layout().setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
+        self.layout().setAlignment(
+            QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignLeft
+        )
         self.layout().setContentsMargins(0, 0, 0, 0)
         self.import_method_chooser = import_method_chooser
 
@@ -1282,7 +1307,9 @@ class WLevelsImportFields(QtWidgets.QWidget):
         """ """
         super().__init__(parent)
         self.setLayout(QtWidgets.QGridLayout())
-        self.layout().setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
+        self.layout().setAlignment(
+            QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignLeft
+        )
         self.layout().setContentsMargins(0, 0, 0, 0)
 
         self.h_toc_dict = None
@@ -1395,7 +1422,9 @@ class WFlowImportFields(QtWidgets.QWidget):
         """
         super().__init__(parent)
         self.setLayout(QtWidgets.QGridLayout())
-        self.layout().setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
+        self.layout().setAlignment(
+            QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignLeft
+        )
         self.layout().setContentsMargins(0, 0, 0, 0)
 
         self._import_method_chooser = import_method_chooser
@@ -1501,7 +1530,9 @@ class WQualFieldImportFields(QtWidgets.QWidget):
         """
         super().__init__(parent)
         self.setLayout(QtWidgets.QGridLayout())
-        self.layout().setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
+        self.layout().setAlignment(
+            QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignLeft
+        )
         self.layout().setContentsMargins(0, 0, 0, 0)
 
         self.staff = staff
@@ -1720,7 +1751,9 @@ class WQualFieldDepthImportFields(QtWidgets.QWidget):
         """ """
         super().__init__(parent)
         self.setLayout(qgis.PyQt.QtWidgets.QHBoxLayout())
-        self.layout().setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
+        self.layout().setAlignment(
+            QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignLeft
+        )
         self.layout().setContentsMargins(0, 0, 0, 0)
         self.import_method_chooser = import_method_chooser
 
@@ -1768,7 +1801,7 @@ class WQualFieldDepthImportFields(QtWidgets.QWidget):
 def default_combobox(editable: bool = True) -> QComboBox:
     combo_box = QtWidgets.QComboBox()
     combo_box.setEditable(editable)
-    combo_box.setSizeAdjustPolicy(QtWidgets.QComboBox.AdjustToContents)
+    combo_box.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToContents)
     combo_box.setMinimumWidth(80)
     combo_box.addItem("")
     return combo_box

@@ -664,7 +664,9 @@ class DatabaseSettings:
     ):
         self.midvsettingsdialogdock = midvsettingsdialogdock
         self.layout = grid_layout_db
-        self.layout.setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
+        self.layout.setAlignment(
+            QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignLeft
+        )
         self.db_settings_obj = None
         self.label_width = self.maximum_label_width()
 
@@ -852,8 +854,8 @@ class SpatialiteSettings(gui_utils.RowEntryGrid):
             return
 
         dbpath = self.dbpath
-        self.midvsettingsdialogdock.ms.settingsdict["database"] = (
-            db_settings_to_string({"spatialite": {"dbpath": dbpath}})
+        self.midvsettingsdialogdock.ms.settingsdict["database"] = db_settings_to_string(
+            {"spatialite": {"dbpath": dbpath}}
         )
         self.midvsettingsdialogdock.ms.save_settings("database")
         try:

@@ -115,7 +115,7 @@ class LoadLayers:
         rel.setReferencedLayer(obs_points_layer.id())
         rel.setReferencingLayer(screen_layer.id())
         rel.addFieldPair("obsid", "obsid")
-        rel.setStrength(QgsRelation.Association)
+        rel.setStrength(QgsRelation.RelationStrength.Association)
         if rel.isValid():
             QgsProject.instance().relationManager().addRelation(rel)
             return True

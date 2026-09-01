@@ -245,7 +245,7 @@ _COLUMN_HEADERS = (
 )
 
 _INVALID_BRUSH = QBrush(QColor(255, 200, 200))
-_DEFAULT_BRUSH = QBrush(Qt.white)
+_DEFAULT_BRUSH = QBrush(Qt.GlobalColor.white)
 
 
 class _ObsidDelegate(QStyledItemDelegate):
@@ -259,8 +259,8 @@ class _ObsidDelegate(QStyledItemDelegate):
     def createEditor(self, parent, option, index):  # noqa: N802
         editor = QLineEdit(parent)
         completer = QCompleter(self._existing_obsids, editor)
-        completer.setCaseSensitivity(Qt.CaseInsensitive)
-        completer.setFilterMode(Qt.MatchContains)
+        completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        completer.setFilterMode(Qt.MatchFlag.MatchContains)
         editor.setCompleter(completer)
         return editor
 
@@ -280,7 +280,7 @@ class ObsidAssignmentDialog(QDialog):
         # Window-modal (not application-modal) so QGIS stays usable while the
         # dialog is open; callers must pass parent=None or WindowModal blocks
         # the whole parent window chain up to the QGIS main window.
-        self.setWindowModality(Qt.WindowModal)
+        self.setWindowModality(Qt.WindowModality.WindowModal)
         self.editor_rows = list(editor_rows)
         self.existing_obsids = list(existing_obsids)
         self._reload_callback = reload_callback
@@ -292,16 +292,16 @@ class ObsidAssignmentDialog(QDialog):
         layout = QVBoxLayout(self)
         self.table = QTableWidget(0, len(_COLUMN_HEADERS), self)
         self.table.setHorizontalHeaderLabels([_tr(h) for h in _COLUMN_HEADERS])
-        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.table.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         # Click-to-sort is enabled; _editor_index_at() translates the
         # sort-affected visual row back to the stable editor_rows index via
         # Qt.UserRole set on column 0. We pin the indicator to column 0 ASC
         # so the initial display matches insertion order.
         self.table.setSortingEnabled(True)
-        self.table.horizontalHeader().setSortIndicator(0, Qt.AscendingOrder)
+        self.table.horizontalHeader().setSortIndicator(0, Qt.SortOrder.AscendingOrder)
         header = self.table.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.Interactive)
+        header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         # Readable defaults: wide text columns, obsid absorbs the rest.
         # Interactive mode keeps every column user-resizable.
         self.resize(1000, 600)
@@ -329,8 +329,8 @@ class ObsidAssignmentDialog(QDialog):
         self.fill_combo.setEditable(True)
         self.fill_combo.addItems(self.existing_obsids)
         fill_completer = QCompleter(self.existing_obsids, self.fill_combo)
-        fill_completer.setCaseSensitivity(Qt.CaseInsensitive)
-        fill_completer.setFilterMode(Qt.MatchContains)
+        fill_completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        fill_completer.setFilterMode(Qt.MatchFlag.MatchContains)
         self.fill_combo.setCompleter(fill_completer)
         bulk_row.addWidget(self.fill_combo)
         self.fill_selection_button = QPushButton(_tr("Fill selection"), self)
@@ -380,7 +380,7 @@ class ObsidAssignmentDialog(QDialog):
             self.table.setRowCount(len(self.editor_rows))
             for row_idx, row in enumerate(self.editor_rows):
                 spec_item = QTableWidgetItem(row.specifik_provplats)
-                spec_item.setData(Qt.UserRole, row_idx)
+                spec_item.setData(Qt.ItemDataRole.UserRole, row_idx)
                 self.table.setItem(row_idx, _COL_SPEC, spec_item)
                 self.table.setItem(
                     row_idx, _COL_NAMN, QTableWidgetItem(row.provplatsnamn)
@@ -409,7 +409,7 @@ class ObsidAssignmentDialog(QDialog):
         spec_item = self.table.item(visual_row, _COL_SPEC)
         if spec_item is None:
             return visual_row
-        stored = spec_item.data(Qt.UserRole)
+        stored = spec_item.data(Qt.ItemDataRole.UserRole)
         return int(stored) if stored is not None else visual_row
 
     def set_obsid_value(self, visual_row: int, obsid: str):
@@ -478,10 +478,10 @@ class ObsidAssignmentDialog(QDialog):
             self.table.setItem(visual_row, _COL_OBSID, item)
         if skipped:
             item.setText("[skipped]")
-            item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+            item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
         else:
             item.setText(obsid)
-            item.setFlags(item.flags() | Qt.ItemIsEditable)
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable)
         for col in range(self.table.columnCount()):
             cell = self.table.item(visual_row, col)
             if cell is not None:
@@ -515,8 +515,8 @@ class ObsidAssignmentDialog(QDialog):
         self.fill_combo.clear()
         self.fill_combo.addItems(self.existing_obsids)
         new_completer = QCompleter(self.existing_obsids, self.fill_combo)
-        new_completer.setCaseSensitivity(Qt.CaseInsensitive)
-        new_completer.setFilterMode(Qt.MatchContains)
+        new_completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        new_completer.setFilterMode(Qt.MatchFlag.MatchContains)
         self.fill_combo.setCompleter(new_completer)
         self.fill_combo.setEditText(current_text)
         for row_idx in range(self.table.rowCount()):
@@ -564,10 +564,16 @@ class ObsidAssignmentDialog(QDialog):
                 )
                 % self._unsaved_count()
             )
-            discard_btn = box.addButton(_tr("Discard"), QMessageBox.DestructiveRole)
-            save_btn = box.addButton(_tr("Save draft"), QMessageBox.AcceptRole)
-            keep_btn = box.addButton(_tr("Keep editing"), QMessageBox.RejectRole)
-            box.exec_()
+            discard_btn = box.addButton(
+                _tr("Discard"), QMessageBox.ButtonRole.DestructiveRole
+            )
+            save_btn = box.addButton(
+                _tr("Save draft"), QMessageBox.ButtonRole.AcceptRole
+            )
+            keep_btn = box.addButton(
+                _tr("Keep editing"), QMessageBox.ButtonRole.RejectRole
+            )
+            box.exec()
             clicked = box.clickedButton()
             if clicked is keep_btn:
                 return

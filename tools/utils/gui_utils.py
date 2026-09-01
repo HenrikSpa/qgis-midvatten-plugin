@@ -40,13 +40,8 @@ from midvatten.tools.utils.date_utils import to_date
 from midvatten.tools.utils.db_utils import DbConnectionManager
 from midvatten.tools.utils.mpl_compat import qt_backend
 
-# Qt6 uses scoped enums (Qt.WidgetAttribute.WA_DeleteOnClose),
-# Qt5 uses flat enums (Qt.WA_DeleteOnClose). Prefer Qt6; fall back to Qt5.
-try:
-    WA_DeleteOnClose = QtCore.Qt.WidgetAttribute.WA_DeleteOnClose
-except AttributeError:
-    # Qt5 fallback — remove when Qt5 support is dropped
-    WA_DeleteOnClose = QtCore.Qt.WA_DeleteOnClose
+# Scoped enum spelling works on both Qt5 (5.12+) and Qt6.
+WA_DeleteOnClose = QtCore.Qt.WidgetAttribute.WA_DeleteOnClose
 
 log = logging.getLogger(__name__)
 
@@ -65,12 +60,14 @@ class SplitterWithHandel(qgis.PyQt.QtWidgets.QSplitter):
         layout = qgis.PyQt.QtWidgets.QVBoxLayout(handle)
         layout.setSpacing(0)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
+        layout.setAlignment(
+            QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignLeft
+        )
 
         layout.setContentsMargins(0, 0, 0, 0)
         line = qgis.PyQt.QtWidgets.QFrame(handle)
-        line.setFrameShape(qgis.PyQt.QtWidgets.QFrame.HLine)
-        line.setFrameShadow(qgis.PyQt.QtWidgets.QFrame.Sunken)
+        line.setFrameShape(qgis.PyQt.QtWidgets.QFrame.Shape.HLine)
+        line.setFrameShadow(qgis.PyQt.QtWidgets.QFrame.Shadow.Sunken)
         layout.addWidget(line)
 
 
@@ -127,8 +124,8 @@ class ExtendedQPlainTextEdit(qgis.PyQt.QtWidgets.QPlainTextEdit):
 def get_line():
     line = qgis.PyQt.QtWidgets.QFrame()
     line.setGeometry(qgis.PyQt.QtCore.QRect(320, 150, 118, 3))
-    line.setFrameShape(qgis.PyQt.QtWidgets.QFrame.HLine)
-    line.setFrameShadow(qgis.PyQt.QtWidgets.QFrame.Sunken)
+    line.setFrameShape(qgis.PyQt.QtWidgets.QFrame.Shape.HLine)
+    line.setFrameShadow(qgis.PyQt.QtWidgets.QFrame.Shadow.Sunken)
     return line
 
 
@@ -136,7 +133,9 @@ class DateTimeFilter(qgis.PyQt.QtWidgets.QWidget):
     def __init__(self, calendar: bool = False, parent: None = None):
         super().__init__(parent)
         self.setLayout(qgis.PyQt.QtWidgets.QHBoxLayout())
-        self.layout().setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
+        self.layout().setAlignment(
+            QtCore.Qt.AlignmentFlag.AlignTop | QtCore.Qt.AlignmentFlag.AlignLeft
+        )
 
         self.label = qgis.PyQt.QtWidgets.QLabel(
             QCoreApplication.translate("DateTimeFilter", "Import data from: ")

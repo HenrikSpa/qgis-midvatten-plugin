@@ -454,9 +454,7 @@ class TestSQLiteCheckDbIsLocked:
         db = tmp_path / "midv.sqlite"
         (tmp_path / "midv.sqlite-journal").write_text("")
         with (
-            mock.patch.object(
-                message_utils, "on_gui_main_thread", return_value=False
-            ),
+            mock.patch.object(message_utils, "on_gui_main_thread", return_value=False),
             mock.patch.object(message_utils, "ask_retry_cancel") as ask,
         ):
             with pytest.raises(db_utils.DatabaseLockedError):
@@ -467,9 +465,7 @@ class TestSQLiteCheckDbIsLocked:
         db = tmp_path / "midv.sqlite"
         (tmp_path / "midv.sqlite-journal").write_text("")
         with (
-            mock.patch.object(
-                message_utils, "on_gui_main_thread", return_value=True
-            ),
+            mock.patch.object(message_utils, "on_gui_main_thread", return_value=True),
             mock.patch.object(
                 message_utils, "ask_retry_cancel", return_value=False
             ) as ask,
@@ -488,27 +484,22 @@ class TestSQLiteCheckDbIsLocked:
                 "_sqlite_lock_message",
                 side_effect=["locked", "locked", None],
             ),
-            mock.patch.object(
-                message_utils, "on_gui_main_thread", return_value=True
-            ),
+            mock.patch.object(message_utils, "on_gui_main_thread", return_value=True),
             mock.patch.object(
                 message_utils, "ask_retry_cancel", return_value=True
             ) as ask,
         ):
-            assert (
-                SQLiteBackend.check_db_is_locked(self._fake_backend(db)) is None
-            )
+            assert SQLiteBackend.check_db_is_locked(self._fake_backend(db)) is None
         assert ask.call_count == 2
 
     def test_ask_retry_cancel_maps_buttons(self):
         with mock.patch(
             "midvatten.tools.utils.message_utils.QtWidgets.QMessageBox"
         ) as msgbox:
-            msgbox.Retry = QtWidgets.QMessageBox.Retry
-            msgbox.Cancel = QtWidgets.QMessageBox.Cancel
-            msgbox.warning.return_value = QtWidgets.QMessageBox.Retry
+            msgbox.StandardButton = QtWidgets.QMessageBox.StandardButton
+            msgbox.warning.return_value = QtWidgets.QMessageBox.StandardButton.Retry
             assert message_utils.ask_retry_cancel("t", "boom") is True
-            msgbox.warning.return_value = QtWidgets.QMessageBox.Cancel
+            msgbox.warning.return_value = QtWidgets.QMessageBox.StandardButton.Cancel
             assert message_utils.ask_retry_cancel("t", "boom") is False
 
     def test_on_gui_main_thread_false_when_headless(self):

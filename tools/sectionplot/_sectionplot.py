@@ -1032,7 +1032,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
         :return:
         """
         parent.updateGeometry()
-        parent.layout().setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
+        parent.layout().setSizeConstraint(QtWidgets.QLayout.SizeConstraint.SetFixedSize)
         parent.adjustSize()
 
     def update_plot_size(self):
@@ -1484,8 +1484,11 @@ def tabwidget_resize(tabwidget):
     for tabnr in range(tabwidget.count()):
         if tabnr != current_index:
             tabwidget.widget(tabnr).setSizePolicy(
-                QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored
+                QtWidgets.QSizePolicy.Policy.Ignored,
+                QtWidgets.QSizePolicy.Policy.Ignored,
             )
     tab = tabwidget.currentWidget()
-    tab.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
+    tab.setSizePolicy(
+        QtWidgets.QSizePolicy.Policy.Preferred, QtWidgets.QSizePolicy.Policy.Preferred
+    )
     tab.adjustSize()

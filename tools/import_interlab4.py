@@ -297,7 +297,7 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
                 reload_callback=db_utils.get_all_obsids,
                 parent=None,
             )
-            dialog.exec_()
+            dialog.exec()
             if dialog.outcome in (None, DialogOutcome.CANCEL):
                 self.status = True
                 return Cancel()
@@ -947,7 +947,7 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
                 "Table s_qual_lab does not exist. Create it now?",
             ),
         )
-        if answer == qgis.PyQt.QtWidgets.QMessageBox.Yes:
+        if answer == qgis.PyQt.QtWidgets.QMessageBox.StandardButton.Yes:
             try:
                 self._create_s_qual_lab()
             except Exception as e:
@@ -1230,17 +1230,14 @@ class MetadataFilter(VRowEntry):
 
         self.table = qgis.PyQt.QtWidgets.QTableWidget()
         self.table.setSelectionBehavior(
-            qgis.PyQt.QtWidgets.QAbstractItemView.SelectRows
+            qgis.PyQt.QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows
         )
         self.table.sizePolicy().setVerticalPolicy(
-            qgis.PyQt.QtWidgets.QSizePolicy.MinimumExpanding
+            qgis.PyQt.QtWidgets.QSizePolicy.Policy.MinimumExpanding
         )
         self.table.sizePolicy().setVerticalStretch(2)
         self.table.setSelectionMode(
-            qgis.PyQt.QtWidgets.QAbstractItemView.ExtendedSelection
-        )
-        self.table.setSelectionBehavior(
-            qgis.PyQt.QtWidgets.QAbstractItemView.SelectRows
+            qgis.PyQt.QtWidgets.QAbstractItemView.SelectionMode.ExtendedSelection
         )
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.setSortingEnabled(True)
@@ -1311,7 +1308,9 @@ class MetadataFilter(VRowEntry):
             (
                 (
                     self.table.hideRow(rownr),
-                    self.table.item(rownr, 0).setFlags(qgis.PyQt.QtCore.Qt.NoItemFlags),
+                    self.table.item(rownr, 0).setFlags(
+                        qgis.PyQt.QtCore.Qt.ItemFlag.NoItemFlags
+                    ),
                 )
                 if all(
                     [
@@ -1322,7 +1321,7 @@ class MetadataFilter(VRowEntry):
                 else (
                     self.table.showRow(rownr),
                     self.table.item(rownr, 0).setFlags(
-                        qgis.PyQt.QtCore.Qt.ItemIsSelectable
+                        qgis.PyQt.QtCore.Qt.ItemFlag.ItemIsSelectable
                     ),
                 )
             )
@@ -1363,14 +1362,14 @@ class MetadataFilter(VRowEntry):
         for rownr, lablittera in enumerate(all_lab_results.keys()):
             metadata = all_lab_results[lablittera]["metadata"]
             tablewidgetitem = qgis.PyQt.QtWidgets.QTableWidgetItem(lablittera)
-            tablewidgetitem.setFlags(qgis.PyQt.QtCore.Qt.ItemIsSelectable)
+            tablewidgetitem.setFlags(qgis.PyQt.QtCore.Qt.ItemFlag.ItemIsSelectable)
             self.table.setItem(rownr, 0, tablewidgetitem)
 
             for colnr, metaheader in enumerate(self.sorted_table_header[1:], 1):
                 tablewidgetitem = qgis.PyQt.QtWidgets.QTableWidgetItem(
                     metadata.get(metaheader, "")
                 )
-                tablewidgetitem.setFlags(qgis.PyQt.QtCore.Qt.ItemIsSelectable)
+                tablewidgetitem.setFlags(qgis.PyQt.QtCore.Qt.ItemFlag.ItemIsSelectable)
                 self.table.setItem(rownr, colnr, tablewidgetitem)
 
         self.table.resizeColumnsToContents()
@@ -1477,9 +1476,7 @@ def get_imported_reports(dest_table: str, dbconnection=None) -> set[str]:
     """Distinct report ids already imported into dest_table."""
     tbl = ident(dest_table, allowed=["w_qual_lab", "s_qual_lab"])
     with db_utils.use_or_create_connection(dbconnection) as dbconnection:
-        rows = dbconnection.execute_and_fetchall(
-            f"SELECT DISTINCT report FROM {tbl}"
-        )
+        rows = dbconnection.execute_and_fetchall(f"SELECT DISTINCT report FROM {tbl}")
     return {str(row[0]) for row in rows}
 
 

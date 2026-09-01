@@ -22,3 +22,6 @@ symbology-style.db
 
 # Synthetic TEM demo database (regenerate via test_export_demo_db)
 demo/
+
+# Release artifact built by plugin_zip_and_upload.py / scripts/prepare_release.py
+midvatten.zip

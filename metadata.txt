@@ -3,7 +3,7 @@ name=Midvatten
 qgisMinimumVersion=3.40
 description=A toolset that makes QGIS an interface for editing/viewing hydrogeological observational data (drillings, water levels, seismic data etc) stored in a SQLite or PostgreSQL database.
 about=The plugin is a toolset that makes QGIS an interface for editing/viewing hydrogeological observational data (drillings, water levels, seismic data etc) stored in a SQLite or PostgreSQL database. NOTE: This plugin requires the Python packages numpy, pandas and matplotlib. These are installed automatically by the qpip helper plugin. When you first install Midvatten, qpip will show a dialog asking to install these packages — click "Install" to proceed. This is a one-time step.
-version=1.9.0b33
+version=1.9.0
 author=Henrik Spångmyr, Josef Källgården
 email=midvattenplugin@midvatten.se
 repository=https://github.com/henrikspa/qgis-midvatten-plugin.git
@@ -11,7 +11,7 @@ license=GPLv2
 qgisMaximumVersion=4.99
 
 #optional metadata entries
-experimental=True
+experimental=False
 deprecated=False
 tags=hydrogeology,groundwater,time series,stratigraphy,piper diagram,borehole
 homepage=https://github.com/henrikspa/qgis-midvatten-plugin/wiki
@@ -23,150 +23,30 @@ hasProcessingProvider=no
 supportsQt6=True
 
 changelog=
-        Version 1.9.0b33:
-          - UX: General CSV import — the "Start import" button now stays disabled until both a file is loaded and a destination table is chosen, so it can no longer be clicked too early. Clicking it with no destination table selected previously crashed with a traceback; it now shows a clear message in the message bar.
-          - Import: When importing into w_qual_lab through the general CSV import, lab parameter and unit strings are mechanically cleaned; the distinct cleaned values are listed in the log for transparency, and the import dialog shows a notice when w_qual_lab is the selected destination table.
-          - UX: Logger import — the timezone prompt is reworded from "Skip file?" to "Import file anyway?" (Yes = import as-is, No = skip, Cancel = abort), matching the natural intent (the old wording inverted it).
-          - Reliability: Logger import no longer aborts with a raw traceback when the database is locked by another program (a stray -journal/-wal file). In the QGIS GUI you now get a Retry/Cancel dialog, so you can close the other program or clear a stale journal and retry; Cancel aborts cleanly. Headless and background runs still raise a clear locked-database error. The read phase of an import now also holds only one connection to the file at a time.
-        Version 1.9.0b32:
-          - UX: The logger import format dropdown shows a tooltip per format describing what data it carries and which table it imports into (w_levels_logger for DiverOffice, Levelogger and Hobo; meteo for DiverOffice Baro), and the on-screen format descriptions now always name the destination table.
-          - UX: Interlab4 import no longer asks for the charset when a file lacks the #Tecken= line but reads correctly as UTF-16 (the common case for lab files); the question only appears when UTF-16 does not fit the file.
-          - UX: The obsid assignment dialog opens at a readable size with wide text columns (still user-resizable); the obsid column absorbs remaining width.
-          - UX: The interlab4 obsid assignment dialog and the "value not found" question no longer block the QGIS main window (window-modal without a parent). You can inspect the map and attribute tables (e.g. obs_points) while assigning obsids, and the dialog's reload button becomes genuinely useful: create the missing obs_point in QGIS, reload, assign.
-          - UX: The interlab4 obsid assignment dialog now keeps typed obsids and skip marks in an in-session draft. Reopening the import after "Save draft" or a cancelled run restores what you already typed, with restored rows marked visibly; auto-matched rows stay out of the draft.
-          - Reliability: Saving obsid assignments to the connection table now uses insert-or-ignore, so re-answering an already-stored connection keeps the first answer instead of raising an error.
-          - Fix: FieldLogger import no longer opens an empty import window when the file dialog is cancelled.
-          - Internal: The interlab4 importer's ask-obsid table construction, imported-report lookup, and assignment-cache read/write are now headless module-level helpers (usable without the GUI, explicit database connection, batched cache writes); the dialog methods delegate to them.
-          - Fix: SpatiaLite databases on Windows paths (backslashes) failed to open; the database setting is now saved as JSON, so a path segment like "\336" is no longer misread as an octal escape.
-          - Fix: The stratigraphy plot no longer crashes QGIS on Windows; the drawing code now guards against an invalid painter state that could trigger a fatal access violation.
-          - Fix: LoggerEditor "adjust trend" — the trend line and its endpoint markers now disappear immediately when the tool is switched off, instead of lingering until the next redraw (zoom, update, etc.). The line now uses a distinct magenta and the two draggable endpoints are filled diamonds, so they stand out clearly from the regular data markers.
-        Version 1.9.0b31:
-          - Security: Imported data and shared databases are handled more safely. CSV import validates declared column types before using them, and all generated reports (drill reports, custom drill reports, water quality reports) escape text values, so a malformed or malicious database can no longer inject code when a report is opened in the browser.
-          - Security: Generated reports and exported CSV files are written to private per-run temporary folders instead of a fixed shared path.
-          - Reliability: The plugin now loads and runs with SpatiaLite databases even when the PostgreSQL driver (psycopg2) is not installed; attempting a PostgreSQL connection then shows a clear message instead of the whole plugin failing to load.
-          - UX: Many status and "nothing selected" messages that used to open a dialog now appear in the QGIS message bar, so they no longer interrupt your work; errors show a short message with the full details in the log panel.
-          - UX: Export to FieldLogger/FieldForm settings changes now update the open dialog in place instead of asking you to restart it.
-          - UX: Lab data (interlab4) import collects parsing problems into a single summary instead of showing one dialog per bad row.
-          - Reports: Drill reports, custom drill reports and Piper plots now show a progress dialog with a working Cancel button; the FieldLogger export preview is a resizable, scrollable window.
-          - Qt6: Removed a Qt5-only matplotlib backend setting so plots work under Qt6 builds of QGIS.
-          - Packaging: Fixed the plugin build script so the published archive no longer includes development files.
-          - Internal: Extracted shared helpers (stored settings, temporary directories, error reporting) and documented module import rules. Note: newly added user-facing strings still need a translation update (pylupdate) before public release.
-        Version 1.9.0b30:
-          - LoggerEditor: Faster saves on series-heavy and PostgreSQL datasets through indexed raw-row updates, set-based orphan cleanup, true batched writes, duplicate-aware range updates, and a lightweight post-save refresh.
-          - Logger import: Parsing and database writes now run without blocking QGIS, Cancel interrupts active database work, and legacy databases automatically receive a non-unique normalized timestamp lookup index before duplicate checking.
-          - Security: Section plot TEM data (thickness/resistivity) is now parsed safely instead of with eval(), so a malformed or malicious database can no longer execute code when a TEM section is drawn; bad values raise a clear error instead.
-          - Internal: CSV import now quotes the destination table and not-null column names through the database identifier helper.
-          - Internal: ruff configuration is now stored inside the repository; the translation source list (midvatten.pro) was regenerated to match the current module layout; added type hints across several large modules.
-        Version 1.9.0b28:
-          - LoggerEditor: Duplicate timestamps (two rows for the same obsid and instant, found in older databases) no longer crash Save. The editor warns, leaves both rows untouched, and still saves all other edits.
-          - LoggerEditor: New duplicate-resolution workflow. A banner appears when the loaded obsid has duplicate timestamps, and a red marker along the plot bottom shows the periods where duplicates remain (it shrinks as you clean them). The "Resolve duplicates…" dialog (non-modal, floats above the editor) bulk-removes redundant copies (keeping the higher datetime precision), lets you keep one source per period for overlapping logger series, and points you to the plot to compare same-source value conflicts. Resolution is scoped to the From/To period, so different periods can keep different sources; a "Whole dataset" button widens the scope. All changes are undoable and written on Save.
-          - LoggerEditor: Now starts clean — no observation point is loaded until you select one from the obsid list.
-          - LoggerEditor: Fixed source-separated plot lines so rows sharing a source (including no source) draw as a single line instead of several identically-labelled lines.
-        Version 1.9.0b27:
-          - CSV import: When importing to w_levels_logger on the modern schema, a "Logger series metadata (w_logger_series)" block now lets you map source, instrument, description, and comment (from file columns or static values). One w_logger_series row is created per distinct obsid+metadata combination and each imported row is linked via series_id. The source field replaces the previous virtual source column.
-        Version 1.9.0b26:
-          - Matplotlib: Fixed RecursionError when clicking edit parameters / configure subplots / save figure toolbar buttons after plugin reload.
-          - DB: Unified duplicate-reading rule to one row per obsid per second on both SpatiaLite and PostGIS; date_time stored raw (date-only values not padded); malformed dates escape uniqueness. PostgreSQL DBs must run definitions/upgrade_postgresql_ai_test.sql to install midv_to_instant, deduplicate, and rebuild unique indexes.
-        Version 1.9.0b25:
-          - LoggerEditor: Fixed move/selection breaking when series_id column exists by only including series_id in line keys when "separate by source" is checked.
-        Version 1.9.0b24:
-          - LoggerEditor: Added "Series" tab for creating, assigning, and editing w_logger_series metadata directly from the editor (only available on modern schema with series_id column).
-          - LoggerEditor: Series changes participate in undo/redo and are saved atomically alongside level adjustments.
-          - LoggerEditor: Series_id UPDATE statements are now batched via executemany for faster saves on large datasets.
-          - LoggerEditor: Series tab refresh is debounced (500ms) to avoid lag during rapid date edits.
-        Version 1.9.0b23:
-          - LoggerEditor: Fixed NumPy broadcasting error when loading logger data with multi-element line keys.
-          - LoggerEditor: Removed manual Update Plot button from main panel; plot now auto-refreshes on obsid change. A new Update Plot button in the reference series dock panel applies checkbox changes.
-          - LoggerEditor: Moved plot option checkboxes (circle nodes, plot head, normalize head, separate by source/import time/precision) to the reference series dock panel under a "Plot options" section.
-          - LoggerEditor: Replaced single "Fit period to selection" button with independent "From selection" and "To selection" buttons next to the period date pickers.
-          - LoggerEditor: Replaced low-quality adjust trend icon with an SVG matching the existing icon style.
-          - LoggerEditor: Fixed plot line drawing order so combined (unsourced) lines appear before source-specific lines.
-          - LoggerEditor: Fixed missing matplotlib imports in legend_picker.
-        Version 1.9.0b22:
-          - Fixes bugs with the screen table in obs_points form view.
-        Version 1.9.0b21:
-          - Logger Import: Fixed severe performance freeze when importing into large w_levels_logger tables by replacing strftime-based duplicate check with an index-friendly range scan.
-          - Logger Import: Added progress dialog during file parsing and database import phases; cancel button supported.
-          - Logger Import: Removed unnecessary foreign key confirmation dialog; duplicate-row counts are logged instead.
-        Version 1.9.0b20:
-          - SectionPlot/Stratigraphy: Replaced per-obsid h_gs/h_toc fallback warnings with a single info-level summary; individual obsids are listed in the QGIS message log.
-        Version 1.9.0b19:
-          - CSV Import: Replaced modal popup after file load with progressive disclosure; the table selector is now in the left panel, disabled until data is loaded.
-          - Stratsymbology: Aligned layer text to halv the layer instead of top.
-        Version 1.9.0b18:
-          - Settings: Fixed spurious "Database setting was empty" error when opening a new project from template without having selected a database.
-        Version 1.9.0b17:
-          - SectionPlot: Profile line layers without an obsid column are now supported; tem_data, profile_images and seismic data are silently skipped and the x-axis label falls back to the template default.
-        Version 1.9.0b16:
-          - ExportCSV: Replaced folder-picker with a dialog that also offers a checkbox to convert HTML rich-text fields (com_html) to plain text before writing (default on); fixes broken rows in Excel/LibreOffice.
-          - Database: Added diam_inner and diam_outer columns to the screen table.
-          - Database: Added unique indexes on (obsid, date_time) for w_levels_logger, w_levels, w_flow, w_qual_field, and meteo.
-          - SectionPlot: Fixed obsid label to prefer water level over h_gs fallback.
-          - Import: Fixed severe performance freeze on large PostgreSQL imports.
-          - Import: Fixed minute-level deduplication edge case for sub-minute timestamps.
-          - LoggerEditor: Significantly improved performance for large datasets (caching, vectorised hot paths, range-based save).
-          - LoggerEditor: Fixed undo history not clearing when switching obsid.
-        Version 1.9.0b15:
-          - LoggerEditor: Added multicursor crosshair button to toolbar; toggles a crosshair across all visible subplots.
-          - LoggerEditor: Reference series filters now plot one series per cartesian-product combination of selected filter values.
-          - LoggerEditor: Fixed View menu to be mouse-clickable; removed redundant Reference series toolbar button.
-          - LoggerEditor: Fixed filter list panel to grow vertically with the dialog.
-          - LoggerEditor: Fixed x-axis labels and subplot spacing when no reference series is shown.
-          - LoadLayers: Removed stale screens placeholder label from the form view.
-        Version 1.9.0b14:
-          - Fixes bugs
-        Version 1.9.0b13:
-          - Database: Added w_logger_series table; logger series metadata (source, instrument serial) moved here from w_levels_logger.
-          - Database: Added screen and zz_screen_plots tables.
-          - Database: Added ON DELETE/UPDATE CASCADE to all obsid foreign keys.
-          - LoggerImport: Unified import dialog for DiverOffice, Levelogger, and HOBO files.
-          - LoggerImport: DiverOffice Baro format imports barometric pressure into the meteo table.
-          - LoggerImport: Instrument serial number extracted from DiverOffice, Levelogger, and HOBO files and stored in w_logger_series.
-          - LoggerEditor: Added reference subplot panel.
-          - Interlab4Import: Added destination table toggle (w_qual_lab / s_qual_lab).
-          - Interlab4Import: Added bulk obsid assignment dialog with search, fill, skip, and sort.
-          - SectionPlot: Added well screen overlay with configurable style.
-          - SectionPlot: Added reverse x-axis button.
-          - LoadLayers: Added screens tab linked to obs_points; placeholder shown for older databases.
-          - CustomPlot: Added style-fix dialog to repair templates across matplotlib versions.
-          - PostGIS: Added configurable database schema support.
-          - ExportSpatialite: Added progress dialog; migrates old logger source column to w_logger_series.
-          - Import: Performance improvements for large imports.
-          - Fixes various bugs.
-        Version 1.9.0b12:
-        - Fixes bugs and changes to support both Qt5 and Qt6
-        Version 1.9.0b11:
-        - Fixes bugs.
-        Version 1.9.0b10:
-        - SectionPlot: Added gaps for tem-shading "nearest" when the measurements show
-        gaps.
-        Version 1.9.0b9:
-        - Changes np.NaN to np.nan
-        Version 1.9.0b8:
-        - SectionPlot: Fixes bug caused by detaching figures by refactoring.
-        - SectionPlot: Updating legend requires entering figure settings twice.
-        - Removed NavigationToolbarWithSignal (no longer needed).
-        Version 1.9.0b7:
-        - SectionPlot: Fixes bug caused by detaching figures by refactoring.
-        Version 1.9.0b6:
-        - SectionPlot: Added tight_layout as standard when the size is set to dynamic.
-        - SectionPlot: Added button to detach the figure from the section plot tool.
-        - SectionPlot: Added the name of the section line to the xaxis label.
-        - SectionPlot: Added plotting of tem data fit.
-        - SectionPlot: Right click in figure now flashes the distance on the section line.
-        - SectionPlot: Removed resetting of Axes_set_ylim during start of sectionplot.
-        Version 1.9.0b5:
-        - SectionPlot: Fixes for new matplotlib-version.
-        Version 1.9.0b4:
-        - SectionPlot: Fix tem-plotting problem when several obsids have the same inversion name.
-        Version 1.9.0b3:
-        - SectionPlot: Added clip-checkbox.
-        Version 1.9.0b2:
-        - Database: Added table profile_images.
-        - SectionPlot: Support for images as backgrounds (for example resistivity).
-        Version 1.9.0b1:
-        - Database: Added table tem_data. Made tables w_qual_logger, s_qual_lab and spatial_history into regular tables for new databases.
-        - SectionPlot: Support for TEM2Go-data.
+        Version 1.9.0:
+          - Qt6: The plugin now runs on both Qt5 and Qt6 builds of QGIS.
+          - Database: Added w_logger_series table; logger series metadata (source, instrument/serial, description, comment) moved there from w_levels_logger, with rows linked via series_id. Export to SpatiaLite migrates the old source column.
+          - Database: Added screen (with diam_inner/diam_outer) and zz_screen_plots tables, plus tem_data and profile_images tables; w_qual_logger, s_qual_lab and spatial_history are regular tables in new databases.
+          - Database: Added ON DELETE/UPDATE CASCADE to all obsid foreign keys, and unique indexes on (obsid, date_time) for w_levels_logger, w_levels, w_flow, w_qual_field and meteo.
+          - Database: Unified duplicate-reading rule to one row per obsid per second on both SpatiaLite and PostGIS; date_time is stored raw. Existing PostgreSQL databases must run definitions/upgrade_postgresql_ai_test.sql once to install midv_to_instant, deduplicate, and rebuild unique indexes.
+          - Database: PostgreSQL/PostGIS now supports configurable schemas.
+          - Security: CSV import validates declared column types; generated reports (drill reports, custom drill reports, water quality reports) escape text values; section plot TEM data is parsed safely instead of with eval(); reports and CSV exports are written to private per-run temporary folders. A malformed or malicious database can no longer inject or execute code.
+          - Logger import: Unified import dialog for DiverOffice, Levelogger and HOBO files; DiverOffice Baro imports barometric pressure into the meteo table; instrument serial numbers are stored in w_logger_series; the format dropdown describes each format and its destination table.
+          - Logger import: Parsing and database writes no longer block QGIS; progress dialog with working Cancel; fixed severe freezes on large tables (index-friendly duplicate check); a locked database now gives a Retry/Cancel dialog instead of a traceback; clearer timezone prompt.
+          - LoggerEditor: New duplicate-timestamp resolution workflow - a banner and red period markers show where duplicates remain, and a non-modal dialog bulk-removes redundant copies, scoped to the selected period; duplicate timestamps no longer crash Save. All changes are undoable.
+          - LoggerEditor: New Series tab for creating, assigning and editing w_logger_series metadata (modern schema); series changes participate in undo/redo and save atomically with level adjustments.
+          - LoggerEditor: Much faster loading and saving on large and PostgreSQL datasets (caching, vectorised hot paths, batched range-based writes); reference series panel with filters and plot options; multicursor crosshair; clearer adjust-trend markers; starts clean until an obsid is selected; many plot and undo fixes.
+          - CSV import: Reworked dialog with progressive disclosure - the table selector is in the left panel and Start import stays disabled until a file is loaded and a destination table is chosen; a logger series metadata block maps source/instrument/description/comment when importing to w_levels_logger; w_qual_lab parameter and unit strings are cleaned mechanically, with the cleaned values listed in the log.
+          - Interlab4 import: Destination table toggle (w_qual_lab / s_qual_lab); bulk obsid assignment dialog with search, fill, skip and sort that keeps an in-session draft and no longer blocks the QGIS main window, so missing obs_points can be created and reloaded while assigning; parsing problems are collected into a single summary; UTF-16 files no longer trigger an unnecessary charset question.
+          - FieldLogger: Import and export support FieldForm; settings changes update the open export dialog in place; resizable, scrollable export preview; fixed empty import window on cancelled file dialog and "wrapped C/C++ object ... has been deleted" errors.
+          - SectionPlot: Support for TEM2Go data with fit plotting and gaps, background images (for example resistivity), a well screen overlay with configurable style, reverse x-axis button, clip checkbox, a button to detach the figure, and the section line name in the x-axis label; right-click flashes the distance on the section line; profile line layers without an obsid column are supported.
+          - Reports: Drill reports, custom drill reports and Piper plots show a progress dialog with a working Cancel button.
+          - Export CSV: New export dialog with an option to convert HTML rich-text fields to plain text (default on), fixing broken rows in Excel/LibreOffice.
+          - Load layers: Added a screens tab linked to obs_points in the form view.
+          - CustomPlot: Added a style-fix dialog to repair plot templates across matplotlib versions.
+          - UX: Many status and "nothing selected" popups moved to the QGIS message bar; errors show a short message with full details in the log panel.
+          - Reliability: The plugin loads with SpatiaLite databases even when psycopg2 is not installed; SpatiaLite databases on Windows paths with backslashes open correctly; fixed a stratigraphy plot crash on Windows; fixed a spurious "Database setting was empty" error for new projects.
+          For detailed per-beta changes during 1.9.0 development, see CHANGELOG_HISTORY.
         Version 1.8.6:
         - LoggerEditor: " (uncalibrated)" now only written after obsids in the list when last value is NULL.
         Version 1.8.5:

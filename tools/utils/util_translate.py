@@ -75,7 +75,7 @@ def get_translate(name_plugin: str, name_dir: None = None):
                     f"QGIS location overried is activated. Using the first found translationfile for pattern {qm_path_filepattern}."
                 ),
                 "Midvatten",
-                level=Qgis.Info,
+                level=Qgis.MessageLevel.Info,
             )
         else:
             QgsApplication.messageLog().logMessage(
@@ -83,7 +83,7 @@ def get_translate(name_plugin: str, name_dir: None = None):
                     f"QGIS location overried is activated. No translation file found using pattern {qm_path_filepattern}, no translation file installed!"
                 ),
                 "Midvatten",
-                level=Qgis.Info,
+                level=Qgis.MessageLevel.Info,
             )
             return
     else:
@@ -98,7 +98,7 @@ def get_translate(name_plugin: str, name_dir: None = None):
         QgsApplication.messageLog().logMessage(
             (f"Installed translation file {translation_file}"),
             "Midvatten",
-            level=Qgis.Info,
+            level=Qgis.MessageLevel.Info,
         )
         return translator
     else:
@@ -107,5 +107,5 @@ def get_translate(name_plugin: str, name_dir: None = None):
                 f"translationFile {translation_file} didn't exist, no translation file installed!"
             ),
             "Midvatten",
-            level=Qgis.Info,
+            level=Qgis.MessageLevel.Info,
         )

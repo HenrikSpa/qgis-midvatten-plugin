@@ -73,7 +73,7 @@ class MessagebarAndLog:
     """Class that sends logmessages to messageBar and or to QgsMessageLog
 
     Usage: MessagebarAndLog.info(bar_msg='a', log_msg='b', duration=10,
-    messagebar_level=Qgis.Info, log_level=Qgis.Info,
+    messagebar_level=Qgis.MessageLevel.Info, log_level=Qgis.MessageLevel.Info,
     button=True)
 
     :param bar_msg: A short msg displayed in messagebar and log.
@@ -107,8 +107,8 @@ class MessagebarAndLog:
         bar_msg: Optional[str] = None,
         log_msg: Optional[str] = None,
         duration: int = 10,
-        messagebar_level: Qgis.MessageLevel = Qgis.Info,
-        log_level: Qgis.MessageLevel = Qgis.Info,
+        messagebar_level: Qgis.MessageLevel = Qgis.MessageLevel.Info,
+        log_level: Qgis.MessageLevel = Qgis.MessageLevel.Info,
         button: bool = True,
     ):
         # One payload for both paths, passed by keyword, so a renamed or
@@ -132,8 +132,8 @@ class MessagebarAndLog:
         bar_msg: Optional[str] = None,
         log_msg: Optional[str] = None,
         duration: int = 10,
-        messagebar_level: Qgis.MessageLevel = Qgis.Info,
-        log_level: Qgis.MessageLevel = Qgis.Info,
+        messagebar_level: Qgis.MessageLevel = Qgis.MessageLevel.Info,
+        log_level: Qgis.MessageLevel = Qgis.MessageLevel.Info,
         button: bool = True,
     ):
         if qgis.utils.iface is None:
@@ -157,7 +157,9 @@ class MessagebarAndLog:
                     )
                 except Exception:
                     QgsApplication.messageLog().logMessage(
-                        traceback.format_exc(), "Midvatten", level=Qgis.Info
+                        traceback.format_exc(),
+                        "Midvatten",
+                        level=Qgis.MessageLevel.Info,
                     )
             QgsApplication.messageLog().logMessage(
                 returnunicode(bar_msg), "Midvatten", level=log_level
@@ -174,7 +176,14 @@ class MessagebarAndLog:
         duration: int = 10,
         button: bool = True,
     ):
-        MessagebarAndLog.log(bar_msg, log_msg, duration, Qgis.Info, Qgis.Info, button)
+        MessagebarAndLog.log(
+            bar_msg,
+            log_msg,
+            duration,
+            Qgis.MessageLevel.Info,
+            Qgis.MessageLevel.Info,
+            button,
+        )
 
     @staticmethod
     def warning(
@@ -184,7 +193,12 @@ class MessagebarAndLog:
         button: bool = True,
     ):
         MessagebarAndLog.log(
-            bar_msg, log_msg, duration, Qgis.Warning, Qgis.Warning, button
+            bar_msg,
+            log_msg,
+            duration,
+            Qgis.MessageLevel.Warning,
+            Qgis.MessageLevel.Warning,
+            button,
         )
 
     @staticmethod
@@ -195,7 +209,12 @@ class MessagebarAndLog:
         button: bool = True,
     ):
         MessagebarAndLog.log(
-            bar_msg, log_msg, duration, Qgis.Critical, Qgis.Critical, button
+            bar_msg,
+            log_msg,
+            duration,
+            Qgis.MessageLevel.Critical,
+            Qgis.MessageLevel.Critical,
+            button,
         )
 
 

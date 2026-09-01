@@ -1,6 +1,6 @@
 [project]
 name = "midvatten"
-version = "1.9.0b31"
+version = "1.9.0"
 description = "QGIS plugin for hydrogeological observational data"
 readme = "README.md"
 requires-python = ">=3.9"

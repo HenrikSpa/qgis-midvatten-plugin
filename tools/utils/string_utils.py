@@ -410,7 +410,7 @@ def anything_to_string_representation(
             from qgis.PyQt import QtCore
 
             if isinstance(anything, QtCore.QVariant):
-                aunicode = returnunicode(anything.toString().data())
+                aunicode = returnunicode(anything.value())
             else:
                 aunicode = returnunicode(str(anything))
         except ImportError:

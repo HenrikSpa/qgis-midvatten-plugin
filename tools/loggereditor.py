@@ -14,6 +14,7 @@ from qgis.PyQt.QtGui import QCloseEvent, QFont, QIcon, QKeySequence
 from qgis.PyQt.QtWidgets import (
     QCheckBox,
     QComboBox,
+    QDialog,
     QDockWidget,
     QFormLayout,
     QFrame,
@@ -664,7 +665,10 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         strftime cost."""
         n = len(buf)
         sources = buf["source"].to_numpy()
-        max_src_len = int(buf["source"].str.len().max() or 0)
+        # .max() is NaN for an empty frame (obsid without logger rows); NaN is
+        # truthy, so `or 0` does not catch it.
+        src_len_max = buf["source"].str.len().max()
+        max_src_len = 0 if pd.isna(src_len_max) else int(src_len_max)
         if "_line_key" in buf.columns:
             line_keys = buf["_line_key"].tolist()
         else:
@@ -2829,6 +2833,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
         self._ref_dock.setWidget(container)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self._ref_dock)
+        self._ref_dock.hide()  # start collapsed; the toolbar toggle shows it
         toggle = self._ref_dock.toggleViewAction()
         icon_path = os.path.join(
             os.path.dirname(__file__), "..", "icons", "svg", "ref_panel.svg"
@@ -2868,7 +2873,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
     def _on_add_ref_series(self) -> None:
         dlg = RefSeriesDialog(parent=self)
-        if dlg.exec() == dlg.Accepted:
+        if dlg.exec() == QDialog.DialogCode.Accepted:
             self._ref_series.append(dlg.to_dict())
             self._save_ref_series()
             self._refresh_ref_list_widget()
@@ -2880,7 +2885,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         if idx < 0:
             return
         dlg = RefSeriesDialog.from_dict(self._ref_series[idx], parent=self)
-        if dlg.exec() == dlg.Accepted:
+        if dlg.exec() == QDialog.DialogCode.Accepted:
             self._ref_series[idx] = dlg.to_dict()
             self._save_ref_series()
             self._refresh_ref_list_widget()

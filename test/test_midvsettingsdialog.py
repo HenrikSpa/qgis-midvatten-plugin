@@ -184,3 +184,38 @@ class TestLoadAndSelectLastWqualSettings:
         assert dock.list_of_tables_wqual.current_index == -99
         assert dock.table_updated_calls == []
         assert dock.list_of_columns_wqualparam.current_index == -99
+
+
+@pytest.mark.active
+class TestChangedCheckBox:
+    """The three plot-option checkboxes share one handler bound with partial.
+    stateChanged passes an int the handler must swallow, and the stored value
+    must be a plain int (PyQt6 CheckState enums cannot be written to the
+    project file)."""
+
+    def test_checkbox_signal_stores_plain_int(self):
+        pytest.importorskip("qgis.PyQt")
+        from functools import partial
+
+        from qgis.PyQt.QtWidgets import QApplication, QCheckBox
+
+        QApplication.instance() or QApplication([])
+        dock = types.SimpleNamespace(
+            ms=types.SimpleNamespace(settingsdict={}, save_settings=mock.Mock())
+        )
+        check_box = QCheckBox()
+        check_box.stateChanged.connect(
+            partial(
+                MidvattenSettingsDock.changed_check_box, dock, check_box, "tsdotmarkers"
+            )
+        )
+
+        check_box.setChecked(True)
+        assert dock.ms.settingsdict["tsdotmarkers"] == 2
+        assert type(dock.ms.settingsdict["tsdotmarkers"]) is int
+        check_box.setChecked(False)
+        assert dock.ms.settingsdict["tsdotmarkers"] == 0
+        assert dock.ms.save_settings.call_args_list == [
+            mock.call("tsdotmarkers"),
+            mock.call("tsdotmarkers"),
+        ]

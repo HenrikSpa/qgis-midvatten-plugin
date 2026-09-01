@@ -2,13 +2,20 @@
 Dialog utilities for the Midvatten plugin.
 """
 
+from collections.abc import Callable
+
 import qgis.PyQt
 from qgis.PyQt import QtCore, QtWidgets, uic
 
 try:
     from qgis.PyQt.QtWebKitWidgets import QWebView
 except ImportError:
-    from qgis.PyQt.QtWebEngineWidgets import QWebEngineView as QWebView
+    try:
+        from qgis.PyQt.QtWebEngineWidgets import QWebEngineView as QWebView
+    except ImportError:
+        # Neither web view binding is installed (e.g. OSGeo4W Qt6 builds ship
+        # PyQt6 without QtWebEngine). HtmlDialog then falls back to QTextBrowser.
+        QWebView = None
 
 from midvatten.tools.utils.exceptions import UserInterruptError
 from midvatten.tools.utils.file_utils import ui_path
@@ -246,6 +253,15 @@ class NotFoundQuestion(QtWidgets.QDialog, not_found_dialog):
         super().closeEvent(event)
 
 
+def _html_view() -> tuple[QtWidgets.QWidget, Callable[[QtCore.QUrl], None]]:
+    """Return (widget, show_url) using the best available HTML viewer."""
+    if QWebView is not None:
+        view = QWebView()
+        return view, view.load
+    view = QtWidgets.QTextBrowser()
+    return view, view.setSource
+
+
 class HtmlDialog(QtWidgets.QDialog):
     def __init__(self, title="", filepath=""):
         QtWidgets.QDialog.__init__(self)
@@ -254,7 +270,7 @@ class HtmlDialog(QtWidgets.QDialog):
 
     def setupUi(self, title, filepath):
         self.resize(600, 500)
-        self.web_view = QWebView()
+        self.web_view, show_url = _html_view()
         self.setWindowTitle(title)
         self.vertical_layout = QtWidgets.QVBoxLayout()
         self.vertical_layout.setSpacing(2)
@@ -271,8 +287,7 @@ class HtmlDialog(QtWidgets.QDialog):
         self.close_button.clicked.connect(lambda x: self.closeWindow())
         self.vertical_layout.addLayout(self.horizontal_layout)
         self.setLayout(self.vertical_layout)
-        url = QtCore.QUrl(filepath)
-        self.web_view.load(url)
+        show_url(QtCore.QUrl(filepath))
 
     def closeWindow(self):
         self.close()

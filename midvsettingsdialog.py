@@ -23,7 +23,7 @@ import logging
 
 from qgis.PyQt import uic, QtCore
 from qgis.PyQt.QtCore import QCoreApplication
-from qgis.PyQt.QtWidgets import QDockWidget, QFileDialog
+from qgis.PyQt.QtWidgets import QCheckBox, QDockWidget, QFileDialog
 from qgis.PyQt.QtWidgets import QGridLayout, QMainWindow
 
 from midvatten.tools.midvsettings import MidvSettings
@@ -86,9 +86,11 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
             partial(self.changed_list_of_columns)
         )
         self.check_box_data_points.stateChanged.connect(
-            self.changed_check_box_data_points
+            partial(self.changed_check_box, self.check_box_data_points, "tsdotmarkers")
         )
-        self.check_box_step_plot.stateChanged.connect(self.changed_check_box_step_plot)
+        self.check_box_step_plot.stateChanged.connect(
+            partial(self.changed_check_box, self.check_box_step_plot, "tsstepplot")
+        )
         # tab XY
         self.list_of_tables_2.currentIndexChanged.connect(
             partial(self.xy_table_updated)
@@ -106,7 +108,9 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
             partial(self.changed_list_of_columns5)
         )
         self.check_box_data_points_2.stateChanged.connect(
-            self.changed_check_box_data_points2
+            partial(
+                self.changed_check_box, self.check_box_data_points_2, "xydotmarkers"
+            )
         )
         # tab wqualreport
         self.list_of_tables_wqual.currentIndexChanged.connect(
@@ -144,17 +148,12 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
         self.iface.addDockWidget(max(self.ms.settingsdict["settingslocation"], 1), self)
         self.iface.mapCanvas().setRenderFlag(True)
 
-    def changed_check_box_data_points(self):
-        self.ms.settingsdict["tsdotmarkers"] = self.check_box_data_points.checkState()
-        self.ms.save_settings("tsdotmarkers")
-
-    def changed_check_box_data_points2(self):
-        self.ms.settingsdict["xydotmarkers"] = self.check_box_data_points_2.checkState()
-        self.ms.save_settings("xydotmarkers")
-
-    def changed_check_box_step_plot(self):
-        self.ms.settingsdict["tsstepplot"] = self.check_box_step_plot.checkState()
-        self.ms.save_settings("tsstepplot")
+    def changed_check_box(self, check_box: QCheckBox, key: str, *_state) -> None:
+        # *_state swallows stateChanged's int argument (bound via partial).
+        # Stored as 0/2 (legacy Qt.CheckState ints) so old projects keep working;
+        # PyQt6 CheckState enums cannot be written to the project file directly.
+        self.ms.settingsdict[key] = 2 if check_box.isChecked() else 0
+        self.ms.save_settings(key)
 
     def changed_list_of_columns(self):
         self.ms.settingsdict["tscolumn"] = self.list_of_columns.currentText()

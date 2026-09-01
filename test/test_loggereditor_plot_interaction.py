@@ -48,6 +48,14 @@ class TestPlotInteraction(utils_for_tests.MidvattenTestSpatialiteDbSv):
         assert editor.push_button_from_selection.text() == "From selection"
         assert editor.push_button_to_selection.text() == "From selection"
 
+    def test_reference_dock_starts_hidden_and_toggle_shows_it(self):
+        """The reference-series dock is empty on open, so it must not take space
+        until the user asks for it via the toolbar toggle."""
+        editor = self._shown_editor()
+        assert editor._ref_dock.isHidden()
+        editor._ref_dock.toggleViewAction().trigger()
+        assert not editor._ref_dock.isHidden()
+
     def test_left_panel_buttons_have_consistent_label_safe_sizes(self):
         editor = LoggerEditor(self.iface, self.midvatten.ms)
         editor.show()

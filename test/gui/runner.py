@@ -242,6 +242,42 @@ def run_outputs(ctx: Context, plugin, out: Path, opened_urls: list) -> dict:
         except Exception:
             record(action_id, False, "exc: " + traceback.format_exc().splitlines()[-1])
 
+    # -- plots actually drew data (an empty figure must fail) ------------
+    settingsdict = plugin.ms.settingsdict
+    for action_id, layer, expr, settings in PLOT_CASES:
+        try:
+            ctx.clear_selections()
+            ctx.select_some(layer, expr)
+            ctx.activate(layer)
+            before = {sip.unwrapinstance(w) for w in QApplication.topLevelWidgets()}
+            saved = {k: settingsdict.get(k) for k in settings} if settings else {}
+            if settings:
+                settingsdict.update(settings)
+            cp = ctx.oracles.checkpoint()
+            dispatch(action_id)
+            ctx.wait(2500)
+            if saved:
+                settingsdict.update(saved)
+            _, tbs = ctx.oracles.since(cp)
+            new = [w for w in QApplication.topLevelWidgets()
+                   if sip.unwrapinstance(w) not in before and w.isVisible()
+                   and w is not ctx.iface.mainWindow()]
+            states = [_plot_state(w) for w in new]
+            has_canvas = any(s[0] for s in states)
+            drew = any(s[1] for s in states)
+            if has_canvas:
+                # matplotlib plot: an empty figure must fail
+                record(action_id, drew and not tbs, f"mpl figure drew data={drew}, windows={len(new)}")
+            else:
+                # non-matplotlib (QPainter) plot, e.g. stratigraphy: judge by
+                # "a window opened and nothing crashed" -- its drawing
+                # correctness is covered by that plot's own unit tests.
+                record(action_id, bool(new) and not tbs,
+                       f"non-mpl plot, window opened={bool(new)}, no traceback={not tbs}")
+            ctx.close_tools()
+        except Exception:
+            record(action_id, False, "exc: " + traceback.format_exc().splitlines()[-1])
+
     summary = {}
     for r in results:
         summary[r["status"]] = summary.get(r["status"], 0) + 1
@@ -519,6 +555,40 @@ def _visible_tool(ctx: Context, class_name: str):
         if type(w).__name__ == class_name and w.isVisible():
             return w
     return None
+
+
+def _plot_state(widget) -> tuple[bool, bool]:
+    """Inspect a plot window: returns (has_mpl_canvas, drew_data).
+
+    has_mpl_canvas is True if a matplotlib FigureCanvas (child with both .figure
+    and .draw) is present; drew_data is True if any of its axes drew lines,
+    collections, patches or images. The stratigraphy plot renders with a custom
+    QPainter.paintEvent instead of matplotlib, so it has no canvas -- there
+    drew_data cannot be introspected and the caller judges by "opened cleanly"."""
+    has_canvas = False
+    for child in widget.findChildren(QWidget):
+        fig = getattr(child, "figure", None)
+        if fig is not None and hasattr(child, "draw") and hasattr(fig, "get_axes"):
+            has_canvas = True
+            for ax in fig.get_axes():
+                if ax.lines or ax.collections or ax.patches or getattr(ax, "images", []):
+                    return True, True
+    return has_canvas, False
+
+
+# obsid selections + settings that make each plot draw real data (from the wiki
+# tutorial figures). Settings are written the way the Settings dock's slots do.
+PLOT_CASES = [
+    ("plot_timeseries", "obs_points", "obsid IN ('Pz0903','Pz0915','Pz0916')",
+     {"tstable": "w_levels", "tscolumn": "level_masl", "tsdotmarkers": 0, "tsstepplot": 0}),
+    ("plot_xy", "obs_lines", "obsid IN ('S1','S2','S3')",
+     {"xytable": "seismic_data", "xy_xcolumn": "length", "xy_y1column": "ground",
+      "xy_y2column": "bedrock", "xy_y3column": "", "xydotmarkers": 0}),
+    ("plot_stratigraphy", "obs_points", "obsid IN ('Pz0903','Pz0905','Pz0917','Pz0918')", None),
+    ("plot_piper", "obs_points", "obsid IN ('OW100','PW1001','PW1002','Pz0905','Pz0917','Pz1016','RG 1')",
+     {"piper_cl": "Cl", "piper_hco3": "Alcalinity, HCO3", "piper_so4": "SO4", "piper_na": "Na",
+      "piper_k": "K", "piper_ca": "Ca", "piper_mg": "Mg", "piper_markers": "type"}),
+]
 
 
 def main() -> None:

@@ -745,7 +745,7 @@ class SurveyWidget(QtWidgets.QFrame):
         try:
             printer.setPageOrientation(QtGui.QPageLayout.Orientation.Landscape)
         except AttributeError:
-            printer.setOrientation(QtPrintSupport.QPrinter.Landscape)
+            printer.setOrientation(QtPrintSupport.QPrinter.Orientation.Landscape)
 
         # setting output file name results in not opening print dialog on Win
         # printer.setOutputFileName("arpat.pdf")

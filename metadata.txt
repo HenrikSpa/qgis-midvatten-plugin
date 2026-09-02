@@ -25,6 +25,7 @@ supportsQt6=True
 changelog=
         Version 1.9.0:
           - Qt6: The plugin now runs on both Qt5 and Qt6 builds of QGIS.
+          - Qt6: The stratigraphy print dialog's legacy Qt5 orientation fallback now uses the scoped QPrinter.Orientation.Landscape spelling (Qt6 removed the unscoped QPrinter.Landscape). Also adopted the shared Qt6 static compatibility guard used across midv plugins.
           - Database: Added w_logger_series table; logger series metadata (source, instrument/serial, description, comment) moved there from w_levels_logger, with rows linked via series_id. Export to SpatiaLite migrates the old source column.
           - Database: Added screen (with diam_inner/diam_outer) and zz_screen_plots tables, plus tem_data and profile_images tables; w_qual_logger, s_qual_lab and spatial_history are regular tables in new databases.
           - Database: Added ON DELETE/UPDATE CASCADE to all obsid foreign keys, and unique indexes on (obsid, date_time) for w_levels_logger, w_levels, w_flow, w_qual_field and meteo.

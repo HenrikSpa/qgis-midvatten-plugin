@@ -151,7 +151,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
         self.setupUi(self)
         self.init_ui()
         self.template_plot_label.setText(
-            '<a href="https://github.com/jkall/qgis-midvatten-plugin/wiki/5.-Plots-and-reports#create-section-plot">Templates manual</a>'
+            '<a href="https://github.com/HenrikSpa/qgis-midvatten-plugin/wiki/Plots#section-plot">Templates manual</a>'
         )
         self.template_plot_label.setOpenExternalLinks(True)
 

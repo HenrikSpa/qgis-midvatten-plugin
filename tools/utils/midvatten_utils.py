@@ -405,7 +405,7 @@ def warn_about_old_database() -> None:
                     break
 
             if version:
-                wikipage = "https://github.com/jkall/qgis-midvatten-plugin/wiki/6.-Database-management#upgrade-database"
+                wikipage = "https://github.com/HenrikSpa/qgis-midvatten-plugin/wiki/Database-management#upgrading-a-1x-database"
 
                 is_old = compare_verson_lists(
                     version_comparison_list(version),

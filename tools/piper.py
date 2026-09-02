@@ -881,10 +881,17 @@ class PiperPlot:
         line_label = []
         for idx, line in enumerate(ax.lines):
             label = line.get_label()
+            # matplotlib auto-labels un-labelled artists "_child0", "_child1"...;
+            # those (and any other "_"-prefixed internal label) must not appear
+            # in the legend -- they showed up as junk entries.
+            if label.startswith("_"):
+                continue
             if label not in distinct:
                 line_label.append((line, label))
                 distinct.add(label)
 
+        if not line_label:
+            return
         leg = ax.legend(*zip(*line_label), **{LEGEND_NCOL_KEY: 4})
         try:
             leg.set_draggable(state=True)

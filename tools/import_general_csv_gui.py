@@ -878,9 +878,9 @@ class ImportTableChooser(VRowEntry):
         self.cleaning_info_label = qgis.PyQt.QtWidgets.QLabel(
             QCoreApplication.translate(
                 "ImportTableChooser",
-                "Parameternamn och enheter städas mekaniskt vid import "
-                "(extra mellanslag, radbrytningar och teckenvarianter "
-                "tas bort).",
+                "Parameter names and units are cleaned mechanically on import "
+                "(extra spaces, line breaks and character variants are "
+                "removed).",
             )
         )
         self.cleaning_info_label.setWordWrap(True)

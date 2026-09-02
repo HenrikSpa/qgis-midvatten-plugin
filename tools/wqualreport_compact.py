@@ -75,7 +75,7 @@ class CompactWqualReportUi(
         )
 
         self.manual_label.setText(
-            '<a href="https://github.com/jkall/qgis-midvatten-plugin/wiki/5.-Plots-and-reports#create-compact-water-quality-report">%s</a>'
+            '<a href="https://github.com/HenrikSpa/qgis-midvatten-plugin/wiki/Reports#compact-water-quality-reports">%s</a>'
             % QCoreApplication.translate("CompactWqualReportUi", "(manual)")
         )
         self.manual_label.setOpenExternalLinks(True)

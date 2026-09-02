@@ -79,7 +79,7 @@ class WarnAboutOldDatabaseMixin:
         print(f"{mock_messagebar.mock_calls=}")
         assert (
             call.info(
-                bar_msg="The database version appears to be older than 999.999.999. An upgrade is suggested! See https://github.com/jkall/qgis-midvatten-plugin/wiki/6.-Database-management#upgrade-database",
+                bar_msg="The database version appears to be older than 999.999.999. An upgrade is suggested! See https://github.com/HenrikSpa/qgis-midvatten-plugin/wiki/Database-management#upgrading-a-1x-database",
                 duration=4,
             )
             in mock_messagebar.mock_calls

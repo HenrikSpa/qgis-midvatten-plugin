@@ -173,7 +173,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
         self.statusbar.showMessage(text, 0)
         self.log_calc_manual.setText(
-            '<a href="https://github.com/jkall/qgis-midvatten-plugin/wiki/4.-Edit-data">Midvatten manual</a>'
+            '<a href="https://github.com/HenrikSpa/qgis-midvatten-plugin/wiki/Edit-data#edit-water-level-logger-data">Midvatten manual</a>'
         )
 
         self.cid = []

@@ -22,7 +22,7 @@ import qgis.PyQt
 import logging
 
 from qgis.PyQt import uic, QtCore
-from qgis.PyQt.QtCore import QCoreApplication
+from qgis.PyQt.QtCore import QCoreApplication, Qt
 from qgis.PyQt.QtWidgets import QCheckBox, QDockWidget, QFileDialog
 from qgis.PyQt.QtWidgets import QGridLayout, QMainWindow
 
@@ -144,8 +144,11 @@ class MidvattenSettingsDock(QDockWidget, midvsettingsdock_ui_class):
             partial(self.changed_piper_marker_combo_box)
         )
 
-        # Draw the widget
-        self.iface.addDockWidget(max(self.ms.settingsdict["settingslocation"], 1), self)
+        # Draw the widget. Qt6's addDockWidget needs a Qt.DockWidgetArea, not
+        # the bare int the setting stores; Qt.DockWidgetArea(int) works on both.
+        self.iface.addDockWidget(
+            Qt.DockWidgetArea(max(self.ms.settingsdict["settingslocation"], 1)), self
+        )
         self.iface.mapCanvas().setRenderFlag(True)
 
     def changed_check_box(self, check_box: QCheckBox, key: str, *_state) -> None:

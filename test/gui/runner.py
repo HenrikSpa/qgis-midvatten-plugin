@@ -471,6 +471,66 @@ def run_controls(ctx: Context, plugin, out: Path) -> dict:
     return {"results": results, "summary": summary}
 
 
+def run_generic_actions(ctx: Context, plugin, out: Path, menu_title: str = "midvatten") -> dict:
+    """Phase 10 (cross-plugin PoC): drive a plugin the GENERIC way -- discover
+    its actions from the QGIS menu bar and trigger() each -- with NO dependency
+    on Midvatten's private `_actions_manifest`. This is the reusable core for
+    generalizing the harness to the other ~/dev plugins: only "which menu" is
+    plugin-specific. Proven here against Midvatten's own menu."""
+    def leaf_actions(menu):
+        found = []
+        for act in menu.actions():
+            if act.isSeparator():
+                continue
+            sub = act.menu()
+            if sub is not None:
+                found.extend(leaf_actions(sub))
+            elif act.text():
+                found.append(act)
+        return found
+
+    menubar = ctx.iface.mainWindow().menuBar()
+    plugin_menu = next((a.menu() for a in menubar.actions()
+                        if a.menu() is not None and menu_title in a.text().lower()), None)
+    if plugin_menu is None:
+        return {"results": [], "summary": {"FAIL": 1},
+                "error": f"no menu matching {menu_title!r} in the menu bar"}
+
+    actions = leaf_actions(plugin_menu)
+    ctx.install_modal_reaper()  # dismiss any modal a triggered action opens
+    results = []
+    report_path = out / "gui_test_report.json"
+    for i, act in enumerate(actions):
+        (out / "progress.txt").write_text(f"{i + 1}/{len(actions)} {act.text()}\n")
+        # Minimal generic preconditions: a broadly-useful selection.
+        ctx.clear_selections()
+        if ctx.default_selection is not None:
+            ctx.select_some(*ctx.default_selection)
+            ctx.activate(ctx.default_selection[0])
+        cp = ctx.oracles.checkpoint()
+        try:
+            act.trigger()
+        except Exception:
+            derr = traceback.format_exc().strip().splitlines()[-1]
+        else:
+            derr = None
+        ctx.wait(1200)
+        _, tbs = ctx.oracles.since(cp)
+        crit = [m for m in ctx.oracles.since(cp)[0] if m["level"] >= int(Qgis.Critical)]
+        status = "FAIL" if (derr or tbs) else ("blocked" if crit else "ok")
+        detail = derr or (tbs[-1]["text"].splitlines()[-1] if tbs else
+                          ("warn: " + crit[-1]["text"][:80] if crit else "triggered, no traceback"))
+        results.append({"id": act.text().replace("&", ""), "status": status, "detail": detail})
+        report_path.write_text(json.dumps({"mode": "generic_actions", "partial": True, "results": results}, indent=2))
+        ctx.close_tools()
+        ctx.clear_selections()
+
+    summary = {}
+    for r in results:
+        summary[r["status"]] = summary.get(r["status"], 0) + 1
+    return {"results": results, "summary": summary, "n_actions_discovered": len(actions)}
+
+
 def run_dbutils(ctx: Context, plugin, out: Path) -> dict:
     """Phase 6: assert the DB-management / utility callback actions' real side
     effects (not just that dispatch returned). Backup/view/vacuum/stats run on
@@ -871,7 +931,7 @@ def main() -> None:
         ctx = Context(plugin, qgis.utils.iface, out, oracles, default_selection=DEFAULT_SELECTION)
         ctx.wait(2000)
 
-        if ns.mode in ("coverage", "outputs", "controls", "loggereditor", "dbutils"):
+        if ns.mode in ("coverage", "outputs", "controls", "loggereditor", "dbutils", "generic_actions"):
             phase("copy_db")
             # Work on a writable copy so the shared fixture stays pristine.
             work_db = out / "work.sqlite"
@@ -894,6 +954,9 @@ def main() -> None:
             elif ns.mode == "dbutils":
                 phase("dbutils")
                 report.update(run_dbutils(ctx, plugin, out))
+            elif ns.mode == "generic_actions":
+                phase("generic_actions")
+                report.update(run_generic_actions(ctx, plugin, out))
             else:
                 phase("outputs")
                 report.update(run_outputs(ctx, plugin, out, opened_urls))

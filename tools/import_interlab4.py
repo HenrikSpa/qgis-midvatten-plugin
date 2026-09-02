@@ -1322,6 +1322,7 @@ class MetadataFilter(VRowEntry):
                     self.table.showRow(rownr),
                     self.table.item(rownr, 0).setFlags(
                         qgis.PyQt.QtCore.Qt.ItemFlag.ItemIsSelectable
+                        | qgis.PyQt.QtCore.Qt.ItemFlag.ItemIsEnabled
                     ),
                 )
             )
@@ -1362,14 +1363,20 @@ class MetadataFilter(VRowEntry):
         for rownr, lablittera in enumerate(all_lab_results.keys()):
             metadata = all_lab_results[lablittera]["metadata"]
             tablewidgetitem = qgis.PyQt.QtWidgets.QTableWidgetItem(lablittera)
-            tablewidgetitem.setFlags(qgis.PyQt.QtCore.Qt.ItemFlag.ItemIsSelectable)
+            tablewidgetitem.setFlags(
+                qgis.PyQt.QtCore.Qt.ItemFlag.ItemIsSelectable
+                | qgis.PyQt.QtCore.Qt.ItemFlag.ItemIsEnabled
+            )
             self.table.setItem(rownr, 0, tablewidgetitem)
 
             for colnr, metaheader in enumerate(self.sorted_table_header[1:], 1):
                 tablewidgetitem = qgis.PyQt.QtWidgets.QTableWidgetItem(
                     metadata.get(metaheader, "")
                 )
-                tablewidgetitem.setFlags(qgis.PyQt.QtCore.Qt.ItemFlag.ItemIsSelectable)
+                tablewidgetitem.setFlags(
+                qgis.PyQt.QtCore.Qt.ItemFlag.ItemIsSelectable
+                | qgis.PyQt.QtCore.Qt.ItemFlag.ItemIsEnabled
+            )
                 self.table.setItem(rownr, colnr, tablewidgetitem)
 
         self.table.resizeColumnsToContents()

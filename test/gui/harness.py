@@ -23,7 +23,7 @@ import qgis.utils
 from qgis.core import Qgis, QgsApplication, QgsProject
 from qgis.PyQt import sip
 from qgis.PyQt.QtCore import QEventLoop, QTimer, qInstallMessageHandler, QtMsgType
-from qgis.PyQt.QtWidgets import QApplication, QDialog, QWidget
+from qgis.PyQt.QtWidgets import QApplication, QCheckBox, QComboBox, QDialog, QTabWidget, QWidget
 
 from midvatten.tools.utils.db_utils.dialect import ident
 from midvatten.tools.utils.db_utils.execution import sql_load_fr_db
@@ -187,6 +187,35 @@ class Context:
         top_left = widget.mapToGlobal(widget.rect().topLeft())
         return (top_left.x() >= geom.x() - 50 and top_left.y() >= geom.y() - 50
                 and widget.width() > 0 and widget.height() > 0)
+
+    def exercise_controls(self, widget: QWidget) -> dict:
+        """Toggle every checkbox, cycle every combo through its items, and walk
+        every tab page, so a control that crashes on interaction is caught by
+        the oracles. Returns a small tally; individual widget errors are
+        swallowed (a deleted C++ object mid-walk is not the point of the test)."""
+        tally = {"checkboxes": 0, "combos": 0, "tabs": 0}
+        for cb in widget.findChildren(QCheckBox):
+            try:
+                cb.toggle()
+                tally["checkboxes"] += 1
+            except RuntimeError:
+                pass
+        for combo in widget.findChildren(QComboBox):
+            try:
+                for i in range(combo.count()):
+                    combo.setCurrentIndex(i)
+                tally["combos"] += 1
+            except RuntimeError:
+                pass
+        for tabs in widget.findChildren(QTabWidget):
+            try:
+                for i in range(tabs.count()):
+                    tabs.setCurrentIndex(i)
+                    self.wait(40)
+                tally["tabs"] += 1
+            except RuntimeError:
+                pass
+        return tally
 
     def grab(self, widget: QWidget, name: str) -> Path | None:
         try:

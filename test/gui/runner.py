@@ -20,10 +20,11 @@ import traceback
 from pathlib import Path
 
 import qgis.utils
-from qgis.core import QgsApplication, QgsProject
+from qgis.core import Qgis, QgsApplication, QgsProject
+from qgis.PyQt import sip
 from qgis.PyQt.QtCore import QTimer
 from qgis.PyQt.QtGui import QDesktopServices
-from qgis.PyQt.QtWidgets import QApplication, QPushButton
+from qgis.PyQt.QtWidgets import QApplication, QPushButton, QWidget
 
 import midvatten.tools.create_db_dialogs as create_db_dialogs
 
@@ -247,6 +248,88 @@ def run_outputs(ctx: Context, plugin, out: Path, opened_urls: list) -> dict:
     return {"results": results, "summary": summary, "opened_urls": opened_urls}
 
 
+def run_controls(ctx: Context, plugin, out: Path) -> dict:
+    """Group C: dispatch each action, exercise every control in the window/modal
+    it opens (toggle checkboxes, cycle combos, walk tabs), and fail on any
+    traceback or Critical. Catches controls that crash on interaction, which the
+    plain coverage sweep (window merely opened) misses."""
+    results = []
+    report_path = out / "gui_test_report.json"
+    specs = list(plugin._actions_manifest)
+
+    # A reaper that EXERCISES a modal before dismissing it (the coverage reaper
+    # only dismisses). Re-entrancy guarded: exercising walks tabs with waits, so
+    # the 900ms timer can fire again mid-walk.
+    busy = {"in": False}
+
+    def reap():
+        if busy["in"]:
+            return
+        dlg = QApplication.activeModalWidget()
+        if dlg is not None:
+            busy["in"] = True
+            try:
+                ctx.exercise_controls(dlg)
+            except Exception:
+                pass
+            ctx._dismiss(dlg)
+            busy["in"] = False
+
+    timer = QTimer()
+    timer.timeout.connect(reap)
+    timer.start(900)
+
+    for i, spec in enumerate(specs):
+        (out / "progress.txt").write_text(f"{i + 1}/{len(specs)} {spec.id}\n")
+        ctx._prepare(spec)
+        cp = ctx.oracles.checkpoint()
+        before = {sip.unwrapinstance(w) for w in QApplication.topLevelWidgets()}
+        derr = None
+        try:
+            plugin._dispatch(spec)
+        except Exception:
+            derr = traceback.format_exc().strip().splitlines()[-1]
+        ctx.wait(1500)
+
+        window = None
+        persistent = plugin._open_tools.get(spec.id)
+        if isinstance(persistent, QWidget) and persistent.isVisible():
+            window = persistent
+        else:
+            new = [w for w in QApplication.topLevelWidgets()
+                   if sip.unwrapinstance(w) not in before and w.isVisible()
+                   and w is not ctx.iface.mainWindow()]
+            if new:
+                window = max(new, key=lambda w: w.width() * w.height())
+        tally = None
+        if window is not None:
+            try:
+                tally = ctx.exercise_controls(window)
+            except Exception:
+                pass
+            ctx.wait(300)
+
+        msgs, tbs = ctx.oracles.since(cp)
+        crit = [m for m in msgs if m["level"] >= int(Qgis.Critical)]
+        if derr or tbs:
+            status, detail = "FAIL", derr or tbs[-1]["text"].splitlines()[-1]
+        elif crit:
+            status, detail = "FAIL", "Critical: " + crit[-1]["text"].strip().replace("\n", " ")[:150]
+        else:
+            status = "ok"
+            detail = f"exercised {tally}" if tally else "no window (callback/blocked)"
+        results.append({"id": spec.id, "menu": spec.menu, "status": status, "detail": detail})
+        report_path.write_text(json.dumps({"mode": "controls", "partial": True, "results": results}, indent=2))
+        ctx.close_tools()
+        ctx.clear_selections()
+
+    timer.stop()
+    summary = {}
+    for r in results:
+        summary[r["status"]] = summary.get(r["status"], 0) + 1
+    return {"results": results, "summary": summary}
+
+
 def _create_fresh_db(ctx: Context, plugin, out: Path) -> tuple[Path, bool]:
     """Drive the real New-SpatiaLite-DB dialog to build a fresh empty database,
     set it as the active DB, and load its default layers. Returns (path, driven).
@@ -463,7 +546,7 @@ def main() -> None:
         ctx = Context(plugin, qgis.utils.iface, out, oracles, default_selection=DEFAULT_SELECTION)
         ctx.wait(2000)
 
-        if ns.mode in ("coverage", "outputs"):
+        if ns.mode in ("coverage", "outputs", "controls"):
             phase("copy_db")
             # Work on a writable copy so the shared fixture stays pristine.
             work_db = out / "work.sqlite"
@@ -473,10 +556,13 @@ def main() -> None:
             phase("load_layers")
             report["fixture"] = load_layers(ctx, plugin, out)
             if ns.mode == "coverage":
-                ctx.install_modal_reaper()  # outputs drives its modals to accept
+                ctx.install_modal_reaper()  # outputs/controls install their own
                 phase("sweep")
                 report.update(run_coverage(ctx, plugin, out))
                 report["opened_urls"] = opened_urls
+            elif ns.mode == "controls":
+                phase("controls")
+                report.update(run_controls(ctx, plugin, out))
             else:
                 phase("outputs")
                 report.update(run_outputs(ctx, plugin, out, opened_urls))

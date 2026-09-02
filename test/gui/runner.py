@@ -515,6 +515,41 @@ def run_fill(ctx: Context, plugin, out: Path, csv_dir: Path) -> dict:
             midvatten_utils.select_files = orig
             record(f"import_{table}", False, "exc: " + traceback.format_exc().splitlines()[-1])
 
+    # -- import_logger (DiverOffice .MON -> w_levels_logger + a new series) ---
+    try:
+        logger_path = str(csv_dir.parent / "logger" / "OW100_diveroffice.MON")
+        wll_before = ctx.db_count("w_levels_logger") or 0
+        series_before = ctx.db_count("w_logger_series") or 0
+        orig = midvatten_utils.select_files
+        midvatten_utils.select_files = lambda *a, **k: [logger_path]
+        cp = ctx.oracles.checkpoint()
+        spec = next(s for s in plugin._actions_manifest if s.id == "import_logger")
+        plugin._dispatch(spec)
+        dlg = _visible_tool(ctx, "LoggerImport")
+        if dlg is None:
+            record("import_logger", False, "LoggerImport window did not open")
+        else:
+            dlg.format_combo.setCurrentText("DiverOffice")
+            ctx.wait(300)
+            stop = start_accept_driver()  # dismiss the progress/info dialogs
+            dlg.select_files_button.click()
+            ctx.wait(1200)
+            dlg.confirm_names.checked = False  # OW100 exists -> resolve silently
+            dlg.start_import_button.click()
+            ctx.wait(4000)
+            stop()
+            ctx.close_tools()
+        midvatten_utils.select_files = orig
+        _, tbs = ctx.oracles.since(cp)
+        wll_after = ctx.db_count("w_levels_logger") or 0
+        series_after = ctx.db_count("w_logger_series") or 0
+        ok = wll_after > wll_before and series_after > series_before and not tbs
+        record("import_logger", ok,
+               f"w_levels_logger {wll_before}->{wll_after}, w_logger_series {series_before}->{series_after}")
+    except Exception:
+        midvatten_utils.select_files = orig
+        record("import_logger", False, "exc: " + traceback.format_exc().splitlines()[-1])
+
     # idempotency: re-importing obs_points must not duplicate rows.
     try:
         csv_path = str(csv_dir / "obs_points.csv")

@@ -4,6 +4,7 @@ These spellings work on PyQt5 but raise AttributeError on PyQt6. The qgis.PyQt
 shim does not unscope enums or alias exec_. Scoped spellings work on both.
 Source of truth: midv_qt6compat/templates/test_qt6_compat_static.py — edit there.
 """
+# qt6compat-template-version: 2
 from __future__ import annotations
 
 import io
@@ -124,13 +125,18 @@ def collect_hits(root: Path | None = None) -> list[str]:
 
         for lineno, (original_line, masked_line) in enumerate(zip(lines, masked_lines), 1):
             for label, pattern in FORBIDDEN.items():
-                if pattern.search(masked_line):
-                    # Skip Qt.X if X is a Qt enum type (legal to reference bare)
-                    if "unscoped Qt namespace member" in label:
-                        m = re.search(r"\bQt\.([A-Za-z_]\w*)", masked_line)
-                        if m and m.group(1) in _QT_ENUM_TYPES:
-                            continue
-                    hits.append(f"{rel}:{lineno}: {label}: {original_line.strip()}")
+                matches = list(pattern.finditer(masked_line))
+                if not matches:
+                    continue
+                if "unscoped Qt namespace member" in label:
+                    # Qt.X is legal to reference bare when X is a Qt enum TYPE name
+                    # (e.g. Qt.GlobalColor). Checked per match, not just the first
+                    # Qt. on the line -- a line can mix an allowed type reference
+                    # with a genuine unscoped member (e.g. "Qt.ItemDataRole.UserRole,
+                    # Qt.Checked"), and only the latter should be a hit.
+                    if all(m.group(0).split(".", 1)[1] in _QT_ENUM_TYPES for m in matches):
+                        continue
+                hits.append(f"{rel}:{lineno}: {label}: {original_line.strip()}")
     return hits
 
 

@@ -247,16 +247,16 @@ def run_outputs(ctx: Context, plugin, out: Path, opened_urls: list) -> dict:
     return {"results": results, "summary": summary, "opened_urls": opened_urls}
 
 
-def run_create_db(ctx: Context, plugin, out: Path) -> dict:
-    """Group A (create half): drive the real New-SpatiaLite-DB dialog to build a
-    fresh empty database, then assert the plugin can create, open and load it.
+def _create_fresh_db(ctx: Context, plugin, out: Path) -> tuple[Path, bool]:
+    """Drive the real New-SpatiaLite-DB dialog to build a fresh empty database,
+    set it as the active DB, and load its default layers. Returns (path, driven).
 
     The dialog is driven like a user -- the native save-picker is patched and the
-    dialog's own Browse button clicked, then OK pressed -- rather than writing its
-    private widgets. No global modal reaper here: this mode drives its one modal
-    itself and must accept (not reject) it."""
+    dialog's own Browse button clicked, then OK pressed -- never writing its
+    private widgets. No global reaper: this drives its one modal to acceptance."""
     target = out / f"created_{os.getpid()}.sqlite"
-    target.unlink(missing_ok=True)
+    for p in out.glob("created_*.sqlite"):
+        p.unlink()
     orig_picker = create_db_dialogs.QFileDialog.getSaveFileName
     create_db_dialogs.QFileDialog.getSaveFileName = staticmethod(lambda *a, **k: (str(target), ""))
 
@@ -274,7 +274,6 @@ def run_create_db(ctx: Context, plugin, out: Path) -> dict:
         driven["ok"] = True
         dlg.accept()
 
-    cp = ctx.oracles.checkpoint()
     QTimer.singleShot(500, drive)
     spec = next(s for s in plugin._actions_manifest if s.id == "new_db")
     try:
@@ -283,20 +282,26 @@ def run_create_db(ctx: Context, plugin, out: Path) -> dict:
         ctx.wait(2500)
         create_db_dialogs.QFileDialog.getSaveFileName = orig_picker
 
-    # new_db() set the freshly-built DB as the active one; point the harness's
-    # connection at it explicitly, then assert the schema.
+    # new_db() set the freshly-built DB as active; point the harness's connection
+    # at it explicitly, then load the default + data-domain layers from it.
     open_database(plugin, str(target))
     ctx.wait(500)
+    for action_id in ("add_midvatten_layers", "load_data_domains"):
+        load_spec = next((s for s in plugin._actions_manifest if s.id == action_id), None)
+        if load_spec is not None:
+            plugin._dispatch(load_spec)
+            ctx.wait(1200)
+    return target, driven["ok"]
+
+
+def run_create_db(ctx: Context, plugin, out: Path) -> dict:
+    """Group A (create half): build a fresh DB and assert its schema."""
+    cp = ctx.oracles.checkpoint()
+    target, driven = _create_fresh_db(ctx, plugin, out)
     _, tbs = ctx.oracles.since(cp)
     description = ctx.db_scalar("SELECT description FROM about_db LIMIT 1")
-
-    load_spec = next((s for s in plugin._actions_manifest if s.id == "add_midvatten_layers"), None)
-    if load_spec is not None:
-        plugin._dispatch(load_spec)
-        ctx.wait(1500)
-
     checks = {
-        "dialog_driven_and_accepted": driven["ok"],
+        "dialog_driven_and_accepted": driven,
         "db_file_created": target.exists(),
         "about_db_version_present": bool(description and "Midvatten" in str(description)),
         "core_tables_present": ctx.db_count("obs_points") is not None
@@ -308,6 +313,129 @@ def run_create_db(ctx: Context, plugin, out: Path) -> dict:
     status = "ok" if all(checks.values()) else "FAIL"
     return {"status": status, "checks": checks, "target": str(target),
             "about_db": str(description)}
+
+
+def run_fill(ctx: Context, plugin, out: Path, csv_dir: Path) -> dict:
+    """Group A (fill half): create a fresh empty DB, then drive the real general
+    CSV importer to load tutorial CSVs into it and assert the row counts.
+
+    Each import means two nested modals -- the file-load sub-dialog, then the
+    row-drop YesNo confirmation -- both of which must be ACCEPTED (a reject
+    cancels the import), so a smart accept-driver runs for the duration of the
+    import instead of the reject-reaper. Column mapping is automatic because the
+    tutorial CSV headers equal the DB column names (import_general_csv_gui.py
+    prefills a ColumnEntry whose db_column matches a file header)."""
+    results = []
+    report_path = out / "gui_test_report.json"
+
+    def record(name, passed, detail):
+        results.append({"id": name, "status": "ok" if passed else "FAIL", "detail": detail})
+        report_path.write_text(json.dumps({"mode": "fill", "partial": True, "results": results}, indent=2))
+
+    cp0 = ctx.oracles.checkpoint()
+    target, driven = _create_fresh_db(ctx, plugin, out)
+    record("create_fresh_db", driven and target.exists() and ctx.db_count("obs_points") == 0,
+           f"created {target.name}, obs_points={ctx.db_count('obs_points')}")
+
+    import midvatten.tools.utils.midvatten_utils as midvatten_utils
+
+    def start_accept_driver():
+        """Accept whatever modal comes up during an import: the file-load
+        sub-dialog (after driving its Browse via the patched picker) then the
+        YesNo row-drop confirmation. Returns a stop() so its self-rearming timer
+        does not linger and swallow the NEXT import's file-load dialog."""
+        control = {"active": True}
+
+        def drive():
+            if not control["active"]:
+                return
+            dlg = QApplication.activeModalWidget()
+            if dlg is not None:
+                cls = type(dlg).__name__
+                if "FileLoad" in cls or "CsvFile" in cls:
+                    for b in dlg.findChildren(QPushButton):
+                        if "rowse" in b.text().lower():
+                            b.click()
+                            break
+                dlg.accept()
+            QTimer.singleShot(150, drive)
+
+        QTimer.singleShot(300, drive)
+        return lambda: control.__setitem__("active", False)
+
+    # obs_points first (root table, no obsid FK ask), then w_levels (references it).
+    for table, csv_name, min_rows in [("obs_points", "obs_points.csv", 60),
+                                      ("w_levels", "w_levels.csv", 1000)]:
+        try:
+            csv_path = str(csv_dir / csv_name)
+            before = ctx.db_count(table) or 0
+            orig = midvatten_utils.select_files
+            midvatten_utils.select_files = lambda *a, **k: [csv_path]
+            cp = ctx.oracles.checkpoint()
+            spec = next(s for s in plugin._actions_manifest if s.id == "import_csv")
+            plugin._dispatch(spec)
+            dlg = _visible_tool(ctx, "GeneralCsvImportGui")
+            if dlg is None:
+                record(f"import_{table}", False, "importer window did not open")
+                continue
+            stop = start_accept_driver()
+            dlg.select_file_button.click()   # -> file-load modal -> accepted by driver
+            ctx.wait(2500)
+            dlg.table_chooser.import_method = table   # auto-maps matching columns
+            ctx.wait(600)
+            dlg.start_import_button.click()  # -> YesNo confirm -> accepted by driver
+            ctx.wait(3000)
+            stop()
+            midvatten_utils.select_files = orig
+            _, tbs = ctx.oracles.since(cp)
+            after = ctx.db_count(table) or 0
+            ok = after - before >= min_rows and not tbs
+            record(f"import_{table}", ok, f"{table} {before}->{after} rows (>= {min_rows})")
+            ctx.close_tools()
+        except Exception:
+            midvatten_utils.select_files = orig
+            record(f"import_{table}", False, "exc: " + traceback.format_exc().splitlines()[-1])
+
+    # idempotency: re-importing obs_points must not duplicate rows.
+    try:
+        csv_path = str(csv_dir / "obs_points.csv")
+        before = ctx.db_count("obs_points") or 0
+        orig = midvatten_utils.select_files
+        midvatten_utils.select_files = lambda *a, **k: [csv_path]
+        spec = next(s for s in plugin._actions_manifest if s.id == "import_csv")
+        plugin._dispatch(spec)
+        dlg = _visible_tool(ctx, "GeneralCsvImportGui")
+        if dlg is not None:
+            stop = start_accept_driver()
+            dlg.select_file_button.click()
+            ctx.wait(2500)
+            dlg.table_chooser.import_method = "obs_points"
+            ctx.wait(600)
+            dlg.start_import_button.click()
+            ctx.wait(3000)
+            stop()
+            ctx.close_tools()
+        midvatten_utils.select_files = orig
+        after = ctx.db_count("obs_points") or 0
+        record("import_obs_points_idempotent", after == before, f"obs_points {before}->{after} (no dupes)")
+    except Exception:
+        midvatten_utils.select_files = orig
+        record("import_obs_points_idempotent", False, "exc: " + traceback.format_exc().splitlines()[-1])
+
+    _, tbs_total = ctx.oracles.since(cp0)
+    summary = {}
+    for r in results:
+        summary[r["status"]] = summary.get(r["status"], 0) + 1
+    return {"results": results, "summary": summary, "target": str(target),
+            "total_tracebacks": len(tbs_total)}
+
+
+def _visible_tool(ctx: Context, class_name: str):
+    """Return the visible top-level widget whose class name matches, else None."""
+    for w in QApplication.topLevelWidgets():
+        if type(w).__name__ == class_name and w.isVisible():
+            return w
+    return None
 
 
 def main() -> None:
@@ -355,6 +483,10 @@ def main() -> None:
         elif ns.mode == "create_db":
             phase("create_db")
             report.update(run_create_db(ctx, plugin, out))
+        elif ns.mode == "fill":
+            phase("fill")
+            csv_dir = Path(ns.db).parent / "csv"
+            report.update(run_fill(ctx, plugin, out, csv_dir))
         else:
             report["error"] = f"unknown mode {ns.mode!r}"
 

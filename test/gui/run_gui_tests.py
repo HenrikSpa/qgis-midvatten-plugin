@@ -129,11 +129,13 @@ def main(argv: list[str] | None = None) -> int:
         print(f"\nstatus: {report.get('status')}")
         return 1 if report.get("status") != "ok" else 0
 
-    # coverage mode: a table of per-action results.
-    print(f"fixture: {report.get('fixture')}\n")
+    # coverage / outputs / fill: a table of per-result rows.
+    if report.get("fixture"):
+        print(f"fixture: {report.get('fixture')}")
+    print()
     for r in report.get("results", []):
         mark = {"ok": "  ok  ", "blocked": "block ", "no-window": "  --  "}.get(r["status"], "FAIL !")
-        print(f"[{mark}] {r['menu']:>7} {r['id']:<34} {r.get('detail', '')}")
+        print(f"[{mark}] {r.get('menu', ''):>7} {r['id']:<34} {r.get('detail', '')}")
     summary = report.get("summary", {})
     print(f"\nsummary: {summary}")
     return 1 if summary.get("FAIL") else 0

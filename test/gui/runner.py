@@ -108,6 +108,137 @@ def run_coverage(ctx: Context, plugin, out: Path) -> dict:
     return {"results": results, "summary": summary}
 
 
+def _drive_modal_accept(ctx: Context, before_click=None):
+    """Schedule a driver that, once a modal is up, optionally runs before_click
+    (e.g. click a Browse button whose picker has been patched) and then accepts
+    it. Used by outputs mode, which must accept modals a global reaper would
+    reject -- so outputs mode runs without the reaper installed."""
+    def drive():
+        dlg = QApplication.activeModalWidget()
+        if dlg is None:
+            QTimer.singleShot(200, drive)
+            return
+        if before_click is not None:
+            before_click(dlg)
+        dlg.accept()
+    QTimer.singleShot(500, drive)
+
+
+def _click_browse(dlg) -> None:
+    for button in dlg.findChildren(QPushButton):
+        if "rowse" in button.text().lower():
+            button.click()
+            break
+
+
+def run_outputs(ctx: Context, plugin, out: Path, opened_urls: list) -> dict:
+    """Group D: run each output-producing tool to completion and assert the
+    real artifact -- files written, HTML produced, DB mutated -- not merely
+    that a window opened. No global modal reaper: each tool's modal is driven
+    to *acceptance* by _drive_modal_accept."""
+    results = []
+    report_path = out / "gui_test_report.json"
+
+    def dispatch(action_id):
+        plugin._dispatch(next(s for s in plugin._actions_manifest if s.id == action_id))
+
+    def record(name, passed, detail):
+        results.append({"id": name, "status": "ok" if passed else "FAIL", "detail": detail})
+        report_path.write_text(json.dumps({"mode": "outputs", "partial": True,
+                                            "results": results}, indent=2))
+
+    def read_html(url: str) -> str:
+        path = url[len("file://"):] if url.startswith("file://") else url
+        try:
+            return Path(path).read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            return ""
+
+    # -- export_csv: writes one CSV per table into the chosen folder ----
+    try:
+        import midvatten.tools.export_data as export_data
+        csv_dir = out / "export_csv"
+        shutil.rmtree(csv_dir, ignore_errors=True)
+        csv_dir.mkdir()
+        ctx.clear_selections()
+        ctx.select_some("obs_points", "obsid IN ('OW100','PW1001','Pz0917')")
+        ctx.activate("obs_points")
+        orig = export_data.QFileDialog.getExistingDirectory
+        export_data.QFileDialog.getExistingDirectory = staticmethod(lambda *a, **k: str(csv_dir))
+        cp = ctx.oracles.checkpoint()
+        _drive_modal_accept(ctx, _click_browse)
+        try:
+            dispatch("export_csv")
+        finally:
+            ctx.wait(2500)
+            export_data.QFileDialog.getExistingDirectory = orig
+        _, tbs = ctx.oracles.since(cp)
+        obs_csv = csv_dir / "obs_points.csv"
+        ok = obs_csv.exists() and obs_csv.stat().st_size > 0 and not tbs
+        record("export_csv", ok, f"{len(list(csv_dir.glob('*.csv')))} csv files, "
+               f"obs_points.csv={'present' if obs_csv.exists() else 'MISSING'}")
+    except Exception:
+        record("export_csv", False, "exc: " + traceback.format_exc().splitlines()[-1])
+
+    # -- export_spatialite: writes a valid SpatiaLite DB (round-trip) ----
+    try:
+        import midvatten.tools.create_db_dialogs as cdd
+        spatialite_out = out / "export.sqlite"
+        for p in out.glob("export.sqlite*"):
+            p.unlink()
+        orig = cdd.QFileDialog.getSaveFileName
+        cdd.QFileDialog.getSaveFileName = staticmethod(lambda *a, **k: (str(spatialite_out), ""))
+        cp = ctx.oracles.checkpoint()
+        _drive_modal_accept(ctx, _click_browse)
+        try:
+            dispatch("export_spatialite")
+        finally:
+            ctx.wait(8000)  # config dialog + two progress dialogs + the export
+            cdd.QFileDialog.getSaveFileName = orig
+        _, tbs = ctx.oracles.since(cp)
+        rows = None
+        if spatialite_out.exists():
+            open_database(plugin, str(spatialite_out))
+            ctx.wait(300)
+            rows = ctx.db_count("obs_points")
+        ok = spatialite_out.exists() and rows is not None and not tbs
+        record("export_spatialite", ok, f"file={'yes' if spatialite_out.exists() else 'no'}, "
+               f"obs_points rows={rows}")
+    except Exception:
+        record("export_spatialite", False, "exc: " + traceback.format_exc().splitlines()[-1])
+    finally:
+        # restore the working fixture as the active DB for the report checks
+        open_database(plugin, str(out / "work.sqlite"))
+        ctx.wait(300)
+
+    # -- reports: HTML written to the path handed to (patched) openUrl ---
+    for action_id, obsid_expr, needle in [
+        ("drillreport", "obsid IN ('Pz0917')", "Pz0917"),
+        ("waterqualityreport", "obsid IN ('Pz0917','Pz0918','Pz1005')", "Pz0917"),
+    ]:
+        try:
+            ctx.clear_selections()
+            ctx.select_some("obs_points", obsid_expr)
+            ctx.activate("obs_points")
+            n_before = len(opened_urls)
+            cp = ctx.oracles.checkpoint()
+            dispatch(action_id)
+            ctx.wait(2500)
+            _, tbs = ctx.oracles.since(cp)
+            new_urls = opened_urls[n_before:]
+            html = read_html(new_urls[-1]) if new_urls else ""
+            ok = bool(html) and needle in html and not tbs
+            record(action_id, ok, f"html {len(html)} bytes, "
+                   f"{'has' if needle in html else 'MISSING'} {needle}")
+        except Exception:
+            record(action_id, False, "exc: " + traceback.format_exc().splitlines()[-1])
+
+    summary = {}
+    for r in results:
+        summary[r["status"]] = summary.get(r["status"], 0) + 1
+    return {"results": results, "summary": summary, "opened_urls": opened_urls}
+
+
 def run_create_db(ctx: Context, plugin, out: Path) -> dict:
     """Group A (create half): drive the real New-SpatiaLite-DB dialog to build a
     fresh empty database, then assert the plugin can create, open and load it.
@@ -196,19 +327,23 @@ def main() -> None:
         ctx = Context(plugin, qgis.utils.iface, out, oracles, default_selection=DEFAULT_SELECTION)
         ctx.wait(2000)
 
-        if ns.mode == "coverage":
+        if ns.mode in ("coverage", "outputs"):
             phase("copy_db")
             # Work on a writable copy so the shared fixture stays pristine.
             work_db = out / "work.sqlite"
             shutil.copy(ns.db, work_db)
             phase("open_database")
             open_database(plugin, str(work_db))
-            ctx.install_modal_reaper()
             phase("load_layers")
             report["fixture"] = load_layers(ctx, plugin, out)
-            phase("sweep")
-            report.update(run_coverage(ctx, plugin, out))
-            report["opened_urls"] = opened_urls
+            if ns.mode == "coverage":
+                ctx.install_modal_reaper()  # outputs drives its modals to accept
+                phase("sweep")
+                report.update(run_coverage(ctx, plugin, out))
+                report["opened_urls"] = opened_urls
+            else:
+                phase("outputs")
+                report.update(run_outputs(ctx, plugin, out, opened_urls))
         elif ns.mode == "create_db":
             phase("create_db")
             report.update(run_create_db(ctx, plugin, out))

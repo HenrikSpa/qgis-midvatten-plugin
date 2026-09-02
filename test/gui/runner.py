@@ -27,12 +27,19 @@ from qgis.PyQt.QtWidgets import QApplication, QPushButton
 
 import midvatten.tools.create_db_dialogs as create_db_dialogs
 
-# QGIS runs this via `--code FILE`, an exec context where __file__ is NOT
-# defined -- so the harness directory is the fixed container mount point, not a
-# path derived from __file__ (the wiki runner hardcodes its dir for the same
-# reason). run_gui_tests.py always mounts this worktree at /plugin.
-HERE = "/plugin/test/gui"
-sys.path.insert(0, HERE)
+
+def _harness_dir() -> str:
+    # QGIS runs this via `--code FILE`, an exec context where __file__ is NOT
+    # defined, so the harness dir cannot be derived from __file__ (the wiki
+    # runner hardcodes its dir for the same reason). The driver passes it via
+    # --harness-dir; default is the Docker mount point for the Qt6 container.
+    argv = sys.argv
+    if "--harness-dir" in argv:
+        return argv[argv.index("--harness-dir") + 1]
+    return "/plugin/test/gui"
+
+
+sys.path.insert(0, _harness_dir())
 from harness import Context, Oracles  # noqa: E402
 
 LOAD_ACTIONS = ["add_midvatten_layers", "load_data_domains", "load_data_tables"]
@@ -48,6 +55,7 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--db", default="")
     ap.add_argument("--out", default="/out")
     ap.add_argument("--mode", default="coverage")
+    ap.add_argument("--harness-dir", default="/plugin/test/gui")
     argv = [a for a in sys.argv[1:] if a != "--"]
     return ap.parse_args(argv)
 

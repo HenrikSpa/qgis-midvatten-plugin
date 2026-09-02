@@ -1,5 +1,27 @@
 # Remaining GUI test work — execution plan
 
+## STATUS (2026-09-02) — executed
+- **Phase 1 ✅** regression tests for the 2 fixes: 48 passed (Qt5).
+- **Phase 2 ✅** `--mode controls`: 34/34, every checkbox/combo/tab exercised, no crash.
+- **Phase 3 ✅** `--mode outputs` plot-data: mpl plots assert drawn artists; 8/8.
+- **Phase 4 ✅** `--mode fill`: obs_points/w_levels CSV + DiverOffice logger + interlab4 selectability; 6/6.
+  → **found & fixed Qt6 bug #3** (interlab4 rows unselectable, missing `ItemIsEnabled`).
+- **Phase 5 ✅** `--mode loggereditor`: load series + plot, duplicate detection + resolve dialog; 4/4.
+- **Phase 6 ✅** `--mode dbutils`: backup/view/vacuum/stats/rows side effects; 6/6.
+- **Phase 7 ⚠️** interlab4 selectability fixed (see Phase 4). Other §6 UX findings (calculators default to
+  2099 date range, Piper legend junk, Swedish-only strings) are UX/product decisions — surfaced, not auto-fixed.
+- **Phase 8 ✅** decision: `add_non_essential_tables` is a legacy upgrade action, not a bug (left as-is).
+- **Phase 9 ❌** PostGIS GUI smoke — infra-blocked (container can't reach host 127.0.0.1:5432; `new_postgis_db`
+  mutates the SHARED nosetests db → contention). PostGIS create/import already covered by postgis unit tests.
+- **Phase 10 ✅** `--mode generic_actions`: drive via menu QActions (no manifest), 38 discovered, 38/38.
+  → **found & fixed Qt6 bug #4** (Settings dock `addDockWidget(int)`, not in the manifest so the sweep missed it).
+
+Net: 4 Qt6 bugs found & fixed, 7 test modes, both toolkits. Original plan below.
+
+---
+
+
+
 Follow-on to `2026-09-02-gui-test-pass-plan.md`. That plan's harness (coverage/create_db/fill/outputs
 + Qt5 host) is built and merged. This plan enumerates and sequences everything still untested, from the
 gap analysis of 2026-09-02. Each phase adds a `runner.py` mode (or extends one), runs it in the isolated

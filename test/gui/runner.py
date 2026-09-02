@@ -22,7 +22,7 @@ from pathlib import Path
 import qgis.utils
 from qgis.core import Qgis, QgsApplication, QgsProject
 from qgis.PyQt import sip
-from qgis.PyQt.QtCore import QTimer
+from qgis.PyQt.QtCore import QDateTime, QTimer
 from qgis.PyQt.QtGui import QDesktopServices
 from qgis.PyQt.QtWidgets import QApplication, QPushButton, QWidget
 
@@ -282,6 +282,111 @@ def run_outputs(ctx: Context, plugin, out: Path, opened_urls: list) -> dict:
     for r in results:
         summary[r["status"]] = summary.get(r["status"], 0) + 1
     return {"results": results, "summary": summary, "opened_urls": opened_urls}
+
+
+# Insert seconds-truncated twins (length 16, not 19) of existing OW100 instants
+# so the duplicate-timestamp detection fires. offset 0 = redundant twin (same
+# value), 5 = conflicting twin. Same SQL the wiki logger-editor scene uses.
+_INSERT_DUPES = """
+INSERT INTO w_levels_logger (obsid, date_time, head_cm, temp_degc, series_id)
+SELECT obsid, substr(date_time, 1, 16), head_cm + ?, temp_degc, series_id
+FROM (SELECT obsid, date_time, head_cm, temp_degc, series_id
+      FROM w_levels_logger WHERE obsid = ? AND length(date_time) = 19
+      ORDER BY date_time LIMIT 3 OFFSET ?)
+"""
+
+
+def run_loggereditor(ctx: Context, plugin, out: Path) -> dict:
+    """Phase 5: the LoggerEditor's critical path -- load a series (plot draws),
+    then the duplicate-timestamp workflow: insert seconds-truncated twins into
+    the writable DB copy, reload, and assert the Resolve-duplicates banner
+    appears and its dialog opens. Runs in its own container (LoggerEditor +
+    plots in one process segfaults on teardown, GUI_AUTOMATION §4)."""
+    import sqlite3
+
+    results = []
+    report_path = out / "gui_test_report.json"
+    work_db = str(out / "work.sqlite")
+    obsid, other = "OW100", "PW1001"
+    dfrom, dto = "2010-12-10 10:10:00", "2012-06-26 10:00:00"
+
+    def record(name, passed, detail):
+        results.append({"id": name, "status": "ok" if passed else "FAIL", "detail": detail})
+        report_path.write_text(json.dumps({"mode": "loggereditor", "partial": True, "results": results}, indent=2))
+
+    spec = next(s for s in plugin._actions_manifest if s.id == "wlvlloggcalibrate")
+    cp = ctx.oracles.checkpoint()
+    plugin._dispatch(spec)
+    ctx.wait(2000)
+    tool = plugin._open_tools.get("wlvlloggcalibrate") or _visible_tool(ctx, "LoggerEditor")
+    if tool is None:
+        record("open_editor", False, "LoggerEditor did not open")
+        return {"results": results, "summary": {"FAIL": 1}}
+    tool.resize(1500, 900)
+
+    def load(which, wait=4000):
+        combo = tool.combobox_obsid
+        idx = next((i for i in range(combo.count()) if combo.itemText(i).split(" ")[0] == which), -1)
+        if idx >= 0:
+            combo.setCurrentIndex(idx)
+        ctx.wait(wait)
+        fmt = "yyyy-MM-dd HH:mm:ss"
+        tool.from_date_time.setDateTime(QDateTime.fromString(dfrom, fmt))
+        tool.to_date_time.setDateTime(QDateTime.fromString(dto, fmt))
+        ctx.wait(800)
+
+    # 1. load OW100 series -> the plot must draw the logger data
+    load(obsid)
+    has_canvas, drew = _plot_state(tool)
+    _, tbs = ctx.oracles.since(cp)
+    record("load_series", drew and not tbs, f"OW100 loaded, plot drew data={drew}, canvas={has_canvas}")
+
+    # 2. insert duplicate rows into the writable copy (drop the unique index it
+    #    would otherwise forbid), then reload the editor to re-read the table.
+    try:
+        conn = sqlite3.connect(work_db, timeout=30)
+        with conn:
+            conn.execute("DROP INDEX IF EXISTS uq_w_levels_logger_obsid_dt")
+        with conn:
+            conn.execute(_INSERT_DUPES, (0.0, obsid, 4000))
+            conn.execute(_INSERT_DUPES, (5.0, obsid, 12000))
+        conn.close()
+        dupes = ctx.db_scalar(
+            f"SELECT count(*) FROM w_levels_logger WHERE obsid='{obsid}' AND length(date_time)<>19")
+        record("insert_duplicates", (dupes or 0) > 0, f"{dupes} short-timestamp rows inserted")
+    except Exception:
+        record("insert_duplicates", False, "exc: " + traceback.format_exc().splitlines()[-1])
+        dupes = 0
+
+    cp2 = ctx.oracles.checkpoint()
+    load(other, 3000)
+    load(obsid)
+
+    # 3. the Resolve-duplicates banner/button must appear
+    btn = next((b for b in tool.findChildren(QPushButton)
+                if b.text().startswith("Resolve duplicates")), None)
+    record("duplicate_banner", btn is not None and btn.isVisible(),
+           f"resolve button present={btn is not None and (btn.isVisible() if btn else False)}")
+
+    # 4. clicking it opens the Resolve-duplicate-timestamps dialog
+    if btn is not None and btn.isVisible():
+        btn.click()
+        ctx.wait(1200)
+        dlg = next((w for w in QApplication.topLevelWidgets()
+                    if w.isVisible() and w.windowTitle().startswith("Resolve duplicate timestamps")), None)
+        _, tbs2 = ctx.oracles.since(cp2)
+        record("resolve_dialog_opens", dlg is not None and not tbs2,
+               f"dialog opened={dlg is not None}")
+        if dlg is not None:
+            ctx.grab(dlg, "loggereditor_resolve_dialog")
+            dlg.close()
+            ctx.wait(300)
+    ctx.close_tools()
+
+    summary = {}
+    for r in results:
+        summary[r["status"]] = summary.get(r["status"], 0) + 1
+    return {"results": results, "summary": summary}
 
 
 def run_controls(ctx: Context, plugin, out: Path) -> dict:
@@ -681,7 +786,7 @@ def main() -> None:
         ctx = Context(plugin, qgis.utils.iface, out, oracles, default_selection=DEFAULT_SELECTION)
         ctx.wait(2000)
 
-        if ns.mode in ("coverage", "outputs", "controls"):
+        if ns.mode in ("coverage", "outputs", "controls", "loggereditor"):
             phase("copy_db")
             # Work on a writable copy so the shared fixture stays pristine.
             work_db = out / "work.sqlite"
@@ -698,6 +803,9 @@ def main() -> None:
             elif ns.mode == "controls":
                 phase("controls")
                 report.update(run_controls(ctx, plugin, out))
+            elif ns.mode == "loggereditor":
+                phase("loggereditor")
+                report.update(run_loggereditor(ctx, plugin, out))
             else:
                 phase("outputs")
                 report.update(run_outputs(ctx, plugin, out, opened_urls))

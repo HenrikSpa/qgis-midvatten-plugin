@@ -396,7 +396,11 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
             self.ms,
         )
 
-        self.iface.addDockWidget(max(self.ms.settingsdict["secplotlocation"], 1), self)
+        # Qt6's addDockWidget requires a Qt.DockWidgetArea, not the bare int the
+        # setting stores; Qt.DockWidgetArea(int) constructs it on both Qt5 and Qt6.
+        self.iface.addDockWidget(
+            Qt.DockWidgetArea(max(self.ms.settingsdict["secplotlocation"], 1)), self
+        )
         self.iface.mapCanvas().setRenderFlag(True)
 
         self.temptable_name = "temporary_section_line"

@@ -72,8 +72,18 @@ def main(argv: list[str] | None = None) -> int:
         print("runner error:\n" + report["error"], file=sys.stderr)
         return 2
 
-    print(f"\nfixture: {report.get('fixture')}")
-    print(f"oracle totals: {report.get('oracle_totals')}\n")
+    print(f"\noracle totals: {report.get('oracle_totals')}")
+
+    # create_db mode: a single result with a checks dict.
+    if "checks" in report:
+        print(f"target: {report.get('target')}\nabout_db: {report.get('about_db')}\n")
+        for name, passed in report["checks"].items():
+            print(f"[{'  ok  ' if passed else 'FAIL !'}] {name}")
+        print(f"\nstatus: {report.get('status')}")
+        return 1 if report.get("status") != "ok" else 0
+
+    # coverage mode: a table of per-action results.
+    print(f"fixture: {report.get('fixture')}\n")
     for r in report.get("results", []):
         mark = {"ok": "  ok  ", "blocked": "block ", "no-window": "  --  "}.get(r["status"], "FAIL !")
         print(f"[{mark}] {r['menu']:>7} {r['id']:<34} {r.get('detail', '')}")

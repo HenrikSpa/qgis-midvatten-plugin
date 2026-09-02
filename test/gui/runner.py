@@ -23,6 +23,9 @@ import qgis.utils
 from qgis.core import QgsApplication, QgsProject
 from qgis.PyQt.QtCore import QTimer
 from qgis.PyQt.QtGui import QDesktopServices
+from qgis.PyQt.QtWidgets import QApplication, QPushButton
+
+import midvatten.tools.create_db_dialogs as create_db_dialogs
 
 # QGIS runs this via `--code FILE`, an exec context where __file__ is NOT
 # defined -- so the harness directory is the fixed container mount point, not a
@@ -105,6 +108,69 @@ def run_coverage(ctx: Context, plugin, out: Path) -> dict:
     return {"results": results, "summary": summary}
 
 
+def run_create_db(ctx: Context, plugin, out: Path) -> dict:
+    """Group A (create half): drive the real New-SpatiaLite-DB dialog to build a
+    fresh empty database, then assert the plugin can create, open and load it.
+
+    The dialog is driven like a user -- the native save-picker is patched and the
+    dialog's own Browse button clicked, then OK pressed -- rather than writing its
+    private widgets. No global modal reaper here: this mode drives its one modal
+    itself and must accept (not reject) it."""
+    target = out / f"created_{os.getpid()}.sqlite"
+    target.unlink(missing_ok=True)
+    orig_picker = create_db_dialogs.QFileDialog.getSaveFileName
+    create_db_dialogs.QFileDialog.getSaveFileName = staticmethod(lambda *a, **k: (str(target), ""))
+
+    driven = {"ok": False}
+
+    def drive():
+        dlg = QApplication.activeModalWidget()
+        if dlg is None:
+            QTimer.singleShot(200, drive)
+            return
+        for button in dlg.findChildren(QPushButton):
+            if "rowse" in button.text().lower():
+                button.click()  # runs _browse_path -> patched picker -> path field
+                break
+        driven["ok"] = True
+        dlg.accept()
+
+    cp = ctx.oracles.checkpoint()
+    QTimer.singleShot(500, drive)
+    spec = next(s for s in plugin._actions_manifest if s.id == "new_db")
+    try:
+        plugin._dispatch(spec)  # blocks in dialog.exec() until drive() accepts
+    finally:
+        ctx.wait(2500)
+        create_db_dialogs.QFileDialog.getSaveFileName = orig_picker
+
+    # new_db() set the freshly-built DB as the active one; point the harness's
+    # connection at it explicitly, then assert the schema.
+    open_database(plugin, str(target))
+    ctx.wait(500)
+    _, tbs = ctx.oracles.since(cp)
+    description = ctx.db_scalar("SELECT description FROM about_db LIMIT 1")
+
+    load_spec = next((s for s in plugin._actions_manifest if s.id == "add_midvatten_layers"), None)
+    if load_spec is not None:
+        plugin._dispatch(load_spec)
+        ctx.wait(1500)
+
+    checks = {
+        "dialog_driven_and_accepted": driven["ok"],
+        "db_file_created": target.exists(),
+        "about_db_version_present": bool(description and "Midvatten" in str(description)),
+        "core_tables_present": ctx.db_count("obs_points") is not None
+        and ctx.db_count("w_levels") is not None,
+        "obs_points_empty": ctx.db_count("obs_points") == 0,
+        "layers_loadable": ctx.layer("obs_points") is not None,
+        "no_tracebacks": len(tbs) == 0,
+    }
+    status = "ok" if all(checks.values()) else "FAIL"
+    return {"status": status, "checks": checks, "target": str(target),
+            "about_db": str(description)}
+
+
 def main() -> None:
     ns = parse_args()
     out = Path(ns.out)
@@ -115,11 +181,6 @@ def main() -> None:
         (out / "phase.txt").write_text(name + "\n")
 
     try:
-        phase("copy_db")
-        # Work on a writable copy so the shared fixture stays pristine.
-        work_db = out / "work.sqlite"
-        shutil.copy(ns.db, work_db)
-
         # Report tools open HTML in the system browser; under Xvfb that can
         # spawn a helper that hangs. Neutralise it and record the URLs instead.
         opened_urls: list[str] = []
@@ -129,23 +190,28 @@ def main() -> None:
         plugin = start_plugin()
         oracles = Oracles()
         oracles.install()
-
-        phase("open_database")
-        open_database(plugin, str(work_db))
         mw = qgis.utils.iface.mainWindow()
         mw.resize(1600, 1000)
         mw.showMaximized()
-
         ctx = Context(plugin, qgis.utils.iface, out, oracles, default_selection=DEFAULT_SELECTION)
-        ctx.install_modal_reaper()
         ctx.wait(2000)
-        phase("load_layers")
-        report["fixture"] = load_layers(ctx, plugin, out)
-        phase("sweep")
 
         if ns.mode == "coverage":
+            phase("copy_db")
+            # Work on a writable copy so the shared fixture stays pristine.
+            work_db = out / "work.sqlite"
+            shutil.copy(ns.db, work_db)
+            phase("open_database")
+            open_database(plugin, str(work_db))
+            ctx.install_modal_reaper()
+            phase("load_layers")
+            report["fixture"] = load_layers(ctx, plugin, out)
+            phase("sweep")
             report.update(run_coverage(ctx, plugin, out))
             report["opened_urls"] = opened_urls
+        elif ns.mode == "create_db":
+            phase("create_db")
+            report.update(run_create_db(ctx, plugin, out))
         else:
             report["error"] = f"unknown mode {ns.mode!r}"
 

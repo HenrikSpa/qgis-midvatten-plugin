@@ -19,6 +19,29 @@ So the harness runs. The work below is turning the *screenshot* harness into a *
 enumerating the tests. Nothing here requires new infrastructure — only assertions on top of the
 existing `Context`/`runner.py`/`shoot.py` mechanism.
 
+## Status (2026-09-02) — IMPLEMENTED
+
+The harness now lives in this repo at `test/gui/` (`harness.py`, `runner.py`, `run_gui_tests.py`), on
+branch `gui-test-pass`. Built and verified against the plugin (Qt6 Docker + Qt5 host):
+
+- **Oracles + harness** (§1): message-log listener, `sys.excepthook`, Qt message handler, continuous
+  modal reaper, writable-DB-copy fixture, incremental crash-safe reporting.
+- **`--mode coverage`** (Group B): all 34 actions. **Qt6: 23 ok / 0 FAIL / 11 windowless-ok.**
+  **Qt5 (host): 22 ok / 1 FAIL** (the FAIL is a fixture artifact — `add_non_essential_tables`
+  re-CREATE-ing tables the full tutorial DB already has).
+- **`--mode create_db`** (Group A create): drives the real New-DB dialog → fresh DB; 7 checks pass.
+- **`--mode fill`** (Group A fill): empty DB → CSV importer → obs_points 0→69, w_levels 0→7447,
+  idempotent re-import, 0 tracebacks.
+- **`--mode outputs`** (Group D): export_csv (22 files), export_spatialite round-trip (3 rows),
+  drill + water-quality reports (non-empty HTML with the obsid). All pass.
+- **Qt5 host variant** (§5): same scenes on host QGIS 3.44/Qt5 via `--host`, isolated in Xvfb
+  (`QT_QPA_PLATFORM=xcb`, drop `WAYLAND_DISPLAY`, `PYTHONNOUSERSITE=1`).
+- **Two Qt6 bugs found + fixed** (§6/E): `plot_section` `addDockWidget(int)`,
+  `compact_w_qual_report.ui` removed combo enum. Both confirmed working on Qt5 too; the coverage sweep
+  (now 0 FAIL) is their regression pin.
+
+Remaining niceties: plots-produce-data / calculator-mutation assertions (Group D), and §7 below.
+
 ## 1. Screenshot scene → test: what changes
 
 The existing scenes already drive the GUI like a user (click Browse with a patched picker, select

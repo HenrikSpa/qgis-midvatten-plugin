@@ -471,6 +471,91 @@ def run_controls(ctx: Context, plugin, out: Path) -> dict:
     return {"results": results, "summary": summary}
 
 
+def run_dbutils(ctx: Context, plugin, out: Path) -> dict:
+    """Phase 6: assert the DB-management / utility callback actions' real side
+    effects (not just that dispatch returned). Backup/view/vacuum/stats run on
+    the writable tutorial copy; add_non_essential_tables runs on a FRESH empty
+    DB (on the full fixture it correctly fails -- the tables already exist)."""
+    results = []
+    report_path = out / "gui_test_report.json"
+
+    def record(name, passed, detail):
+        results.append({"id": name, "status": "ok" if passed else "FAIL", "detail": detail})
+        report_path.write_text(json.dumps({"mode": "dbutils", "partial": True, "results": results}, indent=2))
+
+    def dispatch(action_id):
+        plugin._dispatch(next(s for s in plugin._actions_manifest if s.id == action_id))
+
+    def obj_exists(kind, name):
+        return (ctx.db_scalar(
+            f"SELECT count(*) FROM sqlite_master WHERE type='{kind}' AND name='{name}'") or 0) > 0
+
+    # -- zip_db: writes exactly one new backup .zip next to the open DB ---
+    try:
+        before = set(out.glob("*.zip"))
+        cp = ctx.oracles.checkpoint()
+        dispatch("zip_db")
+        ctx.wait(1000)
+        _, tbs = ctx.oracles.since(cp)
+        new_zips = set(out.glob("*.zip")) - before
+        record("zip_db", len(new_zips) == 1 and not tbs, f"{len(new_zips)} new .zip written")
+        for z in new_zips:
+            z.unlink()
+    except Exception:
+        record("zip_db", False, "exc: " + traceback.format_exc().splitlines()[-1])
+
+    # -- add_view_obs_points_lines: creates view_obs_points / view_obs_lines --
+    try:
+        cp = ctx.oracles.checkpoint()
+        dispatch("add_view_obs_points_lines")
+        ctx.wait(800)
+        _, tbs = ctx.oracles.since(cp)
+        ok = obj_exists("view", "view_obs_points") and obj_exists("view", "view_obs_lines") and not tbs
+        record("add_view_obs_points_lines", ok, f"view_obs_points exists={obj_exists('view', 'view_obs_points')}")
+    except Exception:
+        record("add_view_obs_points_lines", False, "exc: " + traceback.format_exc().splitlines()[-1])
+
+    # -- vacuum_db: runs, DB stays queryable ----------------------------
+    for action_id in ("vacuum_db", "refresh_spatialite_stats", "calculate_db_table_rows"):
+        try:
+            rows_before = ctx.db_count("obs_points")
+            cp = ctx.oracles.checkpoint()
+            dispatch(action_id)
+            ctx.wait(1200)
+            _, tbs = ctx.oracles.since(cp)
+            rows_after = ctx.db_count("obs_points")
+            crit = [m for m in ctx.oracles.since(cp)[0] if m["level"] >= int(Qgis.Critical)]
+            ok = not tbs and not crit and rows_after == rows_before
+            record(action_id, ok, f"ran, obs_points {rows_before}->{rows_after}, no traceback={not tbs}")
+        except Exception:
+            record(action_id, False, "exc: " + traceback.format_exc().splitlines()[-1])
+
+    # -- add_non_essential_tables: a LEGACY UPGRADE action. Modern DBs (fresh
+    #    or the full fixture) already ship these tables (w_qual_logger,
+    #    spatial_history, tem_data), so on any current DB it is a no-op whose
+    #    internal CREATE rolls back (silent on Qt6, a Critical on Qt5 -- that is
+    #    the coverage-sweep FAIL, NOT a bug). Assert it leaves the tables
+    #    present and raises no Python traceback on a fresh DB.
+    try:
+        _create_fresh_db(ctx, plugin, out)  # switches active DB to the fresh one
+        had_before = obj_exists("table", "w_qual_logger")
+        cp = ctx.oracles.checkpoint()
+        dispatch("add_non_essential_tables")
+        ctx.wait(1200)
+        _, tbs = ctx.oracles.since(cp)
+        present = obj_exists("table", "w_qual_logger") and obj_exists("table", "tem_data")
+        ok = present and not tbs
+        record("add_non_essential_tables", ok,
+               f"legacy no-op: tables present before={had_before}, after={present}, no traceback={not tbs}")
+    except Exception:
+        record("add_non_essential_tables", False, "exc: " + traceback.format_exc().splitlines()[-1])
+
+    summary = {}
+    for r in results:
+        summary[r["status"]] = summary.get(r["status"], 0) + 1
+    return {"results": results, "summary": summary}
+
+
 def _create_fresh_db(ctx: Context, plugin, out: Path) -> tuple[Path, bool]:
     """Drive the real New-SpatiaLite-DB dialog to build a fresh empty database,
     set it as the active DB, and load its default layers. Returns (path, driven).
@@ -786,7 +871,7 @@ def main() -> None:
         ctx = Context(plugin, qgis.utils.iface, out, oracles, default_selection=DEFAULT_SELECTION)
         ctx.wait(2000)
 
-        if ns.mode in ("coverage", "outputs", "controls", "loggereditor"):
+        if ns.mode in ("coverage", "outputs", "controls", "loggereditor", "dbutils"):
             phase("copy_db")
             # Work on a writable copy so the shared fixture stays pristine.
             work_db = out / "work.sqlite"
@@ -806,6 +891,9 @@ def main() -> None:
             elif ns.mode == "loggereditor":
                 phase("loggereditor")
                 report.update(run_loggereditor(ctx, plugin, out))
+            elif ns.mode == "dbutils":
+                phase("dbutils")
+                report.update(run_dbutils(ctx, plugin, out))
             else:
                 phase("outputs")
                 report.update(run_outputs(ctx, plugin, out, opened_urls))

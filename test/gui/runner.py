@@ -550,6 +550,36 @@ def run_fill(ctx: Context, plugin, out: Path, csv_dir: Path) -> dict:
         midvatten_utils.select_files = orig
         record("import_logger", False, "exc: " + traceback.format_exc().splitlines()[-1])
 
+    # -- import_interlab4: parse the .lab and confirm rows are SELECTABLE ----
+    # (the table items must carry ItemIsEnabled, else selectAll() selects
+    # nothing on Qt6 and the importer can't read a selection -- a Qt6 bug).
+    try:
+        lab_path = str(csv_dir.parent / "lab" / "interlab4_tutorial.lab")
+        orig = midvatten_utils.select_files
+        midvatten_utils.select_files = lambda *a, **k: [lab_path]
+        cp = ctx.oracles.checkpoint()
+        spec = next(s for s in plugin._actions_manifest if s.id == "import_interlab4")
+        plugin._dispatch(spec)
+        dlg = _visible_tool(ctx, "Interlab4Import")
+        parsed = selected = 0
+        if dlg is not None:
+            dlg.skip_imported_reports.setChecked(False)
+            dlg.select_files_button.click()  # parse -> build table -> selectAll()
+            ctx.wait(1500)
+            parsed = len(getattr(dlg, "all_lab_results", {}) or {})
+            table = getattr(getattr(dlg, "metadata_filter", None), "table", None)
+            if table is not None:
+                selected = len({it.row() for it in table.selectedItems()})
+            ctx.close_tools()
+        midvatten_utils.select_files = orig
+        _, tbs = ctx.oracles.since(cp)
+        ok = parsed > 0 and selected > 0 and not tbs
+        record("interlab4_parse_and_select", ok,
+               f"parsed {parsed} lablitteras, {selected} rows selectable (Qt6 flag fix)")
+    except Exception:
+        midvatten_utils.select_files = orig
+        record("interlab4_parse_and_select", False, "exc: " + traceback.format_exc().splitlines()[-1])
+
     # idempotency: re-importing obs_points must not duplicate rows.
     try:
         csv_path = str(csv_dir / "obs_points.csv")

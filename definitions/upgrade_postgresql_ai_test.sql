@@ -667,3 +667,22 @@ VALUES
     ('PVC solid', 'none', 'black', '',    1.5),
     ('stainless', 'none', 'black', 'xx',  1.0)
 ON CONFLICT DO NOTHING;
+
+-- =============================================================================
+-- 16. Record the new database version
+--
+-- warn_about_old_database() reads the FIRST about_db row, extracts the number
+-- after "Midvatten plugin ", and compares it to latest_database_version()
+-- (currently "1.11.1"). Until now this upgrade left the old creation-version in
+-- place, so an upgraded DB kept being flagged as old. Rewrite just that version
+-- number to the schema version this migration produces, preserving the QGIS and
+-- PostGIS parts of the string. Idempotent: re-running rewrites 1.11.1 -> 1.11.1.
+-- =============================================================================
+
+UPDATE about_db
+SET description = regexp_replace(
+        description,
+        'Midvatten plugin [0-9][0-9ab.]*',
+        'Midvatten plugin 1.11.1'
+    )
+WHERE description LIKE 'This db was created by Midvatten plugin %';

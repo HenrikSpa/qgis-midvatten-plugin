@@ -678,18 +678,19 @@ ON CONFLICT DO NOTHING;
 -- =============================================================================
 -- 16. Record the new database version
 --
--- warn_about_old_database() reads the FIRST about_db row, extracts the number
--- after "Midvatten plugin ", and compares it to latest_database_version()
--- (currently "1.11.1"). Until now this upgrade left the old creation-version in
--- place, so an upgraded DB kept being flagged as old. Rewrite just that version
--- number to the schema version this migration produces, preserving the QGIS and
--- PostGIS parts of the string. Idempotent: re-running rewrites 1.11.1 -> 1.11.1.
+-- warn_about_old_database() reads the "created by Midvatten plugin ..." row,
+-- extracts the version after "Midvatten plugin ", and warns if it is older than
+-- latest_database_version(). Until now this upgrade left the old creation-version
+-- in place, so an upgraded DB kept being flagged as old. Rewrite just that
+-- version number to 2.0.0 (matching what a freshly-created 2.0 database stores),
+-- preserving the QGIS and PostGIS parts of the string. Idempotent: re-running
+-- rewrites 2.0.0 -> 2.0.0.
 -- =============================================================================
 
 UPDATE about_db
 SET description = regexp_replace(
         description,
         'Midvatten plugin [0-9][0-9ab.]*',
-        'Midvatten plugin 1.11.1'
+        'Midvatten plugin 2.0.0'
     )
 WHERE description LIKE 'This db was created by Midvatten plugin %';

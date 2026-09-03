@@ -369,7 +369,14 @@ def warn_about_old_database() -> None:
 
     try:
         try:
-            dbconnection.cursor.execute("""SELECT description FROM about_db LIMIT 1""")
+            # Target the version-marker row directly. A bare "LIMIT 1" returned
+            # an arbitrary row (physical order is unspecified and shifts after
+            # UPDATEs), so the version could be missed and this check silently
+            # skipped. Only the "created by Midvatten plugin ..." row contains
+            # that text, so this reliably reads it regardless of row order.
+            dbconnection.cursor.execute(
+                """SELECT description FROM about_db WHERE description LIKE '%Midvatten plugin%' LIMIT 1"""
+            )
             rows = dbconnection.cursor.fetchall()
         except Exception as e:
             message_utils.MessagebarAndLog.warning(

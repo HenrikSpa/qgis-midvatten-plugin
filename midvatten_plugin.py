@@ -355,15 +355,12 @@ def _make_actions(plugin: "Midvatten") -> list[ActionSpec]:
             menu="db",
             callback=lambda: db_utils.backup_db(),
         ),
-        ActionSpec(
-            id="add_non_essential_tables",
-            label=QCoreApplication.translate(
-                "Midvatten", "Add non-essential data tables"
-            ),
-            icon="create_new.xmp",
-            menu="db",
-            callback=lambda: midvatten_utils.add_non_essential_tables(),
-        ),
+        # NB: no "Add non-essential data tables" menu action. The tables it
+        # created (w_qual_logger, spatial_history, tem_data) are now part of the
+        # standard create_db.sql, so on any modern database the action only ever
+        # errored ("table already exists"). The midvatten_utils.add_non_essential_tables
+        # function is kept (midv_addons' tests still call it), just not exposed
+        # as a menu item.
         # ── Utils ───────────────────────────────────────────────────
         ActionSpec(
             id="load_data_domains",

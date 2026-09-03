@@ -590,25 +590,9 @@ def run_dbutils(ctx: Context, plugin, out: Path) -> dict:
         except Exception:
             record(action_id, False, "exc: " + traceback.format_exc().splitlines()[-1])
 
-    # -- add_non_essential_tables: a LEGACY UPGRADE action. Modern DBs (fresh
-    #    or the full fixture) already ship these tables (w_qual_logger,
-    #    spatial_history, tem_data), so on any current DB it is a no-op whose
-    #    internal CREATE rolls back (silent on Qt6, a Critical on Qt5 -- that is
-    #    the coverage-sweep FAIL, NOT a bug). Assert it leaves the tables
-    #    present and raises no Python traceback on a fresh DB.
-    try:
-        _create_fresh_db(ctx, plugin, out)  # switches active DB to the fresh one
-        had_before = obj_exists("table", "w_qual_logger")
-        cp = ctx.oracles.checkpoint()
-        dispatch("add_non_essential_tables")
-        ctx.wait(1200)
-        _, tbs = ctx.oracles.since(cp)
-        present = obj_exists("table", "w_qual_logger") and obj_exists("table", "tem_data")
-        ok = present and not tbs
-        record("add_non_essential_tables", ok,
-               f"legacy no-op: tables present before={had_before}, after={present}, no traceback={not tbs}")
-    except Exception:
-        record("add_non_essential_tables", False, "exc: " + traceback.format_exc().splitlines()[-1])
+    # (add_non_essential_tables was removed from the menu -- the tables it made
+    # are now in create_db.sql, so it only ever errored on modern DBs. The
+    # function is kept for midv_addons but is no longer a dispatchable action.)
 
     summary = {}
     for r in results:

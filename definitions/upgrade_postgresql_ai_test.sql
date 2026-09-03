@@ -148,9 +148,16 @@ CREATE TABLE IF NOT EXISTS screen (
     screenshort text,
     screen      text,
     comment     text,
+    diam_inner  double precision,
+    diam_outer  double precision,
     UNIQUE (obsid, screenid),
     FOREIGN KEY (obsid) REFERENCES obs_points(obsid)
 );
+
+-- diam_inner/diam_outer must also be added when `screen` already exists from a
+-- partial earlier run (CREATE TABLE IF NOT EXISTS would skip the block above).
+ALTER TABLE screen ADD COLUMN IF NOT EXISTS diam_inner double precision;
+ALTER TABLE screen ADD COLUMN IF NOT EXISTS diam_outer double precision;
 
 -- =============================================================================
 -- 5. New table: tem_data

@@ -1,7 +1,7 @@
 # Logger series — upgrade and direct-SQL reference
 
 This document covers two things that come up when moving to the new
-`w_logger_series` schema (DB version `1.10.0` and later):
+`w_logger_series` schema (Midvatten 2.0.0 and later):
 
 1. How to upgrade an existing database to the new schema.
 2. How to use the new schema from direct SQL (spatialite_gui, psql, or
@@ -48,8 +48,14 @@ archive the old one.
 ## Upgrading an existing PostgreSQL/PostGIS database
 
 Midvatten does not automate PostgreSQL upgrades because schema DDL
-permissions vary per deployment. A DBA (or a user with the required
-permissions) should run this SQL:
+permissions vary per deployment. The **complete, tested, idempotent**
+upgrade ships as `definitions/upgrade_postgresql_to_2_0_0.sql` — run that
+file (as a database owner). Besides `w_logger_series` it also installs
+`midv_to_instant()`, de-duplicates readings and rebuilds the normalized
+unique indexes, and bumps the `about_db` version marker. **Prefer it.**
+
+The SQL below is a minimal illustration of just the `w_logger_series`
+portion, for readers who want to understand that one step in isolation:
 
 ```sql
 BEGIN;
@@ -90,12 +96,12 @@ WHERE s.obsid = l.obsid
 -- old column around as dead metadata during a transition period.
 ALTER TABLE w_levels_logger DROP COLUMN source;
 
--- 6. Update the recorded DB version. The exact row depends on how
--- about_db is populated on your installation; adjust the WHERE clause
--- accordingly, or re-create the DB with the plugin to refresh it.
+-- 6. Update the recorded version marker in about_db. The marker row is
+-- "This db was created by Midvatten plugin X.Y.Z"; this rewrites whatever
+-- version it holds to 2.0.0 (same as upgrade_postgresql_to_2_0_0.sql does).
 UPDATE about_db
-SET description = REPLACE(description, 'version 1.9.0', 'version 1.10.0')
-WHERE description LIKE '%version 1.9.0%';
+SET description = regexp_replace(description, 'Midvatten plugin [0-9][0-9ab.]*', 'Midvatten plugin 2.0.0')
+WHERE description LIKE 'This db was created by Midvatten plugin %';
 
 COMMIT;
 ```

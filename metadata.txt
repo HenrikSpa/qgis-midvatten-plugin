@@ -41,7 +41,7 @@ changelog=
           - Interlab4 import: Destination table toggle (w_qual_lab / s_qual_lab); bulk obsid assignment dialog with search, fill, skip and sort that keeps an in-session draft and no longer blocks the QGIS main window, so missing obs_points can be created and reloaded while assigning; parsing problems are collected into a single summary; UTF-16 files no longer trigger an unnecessary charset question.
           - FieldLogger: Import and export support FieldForm; settings changes update the open export dialog in place; resizable, scrollable export preview; fixed empty import window on cancelled file dialog and "wrapped C/C++ object ... has been deleted" errors.
           - SectionPlot: Support for TEM2Go data with fit plotting and gaps, background images (for example resistivity), a well screen overlay with configurable style, reverse x-axis button, clip checkbox, a button to detach the figure, and the section line name in the x-axis label; right-click flashes the distance on the section line; profile line layers without an obsid column are supported.
-          - Reports: Drill reports, custom drill reports and Piper plots show a progress dialog with a working Cancel button.
+          - Reports: Drill reports and custom drill reports show a progress dialog with a working Cancel button.
           - Export CSV: New export dialog with an option to convert HTML rich-text fields to plain text (default on), fixing broken rows in Excel/LibreOffice.
           - Load layers: Added a screens tab linked to obs_points in the form view.
           - CustomPlot: Added a style-fix dialog to repair plot templates across matplotlib versions.

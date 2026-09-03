@@ -170,7 +170,7 @@ python3 tools/screenshots/shoot.py pack                                         
 python3 tools/screenshots/shoot.py exec -- python3 tools/tutorial_data/check_project.py
 ```
 
-**What the database contains** (schema 1.11.1, locale `en_US`, EPSG 3006, site datum ~316 m a.s.l.;
+**What the database contains** (schema 2.0.0, locale `en_US`, EPSG 3006, site datum ~316 m a.s.l.;
 the 2016 outlier OW100 sits at 41.7 m):
 
 | Table | Rows | Notes for tests |

@@ -58,7 +58,7 @@ release agent to judge. Ordered by severity.
 13. `metadata.txt` changelog claims a progress dialog with Cancel for Piper plots; `tools/piper.py` has none
     (only a waiting cursor). Drop the claim or add the dialog.
 14. i18n: the `w_qual_lab` cleaning notice and its log summary are Swedish-only strings.
-15. `docs/LOGGER_SERIES_MIGRATION.md` says DB version 1.10.0; `definitions/db_defs.py` is 1.11.1.
+15. ~~`docs/LOGGER_SERIES_MIGRATION.md` says DB version 1.10.0; `definitions/db_defs.py` is 1.11.1.~~ **RESOLVED 2026-09-03:** the DB version *is* the plugin version (about_db stamps `Midvatten plugin X.Y.Z`); `db_defs.latest_database_version()` is now `2.0.0`. `LOGGER_SERIES_MIGRATION.md` still uses the old `1.10.0` / `version X.Y.Z` scheme (wrong marker format) and needs its own rewrite — tracked separately.
 
 ## Schema
 16. `screen.obsid` FK has no `ON DELETE/UPDATE CASCADE`, unlike every other child table (create_db.sql:167).

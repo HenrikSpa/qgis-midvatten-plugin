@@ -223,6 +223,32 @@ class CalibrloggerMixin:
         assert test == ref
 
     @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_uncalibrated_series_period_starts_before_first_reading(
+        self, mock_messagebar
+    ):
+        """With no calculated reading, From must precede the first reading so
+        that Calculate covers the whole series; To stays at the far future."""
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, head_cm, level_masl) VALUES ('rb1', '2017-02-01 00:00', 50, NULL)"
+        )
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels_logger (obsid, date_time, head_cm, level_masl) VALUES ('rb1', '2017-03-01 00:00', 100, NULL)"
+        )
+        calibrlogger = LoggerEditor(self.iface, self.midvatten.ms)
+        calibrlogger.show()
+        gui_utils.set_combobox(calibrlogger.combobox_obsid, "rb1 (uncalibrated)")
+        calibrlogger.update_plot()
+
+        fr = calibrlogger.from_date_time.dateTime().toPyDateTime()
+        to = calibrlogger.to_date_time.dateTime().toPyDateTime()
+        print(f"{mock_messagebar.mock_calls=}")
+        assert fr < datetime.datetime(2017, 2, 1, 0, 0)
+        assert fr >= datetime.datetime(2017, 1, 31, 23, 59, 59)
+        assert to == datetime.datetime(2099, 12, 31, 23, 59, 59)
+        assert calibrlogger.logger_elevation.text() == ""
+
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
     def test_editor_starts_without_loading_an_obsid(self, mock_messagebar):
         """Editor starts clean: obsids are available but none is selected or
         loaded until the user picks one."""

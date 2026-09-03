@@ -3113,8 +3113,17 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                     to_date(last_calibration[0][0]) + datetime.timedelta(milliseconds=1)
                 )
             else:
+                # Never calculated: start the period just before the first
+                # reading so that Calculate covers the whole series, instead
+                # of an empty 2099-2099 period the user had to widen by hand.
                 self.logger_elevation.setText("")
-                self.from_date_time.setDateTime(to_date("2099-12-31 23:59:59"))
+                if self._buf is not None and len(self._buf.index) > 0:
+                    first = self._buf.index.min()
+                    self.from_date_time.setDateTime(
+                        first - datetime.timedelta(milliseconds=1)
+                    )
+                else:
+                    self.from_date_time.setDateTime(to_date("2099-12-31 23:59:59"))
         except Exception as e:
             message_utils.MessagebarAndLog.info(
                 log_msg=QCoreApplication.translate(

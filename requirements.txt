@@ -1,5 +1,2 @@
-numpy
 pandas
 matplotlib
-# Optional — only needed for PostgreSQL/PostGIS databases:
-psycopg2

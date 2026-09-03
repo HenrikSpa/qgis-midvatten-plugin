@@ -6,9 +6,9 @@ NOTE: This is as of 2025-05-16 the official and maintained repository for the Mi
 
 **QGIS version:** Requires QGIS ≥ 3.40.
 
-**Python packages:** This plugin requires numpy, pandas, and matplotlib. These packages are installed automatically by the `qpip` plugin dependency (present on most QGIS installations). When you first install Midvatten, a `qpip` dialog will appear asking to install these packages — click "Install" to proceed. This is a one-time step.
+**Python packages:** This plugin requires pandas and matplotlib (numpy is always present in QGIS). The `qpip` helper plugin (installed with Midvatten, present on most QGIS installations) offers to install them on first start — leave the preselected actions and press **OK**. This is a one-time step.
 
-**PostGIS support:** If you plan to connect to PostgreSQL/PostGIS databases, you will also need the `psycopg2` package. This is optional and only required for PostGIS; SQLite/SpatiaLite databases do not need it.
+**PostGIS support:** Connecting to PostgreSQL/PostGIS databases uses the `psycopg2` package, which ships with every official QGIS distribution — no separate install needed. If it is somehow absent, Midvatten still runs against SQLite/SpatiaLite databases.
 
 **For changelog and detailed release notes,** see the `metadata.txt` file in this repository, specifically the `changelog=` section.
 

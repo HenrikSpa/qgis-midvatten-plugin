@@ -11,7 +11,7 @@ license=GPLv2
 qgisMaximumVersion=4.99
 
 #optional metadata entries
-experimental=True
+experimental=False
 deprecated=False
 tags=hydrogeology,groundwater,time series,stratigraphy,piper diagram,borehole
 homepage=https://github.com/henrikspa/qgis-midvatten-plugin/wiki
@@ -23,7 +23,7 @@ hasProcessingProvider=no
 supportsQt6=True
 
 changelog=
-        Version 2.0.0 (experimental):
+        Version 2.0.0:
           - Qt6: The plugin now runs on both Qt5 and Qt6 builds of QGIS.
           - Qt6: The stratigraphy print dialog's legacy Qt5 orientation fallback now uses the scoped QPrinter.Orientation.Landscape spelling (Qt6 removed the unscoped QPrinter.Landscape). Also adopted the shared Qt6 static compatibility guard used across midv plugins.
           - Database: Added w_logger_series table; logger series metadata (source, instrument/serial, description, comment) moved there from w_levels_logger, with rows linked via series_id. Export to SpatiaLite migrates the old source column.
@@ -47,7 +47,7 @@ changelog=
           - CustomPlot: Added a style-fix dialog to repair plot templates across matplotlib versions.
           - UX: Many status and "nothing selected" popups moved to the QGIS message bar; errors show a short message with full details in the log panel.
           - Reliability: The plugin loads with SpatiaLite databases even when psycopg2 is not installed; SpatiaLite databases on Windows paths with backslashes open correctly; fixed a stratigraphy plot crash on Windows; fixed a spurious "Database setting was empty" error for new projects.
-          This release was developed and tested as the 1.9.0 beta series; it is published as 2.0.0 and marked experimental because the frontend, the backend and the database schema changed enough to break third-party code built on 1.x. Version 2.1 is planned to drop the experimental flag. For detailed per-beta changes see CHANGELOG_HISTORY.
+          This release was developed and tested as the 1.9.0 beta series and is published as 2.0.0. The major version bump reflects that the frontend, the backend and the database schema changed enough to break third-party code built on 1.x. For detailed per-beta changes see CHANGELOG_HISTORY.
         Version 1.8.6:
         - LoggerEditor: " (uncalibrated)" now only written after obsids in the list when last value is NULL.
         Version 1.8.5:

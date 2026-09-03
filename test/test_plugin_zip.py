@@ -47,7 +47,7 @@ REQUIRED_FILES = {
     "midvatten/midvatten_plugin.py",
     "midvatten/i18n/midvatten_sv_SE.qm",
     "midvatten/ui/midvsettingsdock.ui",
-    "midvatten/definitions/upgrade_postgresql_ai_test.sql",
+    "midvatten/definitions/upgrade_postgresql_to_2_0_0.sql",
     "midvatten/templates/about_template.htm",
     "midvatten/icons/svg/ref_panel.svg",
 }

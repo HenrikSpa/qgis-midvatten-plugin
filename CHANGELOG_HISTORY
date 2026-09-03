@@ -43,7 +43,7 @@ THIS FILE ONLY FOR HISTORICAL RESONS, IF I NEED TO PICK UP A PARTICULAR VERSION 
           - CSV import: When importing to w_levels_logger on the modern schema, a "Logger series metadata (w_logger_series)" block now lets you map source, instrument, description, and comment (from file columns or static values). One w_logger_series row is created per distinct obsid+metadata combination and each imported row is linked via series_id. The source field replaces the previous virtual source column.
         Version 1.9.0b26:
           - Matplotlib: Fixed RecursionError when clicking edit parameters / configure subplots / save figure toolbar buttons after plugin reload.
-          - DB: Unified duplicate-reading rule to one row per obsid per second on both SpatiaLite and PostGIS; date_time stored raw (date-only values not padded); malformed dates escape uniqueness. PostgreSQL DBs must run definitions/upgrade_postgresql_ai_test.sql to install midv_to_instant, deduplicate, and rebuild unique indexes.
+          - DB: Unified duplicate-reading rule to one row per obsid per second on both SpatiaLite and PostGIS; date_time stored raw (date-only values not padded); malformed dates escape uniqueness. PostgreSQL DBs must run definitions/upgrade_postgresql_to_2_0_0.sql to install midv_to_instant, deduplicate, and rebuild unique indexes.
         Version 1.9.0b25:
           - LoggerEditor: Fixed move/selection breaking when series_id column exists by only including series_id in line keys when "separate by source" is checked.
         Version 1.9.0b24:

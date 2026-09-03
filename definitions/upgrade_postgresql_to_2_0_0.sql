@@ -9,7 +9,7 @@
 -- structural changes are idempotent.
 --
 -- Usage:
---   psql -d <your_db> -f upgrade_postgresql_ai_test.sql
+--   psql -d <your_db> -f upgrade_postgresql_to_2_0_0.sql
 --
 -- WARNING — DATA DELETION (section 12):
 --   This script removes duplicate rows from w_levels, w_levels_logger,

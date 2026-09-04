@@ -22,6 +22,7 @@
 import io
 import re
 import traceback
+from collections.abc import Iterable
 from functools import wraps
 from operator import itemgetter
 from typing import Any, Callable, Optional, TypeAlias
@@ -45,6 +46,29 @@ from midvatten.tools.utils.date_utils import instant_key
 
 
 ImportData: TypeAlias = list[list[object]] | pd.DataFrame
+
+# Busy timeout (ms) for the opportunistic index build on the import path: short,
+# so a database held by another connection falls back to the slower duplicate
+# scan quickly instead of stalling every import. The dedicated "add indexes"
+# tool passes a much larger value.
+_INDEX_BUILD_BUSY_TIMEOUT_MS = 2000
+
+# Long busy timeout (ms) for the deliberate "add missing indexes" maintenance
+# run, which the user starts explicitly after making sure the database is free.
+_INDEX_MAINTENANCE_BUSY_TIMEOUT_MS = 300000  # 5 minutes
+
+# Time-series tables that carry date_time in their primary key and therefore
+# get a normalized-timestamp speed-up index. Mirrors the duplicate check in
+# tools/export_spatialite.py.
+NORMALIZED_DATETIME_INDEX_TABLES = (
+    "w_levels",
+    "w_levels_logger",
+    "comments",
+    "w_flow",
+    "meteo",
+    "w_qual_field",
+    "w_qual_logger",
+)
 
 
 def _cast_or_passthrough(value_ident: str, declared_type: str) -> str:
@@ -1051,6 +1075,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         dbconnection: DbConnectionManager,
         dest_table: str,
         primary_keys: list[str],
+        busy_timeout_ms: Optional[int] = _INDEX_BUILD_BUSY_TIMEOUT_MS,
     ) -> bool:
         """Create the lookup index required by normalized duplicate removal.
 
@@ -1060,8 +1085,13 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         otherwise safe performance migration. New databases retain their
         schema-defined UNIQUE index, which is detected and reused.
 
+        ``busy_timeout_ms`` bounds how long the SQLite index build waits for a
+        lock held by another connection before falling back; pass a larger value
+        from a deliberate maintenance run, or None to leave the connection's
+        timeout untouched.
+
         Returns True when an index was created and False when a suitable index
-        already existed.
+        already existed (or could not be created because the database was busy).
         """
         if "date_time" not in primary_keys or self.has_normalized_datetime_index(
             dbconnection, dest_table, primary_keys
@@ -1084,24 +1114,53 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             f"CREATE INDEX IF NOT EXISTS {dbconnection.ident(index_name)} "
             f"ON {table_ident} ({', '.join(expressions)})"
         )
+        # The index is only a speed-up for the duplicate scan; the import is
+        # correct without it. In a live QGIS session another connection (the
+        # SpatiaLite pool, the Browser panel, another open tool) may hold the
+        # database, so an exclusive CREATE INDEX cannot be guaranteed. A failure
+        # therefore warns and lets the import continue with the slower scan
+        # rather than aborting -- the index can be added later, when the
+        # database is free, from Database management.
+        error = None
+        previous_timeout = None
+        if busy_timeout_ms is not None and dbconnection.is_sqlite():
+            previous_timeout = dbconnection.execute_and_fetchall(
+                "PRAGMA busy_timeout"
+            )[0][0]
+            dbconnection.execute(f"PRAGMA busy_timeout = {int(busy_timeout_ms)}")
         try:
             dbconnection.execute(sql)
-            if not self.has_normalized_datetime_index(
-                dbconnection, dest_table, primary_keys
-            ):
-                raise RuntimeError(
-                    f"index name {index_name!r} already has another definition"
-                )
         except Exception as e:
-            raise MidvDataImporterError(
-                QCoreApplication.translate(
+            error = str(e)
+        finally:
+            if previous_timeout is not None:
+                dbconnection.execute(f"PRAGMA busy_timeout = {int(previous_timeout)}")
+        created = error is None and self.has_normalized_datetime_index(
+            dbconnection, dest_table, primary_keys
+        )
+        if not created:
+            if error is None:
+                error = QCoreApplication.translate(
                     "midv_data_importer",
-                    "The normalized timestamp index required for importing to %s "
-                    "could not be created. The import was stopped to avoid a very "
-                    "slow duplicate scan. Error: %s",
+                    "the index name is already used by a different index",
                 )
-                % (dest_table, str(e))
-            ) from e
+            message_utils.MessagebarAndLog.warning(
+                bar_msg=QCoreApplication.translate(
+                    "midv_data_importer",
+                    "Could not create the timestamp speed-up index for %s "
+                    "(the database is in use). The import continues but is slower.",
+                )
+                % dest_table,
+                log_msg=QCoreApplication.translate(
+                    "midv_data_importer",
+                    "The normalized timestamp index for %s could not be created "
+                    "(index %s). The import continues using the slower duplicate "
+                    "scan. Add the index later from Database management, when no "
+                    "other program is using the database. Error: %s",
+                )
+                % (dest_table, index_name, error),
+            )
+            return False
 
         return True
 
@@ -1369,3 +1428,60 @@ def import_exception_handler(func: Callable) -> Callable:
             return result
 
     return new_func
+
+
+def add_missing_normalized_datetime_indexes(
+    dbconnection: Optional[DbConnectionManager] = None,
+    tables: Iterable[str] = NORMALIZED_DATETIME_INDEX_TABLES,
+) -> dict[str, str]:
+    """Add the non-unique normalized-timestamp speed-up index to every given
+    time-series table that lacks it, using a long busy timeout.
+
+    This is the deliberate maintenance counterpart to the opportunistic build on
+    the import path: the user runs it once, when the database is free, so older
+    databases stop importing slowly. It is non-destructive -- only indexes are
+    created, never rows -- and it does not touch duplicate timestamps.
+
+    Returns ``{table: status}`` where status is one of ``"created"`` (index
+    built), ``"exists"`` (a suitable index was already present), ``"missing"``
+    (the table or its date_time key is absent) or ``"failed"`` (the build could
+    not complete, e.g. the database stayed locked).
+    """
+    importer = MidvDataImporter()
+    results: dict[str, str] = {}
+    created_here = dbconnection is None
+    if created_here:
+        dbconnection = db_utils.DbConnectionManager()
+    try:
+        for table in tables:
+            table_info = db_utils.db_tables_columns_info(
+                table=table, dbconnection=dbconnection
+            )
+            if not table_info:
+                results[table] = "missing"
+                continue
+            primary_keys = [row[1] for row in table_info[table] if int(row[5])]
+            if "date_time" not in primary_keys:
+                results[table] = "missing"
+                continue
+            # ensure_ returns True only when it actually built the index; False
+            # means either a suitable index already existed or the build failed
+            # (e.g. the database stayed locked), which has_ then tells apart.
+            if importer.ensure_normalized_datetime_index(
+                dbconnection,
+                table,
+                primary_keys,
+                busy_timeout_ms=_INDEX_MAINTENANCE_BUSY_TIMEOUT_MS,
+            ):
+                results[table] = "created"
+            elif importer.has_normalized_datetime_index(
+                dbconnection, table, primary_keys
+            ):
+                results[table] = "exists"
+            else:
+                results[table] = "failed"
+        dbconnection.commit()
+    finally:
+        if created_here:
+            dbconnection.closedb()
+    return results

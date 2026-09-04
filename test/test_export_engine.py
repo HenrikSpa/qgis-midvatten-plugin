@@ -984,6 +984,69 @@ class TestExportEngine(_ExportDestMixin, MidvattenTestSpatialiteDbSv):
         ]
         assert warning_calls, "Expected a warning about skipped/ignored rows"
 
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_export_collapses_semantic_datetime_duplicates(self, mock_messagebar):
+        """Upgrade safety: an older source DB with *semantic* datetime
+        duplicates (same normalized instant, different raw text like '00:00' vs
+        '00:00:00') exports into the new DB's UNIQUE normalized index WITHOUT
+        failing. One row per instant survives (first kept), so the user can
+        upgrade without deleting rows by hand.
+        """
+        from midvatten.tools.export_engine import ExportEngine
+
+        conn = db_utils.DbConnectionManager(self._class_db_settings)
+        # Pre-2.0.0 source: drop the normalized unique index so semantic
+        # duplicates can exist (they cannot on a modern source).
+        db_utils.sql_alter_db(
+            "DROP INDEX IF EXISTS uq_w_levels_obsid_dt", dbconnection=conn
+        )
+        db_utils.sql_alter_db(
+            "INSERT INTO obs_points (obsid, geometry) VALUES "
+            "('P1', ST_GeomFromText('POINT(1 2)', 3006))",
+            dbconnection=conn,
+        )
+        db_utils.sql_alter_db(
+            "INSERT INTO w_levels (obsid, date_time, meas) VALUES "
+            "('P1', '2020-01-01 00:00', 1.5),"
+            "('P1', '2020-01-01 00:00:00', 9.9),"
+            "('P1', '2020-01-02 00:00:00', 2.0)",
+            dbconnection=conn,
+        )
+        conn.commit_and_closedb()
+
+        src = self._source_conn()
+        dest = self._dest_conn()
+        # obs_points parent must exist in dest first (FK), as elsewhere.
+        db_utils.sql_alter_db(
+            "INSERT INTO obs_points (obsid, geometry) VALUES "
+            "('P1', ST_GeomFromText('POINT(1 2)', 3006))",
+            dbconnection=dest,
+        )
+        dest.commit()
+        try:
+            ExportEngine()._export_table(
+                "w_levels",
+                src,
+                dest,
+                (),
+                "3006",
+                False,
+                lambda *a: None,
+                threading.Event(),
+            )
+            dest.commit()
+            rows = dest.execute_and_fetchall(
+                "SELECT meas FROM w_levels ORDER BY datetime(date_time)"
+            )
+        finally:
+            src.closedb()
+            dest.closedb()
+
+        # Export completed (no uniqueness failure) and collapsed to one row per
+        # normalized instant: the first duplicate (1.5) kept, the distinct
+        # instant (2.0) kept, the second duplicate (9.9) dropped.
+        assert [r[0] for r in rows] == [1.5, 2.0]
+
     # ------------------------------------------------------------------ Cross-CRS coverage
 
     @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")

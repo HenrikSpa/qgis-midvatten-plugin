@@ -90,3 +90,35 @@ class TestNotFoundQuestion:
         # actually compare on -- stays the untranslated English key.
         d.set_answer_and_value(by_object_name["ok"].objectName())
         assert d.answer == "ok"
+
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    @mock.patch("midvatten.tools.utils.dialog_utils.QtWidgets.QWidget.show")
+    @mock.patch(
+        "midvatten.tools.utils.dialog_utils.QtWidgets.QDialog.exec", return_value=0
+    )
+    def test_ok_button_is_rightmost_even_with_extra_buttons(
+        self, mock_exec, mock_show, mock_messagebar
+    ):
+        """The primary Ok button must be the last (rightmost) button regardless
+        of extra action buttons like Skip, so chained dialogs (obsid then
+        instrument) never place Ok where the next dialog shows Cancel."""
+        d = dialog_utils.NotFoundQuestion(
+            dialogtitle="Test",
+            msg="Message",
+            default_value="default",
+            parent=None,
+            button_names=["Cancel", "Ok", "Skip"],
+        )
+        object_names = [b.objectName() for b in d.button_box.buttons()]
+        print(f"{object_names=}")
+        assert object_names[-1] == "ok"
+
+
+def test_ordered_button_names_ok_last_moves_ok_to_the_end():
+    order = dialog_utils._ordered_button_names_ok_last
+    # Ok is pushed to the end, other buttons keep their relative order.
+    assert order(["Cancel", "Ok", "Skip"]) == ["Cancel", "Skip", "Ok"]
+    # Already last -> unchanged.
+    assert order(["Ignore", "Cancel", "Ok"]) == ["Ignore", "Cancel", "Ok"]
+    # No Ok -> unchanged.
+    assert order(["Cancel", "Skip"]) == ["Cancel", "Skip"]

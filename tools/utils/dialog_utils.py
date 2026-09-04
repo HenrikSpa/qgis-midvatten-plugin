@@ -125,6 +125,20 @@ class Askuser(QtWidgets.QDialog):
                         )
 
 
+def _ordered_button_names_ok_last(button_names):
+    """Return button_names with the primary "Ok" moved to the end.
+
+    The buttons render left-to-right in list order, so keeping "Ok" last pins it
+    to the same (rightmost) position no matter how many extra action buttons
+    (e.g. "Skip") a caller adds. Without this, the obsid dialog ([Cancel, Ok,
+    Skip]) put Ok where the following instrument dialog ([Ignore, Cancel, Ok])
+    shows Cancel, so a user clicking the same spot twice accidentally cancelled.
+    """
+    if "Ok" not in button_names:
+        return list(button_names)
+    return [name for name in button_names if name != "Ok"] + ["Ok"]
+
+
 class NotFoundQuestion(QtWidgets.QDialog, not_found_dialog):
     window_position = qgis.PyQt.QtCore.QPoint(500, 150)
 
@@ -146,6 +160,9 @@ class NotFoundQuestion(QtWidgets.QDialog, not_found_dialog):
         QtWidgets.QDialog.__init__(self, parent)
         if button_names is None:
             button_names = ["Ignore", "Cancel", "Ok"]
+        # Keep Ok rightmost across every caller so chained dialogs place it
+        # consistently (see _ordered_button_names_ok_last).
+        button_names = _ordered_button_names_ok_last(button_names)
         self.answer = None
         # Root widget in not_found_gui.ui is named "dialog". PyQt uic generates
         # connection code like dialog.dialog.accept (receiver name as attribute of

@@ -90,7 +90,7 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif "(see log for more info about removed rows)" in args[
+                        elif "(see log for more info about skipped rows)" in args[
                             1
                         ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
@@ -179,7 +179,7 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif "(see log for more info about removed rows)" in args[
+                        elif "(see log for more info about skipped rows)" in args[
                             1
                         ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
@@ -261,7 +261,7 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif "(see log for more info about removed rows)" in args[
+                        elif "(see log for more info about skipped rows)" in args[
                             1
                         ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
@@ -347,7 +347,7 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif "(see log for more info about removed rows)" in args[
+                        elif "(see log for more info about skipped rows)" in args[
                             1
                         ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
@@ -436,7 +436,7 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif "(see log for more info about removed rows)" in args[
+                        elif "(see log for more info about skipped rows)" in args[
                             1
                         ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
@@ -516,7 +516,7 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif "(see log for more info about removed rows)" in args[
+                        elif "(see log for more info about skipped rows)" in args[
                             1
                         ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
@@ -606,7 +606,7 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif "(see log for more info about removed rows)" in args[
+                        elif "(see log for more info about skipped rows)" in args[
                             1
                         ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
@@ -688,7 +688,7 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif "(see log for more info about removed rows)" in args[
+                        elif "(see log for more info about skipped rows)" in args[
                             1
                         ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
@@ -774,7 +774,7 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif "(see log for more info about removed rows)" in args[
+                        elif "(see log for more info about skipped rows)" in args[
                             1
                         ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
@@ -857,7 +857,7 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif "(see log for more info about removed rows)" in args[
+                        elif "(see log for more info about skipped rows)" in args[
                             1
                         ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
@@ -941,7 +941,7 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif "(see log for more info about removed rows)" in args[
+                        elif "(see log for more info about skipped rows)" in args[
                             1
                         ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
@@ -1019,7 +1019,7 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif "(see log for more info about removed rows)" in args[
+                        elif "(see log for more info about skipped rows)" in args[
                             1
                         ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
@@ -1097,7 +1097,7 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif "(see log for more info about removed rows)" in args[
+                        elif "(see log for more info about skipped rows)" in args[
                             1
                         ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
@@ -1182,7 +1182,7 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif "(see log for more info about removed rows)" in args[
+                        elif "(see log for more info about skipped rows)" in args[
                             1
                         ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
@@ -1260,7 +1260,7 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif "(see log for more info about removed rows)" in args[
+                        elif "(see log for more info about skipped rows)" in args[
                             1
                         ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
@@ -1340,7 +1340,7 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif "(see log for more info about removed rows)" in args[
+                        elif "(see log for more info about skipped rows)" in args[
                             1
                         ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
@@ -1423,7 +1423,7 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif "(see log for more info about removed rows)" in args[
+                        elif "(see log for more info about skipped rows)" in args[
                             1
                         ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
@@ -1511,7 +1511,7 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif "(see log for more info about removed rows)" in args[
+                        elif "(see log for more info about skipped rows)" in args[
                             1
                         ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
@@ -1616,7 +1616,7 @@ class GeneralCsvGuiMixin:
                         elif args[1].startswith("Do you want to import all"):
                             mock_result.result = 0
                             return mock_result
-                        elif "(see log for more info about removed rows)" in args[
+                        elif "(see log for more info about skipped rows)" in args[
                             1
                         ] or args[1].startswith("Please note!\nThere are"):
                             mock_result.result = 1
@@ -1837,7 +1837,7 @@ class GeneralCsvGuiFromLayerMixin:
                     elif args[1].startswith("Do you want to import all"):
                         mock_result.result = 0
                         return mock_result
-                    elif "(see log for more info about removed rows)" in args[
+                    elif "(see log for more info about skipped rows)" in args[
                         1
                     ] or args[1].startswith("Please note!\nThere are"):
                         mock_result.result = 1
@@ -1917,7 +1917,7 @@ class GeneralCsvGuiFromLayerMixin:
                     elif args[1].startswith("Do you want to import all"):
                         mock_result.result = 0
                         return mock_result
-                    elif "(see log for more info about removed rows)" in args[
+                    elif "(see log for more info about skipped rows)" in args[
                         1
                     ] or args[1].startswith("Please note!\nThere are"):
                         mock_result.result = 1

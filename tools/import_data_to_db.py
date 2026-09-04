@@ -600,7 +600,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 message_utils.MessagebarAndLog.warning(
                     bar_msg=QCoreApplication.translate(
                         "midv_data_importer",
-                        "Nothing imported to %s after deleting stratigraphy rows with errors.",
+                        "Nothing imported to %s after skipping stratigraphy rows with errors.",
                     )
                     % dest_table
                 )
@@ -660,7 +660,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             message_utils.MessagebarAndLog.info(
                 log_msg=QCoreApplication.translate(
                     "midv_data_importer",
-                    "Skipping confirmation dialog: %s out of %s rows to import (duplicates removed).",
+                    "Skipping confirmation dialog: %s out of %s rows to import (duplicates skipped).",
                 )
                 % (str(len(remaining_rownumbers)), str(len(all_rownumbers)))
             )
@@ -668,7 +668,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
 
         msg = QCoreApplication.translate(
             "midv_data_importer",
-            "There are %s out of %s number of rows to import (see log for more info about removed rows).\n\nProceed with import?",
+            "There are %s out of %s number of rows to import (see log for more info about skipped rows).\n\nProceed with import?",
         ) % (str(len(remaining_rownumbers)), str(len(all_rownumbers)))
 
         # Set before the dialog so a declined import also counts as "already

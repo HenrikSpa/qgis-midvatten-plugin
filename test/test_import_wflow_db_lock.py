@@ -35,6 +35,7 @@ import pytest
 from qgis.utils import spatialite_connect
 
 from midvatten.test import utils_for_tests
+from midvatten.tools import import_data_to_db
 from midvatten.tools.utils import db_utils
 
 
@@ -197,7 +198,7 @@ class TestWflowImportDbLockSpatialite(
             conn.closedb()
 
         assert created is True
-        assert seen["during"] == 2000
+        assert seen["during"] == import_data_to_db._INDEX_BUILD_BUSY_TIMEOUT_MS
         assert after == 7000
 
     @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")

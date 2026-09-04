@@ -47,11 +47,12 @@ from midvatten.tools.utils.date_utils import instant_key
 
 ImportData: TypeAlias = list[list[object]] | pd.DataFrame
 
-# Busy timeout (ms) for the opportunistic index build on the import path: short,
-# so a database held by another connection falls back to the slower duplicate
-# scan quickly instead of stalling every import. The dedicated "add indexes"
-# tool passes a much larger value.
-_INDEX_BUILD_BUSY_TIMEOUT_MS = 2000
+# Busy timeout (ms) the index build waits to acquire a lock held by another
+# connection before it gives up (and, with the fallback, continues without the
+# index). This is a lock-acquisition wait, NOT a cap on the build duration, so a
+# genuinely slow build is unaffected. Matches SQLite's own default. The
+# dedicated "add indexes" tool passes a much larger value.
+_INDEX_BUILD_BUSY_TIMEOUT_MS = 5000
 
 # Long busy timeout (ms) for the deliberate "add missing indexes" maintenance
 # run, which the user starts explicitly after making sure the database is free.

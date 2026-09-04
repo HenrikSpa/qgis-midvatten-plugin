@@ -45,7 +45,6 @@ from midvatten.tools.create_db_dialogs import NewPostgisDbDialog, NewSpatialiteD
 from midvatten.tools.custom_drillreport import DrillreportUi
 from midvatten.tools.customplot import CustomPlot
 from midvatten.tools.drillreport import Drillreport
-from midvatten.tools.add_missing_indexes_dialog import AddMissingIndexesDialog
 from midvatten.tools.export_data import ExportData
 from midvatten.tools.export_fieldlogger import ExportToFieldLogger
 from midvatten.tools.export_spatialite import ExportSpatialite
@@ -355,15 +354,6 @@ def _make_actions(plugin: "Midvatten") -> list[ActionSpec]:
             icon="zip.png",
             menu="db",
             callback=lambda: db_utils.backup_db(),
-        ),
-        ActionSpec(
-            id="add_missing_indexes",
-            label=QCoreApplication.translate(
-                "Midvatten", "Add missing timestamp indexes (speeds up imports)"
-            ),
-            icon="vacuum.png",
-            menu="db",
-            callback=lambda: AddMissingIndexesDialog(iface.mainWindow()).exec(),
         ),
         # NB: no "Add non-essential data tables" menu action. The tables it
         # created (w_qual_logger, spatial_history, tem_data) are now part of the

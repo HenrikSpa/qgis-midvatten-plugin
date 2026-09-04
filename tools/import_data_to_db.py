@@ -210,6 +210,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             self.confirmation_handled = 1
 
         dbconnection: Optional[DbConnectionManager] = None
+        errored = False
         try:
             import_frame = _as_import_frame(file_data)
             if import_frame.empty:
@@ -382,10 +383,20 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             )
 
         except Exception:
-            self._cleanup(dbconnection, _dbconnection, commit=False)
+            errored = True
             raise
-        else:
-            self._cleanup(dbconnection, _dbconnection, commit=not defer_commit)
+        finally:
+            # A finally block, not else: the body returns early on several
+            # "nothing to import" paths, and those returns must still release
+            # the connection. Otherwise the connection is left with an
+            # uncommitted transaction (the timestamp index build and/or the
+            # staging load), holding a lock that blocks the next table's import
+            # and any later Vacuum until QGIS is restarted.
+            self._cleanup(
+                dbconnection,
+                _dbconnection,
+                commit=not errored and not defer_commit,
+            )
         return nr_imported
 
     def _import_summary_bar_msg(

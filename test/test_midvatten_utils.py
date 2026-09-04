@@ -991,3 +991,26 @@ class TestMessageDispatcher:
         logged_messages = [call.args[0] for call in mock_log.logMessage.call_args_list]
         assert "" not in logged_messages
         assert "detail only" in logged_messages
+
+
+def test_log_selected_files_logs_one_untranslated_line_per_file():
+    with mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog") as mbl:
+        midvatten_utils.log_selected_files(["/p/4512/a.csv", "", "/p/4512/b.csv"])
+    logged = [c.kwargs.get("log_msg") for c in mbl.info.mock_calls]
+    assert logged == ["Selected file: /p/4512/a.csv", "Selected file: /p/4512/b.csv"]
+
+
+def test_log_selected_files_tolerates_none_and_empty():
+    with mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog") as mbl:
+        midvatten_utils.log_selected_files(None)
+        midvatten_utils.log_selected_files([])
+    assert mbl.info.mock_calls == []
+
+
+def test_select_files_logs_the_chosen_file():
+    with mock.patch("midvatten.tools.utils.midvatten_utils.QtWidgets.QFileDialog.getOpenFileName",
+                    return_value=("/p/4512/a.csv", "")), \
+         mock.patch("midvatten.tools.utils.midvatten_utils.log_selected_files") as mock_log:
+        result = midvatten_utils.select_files(only_one_file=True)
+    assert result == ["/p/4512/a.csv"]
+    mock_log.assert_called_once_with(["/p/4512/a.csv"])

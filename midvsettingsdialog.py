@@ -37,7 +37,7 @@ from midvatten.tools.utils import (
 from midvatten.tools.utils.db_utils.db_settings_serde import db_settings_to_string
 from midvatten.tools.utils.file_utils import ui_path
 from midvatten.tools.utils.gui_utils import WA_DeleteOnClose
-from midvatten.tools.utils.midvatten_utils import warn_about_old_database
+from midvatten.tools.utils.midvatten_utils import log_selected_files, warn_about_old_database
 
 log = logging.getLogger(__name__)
 
@@ -839,6 +839,7 @@ class SpatialiteSettings(gui_utils.RowEntryGrid):
         dbpath, __ = QFileDialog.getOpenFileName(None, "Select database:", "*.sqlite")
         if dbpath:  # Only get new db name if not cancelling the FileDialog
             self.dbpath = dbpath
+            log_selected_files([dbpath])
 
         else:  # debug
             message_utils.MessagebarAndLog.info(

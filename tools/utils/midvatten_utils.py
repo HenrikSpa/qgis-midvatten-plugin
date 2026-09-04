@@ -506,6 +506,20 @@ def add_non_essential_tables(
         dbconnection.closedb()
 
 
+def log_selected_files(filenames):
+    """Log each selected file to the QGIS message log (tag 'Midvatten') as
+    'Selected file: <path>', one line per file. The file the user picks
+    reveals which project they are working with; the midv_timeline usage
+    monitor reads these lines to attribute QGIS time even when no project is
+    saved. The message is kept untranslated on purpose — it is a stable
+    machine-read contract, not UI text."""
+    for filename in filenames or []:
+        if filename:
+            message_utils.MessagebarAndLog.info(
+                log_msg="Selected file: %s" % returnunicode(filename)
+            )
+
+
 def select_files(
     only_one_file: bool = True,
     extension: str = "csv (*.csv)",
@@ -554,6 +568,7 @@ def select_files(
             )
         )
         raise UserInterruptError()
+    log_selected_files(csvpath)
     return csvpath
 
 

@@ -11,17 +11,23 @@
 -- Usage:
 --   psql -d <your_db> -f upgrade_postgresql_to_2_0_0.sql
 --
--- WARNING — DATA DELETION (section 12):
---   This script removes duplicate rows from w_levels, w_levels_logger,
---   comments, w_flow, meteo, w_qual_field, and w_qual_logger before creating
---   unique indexes on those tables. "Duplicate" means two rows with the same
---   key columns whose date_time strings represent the same instant when parsed
---   (e.g. '2020-01-01 12:00' and '2020-01-01 12:00:00').  Raw date_time values
---   are NOT modified — only the later physical row (higher ctid) is deleted.
---   Rows with unparseable date_time values are left untouched and reported.
---   The earliest physical row for each duplicate group is kept, matching the
---   behaviour of the export-to-SpatiaLite tool.
---   Review your data BEFORE running this script if you are unsure.
+-- DUPLICATE ROWS STOP THE UPGRADE (section 0a):
+--   Section 13 creates unique indexes on w_levels, w_levels_logger, comments,
+--   w_flow, meteo, w_qual_field and w_qual_logger where two rows are treated
+--   as the same when their key columns match and their date_time strings
+--   represent the same instant when parsed (e.g. '2020-01-01 12:00' and
+--   '2020-01-01 12:00:00'). Databases created before that rule may contain
+--   such rows. This script never deletes them. Instead section 0a, which runs
+--   before any change is made, reports every group and stops the script.
+--   The full report is left in one view per affected table,
+--   midv_upgrade_duplicates_<table>, with the raw date_time values and every
+--   other column aggregated per group, so you can see whether the rows carry
+--   identical data or conflicting data.
+--   Fix the rows yourself, or run upgrade_postgresql_to_2_0_0_dedup_keep_earliest.sql
+--   to keep the earliest physical row of every group, then run this script
+--   again. The report views are dropped when the upgrade completes.
+--   Rows with unparseable date_time values escape uniqueness, are never
+--   deleted, and are only counted in the report.
 --
 -- To inspect current FK constraint names on any table:
 --   SELECT conname FROM pg_constraint WHERE conrelid = '<table>'::regclass;
@@ -48,6 +54,142 @@ EXCEPTION WHEN others THEN
     RETURN NULL;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
+
+-- =============================================================================
+-- 0a. Duplicate gate — report same-instant duplicates and stop, before any
+--     schema change
+--
+-- Two DO blocks on purpose: the first builds the report views and commits
+-- (psql runs each statement in its own transaction), the second raises the
+-- error. Raising inside the first block would roll the views back.
+--
+-- Per table: one view midv_upgrade_duplicates_<table> with one row per
+-- same-instant group: the key columns, the parsed instant, row_count,
+-- data_identical (true when all rows in the group agree on every column
+-- except date_time), and every other column aggregated as a comma-separated
+-- list in physical row order (earliest first). Views for tables without
+-- duplicates are dropped again.
+-- =============================================================================
+
+DO $gate$
+DECLARE
+    spec        record;
+    key_exprs   text;
+    agg_cols    text;
+    view_name   text;
+    n_groups    bigint;
+    n_rows      bigint;
+    n_conflict  bigint;
+    n_malformed bigint;
+    grp         record;
+BEGIN
+    FOR spec IN
+        SELECT * FROM (VALUES
+            ('w_levels',        ARRAY['obsid']),
+            ('w_levels_logger', ARRAY['obsid']),
+            ('comments',        ARRAY['obsid']),
+            ('w_flow',          ARRAY['obsid', 'flowtype', 'instrumentid']),
+            ('meteo',           ARRAY['obsid', 'parameter', 'instrumentid']),
+            ('w_qual_field',    ARRAY['obsid', 'parameter', 'unit']),
+            ('w_qual_logger',   ARRAY['obsid', 'parameter', 'instrument', 'unit'])
+        ) AS t(tbl, keys)
+    LOOP
+        view_name := 'midv_upgrade_duplicates_' || spec.tbl;
+        -- Left behind by an earlier stopped run. Checked first so psql does
+        -- not print a "does not exist, skipping" notice for every table.
+        IF EXISTS (SELECT 1 FROM pg_views
+                    WHERE schemaname = current_schema() AND viewname = view_name) THEN
+            EXECUTE format('DROP VIEW %I', view_name);
+        END IF;
+
+        -- Older databases have w_qual_logger as a view, or not at all; it is
+        -- created as a table in section 8 and cannot hold duplicates yet.
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.tables
+             WHERE table_schema = current_schema()
+               AND table_name = spec.tbl
+               AND table_type = 'BASE TABLE'
+        ) THEN
+            RAISE NOTICE '%: not a table in this database, skipped', spec.tbl;
+            CONTINUE;
+        END IF;
+
+        SELECT string_agg(format('%I', k), ', ') INTO key_exprs
+          FROM unnest(spec.keys) AS k;
+
+        SELECT string_agg(
+                   format('string_agg(coalesce(%I::text, ''NULL''), '', '' ORDER BY ctid) AS %I',
+                          column_name, column_name),
+                   ', ' ORDER BY ordinal_position)
+          INTO agg_cols
+          FROM information_schema.columns
+         WHERE table_schema = current_schema()
+           AND table_name = spec.tbl
+           AND column_name <> 'date_time'
+           AND NOT (column_name = ANY (spec.keys));
+
+        EXECUTE format($v$
+            CREATE VIEW %I AS
+            SELECT %s,
+                   midv_to_instant(date_time) AS instant,
+                   count(*) AS row_count,
+                   count(DISTINCT to_jsonb(t) - 'date_time') = 1 AS data_identical,
+                   string_agg(date_time, ', ' ORDER BY ctid) AS date_time,
+                   %s
+              FROM %I t
+             WHERE midv_to_instant(date_time) IS NOT NULL
+             GROUP BY %s, midv_to_instant(date_time)
+            HAVING count(*) > 1
+        $v$, view_name, key_exprs, agg_cols, spec.tbl, key_exprs);
+
+        EXECUTE format(
+            'SELECT count(*), coalesce(sum(row_count), 0), '
+            'count(*) FILTER (WHERE NOT data_identical) FROM %I', view_name)
+          INTO n_groups, n_rows, n_conflict;
+        EXECUTE format(
+            'SELECT count(*) FROM %I WHERE date_time IS NOT NULL '
+            'AND date_time <> '''' AND midv_to_instant(date_time) IS NULL', spec.tbl)
+          INTO n_malformed;
+
+        RAISE NOTICE '%: % same-instant group(s) covering % row(s), % with conflicting data; % malformed date_time value(s) left as is',
+            spec.tbl, n_groups, n_rows, n_conflict, n_malformed;
+
+        IF n_groups = 0 THEN
+            EXECUTE format('DROP VIEW %I', view_name);
+            CONTINUE;
+        END IF;
+
+        -- row_to_json keeps the view's column order (jsonb would sort keys).
+        FOR grp IN EXECUTE format(
+            'SELECT row_to_json(v)::text AS line FROM %I v ORDER BY %s, instant LIMIT 20',
+            view_name, key_exprs)
+        LOOP
+            RAISE NOTICE '    %', grp.line;
+        END LOOP;
+        IF n_groups > 20 THEN
+            RAISE NOTICE '    ... % more group(s). Full list: SELECT * FROM %;',
+                n_groups - 20, view_name;
+        ELSE
+            RAISE NOTICE '    Full list: SELECT * FROM %;', view_name;
+        END IF;
+    END LOOP;
+END
+$gate$;
+
+DO $stop$
+DECLARE
+    views text;
+BEGIN
+    SELECT string_agg(viewname, ', ' ORDER BY viewname) INTO views
+      FROM pg_views
+     WHERE schemaname = current_schema()
+       AND viewname LIKE 'midv_upgrade_duplicates_%';
+    IF views IS NOT NULL THEN
+        RAISE EXCEPTION 'UPGRADE STOPPED, nothing has been changed: same-instant duplicate rows found. See the report above and the view(s) %. Fix the rows yourself, or run upgrade_postgresql_to_2_0_0_dedup_keep_earliest.sql to keep the earliest row of every group. Then run this upgrade again.',
+            views;
+    END IF;
+END
+$stop$;
 
 -- =============================================================================
 -- 1. New data-domain table: zz_screen_plots
@@ -233,8 +375,8 @@ CREATE TABLE IF NOT EXISTS w_qual_logger (
 );
 
 -- NOTE: The unique index on this table (w_qual_logger_unit_unique_index_null)
--- is created in section 13 after deduplication in section 12, so it is not
--- built here where it might fail if same-instant rows exist in an edge case.
+-- is created in section 13 together with the other normalised indexes, after
+-- the duplicate gate in section 0a has verified that no same-instant rows exist.
 
 -- =============================================================================
 -- 9. New table: spatial_history
@@ -365,107 +507,16 @@ ALTER TABLE profile_images
 -- to (obsid, parameter, date_time, COALESCE(...)), and the date_time column is
 -- now wrapped in midv_to_instant() for instant-normalised uniqueness.
 -- The old index is dropped together with all other old datetime indexes in
--- section 12b, before deduplication; the new normalised index is created in
--- section 13 after deduplication has been completed.
+-- section 12; the new normalised index is created in section 13.
 -- =============================================================================
 
 -- =============================================================================
--- 12. Deduplicate datetime-PK tables (instant-normalised)
+-- 12. Drop old raw-text unique indexes (idempotent)
 --
--- WARNING: ROWS MAY BE DELETED.
---
--- SpatiaLite databases can contain rows with different raw date_time strings
--- that represent the same instant (e.g. '2020-01-01 12:00' vs
--- '2020-01-01 12:00:00'). When such a database was migrated to PostgreSQL,
--- both rows were preserved because there was no normalising unique index.
--- The unique indexes created in section 13 would fail on those same-instant
--- duplicates.
---
--- Deduplication strategy:
---   - Uniqueness is determined by midv_to_instant(date_time), not raw text.
---   - Raw date_time values are NOT modified.
---   - Rows with unparseable date_time values (midv_to_instant → NULL) are left
---     untouched — they escape uniqueness and are reported in the NOTICE output.
---   - The earliest physical row (lowest ctid) for each duplicate group is kept.
---     This matches the behaviour of the export-to-SpatiaLite tool.
---
--- The old raw-text unique indexes (uq_* and w_qual_*) are dropped first so
--- they do not block the DELETE statements or conflict with the new normalized
--- indexes created in section 13.
+-- The pre-2.0.0 indexes compared date_time as raw text. They are dropped so
+-- their definitions do not conflict with the normalised indexes created in
+-- section 13.
 -- =============================================================================
-
--- ---- 12a. Report same-instant collision groups and malformed dates ----------
-
-DO $$ DECLARE c bigint; BEGIN
-    SELECT count(*) INTO c FROM (
-        SELECT 1 FROM w_levels
-        WHERE midv_to_instant(date_time) IS NOT NULL
-        GROUP BY obsid, midv_to_instant(date_time) HAVING count(*) > 1) s;
-    RAISE NOTICE 'w_levels same-instant collision groups: %', c;
-    SELECT count(*) INTO c FROM w_levels
-        WHERE date_time IS NOT NULL AND date_time <> '' AND midv_to_instant(date_time) IS NULL;
-    RAISE NOTICE 'w_levels malformed date_time (left raw, escape uniqueness): %', c;
-
-    SELECT count(*) INTO c FROM (
-        SELECT 1 FROM w_levels_logger
-        WHERE midv_to_instant(date_time) IS NOT NULL
-        GROUP BY obsid, midv_to_instant(date_time) HAVING count(*) > 1) s;
-    RAISE NOTICE 'w_levels_logger same-instant collision groups: %', c;
-    SELECT count(*) INTO c FROM w_levels_logger
-        WHERE date_time IS NOT NULL AND date_time <> '' AND midv_to_instant(date_time) IS NULL;
-    RAISE NOTICE 'w_levels_logger malformed date_time (left raw, escape uniqueness): %', c;
-
-    SELECT count(*) INTO c FROM (
-        SELECT 1 FROM comments
-        WHERE midv_to_instant(date_time) IS NOT NULL
-        GROUP BY obsid, midv_to_instant(date_time) HAVING count(*) > 1) s;
-    RAISE NOTICE 'comments same-instant collision groups: %', c;
-    SELECT count(*) INTO c FROM comments
-        WHERE date_time IS NOT NULL AND date_time <> '' AND midv_to_instant(date_time) IS NULL;
-    RAISE NOTICE 'comments malformed date_time (left raw, escape uniqueness): %', c;
-
-    SELECT count(*) INTO c FROM (
-        SELECT 1 FROM w_flow
-        WHERE midv_to_instant(date_time) IS NOT NULL
-        GROUP BY obsid, flowtype, instrumentid, midv_to_instant(date_time) HAVING count(*) > 1) s;
-    RAISE NOTICE 'w_flow same-instant collision groups: %', c;
-    SELECT count(*) INTO c FROM w_flow
-        WHERE date_time IS NOT NULL AND date_time <> '' AND midv_to_instant(date_time) IS NULL;
-    RAISE NOTICE 'w_flow malformed date_time (left raw, escape uniqueness): %', c;
-
-    SELECT count(*) INTO c FROM (
-        SELECT 1 FROM meteo
-        WHERE midv_to_instant(date_time) IS NOT NULL
-        GROUP BY obsid, parameter, instrumentid, midv_to_instant(date_time) HAVING count(*) > 1) s;
-    RAISE NOTICE 'meteo same-instant collision groups: %', c;
-    SELECT count(*) INTO c FROM meteo
-        WHERE date_time IS NOT NULL AND date_time <> '' AND midv_to_instant(date_time) IS NULL;
-    RAISE NOTICE 'meteo malformed date_time (left raw, escape uniqueness): %', c;
-
-    SELECT count(*) INTO c FROM (
-        SELECT 1 FROM w_qual_field
-        WHERE midv_to_instant(date_time) IS NOT NULL
-        GROUP BY obsid, parameter, COALESCE(unit, '<NULL>'), midv_to_instant(date_time) HAVING count(*) > 1) s;
-    RAISE NOTICE 'w_qual_field same-instant collision groups: %', c;
-    SELECT count(*) INTO c FROM w_qual_field
-        WHERE date_time IS NOT NULL AND date_time <> '' AND midv_to_instant(date_time) IS NULL;
-    RAISE NOTICE 'w_qual_field malformed date_time (left raw, escape uniqueness): %', c;
-
-    SELECT count(*) INTO c FROM (
-        SELECT 1 FROM w_qual_logger
-        WHERE midv_to_instant(date_time) IS NOT NULL
-        GROUP BY obsid, parameter, instrument, COALESCE(unit, '<NULL>'), midv_to_instant(date_time) HAVING count(*) > 1) s;
-    RAISE NOTICE 'w_qual_logger same-instant collision groups: %', c;
-    SELECT count(*) INTO c FROM w_qual_logger
-        WHERE date_time IS NOT NULL AND date_time <> '' AND midv_to_instant(date_time) IS NULL;
-    RAISE NOTICE 'w_qual_logger malformed date_time (left raw, escape uniqueness): %', c;
-END $$;
-
--- ---- 12b. Drop old raw-text unique indexes (idempotent) --------------------
---
--- Must happen before the DELETE statements so existing raw-text indexes do not
--- block rows that share a raw string but differ in normalised instant, and
--- before section 13 so the old definitions do not conflict with the new ones.
 
 DROP INDEX IF EXISTS uq_w_levels_obsid_dt;
 DROP INDEX IF EXISTS uq_w_levels_logger_obsid_dt;
@@ -474,69 +525,6 @@ DROP INDEX IF EXISTS uq_w_flow_obsid_dt;
 DROP INDEX IF EXISTS uq_meteo_obsid_dt;
 DROP INDEX IF EXISTS w_qual_field_unit_unique_index_null;
 DROP INDEX IF EXISTS w_qual_logger_unit_unique_index_null;
-
--- ---- 12c. Delete same-instant duplicates (keep earliest ctid) --------------
---
--- Only parseable rows are considered (midv_to_instant IS NOT NULL).
--- Rows with malformed date_time survive unchanged.
-
--- w_levels
-DELETE FROM w_levels a USING w_levels b
-WHERE a.obsid = b.obsid
-  AND midv_to_instant(a.date_time) IS NOT NULL
-  AND midv_to_instant(a.date_time) = midv_to_instant(b.date_time)
-  AND a.ctid > b.ctid;
-
--- w_levels_logger
-DELETE FROM w_levels_logger a USING w_levels_logger b
-WHERE a.obsid = b.obsid
-  AND midv_to_instant(a.date_time) IS NOT NULL
-  AND midv_to_instant(a.date_time) = midv_to_instant(b.date_time)
-  AND a.ctid > b.ctid;
-
--- comments
-DELETE FROM comments a USING comments b
-WHERE a.obsid = b.obsid
-  AND midv_to_instant(a.date_time) IS NOT NULL
-  AND midv_to_instant(a.date_time) = midv_to_instant(b.date_time)
-  AND a.ctid > b.ctid;
-
--- w_flow (extra key: flowtype, instrumentid)
-DELETE FROM w_flow a USING w_flow b
-WHERE a.obsid = b.obsid
-  AND a.flowtype = b.flowtype
-  AND a.instrumentid = b.instrumentid
-  AND midv_to_instant(a.date_time) IS NOT NULL
-  AND midv_to_instant(a.date_time) = midv_to_instant(b.date_time)
-  AND a.ctid > b.ctid;
-
--- meteo (extra key: parameter, instrumentid)
-DELETE FROM meteo a USING meteo b
-WHERE a.obsid = b.obsid
-  AND a.parameter = b.parameter
-  AND a.instrumentid = b.instrumentid
-  AND midv_to_instant(a.date_time) IS NOT NULL
-  AND midv_to_instant(a.date_time) = midv_to_instant(b.date_time)
-  AND a.ctid > b.ctid;
-
--- w_qual_field (extra key: parameter, unit coalesced)
-DELETE FROM w_qual_field a USING w_qual_field b
-WHERE a.obsid = b.obsid
-  AND a.parameter = b.parameter
-  AND COALESCE(a.unit, '<NULL>') = COALESCE(b.unit, '<NULL>')
-  AND midv_to_instant(a.date_time) IS NOT NULL
-  AND midv_to_instant(a.date_time) = midv_to_instant(b.date_time)
-  AND a.ctid > b.ctid;
-
--- w_qual_logger (extra key: parameter, instrument, unit coalesced)
-DELETE FROM w_qual_logger a USING w_qual_logger b
-WHERE a.obsid = b.obsid
-  AND a.parameter = b.parameter
-  AND a.instrument = b.instrument
-  AND COALESCE(a.unit, '<NULL>') = COALESCE(b.unit, '<NULL>')
-  AND midv_to_instant(a.date_time) IS NOT NULL
-  AND midv_to_instant(a.date_time) = midv_to_instant(b.date_time)
-  AND a.ctid > b.ctid;
 
 -- =============================================================================
 -- 13. Normalised unique indexes on datetime-PK tables
@@ -550,6 +538,13 @@ WHERE a.obsid = b.obsid
 -- created by a previous run of this script or by create_db.py for new DBs.
 --
 -- These definitions must match create_db.sql exactly (POSTGIS-prefixed lines).
+--
+-- Each CREATE UNIQUE INDEX fails if same-instant duplicates remain, so
+-- reaching section 14 proves all seven tables are clean. To check by hand:
+--   SELECT * FROM midv_upgrade_duplicates_w_levels;   (while the gate blocks)
+--   SELECT obsid, midv_to_instant(date_time), count(*) FROM w_levels
+--     WHERE midv_to_instant(date_time) IS NOT NULL
+--     GROUP BY obsid, midv_to_instant(date_time) HAVING count(*) > 1;
 -- =============================================================================
 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_w_levels_obsid_dt
@@ -572,80 +567,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS w_qual_field_unit_unique_index_null
 
 CREATE UNIQUE INDEX IF NOT EXISTS w_qual_logger_unit_unique_index_null
     ON w_qual_logger (obsid, parameter, instrument, midv_to_instant(date_time), COALESCE(unit, '<NULL>'));
-
--- =============================================================================
--- 13a. Verification gate
---
--- Each query below must return zero rows if the migration in sections 12–13
--- succeeded.  A non-empty result means same-instant duplicates remain, which
--- would have caused the corresponding CREATE UNIQUE INDEX above to fail.
--- If section 13's indexes built successfully — which they must have, or this
--- script would already have aborted — these queries return zero rows.
---
--- To verify interactively after running this script:
---   psql -d <your_db> -c "SELECT obsid, midv_to_instant(date_time), count(*) FROM w_levels WHERE midv_to_instant(date_time) IS NOT NULL GROUP BY obsid, midv_to_instant(date_time) HAVING count(*) > 1;"
--- (Adjust table and columns for other tables as needed.)
--- =============================================================================
-
-DO $$ DECLARE c bigint; BEGIN
-    SELECT count(*) INTO c FROM (
-        SELECT 1 FROM w_levels
-        WHERE midv_to_instant(date_time) IS NOT NULL
-        GROUP BY obsid, midv_to_instant(date_time) HAVING count(*) > 1) s;
-    IF c > 0 THEN
-        RAISE EXCEPTION 'MIGRATION INCOMPLETE: w_levels still has % same-instant collision group(s) — unique index would not have built', c;
-    END IF;
-
-    SELECT count(*) INTO c FROM (
-        SELECT 1 FROM w_levels_logger
-        WHERE midv_to_instant(date_time) IS NOT NULL
-        GROUP BY obsid, midv_to_instant(date_time) HAVING count(*) > 1) s;
-    IF c > 0 THEN
-        RAISE EXCEPTION 'MIGRATION INCOMPLETE: w_levels_logger still has % same-instant collision group(s) — unique index would not have built', c;
-    END IF;
-
-    SELECT count(*) INTO c FROM (
-        SELECT 1 FROM comments
-        WHERE midv_to_instant(date_time) IS NOT NULL
-        GROUP BY obsid, midv_to_instant(date_time) HAVING count(*) > 1) s;
-    IF c > 0 THEN
-        RAISE EXCEPTION 'MIGRATION INCOMPLETE: comments still has % same-instant collision group(s) — unique index would not have built', c;
-    END IF;
-
-    SELECT count(*) INTO c FROM (
-        SELECT 1 FROM w_flow
-        WHERE midv_to_instant(date_time) IS NOT NULL
-        GROUP BY obsid, flowtype, instrumentid, midv_to_instant(date_time) HAVING count(*) > 1) s;
-    IF c > 0 THEN
-        RAISE EXCEPTION 'MIGRATION INCOMPLETE: w_flow still has % same-instant collision group(s) — unique index would not have built', c;
-    END IF;
-
-    SELECT count(*) INTO c FROM (
-        SELECT 1 FROM meteo
-        WHERE midv_to_instant(date_time) IS NOT NULL
-        GROUP BY obsid, parameter, instrumentid, midv_to_instant(date_time) HAVING count(*) > 1) s;
-    IF c > 0 THEN
-        RAISE EXCEPTION 'MIGRATION INCOMPLETE: meteo still has % same-instant collision group(s) — unique index would not have built', c;
-    END IF;
-
-    SELECT count(*) INTO c FROM (
-        SELECT 1 FROM w_qual_field
-        WHERE midv_to_instant(date_time) IS NOT NULL
-        GROUP BY obsid, parameter, COALESCE(unit, '<NULL>'), midv_to_instant(date_time) HAVING count(*) > 1) s;
-    IF c > 0 THEN
-        RAISE EXCEPTION 'MIGRATION INCOMPLETE: w_qual_field still has % same-instant collision group(s) — unique index would not have built', c;
-    END IF;
-
-    SELECT count(*) INTO c FROM (
-        SELECT 1 FROM w_qual_logger
-        WHERE midv_to_instant(date_time) IS NOT NULL
-        GROUP BY obsid, parameter, instrument, COALESCE(unit, '<NULL>'), midv_to_instant(date_time) HAVING count(*) > 1) s;
-    IF c > 0 THEN
-        RAISE EXCEPTION 'MIGRATION INCOMPLETE: w_qual_logger still has % same-instant collision group(s) — unique index would not have built', c;
-    END IF;
-
-    RAISE NOTICE 'Verification passed: all 7 tables have no same-instant duplicates among parseable rows.';
-END $$;
 
 -- =============================================================================
 -- 14. Index changes for w_levels_logger
@@ -694,3 +615,20 @@ SET description = regexp_replace(
         'Midvatten plugin 2.0.0'
     )
 WHERE description LIKE 'This db was created by Midvatten plugin %';
+
+-- =============================================================================
+-- 17. Remove the duplicate report views
+--
+-- Section 0a leaves midv_upgrade_duplicates_<table> views behind when it
+-- stops the script. Reaching this point means every table passed, so the
+-- views are empty and no longer needed.
+-- =============================================================================
+
+DROP VIEW IF EXISTS
+    midv_upgrade_duplicates_w_levels,
+    midv_upgrade_duplicates_w_levels_logger,
+    midv_upgrade_duplicates_comments,
+    midv_upgrade_duplicates_w_flow,
+    midv_upgrade_duplicates_meteo,
+    midv_upgrade_duplicates_w_qual_field,
+    midv_upgrade_duplicates_w_qual_logger;

@@ -48,6 +48,7 @@ REQUIRED_FILES = {
     "midvatten/i18n/midvatten_sv_SE.qm",
     "midvatten/ui/midvsettingsdock.ui",
     "midvatten/definitions/upgrade_postgresql_to_2_0_0.sql",
+    "midvatten/definitions/upgrade_postgresql_to_2_0_0_dedup_keep_earliest.sql",
     "midvatten/templates/about_template.htm",
     "midvatten/icons/svg/ref_panel.svg",
 }

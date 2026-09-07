@@ -51,8 +51,13 @@ Midvatten does not automate PostgreSQL upgrades because schema DDL
 permissions vary per deployment. The **complete, tested, idempotent**
 upgrade ships as `definitions/upgrade_postgresql_to_2_0_0.sql` — run that
 file (as a database owner). Besides `w_logger_series` it also installs
-`midv_to_instant()`, de-duplicates readings and rebuilds the normalized
-unique indexes, and bumps the `about_db` version marker. **Prefer it.**
+`midv_to_instant()`, rebuilds the normalized unique indexes, and bumps the
+`about_db` version marker. **Prefer it.** It never deletes data: if readings
+with the same instant exist (`'12:00'` and `'12:00:00'`), it stops before
+changing anything and reports every group, in the psql output and in a
+`midv_upgrade_duplicates_<table>` view per affected table. Fix those rows,
+or run `definitions/upgrade_postgresql_to_2_0_0_dedup_keep_earliest.sql` to
+keep the earliest row of each group, then run the upgrade again.
 
 The SQL below is a minimal illustration of just the `w_logger_series`
 portion, for readers who want to understand that one step in isolation:

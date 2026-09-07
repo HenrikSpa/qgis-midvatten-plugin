@@ -103,12 +103,13 @@ def _clean_w_qual_lab_frame(frame: pd.DataFrame) -> pd.DataFrame:
     general CSV import, interlab4, and interlab4_batch alike."""
     frame = frame.copy()
     for column, cleaner in (
-            ("parameter", parameter_cleaning.clean_parameter),
-            ("unit", parameter_cleaning.clean_unit)):
+        ("parameter", parameter_cleaning.clean_parameter),
+        ("unit", parameter_cleaning.clean_unit),
+    ):
         if column in frame.columns:
             frame[column] = frame[column].map(
-                lambda value: cleaner(value)
-                if isinstance(value, str) else value)
+                lambda value: cleaner(value) if isinstance(value, str) else value
+            )
     return frame
 
 
@@ -120,17 +121,23 @@ def _log_cleaned_values(before: pd.DataFrame, after: pd.DataFrame) -> None:
     for column in ("parameter", "unit"):
         if column not in before.columns:
             continue
-        pairs = {(b, a) for b, a in zip(before[column], after[column])
-                 if isinstance(b, str) and b != a}
+        pairs = {
+            (b, a)
+            for b, a in zip(before[column], after[column])
+            if isinstance(b, str) and b != a
+        }
         changes.extend((column, b, a) for b, a in sorted(pairs))
     if not changes:
         return
     lines = [f"  {column}: {b!r} -> {a!r}" for column, b, a in changes[:50]]
     if len(changes) > 50:
         lines.append(f"  ... och {len(changes) - 50} till")
-    message_utils.MessagebarAndLog.info(log_msg=(
-        f"{len(changes)} parameter/enhets-värden städades mekaniskt vid "
-        "import till w_qual_lab:\n" + "\n".join(lines)))
+    message_utils.MessagebarAndLog.info(
+        log_msg=(
+            f"{len(changes)} parameter/enhets-värden städades mekaniskt vid "
+            "import till w_qual_lab:\n" + "\n".join(lines)
+        )
+    )
 
 
 class MidvDataImporter:  # this class is intended to be a multipurpose import class  BUT loggerdata probably needs specific importer or its own subfunction

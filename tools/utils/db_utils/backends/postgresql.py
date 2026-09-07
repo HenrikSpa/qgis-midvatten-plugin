@@ -108,6 +108,7 @@ class PostgreSQLBackend(Backend):
 
     def __init__(self, connection_name: str, schema: str = "public") -> None:
         self._schema = schema
+        self._has_instant_function: Optional[bool] = None
         self._connection_name = connection_name
         self.postgis_settings = get_postgis_connections()[connection_name]
         self.uri = QgsDataSourceUri()
@@ -339,8 +340,30 @@ class PostgreSQLBackend(Backend):
     def is_not_distinct_from(self) -> str:
         return "IS NOT DISTINCT FROM"
 
+    def has_normalized_instant_function(self) -> bool:
+        if self._has_instant_function is None:
+            rows = self.execute_and_fetchall(
+                "SELECT to_regproc('midv_to_instant') IS NOT NULL"
+            )
+            self._has_instant_function = bool(rows[0][0])
+        return self._has_instant_function
+
     def normalized_instant_sql(self, col_expr: str) -> str:
-        return f"midv_to_instant({col_expr})"
+        if self.has_normalized_instant_function():
+            return f"midv_to_instant({col_expr})"
+        # Database not yet upgraded with upgrade_postgresql_to_2_0_0.sql, so
+        # midv_to_instant() does not exist. Normalize the common text layouts
+        # to 'YYYY-MM-DD HH:MM:SS' without casting, so malformed values never
+        # raise; they fall through and compare as raw text. Appending ':00'
+        # and cutting at 19 chars handles both 'HH:MM' and 'HH:MM:SS[.fff]'.
+        return (
+            "(CASE"
+            f" WHEN {col_expr} ~ '^\\d{{4}}-\\d{{2}}-\\d{{2}}[ T]\\d{{2}}:\\d{{2}}'"
+            f" THEN substr(replace({col_expr}, 'T', ' ') || ':00', 1, 19)"
+            f" WHEN {col_expr} ~ '^\\d{{4}}-\\d{{2}}-\\d{{2}}$'"
+            f" THEN {col_expr} || ' 00:00:00'"
+            f" ELSE {col_expr} END)"
+        )
 
     _NUMERIC_DATATYPES = [
         "smallint",

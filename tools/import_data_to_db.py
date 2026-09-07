@@ -1070,7 +1070,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         dest_table: str,
         primary_keys: list[str],
     ) -> bool:
-        """Create the lookup index required by normalized duplicate removal.
+        """Create the lookup index that speeds up normalized duplicate removal.
 
         The supporting index is deliberately non-unique. Legacy databases may
         already contain differently-formatted timestamps representing the same
@@ -1078,8 +1078,12 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         otherwise safe performance migration. New databases retain their
         schema-defined UNIQUE index, which is detected and reused.
 
-        Returns True when an index was created and False when a suitable index
-        already existed.
+        The import is correct without the index. When it cannot be created
+        (the connecting role does not own the table, the database is not
+        upgraded, the file is locked) the import warns and continues with the
+        slower duplicate scan.
+
+        Returns True when an index was created and False otherwise.
         """
         if "date_time" not in primary_keys or self.has_normalized_datetime_index(
             dbconnection, dest_table, primary_keys
@@ -1103,6 +1107,14 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             f"ON {table_ident} ({', '.join(expressions)})"
         )
         try:
+            if not dbconnection.has_normalized_instant_function():
+                # The text-normalizing fallback expression is not what
+                # has_normalized_datetime_index() looks for, so an index on it
+                # would never be recognised; only the upgrade script can help.
+                raise RuntimeError(
+                    "midv_to_instant() is missing. Ask the database owner to "
+                    "run upgrade_postgresql_to_2_0_0.sql from the plugin folder."
+                )
             dbconnection.execute(sql)
             if not self.has_normalized_datetime_index(
                 dbconnection, dest_table, primary_keys
@@ -1111,15 +1123,22 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                     f"index name {index_name!r} already has another definition"
                 )
         except Exception as e:
-            raise MidvDataImporterError(
-                QCoreApplication.translate(
+            message_utils.MessagebarAndLog.warning(
+                bar_msg=QCoreApplication.translate(
                     "midv_data_importer",
-                    "The normalized timestamp index required for importing to %s "
-                    "could not be created. The import was stopped to avoid a very "
-                    "slow duplicate scan. Error: %s",
+                    "Could not create the timestamp speed-up index for %s. "
+                    "The import continues but is slower.",
                 )
-                % (dest_table, str(e))
-            ) from e
+                % dest_table,
+                log_msg=QCoreApplication.translate(
+                    "midv_data_importer",
+                    "The normalized timestamp index %s for %s could not be "
+                    "created. The import continues using the slower duplicate "
+                    "scan. Error: %s",
+                )
+                % (index_name, dest_table, str(e)),
+            )
+            return False
 
         return True
 

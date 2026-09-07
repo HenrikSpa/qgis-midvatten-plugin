@@ -287,6 +287,9 @@ class DbConnectionManager:
     def normalized_instant_sql(self, col_expr: str) -> str:
         return self._backend.normalized_instant_sql(col_expr)
 
+    def has_normalized_instant_function(self) -> bool:
+        return self._backend.has_normalized_instant_function()
+
     def is_sqlite(self) -> bool:
         return self._backend.is_sqlite()
 

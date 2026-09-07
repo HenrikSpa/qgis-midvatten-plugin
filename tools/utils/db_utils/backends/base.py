@@ -287,8 +287,18 @@ class Backend(ABC):
         Used so duplicate detection matches the unique-index definition on each
         backend. col_expr is an already-safe SQL column reference (e.g. a quoted
         identifier or 'd."date_time"').
+
+        When has_normalized_instant_function() is False the backend returns a
+        best-effort text normalization instead: not index-backed, and malformed
+        values compare as raw text rather than as NULL.
         """
         pass
+
+    def has_normalized_instant_function(self) -> bool:
+        """Whether normalized_instant_sql() can use the backend's index-backed
+        normalization. SQLite's datetime() is built in; PostgreSQL needs the
+        midv_to_instant() function installed by the 2.0.0 upgrade script."""
+        return True
 
     @abstractmethod
     def numeric_datatypes(self) -> list:

@@ -94,7 +94,6 @@
           <font>
            <family>Noto Sans</family>
            <pointsize>8</pointsize>
-           <weight>50</weight>
            <bold>false</bold>
           </font>
          </property>
@@ -127,7 +126,6 @@
           <font>
            <family>Noto Sans</family>
            <pointsize>8</pointsize>
-           <weight>50</weight>
            <bold>false</bold>
           </font>
          </property>
@@ -160,7 +158,6 @@
        <font>
         <family>Noto Sans</family>
         <pointsize>8</pointsize>
-        <weight>50</weight>
         <bold>false</bold>
        </font>
       </property>
@@ -190,7 +187,6 @@
         <font>
          <family>Noto Sans</family>
          <pointsize>8</pointsize>
-         <weight>50</weight>
          <bold>false</bold>
         </font>
        </property>
@@ -227,7 +223,6 @@
              <font>
               <family>Noto Sans</family>
               <pointsize>9</pointsize>
-              <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
@@ -260,7 +255,6 @@
              <font>
               <family>Noto Sans</family>
               <pointsize>8</pointsize>
-              <weight>50</weight>
               <bold>false</bold>
              </font>
             </property>
@@ -283,7 +277,6 @@
            <font>
             <family>Noto Sans</family>
             <pointsize>8</pointsize>
-            <weight>50</weight>
             <bold>false</bold>
            </font>
           </property>
@@ -298,7 +291,6 @@
            <font>
             <family>Noto Sans</family>
             <pointsize>9</pointsize>
-            <weight>75</weight>
             <bold>true</bold>
            </font>
           </property>
@@ -327,7 +319,6 @@
              <font>
               <family>Noto Sans</family>
               <pointsize>8</pointsize>
-              <weight>50</weight>
               <bold>false</bold>
              </font>
             </property>
@@ -354,7 +345,6 @@
              <font>
               <family>Noto Sans</family>
               <pointsize>8</pointsize>
-              <weight>50</weight>
               <italic>false</italic>
               <bold>false</bold>
              </font>
@@ -421,7 +411,6 @@
              <font>
               <family>Noto Sans</family>
               <pointsize>8</pointsize>
-              <weight>50</weight>
               <bold>false</bold>
              </font>
             </property>
@@ -451,7 +440,6 @@
              <font>
               <family>Noto Sans</family>
               <pointsize>8</pointsize>
-              <weight>50</weight>
               <bold>false</bold>
              </font>
             </property>
@@ -481,7 +469,6 @@
              <font>
               <family>Noto Sans</family>
               <pointsize>8</pointsize>
-              <weight>50</weight>
               <bold>false</bold>
              </font>
             </property>
@@ -521,7 +508,6 @@
              <font>
               <family>Noto Sans</family>
               <pointsize>8</pointsize>
-              <weight>50</weight>
               <bold>false</bold>
              </font>
             </property>
@@ -548,7 +534,6 @@
              <font>
               <family>Noto Sans</family>
               <pointsize>8</pointsize>
-              <weight>50</weight>
               <italic>false</italic>
               <bold>false</bold>
              </font>
@@ -601,7 +586,6 @@
              <font>
               <family>Noto Sans</family>
               <pointsize>8</pointsize>
-              <weight>50</weight>
               <bold>false</bold>
              </font>
             </property>
@@ -631,7 +615,6 @@
              <font>
               <family>Noto Sans</family>
               <pointsize>8</pointsize>
-              <weight>50</weight>
               <bold>false</bold>
              </font>
             </property>
@@ -661,7 +644,6 @@
              <font>
               <family>Noto Sans</family>
               <pointsize>8</pointsize>
-              <weight>50</weight>
               <bold>false</bold>
              </font>
             </property>
@@ -690,7 +672,6 @@
            <font>
             <family>Noto Sans</family>
             <pointsize>8</pointsize>
-            <weight>50</weight>
             <bold>false</bold>
            </font>
           </property>
@@ -723,7 +704,6 @@
            <font>
             <family>Noto Sans</family>
             <pointsize>8</pointsize>
-            <weight>50</weight>
             <bold>false</bold>
            </font>
           </property>
@@ -788,7 +768,6 @@
                <font>
                 <family>Noto Sans</family>
                 <pointsize>8</pointsize>
-                <weight>75</weight>
                 <bold>true</bold>
                </font>
               </property>
@@ -836,7 +815,6 @@
                  <font>
                   <family>Noto Sans</family>
                   <pointsize>8</pointsize>
-                  <weight>50</weight>
                   <bold>false</bold>
                  </font>
                 </property>
@@ -872,7 +850,6 @@
                  <font>
                   <family>Noto Sans</family>
                   <pointsize>8</pointsize>
-                  <weight>50</weight>
                   <bold>false</bold>
                  </font>
                 </property>
@@ -908,7 +885,6 @@
                  <font>
                   <family>Noto Sans</family>
                   <pointsize>8</pointsize>
-                  <weight>50</weight>
                   <bold>false</bold>
                  </font>
                 </property>
@@ -932,7 +908,6 @@
                <font>
                 <family>Noto Sans</family>
                 <pointsize>8</pointsize>
-                <weight>75</weight>
                 <bold>true</bold>
                </font>
               </property>
@@ -980,7 +955,6 @@
                  <font>
                   <family>Noto Sans</family>
                   <pointsize>8</pointsize>
-                  <weight>50</weight>
                   <bold>false</bold>
                  </font>
                 </property>
@@ -1016,7 +990,6 @@
                  <font>
                   <family>Noto Sans</family>
                   <pointsize>8</pointsize>
-                  <weight>50</weight>
                   <bold>false</bold>
                  </font>
                 </property>
@@ -1052,7 +1025,6 @@
                  <font>
                   <family>Noto Sans</family>
                   <pointsize>8</pointsize>
-                  <weight>50</weight>
                   <bold>false</bold>
                  </font>
                 </property>
@@ -1081,7 +1053,6 @@
                <font>
                 <family>Noto Sans</family>
                 <pointsize>8</pointsize>
-                <weight>50</weight>
                 <bold>false</bold>
                </font>
               </property>
@@ -1113,7 +1084,6 @@
                  <font>
                   <family>Noto Sans</family>
                   <pointsize>8</pointsize>
-                  <weight>50</weight>
                   <bold>false</bold>
                  </font>
                 </property>
@@ -1140,7 +1110,6 @@
                  <font>
                   <family>Noto Sans</family>
                   <pointsize>8</pointsize>
-                  <weight>50</weight>
                   <bold>false</bold>
                  </font>
                 </property>
@@ -1176,7 +1145,6 @@
                <font>
                 <family>Noto Sans</family>
                 <pointsize>8</pointsize>
-                <weight>50</weight>
                 <bold>false</bold>
                </font>
               </property>
@@ -1285,7 +1253,6 @@
         <font>
          <family>Noto Sans</family>
          <pointsize>8</pointsize>
-         <weight>50</weight>
          <bold>false</bold>
         </font>
        </property>
@@ -1308,7 +1275,6 @@
            <font>
             <family>Noto Sans</family>
             <pointsize>8</pointsize>
-            <weight>50</weight>
             <bold>false</bold>
            </font>
           </property>
@@ -1343,7 +1309,6 @@
               <font>
                <family>Noto Sans</family>
                <pointsize>8</pointsize>
-               <weight>50</weight>
                <bold>false</bold>
               </font>
              </property>

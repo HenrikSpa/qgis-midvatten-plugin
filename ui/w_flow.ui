@@ -40,7 +40,6 @@
         <font>
          <family>Arial</family>
          <pointsize>8</pointsize>
-         <weight>50</weight>
          <bold>false</bold>
         </font>
        </property>
@@ -76,7 +75,6 @@
         <font>
          <family>Arial</family>
          <pointsize>10</pointsize>
-         <weight>50</weight>
          <bold>false</bold>
         </font>
        </property>
@@ -109,7 +107,6 @@
         <font>
          <family>Arial</family>
          <pointsize>8</pointsize>
-         <weight>50</weight>
          <bold>false</bold>
         </font>
        </property>
@@ -145,7 +142,6 @@
         <font>
          <family>Arial</family>
          <pointsize>10</pointsize>
-         <weight>50</weight>
          <bold>false</bold>
         </font>
        </property>
@@ -178,7 +174,6 @@
         <font>
          <family>Arial</family>
          <pointsize>8</pointsize>
-         <weight>50</weight>
          <bold>false</bold>
         </font>
        </property>
@@ -214,7 +209,6 @@
         <font>
          <family>Arial</family>
          <pointsize>10</pointsize>
-         <weight>50</weight>
          <bold>false</bold>
         </font>
        </property>
@@ -251,7 +245,6 @@ Momflow=Momentanflöde vid avläsningstillfället</string>
         <font>
          <family>Arial</family>
          <pointsize>8</pointsize>
-         <weight>50</weight>
          <bold>false</bold>
         </font>
        </property>
@@ -287,7 +280,6 @@ Momflow=Momentanflöde vid avläsningstillfället</string>
         <font>
          <family>Arial</family>
          <pointsize>10</pointsize>
-         <weight>50</weight>
          <bold>false</bold>
         </font>
        </property>
@@ -320,7 +312,6 @@ Momflow=Momentanflöde vid avläsningstillfället</string>
         <font>
          <family>Arial</family>
          <pointsize>8</pointsize>
-         <weight>50</weight>
          <bold>false</bold>
         </font>
        </property>
@@ -356,7 +347,6 @@ Momflow=Momentanflöde vid avläsningstillfället</string>
         <font>
          <family>Arial</family>
          <pointsize>10</pointsize>
-         <weight>50</weight>
          <bold>false</bold>
         </font>
        </property>
@@ -389,7 +379,6 @@ Momflow=Momentanflöde vid avläsningstillfället</string>
         <font>
          <family>Arial</family>
          <pointsize>8</pointsize>
-         <weight>50</weight>
          <bold>false</bold>
         </font>
        </property>
@@ -425,7 +414,6 @@ Momflow=Momentanflöde vid avläsningstillfället</string>
         <font>
          <family>Arial</family>
          <pointsize>10</pointsize>
-         <weight>50</weight>
          <bold>false</bold>
         </font>
        </property>
@@ -458,7 +446,6 @@ Momflow=Momentanflöde vid avläsningstillfället</string>
         <font>
          <family>Arial</family>
          <pointsize>8</pointsize>
-         <weight>50</weight>
          <bold>false</bold>
         </font>
        </property>
@@ -494,7 +481,6 @@ Momflow=Momentanflöde vid avläsningstillfället</string>
         <font>
          <family>Arial</family>
          <pointsize>10</pointsize>
-         <weight>50</weight>
          <bold>false</bold>
         </font>
        </property>
@@ -510,7 +496,6 @@ Momflow=Momentanflöde vid avläsningstillfället</string>
      <property name="font">
       <font>
        <pointsize>8</pointsize>
-       <weight>50</weight>
        <bold>false</bold>
       </font>
      </property>

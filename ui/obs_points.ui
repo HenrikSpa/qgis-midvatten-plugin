@@ -1039,7 +1039,6 @@ p, li { white-space: pre-wrap; }
               <font>
                <family>Arial</family>
                <pointsize>10</pointsize>
-               <weight>50</weight>
                <bold>false</bold>
               </font>
              </property>

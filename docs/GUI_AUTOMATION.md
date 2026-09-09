@@ -122,6 +122,50 @@ the run.
   enough for one scene); never Monitor/background — three implementers stalled waiting for notifications
   that never arrive. `docker ps` / `docker kill` if a container is stuck.
 
+## 4a. Quick check of a single dialog (screenshot one window)
+
+To eyeball one dialog's Qt6 rendering without the full sweep, drop a throwaway
+scene under `test/gui/scenarios/` that opens the tool and grabs it, then run it
+with the standard container command. A scene only needs `scenario(ctx, plugin,
+out)` + `run_scenario` (see `_bootstrap.py`); open the tool with
+`plugin._dispatch(spec)`, fetch it from `plugin._open_tools[<id>]` (or
+`visible_tool("<ClassName>")`), `tool.resize(1400, 900)`, then
+`ctx.grab(tool, "name")` writes `<out>/name.png`. Invocation:
+
+```
+docker run --rm --init --name midv-oneshot-$USER --user $(id -u):$(id -g) -e HOME=/tmp \
+  -v /home/hsai1/dev/qgis-midvatten-plugin.wiki:/wiki:ro -v <plugin-or-worktree>:/plugin:ro -v <out>:/out -w /wiki \
+  midvatten-docs:4.2.2 xvfb-run -a -s "-screen 0 1600x1000x24" \
+  qgis --nologo --profiles-path /work --profile shot --code /plugin/test/gui/scenarios/<scene>.py \
+       --py-args --db /wiki/tutorial_data/build/tutorial.sqlite --out /out --harness-dir /plugin/test/gui --
+```
+
+Delete the throwaway scene afterwards; it is not a committed test.
+
+## 4b. Caveat: the Linux image hides Windows-only font bugs
+
+**A clean screenshot from this image does NOT prove the dialog looks right on
+Windows Qt6.** The image has no `Noto Sans`, so every `.ui` that hardcodes that
+family substitutes `DejaVu Sans` (`QFontInfo` confirms), which ships only
+Regular and Bold faces. Two consequences bit us on the logger editor:
+
+- **Font weight.** Qt Designer wrote weights on the Qt5 0-99 scale (`50` =
+  Normal, `75` = Bold). Qt6 reads the raw integer on the CSS 1-1000 scale
+  (`400` = Normal, `700` = Bold, `100` = Thin), so `<weight>50</weight>` is a
+  hairline. On Linux, DejaVu has no thin face so glyphs snap back to Regular and
+  the bug is **invisible**; on Windows the fallback (Segoe UI) *has* thin faces,
+  so the whole dialog renders as near-invisible hairline text. Fix: delete the
+  `<weight>` lines from the `.ui` (keep `<bold>` for headers) so both toolkits
+  inherit the normal application weight. Guarded by
+  `test/test_ui_font_weight.py`.
+
+For this class of bug, verify **programmatically, not visually**: load the real
+`.ui` with `PyQt6.uic.loadUiType` inside the container and assert the resolved
+weights — `w.findChildren(...)`, `child.font().weight()` — are `400`/`700`, not
+`50`/`75`. That check is font-fallback-independent and catches what the
+screenshot cannot. (Same run confirms `QFontDatabase.families()` for whether a
+requested family is even present.)
+
 ## 5. Reusing this for a full GUI test pass
 
 Design that follows directly from the above (not implemented yet):

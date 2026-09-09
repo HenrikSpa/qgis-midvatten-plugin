@@ -250,7 +250,6 @@
                           <widget class="QgsCollapsibleGroupBox" name="wlvl_groupbox">
                            <property name="font">
                             <font>
-                             <weight>75</weight>
                              <bold>true</bold>
                             </font>
                            </property>
@@ -282,7 +281,6 @@
                                  <font>
                                   <family>DejaVu Sans</family>
                                   <pointsize>9</pointsize>
-                                  <weight>50</weight>
                                   <bold>false</bold>
                                  </font>
                                 </property>
@@ -297,7 +295,6 @@
                                  <font>
                                   <family>DejaVu Sans</family>
                                   <pointsize>9</pointsize>
-                                  <weight>50</weight>
                                   <bold>false</bold>
                                  </font>
                                 </property>
@@ -335,7 +332,6 @@
                                   <font>
                                    <family>DejaVu Sans</family>
                                    <pointsize>9</pointsize>
-                                   <weight>50</weight>
                                    <bold>false</bold>
                                   </font>
                                  </property>
@@ -356,7 +352,6 @@
                                   <font>
                                    <family>DejaVu Sans</family>
                                    <pointsize>9</pointsize>
-                                   <weight>50</weight>
                                    <bold>false</bold>
                                   </font>
                                  </property>
@@ -405,7 +400,6 @@ p, li { white-space: pre-wrap; }
                                   <font>
                                    <family>DejaVu Sans</family>
                                    <pointsize>9</pointsize>
-                                   <weight>50</weight>
                                    <bold>false</bold>
                                   </font>
                                  </property>
@@ -420,7 +414,6 @@ p, li { white-space: pre-wrap; }
                                   <font>
                                    <family>DejaVu Sans</family>
                                    <pointsize>9</pointsize>
-                                   <weight>50</weight>
                                    <bold>false</bold>
                                   </font>
                                  </property>
@@ -432,7 +425,6 @@ p, li { white-space: pre-wrap; }
                                   <font>
                                    <family>DejaVu Sans</family>
                                    <pointsize>9</pointsize>
-                                   <weight>50</weight>
                                    <bold>false</bold>
                                   </font>
                                  </property>
@@ -447,7 +439,6 @@ p, li { white-space: pre-wrap; }
                                   <font>
                                    <family>DejaVu Sans</family>
                                    <pointsize>9</pointsize>
-                                   <weight>50</weight>
                                    <bold>false</bold>
                                   </font>
                                  </property>
@@ -459,7 +450,6 @@ p, li { white-space: pre-wrap; }
                                   <font>
                                    <family>DejaVu Sans</family>
                                    <pointsize>9</pointsize>
-                                   <weight>50</weight>
                                    <bold>false</bold>
                                   </font>
                                  </property>
@@ -474,7 +464,6 @@ p, li { white-space: pre-wrap; }
                                   <font>
                                    <family>DejaVu Sans</family>
                                    <pointsize>9</pointsize>
-                                   <weight>50</weight>
                                    <bold>false</bold>
                                   </font>
                                  </property>
@@ -495,7 +484,6 @@ p, li { white-space: pre-wrap; }
                                   <font>
                                    <family>DejaVu Sans</family>
                                    <pointsize>9</pointsize>
-                                   <weight>50</weight>
                                    <bold>false</bold>
                                   </font>
                                  </property>
@@ -514,7 +502,6 @@ p, li { white-space: pre-wrap; }
                           <widget class="QgsCollapsibleGroupBox" name="dem_groupbox">
                            <property name="font">
                             <font>
-                             <weight>75</weight>
                              <bold>true</bold>
                             </font>
                            </property>
@@ -537,7 +524,6 @@ p, li { white-space: pre-wrap; }
                                <font>
                                 <family>DejaVu Sans</family>
                                 <pointsize>9</pointsize>
-                                <weight>50</weight>
                                 <bold>false</bold>
                                </font>
                               </property>
@@ -564,7 +550,6 @@ p, li { white-space: pre-wrap; }
                                <widget class="QLabel" name="label_13">
                                 <property name="font">
                                  <font>
-                                  <weight>75</weight>
                                   <bold>true</bold>
                                  </font>
                                 </property>
@@ -598,7 +583,6 @@ p, li { white-space: pre-wrap; }
                              <widget class="QGroupBox" name="secplot_apply_graded_dems">
                               <property name="font">
                                <font>
-                                <weight>75</weight>
                                 <bold>true</bold>
                                </font>
                               </property>
@@ -696,7 +680,6 @@ p, li { white-space: pre-wrap; }
                           <widget class="QgsCollapsibleGroupBox" name="bar_groupbox">
                            <property name="font">
                             <font>
-                             <weight>75</weight>
                              <bold>true</bold>
                             </font>
                            </property>
@@ -716,7 +699,6 @@ p, li { white-space: pre-wrap; }
                                <font>
                                 <family>DejaVu Sans</family>
                                 <pointsize>9</pointsize>
-                                <weight>50</weight>
                                 <bold>false</bold>
                                </font>
                               </property>
@@ -727,7 +709,6 @@ p, li { white-space: pre-wrap; }
                               <property name="font">
                                <font>
                                 <pointsize>9</pointsize>
-                                <weight>50</weight>
                                 <bold>false</bold>
                                </font>
                               </property>
@@ -755,7 +736,6 @@ p, li { white-space: pre-wrap; }
                                <font>
                                 <family>DejaVu Sans</family>
                                 <pointsize>9</pointsize>
-                                <weight>50</weight>
                                 <bold>false</bold>
                                </font>
                               </property>
@@ -775,7 +755,6 @@ p, li { white-space: pre-wrap; }
                                  <property name="font">
                                   <font>
                                    <pointsize>9</pointsize>
-                                   <weight>50</weight>
                                    <bold>false</bold>
                                   </font>
                                  </property>
@@ -792,7 +771,6 @@ p, li { white-space: pre-wrap; }
                                  <property name="font">
                                   <font>
                                    <pointsize>9</pointsize>
-                                   <weight>50</weight>
                                    <bold>false</bold>
                                   </font>
                                  </property>
@@ -807,7 +785,6 @@ p, li { white-space: pre-wrap; }
                                   <font>
                                    <family>DejaVu Sans</family>
                                    <pointsize>9</pointsize>
-                                   <weight>50</weight>
                                    <bold>false</bold>
                                   </font>
                                  </property>
@@ -849,7 +826,6 @@ p, li { white-space: pre-wrap; }
                                   <font>
                                    <family>DejaVu Sans</family>
                                    <pointsize>9</pointsize>
-                                   <weight>50</weight>
                                    <bold>false</bold>
                                   </font>
                                  </property>
@@ -867,7 +843,6 @@ p, li { white-space: pre-wrap; }
                                   <font>
                                    <family>DejaVu Sans</family>
                                    <pointsize>9</pointsize>
-                                   <weight>50</weight>
                                    <bold>false</bold>
                                   </font>
                                  </property>
@@ -891,7 +866,6 @@ p, li { white-space: pre-wrap; }
                                   <font>
                                    <family>DejaVu Sans</family>
                                    <pointsize>9</pointsize>
-                                   <weight>50</weight>
                                    <bold>false</bold>
                                   </font>
                                  </property>
@@ -916,7 +890,6 @@ p, li { white-space: pre-wrap; }
                                 <widget class="QRadioButton" name="text_align_center">
                                  <property name="font">
                                   <font>
-                                   <weight>50</weight>
                                    <bold>false</bold>
                                   </font>
                                  </property>
@@ -929,7 +902,6 @@ p, li { white-space: pre-wrap; }
                                 <widget class="QRadioButton" name="text_align_edge">
                                  <property name="font">
                                   <font>
-                                   <weight>50</weight>
                                    <bold>false</bold>
                                   </font>
                                  </property>
@@ -948,7 +920,6 @@ p, li { white-space: pre-wrap; }
                              <widget class="QLabel" name="label_12">
                               <property name="font">
                                <font>
-                                <weight>50</weight>
                                 <bold>false</bold>
                                </font>
                               </property>
@@ -962,7 +933,6 @@ p, li { white-space: pre-wrap; }
                               <property name="font">
                                <font>
                                 <pointsize>9</pointsize>
-                                <weight>50</weight>
                                 <bold>false</bold>
                                </font>
                               </property>
@@ -976,7 +946,6 @@ p, li { white-space: pre-wrap; }
                               <property name="font">
                                <font>
                                 <pointsize>9</pointsize>
-                                <weight>50</weight>
                                 <bold>false</bold>
                                </font>
                               </property>
@@ -1002,7 +971,6 @@ p, li { white-space: pre-wrap; }
                               <property name="font">
                                <font>
                                 <pointsize>9</pointsize>
-                                <weight>50</weight>
                                 <bold>false</bold>
                                </font>
                               </property>
@@ -1016,7 +984,6 @@ p, li { white-space: pre-wrap; }
                               <property name="font">
                                <font>
                                 <pointsize>9</pointsize>
-                                <weight>50</weight>
                                 <bold>false</bold>
                                </font>
                               </property>
@@ -1042,7 +1009,6 @@ p, li { white-space: pre-wrap; }
                               <property name="font">
                                <font>
                                 <pointsize>9</pointsize>
-                                <weight>50</weight>
                                 <bold>false</bold>
                                </font>
                               </property>
@@ -1057,7 +1023,6 @@ p, li { white-space: pre-wrap; }
                                <font>
                                 <family>DejaVu Sans</family>
                                 <pointsize>9</pointsize>
-                                <weight>50</weight>
                                 <bold>false</bold>
                                </font>
                               </property>
@@ -1070,7 +1035,6 @@ p, li { white-space: pre-wrap; }
                           <widget class="QgsCollapsibleGroupBox" name="tem_groupbox">
                            <property name="font">
                             <font>
-                             <weight>75</weight>
                              <bold>true</bold>
                             </font>
                            </property>
@@ -1273,7 +1237,6 @@ p, li { white-space: pre-wrap; }
                           <widget class="QgsCollapsibleGroupBox" name="images_groupbox">
                            <property name="font">
                             <font>
-                             <weight>75</weight>
                              <bold>true</bold>
                             </font>
                            </property>
@@ -1355,7 +1318,6 @@ p, li { white-space: pre-wrap; }
                           <widget class="QgsCollapsibleGroupBox" name="plots_groupbox">
                            <property name="font">
                             <font>
-                             <weight>75</weight>
                              <bold>true</bold>
                             </font>
                            </property>
@@ -1371,7 +1333,6 @@ p, li { white-space: pre-wrap; }
                               <property name="font">
                                <font>
                                 <pointsize>9</pointsize>
-                                <weight>50</weight>
                                 <bold>false</bold>
                                </font>
                               </property>
@@ -1398,7 +1359,6 @@ p, li { white-space: pre-wrap; }
                                  <font>
                                   <family>DejaVu Sans</family>
                                   <pointsize>9</pointsize>
-                                  <weight>50</weight>
                                   <bold>false</bold>
                                  </font>
                                 </property>
@@ -1419,7 +1379,6 @@ p, li { white-space: pre-wrap; }
                                  <font>
                                   <family>DejaVu Sans</family>
                                   <pointsize>9</pointsize>
-                                  <weight>50</weight>
                                   <bold>false</bold>
                                  </font>
                                 </property>
@@ -1451,7 +1410,6 @@ p, li { white-space: pre-wrap; }
                                  <font>
                                   <family>DejaVu Sans</family>
                                   <pointsize>9</pointsize>
-                                  <weight>50</weight>
                                   <bold>false</bold>
                                  </font>
                                 </property>
@@ -1476,7 +1434,6 @@ p, li { white-space: pre-wrap; }
                                  <font>
                                   <family>DejaVu Sans</family>
                                   <pointsize>9</pointsize>
-                                  <weight>50</weight>
                                   <bold>false</bold>
                                  </font>
                                 </property>
@@ -1500,7 +1457,6 @@ p, li { white-space: pre-wrap; }
                                  <font>
                                   <family>DejaVu Sans</family>
                                   <pointsize>9</pointsize>
-                                  <weight>50</weight>
                                   <bold>false</bold>
                                  </font>
                                 </property>
@@ -1512,7 +1468,6 @@ p, li { white-space: pre-wrap; }
                                  <font>
                                   <family>DejaVu Sans</family>
                                   <pointsize>9</pointsize>
-                                  <weight>50</weight>
                                   <bold>false</bold>
                                  </font>
                                 </property>
@@ -1530,7 +1485,6 @@ p, li { white-space: pre-wrap; }
                                  <font>
                                   <family>DejaVu Sans</family>
                                   <pointsize>9</pointsize>
-                                  <weight>50</weight>
                                   <bold>false</bold>
                                  </font>
                                 </property>
@@ -1548,7 +1502,6 @@ p, li { white-space: pre-wrap; }
                                  <font>
                                   <family>DejaVu Sans</family>
                                   <pointsize>9</pointsize>
-                                  <weight>50</weight>
                                   <bold>false</bold>
                                  </font>
                                 </property>

@@ -366,6 +366,63 @@ class TestInterlab4Importer(utils_for_tests.MidvattenTestSpatialiteNotCreated):
         warn_msgs = " ".join(str(c) for c in mock_messagebar.warning.mock_calls)
         assert "3" in warn_msgs
 
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_parse_exposes_collected_errors_on_instance(
+        self, mock_messagebar, mock_popup
+    ):
+        # A caller that drives parse() headlessly (e.g. the addons batch import)
+        # cannot see the transient message-bar warning. parse() must therefore
+        # leave the collected per-row/file errors on the instance so the caller
+        # can attribute them to the file. Same 3 blanked-parameter rows as above.
+        interlab4_lines = (
+            "#Interlab",
+            "#Version=4.0",
+            "#Tecken=UTF-8",
+            "#Textavgränsare=Nej",
+            "#Decimaltecken=,",
+            "#Provadm",
+            "Lablittera;Namn;Adress;Postnr;Ort;Kommunkod;Projekt;Laboratorium;Provtyp;Provtagare;Registertyp;ProvplatsID;Provplatsnamn;Specifik provplats;Provtagningsorsak;Provtyp;Provtypspecifikation;Bedömning;Kemisk bedömning;Mikrobiologisk bedömning;Kommentar;År;Provtagningsdatum;Provtagningstid;Inlämningsdatum;Inlämningstid;",
+            "DM-990908-2773;MFR;PG Vejdes väg 15;351 96;Växjö;0780;Demoproj;Demo-Laboratoriet;NSG;DV;;Demo1 vattenverk;;Föreskriven regelbunden undersökning enligt SLVFS 2001:30;Dricksvatten enligt SLVFS 2001:30;Utgående;Nej;Tjänligt;;;;2010;2010-09-07;10:15;2010-09-07;14:15;",
+            "#Provdat",
+            "Lablittera;Metodbeteckning;Parameter;Mätvärdetext;Mätvärdetal;Mätvärdetalanm;Enhet;Rapporteringsgräns;Detektionsgräns;Mätosäkerhet;Mätvärdespår;Parameterbedömning;Kommentar;",
+            "DM-990908-2773;SS-EN ISO 7887-1/4;;;5;;mg/l Pt;;;;;;;",
+            "DM-990908-2773;ISO 17294-2;;;0,06;;mg/l;;;;;;;",
+            "DM-990908-2773;Saknas;;;14,5;;grader C;;;;;;;",
+            "#Slut",
+        )
+
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
+            self.importinstance.parse([testfile])
+
+        assert len(self.importinstance.parse_errors) == 3
+        assert all(isinstance(e, str) for e in self.importinstance.parse_errors)
+
+    @mock.patch("midvatten.tools.utils.message_utils.pop_up_info")
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_parse_leaves_empty_errors_on_clean_file(
+        self, mock_messagebar, mock_popup
+    ):
+        interlab4_lines = (
+            "#Interlab",
+            "#Version=4.0",
+            "#Tecken=UTF-8",
+            "#Textavgränsare=Nej",
+            "#Decimaltecken=,",
+            "#Provadm",
+            "Lablittera;Namn;Adress;Postnr;Ort;Kommunkod;Projekt;Laboratorium;Provtyp;Provtagare;Registertyp;ProvplatsID;Provplatsnamn;Specifik provplats;Provtagningsorsak;Provtyp;Provtypspecifikation;Bedömning;Kemisk bedömning;Mikrobiologisk bedömning;Kommentar;År;Provtagningsdatum;Provtagningstid;Inlämningsdatum;Inlämningstid;",
+            "DM-990908-2773;MFR;PG Vejdes väg 15;351 96;Växjö;0780;Demoproj;Demo-Laboratoriet;NSG;DV;;Demo1 vattenverk;;Föreskriven;Dricksvatten;Utgående;Nej;Tjänligt;;;;2010;2010-09-07;10:15;2010-09-07;14:15;",
+            "#Provdat",
+            "Lablittera;Metodbeteckning;Parameter;Mätvärdetext;Mätvärdetal;Mätvärdetalanm;Enhet;Rapporteringsgräns;Detektionsgräns;Mätosäkerhet;Mätvärdespår;Parameterbedömning;Kommentar;",
+            "DM-990908-2773;SS-EN ISO 7887-1/4;Färgtal;;5;;mg/l Pt;;;;;;;",
+            "#Slut",
+        )
+
+        with file_utils.tempinput("\n".join(interlab4_lines), "utf-8") as testfile:
+            self.importinstance.parse([testfile])
+
+        assert self.importinstance.parse_errors == []
+
     def test_interlab4_to_table(self):
         interlab4_lines = (
             "#Interlab",

@@ -614,6 +614,11 @@ class Interlab4Import(BaseImporter, import_fieldlogger_ui_dialog):
                 if not file_error:
                     all_lab_results.update(lab_results)
 
+        # Expose the collected errors so headless callers (e.g. the addons
+        # batch import) can attribute them to the file; the transient
+        # message-bar warning below is invisible to them.
+        self.parse_errors = parse_errors
+
         if parse_errors:
             message_utils.MessagebarAndLog.warning(
                 bar_msg=QCoreApplication.translate(

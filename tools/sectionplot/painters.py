@@ -25,7 +25,6 @@ from qgis.core import (
     QgsFeatureRequest,
     QgsGeometry,
     QgsMapLayer,
-    QgsProject,
     QgsRuleBasedRenderer,
     QgsRenderContext,
     QgsVectorLayer,
@@ -528,69 +527,58 @@ def paint_dems(
     iface:
         QGIS iface reference (needed for graded-DEM polygon sampling).
     """
-    try:
-        if (
-            settingsdict["secplotselectedDEMs"]
-            and len(settingsdict["secplotselectedDEMs"]) > 0
-        ):  # Adding a plot for each selected raster
-            for layername in settingsdict["secplotselectedDEMs"]:
-                if not settingsdict["secplotdem_sampling_distance"]:
-                    distance = barwidth / 2.0
-                    if not distance:
-                        distance = max(
-                            figure.line_feature.geometry().length() / 5000, 1
-                        )
+    if settingsdict["secplotselectedDEMs"]:
+        for layername in settingsdict["secplotselectedDEMs"]:
+            if not settingsdict["secplotdem_sampling_distance"]:
+                distance = barwidth / 2.0
+                if not distance:
+                    distance = max(figure.line_feature.geometry().length() / 5000, 1)
+            else:
+                distance = settingsdict["secplotdem_sampling_distance"]
+
+            temp_memorylayer, xarray = qchain(figure.line_layer, distance)
+            dem_data = sampling(temp_memorylayer, dem_layers[str(layername)])
+            plotlable = get_plot_label_name(
+                layername, get_legend_items_labels(figure.plot_handles)[1]
+            )
+            settings = template["dems_Axes_plot"].get(
+                plotlable,
+                template["dems_Axes_plot"]["DEFAULT"],
+            )
+            template["dems_Axes_plot"][plotlable] = copy.deepcopy(settings)
+            settings = template["dems_Axes_plot"][plotlable]
+            settings["label"] = settings.get("label", plotlable)
+            settings["picker"] = 2
+            (lineplot,) = figure.ax_main.plot(xarray, dem_data, **settings)
+            figure.plot_handles.append(lineplot)
+
+            if settingsdict["secplot_apply_graded_dems"]:
+                secplot_color_layer_name = f"{layername}_secplotcolor"
+                try:
+                    layer_utils.find_layer(secplot_color_layer_name)
+                except UsageError:
+                    pass
                 else:
-                    distance = settingsdict["secplotdem_sampling_distance"]
-
-                temp_memorylayer, xarray = qchain(figure.line_layer, distance)
-                dem_data = sampling(temp_memorylayer, dem_layers[str(layername)])
-                plotlable = get_plot_label_name(
-                    layername, get_legend_items_labels(figure.plot_handles)[1]
-                )
-                settings = template["dems_Axes_plot"].get(
-                    plotlable,
-                    template["dems_Axes_plot"]["DEFAULT"],
-                )
-                template["dems_Axes_plot"][plotlable] = copy.deepcopy(settings)
-                settings = template["dems_Axes_plot"][plotlable]
-                settings["label"] = settings.get("label", plotlable)
-                settings["picker"] = 2
-                (lineplot,) = figure.ax_main.plot(xarray, dem_data, **settings)
-                figure.plot_handles.append(lineplot)
-
-                if settingsdict["secplot_apply_graded_dems"]:
-                    secplot_color_layer_name = f"{layername}_secplotcolor"
-                    try:
-                        layer_utils.find_layer(secplot_color_layer_name)
-                    except UsageError:
-                        pass
-                    else:
-                        alpha_max = settingsdict["secplot_grading_max_opacity"]
-                        alpha_min = settingsdict["secplot_grading_min_opacity"]
-                        number_of_plots = settingsdict["secplot_grading_num_layers"]
-                        graded_depth_m = settingsdict["secplot_grading_depth"]
-                        skip_labels = []
-                        paint_graded_dems(
-                            figure,
-                            temp_memorylayer,
-                            figure.line_layer,
-                            xarray,
-                            dem_data,
-                            secplot_color_layer_name,
-                            layername,
-                            alpha_max=alpha_max,
-                            alpha_min=alpha_min,
-                            number_of_plots=number_of_plots,
-                            graded_depth_m=graded_depth_m,
-                            skip_labels=skip_labels,
-                            iface=iface,
-                        )
-    finally:
-        try:
-            QgsProject.instance().removeMapLayer(temp_memorylayer.id())
-        except Exception:
-            message_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
+                    alpha_max = settingsdict["secplot_grading_max_opacity"]
+                    alpha_min = settingsdict["secplot_grading_min_opacity"]
+                    number_of_plots = settingsdict["secplot_grading_num_layers"]
+                    graded_depth_m = settingsdict["secplot_grading_depth"]
+                    skip_labels = []
+                    paint_graded_dems(
+                        figure,
+                        temp_memorylayer,
+                        figure.line_layer,
+                        xarray,
+                        dem_data,
+                        secplot_color_layer_name,
+                        layername,
+                        alpha_max=alpha_max,
+                        alpha_min=alpha_min,
+                        number_of_plots=number_of_plots,
+                        graded_depth_m=graded_depth_m,
+                        skip_labels=skip_labels,
+                        iface=iface,
+                    )
 
 
 def paint_graded_dems(

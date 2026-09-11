@@ -21,7 +21,6 @@ from qgis.core import (
     QgsFeature,
     QgsField,
     QgsFields,
-    QgsProject,
     QgsApplication,
     QgsRaster,
     QgsVectorLayer,
@@ -140,10 +139,8 @@ def points_along_line(
         provider.addFeatures(features)
         virt_layer.updateExtents()
 
-    QgsProject.instance().addMapLayers([virt_layer])
     virt_layer.commitChanges()
     virt_layer.reload()
-    virt_layer.triggerRepaint()
     return virt_layer, xarray
 
 

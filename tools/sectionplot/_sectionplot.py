@@ -396,10 +396,9 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
             self.ms,
         )
 
-        # Qt6's addDockWidget requires a Qt.DockWidgetArea, not the bare int the
-        # setting stores; Qt.DockWidgetArea(int) constructs it on both Qt5 and Qt6.
         self.iface.addDockWidget(
-            Qt.DockWidgetArea(max(self.ms.settingsdict["secplotlocation"], 1)), self
+            Qt.DockWidgetArea(max(int(self.ms.settingsdict["secplotlocation"]), 1)),
+            self,
         )
         self.iface.mapCanvas().setRenderFlag(True)
 
@@ -1121,7 +1120,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
         event.accept()
 
     def set_location(self):  # not ready
-        self.ms.settingsdict["secplotlocation"] = self.parent.dockWidgetArea(self)
+        self.ms.settingsdict["secplotlocation"] = int(self.parent.dockWidgetArea(self))
 
     # ----- Methods used by each figure instance as long as the figure is live -----
     def flash_section_line_position(self, event):
@@ -1150,7 +1149,10 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
             return
 
         point = fig.line_feature.geometry().interpolate(event.xdata)
-        self.iface.mapCanvas().flashGeometries([point], crs=fig.line_layer.crs())
+        canvas = self.iface.mapCanvas()
+        buffer_size = canvas.mapUnitsPerPixel() * 15
+        flash_geom = point.buffer(buffer_size, 16)
+        canvas.flashGeometries([flash_geom], crs=fig.line_layer.crs())
 
     def update_animation(self, fig, datevalue):
         if fig.waterlevel_lineplot is not None and fig.df is not None:

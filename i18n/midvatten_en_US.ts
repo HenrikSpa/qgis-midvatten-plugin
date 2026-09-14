@@ -26,177 +26,177 @@
 <context>
     <name>@default</name>
     <message>
-        <location filename="../tools/drillreport.py" line="189"/>
+        <location filename="../tools/drillreport.py" line="194"/>
         <source>General information</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="190"/>
+        <location filename="../tools/drillreport.py" line="195"/>
         <source>Stratigraphy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="191"/>
+        <location filename="../tools/drillreport.py" line="196"/>
         <source>Comments</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="192"/>
+        <location filename="../tools/drillreport.py" line="197"/>
         <source>Water levels</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="194"/>
+        <location filename="../tools/drillreport.py" line="199"/>
         <source>original name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="195"/>
+        <location filename="../tools/drillreport.py" line="200"/>
         <source>obs type</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="196"/>
+        <location filename="../tools/drillreport.py" line="201"/>
         <source>depth (m fr gs to bottom)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="197"/>
+        <location filename="../tools/drillreport.py" line="202"/>
         <source>top of casing, toc (masl)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="198"/>
+        <location filename="../tools/drillreport.py" line="203"/>
         <source>distance toc-gs, tocags (mags)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="199"/>
+        <location filename="../tools/drillreport.py" line="204"/>
         <source>ground surface level, gs (masl)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="200"/>
+        <location filename="../tools/drillreport.py" line="205"/>
         <source>elevation accuracy (m)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="201"/>
+        <location filename="../tools/drillreport.py" line="206"/>
         <source>eastern coordinate</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="202"/>
+        <location filename="../tools/drillreport.py" line="207"/>
         <source>northern coordinate</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="203"/>
+        <location filename="../tools/drillreport.py" line="208"/>
         <source>position accuracy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="204"/>
+        <location filename="../tools/drillreport.py" line="209"/>
         <source>material</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="205"/>
+        <location filename="../tools/drillreport.py" line="210"/>
         <source>inner diameter (mm)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="206"/>
+        <location filename="../tools/drillreport.py" line="211"/>
         <source>drill stop</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="207"/>
+        <location filename="../tools/drillreport.py" line="212"/>
         <source>screen type</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="208"/>
+        <location filename="../tools/drillreport.py" line="213"/>
         <source>drill date</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="217"/>
+        <location filename="../tools/drillreport.py" line="222"/>
         <source>capacity</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="210"/>
+        <location filename="../tools/drillreport.py" line="215"/>
         <source>place</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="211"/>
+        <location filename="../tools/drillreport.py" line="216"/>
         <source>reference</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="212"/>
+        <location filename="../tools/drillreport.py" line="217"/>
         <source>source for position</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="213"/>
+        <location filename="../tools/drillreport.py" line="218"/>
         <source>source for elevation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="217"/>
+        <location filename="../tools/drillreport.py" line="222"/>
         <source>level (m b gs)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="217"/>
+        <location filename="../tools/drillreport.py" line="222"/>
         <source>geology, full text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="217"/>
+        <location filename="../tools/drillreport.py" line="222"/>
         <source>geology, short</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="217"/>
+        <location filename="../tools/drillreport.py" line="222"/>
         <source>development</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="217"/>
+        <location filename="../tools/drillreport.py" line="222"/>
         <source>comment</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="225"/>
+        <location filename="../tools/drillreport.py" line="230"/>
         <source> m below toc</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="226"/>
+        <location filename="../tools/drillreport.py" line="231"/>
         <source> m above sea level</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="227"/>
+        <location filename="../tools/drillreport.py" line="232"/>
         <source>Number of water level measurements: </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="228"/>
+        <location filename="../tools/drillreport.py" line="233"/>
         <source>Highest measured water level: </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="229"/>
+        <location filename="../tools/drillreport.py" line="234"/>
         <source>Median water level: </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/drillreport.py" line="230"/>
+        <location filename="../tools/drillreport.py" line="235"/>
         <source>Lowest measured water level: </source>
         <translation type="unfinished"></translation>
     </message>
@@ -499,7 +499,7 @@ Must write time resolution also.
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/utils/file_utils.py" line="250"/>
+        <location filename="../tools/utils/file_utils.py" line="261"/>
         <source>write_printlist_to_file</source>
         <comment>Data written to file %s.</comment>
         <translation type="unfinished"></translation>
@@ -842,17 +842,12 @@ Must write time resolution also.
 <context>
     <name>CompactWqualReport</name>
     <message>
-        <location filename="../tools/wqualreport_compact.py" line="296"/>
-        <source>Must select a layer!</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../tools/wqualreport_compact.py" line="441"/>
+        <location filename="../tools/wqualreport_compact.py" line="530"/>
         <source>The chosen layer must contain columns %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/wqualreport_compact.py" line="404"/>
+        <location filename="../tools/wqualreport_compact.py" line="494"/>
         <source>The chosen table must contain columns %s</source>
         <translation type="unfinished"></translation>
     </message>
@@ -860,12 +855,12 @@ Must write time resolution also.
 <context>
     <name>CompactWqualReportUi</name>
     <message>
-        <location filename="../tools/wqualreport_compact.py" line="71"/>
+        <location filename="../tools/wqualreport_compact.py" line="72"/>
         <source>Compact water quality report</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/wqualreport_compact.py" line="77"/>
+        <location filename="../tools/wqualreport_compact.py" line="78"/>
         <source>(manual)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2402,7 +2397,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>Drillreport</name>
     <message>
-        <location filename="../tools/drillreport.py" line="113"/>
+        <location filename="../tools/drillreport.py" line="118"/>
         <source>General report from Midvatten plugin for QGIS</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2420,167 +2415,167 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>Drillreport2</name>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="270"/>
+        <location filename="../tools/custom_drillreport.py" line="272"/>
         <source>obsid</source>
         <translation>name</translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="271"/>
+        <location filename="../tools/custom_drillreport.py" line="273"/>
         <source>name</source>
         <translation>original name</translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="272"/>
+        <location filename="../tools/custom_drillreport.py" line="274"/>
         <source>place</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="273"/>
+        <location filename="../tools/custom_drillreport.py" line="275"/>
         <source>type</source>
         <translation>obs type</translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="274"/>
+        <location filename="../tools/custom_drillreport.py" line="276"/>
         <source>length</source>
         <translation>depth (m fr gs to bottom)</translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="275"/>
+        <location filename="../tools/custom_drillreport.py" line="277"/>
         <source>drillstop</source>
         <translation>drill stop</translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="276"/>
+        <location filename="../tools/custom_drillreport.py" line="278"/>
         <source>diam</source>
         <translation>inner diameter (mm)</translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="277"/>
+        <location filename="../tools/custom_drillreport.py" line="279"/>
         <source>material</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="278"/>
+        <location filename="../tools/custom_drillreport.py" line="280"/>
         <source>screen</source>
         <translation>screen type</translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="279"/>
+        <location filename="../tools/custom_drillreport.py" line="281"/>
         <source>capacity</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="280"/>
+        <location filename="../tools/custom_drillreport.py" line="282"/>
         <source>drilldate</source>
         <translation>drill date</translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="281"/>
+        <location filename="../tools/custom_drillreport.py" line="283"/>
         <source>wmeas_yn</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="282"/>
+        <location filename="../tools/custom_drillreport.py" line="284"/>
         <source>wlogg_yn</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="283"/>
+        <location filename="../tools/custom_drillreport.py" line="285"/>
         <source>east</source>
         <translation>eastern coordinate</translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="284"/>
+        <location filename="../tools/custom_drillreport.py" line="286"/>
         <source>north</source>
         <translation type="unfinished">northern coordinate</translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="285"/>
+        <location filename="../tools/custom_drillreport.py" line="287"/>
         <source>ne_accur</source>
         <translation>position accuracy [m]</translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="286"/>
+        <location filename="../tools/custom_drillreport.py" line="288"/>
         <source>ne_source</source>
         <translation>source for position</translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="287"/>
+        <location filename="../tools/custom_drillreport.py" line="289"/>
         <source>h_toc</source>
         <translation>top of casing, toc (masl)</translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="288"/>
+        <location filename="../tools/custom_drillreport.py" line="290"/>
         <source>h_tocags</source>
         <translation>distance toc-gs, tocags (mags)</translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="289"/>
+        <location filename="../tools/custom_drillreport.py" line="291"/>
         <source>h_gs</source>
         <translation>ground surface level, gs (masl)</translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="290"/>
+        <location filename="../tools/custom_drillreport.py" line="292"/>
         <source>h_accur</source>
         <translation>elevation accuracy (m)</translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="291"/>
+        <location filename="../tools/custom_drillreport.py" line="293"/>
         <source>h_syst</source>
         <translation>height system</translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="292"/>
+        <location filename="../tools/custom_drillreport.py" line="294"/>
         <source>h_source</source>
         <translation>source for elevation</translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="293"/>
+        <location filename="../tools/custom_drillreport.py" line="295"/>
         <source>source</source>
         <translation>reference</translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="294"/>
+        <location filename="../tools/custom_drillreport.py" line="296"/>
         <source>com_onerow</source>
         <translation>comment</translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="295"/>
+        <location filename="../tools/custom_drillreport.py" line="297"/>
         <source>com_html</source>
         <translation>multirow comment</translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="423"/>
+        <location filename="../tools/custom_drillreport.py" line="427"/>
         <source>XY Reference system</source>
         <translation>coordinate system</translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="215"/>
+        <location filename="../tools/custom_drillreport.py" line="217"/>
         <source>General information</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="218"/>
+        <location filename="../tools/custom_drillreport.py" line="220"/>
         <source>Geographical information</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="221"/>
+        <location filename="../tools/custom_drillreport.py" line="223"/>
         <source>Stratigraphy</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="224"/>
+        <location filename="../tools/custom_drillreport.py" line="226"/>
         <source>Comment</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="381"/>
+        <location filename="../tools/custom_drillreport.py" line="383"/>
         <source>Generating report…</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="381"/>
+        <location filename="../tools/custom_drillreport.py" line="383"/>
         <source>Cancel</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2588,47 +2583,47 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>Drillreport2_strat</name>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="748"/>
+        <location filename="../tools/custom_drillreport.py" line="755"/>
         <source>level (m b gs)</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="748"/>
+        <location filename="../tools/custom_drillreport.py" line="755"/>
         <source>geology, full text</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="748"/>
+        <location filename="../tools/custom_drillreport.py" line="755"/>
         <source>geology, short</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="748"/>
+        <location filename="../tools/custom_drillreport.py" line="755"/>
         <source>capacity</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="748"/>
+        <location filename="../tools/custom_drillreport.py" line="755"/>
         <source>development</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="748"/>
+        <location filename="../tools/custom_drillreport.py" line="755"/>
         <source>comment</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="748"/>
+        <location filename="../tools/custom_drillreport.py" line="755"/>
         <source>top of layer (m b gs)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="748"/>
+        <location filename="../tools/custom_drillreport.py" line="755"/>
         <source>bottom of layer (m b gs)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/custom_drillreport.py" line="748"/>
+        <location filename="../tools/custom_drillreport.py" line="755"/>
         <source>Layer number</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2636,44 +2631,69 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>ExportData</name>
     <message>
-        <location filename="../tools/export_spatialite.py" line="291"/>
+        <location filename="../tools/export_spatialite.py" line="288"/>
         <source>Tables with different number of rows:
 %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_data.py" line="239"/>
+        <location filename="../tools/export_data.py" line="280"/>
         <source>Table %s didn&apos;t exist. Skipping it.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_data.py" line="109"/>
+        <location filename="../tools/export_data.py" line="110"/>
         <source>Export to CSV</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_data.py" line="120"/>
+        <location filename="../tools/export_data.py" line="121"/>
         <source>Select export folder…</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_data.py" line="123"/>
+        <location filename="../tools/export_data.py" line="124"/>
         <source>Browse…</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_data.py" line="129"/>
+        <location filename="../tools/export_data.py" line="130"/>
         <source>Export folder:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_data.py" line="133"/>
+        <location filename="../tools/export_data.py" line="134"/>
         <source>Convert rich-text (HTML) fields to plain text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_data.py" line="152"/>
+        <location filename="../tools/export_data.py" line="351"/>
         <source>Select export folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../tools/export_data.py" line="239"/>
+        <source>Exported %s CSV files to %s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../tools/export_data.py" line="316"/>
+        <source>CSV files already exist</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../tools/export_data.py" line="327"/>
+        <source>Replace existing files</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../tools/export_data.py" line="331"/>
+        <source>Choose another folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../tools/export_data.py" line="335"/>
+        <source>Cancel</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2690,37 +2710,37 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_spatialite.py" line="144"/>
+        <location filename="../tools/export_spatialite.py" line="141"/>
         <source>Creating new database, please wait...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_spatialite.py" line="220"/>
+        <location filename="../tools/export_spatialite.py" line="217"/>
         <source>Exporting data, please wait...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_spatialite.py" line="220"/>
+        <location filename="../tools/export_spatialite.py" line="217"/>
         <source>Cancel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_spatialite.py" line="251"/>
+        <location filename="../tools/export_spatialite.py" line="248"/>
         <source>Exporting: {}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_spatialite.py" line="270"/>
+        <location filename="../tools/export_spatialite.py" line="267"/>
         <source>Export failed unexpectedly.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_spatialite.py" line="278"/>
+        <location filename="../tools/export_spatialite.py" line="275"/>
         <source>Export failed, see log message panel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_spatialite.py" line="285"/>
+        <location filename="../tools/export_spatialite.py" line="282"/>
         <source>Export cancelled.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4369,17 +4389,17 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvatten_plugin.py" line="592"/>
+        <location filename="../midvatten_plugin.py" line="599"/>
         <source>Midvatten Settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvatten_plugin.py" line="592"/>
+        <location filename="../midvatten_plugin.py" line="599"/>
         <source>Configuration for Midvatten toolset</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvatten_plugin.py" line="624"/>
+        <location filename="../midvatten_plugin.py" line="631"/>
         <source>About</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4459,27 +4479,27 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvatten_plugin.py" line="568"/>
+        <location filename="../midvatten_plugin.py" line="575"/>
         <source>&amp;Import data to database</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvatten_plugin.py" line="569"/>
+        <location filename="../midvatten_plugin.py" line="576"/>
         <source>&amp;Export data from database</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvatten_plugin.py" line="570"/>
+        <location filename="../midvatten_plugin.py" line="577"/>
         <source>&amp;Edit data in database</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvatten_plugin.py" line="573"/>
+        <location filename="../midvatten_plugin.py" line="580"/>
         <source>&amp;Database management</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvatten_plugin.py" line="574"/>
+        <location filename="../midvatten_plugin.py" line="581"/>
         <source>&amp;Utilities</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4569,17 +4589,17 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvatten_plugin.py" line="571"/>
+        <location filename="../midvatten_plugin.py" line="578"/>
         <source>&amp;Plots</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvatten_plugin.py" line="572"/>
+        <location filename="../midvatten_plugin.py" line="579"/>
         <source>&amp;Reports</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvatten_plugin.py" line="614"/>
+        <location filename="../midvatten_plugin.py" line="621"/>
         <source>Reset settings</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4587,18 +4607,18 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>NewDb</name>
     <message>
-        <location filename="../tools/create_db.py" line="157"/>
+        <location filename="../tools/create_db.py" line="187"/>
         <source>Msg:
 </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/create_db.py" line="514"/>
+        <location filename="../tools/create_db.py" line="544"/>
         <source>User input needed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/create_db.py" line="482"/>
+        <location filename="../tools/create_db.py" line="512"/>
         <source>Select CRS</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4612,48 +4632,73 @@ error msg:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/create_db_dialogs.py" line="72"/>
+        <location filename="../tools/create_db_dialogs.py" line="75"/>
         <source>Locale:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/create_db_dialogs.py" line="77"/>
+        <location filename="../tools/create_db_dialogs.py" line="80"/>
         <source>EPSG code:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/create_db_dialogs.py" line="81"/>
+        <location filename="../tools/create_db_dialogs.py" line="84"/>
         <source>Logger timezone (w_levels_logger):</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/create_db_dialogs.py" line="88"/>
+        <location filename="../tools/create_db_dialogs.py" line="91"/>
         <source>Levels timezone (w_levels):</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/create_db_dialogs.py" line="139"/>
+        <location filename="../tools/create_db_dialogs.py" line="142"/>
         <source>Create new Midvatten SpatiaLite database</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/create_db_dialogs.py" line="153"/>
+        <location filename="../tools/create_db_dialogs.py" line="159"/>
         <source>Browseu2026</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/create_db_dialogs.py" line="160"/>
+        <location filename="../tools/create_db_dialogs.py" line="166"/>
         <source>Database path:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/create_db_dialogs.py" line="175"/>
+        <location filename="../tools/create_db_dialogs.py" line="206"/>
         <source>New DB</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/create_db_dialogs.py" line="193"/>
+        <location filename="../tools/create_db_dialogs.py" line="224"/>
         <source>Create new Midvatten PostGIS database</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../tools/create_db.py" line="69"/>
+        <source>Choose a database file.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../tools/create_db.py" line="71"/>
+        <source>Use an absolute path.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../tools/create_db.py" line="73"/>
+        <source>The destination folder does not exist.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../tools/create_db.py" line="77"/>
+        <source>A file with this name already exists.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../tools/create_db_dialogs.py" line="156"/>
+        <source>Choose a database fileu2026</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5894,11 +5939,6 @@ p, li { white-space: pre-wrap; }
 </context>
 <context>
     <name>export_spatialite</name>
-    <message>
-        <location filename="../tools/export_spatialite.py" line="129"/>
-        <source>No destination path specified.</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>get_table_info</name>
@@ -6183,12 +6223,12 @@ Msg:
 <context>
     <name>newdb</name>
     <message>
-        <location filename="../tools/create_db.py" line="458"/>
+        <location filename="../tools/create_db.py" line="488"/>
         <source>Locales</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/create_db.py" line="514"/>
+        <location filename="../tools/create_db.py" line="544"/>
         <source>Timezone</source>
         <translation type="unfinished"></translation>
     </message>

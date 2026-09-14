@@ -714,7 +714,7 @@ class TestNewSpatialiteDbDialog(utils_for_tests.MidvattenTestSpatialiteNotCreate
 
     def test_destination_validation_and_defensive_accept(self, tmp_path):
         dialog = NewSpatialiteDbDialog()
-        ok_button = dialog._buttons.button(QDialogButtonBox.Ok)
+        ok_button = dialog._buttons.button(QDialogButtonBox.StandardButton.Ok)
 
         assert dialog.dbpath == ""
         assert dialog._path_edit.placeholderText() == "Choose a database file…"

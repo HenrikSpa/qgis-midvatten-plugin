@@ -312,7 +312,7 @@ class ExportData:
 
     def _ask_csv_collision_action(self, conflicts: list[str]) -> str:
         box = QMessageBox(self._dialog_parent())
-        box.setIcon(QMessageBox.Warning)
+        box.setIcon(QMessageBox.Icon.Warning)
         box.setWindowTitle(
             QCoreApplication.translate("ExportData", "CSV files already exist")
         )
@@ -326,15 +326,15 @@ class ExportData:
         )
         replace_button = box.addButton(
             QCoreApplication.translate("ExportData", "Replace existing files"),
-            QMessageBox.AcceptRole,
+            QMessageBox.ButtonRole.AcceptRole,
         )
         choose_button = box.addButton(
             QCoreApplication.translate("ExportData", "Choose another folder"),
-            QMessageBox.ActionRole,
+            QMessageBox.ButtonRole.ActionRole,
         )
         cancel_button = box.addButton(
             QCoreApplication.translate("ExportData", "Cancel"),
-            QMessageBox.RejectRole,
+            QMessageBox.ButtonRole.RejectRole,
         )
         box.setDefaultButton(cancel_button)
         box.setEscapeButton(cancel_button)

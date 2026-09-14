@@ -387,25 +387,25 @@ Must write time resolution also.
         </translation>
     </message>
     <message>
-        <location filename="../tools/utils/dialog_utils.py" line="131"/>
+        <location filename="../tools/utils/dialog_utils.py" line="145"/>
         <source>NotFoundQuestion</source>
         <comment>Warning</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/utils/dialog_utils.py" line="131"/>
+        <location filename="../tools/utils/dialog_utils.py" line="145"/>
         <source>NotFoundQuestion</source>
         <comment>Similar values found in db (choose or edit):</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/utils/dialog_utils.py" line="167"/>
+        <location filename="../tools/utils/dialog_utils.py" line="184"/>
         <source>NotFoundQuestion</source>
         <comment>Ignore database missmatch</comment>
         <translation type="unfinished"></translation>
     </message>
     <message numerus="yes">
-        <location filename="../tools/utils/dialog_utils.py" line="171"/>
+        <location filename="../tools/utils/dialog_utils.py" line="188"/>
         <source>NotFoundQuestion</source>
         <comment>Ignore database missmatch and try to import anyway</comment>
         <translation type="unfinished">
@@ -414,43 +414,43 @@ Must write time resolution also.
         </translation>
     </message>
     <message>
-        <location filename="../tools/utils/dialog_utils.py" line="182"/>
+        <location filename="../tools/utils/dialog_utils.py" line="199"/>
         <source>NotFoundQuestion</source>
         <comment>Ignore</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/utils/dialog_utils.py" line="183"/>
+        <location filename="../tools/utils/dialog_utils.py" line="200"/>
         <source>NotFoundQuestion</source>
         <comment>Cancel</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/utils/dialog_utils.py" line="184"/>
+        <location filename="../tools/utils/dialog_utils.py" line="201"/>
         <source>NotFoundQuestion</source>
         <comment>Ok</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/utils/dialog_utils.py" line="196"/>
+        <location filename="../tools/utils/dialog_utils.py" line="213"/>
         <source>NotFoundQuestion</source>
         <comment>Reuse answer for all identical</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/utils/dialog_utils.py" line="280"/>
+        <location filename="../tools/utils/dialog_utils.py" line="297"/>
         <source>HtmlDialog</source>
         <comment>Close</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/utils/dialog_utils.py" line="310"/>
+        <location filename="../tools/utils/dialog_utils.py" line="327"/>
         <source>ask_for_export_crs</source>
         <comment>Set export crs</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/utils/dialog_utils.py" line="310"/>
+        <location filename="../tools/utils/dialog_utils.py" line="327"/>
         <source>ask_for_export_crs</source>
         <comment>Give the crs for the exported database.
 </comment>
@@ -664,9 +664,6 @@ Must write time resolution also.
     </message>
 </context>
 <context>
-    <name>CalculateStatisticsGui</name>
-</context>
-<context>
     <name>Calibrlogger</name>
     <message>
         <location filename="../tools/loggereditor.py" line="716"/>
@@ -684,7 +681,7 @@ Must write time resolution also.
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/loggereditor.py" line="3276"/>
+        <location filename="../tools/loggereditor.py" line="3285"/>
         <source>Must write time resolution also, ex. %s</source>
         <translation type="unfinished"></translation>
     </message>
@@ -724,7 +721,7 @@ Must write time resolution also.
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/loggereditor.py" line="3426"/>
+        <location filename="../tools/loggereditor.py" line="3435"/>
         <source>Selected nodes</source>
         <translation type="unfinished"></translation>
     </message>
@@ -824,7 +821,7 @@ Must write time resolution also.
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/loggereditor.py" line="3547"/>
+        <location filename="../tools/loggereditor.py" line="3556"/>
         <source>No data loaded.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -942,27 +939,27 @@ Must write time resolution also.
 <context>
     <name>DatabaseSettings</name>
     <message>
-        <location filename="../midvsettingsdialog.py" line="799"/>
+        <location filename="../midvsettingsdialog.py" line="802"/>
         <source>Database type</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvsettingsdialog.py" line="744"/>
+        <location filename="../midvsettingsdialog.py" line="747"/>
         <source>Reading db_settings failed using string %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvsettingsdialog.py" line="781"/>
+        <location filename="../midvsettingsdialog.py" line="784"/>
         <source>Tried to load db_settings string %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvsettingsdialog.py" line="800"/>
+        <location filename="../midvsettingsdialog.py" line="803"/>
         <source>Select db</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvsettingsdialog.py" line="801"/>
+        <location filename="../midvsettingsdialog.py" line="804"/>
         <source>Connections</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1009,29 +1006,29 @@ Must write time resolution also.
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calc_aveflow_dialog.ui" line="70"/>
+        <location filename="../ui/calc_aveflow_dialog.ui" line="69"/>
         <source>Average flow (l/s) is about to be calculated and stored in table w_flow (parameter=&apos;Aveflow&apos;). For the calculation, all values of accumulated volume (&apos;Accvol&apos;) are assumed to be given in m3. Any existing values of &apos;Aveflow&apos; will be left unchanged and only such values that are not already present in the database will be added. 
 
 Aveflow is to be calculated for Accvol observations within this interval:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calc_lvl_dialog.ui" line="156"/>
+        <location filename="../ui/calc_lvl_dialog.ui" line="155"/>
         <source>From:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calc_lvl_dialog.ui" line="297"/>
+        <location filename="../ui/calc_lvl_dialog.ui" line="296"/>
         <source>yyyy-MM-dd HH:mm:ss</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calc_lvl_dialog.ui" line="187"/>
+        <location filename="../ui/calc_lvl_dialog.ui" line="186"/>
         <source>To:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calc_aveflow_dialog.ui" line="327"/>
+        <location filename="../ui/calc_aveflow_dialog.ui" line="326"/>
         <source>Do you want &apos;Aveflow&apos; to be calculated for all or only the selected objects? (The question is only about obsid. Aveflow will always be calculated for ALL instrumentids for the selected obsid.)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1041,7 +1038,7 @@ Aveflow is to be calculated for Accvol observations within this interval:</sourc
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calc_lvl_dialog.ui" line="378"/>
+        <location filename="../ui/calc_lvl_dialog.ui" line="377"/>
         <source>Selected</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1051,7 +1048,7 @@ Aveflow is to be calculated for Accvol observations within this interval:</sourc
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calc_lvl_dialog.ui" line="95"/>
+        <location filename="../ui/calc_lvl_dialog.ui" line="94"/>
         <source>Water levels (in meter above sea level) will be calculated as:
 
 obs_points.h_toc - w_levels.meas
@@ -1059,7 +1056,7 @@ obs_points.h_toc - w_levels.meas
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calc_lvl_dialog.ui" line="349"/>
+        <location filename="../ui/calc_lvl_dialog.ui" line="348"/>
         <source>Do you want the db table w_levels to be updated for
 all or only the selected objects?</source>
         <translation type="unfinished"></translation>
@@ -1070,7 +1067,7 @@ all or only the selected objects?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points_en.ui" line="1047"/>
+        <location filename="../ui/obs_points_en.ui" line="1046"/>
         <source>TextLabel</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1115,7 +1112,7 @@ all or only the selected objects?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points_en.ui" line="1893"/>
+        <location filename="../ui/obs_points_en.ui" line="1892"/>
         <source>place</source>
         <translation type="unfinished">fastighet/plats</translation>
     </message>
@@ -1125,7 +1122,7 @@ all or only the selected objects?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points_en.ui" line="1962"/>
+        <location filename="../ui/obs_points_en.ui" line="1961"/>
         <source>reference</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1155,7 +1152,7 @@ all or only the selected objects?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points.ui" line="1906"/>
+        <location filename="../ui/obs_points.ui" line="1905"/>
         <source>plats</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1165,7 +1162,7 @@ all or only the selected objects?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points.ui" line="1977"/>
+        <location filename="../ui/obs_points.ui" line="1976"/>
         <source>referens</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1308,7 +1305,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points_en.ui" line="1232"/>
+        <location filename="../ui/obs_points_en.ui" line="1231"/>
         <source>accuracy</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1374,7 +1371,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points_en.ui" line="1037"/>
+        <location filename="../ui/obs_points_en.ui" line="1036"/>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -1386,37 +1383,37 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points_en.ui" line="1078"/>
+        <location filename="../ui/obs_points_en.ui" line="1077"/>
         <source>east</source>
         <translation type="unfinished">östlig koordinat</translation>
     </message>
     <message>
-        <location filename="../ui/obs_points_en.ui" line="1118"/>
+        <location filename="../ui/obs_points_en.ui" line="1117"/>
         <source>eastern coordinate</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points_en.ui" line="1155"/>
+        <location filename="../ui/obs_points_en.ui" line="1154"/>
         <source>north</source>
         <translation type="unfinished">nordlig koordinat</translation>
     </message>
     <message>
-        <location filename="../ui/obs_points_en.ui" line="1195"/>
+        <location filename="../ui/obs_points_en.ui" line="1194"/>
         <source>northern coordinate</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points_en.ui" line="1269"/>
+        <location filename="../ui/obs_points_en.ui" line="1268"/>
         <source>accuracy for position</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points_en.ui" line="1303"/>
+        <location filename="../ui/obs_points_en.ui" line="1302"/>
         <source>source for pos</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points_en.ui" line="1337"/>
+        <location filename="../ui/obs_points_en.ui" line="1336"/>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -1425,22 +1422,22 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points_en.ui" line="1365"/>
+        <location filename="../ui/obs_points_en.ui" line="1364"/>
         <source>Note! Select Midvatten-Edit data to update map position from coordinates or vice versa.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points_en.ui" line="1378"/>
+        <location filename="../ui/obs_points_en.ui" line="1377"/>
         <source>Construction and Drill info</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points_en.ui" line="1420"/>
+        <location filename="../ui/obs_points_en.ui" line="1419"/>
         <source>drill date</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points_en.ui" line="1457"/>
+        <location filename="../ui/obs_points_en.ui" line="1456"/>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -1449,12 +1446,12 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points_en.ui" line="1492"/>
+        <location filename="../ui/obs_points_en.ui" line="1491"/>
         <source>capacity</source>
         <translation type="unfinished">kapacitet/vg på spetsnivå</translation>
     </message>
     <message>
-        <location filename="../ui/obs_points_en.ui" line="1529"/>
+        <location filename="../ui/obs_points_en.ui" line="1528"/>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -1468,12 +1465,12 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points_en.ui" line="1569"/>
+        <location filename="../ui/obs_points_en.ui" line="1568"/>
         <source>material</source>
         <translation type="unfinished">material</translation>
     </message>
     <message>
-        <location filename="../ui/obs_points_en.ui" line="1606"/>
+        <location filename="../ui/obs_points_en.ui" line="1605"/>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -1486,22 +1483,22 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points_en.ui" line="1648"/>
+        <location filename="../ui/obs_points_en.ui" line="1647"/>
         <source>inner diam.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points_en.ui" line="1725"/>
+        <location filename="../ui/obs_points_en.ui" line="1724"/>
         <source>Drill stop</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points_en.ui" line="1731"/>
+        <location filename="../ui/obs_points_en.ui" line="1730"/>
         <source>drill stop</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points_en.ui" line="1765"/>
+        <location filename="../ui/obs_points_en.ui" line="1764"/>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -1516,12 +1513,12 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points_en.ui" line="1812"/>
+        <location filename="../ui/obs_points_en.ui" line="1811"/>
         <source>screen type</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points_en.ui" line="1846"/>
+        <location filename="../ui/obs_points_en.ui" line="1845"/>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -1530,7 +1527,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points_en.ui" line="1927"/>
+        <location filename="../ui/obs_points_en.ui" line="1926"/>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -1539,7 +1536,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points_en.ui" line="1996"/>
+        <location filename="../ui/obs_points_en.ui" line="1995"/>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -1550,12 +1547,12 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points_en.ui" line="2048"/>
+        <location filename="../ui/obs_points_en.ui" line="2047"/>
         <source>Comments (single and multiline)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points_en.ui" line="2090"/>
+        <location filename="../ui/obs_points_en.ui" line="2089"/>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -1564,7 +1561,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points_en.ui" line="2119"/>
+        <location filename="../ui/obs_points_en.ui" line="2118"/>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -1620,37 +1617,37 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points.ui" line="1387"/>
+        <location filename="../ui/obs_points.ui" line="1386"/>
         <source>Brunns- och filterinfo</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points.ui" line="1429"/>
+        <location filename="../ui/obs_points.ui" line="1428"/>
         <source>borrdatum</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points.ui" line="1501"/>
+        <location filename="../ui/obs_points.ui" line="1500"/>
         <source>vg</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points.ui" line="1658"/>
+        <location filename="../ui/obs_points.ui" line="1657"/>
         <source>innerdiam</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points.ui" line="1742"/>
+        <location filename="../ui/obs_points.ui" line="1741"/>
         <source>avslut</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points.ui" line="1821"/>
+        <location filename="../ui/obs_points.ui" line="1820"/>
         <source>filtertyp</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points.ui" line="2066"/>
+        <location filename="../ui/obs_points.ui" line="2065"/>
         <source>Kommentarer (enkel- och flerradig)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1849,37 +1846,37 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/w_flow.ui" line="397"/>
+        <location filename="../ui/w_flow.ui" line="386"/>
         <source>Enhet</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/w_flow.ui" line="466"/>
+        <location filename="../ui/w_flow.ui" line="453"/>
         <source>Kommentar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/w_flow.ui" line="502"/>
+        <location filename="../ui/w_flow.ui" line="488"/>
         <source>Ytterligare information</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calc_lvl_dialog.ui" line="410"/>
+        <location filename="../ui/calc_lvl_dialog.ui" line="409"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Checked: H_toc and level_masl will be calculated for all rows.&lt;br/&gt;Unchecked: H_toc and level_masl will only be calculated for rows where level_masl is NULL.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calc_lvl_dialog.ui" line="413"/>
+        <location filename="../ui/calc_lvl_dialog.ui" line="412"/>
         <source>Overwrite previous calculations</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calc_lvl_dialog.ui" line="447"/>
+        <location filename="../ui/calc_lvl_dialog.ui" line="446"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Checked: If obs_points.h_toc is NULL for any obsid included in calculation, the calculation will not be performed for any obsid.&lt;br/&gt;Unchecked: Obsids where obs_points.h_toc is NULL will be skipped and calculation will be performed for the rest.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calc_lvl_dialog.ui" line="450"/>
+        <location filename="../ui/calc_lvl_dialog.ui" line="449"/>
         <source>Stop if h_toc is null</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1969,17 +1966,17 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points.ui" line="1241"/>
+        <location filename="../ui/obs_points.ui" line="1240"/>
         <source>lägesonoggr</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points.ui" line="1312"/>
+        <location filename="../ui/obs_points.ui" line="1311"/>
         <source>lägesinfo ursprung</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points.ui" line="1374"/>
+        <location filename="../ui/obs_points.ui" line="1373"/>
         <source>OBS, uppdatering av east och north påverkar ej automatiskt läget! Välj Midvatten - Edit - update...</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1999,22 +1996,22 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/w_flow.ui" line="84"/>
+        <location filename="../ui/w_flow.ui" line="82"/>
         <source>måste finnas i obs_points.obsid</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/w_flow.ui" line="153"/>
+        <location filename="../ui/w_flow.ui" line="149"/>
         <source>Unik beteckning för flödesmätaren</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/w_flow.ui" line="186"/>
+        <location filename="../ui/w_flow.ui" line="181"/>
         <source>Flödestyp</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/w_flow.ui" line="222"/>
+        <location filename="../ui/w_flow.ui" line="216"/>
         <source>Måste vara ngt av alternativen i tabellen zz_flowtype.
 Normalt sett någon av följande:
 Accvol=Ackumulerad volym
@@ -2023,17 +2020,17 @@ Momflow=Momentanflöde vid avläsningstillfället</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/w_flow.ui" line="295"/>
+        <location filename="../ui/w_flow.ui" line="287"/>
         <source>åååå-mm-dd hh:mm(:ss)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/w_flow.ui" line="328"/>
+        <location filename="../ui/w_flow.ui" line="319"/>
         <source>Avläst värde</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/w_flow.ui" line="364"/>
+        <location filename="../ui/w_flow.ui" line="354"/>
         <source>Värdet på Momflow, Accvol eller Aveflow</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2058,42 +2055,42 @@ Momflow=Momentanflöde vid avläsningstillfället</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/strat_symbology_dialog.ui" line="39"/>
+        <location filename="../ui/strat_symbology_dialog.ui" line="38"/>
         <source>Load symbology styles</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/strat_symbology_dialog.ui" line="46"/>
+        <location filename="../ui/strat_symbology_dialog.ui" line="45"/>
         <source>Rings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/strat_symbology_dialog.ui" line="56"/>
+        <location filename="../ui/strat_symbology_dialog.ui" line="55"/>
         <source>Bars</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/strat_symbology_dialog.ui" line="132"/>
+        <location filename="../ui/strat_symbology_dialog.ui" line="131"/>
         <source>Width factor</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/strat_symbology_dialog.ui" line="149"/>
+        <location filename="../ui/strat_symbology_dialog.ui" line="148"/>
         <source>Height factor</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/strat_symbology_dialog.ui" line="114"/>
+        <location filename="../ui/strat_symbology_dialog.ui" line="113"/>
         <source>Static bars</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/strat_symbology_dialog.ui" line="176"/>
+        <location filename="../ui/strat_symbology_dialog.ui" line="175"/>
         <source>Apply selected obsids as filter</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/strat_symbology_dialog.ui" line="183"/>
+        <location filename="../ui/strat_symbology_dialog.ui" line="182"/>
         <source>OK</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2219,7 +2216,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points.ui" line="1047"/>
+        <location filename="../ui/obs_points.ui" line="1046"/>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -2230,7 +2227,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points.ui" line="1346"/>
+        <location filename="../ui/obs_points.ui" line="1345"/>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -2239,7 +2236,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points.ui" line="1466"/>
+        <location filename="../ui/obs_points.ui" line="1465"/>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -2248,7 +2245,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points.ui" line="1538"/>
+        <location filename="../ui/obs_points.ui" line="1537"/>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -2262,7 +2259,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points.ui" line="1615"/>
+        <location filename="../ui/obs_points.ui" line="1614"/>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -2276,7 +2273,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points.ui" line="1695"/>
+        <location filename="../ui/obs_points.ui" line="1694"/>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -2288,7 +2285,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points.ui" line="1776"/>
+        <location filename="../ui/obs_points.ui" line="1775"/>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -2301,7 +2298,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points.ui" line="1855"/>
+        <location filename="../ui/obs_points.ui" line="1854"/>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -2314,7 +2311,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points.ui" line="1940"/>
+        <location filename="../ui/obs_points.ui" line="1939"/>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -2325,7 +2322,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points.ui" line="2011"/>
+        <location filename="../ui/obs_points.ui" line="2010"/>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -2339,7 +2336,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points.ui" line="2108"/>
+        <location filename="../ui/obs_points.ui" line="2107"/>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -2350,7 +2347,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points.ui" line="2139"/>
+        <location filename="../ui/obs_points.ui" line="2138"/>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -2363,7 +2360,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/obs_points_en.ui" line="1685"/>
+        <location filename="../ui/obs_points_en.ui" line="1684"/>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -2401,9 +2398,6 @@ p, li { white-space: pre-wrap; }
         <source>Cannot get data from sql %s</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>DiverofficeImport</name>
 </context>
 <context>
     <name>Drillreport</name>
@@ -2720,9 +2714,6 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>DrillreportUi</name>
-</context>
-<context>
     <name>ExportData</name>
     <message>
         <location filename="../tools/export_spatialite.py" line="291"/>
@@ -2817,142 +2808,142 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>ExportToFieldLogger</name>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="228"/>
+        <location filename="../tools/export_fieldlogger.py" line="255"/>
         <source>Export to Fieldlogger dialog</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="254"/>
+        <location filename="../tools/export_fieldlogger.py" line="281"/>
         <source>%s did not exist in settingsdict</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="311"/>
+        <location filename="../tools/export_fieldlogger.py" line="347"/>
         <source>Fieldlogger input fields and locations:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="329"/>
+        <location filename="../tools/export_fieldlogger.py" line="365"/>
         <source>Create Input Fields</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="339"/>
+        <location filename="../tools/export_fieldlogger.py" line="375"/>
         <source>More Fields and Locations</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="384"/>
+        <location filename="../tools/export_fieldlogger.py" line="420"/>
         <source>Save settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="387"/>
+        <location filename="../tools/export_fieldlogger.py" line="423"/>
         <source>Saves the current input fields settings.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="397"/>
+        <location filename="../tools/export_fieldlogger.py" line="433"/>
         <source>Clear settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="400"/>
+        <location filename="../tools/export_fieldlogger.py" line="436"/>
         <source>Clear all input fields settings.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="410"/>
+        <location filename="../tools/export_fieldlogger.py" line="446"/>
         <source>Settings strings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="426"/>
+        <location filename="../tools/export_fieldlogger.py" line="462"/>
         <source>Default settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="798"/>
+        <location filename="../tools/export_fieldlogger.py" line="837"/>
         <source>Preview</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="461"/>
+        <location filename="../tools/export_fieldlogger.py" line="497"/>
         <source>Export</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="528"/>
+        <location filename="../tools/export_fieldlogger.py" line="564"/>
         <source>Sub-location suffix</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="528"/>
+        <location filename="../tools/export_fieldlogger.py" line="564"/>
         <source>Input fields</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="544"/>
+        <location filename="../tools/export_fieldlogger.py" line="580"/>
         <source>Locations</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="709"/>
+        <location filename="../tools/export_fieldlogger.py" line="745"/>
         <source>Edit settings string</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="944"/>
+        <location filename="../tools/export_fieldlogger.py" line="988"/>
         <source>Choose a file name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="958"/>
+        <location filename="../tools/export_fieldlogger.py" line="1002"/>
         <source>Writing of file failed!: %s </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="966"/>
+        <location filename="../tools/export_fieldlogger.py" line="1010"/>
         <source>Error writing %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="297"/>
+        <location filename="../tools/export_fieldlogger.py" line="333"/>
         <source>table obs_points (id obsid)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="361"/>
+        <location filename="../tools/export_fieldlogger.py" line="397"/>
         <source>Locations from:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="263"/>
+        <location filename="../tools/export_fieldlogger.py" line="290"/>
         <source>FieldLogger</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="266"/>
+        <location filename="../tools/export_fieldlogger.py" line="293"/>
         <source>FieldForm</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="269"/>
+        <location filename="../tools/export_fieldlogger.py" line="305"/>
         <source>Export format</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="302"/>
+        <location filename="../tools/export_fieldlogger.py" line="338"/>
         <source>point layer:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="696"/>
+        <location filename="../tools/export_fieldlogger.py" line="732"/>
         <source>Settings updated.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="1039"/>
+        <location filename="../tools/export_fieldlogger.py" line="1083"/>
         <source>Settings cleared.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3034,15 +3025,6 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>Hobologger import</name>
-</context>
-<context>
-    <name>HobologgerImport</name>
-</context>
-<context>
-    <name>HtmlDialog</name>
-</context>
-<context>
     <name>ImportTableChooser</name>
     <message>
         <location filename="../tools/import_general_csv_gui.py" line="852"/>
@@ -3116,12 +3098,12 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/import_interlab4.py" line="660"/>
+        <location filename="../tools/import_interlab4.py" line="665"/>
         <source>Give charset used in the file %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/import_interlab4.py" line="668"/>
+        <location filename="../tools/import_interlab4.py" line="673"/>
         <source>Charset not given, stopping.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3181,43 +3163,40 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/import_interlab4.py" line="942"/>
+        <location filename="../tools/import_interlab4.py" line="947"/>
         <source>Create table</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/import_interlab4.py" line="954"/>
+        <location filename="../tools/import_interlab4.py" line="959"/>
         <source>Could not create s_qual_lab, see log.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/import_interlab4.py" line="1155"/>
+        <location filename="../tools/import_interlab4.py" line="1160"/>
         <source>Filter by list</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/import_interlab4.py" line="1161"/>
+        <location filename="../tools/import_interlab4.py" line="1166"/>
         <source>Column header</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/import_interlab4.py" line="1173"/>
+        <location filename="../tools/import_interlab4.py" line="1178"/>
         <source>Apply</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/import_interlab4.py" line="1177"/>
+        <location filename="../tools/import_interlab4.py" line="1182"/>
         <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/import_interlab4.py" line="1207"/>
+        <location filename="../tools/import_interlab4.py" line="1212"/>
         <source>Show only selected rows</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>LeveloggerImport</name>
 </context>
 <context>
     <name>LoadLayers</name>
@@ -3531,137 +3510,137 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="2708"/>
+        <location filename="../ui/customplotdialog.ui" line="2702"/>
         <source>Discontinuous plot if time step &gt; days</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="2795"/>
+        <location filename="../ui/customplotdialog.ui" line="2789"/>
         <source>Plot chart</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="854"/>
+        <location filename="../ui/customplotdialog.ui" line="848"/>
         <source>Tab 1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="2119"/>
+        <location filename="../ui/customplotdialog.ui" line="2113"/>
         <source>Table:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="2143"/>
+        <location filename="../ui/customplotdialog.ui" line="2137"/>
         <source>x-axis:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="2194"/>
+        <location filename="../ui/customplotdialog.ui" line="2188"/>
         <source>y-axis:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="2479"/>
+        <location filename="../ui/customplotdialog.ui" line="2473"/>
         <source>Filter #1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="2512"/>
+        <location filename="../ui/customplotdialog.ui" line="2506"/>
         <source>Filter #2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="2264"/>
+        <location filename="../ui/customplotdialog.ui" line="2258"/>
         <source>Plot type</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="2277"/>
+        <location filename="../ui/customplotdialog.ui" line="2271"/>
         <source>line</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="2282"/>
+        <location filename="../ui/customplotdialog.ui" line="2276"/>
         <source>line and marker</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="2287"/>
+        <location filename="../ui/customplotdialog.ui" line="2281"/>
         <source>line and cross</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="2292"/>
+        <location filename="../ui/customplotdialog.ui" line="2286"/>
         <source>marker</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="2297"/>
+        <location filename="../ui/customplotdialog.ui" line="2291"/>
         <source>step-pre</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="2302"/>
+        <location filename="../ui/customplotdialog.ui" line="2296"/>
         <source>step-post</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="2307"/>
+        <location filename="../ui/customplotdialog.ui" line="2301"/>
         <source>frequency</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="2317"/>
+        <location filename="../ui/customplotdialog.ui" line="2311"/>
         <source>Show plot settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="2343"/>
+        <location filename="../ui/customplotdialog.ui" line="2337"/>
         <source>Remove mean</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="2373"/>
+        <location filename="../ui/customplotdialog.ui" line="2367"/>
         <source>a in y=ax+b</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="2405"/>
+        <location filename="../ui/customplotdialog.ui" line="2399"/>
         <source>b in y=ax+b</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="2392"/>
+        <location filename="../ui/customplotdialog.ui" line="2386"/>
         <source>y offset</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="1475"/>
+        <location filename="../ui/customplotdialog.ui" line="1469"/>
         <source>Tab 2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="2079"/>
+        <location filename="../ui/customplotdialog.ui" line="2073"/>
         <source>Tab 3</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="457"/>
+        <location filename="../ui/customplotdialog.ui" line="452"/>
         <source>ymax  </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="478"/>
+        <location filename="../ui/customplotdialog.ui" line="473"/>
         <source>xmin  </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="421"/>
+        <location filename="../ui/customplotdialog.ui" line="417"/>
         <source>xmax  </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="367"/>
+        <location filename="../ui/customplotdialog.ui" line="365"/>
         <source>ymin  </source>
         <translation type="unfinished"></translation>
     </message>
@@ -3686,7 +3665,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="546"/>
+        <location filename="../ui/customplotdialog.ui" line="540"/>
         <source>Redraw</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3718,7 +3697,7 @@ wells file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="2653"/>
+        <location filename="../ui/customplotdialog.ui" line="2647"/>
         <source>From selection</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3728,27 +3707,27 @@ wells file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="2603"/>
+        <location filename="../ui/customplotdialog.ui" line="2597"/>
         <source>Filtersettings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="2627"/>
+        <location filename="../ui/customplotdialog.ui" line="2621"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Only show items that remains after filtering using the other filter selection.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Ex:&lt;/p&gt;&lt;p&gt;1. Choose filter 1 or 2 and select items.&lt;/p&gt;&lt;p&gt;2. Choose the other filter. The list is now filled with items from the chosen filter that isn&apos;t excluded by the other filter.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Reselecting the filter column resets the selection for current filter list.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="2630"/>
+        <location filename="../ui/customplotdialog.ui" line="2624"/>
         <source>Dependent filtering</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="2650"/>
+        <location filename="../ui/customplotdialog.ui" line="2644"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select items in list with from selected features in the selected layer containing a column with the same name as the selected filter column.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="2667"/>
+        <location filename="../ui/customplotdialog.ui" line="2661"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Filter list for words containg given string.&lt;/p&gt;&lt;p&gt;Supply a list of words separated by ;&lt;/p&gt;&lt;p&gt;Ex: Rb;Br&lt;/p&gt;&lt;p&gt;Ex: Chlor;Sodi;Calc&lt;/p&gt;&lt;p&gt;Case insensitive.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3778,7 +3757,7 @@ wells file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="708"/>
+        <location filename="../ui/customplotdialog.ui" line="702"/>
         <source>(manual)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3948,7 +3927,7 @@ wells file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="641"/>
+        <location filename="../ui/customplotdialog.ui" line="635"/>
         <source>Import</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3968,97 +3947,97 @@ wells file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="562"/>
+        <location filename="../ui/customplotdialog.ui" line="556"/>
         <source>Styles</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="648"/>
+        <location filename="../ui/customplotdialog.ui" line="642"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Open stylelib folder.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="651"/>
+        <location filename="../ui/customplotdialog.ui" line="645"/>
         <source>Open folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="658"/>
+        <location filename="../ui/customplotdialog.ui" line="652"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Write a list of available settings to log.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="661"/>
+        <location filename="../ui/customplotdialog.ui" line="655"/>
         <source>Available settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="638"/>
+        <location filename="../ui/customplotdialog.ui" line="632"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Import a *-mplstyle file to stylelib folder.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="668"/>
+        <location filename="../ui/customplotdialog.ui" line="662"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select style to be used for plotting.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="682"/>
+        <location filename="../ui/customplotdialog.ui" line="676"/>
         <source>Save selected style to file.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="685"/>
+        <location filename="../ui/customplotdialog.ui" line="679"/>
         <source>Save As...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="718"/>
+        <location filename="../ui/customplotdialog.ui" line="712"/>
         <source>Select style in list</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="332"/>
+        <location filename="../ui/customplotdialog.ui" line="331"/>
         <source>Axes limits</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="347"/>
+        <location filename="../ui/customplotdialog.ui" line="345"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Please note! Although xmin and xmax are dates,&lt;br/&gt;both time series plots and xy scatter series can be plotted.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="511"/>
+        <location filename="../ui/customplotdialog.ui" line="505"/>
         <source>Regular xaxis interval</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="586"/>
+        <location filename="../ui/customplotdialog.ui" line="580"/>
         <source>Matplotlib style sheet reference</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="621"/>
+        <location filename="../ui/customplotdialog.ui" line="615"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Dynamic plotsize: The plot size will adjust to the customplot window size.&lt;br/&gt;Fixed: The plot size will be set to the parameter figure.figsize from the used style file.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="601"/>
+        <location filename="../ui/customplotdialog.ui" line="595"/>
         <source>Plotsize:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="611"/>
+        <location filename="../ui/customplotdialog.ui" line="605"/>
         <source>Dynamic</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="624"/>
+        <location filename="../ui/customplotdialog.ui" line="618"/>
         <source>Fixed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="508"/>
+        <location filename="../ui/customplotdialog.ui" line="502"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked, xaxis tickmarks will appear at regular intervals.&lt;br/&gt;If unchecked, xaxis tickmarks will be set to first day of month, first hour of day etc.&lt;br/&gt;in addition to regular intervals.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4123,7 +4102,7 @@ wells file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="2359"/>
+        <location filename="../ui/customplotdialog.ui" line="2353"/>
         <source>y scaling factor
 (gain)</source>
         <translation type="unfinished"></translation>
@@ -4153,17 +4132,17 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="692"/>
+        <location filename="../ui/customplotdialog.ui" line="686"/>
         <source>Inspect and fix style files: remove rcParams keys not supported by this matplotlib version.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="695"/>
+        <location filename="../ui/customplotdialog.ui" line="689"/>
         <source>Fix styles...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/customplotdialog.ui" line="2820"/>
+        <location filename="../ui/customplotdialog.ui" line="2814"/>
         <source>Save as csv</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4192,22 +4171,19 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>MessagebarAndLog</name>
-</context>
-<context>
     <name>MetadataFilter</name>
     <message>
-        <location filename="../tools/import_interlab4.py" line="1352"/>
+        <location filename="../tools/import_interlab4.py" line="1358"/>
         <source>%s will be put into database column &quot;%s&quot;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/import_interlab4.py" line="1411"/>
+        <location filename="../tools/import_interlab4.py" line="1423"/>
         <source>Select lablitteras to import</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/import_interlab4.py" line="1415"/>
+        <location filename="../tools/import_interlab4.py" line="1427"/>
         <source>(%s rows selected)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4473,22 +4449,22 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>Midvatten</name>
     <message>
-        <location filename="../midvatten_plugin.py" line="437"/>
+        <location filename="../midvatten_plugin.py" line="434"/>
         <source>Load default db-layers to qgis</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvatten_plugin.py" line="595"/>
+        <location filename="../midvatten_plugin.py" line="592"/>
         <source>Midvatten Settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvatten_plugin.py" line="595"/>
+        <location filename="../midvatten_plugin.py" line="592"/>
         <source>Configuration for Midvatten toolset</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvatten_plugin.py" line="627"/>
+        <location filename="../midvatten_plugin.py" line="624"/>
         <source>About</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4543,12 +4519,12 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvatten_plugin.py" line="398"/>
+        <location filename="../midvatten_plugin.py" line="395"/>
         <source>Prepare 3D-data for Qgis2threejs plugin</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvatten_plugin.py" line="368"/>
+        <location filename="../midvatten_plugin.py" line="365"/>
         <source>Load data domain tables to qgis</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4568,27 +4544,27 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvatten_plugin.py" line="571"/>
+        <location filename="../midvatten_plugin.py" line="568"/>
         <source>&amp;Import data to database</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvatten_plugin.py" line="572"/>
+        <location filename="../midvatten_plugin.py" line="569"/>
         <source>&amp;Export data from database</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvatten_plugin.py" line="573"/>
+        <location filename="../midvatten_plugin.py" line="570"/>
         <source>&amp;Edit data in database</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvatten_plugin.py" line="576"/>
+        <location filename="../midvatten_plugin.py" line="573"/>
         <source>&amp;Database management</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvatten_plugin.py" line="577"/>
+        <location filename="../midvatten_plugin.py" line="574"/>
         <source>&amp;Utilities</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4598,7 +4574,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvatten_plugin.py" line="417"/>
+        <location filename="../midvatten_plugin.py" line="414"/>
         <source>List of values from selected features</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4618,28 +4594,23 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/utils/midvatten_utils.py" line="451"/>
+        <location filename="../tools/utils/midvatten_utils.py" line="458"/>
         <source>Views not added for PostGIS databases (not needed)!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvatten_plugin.py" line="379"/>
+        <location filename="../midvatten_plugin.py" line="376"/>
         <source>Load data tables to qgis</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvatten_plugin.py" line="388"/>
+        <location filename="../midvatten_plugin.py" line="385"/>
         <source>Load stratigraphy symbology to qgis</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../midvatten_plugin.py" line="205"/>
         <source>Edit water level logger data</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../midvatten_plugin.py" line="358"/>
-        <source>Add non-essential data tables</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4673,27 +4644,27 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvatten_plugin.py" line="408"/>
+        <location filename="../midvatten_plugin.py" line="405"/>
         <source>Calculate database table row</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvatten_plugin.py" line="428"/>
+        <location filename="../midvatten_plugin.py" line="425"/>
         <source>Add obs_points/obs_lines view</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvatten_plugin.py" line="574"/>
+        <location filename="../midvatten_plugin.py" line="571"/>
         <source>&amp;Plots</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvatten_plugin.py" line="575"/>
+        <location filename="../midvatten_plugin.py" line="572"/>
         <source>&amp;Reports</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvatten_plugin.py" line="617"/>
+        <location filename="../midvatten_plugin.py" line="614"/>
         <source>Reset settings</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4772,18 +4743,12 @@ error msg:
     </message>
 </context>
 <context>
-    <name>NotFoundQuestion</name>
-</context>
-<context>
     <name>ObsLayer</name>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="1474"/>
+        <location filename="../tools/export_fieldlogger.py" line="1518"/>
         <source>id column:</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>ObsidFilter</name>
 </context>
 <context>
     <name>PandasCalculations</name>
@@ -4796,22 +4761,22 @@ error msg:
 <context>
     <name>ParameterBrowser</name>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="1195"/>
+        <location filename="../tools/export_fieldlogger.py" line="1239"/>
         <source>Error, sql failed, see log message panel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="1195"/>
+        <location filename="../tools/export_fieldlogger.py" line="1239"/>
         <source>Cannot get data from sql %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="1231"/>
+        <location filename="../tools/export_fieldlogger.py" line="1275"/>
         <source>Error, input name not set</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="1238"/>
+        <location filename="../tools/export_fieldlogger.py" line="1282"/>
         <source>Error, input type not set</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4897,19 +4862,10 @@ error msg:
 <context>
     <name>ParameterGroup</name>
     <message>
-        <location filename="../tools/export_fieldlogger.py" line="82"/>
+        <location filename="../tools/export_fieldlogger.py" line="109"/>
         <source>Paste selected ids</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>PickAnnotator</name>
-</context>
-<context>
-    <name>PlotColorDict</name>
-</context>
-<context>
-    <name>PlotHatchDict</name>
 </context>
 <context>
     <name>PlotTemplates</name>
@@ -4947,17 +4903,14 @@ error msg:
     </message>
 </context>
 <context>
-    <name>PlotTypesDict</name>
-</context>
-<context>
     <name>PostgisSettings</name>
     <message>
-        <location filename="../midvsettingsdialog.py" line="884"/>
+        <location filename="../midvsettingsdialog.py" line="888"/>
         <source>Connections</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../midvsettingsdialog.py" line="907"/>
+        <location filename="../midvsettingsdialog.py" line="911"/>
         <source>Schema</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5016,222 +4969,222 @@ error msg:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="258"/>
+        <location filename="../ui/secplotdockwidget.ui" line="257"/>
         <source>Water levels</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="290"/>
+        <location filename="../ui/secplotdockwidget.ui" line="288"/>
         <source>Include views</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="305"/>
+        <location filename="../ui/secplotdockwidget.ui" line="302"/>
         <source>Table with water level data</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="522"/>
+        <location filename="../ui/secplotdockwidget.ui" line="509"/>
         <source>Digital elevation models</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="548"/>
+        <location filename="../ui/secplotdockwidget.ui" line="534"/>
         <source>Select among single band floating points rasters (must be visible in qgis project)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="704"/>
+        <location filename="../ui/secplotdockwidget.ui" line="687"/>
         <source>Bars</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="735"/>
+        <location filename="../ui/secplotdockwidget.ui" line="716"/>
         <source>Obsid labels</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="839"/>
+        <location filename="../ui/secplotdockwidget.ui" line="816"/>
         <source>Layer text:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="832"/>
+        <location filename="../ui/secplotdockwidget.ui" line="809"/>
         <source>Layers:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="763"/>
+        <location filename="../ui/secplotdockwidget.ui" line="743"/>
         <source>select specific drillstop that will be indicated in plot, use % for wildcard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="783"/>
+        <location filename="../ui/secplotdockwidget.ui" line="762"/>
         <source>Geology</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="800"/>
+        <location filename="../ui/secplotdockwidget.ui" line="778"/>
         <source>Hydrology</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="985"/>
+        <location filename="../ui/secplotdockwidget.ui" line="954"/>
         <source>None</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="857"/>
+        <location filename="../ui/secplotdockwidget.ui" line="833"/>
         <source>% of profile</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="875"/>
+        <location filename="../ui/secplotdockwidget.ui" line="850"/>
         <source>% of plot</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="899"/>
+        <location filename="../ui/secplotdockwidget.ui" line="873"/>
         <source>give stratigraphy bar width (% of full scale) which also affects sampling interval for DEM(s)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1363"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1325"/>
         <source>Plot settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1379"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1340"/>
         <source>Legend</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1427"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1386"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Dynamic plotsize: The plot size will adjust to the customplot window size.&lt;br/&gt;Fixed: The plot size will be set to the parameter figure.figsize from the used style file.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1391"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1352"/>
         <source>Plotsize:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1409"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1369"/>
         <source>Dynamic</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1430"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1389"/>
         <source>Fixed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1459"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1417"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Edit current loaded template.&lt;/p&gt;&lt;p&gt;Note: Changes are not saved to a template file. Use Save as... to save changes to file.&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1462"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1420"/>
         <source>Edit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1484"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1441"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Load the selected template.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1487"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1444"/>
         <source>Load</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1520"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1475"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Import template files.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1523"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1478"/>
         <source>Import</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1538"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1492"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Remove a template from the list.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Note:&lt;/p&gt;&lt;p&gt;* Saved template files will not be removed from disk.&lt;/p&gt;&lt;p&gt;* Templates in default template folder will reappear again next time Section plot is used.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1541"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1495"/>
         <source>Remove</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1556"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1509"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save the loaded template to file.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1559"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1512"/>
         <source>Save as...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1566"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1519"/>
         <source>(manual)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="275"/>
+        <location filename="../ui/secplotdockwidget.ui" line="274"/>
         <source>W level table:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="314"/>
+        <location filename="../ui/secplotdockwidget.ui" line="311"/>
         <source>Specific dates</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="343"/>
+        <location filename="../ui/secplotdockwidget.ui" line="339"/>
         <source>Date time for water level:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="393"/>
+        <location filename="../ui/secplotdockwidget.ui" line="388"/>
         <source>Interactive mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="440"/>
+        <location filename="../ui/secplotdockwidget.ui" line="432"/>
         <source>Resample rule</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="482"/>
+        <location filename="../ui/secplotdockwidget.ui" line="471"/>
         <source>Resample how</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="503"/>
+        <location filename="../ui/secplotdockwidget.ui" line="491"/>
         <source>Skip NaN</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="742"/>
+        <location filename="../ui/secplotdockwidget.ui" line="723"/>
         <source>Drillstop:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="825"/>
+        <location filename="../ui/secplotdockwidget.ui" line="802"/>
         <source>Barwidths:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1439"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1398"/>
         <source>Templates:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="364"/>
+        <location filename="../ui/secplotdockwidget.ui" line="359"/>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -5255,252 +5208,252 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="766"/>
+        <location filename="../ui/secplotdockwidget.ui" line="746"/>
         <source>%bedrock%</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="924"/>
+        <location filename="../ui/secplotdockwidget.ui" line="897"/>
         <source>Center</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="937"/>
+        <location filename="../ui/secplotdockwidget.ui" line="909"/>
         <source>Edge</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="956"/>
+        <location filename="../ui/secplotdockwidget.ui" line="927"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;Alignment:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="467"/>
+        <location filename="../ui/secplotdockwidget.ui" line="457"/>
         <source>Resample offset</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="575"/>
+        <location filename="../ui/secplotdockwidget.ui" line="560"/>
         <source>Sampling distance (m)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="582"/>
+        <location filename="../ui/secplotdockwidget.ui" line="567"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The sampling distance (resolution) of the digitized dem line in meter. &lt;br/&gt;A sampling distance of 1 (m) creates a node every meter.&lt;br/&gt;A sampling distance of 0 m adapts the resolution automatically.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="606"/>
+        <location filename="../ui/secplotdockwidget.ui" line="590"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Colorize the elevation models with graded colors.&lt;/p&gt;&lt;p&gt;The feature can be used to visualize changing features along the profile line, for example soil type or land use for a ground surface dem or bedrock type for a bedrock dem.&lt;/p&gt;&lt;p&gt;To use coloration for a layer, create a polygon layer with the same name as the elevation model raster layer and &apos;_secplotcolor&apos; at the end. Ex (dem &apos;groundsurface&apos; and polygon layer &apos;groundsurface_secplotcolor&apos;. Apply a categorized or rule base symbology with simple symbols with different fill colors, which will be used for graded colors. The label of the category will be used for the legend. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="609"/>
+        <location filename="../ui/secplotdockwidget.ui" line="593"/>
         <source>Graded coloration</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="621"/>
+        <location filename="../ui/secplotdockwidget.ui" line="605"/>
         <source>Maximum opacity</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="628"/>
+        <location filename="../ui/secplotdockwidget.ui" line="612"/>
         <source>Minimum opacity</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="635"/>
+        <location filename="../ui/secplotdockwidget.ui" line="619"/>
         <source>Number of layers</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="642"/>
+        <location filename="../ui/secplotdockwidget.ui" line="626"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The opacity for the topmost graded layer.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="652"/>
+        <location filename="../ui/secplotdockwidget.ui" line="636"/>
         <source>Depth (m)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="659"/>
+        <location filename="../ui/secplotdockwidget.ui" line="643"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The opacity for the bottom layer (the layer at &amp;quot;Depth (m)&amp;quot;).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="666"/>
+        <location filename="../ui/secplotdockwidget.ui" line="650"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Number of graded layers. More layers makes smoother transitions at the cost of slower rendering.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="676"/>
+        <location filename="../ui/secplotdockwidget.ui" line="660"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Maximum depth below raster to add graded color.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="970"/>
+        <location filename="../ui/secplotdockwidget.ui" line="940"/>
         <source>Screens:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="990"/>
+        <location filename="../ui/secplotdockwidget.ui" line="959"/>
         <source>Behind</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="995"/>
+        <location filename="../ui/secplotdockwidget.ui" line="964"/>
         <source>On top</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1010"/>
+        <location filename="../ui/secplotdockwidget.ui" line="978"/>
         <source>Screen width factor:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1050"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1016"/>
         <source>Screen text:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1078"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1042"/>
         <source>TEM inversion model</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1249"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1213"/>
         <source>The alpha blending value, between 0 (transparent) and 1 (opaque).</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1112"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1076"/>
         <source>Colormap normalization</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1119"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1083"/>
         <source>Rasterize the pcolormesh when drawing vector graphics. This can speed up rendering and produce smaller files for large data sets.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1129"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1093"/>
         <source>Plot data fit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1136"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1100"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The color of the edges. Defaults to &apos;none&apos; (&apos;none&apos;, None, &apos;face&apos;, color, color sequence).&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1143"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1107"/>
         <source>Alpha above doi</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1150"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1114"/>
         <source>Shading</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1157"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1121"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The fill style, Possible values:&lt;/p&gt;&lt;ul style=&quot;margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;&quot;&gt;&lt;li style=&quot; margin-top:12px; margin-bottom:0px; margin-left:30px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&apos;flat&apos;: A solid color is used for each quad. The color of the quad (i, j), (i+1, j), (i, j+1), (i+1, j+1) is given by &lt;span style=&quot; font-family:&apos;monospace&apos;;&quot;&gt;C[i,j]&lt;/span&gt;.&lt;/li&gt;&lt;li style=&quot; margin-top:0px; margin-bottom:12px; margin-left:30px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&apos;gouraud&apos;: Each quad will be Gouraud shaded: The color of the corners (i&apos;, j&apos;) are given by &lt;span style=&quot; font-family:&apos;monospace&apos;;&quot;&gt;C[i&apos;,j&apos;]&lt;/span&gt;. The color values of the area in between is interpolated from the corner values.&lt;/li&gt;&lt;/ul&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1164"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1128"/>
         <source>Minimum resistivity value to use for scaling the colormap. Will use minimum value above doi if not set.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1174"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1138"/>
         <source>Whether to snap the mesh to pixel boundaries.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1184"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1148"/>
         <source>Colormap</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1191"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1155"/>
         <source>Colormap vmin / vmax</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1198"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1162"/>
         <source>Alpha below doi</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1208"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1172"/>
         <source>Inversion model name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1215"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1179"/>
         <source>Maximum resistivity value to use for scaling the colormap. Will use maximum value above doi if not set</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1225"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1189"/>
         <source>Snap</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1235"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1199"/>
         <source>Rasterized</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1265"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1229"/>
         <source>Edgecolors</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1281"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1244"/>
         <source>Images</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1293"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1256"/>
         <source>zorder(s)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1300"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1263"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The alpha blending value, between 0 (transparent) and 1 (opaque). Give one value or a ;-separated list of values corresponding to the alphabetical order of the selected images (default 1.0).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1303"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1266"/>
         <source>1.0</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1310"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1273"/>
         <source>alpha(s)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1324"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1287"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The drawing order of the images. Give one value or a ;-separated list of values corresponding to the alphabetical order of the selected images (default 0).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1327"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1290"/>
         <source>1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1334"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1297"/>
         <source>clip</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/secplotdockwidget.ui" line="1341"/>
+        <location filename="../ui/secplotdockwidget.ui" line="1304"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Clip the images using clip_left_right_top_bottom-column.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5518,18 +5471,18 @@ p, li { white-space: pre-wrap; }
         <translation>Avstånd längs profillinje</translation>
     </message>
     <message>
-        <location filename="../tools/sectionplot/_sectionplot.py" line="607"/>
+        <location filename="../tools/sectionplot/_sectionplot.py" line="610"/>
         <source>Plotting using settings:
 %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/sectionplot/_sectionplot.py" line="884"/>
+        <location filename="../tools/sectionplot/_sectionplot.py" line="887"/>
         <source>Error msg: %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/sectionplot/_sectionplot.py" line="599"/>
+        <location filename="../tools/sectionplot/_sectionplot.py" line="602"/>
         <source>rcParams key %s didn&apos;t exist</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5539,28 +5492,28 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/sectionplot/_sectionplot.py" line="974"/>
+        <location filename="../tools/sectionplot/_sectionplot.py" line="977"/>
         <source>Could not alter NavigationToolbar, msg: %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/sectionplot/_sectionplot.py" line="1079"/>
+        <location filename="../tools/sectionplot/_sectionplot.py" line="1082"/>
         <source>Sectionplot settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/sectionplot/_sectionplot.py" line="897"/>
+        <location filename="../tools/sectionplot/_sectionplot.py" line="900"/>
         <source>An error occured, see log message panel!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/sectionplot/_sectionplot.py" line="897"/>
+        <location filename="../tools/sectionplot/_sectionplot.py" line="900"/>
         <source>Error msg:
  %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/sectionplot/_sectionplot.py" line="685"/>
+        <location filename="../tools/sectionplot/_sectionplot.py" line="688"/>
         <source>screen </source>
         <translation>filter </translation>
     </message>
@@ -5575,7 +5528,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/sectionplot/painters.py" line="1031"/>
+        <location filename="../tools/sectionplot/painters.py" line="1019"/>
         <source>Resistivity</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5586,12 +5539,9 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>Sectionplot</name>
-</context>
-<context>
     <name>SpatialiteSettings</name>
     <message>
-        <location filename="../midvsettingsdialog.py" line="813"/>
+        <location filename="../midvsettingsdialog.py" line="816"/>
         <source>Select db</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5635,28 +5585,25 @@ for string
 <context>
     <name>SurveyDialog</name>
     <message>
-        <location filename="../tools/stratigraphy.py" line="784"/>
+        <location filename="../tools/stratigraphy.py" line="781"/>
         <source>Identify Results</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/stratigraphy.py" line="805"/>
+        <location filename="../tools/stratigraphy.py" line="802"/>
         <source>Show text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/stratigraphy.py" line="820"/>
+        <location filename="../tools/stratigraphy.py" line="817"/>
         <source>Print</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/stratigraphy.py" line="825"/>
+        <location filename="../tools/stratigraphy.py" line="822"/>
         <source>Close</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>SurveyStore</name>
 </context>
 <context>
     <name>SurveyWidget</name>
@@ -5839,12 +5786,6 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>TimeSeriesPlot</name>
-</context>
-<context>
-    <name>Timer</name>
-</context>
-<context>
     <name>TzSelector</name>
     <message>
         <location filename="../tools/import_logger/parsers.py" line="184"/>
@@ -5987,12 +5928,6 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>ask_for_delimiter</name>
-</context>
-<context>
-    <name>ask_for_export_crs</name>
-</context>
-<context>
     <name>askuser</name>
     <message>
         <location filename="../tools/import_logger/importer.py" line="661"/>
@@ -6040,18 +5975,6 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>create_dict_from_db_2_cols</name>
-</context>
-<context>
-    <name>create_temporary_table_for_import</name>
-</context>
-<context>
-    <name>custom_drillreport</name>
-</context>
-<context>
-    <name>db_tables_columns_info</name>
-</context>
-<context>
     <name>delete_srids</name>
     <message>
         <location filename="../tools/utils/db_utils/helpers.py" line="383"/>
@@ -6068,42 +5991,6 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>filter_nonexisting_values_and_ask</name>
-</context>
-<context>
-    <name>find_date_format</name>
-</context>
-<context>
-    <name>find_layer</name>
-</context>
-<context>
-    <name>general_exception_handler</name>
-</context>
-<context>
-    <name>geocolorsymbols</name>
-</context>
-<context>
-    <name>get_delimiter</name>
-</context>
-<context>
-    <name>get_delimiter_from_file_rows</name>
-</context>
-<context>
-    <name>get_locale_from_db</name>
-</context>
-<context>
-    <name>get_quality_instruments</name>
-</context>
-<context>
-    <name>get_selected_features_as_tuple</name>
-</context>
-<context>
-    <name>get_spatialite_db_path_from_dbsettings_string</name>
-</context>
-<context>
-    <name>get_stored_settings</name>
-</context>
-<context>
     <name>get_table_info</name>
     <message>
         <location filename="../tools/utils/db_utils/schema.py" line="84"/>
@@ -6115,13 +6002,10 @@ msg:%s</source>
 <context>
     <name>handle_save</name>
     <message>
-        <location filename="../tools/import_interlab4.py" line="932"/>
+        <location filename="../tools/import_interlab4.py" line="937"/>
         <source>No file selected!</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>hydrocolors</name>
 </context>
 <context>
     <name>mainWindow</name>
@@ -6131,182 +6015,182 @@ msg:%s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="102"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="101"/>
         <source>Obsid not selected.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="135"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="133"/>
         <source>See the link to wiki</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="235"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="230"/>
         <source>Obsid</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="268"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="262"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Obsid ends with &amp;quot;(uncalibrated)&amp;quot; if the column level_masl in table w_levels_logger contains NULL-values.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="306"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="298"/>
         <source>Select period</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="335"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="326"/>
         <source>From</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="579"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="564"/>
         <source>yyyy-MM-dd HH:mm:ss</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="429"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="418"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select from-date in plot&lt;/p&gt;&lt;p&gt;(must select close to the logger line).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="612"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="596"/>
         <source>Select in plot</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="459"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="447"/>
         <source>Set from-date to current view extent</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="642"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="625"/>
         <source>From current extent</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="529"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="515"/>
         <source>To</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="609"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="593"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select to-date in plot&lt;/p&gt;&lt;p&gt;(must select close to the logger line).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="639"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="622"/>
         <source>Set to-date to current view extent</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="744"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="724"/>
         <source>Adjust level</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="916"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="892"/>
         <source>Calculate</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="1192"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="1160"/>
         <source>Delete data</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="1266"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="1234"/>
         <source>Delete logger data</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="799"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="778"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Calculate from water head&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="809"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="788"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:7pt;&quot;&gt;Calculate water level (&lt;/span&gt;&lt;span style=&quot; font-size:7pt; font-style:italic;&quot;&gt;level_masl&lt;/span&gt;&lt;span style=&quot; font-size:7pt;&quot;&gt;) from water head above logger (&lt;/span&gt;&lt;span style=&quot; font-size:7pt; font-style:italic;&quot;&gt;head_cm&lt;/span&gt;&lt;span style=&quot; font-size:7pt;&quot;&gt; / 100) + logger &lt;/span&gt;&lt;span style=&quot; font-size:7pt; font-style:italic;&quot;&gt;Elevation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="844"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="822"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Elevation&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="940"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="915"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="943"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="918"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add offset to water level&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="953"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="928"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:7pt;&quot;&gt;Adjust water level (&lt;/span&gt;&lt;span style=&quot; font-size:7pt; font-style:italic;&quot;&gt;level_masl&lt;/span&gt;&lt;span style=&quot; font-size:7pt;&quot;&gt;) by adding offset, by using &lt;/span&gt;&lt;span style=&quot; font-size:7pt; font-style:italic;&quot;&gt;Move nodes&lt;/span&gt;&lt;span style=&quot; font-size:7pt;&quot;&gt;-tool in navigation toolbar or fit automatically to measurements using &lt;/span&gt;&lt;span style=&quot; font-size:7pt; font-style:italic;&quot;&gt;Fit to measurements.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="988"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="962"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Offset&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="1027"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="1000"/>
         <source>0</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="1060"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="1032"/>
         <source>Add</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="1089"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="1060"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Fit selected water level to measurements using mean difference between logger water level and measurements. Each water level is matched to measurements within its datetime +- &lt;span style=&quot; font-style:italic;&quot;&gt;search radius&lt;/span&gt;. Increase &lt;span style=&quot; font-style:italic;&quot;&gt;search radius&lt;/span&gt; if no match is found.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="1092"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="1063"/>
         <source>Fit to measurements (auto)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="768"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="748"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;INFO: &lt;/span&gt;&lt;span style=&quot; font-size:7pt;&quot;&gt;Water level is calculated from logger water head (&lt;/span&gt;&lt;span style=&quot; font-size:7pt; font-style:italic;&quot;&gt;head_cm&lt;/span&gt;&lt;span style=&quot; font-size:7pt;&quot;&gt;) and logger elevation or adjusted by adding an offset.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="1233"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="1201"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;INFO:&lt;/span&gt;&lt;br/&gt;In this tab you may remove erroneous data from the database table w_levels_logger. &lt;/p&gt;&lt;p&gt;Set interval for deletion above (from/to) and then select to delete logger data below. (You will be asked to confirm the deletion.)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="1253"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="1221"/>
         <source>Set level_masl to NULL</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="489"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="476"/>
         <source>Set From to the earliest date of the selected lines</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="672"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="654"/>
         <source>From selection</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="669"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="651"/>
         <source>Set To to the latest date of the selected lines</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="1121"/>
+        <location filename="../ui/calibr_logger_dialog_integrated.ui" line="1091"/>
         <source>Auto-fit search radius</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6314,7 +6198,7 @@ msg:%s</source>
 <context>
     <name>midv_data_importer</name>
     <message>
-        <location filename="../tools/import_data_to_db.py" line="791"/>
+        <location filename="../tools/import_data_to_db.py" line="809"/>
         <source>Sql
 %s  failed.
 Msg:
@@ -6322,12 +6206,12 @@ Msg:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/import_data_to_db.py" line="1362"/>
+        <location filename="../tools/import_data_to_db.py" line="1399"/>
         <source>Import error, see log message panel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/import_data_to_db.py" line="779"/>
+        <location filename="../tools/import_data_to_db.py" line="797"/>
         <source>Sql
 %s  failed.</source>
         <translation type="unfinished"></translation>
@@ -6338,53 +6222,50 @@ Msg:
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/import_data_to_db.py" line="209"/>
+        <location filename="../tools/import_data_to_db.py" line="217"/>
         <source>Validating columns...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/import_data_to_db.py" line="243"/>
+        <location filename="../tools/import_data_to_db.py" line="251"/>
         <source>Creating temporary table...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/import_data_to_db.py" line="278"/>
+        <location filename="../tools/import_data_to_db.py" line="286"/>
         <source>Checking for duplicate timestamps...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/import_data_to_db.py" line="334"/>
+        <location filename="../tools/import_data_to_db.py" line="342"/>
         <source>Importing rows...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/import_data_to_db.py" line="384"/>
+        <location filename="../tools/import_data_to_db.py" line="402"/>
         <source>%s already existed in the database</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/import_data_to_db.py" line="391"/>
+        <location filename="../tools/import_data_to_db.py" line="409"/>
         <source>%s duplicated within the file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/import_data_to_db.py" line="399"/>
+        <location filename="../tools/import_data_to_db.py" line="417"/>
         <source>%s for other reasons</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/import_data_to_db.py" line="666"/>
+        <location filename="../tools/import_data_to_db.py" line="684"/>
         <source>Info</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>midvsettings</name>
-</context>
-<context>
     <name>midvsettingsdialogdock</name>
     <message>
-        <location filename="../midvsettingsdialog.py" line="650"/>
+        <location filename="../midvsettingsdialog.py" line="653"/>
         <source>Wrong table! obsid is missing.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6403,18 +6284,6 @@ Msg:
     </message>
 </context>
 <context>
-    <name>pandas_base_tooltip</name>
-</context>
-<context>
-    <name>pandas_how_tooltip</name>
-</context>
-<context>
-    <name>pandas_rule_tooltip</name>
-</context>
-<context>
-    <name>parse_timezone_to_timedelta</name>
-</context>
-<context>
     <name>plotsqlitewindow</name>
     <message>
         <location filename="../tools/customplot/plot_object.py" line="52"/>
@@ -6428,37 +6297,22 @@ Msg:
     </message>
 </context>
 <context>
-    <name>pop_up_info</name>
-</context>
-<context>
-    <name>replace_matplotlib_backends_backend_qt5agg_NavigationToolbar2QT_set_message_xylimits</name>
-</context>
-<context>
-    <name>returnunicode</name>
-</context>
-<context>
-    <name>save_stored_settings</name>
-</context>
-<context>
     <name>select_files</name>
     <message>
-        <location filename="../tools/utils/midvatten_utils.py" line="528"/>
+        <location filename="../tools/utils/midvatten_utils.py" line="549"/>
         <source>Select file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/utils/midvatten_utils.py" line="536"/>
+        <location filename="../tools/utils/midvatten_utils.py" line="557"/>
         <source>Select files</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../tools/utils/midvatten_utils.py" line="544"/>
+        <location filename="../tools/utils/midvatten_utils.py" line="565"/>
         <source>No file selected!</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>selection_check</name>
 </context>
 <context>
     <name>settingsdict</name>
@@ -6469,24 +6323,12 @@ Msg:
     </message>
 </context>
 <context>
-    <name>sql_alter_db</name>
-</context>
-<context>
-    <name>sql_failed_msg</name>
-</context>
-<context>
-    <name>sql_load_fr_db</name>
-</context>
-<context>
     <name>staff_list</name>
     <message>
         <location filename="../definitions/midvatten_defs.py" line="817"/>
         <source>Sql failed, see log message panel</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>strat_selection_check</name>
 </context>
 <context>
     <name>strat_symbology</name>
@@ -6500,24 +6342,6 @@ Msg:
         <source>&apos;Missing stylefile %s</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>timer</name>
-</context>
-<context>
-    <name>unicode_2_utf8</name>
-</context>
-<context>
-    <name>verify_layer_selection</name>
-</context>
-<context>
-    <name>verify_msettings_loaded_and_layer_edit_mode</name>
-</context>
-<context>
-    <name>verify_this_layer_selected_and_not_in_edit_mode</name>
-</context>
-<context>
-    <name>version_comparison_list</name>
 </context>
 <context>
     <name>w_flow_flowtypes_units</name>
@@ -6543,12 +6367,9 @@ Msg:
 <context>
     <name>warn_about_old_database</name>
     <message>
-        <location filename="../tools/utils/midvatten_utils.py" line="375"/>
+        <location filename="../tools/utils/midvatten_utils.py" line="382"/>
         <source>msg: %s</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>write_printlist_to_file</name>
 </context>
 </TS>

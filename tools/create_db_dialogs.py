@@ -200,7 +200,7 @@ class NewSpatialiteDbDialog(_BaseNewDbDialog):
 
     def _browse_path(self) -> None:
         documents_location = QStandardPaths.writableLocation(
-            QStandardPaths.DocumentsLocation
+            QStandardPaths.StandardLocation.DocumentsLocation
         )
         suggested_path = os.path.join(documents_location, self._DEFAULT_PATH)
         path, _ = QFileDialog.getSaveFileName(

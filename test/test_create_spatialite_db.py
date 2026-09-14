@@ -761,7 +761,9 @@ class TestNewSpatialiteDbDialog(utils_for_tests.MidvattenTestSpatialiteNotCreate
 
         dialog._browse_path()
 
-        mock_documents.assert_called_once_with(QStandardPaths.DocumentsLocation)
+        mock_documents.assert_called_once_with(
+            QStandardPaths.StandardLocation.DocumentsLocation
+        )
         assert mock_get_save_file_name.call_args.args[2] == str(
             documents / "midv_obsdb.sqlite"
         )

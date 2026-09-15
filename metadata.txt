@@ -3,7 +3,7 @@ name=Midvatten
 qgisMinimumVersion=3.40
 description=A toolset that makes QGIS an interface for editing/viewing hydrogeological observational data (drillings, water levels, seismic data etc) stored in a SQLite or PostgreSQL database.
 about=The plugin is a toolset that makes QGIS an interface for editing/viewing hydrogeological observational data (drillings, water levels, seismic data etc) stored in a SQLite or PostgreSQL database. NOTE: This plugin requires the Python packages pandas and matplotlib (numpy is always present in QGIS). The qpip helper plugin (installed with Midvatten) offers to install them on first start — leave the preselected actions and press OK. This is a one-time step.
-version=2.0.0
+version=2.0.1
 author=Henrik Spångmyr, Josef Källgården
 email=midvattenplugin@midvatten.se
 repository=https://github.com/henrikspa/qgis-midvatten-plugin.git
@@ -23,6 +23,8 @@ hasProcessingProvider=no
 supportsQt6=True
 
 changelog=
+        Version 2.0.1:
+          - Packaging: Pass the plugins.qgis.org security scan. Marked 104 SQL statements that build identifiers via the safe-SQL layer (validated/quoted identifiers plus bound ?/%s parameters) with reviewed "# nosec" annotations, replaced one internal assert with an explicit error check, and cleared the executable bit from packaged Python files. No functional or user-facing changes.
         Version 2.0.0:
           - Qt6: The plugin now runs on both Qt5 and Qt6 builds of QGIS.
           - Qt6: The stratigraphy print dialog's legacy Qt5 orientation fallback now uses the scoped QPrinter.Orientation.Landscape spelling (Qt6 removed the unscoped QPrinter.Landscape). Also adopted the shared Qt6 static compatibility guard used across midv plugins.

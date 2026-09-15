@@ -24,7 +24,7 @@ supportsQt6=True
 
 changelog=
         Version 2.0.1:
-          - Packaging: Pass the plugins.qgis.org security scan. Marked 104 SQL statements that build identifiers via the safe-SQL layer (validated/quoted identifiers plus bound ?/%s parameters) with reviewed "# nosec" annotations, replaced one internal assert with an explicit error check, and cleared the executable bit from packaged Python files. No functional or user-facing changes.
+          - Packaging: Pass the plugins.qgis.org security scan. Annotated 104 safe SQL statements (identifiers built through the validated, quoted safe-SQL layer, with bound query parameters) as reviewed false positives, replaced one internal assert with an explicit error check, and cleared the executable bit from packaged Python files. No functional or user-facing changes.
         Version 2.0.0:
           - Qt6: The plugin now runs on both Qt5 and Qt6 builds of QGIS.
           - Qt6: The stratigraphy print dialog's legacy Qt5 orientation fallback now uses the scoped QPrinter.Orientation.Landscape spelling (Qt6 removed the unscoped QPrinter.Landscape). Also adopted the shared Qt6 static compatibility guard used across midv plugins.

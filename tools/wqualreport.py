@@ -129,9 +129,9 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
             str(self.settingsdict["wqual_unitcolumn"]) == ""
         ):  # If there is a a given column for unit
             unit_col = dbconnection.ident(self.settingsdict["wqual_unitcolumn"])
-            sql = f"SELECT DISTINCT {param_col}, {unit_col} FROM {wqual_table} WHERE obsid = {ph} ORDER BY {param_col}"
+            sql = f"SELECT DISTINCT {param_col}, {unit_col} FROM {wqual_table} WHERE obsid = {ph} ORDER BY {param_col}"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
         else:  # IF no specific column exist for unit
-            sql = f"SELECT DISTINCT {param_col}, {param_col} FROM {wqual_table} WHERE obsid = {ph} ORDER BY {param_col}"
+            sql = f"SELECT DISTINCT {param_col}, {param_col} FROM {wqual_table} WHERE obsid = {ph} ORDER BY {param_col}"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
         connection_ok, parameters = db_utils.sql_load_fr_db(
             sql, dbconnection, execute_args=(obsid,)
         )
@@ -152,14 +152,14 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
         ]:  # If there is a a specific sorting column
             sort_col = dbconnection.ident(self.settingsdict["wqual_sortingcolumn"])
             if dt_len > 16:
-                sql = f"SELECT DISTINCT {sort_col}, date_time FROM {wqual_table} WHERE obsid = {ph} ORDER BY date_time"
+                sql = f"SELECT DISTINCT {sort_col}, date_time FROM {wqual_table} WHERE obsid = {ph} ORDER BY date_time"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
             else:
-                sql = f"SELECT DISTINCT under16.{sort_col}, under16.date_time FROM (SELECT {sort_col}, substr(date_time,1,{dt_len}) AS date_time FROM {wqual_table} WHERE obsid = {ph}) AS under16 ORDER BY date_time"
+                sql = f"SELECT DISTINCT under16.{sort_col}, under16.date_time FROM (SELECT {sort_col}, substr(date_time,1,{dt_len}) AS date_time FROM {wqual_table} WHERE obsid = {ph}) AS under16 ORDER BY date_time"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
         else:  # IF no specific column exist for sorting
             if dt_len > 16:
-                sql = f"SELECT DISTINCT date_time, date_time FROM {wqual_table} WHERE obsid = {ph} ORDER BY date_time"
+                sql = f"SELECT DISTINCT date_time, date_time FROM {wqual_table} WHERE obsid = {ph} ORDER BY date_time"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
             else:
-                sql = f"SELECT DISTINCT under16.dummy, under16.date_time FROM (SELECT substr(date_time,1,{dt_len}) AS dummy, substr(date_time,1,{dt_len}) AS date_time FROM {wqual_table} WHERE obsid = {ph}) AS under16 ORDER BY date_time"
+                sql = f"SELECT DISTINCT under16.dummy, under16.date_time FROM (SELECT substr(date_time,1,{dt_len}) AS dummy, substr(date_time,1,{dt_len}) AS date_time FROM {wqual_table} WHERE obsid = {ph}) AS under16 ORDER BY date_time"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
         connection_ok, date_times = db_utils.sql_load_fr_db(
             sql, dbconnection, execute_args=(obsid,)
         )
@@ -249,7 +249,7 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
                 ph = dbconnection.placeholder()
                 value_col = dbconnection.ident(self.settingsdict["wqual_valuecolumn"])
                 wqual_table = dbconnection.ident(self.settingsdict["wqualtable"])
-                sql = f"SELECT {value_col} FROM {wqual_table} WHERE obsid = {ph}"
+                sql = f"SELECT {value_col} FROM {wqual_table} WHERE obsid = {ph}"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                 execute_args = [obsid]
                 if date_time is None or not date_time:
                     sql += r""" AND (date_time IS NULL OR date_time = '') """

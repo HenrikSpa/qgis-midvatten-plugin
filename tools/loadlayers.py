@@ -9,6 +9,7 @@ from qgis.core import (
     QgsLayerTreeGroup,
     QgsProject,
     QgsRelation,
+    QgsVectorLayer,
 )
 from qgis.PyQt.QtCore import QCoreApplication
 

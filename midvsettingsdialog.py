@@ -706,19 +706,19 @@ class DatabaseSettings:
         for widget in self.child_widgets:
             try:
                 widget.clear_widgets()
-            except Exception:
+            except Exception:  # nosec B110 - best-effort cleanup
                 pass
             try:
                 self.layout.removeWidget(widget)
-            except Exception:
+            except Exception:  # nosec B110 - best-effort cleanup
                 pass
             try:
                 widget.deleteLater()
-            except Exception:
+            except Exception:  # nosec B110 - best-effort cleanup
                 pass
             try:
                 widget.close()
-            except Exception:
+            except Exception:  # nosec B110 - best-effort cleanup
                 pass
         self.child_widgets = []
 

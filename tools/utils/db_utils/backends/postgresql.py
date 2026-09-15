@@ -385,7 +385,7 @@ class PostgreSQLBackend(Backend):
     def median_sql(
         self, col_ident: str, table_ident: str, ph: str, obsid: Any
     ) -> tuple[str, tuple]:
-        sql = f"SELECT median({col_ident}) FROM {table_ident} t1 WHERE obsid = {ph};"
+        sql = f"SELECT median({col_ident}) FROM {table_ident} t1 WHERE obsid = {ph};"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
         return sql, (obsid,)
 
     def backup(self, dbconnection: Any) -> None:

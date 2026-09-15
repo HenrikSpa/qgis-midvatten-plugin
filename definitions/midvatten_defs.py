@@ -496,7 +496,7 @@ def hydrocolors():
     if not res:
         try:
             print("using fallback method for backwards compat.")
-        except Exception:
+        except Exception:  # nosec B110 - best-effort cleanup
             pass
         message_utils.MessagebarAndLog.warning(
             bar_msg=QCoreApplication.translate(
@@ -547,7 +547,7 @@ def plot_types_dict(international="no"):
         "select strata, geoshort from zz_strat"
     )
     succss_strata, strata_order = sql_load_fr_db(
-        "select strata from zz_stratigraphy_plots order by %s" % rowid_string()
+        "select strata from zz_stratigraphy_plots order by %s" % rowid_string()  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
     )
     if not success:
         message_utils.MessagebarAndLog.info(

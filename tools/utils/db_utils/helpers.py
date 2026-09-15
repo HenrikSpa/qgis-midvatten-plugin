@@ -220,7 +220,7 @@ def get_timezones_from_db(
         table_ident = dbconnection.ident(table_column)
         date_ident = dbconnection.ident(date_column)
         rows = dbconnection.execute_and_fetchall(
-            f"SELECT {table_ident}, description FROM about_db "
+            f"SELECT {table_ident}, description FROM about_db "  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
             f"WHERE {table_ident} IN {table_clause} AND {date_ident} = {ph}",
             (*table_args, "date_time"),
         )
@@ -333,7 +333,7 @@ def calculate_median_value(
         # (the AVG-based subquery SQLite uses handles empty sets natively).
         if dbconnection.is_postgresql():
             if not sql_load_fr_db(
-                f"SELECT {col_ident} FROM {table_ident} WHERE obsid = {ph} AND {col_ident} IS NOT NULL LIMIT 1",
+                f"SELECT {col_ident} FROM {table_ident} WHERE obsid = {ph} AND {col_ident} IS NOT NULL LIMIT 1",  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                 dbconnection,
                 execute_args=(obsid,),
             )[1]:
@@ -370,13 +370,13 @@ def delete_srids(
         else "?"
     )
     delete_srid_sql_aux = (
-        f"DELETE FROM spatial_ref_sys_aux WHERE srid NOT IN ({ph}, '4326')"
+        f"DELETE FROM spatial_ref_sys_aux WHERE srid NOT IN ({ph}, '4326')"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
     )
     try:
         execute_able_object.execute(delete_srid_sql_aux, args=(keep_epsg_code,))
     except Exception:
         message_utils.MessagebarAndLog.info(log_msg=traceback.format_exc())
-    delete_srid_sql = f"DELETE FROM spatial_ref_sys WHERE srid NOT IN ({ph}, '4326')"
+    delete_srid_sql = f"DELETE FROM spatial_ref_sys WHERE srid NOT IN ({ph}, '4326')"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
     try:
         execute_able_object.execute(delete_srid_sql, args=(keep_epsg_code,))
     except Exception:

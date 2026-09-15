@@ -117,7 +117,7 @@ class PiperPlot:
                   group by obsid, date_time
                 ) AS u
             where u.Ca_meqPl is not null and u.Mg_meqPl is not null and u.Na_meqPl is not null and u.K_meqPl is not null and u.HCO3_meqPl is not null and u.Cl_meqPl is not null and u.SO4_meqPl is not null
-            ) as a, obs_points WHERE a.obsid = obs_points.obsid""".format(
+            ) as a, obs_points WHERE a.obsid = obs_points.obsid""".format(  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
             cl=format_list(ph, self.parameters["piper_cl"]),
             hco3=format_list(ph, self.parameters["piper_hco3"]),
             so4=format_list(ph, self.parameters["piper_so4"]),
@@ -264,7 +264,7 @@ class PiperPlot:
     def get_selected_datetimes(self):
         sql1, args = self.big_sql()
         sql2 = (
-            r""" select distinct date_time from ("""
+            r""" select distinct date_time from ("""  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
             + sql1
             + r""") AS foo order by date_time"""
         )
@@ -277,7 +277,7 @@ class PiperPlot:
         dbconnection = db_utils.DbConnectionManager()
         try:
             clause, args = dbconnection.in_clause(self.observations)
-            sql = f"select obsid, type from obs_points where obsid in {clause}"
+            sql = f"select obsid, type from obs_points where obsid in {clause}"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
             conn_ok, types = db_utils.sql_load_fr_db(
                 sql, dbconnection=dbconnection, execute_args=args
             )
@@ -290,7 +290,7 @@ class PiperPlot:
         dbconnection = db_utils.DbConnectionManager()
         try:
             clause, args = dbconnection.in_clause(self.observations)
-            sql = f"select distinct type from obs_points where obsid in {clause}"
+            sql = f"select distinct type from obs_points where obsid in {clause}"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
             conn_ok, self.distincttypes = db_utils.sql_load_fr_db(
                 sql, dbconnection=dbconnection, execute_args=args
             )
@@ -917,7 +917,9 @@ class PiperPlot:
             "obsid but no legend": lambda i: {"label": self.obsrecarray.obsid[i]},
             "date_time": lambda i: {"label": self.obsrecarray.date_time[i]},
         }
-        default_marker = lambda i: "ko"
+
+        def default_marker(i):
+            return "ko"
 
         for i in range(0, nosamples):
             ax.plot(

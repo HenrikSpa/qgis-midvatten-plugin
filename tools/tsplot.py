@@ -75,7 +75,7 @@ class TimeSeriesPlot:
                     attributes = k.attributes()
                     obsid = ru(attributes[kolumnindex])
                     # Load all observations (full time series) for the object [i] (i.e. selected observation point no i)
-                    sql = f"SELECT date_time, {ts_col} FROM {ts_table} WHERE obsid = {ph} ORDER BY date_time"
+                    sql = f"SELECT date_time, {ts_col} FROM {ts_table} WHERE obsid = {ph} ORDER BY date_time"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                     connection_ok, recs = db_utils.sql_load_fr_db(
                         sql, dbconnection=dbconnection, execute_args=(obsid,)
                     )

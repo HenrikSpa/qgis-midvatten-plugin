@@ -235,7 +235,7 @@ class SurveyStore:
                     if h_gs:
                         try:
                             level_val = float(h_gs)
-                        except Exception:
+                        except Exception:  # nosec B110 - best-effort cleanup
                             pass
                     if level_val is None:
                         h_toc = ru(attributes[h_toc_col_no])
@@ -482,11 +482,15 @@ class SurveyWidget(QtWidgets.QFrame):
 
         if x_max - x_min > y_max - y_min:
             # sort using x coordinate
-            cc = lambda a: a.coord.x()
+            def cc(a):
+                return a.coord.x()
+
             # cc = lambda a,b: cmp(a.coord.x(), b.coord.x())
         else:
             # sort using y coordinate
-            cc = lambda a: a.coord.y()
+            def cc(a):
+                return a.coord.y()
+
             # cc = lambda a,b: cmp(a.coord.y(), b.coord.y())
         order = sorted(self.sondaggio.values(), key=cc)
         self.order = order  # THIS SHOULD BE REPLACED BY 2L BELOW

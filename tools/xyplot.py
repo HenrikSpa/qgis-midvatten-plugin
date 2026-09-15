@@ -90,7 +90,7 @@ class XYPlot:
                         select_cols.append(f"{dbconnection.ident(self.y2col)} AS y2")
                     if len(self.y3col):
                         select_cols.append(f"{dbconnection.ident(self.y3col)} AS y3")
-                    sql = f"SELECT {', '.join(select_cols)} FROM {table_ident} WHERE obsid = {ph} ORDER BY {xcol_ident}"
+                    sql = f"SELECT {', '.join(select_cols)} FROM {table_ident} WHERE obsid = {ph} ORDER BY {xcol_ident}"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                     connection_ok, recs = db_utils.sql_load_fr_db(
                         sql, dbconnection=dbconnection, execute_args=(obsid,)
                     )

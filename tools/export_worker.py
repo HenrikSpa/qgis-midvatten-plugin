@@ -92,5 +92,5 @@ class ExportWorker(QObject):
             if conn is not None:
                 try:
                     conn.closedb()
-                except Exception:
+                except Exception:  # nosec B110 - best-effort cleanup
                     pass

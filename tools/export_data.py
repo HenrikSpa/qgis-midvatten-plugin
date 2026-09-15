@@ -388,7 +388,7 @@ class ExportData:
                 else q(row[1])
                 for row in table_info
             ]
-            sql = f"SELECT {', '.join(col_exprs)} FROM {q(tname)}"
+            sql = f"SELECT {', '.join(col_exprs)} FROM {q(tname)}"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
         else:
             sql = self.source_dbconnection.sql_ident("SELECT * FROM {t}", t=tname)
         args = None

@@ -684,7 +684,7 @@ class GeneralCsvImportGui(BaseImporter, import_ui_dialog):
                     if key in key_to_sid:
                         continue
                     dbconn.execute(
-                        f"INSERT INTO w_logger_series ({colnames})"
+                        f"INSERT INTO w_logger_series ({colnames})"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                         f" VALUES ({placeholders})",
                         (obsid,) + vals,
                     )

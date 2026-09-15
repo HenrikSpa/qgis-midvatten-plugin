@@ -21,7 +21,7 @@ class ExportEngine:
 
     def _get_columns(self, tname: str, conn: DbConnectionManager) -> list[str]:
         """Return column names for a table, lowercased, in definition order."""
-        conn.execute(f"SELECT * FROM {db_utils.ident(tname)} LIMIT 0")
+        conn.execute(f"SELECT * FROM {db_utils.ident(tname)} LIMIT 0")  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
         return [x[0].lower() for x in conn.cursor.description]
 
     def _get_exportable_columns(
@@ -76,7 +76,7 @@ class ExportEngine:
             else:
                 exprs.append(db_utils.ident(col))
 
-        sql = f"SELECT {', '.join(exprs)} FROM {db_utils.ident(tname)}"
+        sql = f"SELECT {', '.join(exprs)} FROM {db_utils.ident(tname)}"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
         args: list = list(srid_args)
         if obsids:
             clause, in_args = source_conn.in_clause(obsids)
@@ -285,11 +285,11 @@ class ExportEngine:
         SQLite's ``defer_foreign_keys`` auto-resets at each COMMIT/ROLLBACK,
         so callers must set it per transaction.
         """
-        dest_conn.execute(f"SELECT * FROM {db_utils.ident(tname)}")
+        dest_conn.execute(f"SELECT * FROM {db_utils.ident(tname)}")  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
         cols = [x[0].lower() for x in dest_conn.cursor.description]
         rows = list(dest_conn.cursor.fetchall())
         if rows:
-            dest_conn.execute(f"DELETE FROM {db_utils.ident(tname)}")
+            dest_conn.execute(f"DELETE FROM {db_utils.ident(tname)}")  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
         return rows, cols
 
     def _reinsert_dest_snapshot(
@@ -323,9 +323,10 @@ class ExportEngine:
         key_to_sid: dict[tuple, int],
     ) -> list[tuple]:
         """Replace 'source' text values with w_logger_series.id integers in chunk."""
-        assert "source" in src_cols and "obsid" in src_cols, (
-            "_migrate_logger_chunk called but src_cols missing 'source' or 'obsid'"
-        )
+        if "source" not in src_cols or "obsid" not in src_cols:
+            raise ValueError(
+                "_migrate_logger_chunk called but src_cols missing 'source' or 'obsid'"
+            )
         src_idx = src_cols.index("source")
         obsid_idx = src_cols.index("obsid")
 
@@ -337,7 +338,7 @@ class ExportEngine:
             key = (obsid, source_val)
             if key not in key_to_sid:
                 dest_conn.execute(
-                    f"INSERT INTO {db_utils.ident('w_logger_series')}"
+                    f"INSERT INTO {db_utils.ident('w_logger_series')}"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                     f" ({db_utils.ident('obsid')}, {db_utils.ident('source')},"
                     f" {db_utils.ident('description')}) VALUES (?, ?, ?)",
                     (obsid, source_val, "Upgraded from Midv 1.x"),
@@ -420,7 +421,7 @@ class ExportEngine:
             for tname in db_utils.get_tables(dbconnection=conn, skip_views=True):
                 try:
                     n = conn.execute_and_fetchall(
-                        f"SELECT count(*) FROM {db_utils.ident(tname)}"
+                        f"SELECT count(*) FROM {db_utils.ident(tname)}"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                     )[0][0]
                     results.setdefault(tname, {})[alias] = n
                 except Exception:
@@ -451,7 +452,7 @@ class ExportEngine:
         obsids: tuple[str, ...],
     ) -> int:
         """Count rows in tname, filtered by obsids if non-empty."""
-        sql = f"SELECT count(*) FROM {db_utils.ident(tname)}"
+        sql = f"SELECT count(*) FROM {db_utils.ident(tname)}"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
         args: list = []
         if obsids:
             clause_sql, clause_args = source_conn.in_clause(obsids)

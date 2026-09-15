@@ -72,7 +72,7 @@ def prepare_obsid_positions(
             )
     else:
         res = dbconnection.execute_and_fetchall(
-            f"""SELECT obsid, east, north FROM obs_points WHERE obsid IN ({dbconnection.placeholders(len(selected_obspoints))})""",
+            f"""SELECT obsid, east, north FROM obs_points WHERE obsid IN ({dbconnection.placeholders(len(selected_obspoints))})""",  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
             args=tuple(selected_obspoints),
         )
         xs = [float(row[1]) for row in res]
@@ -157,7 +157,7 @@ def get_z_data(obsids_x_position: dict, dbconnection=None) -> dict:
     fallback_htoc: list[str] = []
     fallback_zero: list[str] = []
     for obs in obsids_x_position.keys():
-        sql = f"SELECT h_toc, h_gs, length FROM obs_points WHERE obsid = {dbconnection.placeholder()}"
+        sql = f"SELECT h_toc, h_gs, length FROM obs_points WHERE obsid = {dbconnection.placeholder()}"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
         recs = dbconnection.execute_and_fetchall(sql, (obs,))
         h_toc, h_gs, length = recs[0]
         if string_utils.isfloat(str(h_gs)) and h_gs > -999:
@@ -298,7 +298,7 @@ def get_screen_plot_data(
         return bars
 
     ph = dbconnection.placeholder()
-    sql = f"SELECT depthtop, depthbot, screenshort FROM screen WHERE obsid = {ph} ORDER BY screenid"
+    sql = f"SELECT depthtop, depthbot, screenshort FROM screen WHERE obsid = {ph} ORDER BY screenid"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
 
     for obs, x in obsids_x_position.items():
         if obs not in z_data:
@@ -347,7 +347,7 @@ def get_screen_text_data(
     texts: dict = {}
     ph = dbconnection.placeholder()
     col = ident(text_column, allowed=_SCREEN_TEXT_COLUMNS)
-    sql = f"SELECT depthtop, depthbot, {col} FROM screen WHERE obsid = {ph} ORDER BY screenid"
+    sql = f"SELECT depthtop, depthbot, {col} FROM screen WHERE obsid = {ph} ORDER BY screenid"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
 
     for obs, x in obsids_x_position.items():
         if obs not in z_data:
@@ -394,7 +394,7 @@ def get_plot_data_layer_texts(
         sql = f"""SELECT depthtop, depthbot, geology, geoshort, capacity, development,
                 comment
                 FROM stratigraphy WHERE obsid = {dbconnection.placeholder()}
-                ORDER BY stratid"""
+                ORDER BY stratid"""  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
         recs = dbconnection.execute_and_fetchall(sql, args=(obs,))
         if not recs:
             continue
@@ -442,7 +442,7 @@ def get_drillstops(
     """
     obs_p_w_drill_stops = []
     if settingsdict["secplotdrillstop"] != "":
-        sql = f"""SELECT obsid FROM obs_points WHERE lower(drillstop) LIKE {dbconnection.placeholder()}"""
+        sql = f"""SELECT obsid FROM obs_points WHERE lower(drillstop) LIKE {dbconnection.placeholder()}"""  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
         res = dbconnection.execute_and_fetchall(
             sql, (ru(settingsdict["secplotdrillstop"]),)
         )
@@ -485,7 +485,7 @@ def get_plot_data_seismic(line_layer, line_feature, dbconnection=None):
         if line_obsid is None:
             return None
         sql = (
-            f"SELECT {ident(x)} AS x, {ident(y1_column)} AS y1,"
+            f"SELECT {ident(x)} AS x, {ident(y1_column)} AS y1,"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
             f" {ident(y2_column)} AS y2, {ident(y3_column)} AS y3"
             f" FROM {ident(table)} WHERE obsid={dbconnection.placeholder()}"
         )

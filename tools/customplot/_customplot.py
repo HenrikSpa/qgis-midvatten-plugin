@@ -547,7 +547,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             xcol_ident = dbconnection.ident(str(xcol.currentText()))
             ycol_ident = dbconnection.ident(str(ycol.currentText()))
             _sql = (
-                f"SELECT {xcol_ident}, {ycol_ident} FROM {table_ident} WHERE "
+                f"SELECT {xcol_ident}, {ycol_ident} FROM {table_ident} WHERE "  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                 + db_utils.test_not_null_and_not_empty_string(
                     str(table.currentText()),
                     str(xcol.currentText()),
@@ -1080,7 +1080,7 @@ class CustomPlot(QtWidgets.QMainWindow, customplot_ui_class):
             if selected:
                 clause, args = dbconnection.in_clause(selected)
                 sql = dbconnection.sql_ident(
-                    f"SELECT DISTINCT {{c}} FROM {{t}} WHERE {{oc}} IN {clause} ORDER BY {{c}}",
+                    f"SELECT DISTINCT {{c}} FROM {{t}} WHERE {{oc}} IN {clause} ORDER BY {{c}}",  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                     c=str(filtercolumn),
                     t=table,
                     oc=other_filtercolumn,

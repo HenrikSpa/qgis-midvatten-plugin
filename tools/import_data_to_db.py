@@ -954,7 +954,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
 
         if dbconnection.is_sqlite():
             sql = (
-                f"INSERT INTO {dbconnection.ident(temptable_name)} VALUES "
+                f"INSERT INTO {dbconnection.ident(temptable_name)} VALUES "  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                 f"({dbconnection.placeholders(len(df.columns))})"
             )
             dbconnection.cursor.executemany(sql, df.itertuples(index=False, name=None))
@@ -1009,7 +1009,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             else:
                 conditions.append(f"d.{q} = {temp_ident}.{q}")
         sql = (
-            f"DELETE FROM {temp_ident} WHERE EXISTS ("
+            f"DELETE FROM {temp_ident} WHERE EXISTS ("  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
             f"SELECT 1 FROM {dest_ident} d WHERE {' AND '.join(conditions)})"
         )
         dbconnection.execute(sql)
@@ -1045,7 +1045,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
         else:
             ph = dbconnection.placeholder()
             rows = dbconnection.execute_and_fetchall(
-                "SELECT indexdef FROM pg_indexes "
+                "SELECT indexdef FROM pg_indexes "  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                 f"WHERE schemaname = {ph} AND tablename = {ph}",
                 (dbconnection.schema, dest_table),
             )
@@ -1277,7 +1277,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             if skip_obsids:
                 temp_ident = dbconnection.ident(self.temptable_name)
                 placeholders = dbconnection.placeholders(len(skip_obsids))
-                sql = f"DELETE FROM {temp_ident} WHERE obsid IN ({placeholders})"
+                sql = f"DELETE FROM {temp_ident} WHERE obsid IN ({placeholders})"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                 message_utils.MessagebarAndLog.info(log_msg=f" {sql=} {skip_obsids=}")
                 dbconnection.execute(sql, all_args=[tuple(skip_obsids)])
 
@@ -1318,7 +1318,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
 
             fk_table_ident = dbconnection.ident(fk_table)
             nr_fk_before = dbconnection.execute_and_fetchall(
-                f"SELECT count(*) FROM {fk_table_ident}"
+                f"SELECT count(*) FROM {fk_table_ident}"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
             )[0][0]
             table_info = db_utils.db_tables_columns_info(
                 table=fk_table, dbconnection=dbconnection
@@ -1364,7 +1364,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
                 for k in from_list
             )
             sql = (
-                f"INSERT INTO {fk_table_ident} ({to_list_idents}) "
+                f"INSERT INTO {fk_table_ident} ({to_list_idents}) "  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                 f"SELECT DISTINCT {cast_exprs} FROM {temptable_ident} AS b "
                 f"WHERE {concatted_from_string} NOT IN "
                 f"(SELECT {concatted_to_string} FROM {fk_table_ident}) "
@@ -1373,7 +1373,7 @@ class MidvDataImporter:  # this class is intended to be a multipurpose import cl
             dbconnection.execute(sql)
 
             nr_fk_after = dbconnection.execute_and_fetchall(
-                f"SELECT count(*) FROM {fk_table_ident}"
+                f"SELECT count(*) FROM {fk_table_ident}"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
             )[0][0]
             if nr_fk_after > nr_fk_before:
                 message_utils.MessagebarAndLog.info(

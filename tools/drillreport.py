@@ -435,7 +435,7 @@ class Drillreport:  # general observation point info for the selected object
         dbconnection = db_utils.DbConnectionManager()
         table_ident = dbconnection.ident(tablename)
         obsid_literal = db_utils.sql_literal(obsid)
-        sql = f"SELECT * FROM {table_ident} WHERE obsid = {obsid_literal}"
+        sql = f"SELECT * FROM {table_ident} WHERE obsid = {obsid_literal}"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
         if tablename == "stratigraphy":
             sql += " ORDER BY stratid"
         connection_ok, raw_rows = db_utils.sql_load_fr_db(sql, dbconnection)

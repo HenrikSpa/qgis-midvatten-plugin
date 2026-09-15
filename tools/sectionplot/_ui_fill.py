@@ -73,7 +73,7 @@ def fill_tem(ui, ms, dbconnection, line_feature=None):
         return
 
     res = dbconnection.execute_and_fetchall(
-        f"SELECT DISTINCT inversion_name FROM tem_data WHERE obsid = {dbconnection.placeholder()}",
+        f"SELECT DISTINCT inversion_name FROM tem_data WHERE obsid = {dbconnection.placeholder()}",  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
         args=(line_obsid,),
     )
     if res:
@@ -116,7 +116,7 @@ def fill_images(ui, ms, dbconnection, line_feature):
         return
 
     res = dbconnection.execute_and_fetchall(
-        f"SELECT alias FROM profile_images WHERE obsid = {dbconnection.placeholder()}",
+        f"SELECT alias FROM profile_images WHERE obsid = {dbconnection.placeholder()}",  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
         args=(line_obsid,),
     )
     if res:

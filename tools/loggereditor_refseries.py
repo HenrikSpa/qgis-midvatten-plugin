@@ -101,7 +101,7 @@ class _FilterRow(QWidget):
         with use_or_create_connection(None) as conn:
             try:
                 rows = conn.execute_and_fetchall(
-                    f"SELECT DISTINCT {ident(col)} FROM {ident(table)} ORDER BY 1"
+                    f"SELECT DISTINCT {ident(col)} FROM {ident(table)} ORDER BY 1"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                 )
                 for (val,) in rows:
                     if val is not None:

@@ -838,7 +838,7 @@ def paint_tem(
         return
 
     df = pd.read_sql(
-        f"""SELECT length, thickness, resistivity, elevation, doi, data_fit FROM tem_data WHERE inversion_name = {dbconnection.placeholder()} AND obsid = {dbconnection.placeholder()} ORDER BY length;""",
+        f"""SELECT length, thickness, resistivity, elevation, doi, data_fit FROM tem_data WHERE inversion_name = {dbconnection.placeholder()} AND obsid = {dbconnection.placeholder()} ORDER BY length;""",  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
         dbconnection.conn,
         params=(
             settingsdict["secplot_tem_model_name"],
@@ -1080,7 +1080,7 @@ def paint_images(
     labels = []
 
     res = dbconnection.execute_and_fetchall(
-        f"SELECT alias, path, clip_left_right_top_bottom, extent_left_right_top_bottom FROM profile_images WHERE obsid = {dbconnection.placeholder()}",
+        f"SELECT alias, path, clip_left_right_top_bottom, extent_left_right_top_bottom FROM profile_images WHERE obsid = {dbconnection.placeholder()}",  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
         args=(line_obsid,),
     )
 
@@ -1238,14 +1238,14 @@ def paint_specific_water_level(
                 # Treat _date as a value (parameterized), not as raw SQL.
                 ph_date = dbconnection.placeholder()
                 sql = dbconnection.sql_ident(
-                    f"SELECT level_masl FROM {{t}} WHERE obsid = {ph_obs} AND date_time = {ph_date} AND level_masl IS NOT NULL",
+                    f"SELECT level_masl FROM {{t}} WHERE obsid = {ph_obs} AND date_time = {ph_date} AND level_masl IS NOT NULL",  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                     t=tab,
                 )
                 res = dbconnection.execute_and_fetchall(sql, (obs, _date))
             else:
                 ph_like = dbconnection.placeholder()
                 sql = dbconnection.sql_ident(
-                    f"SELECT level_masl FROM {{t}} WHERE obsid = {ph_obs} AND date_time LIKE {ph_like} ORDER BY date_time ASC",
+                    f"SELECT level_masl FROM {{t}} WHERE obsid = {ph_obs} AND date_time LIKE {ph_like} ORDER BY date_time ASC",  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                     t=tab,
                 )
                 res = dbconnection.execute_and_fetchall(sql, (obs, f"{_date}%"))

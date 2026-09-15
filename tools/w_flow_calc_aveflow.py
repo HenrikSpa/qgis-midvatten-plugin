@@ -77,7 +77,7 @@ class CalculateAveflow(qgis.PyQt.QtWidgets.QDialog, Calc_Ui_Dialog):
         ph = dbconnection.placeholder()
         in_clause, in_args = dbconnection.in_clause(observations)
         sql = (
-            "SELECT date_time, reading, obsid, instrumentid, comment "
+            "SELECT date_time, reading, obsid, instrumentid, comment "  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
             "FROM w_flow "
             f"WHERE flowtype = 'Accvol' AND date_time >= {ph} AND date_time <= {ph} "
             f"AND obsid IN {in_clause} "

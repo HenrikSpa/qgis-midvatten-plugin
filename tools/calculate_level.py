@@ -65,7 +65,7 @@ class CalculateLevel(
         dbconnection = db_utils.DbConnectionManager()
         try:
             in_clause, in_args = dbconnection.in_clause(obsids)
-            sql = f"SELECT obsid FROM obs_points WHERE obsid IN {in_clause} AND h_toc IS NULL"
+            sql = f"SELECT obsid FROM obs_points WHERE obsid IN {in_clause} AND h_toc IS NULL"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
             obsid_with_h_toc_null = db_utils.sql_load_fr_db(
                 sql, dbconnection=dbconnection, execute_args=in_args
             )[1]
@@ -105,7 +105,7 @@ class CalculateLevel(
                 where_sql += """ AND level_masl IS NULL """
 
             sql1 = (
-                "UPDATE w_levels "
+                "UPDATE w_levels "  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                 "SET h_toc = (SELECT obs_points.h_toc FROM obs_points WHERE w_levels.obsid = obs_points.obsid) "
                 f"WHERE {where_sql}"
             )
@@ -115,7 +115,7 @@ class CalculateLevel(
             db_utils.sql_alter_db(sql1, all_args=[where_sql_args])
 
             where_sql += """ AND h_toc IS NOT NULL"""
-            sql2 = f"UPDATE w_levels SET level_masl = h_toc - meas WHERE h_toc IS NOT NULL AND {where_sql}"
+            sql2 = f"UPDATE w_levels SET level_masl = h_toc - meas WHERE h_toc IS NOT NULL AND {where_sql}"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
             self.updated_level_masl = self.log_msg(where_sql, where_sql_args)
             db_utils.sql_alter_db(sql2, all_args=[where_sql_args])
 

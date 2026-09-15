@@ -1299,7 +1299,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
             geom_linestring = geom.convertToType(Qgis.GeometryType.Line)
         ph = self.dbconnection.placeholder()
         sql = self.dbconnection.sql_ident(
-            f"INSERT INTO {{t}} (dummyfield, geometry) VALUES ('0', ST_GeomFromText({ph}, {ph}))",
+            f"INSERT INTO {{t}} (dummyfield, geometry) VALUES ('0', ST_GeomFromText({ph}, {ph}))",  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
             t=self.temptable_name,
         )
         self.dbconnection.execute(sql, all_args=[(geom_linestring.asWkt(), srid)])
@@ -1312,7 +1312,7 @@ class SectionPlot(qgis.PyQt.QtWidgets.QDockWidget, SecPlotUi, Ui_SecPlotDock):
             return
         placeholders = self.dbconnection.placeholders(len(self.obsids_x_position))
         sql = self.dbconnection.sql_ident(
-            f"SELECT date_time, level_masl, obsid FROM {{t}} WHERE obsid IN ({placeholders})",
+            f"SELECT date_time, level_masl, obsid FROM {{t}} WHERE obsid IN ({placeholders})",  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
             t=self.ms.settingsdict["secplotwlvltab"],
         )
         df = pd.read_sql(

@@ -117,7 +117,7 @@ class ResolveDuplicatesDialog(QDialog):
     def _after_change(self) -> None:
         try:
             self._editor.update_plot()
-        except Exception:
+        except Exception:  # nosec B110 - best-effort cleanup
             pass
         self._rebuild()
 

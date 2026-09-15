@@ -834,7 +834,7 @@ class Midvatten:
             self.midvsettingsdialog.clear_everything()
             if len(self.ms.settingsdict["database"]) > 0:
                 self.midvsettingsdialog.select_last_settings()
-        except Exception:
+        except Exception:  # nosec B110 - best-effort cleanup
             pass
         midvatten_utils.warn_about_old_database()
 
@@ -844,7 +844,7 @@ class Midvatten:
         try:  # if midvsettingsdock is shown, then it must be reset
             self.midvsettingsdialog.activateWindow()
             self.midvsettingsdialog.clear_everything()
-        except Exception:
+        except Exception:  # nosec B110 - best-effort cleanup
             pass
 
     def setup(self):

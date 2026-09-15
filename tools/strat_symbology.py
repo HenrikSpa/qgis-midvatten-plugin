@@ -667,7 +667,7 @@ def add_views_to_db(dbconnection, bedrock_geoshort):
             FROM
             stratigraphy AS a where a.obsid = stratigraphy.obsid) AS "maxdepthbot",
             "stratid", "depthtop", "depthbot", "geology", "geoshort", stratigraphy."capacity",
-            stratigraphy."development", "comment", geometry FROM stratigraphy JOIN obs_points USING (obsid)"""
+            stratigraphy."development", "comment", geometry FROM stratigraphy JOIN obs_points USING (obsid)"""  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
     else:
         # The first user that creates this view will own it in the PostgreSQL-database.
         #
@@ -710,7 +710,7 @@ def add_views_to_db(dbconnection, bedrock_geoshort):
                                     SELECT row_number() OVER (ORDER BY a.obsid) rowid,
                                     a.obsid AS obsid, MAX(a.date_time) AS date_time,  a.meas AS meas,  a.level_masl AS level_masl, b.h_tocags AS h_tocags, b.geometry AS geometry
                                     FROM w_levels AS a JOIN obs_points AS b using (obsid)
-                                    GROUP BY obsid;"""
+                                    GROUP BY obsid;"""  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
             )
             insert_view(view_name)
 

@@ -1488,7 +1488,7 @@ def get_imported_reports(dest_table: str, dbconnection=None) -> set[str]:
     """Distinct report ids already imported into dest_table."""
     tbl = ident(dest_table, allowed=["w_qual_lab", "s_qual_lab"])
     with db_utils.use_or_create_connection(dbconnection) as dbconnection:
-        rows = dbconnection.execute_and_fetchall(f"SELECT DISTINCT report FROM {tbl}")
+        rows = dbconnection.execute_and_fetchall(f"SELECT DISTINCT report FROM {tbl}")  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
     return {str(row[0]) for row in rows}
 
 
@@ -1514,7 +1514,7 @@ def insert_obsid_assignment_rows(cache_rows, dbconnection=None) -> None:
         return
     with db_utils.use_or_create_connection(dbconnection) as dbconnection:
         sql = dbconnection.sql_ident(
-            "INSERT INTO {t} ({c1}, {c2}, obsid) "
+            "INSERT INTO {t} ({c1}, {c2}, obsid) "  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
             "VALUES (" + dbconnection.placeholders(3) + ")",
             t=OBSID_ASSIGNMENT_TABLE,
             c1=OBSID_ASSIGNMENT_DB_COLUMNS[0],

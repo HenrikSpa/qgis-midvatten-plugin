@@ -165,7 +165,7 @@ class LoggerDbImportWorker(LoggerWorker):
         if connection is not None:
             try:
                 connection.cancel()
-            except Exception:
+            except Exception:  # nosec B110 - best-effort cleanup
                 pass
 
     def _on_progress(self, message: str) -> None:
@@ -181,7 +181,7 @@ class LoggerDbImportWorker(LoggerWorker):
 
         placeholder = connection.placeholder()
         connection.execute(
-            "INSERT INTO w_logger_series "
+            "INSERT INTO w_logger_series "  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
             f"(obsid, source, description, instrument) VALUES ({placeholder}, "
             f"{placeholder}, {placeholder}, {placeholder})",
             (series.obsid, series.source, series.description, series.instrument),
@@ -224,7 +224,7 @@ class LoggerDbImportWorker(LoggerWorker):
                     if has_new_rows:
                         has_new_rows = (
                             connection.execute_and_fetchall(
-                                "SELECT COUNT(*) FROM w_levels_logger "
+                                "SELECT COUNT(*) FROM w_levels_logger "  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                                 f"WHERE series_id = {placeholder}",
                                 (series_id,),
                             )[0][0]
@@ -232,7 +232,7 @@ class LoggerDbImportWorker(LoggerWorker):
                         )
                     if not has_new_rows:
                         connection.execute(
-                            f"DELETE FROM w_logger_series WHERE id = {placeholder}",
+                            f"DELETE FROM w_logger_series WHERE id = {placeholder}",  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                             (series_id,),
                         )
                 if has_new_rows:
@@ -259,5 +259,5 @@ class LoggerDbImportWorker(LoggerWorker):
             if connection is not None:
                 try:
                     connection.closedb()
-                except Exception:
+                except Exception:  # nosec B110 - best-effort cleanup
                     pass

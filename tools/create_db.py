@@ -591,7 +591,7 @@ class NewDb:
             if created_tables_sqls is None:
                 ph = dbconnection.placeholder()
                 table_descr_sql = (
-                    f"SELECT name, sql from sqlite_master WHERE name = {ph};"
+                    f"SELECT name, sql from sqlite_master WHERE name = {ph};"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                 )
                 create_table_sql = dbconnection.execute_and_fetchall(
                     table_descr_sql, (table,)
@@ -619,7 +619,7 @@ class NewDb:
 
             ph = dbconnection.placeholder()
             placeholders = ", ".join([ph] * 8)
-            sql = f"INSERT INTO about_db (tablename, columnname, description, data_type, not_null, default_value, primary_key, foreign_key) VALUES ({placeholders})"
+            sql = f"INSERT INTO about_db (tablename, columnname, description, data_type, not_null, default_value, primary_key, foreign_key) VALUES ({placeholders})"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
             row_values = (
                 table,
                 "*",
@@ -647,7 +647,7 @@ class NewDb:
                     column_descr = column_descr.rstrip("\r")
                 ph = dbconnection.placeholder()
                 placeholders = ", ".join([ph] * 8)
-                sql = f"INSERT INTO about_db (tablename, columnname, data_type, not_null, default_value, primary_key, foreign_key, description) VALUES ({placeholders})"
+                sql = f"INSERT INTO about_db (tablename, columnname, data_type, not_null, default_value, primary_key, foreign_key, description) VALUES ({placeholders})"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                 row_values = (
                     table,
                     colname,
@@ -671,7 +671,7 @@ class NewDb:
             if tz:
                 tz_lit = f"({tz})"
                 tz_suffix = f" ({tz})"
-                sql = f"UPDATE about_db SET description = CASE WHEN description IS NULL THEN {ph} ELSE description || {ph} END WHERE tablename = {ph} and columnname = {ph}"
+                sql = f"UPDATE about_db SET description = CASE WHEN description IS NULL THEN {ph} ELSE description || {ph} END WHERE tablename = {ph} and columnname = {ph}"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                 dbconnection.execute(
                     sql, all_args=[(tz_lit, tz_suffix, tname, "date_time")]
                 )

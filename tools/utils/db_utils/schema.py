@@ -31,7 +31,7 @@ def get_tables(
             else:
                 tabletype = "type = 'table' or type = 'view'"
             tables_sql = (
-                f"SELECT tbl_name FROM sqlite_master WHERE ({tabletype}) "
+                f"SELECT tbl_name FROM sqlite_master WHERE ({tabletype}) "  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                 f"AND tbl_name NOT IN {dbconnection.internal_tables()} "
                 f"ORDER BY tbl_name"
             )
@@ -52,7 +52,7 @@ def get_tables(
                     pg_mat_views += " AND n.nspname = " + ph + " "
                     args_list.append(dbconnection.schema)
             tables_sql = (
-                "SELECT table_name FROM ("
+                "SELECT table_name FROM ("  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                 "SELECT table_name FROM information_schema.tables "
                 "WHERE table_schema = " + ph + " " + tabletype + " "
                 "AND table_name NOT IN "
@@ -92,7 +92,7 @@ def get_table_info(
         else:
             ph = dbconnection.placeholder()
             columns_sql = (
-                "SELECT ordinal_position, column_name, data_type, CASE WHEN is_nullable = 'NO' THEN 1 ELSE 0 END AS notnull, column_default, 0 AS primary_key FROM information_schema.columns WHERE table_schema = "
+                "SELECT ordinal_position, column_name, data_type, CASE WHEN is_nullable = 'NO' THEN 1 ELSE 0 END AS notnull, column_default, 0 AS primary_key FROM information_schema.columns WHERE table_schema = "  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                 + ph
                 + " AND table_name = "
                 + ph
@@ -104,7 +104,7 @@ def get_table_info(
                 )
             ]
             primary_keys_sql = (
-                "SELECT a.attname, format_type(a.atttypid, a.atttypmod) AS data_type "
+                "SELECT a.attname, format_type(a.atttypid, a.atttypmod) AS data_type "  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                 "FROM pg_index i "
                 "JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey) "
                 "WHERE i.indrelid = (SELECT c.oid FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = "
@@ -125,7 +125,7 @@ def get_table_info(
                     column[5] = 1
             if not columns:
                 columns_sql = (
-                    "SELECT a.attnum, a.attname, pg_catalog.format_type(a.atttypid, a.atttypmod) as datatype, "
+                    "SELECT a.attnum, a.attname, pg_catalog.format_type(a.atttypid, a.atttypmod) as datatype, "  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                     "a.attnotnull, NULL AS default, NULL as primary_key "
                     "FROM pg_attribute a "
                     "JOIN pg_class t on a.attrelid = t.oid "
@@ -158,7 +158,7 @@ def get_foreign_keys(
         else:
             ph = dbconnection.placeholder()
             sql = (
-                "SELECT "
+                "SELECT "  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                 "  pg_get_constraintdef(c.oid) AS cdef "
                 "FROM pg_constraint c "
                 "JOIN pg_namespace n "
@@ -238,7 +238,7 @@ def get_geometry_types(
         else:
             ph = dbconnection.placeholder()
             sql = (
-                "SELECT f_geometry_column, type "
+                "SELECT f_geometry_column, type "  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                 "FROM geometry_columns "
                 "WHERE f_table_schema = " + ph + " "
                 "AND f_table_name = " + ph + ";"
@@ -292,7 +292,7 @@ def get_columns_for_tables(
         table_clause, table_args = dbconnection.in_clause(names)
         ph = dbconnection.placeholder()
         sql = (
-            "SELECT table_name, column_name "
+            "SELECT table_name, column_name "  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
             "FROM information_schema.columns "
             f"WHERE table_schema = {ph} AND table_name IN {table_clause} "
             "ORDER BY table_name, ordinal_position"

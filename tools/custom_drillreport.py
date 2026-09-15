@@ -335,7 +335,7 @@ class Drillreport:  # general observation point info for the selected object
         ]
         clause, args = dbconnection.in_clause(obsids)
         cols_sql = ", ".join([dbconnection.ident(c) for c in obs_points_cols])
-        sql = f"SELECT {cols_sql} FROM {dbconnection.ident('obs_points')} WHERE obsid IN {clause} ORDER BY obsid"
+        sql = f"SELECT {cols_sql} FROM {dbconnection.ident('obs_points')} WHERE obsid IN {clause} ORDER BY obsid"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
         all_obs_points_data = ru(
             db_utils.get_sql_result_as_dict(
                 sql, dbconnection=dbconnection, execute_args=args
@@ -355,7 +355,7 @@ class Drillreport:  # general observation point info for the selected object
             cols_sql = ", ".join(
                 [dbconnection.ident(c) for c in strat_sql_columns_list]
             )
-            strat_sql = f"SELECT obsid, {cols_sql} FROM stratigraphy WHERE obsid IN {clause} ORDER BY obsid, stratid"
+            strat_sql = f"SELECT obsid, {cols_sql} FROM stratigraphy WHERE obsid IN {clause} ORDER BY obsid, stratid"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
             all_stratigrapy_data = ru(
                 db_utils.get_sql_result_as_dict(
                     strat_sql,

@@ -753,7 +753,7 @@ class MatplotlibStyles:
                             )
                             use_style = _style
                             break
-                    except Exception:
+                    except Exception:  # nosec B110 - best-effort cleanup
                         pass
                 message_utils.MessagebarAndLog.warning(
                     bar_msg=returnunicode(

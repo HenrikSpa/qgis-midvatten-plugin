@@ -501,7 +501,7 @@ class Wqualreport:  # extracts water quality data for selected objects, selected
         col_list = ", ".join(dbconnection.ident(c, allowed=fieldnames) for c in columns)
         table_ident = dbconnection.ident(table)
         placeholders = dbconnection.placeholders(len(obsids))
-        sql = f"SELECT {col_list} FROM {table_ident} WHERE obsid IN ({placeholders})"
+        sql = f"SELECT {col_list} FROM {table_ident} WHERE obsid IN ({placeholders})"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
         params = tuple(obsids)
 
         df = pd.read_sql(

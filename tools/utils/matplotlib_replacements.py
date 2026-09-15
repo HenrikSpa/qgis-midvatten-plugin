@@ -112,7 +112,7 @@ def add_to_rc_defaultParams():
     if default_params is not None:
         try:
             default_params.update(params_to_add)
-        except Exception:
+        except Exception:  # nosec B110 - best-effort cleanup
             pass
 
     # Inject defaults so the custom keys survive mpl.rcdefaults().

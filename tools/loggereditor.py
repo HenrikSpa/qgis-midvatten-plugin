@@ -558,7 +558,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                         GROUP BY obsid
                     ) latest
                     ORDER BY obsid
-                    """
+                    """  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
             else:
                 sql = f"""
                     SELECT obsid,
@@ -572,7 +572,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                         ORDER BY obsid, date_time DESC
                     ) latest
                     ORDER BY obsid
-                    """
+                    """  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
 
             execute_args = (obsid,) if obsid is not None else None
             rows = db_utils.sql_load_fr_db(
@@ -1079,7 +1079,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             return
         with use_or_create_connection(dbconnection) as dbconnection:
             ph = dbconnection.placeholder()
-            meas_sql = f"SELECT date_time, level_masl FROM w_levels WHERE obsid = {ph} ORDER BY date_time"
+            meas_sql = f"SELECT date_time, level_masl FROM w_levels WHERE obsid = {ph} ORDER BY date_time"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
             meas_list = db_utils.sql_load_fr_db(
                 meas_sql, dbconnection=dbconnection, execute_args=(obsid,)
             )[1]
@@ -1106,7 +1106,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 has_created_at, has_comment, prefix="l."
             )
             head_level_masl_sql = (
-                f"SELECT l.date_time, l.head_cm / 100, l.level_masl,"
+                f"SELECT l.date_time, l.head_cm / 100, l.level_masl,"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                 f" TRIM(COALESCE(s.source, '')), l.series_id{extra_cols}"
                 f" FROM w_levels_logger l"
                 f" LEFT JOIN w_logger_series s ON s.id = l.series_id"
@@ -1122,7 +1122,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
             )
             extra_cols = self._build_optional_extra_cols(has_created_at, has_comment)
             head_level_masl_sql = (
-                f"SELECT date_time, head_cm / 100, level_masl,"
+                f"SELECT date_time, head_cm / 100, level_masl,"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                 f" {source_expr}, NULL AS series_id{extra_cols}"
                 f" FROM w_levels_logger WHERE obsid = {ph}"
                 f" ORDER BY date_time"
@@ -1135,7 +1135,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         series_buf: dict = {}
         if series_join:
             series_rows = dbconnection.execute_and_fetchall(
-                f"SELECT id, obsid, source, instrument, description, comment"
+                f"SELECT id, obsid, source, instrument, description, comment"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                 f" FROM w_logger_series WHERE obsid = {ph}",
                 (obsid,),
             )
@@ -1331,7 +1331,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
         with use_or_create_connection(None) as dbconnection:
             ph = dbconnection.placeholder()
-            sql = f"SELECT date_time, (level_masl - (head_cm/100)) AS loggerpos FROM w_levels_logger WHERE date_time = (SELECT max(date_time) AS date_time FROM w_levels_logger WHERE obsid = {ph} AND (CASE WHEN level_masl IS NULL THEN -1000 ELSE level_masl END) > -990 AND level_masl IS NOT NULL AND head_cm IS NOT NULL) AND obsid = {ph}"
+            sql = f"SELECT date_time, (level_masl - (head_cm/100)) AS loggerpos FROM w_levels_logger WHERE date_time = (SELECT max(date_time) AS date_time FROM w_levels_logger WHERE obsid = {ph} AND (CASE WHEN level_masl IS NULL THEN -1000 ELSE level_masl END) > -990 AND level_masl IS NOT NULL AND head_cm IS NOT NULL) AND obsid = {ph}"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
             lastcalibr = db_utils.sql_load_fr_db(
                 sql, dbconnection=dbconnection, execute_args=(obsid, obsid)
             )[1]
@@ -1517,7 +1517,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                     with dbconnection.transaction():
                         if delete_params:
                             delete_sql = (
-                                f"DELETE FROM {tbl} WHERE {ident('obsid')} = {ph}"
+                                f"DELETE FROM {tbl} WHERE {ident('obsid')} = {ph}"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                                 f" AND {ident('date_time')} = {ph}"
                             )
                             dbconnection.executemany(delete_sql, delete_params)
@@ -1525,7 +1525,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                             dbconnection.execute(sql, params)
                         if per_row_params:
                             update_sql = (
-                                f"UPDATE {tbl} SET {ident('level_masl')} = {ph}"
+                                f"UPDATE {tbl} SET {ident('level_masl')} = {ph}"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                                 f" WHERE {ident('obsid')} = {ph}"
                                 f" AND {dt_eq}"
                             )
@@ -1544,7 +1544,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                             }
                             for temp_id, meta in new_series.items():
                                 rows = dbconnection.execute_and_fetchall(
-                                    f"INSERT INTO {series_tbl}"
+                                    f"INSERT INTO {series_tbl}"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                                     f" ({ident('obsid')}, {ident('source')},"
                                     f" {ident('instrument')},"
                                     f" {ident('description')},"
@@ -1569,7 +1569,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                                 if orig is None or meta == orig:
                                     continue
                                 dbconnection.execute(
-                                    f"UPDATE {series_tbl}"
+                                    f"UPDATE {series_tbl}"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                                     f" SET {ident('source')} = {ph},"
                                     f" {ident('instrument')} = {ph},"
                                     f" {ident('description')} = {ph},"
@@ -1610,7 +1610,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                                             (resolved, obsid, dt_raw)
                                         )
                                     sid_update_sql = (
-                                        f"UPDATE {logger_tbl}"
+                                        f"UPDATE {logger_tbl}"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                                         f" SET {ident('series_id')} = {ph}"
                                         f" WHERE {ident('obsid')} = {ph}"
                                         f" AND {dt_eq}"
@@ -1625,7 +1625,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                                     sorted(orphan_candidates)
                                 )
                                 deleted_rows = dbconnection.execute_and_fetchall(
-                                    f"DELETE FROM {series_tbl}"
+                                    f"DELETE FROM {series_tbl}"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                                     f" WHERE {ident('id')} IN {clause}"
                                     f" AND NOT EXISTS ("
                                     f"SELECT 1 FROM {logger_tbl}"
@@ -1743,7 +1743,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
 
             # Pattern: set to NULL
             if grp_new.isna().all():
-                sql = f"UPDATE {tbl} SET {level_col} = NULL WHERE {where_range}"
+                sql = f"UPDATE {tbl} SET {level_col} = NULL WHERE {where_range}"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                 range_stmts.append((sql, (obsid, t1, t2)))
                 continue
 
@@ -1753,7 +1753,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 c_arr = (grp_new - grp_head).to_numpy(dtype=float)
                 if np.all(np.abs(c_arr - c_arr[0]) < 1e-9):
                     sql = (
-                        f"UPDATE {tbl}"
+                        f"UPDATE {tbl}"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                         f" SET {level_col} = {ph} + {head_col} / 100.0"
                         f" WHERE {head_col} IS NOT NULL AND {where_range}"
                     )
@@ -1765,7 +1765,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                 d_arr = (grp_new - grp_orig).to_numpy(dtype=float)
                 if np.all(np.abs(d_arr - d_arr[0]) < 1e-9):
                     sql = (
-                        f"UPDATE {tbl}"
+                        f"UPDATE {tbl}"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
                         f" SET {level_col} = {level_col} + {ph}"
                         f" WHERE {level_col} IS NOT NULL AND {where_range}"
                     )
@@ -2905,14 +2905,14 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     def _restore_main_xticklabels(self) -> None:
         # get_ticklabels() filters out invisible labels, so use get_major_ticks()
         # to reach labels hidden by autofmt_xdate().
-        for tick in self.axes.xaxis.get_major_ticks():
-            tick.label1.set_visible(True)
-            tick.label1.set_rotation(30)
-            tick.label1.set_ha("right")
+        for tick_val in self.axes.xaxis.get_major_ticks():
+            tick_val.label1.set_visible(True)
+            tick_val.label1.set_rotation(30)
+            tick_val.label1.set_ha("right")
 
     def _hide_main_xticklabels(self) -> None:
-        for tick in self.axes.xaxis.get_major_ticks():
-            tick.label1.set_visible(False)
+        for tick_val in self.axes.xaxis.get_major_ticks():
+            tick_val.label1.set_visible(False)
 
     def _draw_reference_subplot(self) -> None:
         if not self._ref_subplot_dirty:
@@ -3011,7 +3011,7 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
     def _build_ref_query(self, conn, s: dict, combo: dict) -> tuple:
         ph = conn.placeholder()
         sql = (
-            f"SELECT {ident(s['x_col'])}, {ident(s['y_col'])} FROM {ident(s['table'])}"
+            f"SELECT {ident(s['x_col'])}, {ident(s['y_col'])} FROM {ident(s['table'])}"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
         )
         where_parts: list[str] = []
         params: list = []

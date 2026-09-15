@@ -142,7 +142,7 @@ def get_statistics(
     col_ident = dbconnection.ident(column)
     table_ident = dbconnection.ident(table)
     agg_cols = ", ".join([f"{func}({col_ident})" for func in sql_function_order])
-    sql = f"select obsid, {agg_cols} from {table_ident} where obsid in {clause} group by obsid"
+    sql = f"select obsid, {agg_cols} from {table_ident} where obsid in {clause} group by obsid"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
     _res = db_utils.get_sql_result_as_dict(
         sql, dbconnection=dbconnection, execute_args=args
     )[1]
@@ -172,7 +172,7 @@ def get_statistics_for_single_obsid(
     table_ident = dbconnection.ident(table)
     for column in data_columns:
         col_ident = dbconnection.ident(column)
-        sql = f"select Count({col_ident}) from {table_ident} where obsid = {ph}"
+        sql = f"select Count({col_ident}) from {table_ident} where obsid = {ph}"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
         connection_ok, number_of_values = db_utils.sql_load_fr_db(
             sql, dbconnection=dbconnection, execute_args=(obsid,)
         )
@@ -184,7 +184,7 @@ def get_statistics_for_single_obsid(
 
     # min value
     col_ident = dbconnection.ident(data_column)
-    sql = f"select min({col_ident}) from {table_ident} where obsid = {ph}"
+    sql = f"select min({col_ident}) from {table_ident} where obsid = {ph}"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
     connection_ok, min_value = db_utils.sql_load_fr_db(
         sql, dbconnection=dbconnection, execute_args=(obsid,)
     )
@@ -197,7 +197,7 @@ def get_statistics_for_single_obsid(
         statistics_list[1] = median_value
 
     # max value
-    sql = f"select max({col_ident}) from {table_ident} where obsid = {ph}"
+    sql = f"select max({col_ident}) from {table_ident} where obsid = {ph}"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
     connection_ok, max_value = db_utils.sql_load_fr_db(
         sql, dbconnection=dbconnection, execute_args=(obsid,)
     )

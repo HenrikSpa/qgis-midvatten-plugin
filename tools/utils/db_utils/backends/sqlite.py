@@ -158,7 +158,7 @@ class SQLiteBackend(Backend):
     def closedb(self) -> None:
         try:
             self._conn.rollback()
-        except Exception:
+        except Exception:  # nosec B110 - best-effort cleanup
             pass
         self._conn.close()
 
@@ -322,7 +322,7 @@ class SQLiteBackend(Backend):
         self, col_ident: str, table_ident: str, ph: str, obsid: Any
     ) -> tuple[str, tuple]:
         sql = (
-            f"SELECT AVG({col_ident}) "
+            f"SELECT AVG({col_ident}) "  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
             f"FROM (SELECT {col_ident} "
             f"      FROM {table_ident} "
             f"      WHERE obsid = {ph} "

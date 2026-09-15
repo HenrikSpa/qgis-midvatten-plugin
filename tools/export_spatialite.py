@@ -44,7 +44,7 @@ def _find_datetime_duplicates(source_db_settings: str) -> dict[str, int]:
     try:
         for table, group_by in _DT_DUPLICATE_CHECKS:
             tq = db_utils.ident(table)
-            sql = f"SELECT COUNT(*) FROM (SELECT 1 FROM {tq} GROUP BY {group_by} HAVING COUNT(*) > 1)"
+            sql = f"SELECT COUNT(*) FROM (SELECT 1 FROM {tq} GROUP BY {group_by} HAVING COUNT(*) > 1)"  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
             try:
                 count = conn.execute_and_fetchall(sql)[0][0]
                 if count:

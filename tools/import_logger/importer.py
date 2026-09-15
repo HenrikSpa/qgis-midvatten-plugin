@@ -756,7 +756,7 @@ class LoggerImport(BaseImporter, import_ui_dialog):
         """
         placeholder = dbconnection.placeholder()
         sql = db_utils.add_insert_or_ignore_to_sql(
-            "INSERT INTO zz_meteoparam(parameter, explanation) "
+            "INSERT INTO zz_meteoparam(parameter, explanation) "  # nosec B608 - identifiers via ident()/placeholder; values bound; no raw SQL
             f"VALUES ({placeholder}, {placeholder})",
             dbconnection,
         )

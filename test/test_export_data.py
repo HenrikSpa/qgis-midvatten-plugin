@@ -27,7 +27,13 @@ from unittest import mock
 import pytest
 
 from midvatten.tools.export_data import ExportData, html_to_plaintext
-from midvatten.tools.export_spatialite import ExportSpatialite
+from qgis.PyQt.QtWidgets import QMessageBox
+
+from midvatten.tools.export_spatialite import (
+    ExportSpatialite,
+    _export_progress_dialog,
+    _warn_duplicates,
+)
 from midvatten.tools.utils import db_utils, file_utils
 from midvatten.test import utils_for_tests
 from midvatten.test.mocks_for_tests import MockUsingReturnValue, MockReturnUsingDictIn
@@ -142,6 +148,38 @@ def test_spatialite_export_rejects_invalid_destination(dbpath, expected_error):
     messagebar.critical.assert_called_once_with(bar_msg=expected_error)
     find_duplicates.assert_not_called()
     new_db.assert_not_called()
+
+
+def test_export_progress_dialog_stays_visible_between_small_tables():
+    """A table finishing in one chunk sets value == maximum; the dialog must not auto-close."""
+    progress = _export_progress_dialog(None)
+    try:
+        progress.show()
+        for total in (12, 300, 0, 7):
+            progress.setMaximum(total)
+            progress.setValue(total)
+        assert progress.isVisible()
+    finally:
+        progress.close()
+
+
+def test_warn_duplicates_logs_affected_tables():
+    """The duplicate tables must stay findable in the log after the popup is closed."""
+    with (
+        mock.patch(
+            "midvatten.tools.export_spatialite.QMessageBox.question",
+            return_value=QMessageBox.StandardButton.Yes,
+        ),
+        mock.patch(
+            "midvatten.tools.utils.message_utils.MessagebarAndLog"
+        ) as mock_messagebar,
+    ):
+        assert _warn_duplicates(None, {"w_levels_logger": 3, "comments": 1})
+
+    print(mock_messagebar.mock_calls)
+    log_msg = mock_messagebar.warning.call_args.kwargs["log_msg"]
+    assert "w_levels_logger: 3" in log_msg
+    assert "comments: 1" in log_msg
 
 
 class TestExportCsvOverwriteConfirmation:

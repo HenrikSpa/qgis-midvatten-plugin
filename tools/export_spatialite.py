@@ -69,6 +69,13 @@ def _warn_duplicates(parent, duplicates: dict[str, int]) -> bool:
         "It is recommended to review and correct these in the source database before exporting.\n\n"
         "Continue with export?",
     ).format(lines)
+    message_utils.MessagebarAndLog.warning(
+        log_msg=QCoreApplication.translate(
+            "ExportSpatialite",
+            "Export to SpatiaLite: duplicate timestamps in source database "
+            "(table: number of duplicate groups):\n{}",
+        ).format(lines)
+    )
     result = QMessageBox.question(
         parent,
         QCoreApplication.translate("ExportSpatialite", "Duplicate timestamps detected"),
@@ -77,6 +84,25 @@ def _warn_duplicates(parent, duplicates: dict[str, int]) -> bool:
         QMessageBox.StandardButton.No,
     )
     return result == QMessageBox.StandardButton.Yes
+
+
+def _export_progress_dialog(parent) -> QProgressDialog:
+    progress = QProgressDialog(
+        QCoreApplication.translate(
+            "ExportSpatialite", "Exporting data, please wait..."
+        ),
+        QCoreApplication.translate("ExportSpatialite", "Cancel"),
+        0,
+        0,
+        parent,
+    )
+    progress.setWindowModality(Qt.WindowModality.WindowModal)
+    progress.setMinimumDuration(0)
+    # Tables that fit in one chunk jump straight to value == maximum; with the
+    # defaults that auto-closes the dialog and it only reappears on a larger table.
+    progress.setAutoReset(False)
+    progress.setAutoClose(False)
+    return progress
 
 
 class ExportSpatialite:
@@ -133,7 +159,8 @@ class ExportSpatialite:
         source_db_settings = qgis.core.QgsProject.instance().readEntry(
             "Midvatten", "database"
         )[0]
-        duplicates = _find_datetime_duplicates(source_db_settings)
+        with common_utils.waiting_cursor_scope():
+            duplicates = _find_datetime_duplicates(source_db_settings)
         if duplicates and not _warn_duplicates(self._iface.mainWindow(), duplicates):
             return
 
@@ -214,17 +241,7 @@ class ExportSpatialite:
         worker.finished.connect(thread.quit)
         worker.error.connect(thread.quit)
 
-        progress = QProgressDialog(
-            QCoreApplication.translate(
-                "ExportSpatialite", "Exporting data, please wait..."
-            ),
-            QCoreApplication.translate("ExportSpatialite", "Cancel"),
-            0,
-            0,
-            self._iface.mainWindow(),
-        )
-        progress.setWindowModality(Qt.WindowModality.WindowModal)
-        progress.setMinimumDuration(0)
+        progress = _export_progress_dialog(self._iface.mainWindow())
         progress.show()
         QApplication.processEvents()
 
@@ -251,6 +268,7 @@ class ExportSpatialite:
                 )
             )
             progress.setMaximum(total)
+            progress.setValue(0)
 
         worker.finished.connect(on_finished)
         worker.error.connect(on_error)

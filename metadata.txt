@@ -3,7 +3,7 @@ name=Midvatten
 qgisMinimumVersion=3.40
 description=A toolset that makes QGIS an interface for editing/viewing hydrogeological observational data (drillings, water levels, seismic data etc) stored in a SQLite or PostgreSQL database.
 about=The plugin is a toolset that makes QGIS an interface for editing/viewing hydrogeological observational data (drillings, water levels, seismic data etc) stored in a SQLite or PostgreSQL database. NOTE: This plugin requires the Python packages pandas and matplotlib (numpy is always present in QGIS). The qpip helper plugin (installed with Midvatten) offers to install them on first start — leave the preselected actions and press OK. This is a one-time step.
-version=2.0.1
+version=2.0.2
 author=Henrik Spångmyr, Josef Källgården
 email=midvattenplugin@midvatten.se
 repository=https://github.com/henrikspa/qgis-midvatten-plugin.git
@@ -23,6 +23,10 @@ hasProcessingProvider=no
 supportsQt6=True
 
 changelog=
+        Version 2.0.2:
+          - Export to SpatiaLite: The progress dialog no longer disappears after the first small table. Previously it closed itself whenever a table fit in a single chunk, so the export could run for several seconds with no visible sign of progress.
+          - Export to SpatiaLite: The duplicate timestamp warning now also lists the affected tables and counts in the log message panel, so they can be looked up after the popup is closed.
+          - Export to SpatiaLite: A waiting cursor is shown while the source database is checked for duplicate timestamps.
         Version 2.0.1:
           - Packaging: Pass the plugins.qgis.org security scan. Annotated 104 safe SQL statements (identifiers built through the validated, quoted safe-SQL layer, with bound query parameters) as reviewed false positives, replaced one internal assert with an explicit error check, and cleared the executable bit from packaged Python files. No functional or user-facing changes.
         Version 2.0.0:

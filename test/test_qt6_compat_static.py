@@ -4,9 +4,10 @@ These spellings work on PyQt5 but raise AttributeError on PyQt6. The qgis.PyQt
 shim does not unscope enums or alias exec_. Scoped spellings work on both.
 Source of truth: midv_qt6compat/templates/test_qt6_compat_static.py — edit there.
 """
-# qt6compat-template-version: 2
+# qt6compat-template-version: 4
 from __future__ import annotations
 
+import ast
 import io
 import re
 import tokenize
@@ -114,6 +115,54 @@ def _plugin_sources(root: Path) -> tuple[Path, list[str]]:
         yield rel, path.read_text(encoding="utf-8").splitlines()
 
 
+_INT_LEVEL_LABEL = "integer message level (use Qgis.MessageLevel.X)"
+
+
+def _int_message_level_hits(text: str) -> list[tuple[int, str]]:
+    """Find messageBar().pushMessage(...) calls that pass a bare int as the level.
+
+    PyQt5/sip4 silently converted 0/1/2 to Qgis.MessageLevel; PyQt6 rejects it
+    ("arguments did not match any overloaded call"). Positional index 1 or 2 is
+    the level in every pushMessage overload; index 3 can be a legal int duration
+    so it is left alone. Multi-line calls are covered because this walks the AST.
+    """
+    try:
+        tree = ast.parse(text)
+    except (SyntaxError, ValueError):
+        return []
+    hits = []
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                and node.func.attr == "pushMessage"):
+            continue
+        suspects = [a for a in node.args[1:3]]
+        suspects += [kw.value for kw in node.keywords if kw.arg == "level"]
+        for a in suspects:
+            if isinstance(a, ast.Constant) and isinstance(a.value, int) and not isinstance(a.value, bool):
+                hits.append((a.lineno, _INT_LEVEL_LABEL))
+    return hits
+
+
+_FM_WIDTH_LABEL = "QFontMetrics.width(text) was removed in Qt6 (use horizontalAdvance)"
+
+
+def _font_metrics_width_hits(text: str) -> list[tuple[int, str]]:
+    """Find ``.width(<arg>)`` calls: QFontMetrics(F).width(text) is gone in Qt6.
+
+    The receiver is usually ``self.fontMetrics()`` or a name bound to it, which
+    a regex or the upstream rewriter cannot type, so any ``width`` call WITH an
+    argument is a hit. Qt's other width() methods (QWidget, QRect, QSize, QPen,
+    QImage...) take none. horizontalAdvance exists since Qt 5.11.
+    """
+    try:
+        tree = ast.parse(text)
+    except (SyntaxError, ValueError):
+        return []
+    return sorted((node.lineno, _FM_WIDTH_LABEL) for node in ast.walk(tree)
+                  if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                  and node.func.attr == "width" and (node.args or node.keywords))
+
+
 def collect_hits(root: Path | None = None) -> list[str]:
     """Scan plugin root for Qt6-incompatible patterns. Match against masked lines, report original."""
     if root is None:
@@ -122,6 +171,8 @@ def collect_hits(root: Path | None = None) -> list[str]:
     for rel, lines in _plugin_sources(root):
         original_text = "\n".join(lines)
         masked_lines = _mask_strings_and_comments(original_text)
+        for lineno, label in _int_message_level_hits(original_text) + _font_metrics_width_hits(original_text):
+            hits.append(f"{rel}:{lineno}: {label}: {lines[lineno - 1].strip()}")
 
         for lineno, (original_line, masked_line) in enumerate(zip(lines, masked_lines), 1):
             for label, pattern in FORBIDDEN.items():

@@ -1309,13 +1309,18 @@ class ParameterBrowser(QtWidgets.QDialog, parameter_browser_dialog):
 
         else:
             # FieldForm format:
-            input_field = {combined_name: {"type": input_type}}
+            # hint/options/default_value must be nested inside the field's own
+            # dict. Top-level siblings get merged into "inputfields" on export
+            # and the app then fails with "'String' is not a subtype of
+            # 'Map<String, dynamic>'".
+            field_def = {"type": input_type}
             if hint:
-                input_field["hint"] = hint
+                field_def["hint"] = hint
             if options and input_type in ("choice", "multichoice"):
-                input_field["options"] = json.loads(f"[{options}]")
-            if default and type == "choice":
-                input_field["default_value"] = default
+                field_def["options"] = json.loads(f"[{options}]")
+            if default and input_type == "choice":
+                field_def["default_value"] = default
+            input_field = {combined_name: field_def}
             self._input_field_list.paste_data(
                 [json.dumps(input_field, ensure_ascii=False)]
             )

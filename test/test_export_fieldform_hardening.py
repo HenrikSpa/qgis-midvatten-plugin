@@ -6,6 +6,7 @@ therefore refuse untransformed coordinates and invalid layer CRSs, and steer
 the user towards a working file name.
 """
 
+import json
 import re
 from unittest import mock
 
@@ -136,3 +137,37 @@ class TestFieldFormFileName(MidvattenTestBase):
         mock_ms.settingsdict = {}
         exporter = ExportToFieldLogger(None, mock_ms)
         assert "locations" in exporter.export_as_fieldform.toolTip()
+
+
+@pytest.mark.active
+class TestCombineNameFieldFormNesting:
+    """hint/options/default_value must live inside the field's own dict, or the
+    app's inputfields map gets a String where it expects a Map."""
+
+    @staticmethod
+    def _build(*args, **kwargs):
+        pasted = []
+        stub = mock.Mock()
+        stub._use_fieldlogger = False
+        stub._input_field_list.paste_data.side_effect = pasted.extend
+        export_fieldlogger.ParameterBrowser.combine_name(stub, *args, **kwargs)
+        return json.loads(pasted[0])
+
+    def test_hint_options_default_are_nested(self):
+        result = self._build(
+            "q.l/s", "choice", "a hint", options='"a", "b"', default="a"
+        )
+        assert result == {
+            "q.l/s": {
+                "type": "choice",
+                "hint": "a hint",
+                "options": ["a", "b"],
+                "default_value": "a",
+            }
+        }
+
+    def test_merged_inputfields_are_all_maps(self):
+        merged = {}
+        merged.update(self._build("a", "text", "hint a"))
+        merged.update(self._build("b", "numberDecimal", "hint b"))
+        assert all(isinstance(v, dict) for v in merged.values())

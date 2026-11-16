@@ -32,6 +32,12 @@ from midvatten.tools.utils.string_utils import returnunicode as ru
 log = logging.getLogger(__name__)
 
 _YEAR_PREFIX = re.compile(r"\d{4}")
+# Fills fields missing from the input: "2015" -> 2015-01-01, "2015-06" -> 2015-06-01,
+# a time alone -> 1900-01-01. Without it dateutil would take them from today's date.
+_PARSE_DEFAULT = datetime.datetime(1900, 1, 1)
+# A numeric date with only a two-digit year ("15-01-01", "15/1/1", "150101") is
+# ambiguous between yy-mm-dd and dd-mm-yy, so to_date rejects it.
+_TWO_DIGIT_YEAR_DATE = re.compile(r"(\d{1,2}[-/.]\d{1,2}[-/.]\d{1,2}|\d{6})")
 
 
 def to_date(
@@ -58,6 +64,12 @@ def to_date(
     datetime.datetime(2010, 9, 7, 0, 0)
     >>> to_date('07-09-2010')
     datetime.datetime(2010, 9, 7, 0, 0)
+    >>> to_date('2015')
+    datetime.datetime(2015, 1, 1, 0, 0)
+    >>> to_date('2015-06')
+    datetime.datetime(2015, 6, 1, 0, 0)
+    >>> to_date('15-01-01') is None
+    True
     >>> to_date('abc') is None
     True
     """
@@ -67,10 +79,12 @@ def to_date(
         return datetime.datetime(astring.year, astring.month, astring.day)
     try:
         s = str(astring).strip()
+        if _TWO_DIGIT_YEAR_DATE.fullmatch(re.split(r"[\sT]", s, maxsplit=1)[0]):
+            return None
         if _YEAR_PREFIX.match(s):
-            dt = dateutil_parser.parse(s, yearfirst=True)
+            dt = dateutil_parser.parse(s, yearfirst=True, default=_PARSE_DEFAULT)
         else:
-            dt = dateutil_parser.parse(s, dayfirst=True)
+            dt = dateutil_parser.parse(s, dayfirst=True, default=_PARSE_DEFAULT)
         return dt.replace(tzinfo=None)
     except (ValueError, TypeError, OverflowError):
         return None

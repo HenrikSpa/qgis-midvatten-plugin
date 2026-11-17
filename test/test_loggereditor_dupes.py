@@ -12,6 +12,7 @@ import pandas as pd
 from midvatten.test import utils_for_tests
 from midvatten.tools.loggereditor import LoggerEditor
 from midvatten.tools.utils import db_utils
+from midvatten.tools.utils.db_utils.backends.postgresql import PostgreSQLBackend
 from midvatten.test.test_loggereditor_series import (
     _insert_obs_point,
     _insert_logger_row,
@@ -60,7 +61,6 @@ def test_range_groups_split_at_full_buffer_gaps():
         '"w_levels_logger"',
         "?",
         'datetime("date_time")',
-        "datetime(?)",
     )
 
     assert len(range_stmts) == 2
@@ -87,7 +87,6 @@ def test_per_row_fallback_preserves_raw_datetime_identity():
         '"w_levels_logger"',
         "%s",
         'midv_to_instant("date_time")',
-        "midv_to_instant(%s)",
     )
 
     assert range_stmts == []
@@ -781,3 +780,68 @@ class TestLoggerEditorDupes(utils_for_tests.MidvattenTestSpatialiteDbSv):
             pd.Timestamp("2024-01-01 00:00:00"),
             pd.Timestamp("2024-03-01 00:00:00"),
         )
+
+
+@pytest.mark.postgis
+class TestLoggerEditorSavePostgisNotUpgraded(utils_for_tests.MidvattenTestPostgisDbSv):
+    def teardown_method(self):
+        super().teardown_method()
+        gc.collect()
+
+    @pytest.mark.parametrize("has_instant_fn", [False, True])
+    @mock.patch("midvatten.tools.utils.message_utils.MessagebarAndLog")
+    def test_range_save_with_and_without_midv_to_instant(
+        self, mock_messagebar, has_instant_fn
+    ):
+        """A range UPDATE must save on a PostgreSQL DB with midv_to_instant()
+        and on one that lacks it (not upgraded to 2.0.0).
+
+        Regression: the bounds were wrapped in the text-normalizing CASE
+        fallback, which repeats its argument five times, so the statement had
+        12 placeholders for 4 args and psycopg2 raised IndexError.
+        """
+        dates = ["2024-01-01 00:00:00", "2024-01-02 00:00:00", "2024-01-03 00:00:00"]
+        db_utils.sql_alter_db(
+            "INSERT INTO obs_points (obsid) VALUES (%s)", all_args=[("rb1",)]
+        )
+        for dt, head in zip(dates, [100.0, 200.0, 300.0]):
+            db_utils.sql_alter_db(
+                "INSERT INTO w_levels_logger (obsid, date_time, head_cm)"
+                " VALUES (%s, %s, %s)",
+                all_args=[("rb1", dt, head)],
+            )
+
+        editor = _make_editor_with_buf(
+            self.iface,
+            self.midvatten.ms,
+            obsid="rb1",
+            dates=dates,
+            head_values=[1.0, 2.0, 3.0],
+            level_values=[None, None, None],
+            series_ids=[None, None, None],
+            sources=["", "", ""],
+            series_buf={},
+        )
+        # Set logger position: level = C + head_cm/100 -> one range UPDATE.
+        editor._buf["level_masl"] = 10.0 + editor._buf["head_cm_m"]
+
+        with mock.patch.object(
+            PostgreSQLBackend,
+            "has_normalized_instant_function",
+            return_value=has_instant_fn,
+        ):
+            result = editor.save_to_db()
+        print(f"{mock_messagebar.mock_calls=}")
+        assert result is True
+        dbconn = db_utils.DbConnectionManager()
+        rows = dbconn.execute_and_fetchall(
+            "SELECT date_time, level_masl FROM w_levels_logger"
+            " WHERE obsid = %s ORDER BY date_time",
+            ("rb1",),
+        )
+        dbconn.closedb()
+        assert rows == [
+            ("2024-01-01 00:00:00", 11.0),
+            ("2024-01-02 00:00:00", 12.0),
+            ("2024-01-03 00:00:00", 13.0),
+        ]

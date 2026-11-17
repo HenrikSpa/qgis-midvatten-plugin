@@ -1491,7 +1491,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                     normalized_dt = dbconnection.normalized_instant_sql(
                         ident("date_time")
                     )
-                    normalized_ph = dbconnection.normalized_instant_sql(ph)
                     range_stmts, per_row_params = self._compute_update_statements(
                         changed_index,
                         orig_changed,
@@ -1503,7 +1502,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
                         tbl,
                         ph,
                         normalized_dt,
-                        normalized_ph,
                     )
                 except Exception:
                     return self._report_save_failure(
@@ -1699,7 +1697,6 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         tbl: str,
         ph: str,
         normalized_dt: str,
-        normalized_ph: str,
     ) -> tuple[list[tuple], list[tuple]]:
         """Group changed rows by contiguous buf-position; emit range or per-row SQL.
 
@@ -1722,7 +1719,12 @@ class LoggerEditor(qgis.PyQt.QtWidgets.QMainWindow, Calibr_Ui_Dialog):
         obsid_col = ident("obsid")
         level_col = ident("level_masl")
         head_col = ident("head_cm")
-        dt_between = f"{normalized_dt} BETWEEN {normalized_ph} AND {normalized_ph}"
+        # The bounds t1/t2 are bound as plain placeholders: they come from
+        # strftime(_DT_FMT), so they are already canonical. Wrapping them in
+        # normalized_instant_sql() would break the PostgreSQL fallback (DB not
+        # upgraded to 2.0.0), which repeats its argument five times and so
+        # would need each bound bound five times.
+        dt_between = f"{normalized_dt} BETWEEN {ph} AND {ph}"
         where_range = f"{obsid_col} = {ph} AND {dt_between}"
 
         # A BETWEEN range-query only touches the intended rows when there are no

@@ -3,3 +3,4 @@
 .out/
 .out-host/
 .out*.log
+.overnight/

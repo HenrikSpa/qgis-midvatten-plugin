@@ -2278,6 +2278,79 @@ class WlvllogImportFromLoggerDiverOfficeMixin:
         assert "UTC+ABC2 could not be parsed!" in tz_msg
         assert "Import file anyway?" in tz_msg
 
+    def test_wlvllogg_import_bare_instrument_number_does_not_shift(self):
+        """'Instrument number=-219667' carries no UTC offset.
+
+        It used to be read as UTC-22:06, moving the data about a day forward.
+        Now the user is asked, and 'import anyway' keeps the timestamps.
+        """
+        content = "\n".join(
+            (
+                "Location=rb1",
+                "Instrument number        =-219667",
+                "Date/time,Water head[cm],Temperature[\u00b0C]",
+                "2016/03/15 10:30:00,1,10",
+                "2016/03/15 11:00:00,11,101",
+            )
+        )
+        db_utils.sql_alter_db("INSERT INTO obs_points (obsid) VALUES ('rb1')")
+
+        with file_utils.tempinput(content, _CHARSET) as f1:
+
+            @mock.patch("midvatten.tools.utils.common_utils.NotFoundQuestion")
+            @mock.patch("midvatten.tools.utils.dialog_utils.Askuser")
+            @mock.patch("qgis.utils.iface", autospec=True)
+            @mock.patch(
+                "midvatten.tools.utils.message_utils.pop_up_info",
+                autospec=True,
+            )
+            @mock.patch("midvatten.tools.import_logger.midvatten_utils.select_files")
+            def _run(
+                self,
+                mock_filenames,
+                mock_skippopup,
+                mock_iface,
+                mock_askuser,
+                mock_notfoundquestion,
+            ):
+                mock_notfoundquestion.return_value.answer = "ok"
+                mock_notfoundquestion.return_value.value = "rb1"
+                mock_notfoundquestion.return_value.reuse_column = "location"
+                mock_filenames.return_value = [f1]
+                ms = MagicMock()
+                ms.settingsdict = OrderedDict()
+                importer = LoggerImport(self.iface, ms)
+                importer.load_gui()
+                importer.confirm_names.checked = False
+
+                set_combobox(importer.utc_offset, "UTC+1", add_if_not_exists=False)
+                importer.select_files()
+
+                # Yes = import the file anyway (keep its timestamps as-is).
+                mock_askuser.return_value.result = 1
+                importer.start_import(
+                    importer.files,
+                    importer.skip_rows.checked,
+                    importer.confirm_names.checked,
+                    importer.import_all_data.checked,
+                )
+                return mock_askuser
+
+            mock_askuser = _run(self)
+
+        test_string = utils_for_tests.create_test_string(
+            db_utils.sql_load_fr_db(
+                "SELECT obsid, date_time, head_cm, temp_degc FROM w_levels_logger ORDER BY obsid, date_time"
+            )
+        )
+        reference_string = r"""(True, [(rb1, 2016-03-15 10:30:00, 1.0, 10.0), (rb1, 2016-03-15 11:00:00, 11.0, 101.0)])"""
+        assert test_string == reference_string
+        assert (
+            mock_askuser.mock_calls[0].kwargs.get("dialogtitle", "")
+            == "Time zone conversion failed"
+        )
+        assert "-219667" in mock_askuser.mock_calls[0].kwargs.get("msg", "")
+
     def test_wlvllogg_import_change_timezone_file_timezone_failed_skip(self):
         files = [
             (

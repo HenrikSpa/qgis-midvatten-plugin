@@ -26,6 +26,7 @@ from midvatten.tools.import_logger.models import (
 from midvatten.tools.import_logger.pipeline import (
     InvalidLatestDateError,
     LoggerPipelineError,
+    TimezoneConversionError,
     assign_obsid,
     baro_to_meteo,
     drop_missing_water_head,
@@ -327,6 +328,38 @@ def test_timezone_conversion_without_collision_preserves_every_row() -> None:
     ]
     assert result.data["head_cm"].tolist() == [1.0, 2.0]
     assert result.notices == ()
+
+
+@pytest.mark.parametrize("source", ["-219667", "219667", "-219667 x"])
+def test_bare_instrument_number_is_not_a_timezone(source: str) -> None:
+    """A DiverOffice instrument number without UTC/GMT has no offset to read.
+
+    pandas would otherwise read '-219667' as a fixed offset of UTC-22:06 and
+    shift every timestamp by about a day.
+    """
+    data = logger_frame(["2024-06-01 12:00:00"], head=[1.0])
+
+    with pytest.raises(TimezoneConversionError):
+        normalize_timezone(parsed_file(data, source_timezone=source), "UTC+1")
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        ("-219667 UTC+2", "2024-06-01 11:00:00"),
+        ("-219667\tUTC+2", "2024-06-01 11:00:00"),
+        ("+02:00", "2024-06-01 11:00:00"),
+        ("-01:00", "2024-06-01 14:00:00"),
+        ("UTC", "2024-06-01 13:00:00"),
+        ("CET", "2024-06-01 11:00:00"),
+    ],
+)
+def test_readable_source_offsets_still_convert(source: str, expected: str) -> None:
+    data = logger_frame(["2024-06-01 12:00:00"], head=[1.0])
+
+    result = normalize_timezone(parsed_file(data, source_timezone=source), "UTC+1")
+
+    assert result.data["date_time"].tolist() == [pd.Timestamp(expected)]
 
 
 def test_no_timezone_transformation_does_not_reconcile_existing_duplicates() -> None:

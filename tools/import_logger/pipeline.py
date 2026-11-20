@@ -9,7 +9,8 @@ from collections.abc import Mapping
 
 import pandas as pd
 from pandas.api.types import is_datetime64_ns_dtype, is_numeric_dtype
-from pytz.exceptions import AmbiguousTimeError
+import pytz
+from pytz.exceptions import AmbiguousTimeError, UnknownTimeZoneError
 
 from midvatten.tools.utils import date_utils
 
@@ -28,6 +29,7 @@ from .models import (
 )
 
 _FIXED_TIMEZONE = re.compile(r"(?:gmt|utc)", re.IGNORECASE)
+_BARE_OFFSET = re.compile(r"^\s*[+-]\d{1,2}:\d{2}\s*$")
 _BARO_DESTINATION = {
     "baro_cmh2o": ("pressure", "cmH2O"),
     "temp_degc": ("temp", "°C"),
@@ -106,16 +108,31 @@ def _with_data(parsed: ParsedLoggerFile, data: pd.DataFrame) -> ParsedLoggerFile
 
 
 def _fixed_offset(value: str) -> datetime.timedelta | None:
-    if "/" in value or not _FIXED_TIMEZONE.search(value):
+    """Return the offset of a 'UTC+hh[:mm]'/'GMT…' or bare '±hh:mm' string."""
+    if "/" in value:
+        return None
+    if _BARE_OFFSET.match(value):
+        value = "UTC" + value.strip()
+    elif not _FIXED_TIMEZONE.search(value):
         return None
     return date_utils.parse_timezone_to_timedelta(value)
 
 
-def _timezone_spec(value: str) -> str | datetime.tzinfo:
+def _timezone_spec(value: str) -> datetime.tzinfo | str:
+    """Return a fixed-offset tzinfo, or the name of a known tz-database zone.
+
+    Anything else is rejected rather than handed to pandas, which reads a
+    DiverOffice instrument number such as '-219667' as a nonsense offset
+    (UTC-22:06) and shifts the data by about a day.
+    """
     offset = _fixed_offset(value)
-    if offset is None:
-        return value
-    return datetime.timezone(offset, name=value)
+    if offset is not None:
+        return datetime.timezone(offset, name=value)
+    try:
+        pytz.timezone(value)
+    except UnknownTimeZoneError as error:
+        raise ValueError(f"{value!r} is not a recognised timezone") from error
+    return value
 
 
 def _timezones_equivalent(source: str, target: str) -> bool:
